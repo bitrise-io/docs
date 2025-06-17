@@ -19,10 +19,20 @@ if (webpackConfig.mode === 'development') app.use(hotMiddleware(compiler));
 
 // Middleware to inject script tag into HTML files
 app.use(async (req, res, next) => {
-  const filePath = path.join(__dirname, 'out', req.path === '/' ? 'index.html' : req.path);
+  let filePath = path.join(__dirname, 'out', req.path === '/' ? 'index.html' : req.path);
+  if (path.extname(filePath) === '' && fs.existsSync(`${filePath}.html`)) {
+    filePath += '.html';
+  }
   if (path.extname(filePath) === '.html' && fs.existsSync(filePath)) {
     try {
       let html = await fs.promises.readFile(filePath, 'utf8');
+      html = html.replace(
+        '</head>',
+        `<link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet"></link>
+        </head>`,
+      );
       html = html.replace('</body>', '<script src="/index.js"></script></body>');
       res.setHeader('Content-Type', 'text/html');
       res.send(html);

@@ -1,14 +1,30 @@
 const fs = require('fs');
 const path = require('path');
-const CopyPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
+const CopyPlugin = require('copy-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+
+const redirects = require('./redirect.js');
 
 module.exports = (mode) => {
   const plugins = [
     new CopyPlugin({
-      patterns: [{ from: 'src/images/corporate-logo.svg', to: 'css/image/corporate-logo.svg' }],
+      patterns: [
+        "public",
+      ],
+    }),
+    new HtmlWebpackPlugin({
+      filename: 'index.html',
+      template: 'src/html/portal.html'
     }),
   ];
+  redirects.forEach((redirect) => {
+    plugins.push(new HtmlWebpackPlugin({
+      filename: redirect[0],
+      redirect: mode === 'development' ? redirect[1].replace("https://devcenter.bitrise.io", "") : redirect[1],
+      template: 'src/html/redirect.html',
+    }));
+  });
   if (mode === 'development') {
     plugins.push(new webpack.HotModuleReplacementPlugin());
   }

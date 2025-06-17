@@ -3,8 +3,25 @@ const unzipper = require('unzipper');
 
 const { POLIGO_API_KEY } = process.env;
 
+const listPublishSettings = async () => {
+  const headers = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    Authorization: `Basic ${POLIGO_API_KEY}`,
+  };
+  const response = await fetch('https://bitrise.paligoapp.com/api/v2/publishsettings/', {
+    method: 'GET',
+    headers,
+  });
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+  }
+  return response.json();
+};
+
 const createProduction = async () => {
-  const inputBody = '{ "publishsetting": "18" }';
+  const inputBody = '{ "publishsetting": "19" }';
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -94,6 +111,15 @@ const listFolders = async (dirPath) => {
   const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
   return entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
 };
+
+// listPublishSettings().then((settings) => {
+//   process.stdout.write('Available publish settings:\n');
+//   settings.publishsettings?.forEach((setting) => {
+//     process.stdout.write(`- ID: ${setting.id}, Name: ${setting.name}\n`);
+//   });
+// }).catch((error) => {
+//   process.stderr.write(`Error fetching publish settings: ${error.message}\n`);
+// });
 
 createProduction()
   .then(async (response) => {
