@@ -3,10 +3,11 @@ const path = require('path');
 const webpack = require('webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const { getCustomStyles, getCustomScript } = require('./middleware.js');
 
 const redirects = require('./redirect.js');
 
-module.exports = (mode) => {
+module.exports = (mode, distPath) => {
   const plugins = [
     new CopyPlugin({
       patterns: [
@@ -15,7 +16,10 @@ module.exports = (mode) => {
     }),
     new HtmlWebpackPlugin({
       filename: 'index.html',
-      template: 'src/html/portal.html'
+      customStyles: mode === 'development' ? getCustomStyles() : '',
+      customScript: mode === 'development' ? getCustomScript(0) : '',
+      template: 'src/html/portal.html',
+      inject: false,
     }),
   ];
   redirects.forEach((redirect) => {
@@ -23,6 +27,7 @@ module.exports = (mode) => {
       filename: redirect[0],
       redirect: mode === 'development' ? redirect[1].replace("https://devcenter.bitrise.io", "") : redirect[1],
       template: 'src/html/redirect.html',
+      inject: false,
     }));
   });
   if (mode === 'development') {
@@ -30,7 +35,6 @@ module.exports = (mode) => {
   }
 
   const srcPath = path.resolve(__dirname, 'src');
-  const distPath = path.resolve(__dirname, 'out');
   const entryPoints = {};
   fs.readdirSync(path.resolve(srcPath, 'js')).forEach((fileName) => {
     const match = fileName.match(/^(.*)\.js$/);

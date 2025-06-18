@@ -4,38 +4,36 @@ const express = require('express');
 const webpack = require('webpack');
 const devMiddleware = require('webpack-dev-middleware');
 const hotMiddleware = require('webpack-hot-middleware');
-const webpackConfig = require('./webpack.dev.js');
+const webpackConfigBuilder = require('./webpack.common.js');
+const { addCustomScriptAndStyles } = require('./middleware.js');
 
 const hostname = process.argv[3] || '127.0.0.1';
 const port = 3333;
 
+const outputPath = path.join(__dirname, 'out');
+
+const webpackConfig = webpackConfigBuilder('development', outputPath);
 const compiler = webpack(webpackConfig);
 const devMiddlewareOptions = {
   // writeToDisk: true,
 };
 const app = express();
+
 app.use(devMiddleware(compiler, devMiddlewareOptions));
 if (webpackConfig.mode === 'development') app.use(hotMiddleware(compiler));
 
 // Middleware to inject script tag into HTML files
 app.use(async (req, res, next) => {
-  let filePath = path.join(__dirname, 'out', req.path === '/' ? 'index.html' : req.path);
+  let filePath = path.join(outputPath, req.path === '/' ? 'index.html' : req.path);
   if (path.extname(filePath) === '' && fs.existsSync(`${filePath}.html`)) {
     filePath += '.html';
   }
   if (path.extname(filePath) === '.html' && fs.existsSync(filePath)) {
     try {
-      let html = await fs.promises.readFile(filePath, 'utf8');
-      html = html.replace(
-        '</head>',
-        `<link rel="preconnect" href="https://fonts.googleapis.com">
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-          <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet"></link>
-        </head>`,
-      );
-      html = html.replace('</body>', '<script src="/index.js"></script></body>');
+      const html = await fs.promises.readFile(filePath, 'utf8');
       res.setHeader('Content-Type', 'text/html');
-      res.send(html);
+      const depth = path.relative(outputPath, path.dirname(filePath)).split(path.sep).length;
+      res.send(addCustomScriptAndStyles(html, depth));
     } catch (err) {
       next();
     }
@@ -45,7 +43,7 @@ app.use(async (req, res, next) => {
 });
 
 // Serve static files from /out
-app.use(express.static(path.join(__dirname, 'out')));
+app.use(express.static(outputPath));
 
 app.listen(port, hostname, () => {
   process.stdout.write(`Server running at http://${hostname}:${port}/\n`);
