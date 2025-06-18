@@ -44,7 +44,7 @@ const build = async (publishsetting, outputPath) => {
   Output path: ${outputPath}
   `);
 
-  // await publish(publishsetting, outputPath);
+  await publish(publishsetting, outputPath);
 
   await webpackBuild(webpackConfigBuilder('production', outputPath));
 
