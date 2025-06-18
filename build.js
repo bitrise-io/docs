@@ -2,7 +2,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const webpack = require('webpack');
 const webpackConfigBuilder = require('./webpack.common.js');
-const { publish } = require('./paligo.js');
+const { pathExists, publish } = require('./paligo.js');
 const { addCustomScriptAndStyles } = require('./middleware.js');
 
 async function processHtmlFiles(basePath, processPath=null) {
@@ -10,12 +10,11 @@ async function processHtmlFiles(basePath, processPath=null) {
     processPath = basePath;
   }
   let count = 0;
-  process.stdout.write(`Processing HTML files in directory: ${path.relative(basePath, processPath)}\n`);
   const entries = await fs.readdir(processPath, { withFileTypes: true });
   for (const entry of entries) {
     const fullPath = path.join(processPath, entry.name);
     if (entry.isDirectory()) {
-      await processHtmlFiles(basePath, fullPath);
+      count += await processHtmlFiles(basePath, fullPath);
     } else if (entry.isFile() && entry.name.endsWith('.html')) {
       let content = await fs.readFile(fullPath, 'utf8');
       const depth = path.relative(basePath, fullPath).split(path.sep).length - 1;
@@ -25,13 +24,13 @@ async function processHtmlFiles(basePath, processPath=null) {
       count++;
     }
   }
-  process.stdout.write(`Finished processing ${count} HTML files.\n\n`);
+  return count;
 }
 
 const webpackBuild = (config) =>  new Promise((resolve, reject) => {
   webpack(config, (err, stats) => {
     if (err || stats.hasErrors()) {
-      reject(err || new Error('Webpack build failed'));
+      reject(stats);
     } else {
       resolve(stats);
     }
@@ -42,13 +41,33 @@ const build = async (publishsetting, outputPath) => {
   process.stdout.write(`Starting build:
   Publish setting: ${JSON.stringify(publishsetting)}
   Output path: ${outputPath}
-  `);
+\n`);
 
+  if (pathExists(outputPath)) {
+    await fs.rm(outputPath, { recursive: true, force: true })
+  } 
+
+  // Create and download Paligo production
   await publish(publishsetting, outputPath);
 
-  await webpackBuild(webpackConfigBuilder('production', outputPath));
+  // Build project with Webpack
+  let webpackStats;
+  try {
+    webpackStats = await webpackBuild(webpackConfigBuilder('production', outputPath));
+  } catch (error) {
+    webpackStats = error;
+  }
+  if (webpackStats.hasErrors()) {
+    process.stderr.write(`Webpack build failed:\n${webpackStats.toString({ colors: true })}\n\n`);
+    throw new Error('Webpack build failed');
+  } else {
+    process.stdout.write(`Webpack build completed successfully:\n${webpackStats.toString({ colors: true })}\n\n`);
+  }
 
-  await processHtmlFiles(outputPath);
+  // Process HTML files to inject custom scripts and styles
+  process.stdout.write(`Processing HTML files in directory: ${path.relative(__dirname, outputPath)}\n`);
+  const count = await processHtmlFiles(outputPath);
+  process.stdout.write(`Finished processing ${count} HTML files.\n\n`);
 
   process.stdout.write(`Build completed successfully. Output is in ${outputPath}\n`);
 }
