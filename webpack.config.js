@@ -18,6 +18,7 @@ module.exports = (mode, distPath) => {
       filename: 'index.html',
       customStyles: mode === 'development' ? getCustomStyles() : '',
       customScript: mode === 'development' ? getCustomScript(0) : '',
+      copyrightYear: new Date().getFullYear(),
       template: 'src/html/portal.html',
       inject: false,
     }),

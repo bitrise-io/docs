@@ -1,7 +1,7 @@
 const fs = require('fs').promises;
 const path = require('path');
 const webpack = require('webpack');
-const webpackConfigBuilder = require('./webpack.common.js');
+const webpackConfigBuilder = require('./webpack.config.js');
 const { pathExists, publish } = require('./paligo.js');
 const { addCustomScriptAndStyles } = require('./middleware.js');
 
@@ -42,10 +42,6 @@ const build = async (publishsetting, outputPath) => {
   Publish setting: ${JSON.stringify(publishsetting)}
   Output path: ${outputPath}
 \n`);
-
-  if (pathExists(outputPath)) {
-    await fs.rm(outputPath, { recursive: true, force: true })
-  } 
 
   // Create and download Paligo production
   await publish(publishsetting, outputPath);

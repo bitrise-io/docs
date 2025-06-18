@@ -4,7 +4,7 @@ const express = require('express');
 const webpack = require('webpack');
 const devMiddleware = require('webpack-dev-middleware');
 const hotMiddleware = require('webpack-hot-middleware');
-const webpackConfigBuilder = require('./webpack.common.js');
+const webpackConfigBuilder = require('./webpack.config.js');
 const { addCustomScriptAndStyles } = require('./middleware.js');
 
 const hostname = process.argv[3] || '127.0.0.1';
