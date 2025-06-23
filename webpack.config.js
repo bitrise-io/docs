@@ -3,12 +3,16 @@ const path = require('path');
 const webpack = require('webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const { getCustomStyles, getCustomScript } = require('./middleware.js');
 
 const redirects = require('./redirect.js');
 
 module.exports = (mode, distPath) => {
   const plugins = [
+    new MiniCssExtractPlugin({
+      filename: "[name].css",
+    }),
     new CopyPlugin({
       patterns: [
         "public",
@@ -16,8 +20,8 @@ module.exports = (mode, distPath) => {
     }),
     new HtmlWebpackPlugin({
       filename: 'index.html',
-      customStyles: mode === 'development' ? getCustomStyles() : '',
-      customScript: mode === 'development' ? getCustomScript(0) : '',
+      customStyles: mode === 'development' ? getCustomStyles(0, 'portal') : '',
+      customScript: mode === 'development' ? getCustomScript(0, 'portal') : '',
       copyrightYear: new Date().getFullYear(),
       template: 'src/html/portal.html',
       inject: false,
@@ -63,7 +67,7 @@ module.exports = (mode, distPath) => {
       rules: [
         {
           test: /\.css$/i,
-          use: ['style-loader', 'css-loader'],
+          use: [MiniCssExtractPlugin.loader, 'css-loader'],
         },
       ],
     },

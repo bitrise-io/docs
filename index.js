@@ -32,8 +32,7 @@ app.use(async (req, res, next) => {
     try {
       const html = await fs.promises.readFile(filePath, 'utf8');
       res.setHeader('Content-Type', 'text/html');
-      const depth = path.relative(outputPath, path.dirname(filePath)).split(path.sep).length;
-      res.send(addCustomScriptAndStyles(html, depth));
+      res.send(addCustomScriptAndStyles(html, path.relative(outputPath, filePath)));
     } catch (err) {
       next();
     }
