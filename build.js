@@ -17,8 +17,7 @@ async function processHtmlFiles(basePath, processPath=null) {
       count += await processHtmlFiles(basePath, fullPath);
     } else if (entry.isFile() && entry.name.endsWith('.html')) {
       let content = await fs.readFile(fullPath, 'utf8');
-      const depth = path.relative(basePath, fullPath).split(path.sep).length - 1;
-      content = await addCustomScriptAndStyles(content, depth);
+      content = await addCustomScriptAndStyles(content, path.relative(basePath, fullPath));
       await fs.writeFile(fullPath, content, 'utf8');
       process.stdout.write(` - ${path.relative(basePath, fullPath)}: done\n`);
       count++;

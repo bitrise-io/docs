@@ -20,8 +20,8 @@ module.exports = (mode, distPath) => {
     }),
     new HtmlWebpackPlugin({
       filename: 'index.html',
-      customStyles: mode === 'development' ? getCustomStyles(0, 'portal') : '',
-      customScript: mode === 'development' ? getCustomScript(0, 'portal') : '',
+      customStyles: mode === 'development' ? getCustomStyles(0) : '',
+      customScript: mode === 'development' ? getCustomScript(0) : '',
       copyrightYear: new Date().getFullYear(),
       template: 'src/html/portal.html',
       inject: false,
