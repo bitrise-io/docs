@@ -57,11 +57,14 @@ const main = async () => {
   //throw new Error('This is a test error to check error handling in common.js');
 };
 
+main().catch((error) => {
+  console.error('Error in common.js:', error);
+});
+
 if (import.meta.webpackHot) {
   import.meta.webpackHot.dispose(() => {
     console.log('Hot module replacement is disposing of the current module.');
     resetPage.forEach((reset) => reset && reset());
   });
   import.meta.webpackHot.accept();
-  main();
 }
