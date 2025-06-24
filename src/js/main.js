@@ -1,5 +1,5 @@
 import '../css/global.css';
-import { renderSidebarSubpageHeaders } from './lib/common';
+import { renderHubLinks, renderIntroContainer, renderSidebarSubpageHeaders } from './lib/common';
 import { addSidebarLinks } from './pages/bitrise-ci';
 
 
@@ -12,15 +12,19 @@ const main = async () => {
 
   resetPage.push(renderSidebarSubpageHeaders());
 
-  console.log(window.location.href);
   const subpageMatch = window.location.href.match(/\/(en|jp)\/([^\/]+)(\.html|\/)/);
   if (subpageMatch && subpageMatch[2]) {
     const language = subpageMatch[1];
     const subpage = subpageMatch[2];
     const isHub = subpageMatch[3] === '.html';
-    console.log('subpage:', subpage, 'isHub:', isHub, 'language:', language);
+    // console.log('subpage:', subpage, 'isHub:', isHub, 'language:', language);
 
-    document.getElementById('content-wrapper').dataset.isHub = isHub ? 'true' : 'false';
+    document.querySelector('.site-content').dataset.isHub = isHub ? 'true' : 'false';
+
+    if (isHub) {
+      resetPage.push(renderIntroContainer());
+      resetPage.push(renderHubLinks());
+    }
 
     if (subpage === 'bitrise-ci') {
       resetPage.push(addSidebarLinks());
