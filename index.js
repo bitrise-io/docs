@@ -5,7 +5,7 @@ const webpack = require('webpack');
 const devMiddleware = require('webpack-dev-middleware');
 const hotMiddleware = require('webpack-hot-middleware');
 const webpackConfigBuilder = require('./webpack.config.js');
-const { addCustomScriptAndStyles } = require('./middleware.js');
+const { updateContent } = require('./middleware.js');
 
 const hostname = process.argv[3] || '127.0.0.1';
 const port = 3333;
@@ -32,7 +32,7 @@ app.use(async (req, res, next) => {
     try {
       const html = await fs.promises.readFile(filePath, 'utf8');
       res.setHeader('Content-Type', 'text/html');
-      res.send(addCustomScriptAndStyles(html, path.relative(outputPath, filePath)));
+      res.send(updateContent(html, path.relative(outputPath, filePath)));
     } catch (err) {
       next();
     }

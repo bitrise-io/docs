@@ -3,7 +3,7 @@ const path = require('path');
 const webpack = require('webpack');
 const webpackConfigBuilder = require('./webpack.config.js');
 const { pathExists, publish } = require('./paligo.js');
-const { addCustomScriptAndStyles } = require('./middleware.js');
+const { updateContent } = require('./middleware.js');
 
 async function processHtmlFiles(basePath, processPath=null) {
   if (!processPath) {
@@ -17,7 +17,7 @@ async function processHtmlFiles(basePath, processPath=null) {
       count += await processHtmlFiles(basePath, fullPath);
     } else if (entry.isFile() && entry.name.endsWith('.html')) {
       let content = await fs.readFile(fullPath, 'utf8');
-      content = await addCustomScriptAndStyles(content, path.relative(basePath, fullPath));
+      content = await updateContent(content, path.relative(basePath, fullPath));
       await fs.writeFile(fullPath, content, 'utf8');
       process.stdout.write(` - ${path.relative(basePath, fullPath)}: done\n`);
       count++;

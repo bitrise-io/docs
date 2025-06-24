@@ -4,7 +4,7 @@ const webpack = require('webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const { getCustomStyles, getCustomScript } = require('./middleware.js');
+const { getCustomStyles, getCustomScript, getFooter } = require('./middleware.js');
 
 const redirects = require('./redirect.js');
 
@@ -22,7 +22,7 @@ module.exports = (mode, distPath) => {
       filename: 'index.html',
       customStyles: mode === 'development' ? getCustomStyles(0) : '',
       customScript: mode === 'development' ? getCustomScript(0) : '',
-      copyrightYear: new Date().getFullYear(),
+      footerSnippet: getFooter(),
       template: 'src/html/portal.html',
       inject: false,
     }),
