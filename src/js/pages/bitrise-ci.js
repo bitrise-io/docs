@@ -1,3 +1,5 @@
+import { onReset } from "../lib/reset";
+
 export const addSidebarLinks = () => {
   const sidebarLinks = document.createElement('li');
   sidebarLinks.className = 'sidebar-links opened';
@@ -14,7 +16,8 @@ export const addSidebarLinks = () => {
     </ul>
   `;
   document.querySelector('.nav-site-sidebar').appendChild(sidebarLinks);
-  return () => {
+  
+  onReset(() => {
     sidebarLinks.remove();
-  };
+  });
 };

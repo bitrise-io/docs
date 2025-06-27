@@ -1,16 +1,15 @@
 import '../css/global.css';
-import { renderHubLinks, renderIntroContainer, renderSidebarSubpageHeaders } from './lib/common';
+import { renderHubLinks, renderIntroContainer, renderSidebarSubpageHeaders, renderTabContainers, renderCodeBlocks } from './lib/common';
+import { reset } from './lib/reset';
 import { addSidebarLinks } from './pages/bitrise-ci';
 
-
-const resetPage = [];
 const main = async () => {
   if (!window.location.href.match(/(\.html|\/)$/)) {
     window.location.href += '.html';
     return;
   }
 
-  resetPage.push(renderSidebarSubpageHeaders());
+  renderSidebarSubpageHeaders();
 
   const subpageMatch = window.location.href.match(/\/(en|jp)\/([^\/]+)(\.html|\/)/);
   if (subpageMatch && subpageMatch[2]) {
@@ -22,12 +21,15 @@ const main = async () => {
     document.querySelector('.site-content').dataset.isHub = isHub ? 'true' : 'false';
 
     if (isHub) {
-      resetPage.push(renderIntroContainer());
-      resetPage.push(renderHubLinks());
+      renderIntroContainer();
+      renderHubLinks();
+    } else {
+      renderTabContainers();
+      renderCodeBlocks();
     }
 
     if (subpage === 'bitrise-ci') {
-      resetPage.push(addSidebarLinks());
+      addSidebarLinks();
     }
   } else {
      console.log('subpage:', 'portal');
@@ -40,8 +42,7 @@ main().catch((error) => {
 
 if (import.meta.webpackHot) {
   import.meta.webpackHot.dispose(() => {
-    console.log('Hot module replacement is disposing of the current module.');
-    resetPage.forEach((reset) => reset && reset());
+    reset();
   });
   import.meta.webpackHot.accept();
 }

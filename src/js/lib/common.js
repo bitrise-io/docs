@@ -1,3 +1,5 @@
+import { onReset } from "./reset";
+
 export const renderSidebarSubpageHeaders = () => {
   const subpageHeaders = Array.from(document.querySelectorAll('.nav-site-sidebar > li > a')).map((sidebarSubpageLink) => {
     const newSubpageSidebarHeader = document.createElement('div');
@@ -9,12 +11,11 @@ export const renderSidebarSubpageHeaders = () => {
     sidebarSubpageLink.insertAdjacentElement('afterend', newSubpageSidebarHeader);
     return newSubpageSidebarHeader;
   });
-
-  return () => {
+  onReset(() => {
     subpageHeaders.forEach((header) => {
       header.remove();
     });
-  };
+  });
 };
 
 export const renderIntroContainer = () => {
@@ -48,11 +49,11 @@ export const renderIntroContainer = () => {
       }
     });
   }
-  return () => {
+  onReset(() => {
     homepageDescription.remove();
     homepageCta.remove();
     homepageImage.remove();
-  };
+  });
 };
 
 export const renderHubLinks = () => {
@@ -86,9 +87,78 @@ export const renderHubLinks = () => {
       }
     }
   });
-  return () => {
+  onReset(() => {
     newComponents.forEach((header) => {
       header.remove();
     });
-  };
+  });
 };
+
+export const renderTabContainers = () => {
+  const tabElements = Array.from(document.querySelectorAll('p.tabs'));
+  const wrapped = new Set();
+
+  tabElements.forEach((tab, idx) => {
+    if (wrapped.has(tab)) return;
+
+    const group = [tab];
+    let next = tab.nextElementSibling;
+
+    while (next && next.matches('p.tabs')) {
+      group.push(next);
+      wrapped.add(next);
+      next = next.nextElementSibling;
+    }
+
+    if (group.length > 1) {
+      const container = document.createElement('div');
+      container.className = 'tab-container';
+      tab.parentNode.insertBefore(container, group[0]);
+      group.forEach(el => container.appendChild(el));
+      group.forEach(el => wrapped.add(el));
+    }
+  });
+  onReset(() => {
+    document.querySelectorAll('div.tab-container').forEach(container => {
+      while (container.firstChild) {
+        container.parentNode.insertBefore(container.firstChild, container);
+      }
+      container.remove();
+    });
+  });
+};
+
+export const renderCodeBlocks = () => {
+  Array.from(document.querySelectorAll('.programlisting')).forEach((codeBlock) => {
+    const newCodeFragment = document.createFragment = document.createDocumentFragment();
+    newCodeFragment.appendChild(codeBlock.querySelector('.code-button'));
+    const originalCode = document.createElement('div');
+    originalCode.className = 'original-code';
+    originalCode.innerHTML = codeBlock.innerHTML;
+    newCodeFragment.appendChild(originalCode);
+    const newCode = [];
+    const codeLines = codeBlock.innerHTML.split('\n');
+    codeLines.forEach((line, index) => {
+      newCode.push(`<div class="code-line" style="--line-number: '${index + 1}'; --max-line-number-length: ${(codeLines.length + 1).toString().length};">${line}</div>`);
+    });
+    codeBlock.innerHTML = newCode.join('');
+    codeBlock.classList.add('code-block');
+    if (codeLines.length === 1) {
+      codeBlock.classList.add('single-line');
+    }
+    codeBlock.appendChild(newCodeFragment);
+  });
+  onReset(() => {
+    Array.from(document.querySelectorAll('.programlisting')).forEach((codeBlock) => {
+      const resetCodeFragment = document.createDocumentFragment();
+      resetCodeFragment.appendChild(codeBlock.querySelector('.code-button'));
+      const originalCode = codeBlock.querySelector('.original-code');
+      if (originalCode) {
+        codeBlock.innerHTML = originalCode.innerHTML;
+      }
+      codeBlock.appendChild(resetCodeFragment);
+      codeBlock.classList.remove('code-block');
+      codeBlock.classList.remove('single-line');
+    });
+  });
+}
