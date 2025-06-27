@@ -1,11 +1,11 @@
 import '../css/global.css';
-import { renderHubLinks, renderIntroContainer, renderSidebarSubpageHeaders, renderTabContainers, renderCodeBlocks } from './lib/common';
+import { renderHubLinks, renderIntroContainer, renderSidebarSubpageHeaders, renderTabContainers, renderCodeBlocks, renderNavbarSearch } from './lib/common';
 import { reset } from './lib/reset';
 import { addSidebarLinks } from './pages/bitrise-ci';
 
 const redirectToHtml = () => {
-  if (window.location.pathname.match(/\/(en|jp)\/index-(en|jp)/)) {
-    window.location.pathname = window.location.pathname.replace(/\/(en|jp)\/index-(en|jp).*/, '/');
+  if (window.location.pathname.match(/\/(en|ja)\/index-(en|ja)/)) {
+    window.location.pathname = window.location.pathname.replace(/\/(en|ja)\/index-(en|ja).*/, '/');
     return;
   }
   if (!window.location.pathname.match(/(\.html|\/)$/)) {
@@ -17,7 +17,7 @@ const redirectToHtml = () => {
 const main = async () => {
   renderSidebarSubpageHeaders();
 
-  const subpageMatch = window.location.href.match(/\/(en|jp)\/([^\/]+)(\.html|\/)/);
+  const subpageMatch = window.location.href.match(/\/(en|ja)\/([^\/]+)(\.html|\/)/);
   if (subpageMatch && subpageMatch[2]) {
     const language = subpageMatch[1];
     const subpage = subpageMatch[2];
@@ -33,6 +33,8 @@ const main = async () => {
       renderTabContainers();
       renderCodeBlocks();
     }
+
+    renderNavbarSearch();
 
     if (subpage === 'bitrise-ci') {
       addSidebarLinks();

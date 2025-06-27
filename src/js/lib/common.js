@@ -167,3 +167,17 @@ export const renderCodeBlocks = () => {
     });
   });
 }
+
+export const renderNavbarSearch = () => {
+  const navbarHeader = document.querySelector('.navbar-header');
+  const searchField = document.createElement('div');
+  searchField.className = 'navbar-search';
+  searchField.innerHTML = `
+    <input type="text" name="q" placeholder="Search all documentation" aria-label="Search" />
+  `;
+  navbarHeader.insertAdjacentElement('afterend', searchField);
+
+  if (import.meta.webpackHot) onReset(() => {
+    searchField.remove();
+  });
+};
