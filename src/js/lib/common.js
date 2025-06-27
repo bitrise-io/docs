@@ -11,7 +11,8 @@ export const renderSidebarSubpageHeaders = () => {
     sidebarSubpageLink.insertAdjacentElement('afterend', newSubpageSidebarHeader);
     return newSubpageSidebarHeader;
   });
-  onReset(() => {
+
+  if (import.meta.webpackHot) onReset(() => {
     subpageHeaders.forEach((header) => {
       header.remove();
     });
@@ -49,7 +50,8 @@ export const renderIntroContainer = () => {
       }
     });
   }
-  onReset(() => {
+
+  if (import.meta.webpackHot) onReset(() => {
     homepageDescription.remove();
     homepageCta.remove();
     homepageImage.remove();
@@ -87,7 +89,8 @@ export const renderHubLinks = () => {
       }
     }
   });
-  onReset(() => {
+
+  if (import.meta.webpackHot) onReset(() => {
     newComponents.forEach((header) => {
       header.remove();
     });
@@ -118,7 +121,8 @@ export const renderTabContainers = () => {
       group.forEach(el => wrapped.add(el));
     }
   });
-  onReset(() => {
+
+  if (import.meta.webpackHot) onReset(() => {
     document.querySelectorAll('div.tab-container').forEach(container => {
       while (container.firstChild) {
         container.parentNode.insertBefore(container.firstChild, container);
@@ -148,7 +152,8 @@ export const renderCodeBlocks = () => {
     }
     codeBlock.appendChild(newCodeFragment);
   });
-  onReset(() => {
+
+  if (import.meta.webpackHot) onReset(() => {
     Array.from(document.querySelectorAll('.programlisting')).forEach((codeBlock) => {
       const resetCodeFragment = document.createDocumentFragment();
       resetCodeFragment.appendChild(codeBlock.querySelector('.code-button'));

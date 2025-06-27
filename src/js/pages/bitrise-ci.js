@@ -17,7 +17,7 @@ export const addSidebarLinks = () => {
   `;
   document.querySelector('.nav-site-sidebar').appendChild(sidebarLinks);
   
-  onReset(() => {
+  if (import.meta.webpackHot) onReset(() => {
     sidebarLinks.remove();
   });
 };

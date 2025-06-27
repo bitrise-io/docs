@@ -3,12 +3,18 @@ import { renderHubLinks, renderIntroContainer, renderSidebarSubpageHeaders, rend
 import { reset } from './lib/reset';
 import { addSidebarLinks } from './pages/bitrise-ci';
 
-const main = async () => {
-  if (!window.location.href.match(/(\.html|\/)$/)) {
-    window.location.href += '.html';
+const redirectToHtml = () => {
+  if (window.location.pathname.match(/\/(en|jp)\/index-(en|jp)/)) {
+    window.location.pathname = window.location.pathname.replace(/\/(en|jp)\/index-(en|jp).*/, '/');
     return;
   }
+  if (!window.location.pathname.match(/(\.html|\/)$/)) {
+    window.location.pathname += '.html';
+    return;
+  }
+}
 
+const main = async () => {
   renderSidebarSubpageHeaders();
 
   const subpageMatch = window.location.href.match(/\/(en|jp)\/([^\/]+)(\.html|\/)/);
@@ -32,17 +38,22 @@ const main = async () => {
       addSidebarLinks();
     }
   } else {
-     console.log('subpage:', 'portal');
+     // console.log('subpage:', 'portal');
   }
 };
 
-main().catch((error) => {
-  console.error('Error:', error);
-});
+redirectToHtml();
+window.addEventListener('DOMContentLoaded', main);
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  main().catch((error) => {
+    console.error('Error:', error);
+  });
+}
 
 if (import.meta.webpackHot) {
   import.meta.webpackHot.dispose(() => {
-    reset();
-  });
+    window.removeEventListener('DOMContentLoaded', main);
+    reset(); 
+  }); 
   import.meta.webpackHot.accept();
 }
