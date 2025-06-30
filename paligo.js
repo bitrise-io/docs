@@ -141,15 +141,15 @@ const pathExists = async (filePath) => {
 const publish = async (publishsetting, outputPath, useLatest) => {
   let productionId;
   if (useLatest) {
-    const latestPaligoFilePath = path.join(outputPath, LATEST_PALIGO_FILE);
-    process.stdout.write(`Checking for latest production file: ${latestPaligoFilePath} `);
-    if (await pathExists(latestPaligoFilePath)) {
-      process.stdout.write(`found\n`);
-      const latestPaligoData = JSON.parse(await fs.promises.readFile(latestPaligoFilePath, 'utf8'));
-      process.stdout.write(`Using last production: ${latestPaligoData.id}\n`);
-      productionId = latestPaligoData.id;
-    } else {
-      process.stdout.write(`not found\n`);
+    // const latestPaligoFilePath = path.join(outputPath, LATEST_PALIGO_FILE);
+    // process.stdout.write(`Checking for latest production file: ${latestPaligoFilePath} `);
+    // if (await pathExists(latestPaligoFilePath)) {
+    //   process.stdout.write(`found\n`);
+    //   const latestPaligoData = JSON.parse(await fs.promises.readFile(latestPaligoFilePath, 'utf8'));
+    //   process.stdout.write(`Using last production: ${latestPaligoData.id}\n`);
+    //   productionId = latestPaligoData.id;
+    // } else {
+    //   process.stdout.write(`not found\n`);
       const latestPaligoFileUrl = `https://devcenter.bitrise.dev/${LATEST_PALIGO_FILE}`;
       process.stdout.write(`Fetching ${latestPaligoFileUrl} `);
       const latestPaligoDataResponse = await fetch(latestPaligoFileUrl);
@@ -162,7 +162,7 @@ const publish = async (publishsetting, outputPath, useLatest) => {
         process.stdout.write(`failed: ${latestPaligoDataResponse.status} ${latestPaligoDataResponse.statusText}\n`);
         process.stdout.write(`No last production found, creating a new one.\n`);
       }
-    }
+    // }
   }
   if (!productionId) {
     const createProductionResponse = await createProduction(publishsetting);
