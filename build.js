@@ -36,14 +36,15 @@ const webpackBuild = (config) =>  new Promise((resolve, reject) => {
   });
 });
 
-const build = async (publishsetting, outputPath) => {
+const build = async (publishsetting, outputPath, useLatest) => {
   process.stdout.write(`Starting build:
   Publish setting: ${JSON.stringify(publishsetting)}
   Output path: ${outputPath}
+  Use latest production: ${useLatest ? 'Yes' : 'No'}
 \n`);
 
   // Create and download Paligo production
-  await publish(publishsetting, outputPath);
+  await publish(publishsetting, outputPath, useLatest);
 
   // Build project with Webpack
   let webpackStats;
@@ -67,7 +68,7 @@ const build = async (publishsetting, outputPath) => {
   process.stdout.write(`Build completed successfully. Output is in ${outputPath}\n`);
 }
 
-build('19', path.join(__dirname, 'deploy')).catch((error) => {
+build('19', path.join(__dirname, 'deploy'), process.env.COMMIT_MESSAGE?.match('^\\[skip publish\\]')).catch((error) => {
   process.stderr.write(`Error during build: ${error.message}\n`);
   process.exit(1);
 });
