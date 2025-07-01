@@ -8,7 +8,7 @@ if (!PALIGO_API_KEY) {
   throw new Error('PALIGO_API_KEY environment variable is not set.');
 }
 
-const LATEST_PALIGO_FILE = '.paligo.json';
+const LATEST_PALIGO_FILE = '.paligo.zip';
 
 const listPublishSettings = async () => {
   const headers = {
@@ -124,6 +124,21 @@ const getOutput = async (outputUrl, outputPath) => {
   return outputPath;
 };
 
+const getLastestOutput = async (latestOutputUrl, outputPath) => {
+  const response = await fetch(latestOutputUrl);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  await fs.promises.writeFile(outputPath, buffer);
+
+  return outputPath;
+};
+
 const extractOutputFile = async (outputPath, extractPath) => {
   await fs.promises.mkdir(extractPath, { recursive: true });
   await fs
@@ -143,63 +158,49 @@ const pathExists = async (filePath) => {
 };
 
 const publish = async (publishsetting, outputPath, useLatest) => {
-  let productionId;
-  if (useLatest) {
-    // const latestPaligoFilePath = path.join(outputPath, LATEST_PALIGO_FILE);
-    // process.stdout.write(`Checking for latest production file: ${latestPaligoFilePath} `);
-    // if (await pathExists(latestPaligoFilePath)) {
-    //   process.stdout.write(`found\n`);
-    //   const latestPaligoData = JSON.parse(await fs.promises.readFile(latestPaligoFilePath, 'utf8'));
-    //   process.stdout.write(`Using last production: ${latestPaligoData.id}\n`);
-    //   productionId = latestPaligoData.id;
-    // } else {
-    //   process.stdout.write(`not found\n`);
-      const latestPaligoFileUrl = `https://devcenter.bitrise.dev/${LATEST_PALIGO_FILE}`;
-      process.stdout.write(`Fetching ${latestPaligoFileUrl} `);
-      const latestPaligoDataResponse = await fetch(latestPaligoFileUrl);
-      if (latestPaligoDataResponse.ok) {
-        const latestPaligoData = await latestPaligoDataResponse.json();
-        process.stdout.write(`done\n`);
-        process.stdout.write(`Using last production: ${latestPaligoData.id}\n`);
-        productionId = latestPaligoData.id;
-      } else {
-        process.stdout.write(`failed: ${latestPaligoDataResponse.status} ${latestPaligoDataResponse.statusText}\n`);
-        process.stdout.write(`No last production found, creating a new one.\n`);
-      }
-    // }
-  }
-  if (!productionId) {
-    const createProductionResponse = await createProduction(publishsetting);
-    process.stdout.write(`Production created: ${createProductionResponse.id}\n`);
-    productionId = createProductionResponse.id;
-    process.stdout.write('Building production:\n');
-  }
-  const productionStatus = await pollProductionStatus(productionId, (statusResponse) => {
-    process.stdout.write(`  [${statusResponse.status}]`);
-    if (statusResponse.steps) process.stdout.write(` ${statusResponse.steps.count}/${statusResponse.steps.total}`);
-    if (statusResponse.message) process.stdout.write(`: ${statusResponse.message}`);
-    process.stdout.write('\n');
-  });
-
-  process.stdout.write(`Downloading output file: ${productionStatus.url}...\n`);
-
   const tempPath = path.join(__dirname, 'temp');
   if (!(await pathExists(tempPath))) {
     await fs.promises.mkdir(tempPath, { recursive: true });
   }
-  const outputFile = await getOutput(productionStatus.url, path.join(tempPath, `${productionStatus.id}.zip`));
+
+  let outputFile;
+  if (useLatest) {
+    try {
+      const latestOutputUrl = `https://devcenter.bitrise.dev/${LATEST_PALIGO_FILE}`;
+      process.stdout.write(`Downloading latest output file: ${latestOutputUrl}...\n`);
+      outputFile = await getLastestOutput(latestOutputUrl, path.join(tempPath, LATEST_PALIGO_FILE));
+    } catch (error) {
+      process.stderr.write(`Error downloading latest output file: ${error.message}\n`);
+    }
+  }
+  if (!outputFile) {
+    process.stdout.write('Creating a new production...\n');
+    const createProductionResponse = await createProduction(publishsetting);
+    process.stdout.write(`Production created: ${createProductionResponse.id}\n`);
+    productionId = createProductionResponse.id;
+    process.stdout.write('Building production...\n');
+
+    const productionStatus = await pollProductionStatus(productionId, (statusResponse) => {
+      process.stdout.write(`  [${statusResponse.status}]`);
+      if (statusResponse.steps) process.stdout.write(` ${statusResponse.steps.count}/${statusResponse.steps.total}`);
+      if (statusResponse.message) process.stdout.write(`: ${statusResponse.message}`);
+      process.stdout.write('\n');
+    });
+
+    process.stdout.write(`Downloading output file: ${productionStatus.url}...\n`);
+    outputFile = await getOutput(productionStatus.url, path.join(tempPath, `${productionStatus.id}.zip`));
+  }
 
   process.stdout.write(`Output file downloaded: ${outputFile}\nExtracting output file...\n`);
   const extractPath = await extractOutputFile(outputFile, outputFile.replace('.zip', '/'));
 
   process.stdout.write(`Output file extracted: ${extractPath}\nDeploying output...\n`);
-
   if (await (pathExists(outputPath))) {
     await fs.promises.rm(outputPath, { recursive: true, force: true });
   }
   const folders = await listFolders(extractPath);
   await fs.promises.rename(path.join(extractPath, folders[0], 'out'), outputPath);
-  await fs.promises.writeFile(path.join(outputPath, LATEST_PALIGO_FILE), JSON.stringify({ id: productionId }));  
+  await fs.promises.rename(outputFile, path.join(outputPath, LATEST_PALIGO_FILE));
   await fs.promises.rm(extractPath, { recursive: true, force: true });
 
   process.stdout.write('Output deployed.\n\n');

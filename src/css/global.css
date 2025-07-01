@@ -3,15 +3,28 @@
 :root {
   --page-max-width: 1440px;
   --content-max-width: 720px;
-  --content-overview-gap: 3rem;
+  --content-navigation-gap: 3rem;
+  --content-navigation-max-width: 400px;
+  --content-navigation-container-max-width: auto;
+  --content-navigation-margin-right: 0;
+  --content-margin-right: calc(var(--page-max-width) - var(--sidebar-width) - var(--content-max-width) - (var(--content-padding) * 2) - var(--content-navigation-gap));
+  --content-margin-left: 0;
   --content-padding: 3rem;
   --display-overview: block;
+}
+@media (min-width: 1550px) {
+  :root {
+    --content-navigation-container-max-width: var(--content-navigation-max-width);
+    --content-navigation-margin-right: calc((100% - var(--content-max-width) - var(--content-navigation-max-width) - var(--sidebar-width) - var(--content-navigation-gap) - var(--content-padding) * 2) / 2);
+    --content-margin-left: calc((100% - var(--content-max-width) - var(--sidebar-width) - var(--content-navigation-gap) - var(--content-padding) * 2) / 2);
+    --content-margin-right: 0;
+  }
 }
 @media (max-width: 992px) {
   :root {
     --page-max-width: 100%;
     --content-max-width: 100%;
-    --content-overview-gap: 0;
+    --content-navigation-gap: 0;
     --display-overview: none;
   }
 }
@@ -51,18 +64,17 @@
     main article#content-wrapper div#topic-content > section,
     main article#content-wrapper div#topic-content > .footer-content,
     #bottom-pager ul.pager {
-      margin-right: calc(var(--page-max-width) - var(--sidebar-width) - var(--content-max-width) - (var(--content-padding) * 2) - var(--content-overview-gap));
+      margin-right: var(--content-margin-right);
     }
   }
 
   #bottom-pager {
-    width: 100%;
-    padding: 0 var(--content-padding) 1.5rem var(--content-padding);
+    margin-left: var(--content-margin-left);
 
     ul.pager {
       margin: 0;
-      padding: 0;
-      max-width: var(--content-max-width);
+      padding: 0 var(--content-padding) 1.5rem var(--content-padding);
+      max-width: calc(var(--content-max-width) + var(--content-padding) * 2);
       float: none;
       display: flex;
       width: auto;
@@ -142,21 +154,24 @@
 
   main {
     position: relative;
+    margin-left: var(--content-margin-left);
 
     aside.section-nav-container {
-      min-width: calc(var(--page-max-width) - var(--sidebar-width) - var(--content-max-width) - (var(--content-padding) * 2) - var(--content-overview-gap));
+      max-width: var(--content-navigation-container-max-width);
+      min-width: calc(var(--page-max-width) - var(--sidebar-width) - var(--content-max-width) - (var(--content-padding) * 2) - var(--content-navigation-gap));
       width: calc(100% - var(--sidebar-width) - var(--content-max-width) - (var(--content-padding) * 2));
       padding: 0 2rem 0 0;
+      margin-right: var(--content-navigation-margin-right);
+      right: 0;
       top: 3rem;
       margin-top: calc(var(--header-height) + 1.5rem);
-      right: 0;
       position: fixed;
       z-index: 1;
       display: var(--display-overview);
       background: var(--background-primary);
 
       .side-cta {
-        max-width: 256px;
+        display: none;
       }
 
       &::before {
@@ -175,6 +190,7 @@
         padding: 0;
         list-style: none;
         border-left: 1px solid var(--border-regular);
+        max-width: var(--content-navigation-max-width);
         
 
         & li > a {
@@ -380,9 +396,9 @@
 
             p {
               margin: 0;
-              font-size: var(--body-md-regular-font-size);
-              line-height: var(--body-md-regular-line-height);
-              font-weight: var(--body-md-regular-font-weight);
+              font-size: var(--body-lg-regular-font-size);
+              line-height: var(--body-lg-regular-line-height);
+              font-weight: var(--body-lg-regular-font-weight);
               font-family: var(--base-font-family);
             }
 
@@ -420,6 +436,12 @@
               font-size: var(--heading-h4-font-size);
               line-height: var(--heading-h4-line-height);
               font-weight: var(--heading-h4-font-weight);
+            }
+
+            h5 {
+              font-size: var(--heading-h5-font-size);
+              line-height: var(--heading-h5-line-height);
+              font-weight: var(--heading-h5-font-weight);
             }
 
             a {
