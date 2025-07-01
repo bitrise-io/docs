@@ -57,11 +57,15 @@ const updateContent = (html, { relativePath, genSearchWidgetConfigId }) => {
   const depth = typeof relativePath === "string" ? relativePath.split(path.sep).length - 1 : 0;
 
   return html
-    .replace('</head>', `${getCustomStyles({ depth })}</head>`,)
-    .replace('</body>', `${getCustomScript({ depth, genSearchWidgetConfigId })}</body>`)
-    .replace(/<div class="toolbar top-nav-on".*?<main/gms, '<main')
+    // Below is already done for rendered pages
+    .replace('<script src="js/fuzzydata.js" type="text/javascript"></script>', '')
+    .replace(/<div class="toolbar top-nav-on".*?<main/gms, '<div class="toolbar"></div><main')
     .replace('id="navbar">', 'id="navbar">\n<div class="tool-search"></div>')
-    .replace(/<footer class="site-footer">.*?<\/footer>/gms, getFooter());
+    .replace(/<footer class="site-footer">.*?<\/footer>/gms, getFooter())
+
+    // below is embedded through template variablées by webpack for rendered pages
+    .replace('</head>', `${getCustomStyles({ depth })}</head>`,)
+    .replace('</body>', `${getCustomScript({ depth, genSearchWidgetConfigId })}</body>`);
 }
 
 const getFooter = () => {

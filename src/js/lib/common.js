@@ -172,12 +172,32 @@ export const renderNavbarSearch = () => {
   const navbarHeader = document.querySelector('.navbar-header');
   const searchField = document.createElement('div');
   searchField.className = 'navbar-search';
+  searchField.id = 'searchWidgetTrigger';
   searchField.innerHTML = `
-    <input type="text" name="q" placeholder="Search all documentation" aria-label="Search" id="searchWidgetTrigger" />
+    <input type="text" name="q" placeholder="Search all documentation" aria-label="Search" />
   `;
   navbarHeader.insertAdjacentElement('afterend', searchField);
 
   if (import.meta.webpackHot) onReset(() => {
     searchField.remove();
   });
+};
+
+export const detectOverviewContainer = () => {
+  const overviewContainer = document.querySelector('aside.section-nav-container');
+  if (!overviewContainer) document.querySelector(".site-content").classList.add('no-overview');
+
+  if (import.meta.webpackHot) onReset(() => {
+    document.querySelector(".site-content").classList.remove('no-overview');
+  });
+};
+
+export const updateOverviewContainerPosition = () => {
+  const overviewContainer = document.querySelector('aside.section-nav-container');
+  if (overviewContainer) {
+    const navbarContainer = document.querySelector('.navbar-container');
+    const mainSection = document.querySelector('main article#content-wrapper div#topic-content > section');
+    const distanceFromSiteContentTop = mainSection.getBoundingClientRect().top - navbarContainer.getBoundingClientRect().height;
+    overviewContainer.style.top = `${Math.max(0, distanceFromSiteContentTop)}px`;
+  }
 };

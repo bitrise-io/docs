@@ -1,5 +1,14 @@
 import '../css/global.css';
-import { renderHubLinks, renderIntroContainer, renderSidebarSubpageHeaders, renderTabContainers, renderCodeBlocks, renderNavbarSearch } from './lib/common';
+import { 
+  renderHubLinks,
+  renderIntroContainer,
+  renderSidebarSubpageHeaders,
+  renderTabContainers,
+  renderCodeBlocks,
+  renderNavbarSearch,
+  detectOverviewContainer,
+  updateOverviewContainerPosition
+} from './lib/common';
 import { reset } from './lib/reset';
 import { addSidebarLinks } from './pages/bitrise-ci';
 
@@ -13,6 +22,10 @@ const redirectToHtml = () => {
     return;
   }
 }
+
+const onScroll = () => {
+  updateOverviewContainerPosition();
+};
 
 const main = async () => {
   renderSidebarSubpageHeaders();
@@ -32,6 +45,7 @@ const main = async () => {
     } else {
       renderTabContainers();
       renderCodeBlocks();
+      detectOverviewContainer();
     }
 
     renderNavbarSearch();
@@ -42,9 +56,12 @@ const main = async () => {
   } else {
      // console.log('subpage:', 'portal');
   }
+
+  onScroll();
 };
 
 redirectToHtml();
+window.addEventListener('scroll', onScroll);
 window.addEventListener('DOMContentLoaded', main);
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
   main().catch((error) => {
@@ -54,6 +71,7 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
 
 if (import.meta.webpackHot) {
   import.meta.webpackHot.dispose(() => {
+    window.removeEventListener('scroll', onScroll);
     window.removeEventListener('DOMContentLoaded', main);
     reset(); 
   }); 
