@@ -20,8 +20,11 @@ module.exports = (mode, distPath) => {
     }),
     new HtmlWebpackPlugin({
       filename: 'index.html',
-      customStyles: mode === 'development' ? getCustomStyles(0) : '',
-      customScript: mode === 'development' ? getCustomScript(0) : '',
+      customStyles: mode === 'development' ? getCustomStyles({ depth: 0 }) : '',
+      customScript: mode === 'development' ? getCustomScript({
+        depth: 0,
+        genSearchWidgetConfigId: process.env.GEN_SEARCH_WIDGET_ID || ''
+      }) : '',
       footerSnippet: getFooter(),
       template: 'src/html/portal.html',
       inject: false,

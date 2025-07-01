@@ -17,7 +17,10 @@ async function processHtmlFiles(basePath, processPath=null) {
       count += await processHtmlFiles(basePath, fullPath);
     } else if (entry.isFile() && entry.name.endsWith('.html')) {
       let content = await fs.readFile(fullPath, 'utf8');
-      content = await updateContent(content, path.relative(basePath, fullPath));
+      content = updateContent(content, {
+        relativePath: path.relative(basePath, fullPath),
+        genSearchWidgetConfigId: process.env.GEN_SEARCH_WIDGET_ID || ''
+      });
       await fs.writeFile(fullPath, content, 'utf8');
       process.stdout.write(` - ${path.relative(basePath, fullPath)}: done\n`);
       count++;

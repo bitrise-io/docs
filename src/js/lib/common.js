@@ -173,7 +173,7 @@ export const renderNavbarSearch = () => {
   const searchField = document.createElement('div');
   searchField.className = 'navbar-search';
   searchField.innerHTML = `
-    <input type="text" name="q" placeholder="Search all documentation" aria-label="Search" />
+    <input type="text" name="q" placeholder="Search all documentation" aria-label="Search" id="searchWidgetTrigger" />
   `;
   navbarHeader.insertAdjacentElement('afterend', searchField);
 

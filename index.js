@@ -32,7 +32,10 @@ app.use(async (req, res, next) => {
     try {
       const html = await fs.promises.readFile(filePath, 'utf8');
       res.setHeader('Content-Type', 'text/html');
-      res.send(updateContent(html, path.relative(outputPath, filePath)));
+      res.send(updateContent(html, {
+        relativePath: path.relative(outputPath, filePath),
+        genSearchWidgetConfigId: process.env.GEN_SEARCH_WIDGET_ID || '',
+      }));
     } catch (err) {
       next();
     }

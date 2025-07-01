@@ -4,6 +4,10 @@ const unzipper = require('unzipper');
 
 const { PALIGO_API_KEY } = process.env;
 
+if (!PALIGO_API_KEY) {
+  throw new Error('PALIGO_API_KEY environment variable is not set.');
+}
+
 const LATEST_PALIGO_FILE = '.paligo.json';
 
 const listPublishSettings = async () => {

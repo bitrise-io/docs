@@ -2,10 +2,12 @@ const path = require('path');
 
 /**
  * Generates custom styles for the HTML content based on the depth of the relative path.
- * @param {number} depth 
+ * @param {{
+ *  depth: number
+ * }} options 
  * @returns {string} Custom styles as a string
  */
-const getCustomStyles = (depth) => {
+const getCustomStyles = ({ depth }) => {
   return `
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,25 +18,49 @@ const getCustomStyles = (depth) => {
 
 /**
  * Generates a custom script tag for the HTML content based on the depth of the relative path. 
- * @param {number} depth 
+ * @param {{
+ *  depth: number,
+ *  genSearchWidgetConfigId: string
+ * }} options
  * @returns {string} Custom script tag as a string
  */
-const getCustomScript = (depth) => {
-  return `<script src="${Array(depth).fill('../').join('') + 'main.js'}"></script>\n`;
+const getCustomScript = ({ depth, genSearchWidgetConfigId }) => {
+  let customScript = '';
+
+  if (genSearchWidgetConfigId) {
+    customScript = `
+    <!-- Widget JavaScript bundle -->
+    <script src="https://cloud.google.com/ai/gen-app-builder/client?hl=en_US"></script>
+    
+    <!-- Search widget element is not visible by default -->
+    <gen-search-widget
+      configId="${genSearchWidgetConfigId}"
+      location="us"
+      triggerId="searchWidgetTrigger">
+    </gen-search-widget>`;
+  }
+
+  customScript += `<script src="${Array(depth).fill('../').join('') + 'main.js'}"></script>`;
+  return customScript;
 };
 
 /**
  * Adds custom script and styles to the HTML content.
  * @param {string} html 
- * @param {string} relativePath 
+ * @param {{
+ *  relativePath: string | null,
+ *  genSearchWidgetConfigId: string
+ * }} options 
  * @returns {string} HTML with custom script and styles added
  */
-const updateContent = (html, relativePath) => {
+const updateContent = (html, { relativePath, genSearchWidgetConfigId }) => {
   const depth = typeof relativePath === "string" ? relativePath.split(path.sep).length - 1 : 0;
 
   return html
-    .replace('</head>', `${getCustomStyles(depth)}</head>`,)
-    .replace('</body>', `${getCustomScript(depth)}</body>`)
+    .replace('</head>', `${getCustomStyles({ depth })}</head>`,)
+    .replace('</body>', `${getCustomScript({ depth, genSearchWidgetConfigId })}</body>`)
+    .replace(/<div class="toolbar top-nav-on".*?<main/gms, '<main')
+    .replace('id="navbar">', 'id="navbar">\n<div class="tool-search"></div>')
     .replace(/<footer class="site-footer">.*?<\/footer>/gms, getFooter());
 }
 
