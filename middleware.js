@@ -12,7 +12,7 @@ const getCustomStyles = ({ depth }) => {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet"></link>
-    <link rel="stylesheet" href="${Array(depth).fill('../').join('') + 'main.css'}">
+    <link rel="stylesheet" href="${`${Array(depth).fill('../').join('')}main.css?v=${Date.now()}`}" />
   `;
 };
 
@@ -40,7 +40,7 @@ const getCustomScript = ({ depth, genSearchWidgetConfigId }) => {
     </gen-search-widget>`;
   }
 
-  customScript += `<script src="${Array(depth).fill('../').join('') + 'main.js'}"></script>`;
+  customScript += `<script src="${`${Array(depth).fill('../').join('')}main.js?v=${Date.now()}`}" type="text/javascript"></script>`;
   return customScript;
 };
 
