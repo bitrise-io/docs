@@ -5,7 +5,7 @@ export const renderSidebarSubpageHeaders = () => {
     const newSubpageSidebarHeader = document.createElement('div');
     newSubpageSidebarHeader.className = 'sidebar-subpage-header';
     newSubpageSidebarHeader.innerHTML = `
-      <a href="/" class="sidebar-back-link">Back</a>
+      <a href="/" class="sidebar-back-link">Home</a>
       <div class="sidebar-heading"><a href="${sidebarSubpageLink.href}">${sidebarSubpageLink.textContent.trim()}</a></div>
     `;
     sidebarSubpageLink.insertAdjacentElement('afterend', newSubpageSidebarHeader);
