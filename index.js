@@ -28,6 +28,9 @@ app.use(async (req, res, next) => {
   if (path.extname(filePath) === '' && fs.existsSync(`${filePath}.html`)) {
     filePath += '.html';
   }
+  if (path.extname(filePath) !== '.html' && fs.existsSync(`${filePath}.html`)) {
+    filePath += '.html';
+  } 
   if (path.extname(filePath) === '.html' && fs.existsSync(filePath)) {
     try {
       const html = await fs.promises.readFile(filePath, 'utf8');
@@ -46,6 +49,23 @@ app.use(async (req, res, next) => {
 
 // Serve static files from /out
 app.use(express.static(outputPath));
+
+// 404 error handler - must be placed after all other routes
+app.use((req, res, next) => {
+  const notFoundPath = path.join(__dirname, 'public', '404.html');
+  if (fs.existsSync(notFoundPath)) {
+    try {
+      const html = fs.readFileSync(notFoundPath, 'utf8');
+      res.status(404);
+      res.setHeader('Content-Type', 'text/html');
+      res.send(html);
+    } catch (err) {
+      res.status(404).send('404 - Page Not Found');
+    }
+  } else {
+    res.status(404).send('404 - Page Not Found');
+  }
+});
 
 app.listen(port, hostname, () => {
   process.stdout.write(`Server running at http://${hostname}:${port}/\n`);
