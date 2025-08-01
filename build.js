@@ -15,7 +15,7 @@ async function processHtmlFiles(basePath, processPath=null) {
     const fullPath = path.join(processPath, entry.name);
     if (entry.isDirectory()) {
       count += await processHtmlFiles(basePath, fullPath);
-    } else if (entry.isFile() && entry.name.endsWith('.html')) {
+    } else if (entry.isFile() && entry.name.endsWith('.html') && entry.name !== '404.html') {
       let content = await fs.readFile(fullPath, 'utf8');
       content = updateContent(content, {
         relativePath: path.relative(basePath, fullPath),
