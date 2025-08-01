@@ -6,7 +6,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const { getCustomStyles, getCustomScript, getFooter } = require('./middleware.js');
 
-const redirects = require('./redirect.js');
+const redirects = JSON.parse(fs.readFileSync('./redirects.json', 'utf8'));
 
 module.exports = (mode, distPath) => {
   const plugins = [
@@ -28,12 +28,12 @@ module.exports = (mode, distPath) => {
       footerSnippet: getFooter(),
       template: 'src/html/portal.html',
       inject: false,
-    }),
+    })
   ];
-  redirects.forEach((redirect) => {
+  Object.keys(redirects).forEach((sourceUrl) => {
     plugins.push(new HtmlWebpackPlugin({
-      filename: redirect[0],
-      redirect: mode === 'development' ? redirect[1].replace("https://devcenter.bitrise.io", "") : redirect[1],
+      filename: sourceUrl.replace(/^\//, '').replace(/\.html$/, '') + '.html',
+      redirect: redirects[sourceUrl],
       template: 'src/html/redirect.html',
       inject: false,
     }));
