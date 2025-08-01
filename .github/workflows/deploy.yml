@@ -23,6 +23,8 @@ jobs:
 
     env:
       PALIGO_API_KEY: ${{ secrets.PALIGO_API_KEY || '' }}
+      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN || '' }}
+      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID || '' }}
       GEN_SEARCH_WIDGET_ID: ${{ vars.GEN_SEARCH_WIDGET_ID || '' }}
       COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
 
@@ -39,6 +41,9 @@ jobs:
         run: npm install
       - name: Build
         run: npm run build
+
+      - name: Upload redirects to Cloudflare
+        run: npm run cloudflare:upload_redirects
 
       - name: Setup Pages
         id: pages
