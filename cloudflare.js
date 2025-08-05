@@ -235,6 +235,20 @@ const main = async () => {
             ...options
           }
         });
+        if (sourceUrl.match(/^\/en\//)) {
+          redirectsToUpload.push({
+            redirect: {
+              source_url: `${urlPrefix}${sourceUrl.replace(/^\/en\//, '/ja/').replace(/\.html$/, '')}`,
+              ...options
+            }
+          });
+          redirectsToUpload.push({
+            redirect: {
+              source_url: `${urlPrefix}${sourceUrl.replace(/^\/en\//, '/ja/').replace(/\.html$/, '')}.html`,
+              ...options
+            }
+          });
+        }
       }
     });
 
