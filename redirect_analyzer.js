@@ -674,6 +674,57 @@ function saveHtmlReport(htmlContent) {
     }
 }
 
+function generateBadgeSvg(validCount, invalidCount) {
+    const hasInvalid = invalidCount > 0;
+    const rightText = hasInvalid ? `${invalidCount} invalid` : `${validCount} valid`;
+    const rightColor = hasInvalid ? '#e05d44' : '#4c1'; // Red for invalid, green for valid
+    
+    // Calculate text widths (approximate)
+    const leftText = 'Redirects';
+    const leftWidth = leftText.length * 7 + 10; // Approximate width
+    const rightWidth = rightText.length * 7 + 10;
+    const totalWidth = leftWidth + rightWidth;
+    
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="20">
+    <defs>
+        <linearGradient id="b" x2="0" y2="100%">
+            <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+            <stop offset="1" stop-opacity=".1"/>
+        </linearGradient>
+        <clipPath id="a">
+            <rect width="${totalWidth}" height="20" rx="3" fill="#fff"/>
+        </clipPath>
+    </defs>
+    <g clip-path="url(#a)">
+        <path fill="#555" d="M0 0h${leftWidth}v20H0z"/>
+        <path fill="${rightColor}" d="M${leftWidth} 0h${rightWidth}v20H${leftWidth}z"/>
+        <path fill="url(#b)" d="M0 0h${totalWidth}v20H0z"/>
+    </g>
+    <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="110">
+        <text x="${leftWidth / 2 * 10}" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="${(leftWidth - 10) * 10}">${leftText}</text>
+        <text x="${leftWidth / 2 * 10}" y="140" transform="scale(.1)" textLength="${(leftWidth - 10) * 10}">${leftText}</text>
+        <text x="${(leftWidth + rightWidth / 2) * 10}" y="150" fill="#010101" fill-opacity=".3" transform="scale(.1)" textLength="${(rightWidth - 10) * 10}">${rightText}</text>
+        <text x="${(leftWidth + rightWidth / 2) * 10}" y="140" transform="scale(.1)" textLength="${(rightWidth - 10) * 10}">${rightText}</text>
+    </g>
+</svg>`;
+    
+    return svg;
+}
+
+function saveBadge(validCount, invalidCount) {
+    const svgContent = generateBadgeSvg(validCount, invalidCount);
+    const outputPath = path.join(outPath, '_redirects.svg');
+    
+    try {
+        fs.writeFileSync(outputPath, svgContent, 'utf8');
+        console.log(`🏷️  Badge saved to: ${outputPath}`);
+        return outputPath;
+    } catch (error) {
+        console.error('Error saving badge:', error.message);
+        return null;
+    }
+}
+
 function analyzeRedirects() {
     console.log('🔍 Loading redirects from', redirectsPath);
     const redirects = loadRedirects();
@@ -701,6 +752,11 @@ function analyzeRedirects() {
     // Generate and save HTML report
     const htmlContent = generateHtmlReport(data);
     saveHtmlReport(htmlContent);
+    
+    // Generate and save badge
+    const totalValid = data.validChains.length + data.externalChains.length;
+    const totalInvalid = invalidRedirects.length + circularChains.length;
+    saveBadge(totalValid, totalInvalid);
     
     // Print results
     console.log('📈 ANALYSIS RESULTS:');
@@ -809,4 +865,4 @@ if (require.main === module) {
     analyzeRedirects();
 }
 
-module.exports = { analyzeRedirects, loadRedirects, findRedirectChains, groupRedirectsByTarget, generateHtmlReport, saveHtmlReport };
+module.exports = { analyzeRedirects, loadRedirects, findRedirectChains, groupRedirectsByTarget, generateHtmlReport, saveHtmlReport, generateBadgeSvg, saveBadge };
