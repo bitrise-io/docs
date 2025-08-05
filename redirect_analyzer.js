@@ -48,6 +48,29 @@ function checkFileInOut(targetPath) {
     return { exists: false, path: fullPath };
 }
 
+function findRedirectMatch(target, redirects) {
+    // First check for exact match
+    if (redirects[target]) {
+        return redirects[target];
+    }
+    
+    // If target ends with .html, check for version without .html
+    if (target.endsWith('.html')) {
+        const withoutHtml = target.slice(0, -5);
+        if (redirects[withoutHtml]) {
+            return redirects[withoutHtml];
+        }
+    } else {
+        // If target doesn't end with .html, check for version with .html
+        const withHtml = target + '.html';
+        if (redirects[withHtml]) {
+            return redirects[withHtml];
+        }
+    }
+    
+    return null;
+}
+
 function findRedirectChains(redirects) {
     const chains = [];
     const invalidRedirects = [];
@@ -76,9 +99,10 @@ function findRedirectChains(redirects) {
             chain.push(currentTarget);
             chainVisited.add(currentTarget);
             
-            // Check if this target is also a source in redirects
-            if (redirects[currentTarget]) {
-                currentTarget = redirects[currentTarget];
+            // Check if this target is also a source in redirects (with .html variants)
+            const nextTarget = findRedirectMatch(currentTarget, redirects);
+            if (nextTarget) {
+                currentTarget = nextTarget;
             } else {
                 // End of chain - check if final target exists
                 const fileCheck = checkFileInOut(currentTarget);
