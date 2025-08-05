@@ -30,7 +30,7 @@ module.exports = (mode, distPath) => {
       inject: false,
     })
   ];
-  Object.keys(redirects).forEach((sourceUrl) => {
+  Object.keys(redirects).filter(sourceUrl => !sourceUrl.endsWith('*')).forEach((sourceUrl) => {
     plugins.push(new HtmlWebpackPlugin({
       filename: sourceUrl.replace(/^\//, '').replace(/\.html$/, '') + '.html',
       redirect: redirects[sourceUrl],
