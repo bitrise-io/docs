@@ -30,8 +30,8 @@ app.use(async (req, res, next) => {
   }
   if (path.extname(filePath) !== '.html' && fs.existsSync(`${filePath}.html`)) {
     filePath += '.html';
-  } 
-  if (path.extname(filePath) === '.html' && fs.existsSync(filePath)) {
+  }
+  if (!path.basename(filePath).startsWith("_") && path.extname(filePath) === '.html' && fs.existsSync(filePath)) {
     try {
       const html = await fs.promises.readFile(filePath, 'utf8');
       res.setHeader('Content-Type', 'text/html');
