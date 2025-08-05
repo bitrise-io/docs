@@ -28,8 +28,6 @@ const onScroll = () => {
 };
 
 const main = async () => {
-  renderSidebarSubpageHeaders();
-
   const subpageMatch = window.location.href.match(/\/(en|ja)\/([^\/]+)(\.html|\/)/);
   if (subpageMatch && subpageMatch[2]) {
     const language = subpageMatch[1];
@@ -39,6 +37,8 @@ const main = async () => {
 
     document.querySelector('.site-content').dataset.isHub = isHub ? 'true' : 'false';
 
+    renderSidebarSubpageHeaders(language);
+
     if (isHub) {
       renderIntroContainer();
       renderHubLinks();
@@ -46,6 +46,12 @@ const main = async () => {
       renderTabContainers();
       renderCodeBlocks();
       detectOverviewContainer();
+
+      Array.from(document.querySelectorAll("#header-navigation-prev")).forEach((el) => {
+        if (el.textContent.trim() === 'Prev') {
+          el.textContent = 'Previous';
+        }
+      });
     }
 
     renderNavbarSearch();

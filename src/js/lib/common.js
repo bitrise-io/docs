@@ -1,11 +1,17 @@
 import { onReset } from "./reset";
 
-export const renderSidebarSubpageHeaders = () => {
+/**
+ * 
+ * @param {string} language 
+ */
+export const renderSidebarSubpageHeaders = (language) => {
   const subpageHeaders = Array.from(document.querySelectorAll('.nav-site-sidebar > li > a')).map((sidebarSubpageLink) => {
+    const homeButtonLabel = language === 'ja' ? 'ホーム' : 'Home';
+
     const newSubpageSidebarHeader = document.createElement('div');
     newSubpageSidebarHeader.className = 'sidebar-subpage-header';
     newSubpageSidebarHeader.innerHTML = `
-      <a href="/" class="sidebar-back-link">Home</a>
+      <a href="/" class="sidebar-back-link">${homeButtonLabel}</a>
       <div class="sidebar-heading"><a href="${sidebarSubpageLink.href}">${sidebarSubpageLink.textContent.trim()}</a></div>
     `;
     sidebarSubpageLink.insertAdjacentElement('afterend', newSubpageSidebarHeader);
