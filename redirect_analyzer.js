@@ -137,7 +137,11 @@ function groupRedirectsByTarget(chains, invalidRedirects) {
                 sources: []
             };
         }
-        validByTarget[target].sources.push(chain.chain[0]); // First item is the source
+        // Store the full chain instead of just the first item
+        validByTarget[target].sources.push({
+            chain: chain.chain,
+            source: chain.chain[0]
+        });
     });
     
     // Group external redirects by target URL
@@ -151,7 +155,11 @@ function groupRedirectsByTarget(chains, invalidRedirects) {
                 sources: []
             };
         }
-        externalByTarget[target].sources.push(chain.chain[0]); // First item is the source
+        // Store the full chain instead of just the first item
+        externalByTarget[target].sources.push({
+            chain: chain.chain,
+            source: chain.chain[0]
+        });
     });
     
     // Group invalid redirects by missing target
@@ -165,7 +173,11 @@ function groupRedirectsByTarget(chains, invalidRedirects) {
                 sources: []
             };
         }
-        invalidByTarget[target].sources.push(redirect.chain[0]); // First item is the source
+        // Store the full chain instead of just the first item
+        invalidByTarget[target].sources.push({
+            chain: redirect.chain,
+            source: redirect.chain[0]
+        });
     });
     
     // Group circular redirects (keep as is since they're usually unique)
@@ -349,6 +361,27 @@ function generateHtmlReport(data) {
             font-family: 'Monaco', 'Menlo', monospace;
             font-size: 0.8rem;
             color: #333;
+            margin-bottom: 4px;
+            display: block;
+            width: 100%;
+        }
+        .chain-display {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.8rem;
+        }
+        .chain-step {
+            display: inline;
+            color: #333;
+        }
+        .chain-arrow {
+            color: #666;
+            margin: 0 6px;
+            font-weight: bold;
         }
         .file-info {
             font-family: 'Monaco', 'Menlo', monospace;
@@ -463,7 +496,17 @@ function generateHtmlReport(data) {
                             <div class="card-content">
                                 <div class="file-info">📁 File: ${group.finalFile.replace(outPath + '/', '')}</div>
                                 <div class="source-list">
-                                    ${group.sources.map(source => `<span class="source-item">${source}</span>`).join('')}
+                                    ${group.sources.map(sourceInfo => {
+                                        if (sourceInfo.chain.length === 1) {
+                                            // Single redirect, show as before
+                                            return `<div class="source-item">${sourceInfo.source}</div>`;
+                                        } else {
+                                            // Multi-step redirect, show the full chain
+                                            return `<div class="chain-display">
+                                                ${sourceInfo.chain.filter(step => step !== group.target).map(step => `<span class="chain-step">${step}</span>`).join('<span class="chain-arrow">→</span>')}
+                                            </div>`;
+                                        }
+                                    }).join('')}
                                 </div>
                             </div>
                         </details>
@@ -493,7 +536,17 @@ function generateHtmlReport(data) {
                             <div class="card-content">
                                 <div class="file-info">🌐 External: <a href="${group.target}" target="_blank" class="external-link">${group.target}</a></div>
                                 <div class="source-list">
-                                    ${group.sources.map(source => `<span class="source-item">${source}</span>`).join('')}
+                                    ${group.sources.map(sourceInfo => {
+                                        if (sourceInfo.chain.length === 1) {
+                                            // Single redirect, show as before
+                                            return `<div class="source-item">${sourceInfo.source}</div>`;
+                                        } else {
+                                            // Multi-step redirect, show the full chain
+                                            return `<div class="chain-display">
+                                                ${sourceInfo.chain.filter(step => step !== group.target).map(step => `<span class="chain-step">${step}</span>`).join('<span class="chain-arrow">→</span>')}
+                                            </div>`;
+                                        }
+                                    }).join('')}
                                 </div>
                             </div>
                         </details>
@@ -522,7 +575,17 @@ function generateHtmlReport(data) {
                             </summary>
                             <div class="card-content">
                                 <div class="source-list">
-                                    ${group.sources.map(source => `<span class="source-item">${source}</span>`).join('')}
+                                    ${group.sources.map(sourceInfo => {
+                                        if (sourceInfo.chain.length === 1) {
+                                            // Single redirect, show as before
+                                            return `<div class="source-item">${sourceInfo.source}</div>`;
+                                        } else {
+                                            // Multi-step redirect, show the full chain
+                                            return `<div class="chain-display">
+                                                ${sourceInfo.chain.filter(step => step !== group.target).map(step => `<span class="chain-step">${step}</span>`).join('<span class="chain-arrow">→</span>')}
+                                            </div>`;
+                                        }
+                                    }).join('')}
                                 </div>
                             </div>
                         </details>
@@ -624,7 +687,19 @@ function analyzeRedirects() {
         validByTarget.slice(0, 10).forEach((group, index) => {
             console.log(`${index + 1}. ${group.target} (${group.sources.length} redirects)`);
             console.log(`   📁 File: ${group.finalFile.replace(outPath + '/', '')}`);
-            console.log(`   📍 Sources: ${group.sources.slice(0, 3).join(', ')}${group.sources.length > 3 ? ` +${group.sources.length - 3} more` : ''}\n`);
+            // Show first few sources with chain info
+            const sourcesToShow = group.sources.slice(0, 3);
+            sourcesToShow.forEach(sourceInfo => {
+                if (sourceInfo.chain.length === 1) {
+                    console.log(`   📍 ${sourceInfo.source}`);
+                } else {
+                    console.log(`   📍 ${sourceInfo.chain.join(' → ')}`);
+                }
+            });
+            if (group.sources.length > 3) {
+                console.log(`   📍 +${group.sources.length - 3} more redirects`);
+            }
+            console.log();
         });
         if (validByTarget.length > 10) {
             console.log(`   ... and ${validByTarget.length - 10} more valid targets\n`);
@@ -637,7 +712,19 @@ function analyzeRedirects() {
     if (externalByTarget.length > 0) {
         externalByTarget.slice(0, 5).forEach((group, index) => {
             console.log(`${index + 1}. ${group.target} (${group.sources.length} redirects)`);
-            console.log(`   📍 Sources: ${group.sources.slice(0, 3).join(', ')}${group.sources.length > 3 ? ` +${group.sources.length - 3} more` : ''}\n`);
+            // Show first few sources with chain info
+            const sourcesToShow = group.sources.slice(0, 3);
+            sourcesToShow.forEach(sourceInfo => {
+                if (sourceInfo.chain.length === 1) {
+                    console.log(`   📍 ${sourceInfo.source}`);
+                } else {
+                    console.log(`   📍 ${sourceInfo.chain.join(' → ')}`);
+                }
+            });
+            if (group.sources.length > 3) {
+                console.log(`   📍 +${group.sources.length - 3} more redirects`);
+            }
+            console.log();
         });
         if (externalByTarget.length > 5) {
             console.log(`   ... and ${externalByTarget.length - 5} more external targets\n`);
@@ -650,7 +737,19 @@ function analyzeRedirects() {
     if (invalidByTarget.length > 0) {
         invalidByTarget.slice(0, 10).forEach((group, index) => {
             console.log(`${index + 1}. ${group.target} (${group.sources.length} redirects)`);
-            console.log(`   📍 Sources: ${group.sources.slice(0, 3).join(', ')}${group.sources.length > 3 ? ` +${group.sources.length - 3} more` : ''}\n`);
+            // Show first few sources with chain info
+            const sourcesToShow = group.sources.slice(0, 3);
+            sourcesToShow.forEach(sourceInfo => {
+                if (sourceInfo.chain.length === 1) {
+                    console.log(`   📍 ${sourceInfo.source}`);
+                } else {
+                    console.log(`   📍 ${sourceInfo.chain.join(' → ')}`);
+                }
+            });
+            if (group.sources.length > 3) {
+                console.log(`   📍 +${group.sources.length - 3} more redirects`);
+            }
+            console.log();
         });
         if (invalidByTarget.length > 10) {
             console.log(`   ... and ${invalidByTarget.length - 10} more missing targets\n`);
