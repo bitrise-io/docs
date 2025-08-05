@@ -21,7 +21,7 @@ const Cloudflare = require('cloudflare');
  *  status_code: number;
  *  include_subdomains?: boolean;
  *  preserve_query_string?: boolean;
- *  subpath_match?: boolean;
+ *  subpath_matching?: boolean;
  *  preserve_path_suffix?: boolean;
  * }} Redirect
  */
@@ -185,22 +185,41 @@ const main = async () => {
     const redirectsToUpload = [];
     Object.keys(newRedirects).forEach(sourceUrl => {
       const targetUrl = newRedirects[sourceUrl];
-      redirectsToUpload.push({
-        redirect: {
-          source_url: `https://docs.bitrise.io${sourceUrl.replace(/\.html$/, '')}`,
-          target_url: `https://docs.bitrise.io${targetUrl}`,
-          status_code: 301,
-          preserve_query_string: true
+
+      const options = {
+        status_code: 301,
+        preserve_query_string: true
+      };
+      if (sourceUrl.endsWith('*')) {
+        options.subpath_matching = true;
+        if (targetUrl.endsWith('$1')) {
+          options.target_url = `https://docs.bitrise.io${targetUrl.slice(0, -2)}`;
+          options.preserve_path_suffix = true;
+        } else {
+          options.target_url = `https://docs.bitrise.io${targetUrl}`;
+          options.preserve_path_suffix = false;
         }
-      });
-      redirectsToUpload.push({
-        redirect: {
-          source_url: `https://docs.bitrise.io${sourceUrl.replace(/\.html$/, '')}.html`,
-          target_url: `https://docs.bitrise.io${targetUrl}.html`,
-          status_code: 301,
-          preserve_query_string: true
-        }
-      });
+        redirectsToUpload.push({
+          redirect: {
+            source_url: `https://docs.bitrise.io${sourceUrl.slice(0, -1)}`,
+            ...options,
+          }
+        });
+      } else {
+        options.target_url = `https://docs.bitrise.io${targetUrl}`;
+        redirectsToUpload.push({
+          redirect: {
+            source_url: `https://docs.bitrise.io${sourceUrl.replace(/\.html$/, '')}`,
+            ...options
+          }
+        });
+        redirectsToUpload.push({
+          redirect: {
+            source_url: `https://docs.bitrise.io${sourceUrl.replace(/\.html$/, '')}.html`,
+            ...options
+          }
+        });
+      }
     });
 
     process.stdout.write(`Updating items in list ${devCenterList.id}...\n`);
