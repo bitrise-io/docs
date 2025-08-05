@@ -30,16 +30,27 @@ module.exports = (mode, distPath) => {
       inject: false,
     })
   ];
-  Object.keys(redirects).filter(sourceUrl => !sourceUrl.endsWith('*')).forEach((sourceUrl) => {
-    plugins.push(new HtmlWebpackPlugin({
-      filename: sourceUrl.replace(/^\//, '').replace(/\.html$/, '') + '.html',
-      redirect: redirects[sourceUrl],
-      template: 'src/html/redirect.html',
-      inject: false,
-    }));
-  });
+  // Object.keys(redirects).filter(sourceUrl => !sourceUrl.endsWith('*')).forEach((sourceUrl) => {
+  //   plugins.push(new HtmlWebpackPlugin({
+  //     filename: sourceUrl.replace(/^\//, '').replace(/\.html$/, '') + '.html',
+  //     redirect: redirects[sourceUrl],
+  //     template: 'src/html/redirect.html',
+  //     inject: false,
+  //   }));
+  // });
   if (mode === 'development') {
     plugins.push(new webpack.HotModuleReplacementPlugin());
+    // plugins.push(new HtmlWebpackPlugin({
+    //   filename: 'example.html',
+    //   customStyles: mode === 'development' ? getCustomStyles({ depth: 0 }) : '',
+    //   customScript: mode === 'development' ? getCustomScript({
+    //     depth: 0,
+    //     genSearchWidgetConfigId: process.env.GEN_SEARCH_WIDGET_I
+    //   }) : '',
+    //   footerSnippet: getFooter(),
+    //   template: 'src/html/example.html',
+    //   inject: false,
+    // }));
   }
 
   const srcPath = path.resolve(__dirname, 'src');
