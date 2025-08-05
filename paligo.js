@@ -166,7 +166,7 @@ const publish = async (publishsetting, outputPath, useLatest) => {
   let outputFile;
   if (useLatest) {
     try {
-      const latestOutputUrl = `https://devcenter.bitrise.dev/${LATEST_PALIGO_FILE}`;
+      const latestOutputUrl = `https://docs.bitrise.io/${LATEST_PALIGO_FILE}`;
       process.stdout.write(`Downloading latest output file: ${latestOutputUrl}...\n`);
       outputFile = await getLastestOutput(latestOutputUrl, path.join(tempPath, LATEST_PALIGO_FILE));
     } catch (error) {
