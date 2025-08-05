@@ -184,7 +184,14 @@ const main = async () => {
     /** @type {ListsListItemRedirectComment[]} */
     const redirectsToUpload = [];
     Object.keys(newRedirects).forEach(sourceUrl => {
+      if (sourceUrl.match(/^[^/]/)) {
+        process.stderr.write(`Error: Source URL "${sourceUrl}" must start with a slash.\n`);
+        return;
+      }
+
       const targetUrl = newRedirects[sourceUrl];
+      const urlPrefix = 'https://docs.bitrise.io';
+      const targetUrlPrefix = targetUrl.match(/^https?:\/\//) ? '' : urlPrefix;
 
       const options = {
         status_code: 301,
@@ -193,29 +200,29 @@ const main = async () => {
       if (sourceUrl.endsWith('*')) {
         options.subpath_matching = true;
         if (targetUrl.endsWith('$1')) {
-          options.target_url = `https://docs.bitrise.io${targetUrl.slice(0, -2)}`;
+          options.target_url = `${targetUrlPrefix}${targetUrl.slice(0, -2)}`;
           options.preserve_path_suffix = true;
         } else {
-          options.target_url = `https://docs.bitrise.io${targetUrl}`;
+          options.target_url = `${targetUrlPrefix}${targetUrl}`;
           options.preserve_path_suffix = false;
         }
         redirectsToUpload.push({
           redirect: {
-            source_url: `https://docs.bitrise.io${sourceUrl.slice(0, -1)}`,
+            source_url: `${urlPrefix}${sourceUrl.slice(0, -1)}`,
             ...options,
           }
         });
       } else {
-        options.target_url = `https://docs.bitrise.io${targetUrl}`;
+        options.target_url = `${targetUrlPrefix}${targetUrl}`;
         redirectsToUpload.push({
           redirect: {
-            source_url: `https://docs.bitrise.io${sourceUrl.replace(/\.html$/, '')}`,
+            source_url: `${urlPrefix}${sourceUrl.replace(/\.html$/, '')}`,
             ...options
           }
         });
         redirectsToUpload.push({
           redirect: {
-            source_url: `https://docs.bitrise.io${sourceUrl.replace(/\.html$/, '')}.html`,
+            source_url: `${urlPrefix}${sourceUrl.replace(/\.html$/, '')}.html`,
             ...options
           }
         });
