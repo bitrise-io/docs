@@ -57,13 +57,15 @@ const updateContent = (html, { relativePath, genSearchWidgetConfigId }) => {
   const depth = typeof relativePath === "string" ? relativePath.split(path.sep).length - 1 : 0;
 
   return html
+    .replace(/devcenter\.bitrise\.io/, 'docs.bitrise.io') // Update domain to docs.bitrise.io
+
     // Below is already done for rendered pages
     .replace('<script src="js/fuzzydata.js" type="text/javascript"></script>', '')
     .replace(/<div class="toolbar top-nav-on".*?<main/gms, '<div class="toolbar"></div><main')
     .replace('id="navbar">', 'id="navbar">\n<div class="tool-search"></div>')
     .replace(/<footer class="site-footer">.*?<\/footer>/gms, getFooter())
 
-    // below is embedded through template variablées by webpack for rendered pages
+    // Below is embedded through template variablées by webpack for rendered pages
     .replace('</head>', `${getCustomStyles({ depth })}</head>`,)
     .replace('</body>', `${getCustomScript({ depth, genSearchWidgetConfigId })}</body>`);
 }
@@ -77,8 +79,8 @@ const getFooter = () => {
         </div>
 
         <ul class="footer-links">
-          <li><a href="https://devcenter.bitrise.io/" rel="noopener">Docs</a></li>
-          <li><a href="https://devcenter.bitrise.io/api/v0.1/" target="_blank" rel="noopener">API</a></li>
+          <li><a href="https://docs.bitrise.io/" rel="noopener">Docs</a></li>
+          <li><a href="https://docs.bitrise.io/en/bitrise-ci/api.html" target="_blank" rel="noopener">API</a></li>
           <li><a href="https://bitrise.io/pricing" target="_blank" rel="noopener">Pricing</a></li>
           <li><a href="https://bitrise.io/platform/devops/security" target="_blank" rel="noopener">Security</a></li>
           <li><a href="https://bitrise.io/terms" target="_blank" rel="noopener">Terms</a></li>
