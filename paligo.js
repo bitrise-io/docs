@@ -1,3 +1,11 @@
+/**
+ * @description This script provides functions to interact with the Paligo API for publishing and managing documentation.
+ * It includes functions to list publish settings, create productions, download outputs, and extract files.
+ * It also provides middleware functions to update HTML content with custom scripts and styles.
+ *
+ * @see https://api.paligo.net/en/index-en.html
+ */
+
 const fs = require('fs');
 const path = require('path');
 const unzipper = require('unzipper');

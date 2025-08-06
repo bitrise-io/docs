@@ -7,7 +7,9 @@ import {
   renderCodeBlocks,
   renderNavbarSearch,
   detectOverviewContainer,
-  updateOverviewContainerPosition
+  updateOverviewContainerPosition,
+  fixContentPager,
+  handleIntercomBanner
 } from './lib/common';
 import { reset } from './lib/reset';
 import { addSidebarLinks } from './pages/bitrise-ci';
@@ -46,12 +48,7 @@ const main = async () => {
       renderTabContainers();
       renderCodeBlocks();
       detectOverviewContainer();
-
-      Array.from(document.querySelectorAll("#header-navigation-prev")).forEach((el) => {
-        if (el.textContent.trim() === 'Prev') {
-          el.textContent = 'Previous';
-        }
-      });
+      fixContentPager();
     }
 
     renderNavbarSearch();
@@ -65,6 +62,8 @@ const main = async () => {
 
   onScroll();
 };
+
+handleIntercomBanner();
 
 redirectToHtml();
 window.addEventListener('scroll', onScroll);

@@ -1,9 +1,7 @@
 /**
- * @description
- * This module provides functions to interact with Cloudflare's Rules API for managing lists and redirects.
+ * @description This module provides functions to interact with Cloudflare's Rules API for managing lists and redirects.
  * It includes functionality to fetch, update, and manage redirect rules in a specified list.
  *
- * @module cloudflare
  * @see https://developers.cloudflare.com/api/node/resources/rules/subresources/lists/
  */
 

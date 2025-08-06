@@ -207,3 +207,20 @@ export const updateOverviewContainerPosition = () => {
     overviewContainer.style.top = `${Math.max(0, distanceFromSiteContentTop)}px`;
   }
 };
+
+export const fixContentPager = () => {
+  Array.from(document.querySelectorAll("#header-navigation-prev")).forEach((el) => {
+    if (el.textContent.trim() === 'Prev') {
+      el.textContent = 'Previous';
+    }
+  });
+};
+
+export const handleIntercomBanner = () => {
+  window.setInterval(() => {
+    const bodyMarginTop = document.body.style.marginTop;  // intercom sets this for top banner
+    document.querySelector('aside.site-sidebar').style.marginTop = bodyMarginTop;
+    document.querySelector('aside.site-sidebar').style.maxHeight = `calc(100% - ${bodyMarginTop})`;
+    document.querySelector('.site-header-navbar').style.marginTop = bodyMarginTop;
+  }, 500);
+};
