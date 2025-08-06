@@ -13,6 +13,12 @@ const getCustomStyles = ({ depth }) => {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet"></link>
     <link rel="stylesheet" href="${`${Array(depth).fill('../').join('')}main.css?v=${Date.now()}`}" />
+
+    <link rel="preconnect" href="https://cdn.cookielaw.org/">
+    <link rel="preload" href="https://cdn.cookielaw.org/consent/74dfda25-8e61-4fab-9330-4718635e7050/OtAutoBlock.js" as="script">
+    <link rel="preload" href="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js" as="script">
+    <script type="text/javascript" src="https://cdn.cookielaw.org/consent/74dfda25-8e61-4fab-9330-4718635e7050/OtAutoBlock.js" ></script>
+    <script src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js"  type="text/javascript" charset="UTF-8" data-domain-script="74dfda25-8e61-4fab-9330-4718635e7050" ></script>
   `;
 };
 
@@ -57,15 +63,14 @@ const updateContent = (html, { relativePath, genSearchWidgetConfigId }) => {
   const depth = typeof relativePath === "string" ? relativePath.split(path.sep).length - 1 : 0;
 
   return html
-    .replace(/devcenter\.bitrise\.io/, 'docs.bitrise.io') // Update domain to docs.bitrise.io
-
-    // Below is already done for rendered pages
+    // Below is already done for pages rendered by webpack
+    .replace(/devcenter\.bitrise\.io/, 'docs.bitrise.io')
     .replace('<script src="js/fuzzydata.js" type="text/javascript"></script>', '')
     .replace(/<div class="toolbar top-nav-on".*?<main/gms, '<div class="toolbar"></div><main')
     .replace('id="navbar">', 'id="navbar">\n<div class="tool-search"></div>')
-    .replace(/<footer class="site-footer">.*?<\/footer>/gms, getFooter())
 
-    // Below is embedded through template variablées by webpack for rendered pages
+    // Below is embedded through template variables for pages rendered by webpack
+    .replace(/<footer class="site-footer">.*?<\/footer>/gms, getFooter())
     .replace('</head>', `${getCustomStyles({ depth })}</head>`,)
     .replace('</body>', `${getCustomScript({ depth, genSearchWidgetConfigId })}</body>`);
 }
