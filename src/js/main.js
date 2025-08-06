@@ -9,7 +9,7 @@ import {
   detectOverviewContainer,
   updateOverviewContainerPosition,
   fixContentPager,
-  handleIntercomBanner
+  initializeIntercomBannerObserver
 } from './lib/common';
 import { reset } from './lib/reset';
 import { addSidebarLinks } from './pages/bitrise-ci';
@@ -60,10 +60,10 @@ const main = async () => {
      // console.log('subpage:', 'portal');
   }
 
+  initializeIntercomBannerObserver();
+
   onScroll();
 };
-
-handleIntercomBanner();
 
 redirectToHtml();
 window.addEventListener('scroll', onScroll);

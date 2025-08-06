@@ -216,11 +216,67 @@ export const fixContentPager = () => {
   });
 };
 
-export const handleIntercomBanner = () => {
-  window.setInterval(() => {
-    const bodyMarginTop = document.body.style.marginTop;  // intercom sets this for top banner
-    document.querySelector('aside.site-sidebar').style.marginTop = bodyMarginTop;
-    document.querySelector('aside.site-sidebar').style.maxHeight = `calc(100% - ${bodyMarginTop})`;
-    document.querySelector('.site-header-navbar').style.marginTop = bodyMarginTop;
-  }, 500);
+let bannerHeight = '0px';
+
+/**
+ * Set the height of the Intercom banner.
+ * @param {string} height 
+ */
+const setBannerHeight = (height) => {
+  bannerHeight = height;
+
+  // Render updated styles
+  document.querySelector('aside.site-sidebar').style.marginTop = bannerHeight;
+  document.querySelector('aside.site-sidebar').style.maxHeight = `calc(100% - ${bannerHeight})`;
+  document.querySelector('.site-header-navbar').style.marginTop = bannerHeight;
+};
+
+/**
+ * Check for the Intercom banner in the DOM mutations and adjust the sidebar and navbar styles accordingly.
+ * @param {MutationRecord[]} mutations 
+ */
+const checkIntercomBanner = (mutations) => {
+  mutations.forEach((mutation) => {
+    mutation.addedNodes.forEach((node) => {
+      /** @type {HTMLIFrameElement | HTMLButtonElement} */
+      const banner = node;
+      if (banner.name === 'intercom-banner-frame') {
+        const interval = setInterval(() => {
+          const computedStyle = window.getComputedStyle(document.body);
+          const newHeight = computedStyle.getPropertyValue('margin-top');
+          if (newHeight !== bannerHeight) {
+            setBannerHeight(newHeight);
+          } else if (newHeight !== '0px') {
+            clearInterval(interval);
+          }
+        }, 25);
+      }
+    });
+    mutation.removedNodes.forEach((node) => {
+      /** @type {HTMLIFrameElement | HTMLButtonElement} */
+      const banner = node;
+      if (banner.name === 'intercom-banner-frame') {
+        setBannerHeight('0px');
+      }
+    });
+  });
+};
+
+/**
+ * Initialize the Intercom banner observer to watch for changes in the DOM
+ * and adjust the sidebar and navbar styles accordingly.
+ */
+export const initializeIntercomBannerObserver = () => {
+  // Set up observer
+  const observer = new MutationObserver(checkIntercomBanner);
+
+  // Observe changes in body
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+
+  if (import.meta.webpackHot) onReset(() => {
+    observer.disconnect();
+  });
 };
