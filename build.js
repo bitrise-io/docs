@@ -5,6 +5,8 @@ const webpackConfigBuilder = require('./webpack.config.js');
 const { pathExists, publish } = require('./paligo.js');
 const { updateContent } = require('./middleware.js');
 
+const ENV = 'production';
+
 async function processHtmlFiles(basePath, processPath=null) {
   if (!processPath) {
     processPath = basePath;
@@ -19,7 +21,9 @@ async function processHtmlFiles(basePath, processPath=null) {
       let content = await fs.readFile(fullPath, 'utf8');
       content = updateContent(content, {
         relativePath: path.relative(basePath, fullPath),
-        genSearchWidgetConfigId: process.env.GEN_SEARCH_WIDGET_ID || ''
+        genSearchWidgetConfigId: process.env.GEN_SEARCH_WIDGET_ID || '',
+        gtmId: process.env.GTM_ID || '',
+        environment: ENV
       });
       await fs.writeFile(fullPath, content, 'utf8');
       process.stdout.write(` - ${path.relative(basePath, fullPath)}: done\n`);
@@ -52,7 +56,7 @@ const build = async (publishsetting, outputPath, useLatest) => {
   // Build project with Webpack
   let webpackStats;
   try {
-    webpackStats = await webpackBuild(webpackConfigBuilder('production', outputPath));
+    webpackStats = await webpackBuild(webpackConfigBuilder(ENV, outputPath));
   } catch (error) {
     webpackStats = error;
   }

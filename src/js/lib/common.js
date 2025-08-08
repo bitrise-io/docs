@@ -103,6 +103,45 @@ export const renderHubLinks = () => {
   });
 };
 
+class TabbedContent {
+  constructor(tabContainer) {
+    this.tabContainer = tabContainer;
+    this.tabs = Array.from(tabContainer.querySelectorAll('p.tabs'));
+    this.sections = [];
+    let next = tabContainer.nextElementSibling;
+    while (next && next.classList.contains('tab-content')) {
+      this.sections.push(next);
+      next = next.nextElementSibling;
+    }
+
+    this.tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => {
+        this.setActiveTabIndex(index);
+      });
+    });
+
+    this.setActiveTabIndex(0);
+  }
+
+  setActiveTabIndex(index) {
+    this.activeTabIndex = index;
+    this.tabs.forEach((tab, i) => {
+      if (i === index) {
+        tab.classList.add('is-active');
+      } else {
+        tab.classList.remove('is-active');
+      }
+    });
+    this.sections.forEach((section, i) => {
+      if (i === index) {
+        section.classList.add('is-active');
+      } else {
+        section.classList.remove('is-active');
+      }
+    });
+  }
+}
+
 export const renderTabContainers = () => {
   const tabElements = Array.from(document.querySelectorAll('p.tabs'));
   const wrapped = new Set();
@@ -125,6 +164,8 @@ export const renderTabContainers = () => {
       tab.parentNode.insertBefore(container, group[0]);
       group.forEach(el => container.appendChild(el));
       group.forEach(el => wrapped.add(el));
+
+      const tabbedContent = new TabbedContent(container);
     }
   });
 
@@ -141,11 +182,25 @@ export const renderTabContainers = () => {
 export const renderCodeBlocks = () => {
   Array.from(document.querySelectorAll('.programlisting')).forEach((codeBlock) => {
     const newCodeFragment = document.createFragment = document.createDocumentFragment();
-    newCodeFragment.appendChild(codeBlock.querySelector('.code-button'));
+
     const originalCode = document.createElement('div');
     originalCode.className = 'original-code';
     originalCode.innerHTML = codeBlock.innerHTML;
     newCodeFragment.appendChild(originalCode);
+
+    const copyButton = document.createElement("button");
+    copyButton.textContent = "Copy";
+    copyButton.classList.add("code-button");
+    copyButton.addEventListener('click', () => {
+      navigator.clipboard.writeText(originalCode.textContent);
+      copyButton.textContent = "Copied!"
+      setTimeout(function() {
+        copyButton.textContent = "Copy"
+      },
+      2000)
+    });
+    newCodeFragment.appendChild(copyButton);
+
     const newCode = [];
     const codeLines = codeBlock.innerHTML.split('\n');
     codeLines.forEach((line, index) => {
@@ -216,6 +271,12 @@ export const fixContentPager = () => {
   });
 };
 
+export const selectOpenedSubpage = (subpage) => {
+  document.querySelectorAll(`.nav-site-sidebar > li > a[data-permalink="${subpage}.html"]`).forEach((link) => {
+    link.parentNode.classList.add('opened');
+  });
+};
+
 let bannerHeight = '0px';
 
 /**
@@ -278,5 +339,38 @@ export const initializeIntercomBannerObserver = () => {
 
   if (import.meta.webpackHot) onReset(() => {
     observer.disconnect();
+  });
+};
+
+export const renderNavbarLanguageSwitcher = () => {
+  const language = window.location.pathname.match(/\/(en|ja)\//)[1];
+  if (!language) return;
+
+  const languageMap = {
+    'en': 'EN',
+    'ja': '日本語'
+  };
+  const dropdownContainer = document.createElement('div');
+  dropdownContainer.setAttribute('class', 'dropdown-container');
+  dropdownContainer.innerHTML = `
+    <span>${languageMap[language]}</span>
+    <ul class="dropdown-content">
+      ${Object.entries(languageMap).map(([lang, langName]) => `
+        <li class="lang-option${language === lang ? ' active-lang' : ''}">
+          <a href="${window.location.pathname.replace(/\/(en|ja)\//, `/${lang}/`)}" data-lang="${lang}">${langName}</a>
+        </li>
+      `).join('')}
+    </ul>
+  `;
+  dropdownContainer.addEventListener('click', () => {
+    dropdownContainer.querySelector('.dropdown-content').classList.toggle('show');
+  });
+  const navbar = document.getElementById('navbar');
+  if (navbar) {
+    navbar.insertBefore(dropdownContainer, navbar.firstChild);
+  }
+
+  if (import.meta.webpackHot) onReset(() => {
+    dropdownContainer.remove();
   });
 };

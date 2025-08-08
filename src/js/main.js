@@ -9,7 +9,9 @@ import {
   detectOverviewContainer,
   updateOverviewContainerPosition,
   fixContentPager,
-  initializeIntercomBannerObserver
+  initializeIntercomBannerObserver,
+  selectOpenedSubpage,
+  renderNavbarLanguageSwitcher
 } from './lib/common';
 import { reset } from './lib/reset';
 import { addSidebarLinks } from './pages/bitrise-ci';
@@ -35,11 +37,11 @@ const main = async () => {
     const language = subpageMatch[1];
     const subpage = subpageMatch[2];
     const isHub = subpageMatch[3] === '.html';
-    // console.log('subpage:', subpage, 'isHub:', isHub, 'language:', language);
 
     document.querySelector('.site-content').dataset.isHub = isHub ? 'true' : 'false';
 
     renderSidebarSubpageHeaders(language);
+    selectOpenedSubpage(subpage);
 
     if (isHub) {
       renderIntroContainer();
@@ -52,6 +54,7 @@ const main = async () => {
     }
 
     renderNavbarSearch();
+    renderNavbarLanguageSwitcher();
 
     if (subpage === 'bitrise-ci') {
       addSidebarLinks();

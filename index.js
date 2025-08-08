@@ -7,12 +7,14 @@ const hotMiddleware = require('webpack-hot-middleware');
 const webpackConfigBuilder = require('./webpack.config.js');
 const { updateContent } = require('./middleware.js');
 
+const ENV = 'development';
+
 const hostname = process.argv[3] || '127.0.0.1';
 const port = 3333;
 
 const outputPath = path.join(__dirname, 'out');
 
-const webpackConfig = webpackConfigBuilder('development', outputPath);
+const webpackConfig = webpackConfigBuilder(ENV, outputPath);
 const compiler = webpack(webpackConfig);
 const devMiddlewareOptions = {
   // writeToDisk: true,
@@ -20,7 +22,7 @@ const devMiddlewareOptions = {
 const app = express();
 
 app.use(devMiddleware(compiler, devMiddlewareOptions));
-if (webpackConfig.mode === 'development') app.use(hotMiddleware(compiler));
+app.use(hotMiddleware(compiler));
 
 // Middleware to inject script tag into HTML files
 app.use(async (req, res, next) => {
@@ -38,6 +40,8 @@ app.use(async (req, res, next) => {
       res.send(updateContent(html, {
         relativePath: path.relative(outputPath, filePath),
         genSearchWidgetConfigId: process.env.GEN_SEARCH_WIDGET_ID || '',
+        gtmId: process.env.GTM_ID || '',
+        environment: ENV
       }));
     } catch (err) {
       next();

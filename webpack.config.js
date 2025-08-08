@@ -20,7 +20,11 @@ module.exports = (mode, distPath) => {
     }),
     new HtmlWebpackPlugin({
       filename: 'index.html',
-      customStyles: mode === 'development' ? getCustomStyles({ depth: 0 }) : '',
+      customStyles: mode === 'development' ? getCustomStyles({
+        depth: 0,
+        gtmId: process.env.GTM_ID || '',
+        environment: mode
+      }) : '',
       customScript: mode === 'development' ? getCustomScript({
         depth: 0,
         genSearchWidgetConfigId: process.env.GEN_SEARCH_WIDGET_ID || ''

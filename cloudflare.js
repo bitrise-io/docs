@@ -190,6 +190,7 @@ const main = async () => {
 
     /** @type {ListsListItemRedirectComment[]} */
     const redirectsToUpload = [];
+
     Object.keys(newRedirects).forEach(sourceUrl => {
       if (sourceUrl.match(/^[^/]/)) {
         process.stderr.write(`Error: Source URL "${sourceUrl}" must start with a slash.\n`);
@@ -221,6 +222,8 @@ const main = async () => {
         });
       } else {
         options.target_url = `${targetUrlPrefix}${targetUrl}`;
+
+        // Redirects for both .html and without .html
         redirectsToUpload.push({
           redirect: {
             source_url: `${urlPrefix}${sourceUrl.replace(/\.html$/, '')}`,
@@ -233,7 +236,13 @@ const main = async () => {
             ...options
           }
         });
+
         if (sourceUrl.match(/^\/en\//)) {
+          if (targetUrlPrefix === urlPrefix && targetUrl.match(/^\/en\//)) {
+            options.target_url = `${targetUrlPrefix}${targetUrl.replace(/^\/en\//, '/ja/')}`;
+          }
+          
+          // Japanese redirects
           redirectsToUpload.push({
             redirect: {
               source_url: `${urlPrefix}${sourceUrl.replace(/^\/en\//, '/ja/').replace(/\.html$/, '')}`,
@@ -243,6 +252,20 @@ const main = async () => {
           redirectsToUpload.push({
             redirect: {
               source_url: `${urlPrefix}${sourceUrl.replace(/^\/en\//, '/ja/').replace(/\.html$/, '')}.html`,
+              ...options
+            }
+          });
+
+          // Legacy Japanese redirects
+          redirectsToUpload.push({
+            redirect: {
+              source_url: `${urlPrefix}${sourceUrl.replace(/^\/en\//, '/jp/').replace(/\.html$/, '')}`,
+              ...options
+            }
+          });
+          redirectsToUpload.push({
+            redirect: {
+              source_url: `${urlPrefix}${sourceUrl.replace(/^\/en\//, '/jp/').replace(/\.html$/, '')}.html`,
               ...options
             }
           });
