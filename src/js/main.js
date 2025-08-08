@@ -41,7 +41,7 @@ const main = async () => {
     document.querySelector('.site-content').dataset.isHub = isHub ? 'true' : 'false';
 
     renderSidebarSubpageHeaders(language);
-    selectOpenedSubpage(subpage);
+    selectOpenedSubpage();
 
     if (isHub) {
       renderIntroContainer();

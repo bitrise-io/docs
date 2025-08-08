@@ -271,10 +271,29 @@ export const fixContentPager = () => {
   });
 };
 
-export const selectOpenedSubpage = (subpage) => {
-  document.querySelectorAll(`.nav-site-sidebar > li > a[data-permalink="${subpage}.html"]`).forEach((link) => {
-    link.parentNode.classList.add('opened');
-  });
+export const selectOpenedSubpage = () => {
+  const permalink = window.location.pathname.replace(/\/(en|ja)\//, '');
+  window.setTimeout(() => {
+    const navSiteSidebar = document.querySelector('.nav-site-sidebar');
+    const navItem = navSiteSidebar.querySelector(`a[data-permalink="${permalink}"]`);
+    if (navItem) {
+      navItem.parentElement.classList.add('active');
+      
+      let parentElement = navItem.parentElement;
+      while (parentElement && parentElement !== navSiteSidebar) {
+        if (parentElement.tagName === 'LI') {
+          parentElement.classList.add('opened');
+        }
+        parentElement = parentElement.parentElement;
+      }
+      
+      // If the navItem has no href, redirect to the first child link
+      if (!navItem.href) {
+        let firstChild = navItem.parentElement.querySelector('a[href]');
+        if (firstChild) window.location.href = firstChild.href;
+      }
+    }
+  }, 250);
 };
 
 let bannerHeight = '0px';
