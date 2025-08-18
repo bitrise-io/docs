@@ -14,6 +14,18 @@ const getCustomStyles = ({ depth, gtmId, environment }) => {
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet"></link>
     <link rel="stylesheet" href="${`${Array(depth).fill('../').join('')}main.css?v=${Date.now()}`}" />
 
+    <script>
+      (function() {
+        var canonicalLink = document.querySelector('link[rel="canonical"]');
+        if (canonicalLink) {
+          var canonicalUrl = new URL(canonicalLink.href);
+          if (canonicalUrl.pathname !== window.location.pathname) {
+            window.location.pathname = canonicalUrl.pathname;
+          }
+        }
+      })();
+    </script>
+
     ${environment !== 'development' ? `
     <link rel="preconnect" href="https://cdn.cookielaw.org/">
     <link rel="preload" href="https://cdn.cookielaw.org/consent/74dfda25-8e61-4fab-9330-4718635e7050/OtAutoBlock.js" as="script">
