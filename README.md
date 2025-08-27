@@ -1,16 +1,12 @@
 # Bitrise Documentation
 
+Welcome to the public repository for Bitrise product documentation.
+
 ## Status
 
 [![Redirect Status](https://docs.bitrise.io/_redirects.svg)](https://docs.bitrise.io/_redirects.html)
 
 _Additional documentation health metrics may be added here in the future (e.g., number of documents, build status, etc.)_
-
-## About
-
-# Bitrise Documentation
-
-Welcome to the public repository for Bitrise product documentation.
 
 ## About
 This repository contains the source files for the official Bitrise documentation. It is intended for reference and transparency purposes only.
