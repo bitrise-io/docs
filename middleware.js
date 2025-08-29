@@ -98,23 +98,8 @@ const updateContent = (html, { relativePath, genSearchWidgetConfigId, gtmId, env
     .replace(/<div class="toolbar top-nav-on".*?<main/gms, '<div class="toolbar"></div><main')
     .replace('id="navbar">', 'id="navbar">\n<div class="tool-search"></div>')
     .replace(/<script\s+[^>]*src="[^"]*js\/layout-custom-script\.js(\?[^"]*)?"[^>]*><\/script>/g, '')
-
-    /* Relative path to absolute path conversion *//*
-    .replace(/(src|href)="([^"]*)"/g, (match, p1, p2) => {
-      if (!p2.startsWith('http') && !p2.startsWith('#') && !p2.startsWith('/')) {
-        const relativePathComponents = relativePath.split(path.sep).slice(0, -1);
-
-        let absolutePath = p2;
-        while (absolutePath.match(/^\.\.\//)) {
-          absolutePath = absolutePath.replace(/^\.\.\//, '');
-          relativePathComponents.pop();
-        }
-        absolutePath = `/${relativePathComponents.length ? relativePathComponents.join('/') + '/' : ''}${absolutePath}`;
-
-        return `${p1}="${absolutePath}"`;
-      }
-      return match;
-    }) */
+    .replace(/src="(\.\.\/)*js\/swagger/g, 'defer src="/js/swagger')
+    .replace(/href="(\.\.\/)*js\/swagger/g, 'href="/js/swagger')
 
     // Below is embedded through template variables for pages rendered by webpack
     .replace(/<footer class="site-footer">.*?<\/footer>/gms, getFooter())
