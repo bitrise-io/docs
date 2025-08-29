@@ -10,11 +10,15 @@ const fs = require('fs');
 const path = require('path');
 const unzipper = require('unzipper');
 
-const { PALIGO_API_KEY } = process.env;
+const getPaligoApiKey = () => {
+  const { PALIGO_API_KEY } = process.env;
 
-if (!PALIGO_API_KEY) {
-  throw new Error('PALIGO_API_KEY environment variable is not set.');
-}
+  if (!PALIGO_API_KEY) {
+    throw new Error('PALIGO_API_KEY environment variable is not set.');
+  }
+  
+  return PALIGO_API_KEY;
+};
 
 const LATEST_PALIGO_FILE = '.paligo.zip';
 
@@ -22,7 +26,7 @@ const listPublishSettings = async () => {
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
-    Authorization: `Basic ${PALIGO_API_KEY}`,
+    Authorization: `Basic ${getPaligoApiKey()}`,
   };
   const response = await fetch('https://bitrise.paligoapp.com/api/v2/publishsettings/', {
     method: 'GET',
@@ -39,7 +43,7 @@ const listProductions = async () => {
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
-    Authorization: `Basic ${PALIGO_API_KEY}`,
+    Authorization: `Basic ${getPaligoApiKey()}`,
   };
   const response = await fetch('https://bitrise.paligoapp.com/api/v2/productions/', {
     method: 'GET',
@@ -59,7 +63,7 @@ const createProduction = async (publishsetting) => {
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
-    Authorization: `Basic ${PALIGO_API_KEY}`,
+    Authorization: `Basic ${getPaligoApiKey()}`,
   };
 
   const response = await fetch('https://bitrise.paligoapp.com/api/v2/productions/', {
@@ -80,7 +84,7 @@ const showProduction = async (productionId) => {
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
-    Authorization: `Basic ${PALIGO_API_KEY}`,
+    Authorization: `Basic ${getPaligoApiKey()}`,
   };
 
   const response = await fetch(`https://bitrise.paligoapp.com/api/v2/productions/${productionId}`, {
@@ -112,7 +116,7 @@ const getOutput = async (outputUrl, outputPath) => {
   const headers = {
     'Content-Type': 'application/json',
     Accept: 'application/json',
-    Authorization: `Basic ${PALIGO_API_KEY}`,
+    Authorization: `Basic ${getPaligoApiKey()}`,
   };
 
   const response = await fetch(outputUrl, {
