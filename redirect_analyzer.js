@@ -581,7 +581,7 @@ function analyzeRedirects() {
     
     // Generate and save badge
     const totalValid = data.validChains.length + data.externalChains.length;
-    const totalInvalid = invalidRedirects.length + circularChains.length;
+    const totalInvalid = invalidRedirects.length + circularChains.length - preservePathSuffixByTarget;
     saveBadge(totalValid, totalInvalid);
     
     // Print results
