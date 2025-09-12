@@ -12,7 +12,7 @@ import {
   initializeIntercomBannerObserver,
   selectOpenedSubpage,
   renderNavbarLanguageSwitcher,
-  genSearchWidgetFixer2
+  genSearchWidgetFixer
 } from './lib/common';
 import { reset } from './lib/reset';
 import { addSidebarLinks } from './pages/bitrise-ci';
@@ -66,7 +66,7 @@ const main = async () => {
 
   initializeIntercomBannerObserver();
 
-  genSearchWidgetFixer2({ fixedHeight: 300 });
+  genSearchWidgetFixer({ fixedHeight: 300, intervalDelay: 50 });
 
   onScroll();
 };
