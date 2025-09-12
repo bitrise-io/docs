@@ -410,8 +410,8 @@ export const genSearchWidgetFixer = ({ fixedHeight, intervalDelay }) => {
         if (ucsSummary) {
           if (!loaderContainer && ucsSummary.shadowRoot?.querySelector(".loader-container")) {
             console.log('Loading started');
-            loaderContainer = ucsSummary.shadowRoot?.querySelector(".loader-container");
           }
+          loaderContainer = ucsSummary.shadowRoot?.querySelector(".loader-container");
           if (loaderContainer) {
             loaderContainer.style.height = `${fixedHeight + 45}px`;
           }
