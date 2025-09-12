@@ -212,7 +212,6 @@ export const renderCodeBlocks = () => {
     newCodeFragment.appendChild(copyToast);
 
     hljs.highlightElement(codeBlock);
-    console.log('codeBlock:', codeBlock);
     const newCode = [];
     const codeLines = codeBlock.innerHTML.split('\n');
     codeLines.forEach((line, index) => {
