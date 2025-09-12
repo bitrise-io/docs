@@ -11,7 +11,8 @@ import {
   fixContentPager,
   initializeIntercomBannerObserver,
   selectOpenedSubpage,
-  renderNavbarLanguageSwitcher
+  renderNavbarLanguageSwitcher,
+  genSearchWidgetFixer
 } from './lib/common';
 import { reset } from './lib/reset';
 import { addSidebarLinks } from './pages/bitrise-ci';
@@ -64,6 +65,8 @@ const main = async () => {
   }
 
   initializeIntercomBannerObserver();
+
+  genSearchWidgetFixer({ fixedHeight: 300, intervalDelay: 50 });
 
   onScroll();
 };

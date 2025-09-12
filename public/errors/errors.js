@@ -11,7 +11,7 @@
  *    indicator: "minor" | "major" | "critical" | "none" | "maintenance";
  *    description: string;
  *  };
- * }} StatusResult;
+ * }} StatusResult
  */
 
 /**
