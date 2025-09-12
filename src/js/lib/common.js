@@ -1,4 +1,8 @@
+import hljs from '@highlightjs/cdn-assets/es/highlight.js';
+import '@highlightjs/cdn-assets/styles/vs2015.css';
+
 import { onReset } from "./reset";
+
 
 /**
  * 
@@ -184,7 +188,7 @@ export const renderCodeBlocks = () => {
     const newCodeFragment = document.createFragment = document.createDocumentFragment();
 
     const originalCode = document.createElement('div');
-    originalCode.className = 'original-code';
+    originalCode.className = 'original-code' + (codeBlock.className ? ' ' + codeBlock.className : '');
     originalCode.innerHTML = codeBlock.innerHTML;
     newCodeFragment.appendChild(originalCode);
 
@@ -194,40 +198,61 @@ export const renderCodeBlocks = () => {
     copyButton.addEventListener('click', () => {
       navigator.clipboard.writeText(originalCode.textContent);
       copyButton.textContent = "Copied!"
+      copyButton.parentElement.querySelector('.copy-toast').classList.add('visible');
       setTimeout(function() {
-        copyButton.textContent = "Copy"
+        copyButton.textContent = "Copy";
+        copyButton.parentElement.querySelector('.copy-toast').classList.remove('visible');
       },
       2000)
     });
     newCodeFragment.appendChild(copyButton);
+    const copyToast = document.createElement("div");
+    copyToast.className = "copy-toast";
+    copyToast.textContent = "Copied to clipboard";
+    newCodeFragment.appendChild(copyToast);
 
+    hljs.highlightElement(codeBlock);
+    console.log('codeBlock:', codeBlock);
     const newCode = [];
     const codeLines = codeBlock.innerHTML.split('\n');
     codeLines.forEach((line, index) => {
-      newCode.push(`<div class="code-line" style="--line-number: '${index + 1}'; --max-line-number-length: ${(codeLines.length + 1).toString().length};">${line}</div>`);
+      newCode.push(`<div class="code-line" style="--line-number: '${index + 1}'; --max-line-number-length: ${(codeLines.length + 1).toString().length};"><span>${line}</span></div>`);
     });
     codeBlock.innerHTML = newCode.join('');
     codeBlock.classList.add('code-block');
     if (codeLines.length === 1) {
       codeBlock.classList.add('single-line');
     }
+
     codeBlock.appendChild(newCodeFragment);
   });
 
   if (import.meta.webpackHot) onReset(() => {
     Array.from(document.querySelectorAll('.programlisting')).forEach((codeBlock) => {
-      const resetCodeFragment = document.createDocumentFragment();
-      resetCodeFragment.appendChild(codeBlock.querySelector('.code-button'));
       const originalCode = codeBlock.querySelector('.original-code');
       if (originalCode) {
         codeBlock.innerHTML = originalCode.innerHTML;
+        codeBlock.className = originalCode.className
+        codeBlock.classList.remove('original-code');
+        delete(codeBlock.dataset.highlighted);
       }
-      codeBlock.appendChild(resetCodeFragment);
-      codeBlock.classList.remove('code-block');
-      codeBlock.classList.remove('single-line');
     });
   });
-}
+};
+
+export const renderCodeBlocksWithHighlightJs = () => {
+  let originalCodeBlocks = [];
+  Array.from(document.querySelectorAll('.programlisting')).forEach((codeBlock) => {
+    originalCodeBlocks.push(codeBlock.innerHTML);
+    hljs.highlightElement(codeBlock);
+  });
+
+  if (import.meta.webpackHot) onReset(() => {
+    Array.from(document.querySelectorAll('.programlisting')).forEach((codeBlock, index) => {
+      codeBlock.innerHTML = originalCodeBlocks[index];
+    });
+  });
+};
 
 export const renderNavbarSearch = () => {
   const navbarHeader = document.querySelector('.navbar-header');
