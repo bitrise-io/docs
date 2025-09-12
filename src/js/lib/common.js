@@ -437,4 +437,87 @@ export const genSearchWidgetFixer = ({ fixedHeight, intervalDelay }) => {
     }
   }, intervalDelay);
 };
+
+export const genSearchWidgetFixer2 = ({ fixedHeight }) => {
+  let observer;
+  let searchInputHandled = false;
+
+  function updateWidget() {
+    const genSearchWidget = document.querySelector("gen-search-widget");
+    if (!genSearchWidget || !genSearchWidget.shadowRoot) return;
+
+    const ucsResults = genSearchWidget.shadowRoot.querySelector("ucs-results");
+    if (!ucsResults || !ucsResults.shadowRoot) return;
+
+    const ucsSummary = ucsResults.shadowRoot.querySelector("ucs-summary");
+    if (ucsSummary && ucsSummary.shadowRoot) {
+      const loaderContainer = ucsSummary.shadowRoot.querySelector(".loader-container");
+      if (loaderContainer) {
+        loaderContainer.style.height = `${fixedHeight + 45}px`;
+      }
+      const summaryContainer = ucsSummary.shadowRoot.querySelector(".summary-container");
+      if (summaryContainer) {
+        summaryContainer.style.height = summaryContainer.className.match(/expanded/) ? "auto" : `${fixedHeight}px`;
+      }
+    }
+
+    const ucsSearchBar = genSearchWidget.shadowRoot.querySelector("ucs-search-bar");
+    if (ucsSearchBar && ucsSearchBar.shadowRoot) {
+      const searchInput = ucsSearchBar.shadowRoot.querySelector("input");
+      if (searchInput && !searchInputHandled) {
+        searchInputHandled = true;
+        searchInput.addEventListener('keyup', (event) => {
+          if (event.key === 'Enter') {
+            console.log('Search triggered by Enter key', searchInput.value);
+          }
+        });
+      }
+      if (searchInput) {
+        searchInput.placeholder = 'Press Enter to search';
+      }
+    }
+  }
+
+  function observeWidget() {
+    // Disconnect previous observer if any
+    if (observer) observer.disconnect();
+
+    const genSearchWidget = document.querySelector("gen-search-widget");
+    if (!genSearchWidget) return;
+
+    observer = new MutationObserver(() => {
+      updateWidget();
+    });
+
+    // Observe the shadowRoot of genSearchWidget for subtree changes
+    if (genSearchWidget.shadowRoot) {
+      observer.observe(genSearchWidget.shadowRoot, {
+        childList: true,
+        subtree: true
+      });
+    }
+    // Initial update
+    updateWidget();
+  }
+
+  // Observe for the gen-search-widget being added to the DOM
+  const rootObserver = new MutationObserver(() => {
+    if (document.querySelector("gen-search-widget")) {
+      observeWidget();
+    }
+  });
+  rootObserver.observe(document.body, { childList: true, subtree: true });
+
+  // In case the widget is already present
+  if (document.querySelector("gen-search-widget")) {
+    observeWidget();
+  }
+
+  // Hot reload cleanup
+  if (import.meta.webpackHot) onReset(() => {
+    if (observer) observer.disconnect();
+    rootObserver.disconnect();
+  });
+};
+
 // TEST: genSearchWidgetFixer({ fixedHeight: 300, intervalDelay: 50 });
