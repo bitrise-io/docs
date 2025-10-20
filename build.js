@@ -75,7 +75,7 @@ const build = async (publishsetting, outputPath, useLatest) => {
   process.stdout.write(`Build completed successfully. Output is in ${outputPath}\n`);
 }
 
-build('19', path.join(__dirname, 'deploy'), process.env.COMMIT_MESSAGE?.match('^\\[skip publish\\]')).catch((error) => {
+build('19', path.join(__dirname, 'deploy'), process.env.COMMIT_MESSAGE?.match('^\\[skip publish\\]') || process.argv[2] === '--skip-publish').catch((error) => {
   process.stderr.write(`Error during build: ${error.message}\n`);
   process.exit(1);
 });
