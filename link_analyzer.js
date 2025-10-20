@@ -30,6 +30,9 @@ const { pathExists } = require('./paligo');
  * @returns {string}
  */
 function convertToAbsoluteUrl(relativeUrl, basePath) {
+  if (relativeUrl.match(/^http/)) {
+    return new URL(relativeUrl);
+  }
   return new URL(relativeUrl, new URL(basePath, 'https://docs.bitrise.io/').href);
 }
 
@@ -85,7 +88,7 @@ async function analyseLinks(content, basePath, fullPath) {
   if (linkedFilesMatch) {
     for (let match of linkedFilesMatch) {
       const [, , url, linkText] = match.match(/(src|href)="([^"]*)"[^>]*>(.*?)<\/a>/) || [];
-      if (!url.match(/^(http|mailto|#|\/)/)) {
+      if (!url.match(/^(http|mailto|#|\/)/) || url.match(/^https:\/\/docs\.bitrise\.io/)) {
         const absoluteUrl = convertToAbsoluteUrl(url, relativePath);
         const exists = await pathExists(path.join(basePath, absoluteUrl.pathname));
         if (!exists) {
@@ -182,7 +185,7 @@ async function generateBrokenLinksReport(linkAnalysis, outputPath) {
           html += `<a href="${link.absoluteUrl}" target="_blank">${link.url}</a> (${link.linkText})`;
         } else {
           html += '<img src="/favicon.ico" alt="Bitrise" />';
-          html += `<a href="${link.absoluteUrl}" target="_blank">${link.absoluteUrl}</a> (${link.linkText})`;
+          html += `<a href="${link.url.match(/^http/) ? link.url : link.absoluteUrl}" target="_blank">${link.url.match(/^http/) ? link.url : link.absoluteUrl}</a> (${link.linkText})`;
         }
         html += '</li>';
       }
