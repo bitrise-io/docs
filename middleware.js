@@ -93,19 +93,19 @@ const updateContent = (html, { relativePath, genSearchWidgetConfigId, gtmId, env
 
   return html
     // Below is already done for pages rendered by webpack
-    .replace(/devcenter\.bitrise\.io/g, 'docs.bitrise.io')
-    .replace(/blog\.bitrise\.io/g, 'bitrise.io/blog')
-    .replace(/www\.bitrise\.io/g, 'bitrise.io')
-    .replace(/bitrise.io\/cli/g, 'app.bitrise.io/cli')
-    .replace(/bitrise.io\/requests\/new/g, 'support.bitrise.io/')
-    .replace(/https?:\/\/([^\/]+\.)?bitrise\.io/g, 'https://$1bitrise.io')
+    .replace(/devcenter\.bitrise\.io/gi, 'docs.bitrise.io')
+    .replace(/blog\.bitrise\.io/gi, 'bitrise.io/blog')
+    .replace(/www\.bitrise\.io/gi, 'bitrise.io')
+    .replace(/bitrise.io\/cli/gi, 'app.bitrise.io/cli')
+    .replace(/bitrise.io\/requests\/new/gi, 'support.bitrise.io/')
+    .replace(/https?:\/\/([^\/]+\.)?bitrise\.io/gi, 'https://$1bitrise.io')
 
     .replace('<script src="js/fuzzydata.js" type="text/javascript"></script>', '')
-    .replace(/<div class="toolbar top-nav-on".*?<main/gms, '<div class="toolbar"></div><main')
+    .replace(/<div class="toolbar top-nav-on".*?<main/gmsi, '<div class="toolbar"></div><main')
     .replace('id="navbar">', 'id="navbar">\n<div class="tool-search"></div>')
-    .replace(/<script\s+[^>]*src="[^"]*js\/layout-custom-script\.js(\?[^"]*)?"[^>]*><\/script>/g, '')
-    .replace(/src="(\.\.\/)*js\/swagger/g, 'defer src="/js/swagger')
-    .replace(/href="(\.\.\/)*js\/swagger/g, 'href="/js/swagger')
+    .replace(/<script\s+[^>]*src="[^"]*js\/layout-custom-script\.js(\?[^"]*)?"[^>]*><\/script>/gi, '')
+    .replace(/src="(\.\.\/)*js\/swagger/gi, 'defer src="/js/swagger')
+    .replace(/href="(\.\.\/)*js\/swagger/gi, 'href="/js/swagger')
 
     // Below is embedded through template variables for pages rendered by webpack
     .replace(/<footer class="site-footer">.*?<\/footer>/gms, getFooter())
