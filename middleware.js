@@ -106,6 +106,7 @@ const updateContent = (html, { relativePath, genSearchWidgetConfigId, gtmId, env
     .replace(/<script\s+[^>]*src="[^"]*js\/layout-custom-script\.js(\?[^"]*)?"[^>]*><\/script>/gi, '')
     .replace(/src="(\.\.\/)*js\/swagger/gi, 'defer src="/js/swagger')
     .replace(/href="(\.\.\/)*js\/swagger/gi, 'href="/js/swagger')
+    .replace(/<body\s+/i, '<body data-clarity-unmask="true" ')
 
     // Below is embedded through template variables for pages rendered by webpack
     .replace(/<footer class="site-footer">.*?<\/footer>/gms, getFooter())
