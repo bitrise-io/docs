@@ -4,7 +4,7 @@ const webpack = require('webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const { getCustomStyles, getCustomScript, getFooter } = require('./middleware.js');
+const { updateContent } = require('./middleware.js');
 
 const redirects = JSON.parse(fs.readFileSync('./redirects.json', 'utf8'));
 
@@ -20,16 +20,6 @@ module.exports = (mode, distPath) => {
     }),
     new HtmlWebpackPlugin({
       filename: 'index.html',
-      customStyles: mode === 'development' ? getCustomStyles({
-        depth: 0,
-        gtmId: process.env.GTM_ID || '',
-        environment: mode
-      }) : '',
-      customScript: mode === 'development' ? getCustomScript({
-        depth: 0,
-        genSearchWidgetConfigId: process.env.GEN_SEARCH_WIDGET_ID || ''
-      }) : '',
-      footerSnippet: getFooter(),
       template: 'src/html/portal.html',
       inject: false,
     })
@@ -44,17 +34,27 @@ module.exports = (mode, distPath) => {
   // });
   if (mode === 'development') {
     plugins.push(new webpack.HotModuleReplacementPlugin());
-    // plugins.push(new HtmlWebpackPlugin({
-    //   filename: 'example.html',
-    //   customStyles: mode === 'development' ? getCustomStyles({ depth: 0 }) : '',
-    //   customScript: mode === 'development' ? getCustomScript({
-    //     depth: 0,
-    //     genSearchWidgetConfigId: process.env.GEN_SEARCH_WIDGET_I
-    //   }) : '',
-    //   footerSnippet: getFooter(),
-    //   template: 'src/html/example.html',
-    //   inject: false,
-    // }));
+    
+    // Custom plugin to apply updateContent to webpack-generated HTML in dev mode
+    plugins.push({
+      apply: (compiler) => {
+        compiler.hooks.compilation.tap('UpdateContentPlugin', (compilation) => {
+          HtmlWebpackPlugin.getHooks(compilation).beforeEmit.tapAsync(
+            'UpdateContentPlugin',
+            (data, cb) => {
+              // Apply the same transformations as the middleware
+              data.html = updateContent(data.html, {
+                relativePath: data.outputName,
+                genSearchWidgetConfigId: process.env.GEN_SEARCH_WIDGET_ID || '',
+                gtmId: process.env.GTM_ID || '',
+                environment: mode
+              });
+              cb(null, data);
+            }
+          );
+        });
+      }
+    });
   }
 
   const srcPath = path.resolve(__dirname, 'src');

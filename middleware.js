@@ -92,7 +92,6 @@ const updateContent = (html, { relativePath, genSearchWidgetConfigId, gtmId, env
   const depth = typeof relativePath === "string" ? relativePath.split(path.sep).length - 1 : 0;
 
   return html
-    // Below is already done for pages rendered by webpack
     .replace(/devcenter\.bitrise\.io/gi, 'docs.bitrise.io')
     .replace(/blog\.bitrise\.io/gi, 'bitrise.io/blog')
     .replace(/www\.bitrise\.io/gi, 'bitrise.io')
@@ -108,8 +107,7 @@ const updateContent = (html, { relativePath, genSearchWidgetConfigId, gtmId, env
     .replace(/href="(\.\.\/)*js\/swagger/gi, 'href="/js/swagger')
     .replace(/<body\s+/i, '<body data-clarity-unmask="true" ')
 
-    // Below is embedded through template variables for pages rendered by webpack
-    .replace(/<footer class="site-footer">.*?<\/footer>/gms, getFooter())
+    .replace(/<footer class="(site|portal)-footer">.*?<\/footer>/gms, getFooter())
     .replace('</head>', `${getCustomStyles({ depth, gtmId, environment })}</head>`,)
     .replace('</body>', `${getCustomScript({ depth, genSearchWidgetConfigId })}</body>`);
 }
