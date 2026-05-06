@@ -1,0 +1,37 @@
+---
+title: "Changelog"
+sidebar_position: 6
+slug: /bitrise-build-hub/infrastructure/build-stacks/changelog
+---
+
+## June 2025
+
+**Changed**
+
+Mentions of Linux stack update policy has been moved on its own page, [Linux stack update policy](/en/bitrise-build-hub/infrastructure/build-stacks/linux-stack-update-policy.html), with more information on Edge, Stable and Frozen stacks. It also describes the yearly cadence of new Linux stacks, as well as the deprecation and removal of older Linux stacks.
+
+Removed how to use previous versions of a stack from this page and added it to [Stack update policy](/en/bitrise-build-hub/infrastructure/build-stacks/stack-update-policy.html).
+
+## July 2024
+
+**Removed**:
+
+Mentions of dependency manager cache updates. Both Cocoapods and Homebrew have better mechanisms now than cloning the entire registry git repo, and these newer mechanisms (Cocoapods CDN, Homebrew API) are enabled on stacks now. When stacks are updated, you can expect the on-disk repos to be up-to-date, but Stable stacks are no longer strictly updated weekly if there are no other changes to release.
+
+**Changed**:
+
+The breaking changes to stable macOS stacks (once a year when a new Xcode major version is released) no longer apply to older, existing stable stacks, only the newly released stable stack. For example, when Xcode 16.0 is released, the planned breaking changes only apply to the Xcode 16.0 stable stack. Xcode 14.x and 15.x stable stacks won’t receive breaking changes.
+
+## March 2024
+
+**New**:
+
+Define what happens when an Edge stack is phased out in favor of a newer edge stack.
+
+**Removed**:
+
+When a new Xcode Edge stack is released, it no longer brings tooling changes to the Stable stacks.
+
+**Changed**:
+
+New, simpler simulator runtime policy. The same number of older iOS major versions are installed, but only the latest minor version is installed for each.

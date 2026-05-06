@@ -1,0 +1,49 @@
+---
+title: "Service containers"
+sidebar_position: 3
+slug: /bitrise-platform/infrastructure/docker-containers-on-bitrise/service-containers
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_DefiningAServiceContainer from '@site/src/partials/defining-a-service-container.mdx';
+import Partial_RunningAServiceContainer from '@site/src/partials/running-a-service-container.mdx';
+
+Service containers are Docker containers that host services you might need to test or operate your apps during a Bitrise Workflow. The services will run in the background and the containers are cleaned up when all Steps are finished.
+
+When defining a service container, you need:
+
+- The ID of the container.
+- The type of the container: `service`.
+- The image name and version of the service.
+
+  :::important[Getting images]
+
+  You can use any public Docker image from [Docker Hub](https://hub.docker.com/).
+
+  :::
+
+You can then refer to the container within a Step or a Step bundle: the container will run during the execution of these Steps or Step bundles.
+
+For detailed configuration options, check out [Docker container properties](/en/bitrise-ci/references/configuration-yaml-reference/docker-container-properties).
+
+<Partial_DefiningAServiceContainer />
+
+<Partial_RunningAServiceContainer />
+
+## Network access for service containers
+
+Service containers are all joined to the same [docker network](https://docs.docker.com/network/) called `bitrise`. This ensures that all of them are accessible from any other service container and Step execution container.
+
+:::tip[Running your own background workers]
+
+You can run your own background workers by executing the Docker commands yourself or by using something like `docker-compose` but make sure you use the same network.
+
+:::
+
+Service containers can be used even when the Step group is not using a Step execution container. The only difference is how to access the services.
+
+Use the `<service_id>` (name of the service) to access it when you are using Step execution container. For example, `http://postgres:5432`.
+
+Use localhost to access your service if you are not using a Step execution container. For example, `http://localhost:5432`.

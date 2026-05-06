@@ -1,0 +1,52 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Using the previous version of a stack
+
+We regularly update the Bitrise stacks based on user requests and external tooling changes. These updates can potentially introduce breaking changes, despite our efforts to avoid those.
+
+For those cases, we provide a temporary option to use the previous version of a given stack for a few days after the release of a new version.
+
+- This is meant to be a temporary mechanism only. Because of infrastructure reasons, we can't keep the previous release available forever. Usually, the previous version is removed a few days after a successful release.
+- Once the previous version becomes unavailable, new builds run on the latest version even if this feature is enabled.
+- If a previous version is not available for a given stack at a given time, the switch is inactive and the feature can't be turned on. Any build triggered will run on the current version of the stack.
+
+To use the previous version of your stack:
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+
+   ![workflows-button.png](/img/_paligo/uuid-99bb894c-3e79-91c8-9e62-7e475573495d.png)
+1. Go to the **Stacks & Machines** tab.
+1. Find the stack you want to configure: either the default stack or one of the Workflow-specific stacks.
+1. Under the machine type for the chosen stack, toggle the **Use previous version** switch.
+
+   This modifies the `bitrise.yml` file: it adds the previous version of the stack to the `meta` block.
+
+   ![prev-vers.png](/img/_paligo/uuid-eefe9d3d-ab41-f2c3-9657-97994dab1f73.png)
+
+</TabItem>
+<TabItem value="bitriseyml" label="bitrise.yml">
+
+1. Find the `meta` block in your `bitrise.yml` file.
+1. Add a `stack_rollback_version` field with the given version string.
+
+   :::tip[Finding out the previous version number]
+
+   To find out the previous version string, open an older build, switch to the **Details** tab, and look for the **Stack image version** field.
+
+   :::
+
+   ```
+   meta:
+     stack: osx-xcode-15.0.x
+     machine_type_id: g2-m1.8core
+     stack_rollback_version: 2-16-2
+   ```
+
+</TabItem>
+</Tabs>

@@ -1,0 +1,45 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Setting Env Vars in the configuration YAML
+
+You can set Env Vars directly in the YAML configuration file for your app. You can set both app level and Workflow level Env Vars in your app's config file.
+
+In this example, we have a configuration with an app-level Env Var called TEST_KEY:
+
+```
+app:  
+  envs:  
+  - opts:      
+      is_expand: false    
+    TEST_KEY: test value
+```
+
+:::important[Replacing variables in inputs]
+
+Replacing variables in inputs ensures that the value of the Env Var will be passed to the build instead of the key. For details, check [Replacing variables in inputs](/en/bitrise-ci/configure-builds/environment-variables/replacing-variables-in-inputs).
+
+:::
+
+In this example, the `deploy-alpha` Workflow defines an Env Var called ENV_TYPE, and then runs another Workflow that can use that Env Var:
+
+```
+workflows:
+
+  deploy-alpha:
+    envs:
+    - ENV_TYPE: alpha
+    after_run:
+    - _deploy
+
+  _deploy:
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            echo "ENV_TYPE: $ENV_TYPE"
+```
+
+If you run the `deploy-alpha` Workflow, that will set the `ENV_TYPE` Env Var to `alpha`, then it will run the `deploy` Workflow, which can use that Env Var. In this example, it will simply print its value (the printed text will be: `ENV_TYPE: alpha`).

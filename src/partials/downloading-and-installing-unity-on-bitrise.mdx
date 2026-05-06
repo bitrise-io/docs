@@ -1,0 +1,46 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Downloading and installing Unity software on Bitrise
+
+To be able to build a Unity project on Bitrise, you'll need to install Unity software on the virtual machine at the start of your build. This is the standard practice of running Unity software in the cloud and it only takes a few minutes.
+
+:::note[Xcode stacks]
+
+Make sure you use an Xcode stack to run Unity builds: the instructions on this page are valid for installing Unity on our Xcode stacks.
+
+:::
+
+1. Look up the Unity software version you want to download on the [Unity download archive](https://unity.com/releases/editor/archive).
+1. Find the Unity Editor of the version you need, and copy its download link.
+
+   The link will look something like this: https://download.unity3d.com/download_unity/b16b3b16c7a0/MacEditorInstallerArm64/Unity.pkg.
+1. You will also need the download links for the two platform support packages (iOS and Android). You can find these on the [LTS Releases page](https://unity.com/releases/editor/qa/lts-releases).
+1. Add a **Script** Step to the start of your Workflow.
+1. In the **Content** input, add the curl commands to download the necessary Unity packages. For example:
+
+   ```
+   #workaround for .NET issue https://github.com/dotnet/runtime/issues/64103
+   export COMPlus_ReadyToRun=0
+   envman add --key COMPlus_ReadyToRun --value 0
+
+   #download unity pkg for Apple Silicon
+   curl -o ./unity.pkg http://download.unity3d.com/download_unity/8af3c3e441b1/MacEditorInstallerArm64/Unity-2021.3.12f1.pkg
+
+   #download android support platform
+   curl -o ./android.pkg http://download.unity3d.com/download_unity/8af3c3e441b1/MacEditorTargetInstaller/UnitySetup-Android-Support-for-Editor-2021.3.12f1.pkg
+
+   #download iOS support platform
+   curl -o ./ios.pkg http://download.unity3d.com/download_unity/8af3c3e441b1/MacEditorTargetInstaller/UnitySetup-iOS-Support-for-Editor-2021.3.12f1.pkg
+   ```
+
+   Replace the download links with the links for the versions you need.
+1. Optionally, you can install a Unity software version for Apple silicon that supports [Rosetta](https://developer.apple.com/documentation/apple-silicon/about-the-rosetta-translation-environment):
+
+   ```
+   #download unity pkg for Apple Silicon with Rosetta support
+   curl -o ./unity.pkg http://download.unity3d.com/download_unity/8af3c3e441b1/MacEditorInstaller/Unity-2021.3.12f1.pkg
+   ```
+
+If successful, you should be able to find Unity software at `/Applications/Unity/Unity.app/Contents/MacOS/Unity`.

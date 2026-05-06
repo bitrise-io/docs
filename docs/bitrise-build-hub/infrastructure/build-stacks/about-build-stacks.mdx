@@ -1,0 +1,44 @@
+---
+title: "About build stacks"
+description: "The Bitrise build stack defines the virtual machine version used to run your builds. The main types are macOS stacks and Android & Docker stacks."
+sidebar_position: 1
+slug: /bitrise-build-hub/infrastructure/build-stacks/about-build-stacks
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+The build <GlossTerm baseform="Stack">stack</GlossTerm> indicates the virtual machine version that we will use to run your build. The main stack types are:
+
+- **macOS stacks**: These stacks run on a macOS operating system and each one includes multiple Xcode versions. Ideal for building iOS apps. They also have Android tools installed if you want to use them to build a cross-platform app.
+- The **Android & Docker** stack: These stacks run on Linux operating system in a Docker environment. They have all Android tools installed and they are ideal for building native Android apps.
+
+:::note[Free disk space]
+
+Each stack has at least 100 GB of free disk space. You can check each stack's exact available disk space on the relevant stack report page: [Bitrise stack reports](https://stacks.bitrise.io/stack_reports/).
+
+:::
+
+Each build runs in its own virtual machine and the virtual machine is rolled back to a saved state, the “base box” state, after the build is finished. This way **your builds are always protected** by changes made by others and by your previous builds and you can use a **stable environment** to define your build workflow, since no state persists between builds.
+
+:::note[Passwordless sudo enabled]
+
+The user account that is used for the builds is configured to have **passwordless sudo** enabled. This way you are able to install all the extra things you need for your builds and for other automation. If a tool is not preinstalled on your stack of choice, you can install it yourself - see the guide.
+
+:::
+
+After adding your app to Bitrise we will select an appropriate stack for it. You can change the stack at any time on the **Stacks & Machines** tab of the Workflow Editor.
+
+![xcode_image.png](/img/_paligo/uuid-fc53715a-add5-8c4c-d4a6-9a04f5da6d3b.png)
+
+After selecting the stack you want to use, you’ll see a short description of the stack with an additional link to learn more about that specific one (for example, to see what tools are preinstalled, and which versions, on the selected stack).
+
+| Type | Description |
+| --- | --- |
+| Stable | Generally available and expected to be supported for the foreseeable future. Updated when an update for the stack’s primary tool is available. Example: when Xcode 7.3.1 was released, the Xcode 7.3 stack was updated to have 7.3.1 instead of 7.3(.0). |
+
+| Type | Description |
+| --- | --- |
+| Pre-booted | If a stack is available as pre-booted, and there’s enough pre-booted machines with that stack configuration, your build can start right away, without waiting for the build environment to boot. In case there’s no more available pre-booted machine with that stack configuration, your build will start on an on-demand configuration. |
+| On-demand | If a stack is available as on-demand configuration and there’s no (available) pre-booted configuration for the stack, our system will have to create a virtual machine for your selected configuration when your build starts. This means that your build will be in preparing environment state while the related virtual machine is created & booted. For a macOS configuration the boot process usually takes about 1 - 1.5 minutes. The prepare time (of course) is not counted into the build time, it won’t affect how long your build can run. |

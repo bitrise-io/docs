@@ -1,0 +1,68 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Scheduling a build
+
+How to schedule a build with the basic configuration options on Bitrise:
+
+1. On the **Bitrise CI** page of your app, find the **Start build** button and click the button with the clock icon next to it.
+
+   ![scheduling-builds.png](/img/_paligo/uuid-ea158f34-25dc-4585-c7a3-0961c5ef5472.png)
+1. In the **Schedule build** dialog, set up the scheduling cadence: you can choose between **Basic** and **Cron** settings.
+
+   - In the **Basic** settings, you need to set a start date, a start time in 24-hour time format, and select a timezone.
+   - In the **Cron** settings, you can set a `cron` [schedule expression](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/crontab.html). The dialog will parse your expression and display the configured time in a human-readable format.
+1. If you chose **Basic**, enable or disable repetition with the **Repetition** toggle. If you enable repetition, configure the frequency, from minutes to years.
+
+   The build will be triggered with the configured frequency, always at the same time, determined by the scheduling cadence. For example, you can configure your builds to run on Monday and Thursday every week.
+
+   ![repetition.png](/img/_paligo/uuid-e5013e56-2f65-12a8-c6c7-ba34733cde57.png)
+1. When ready, click **Next** to proceed to the build configuration.
+1. Select between **Basic** and **Advanced** configuration.
+
+   Basic configuration offers three options:
+
+   - A branch name. This is a required field.
+   - A message in the **Message** field. This is not related to Git commit messages at all. It's just a place to provide some optional information about your build.
+   - A Workflow or a Pipeline. You can select a specific one or use the **Based on trigger map** option to select one using the [the trigger map](/en/bitrise-ci/run-and-analyze-builds/build-triggers/yaml-syntax-for-build-triggers.html) in the app's `bitrise.yml` configuration file.
+
+   :::note[Pull request branch]
+
+   Starting a build of a pull request’s branch is NOT the same as a pull request build. The manually started build of a pull request branch will only build the state of the code on that branch. An automatically triggered pull request build, however, builds the state of the code as it will look like once you merged the pull request.
+
+   :::
+
+   For advanced configuration options, see the [see topic](#UUID-b8758d13-9796-ea59-15cd-0ba401687e85) section.
+
+   ![schedule-basic.png](/img/_paligo/uuid-9e21a75a-a3ed-54f2-9b07-53a46d9a3d2d.png)
+1. When done, click **Schedule build**.
+
+### Advanced configuration options for starting/scheduling builds
+
+If you choose **Advanced** in the **Build configuration** window, you have all the options available with **Basic**, and a few more:
+
+You can select a source type in the **Source** dropdown menu. In addition to the default **Branch** option, you can also select:
+
+- **Git Tag**: Builds a particular branch or commit that is tagged with the Tag you enter. If you set this, you can't set a commit hash.
+
+  :::important[Git Tags and commit hashes are conflicting options]
+
+  You cannot specify both a Git Tag and a commit hash. When you set one, the other one will disappear. This ensures you cannot enter conflicting input values.
+
+  :::
+- **Commit Hash**: Copy a specific commit’s hash here to build that particular commit. This option can even send a build status update to your git hosting service. If you set this, you can't set a Git Tag.
+
+  :::note[Commit hash takes precedence over the Branch option]
+
+  If the **Branch** option specifies a branch where the commit hash you chose doesn't exist, Bitrise will find the branch that does have the given commit and run a build with that branch.
+
+  :::
+
+![start-build-advanced.png](/img/_paligo/uuid-67f3a4f0-9315-bec3-0ea7-cca80d77b103.png)
+
+In addition to different sources, you can also add:
+
+- **Priority**: Determines the priority of your build in the build queue. The higher the number, the sooner your build will run. The priority must be an integer between -100 and 100. The default value is 0. For more information, check out [Build priority](/en/bitrise-ci/configure-builds/configuring-build-settings/build-priority).
+- **Custom Environment Variables**: Create a custom Environment Variable that is used in the build. See [Setting a custom Env Var when starting a build](/en/bitrise-ci/configure-builds/environment-variables/setting-a-custom-env-var-when-starting-a-build).
+- **Generated cURL command**: Based on the options you set in the Build configuration window, we provide an automatically generated cURL command. This can be copied and pasted, and you can run it on any platform that has cURL installed.

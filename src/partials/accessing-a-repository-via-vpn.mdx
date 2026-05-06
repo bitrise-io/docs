@@ -1,0 +1,27 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Accessing a repository via VPN
+
+If the repository of your Bitrise project can be only accessed via VPN, you have two things to keep in mind above all:
+
+- During builds, the VPN connection must be established before cloning the repository to our virtual machines: in practice, this means the Step establishing the connection must be placed before the **Git Clone**<GlossTerm baseform="Step">Step</GlossTerm> in your <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
+- When adding a new project, you need a workaround: use a dummy repository that can be accessed without a VPN during the process of adding the project.
+
+Let’s go through this workaround!
+
+1. Create an empty repository that is accessible without a VPN connection.
+1. Add a new project, using this repository as the source. Make sure it is a private project! There is no need to register a [webhook](/en/bitrise-platform/integrations/webhooks.html).
+1. Open your project on Bitrise with a user that has the **Admin** [role on the project](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci.html).
+1. On the main page of the project, click on the **Project settings** button.
+
+   ![project-settings-button.png](/img/_paligo/uuid-14defaa4-472c-2d09-84df-145dc3aef4f5.png)
+1. On the left, select **Git** and click **Change**.
+1. In the dialog, paste the new repository URL.
+
+   ![SCR-20260331-przw.png](/img/_paligo/uuid-fa95efd5-ff6f-a7a3-2dc3-7ccc5878cd47.png)
+1. Click **Save**.
+1. Place the Step or Steps establishing the VPN connection before any Steps that have to access your repository in your Workflow.
+
+And you’re done. For the different methods of establishing a VPN connection, take a look at our example configurations.

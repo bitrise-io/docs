@@ -1,0 +1,103 @@
+---
+title: "Step data in the bitrise.yml file"
+description: "The Step data and information you specify in the `bitrise.yml` file are the parameters of the Step you want to change, compared to the Step’s default definition."
+sidebar_position: 3
+slug: /bitrise-ci/references/steps-reference/step-data-in-the-bitrise-yml-file
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+The <GlossTerm baseform="Step">Step</GlossTerm> data and information you specify in the `<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>` file are the parameters of the Step you want to change, compared to the Step’s default definition.
+
+To see the Step’s raw interface definition you can check it in the step library. The Step interface definitions can be found in the StepLib’s [steps directory](https://github.com/bitrise-io/bitrise-steplib/tree/master/steps).
+
+If you don’t specify any input or other Step property in the `bitrise.yml` configuration, only the Step (reference/ID), the Step will run with the default values as defined by the Step’s developer in the interface definition.
+
+Let’s see an example with a single **Script** Step, which will be executed when you run `bitrise run test`:
+
+```
+format_version: 11
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+    
+workflows:
+  test:
+    steps:
+    - script:
+```
+
+Specify inputs for the Step with the `inputs:` list property. An input consists of a *key* and a *value*:
+
+:::warning[Indentation]
+
+Indentation in the [YAML format](http://yaml.org/faq.html) is very important! You should use two- or four-space indentation, and you can’t use tabs to indent!
+
+:::
+
+```
+format_version: 11
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+    
+workflows:
+  test:
+    steps:
+    - script:
+        inputs:
+        - content: "echo 'Hello World!'"
+```
+
+If the Step doesn’t have any required inputs you don’t have to specify an input. You can specify values for as many inputs as you want to.
+
+Step input values are always **string** / text values and they are passed to the Step as Environment Variables. The value can be multiline too, using the standard YAML multiline format:
+
+```
+format_version: 11
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  test:
+    steps:
+    - script@1.1.3:
+        inputs:
+        - content: |
+            #!/bin/bash
+            set -ex
+            var_to_print='Hello World!'
+            echo "${var_to_print}"
+```
+
+If you use a multiline value, like the one above, you have to indent the value with either two or four spaces, compared to the key!
+
+Force a Step to run even if a previous Step fails by setting the `is_always_run` property to `true`:
+
+```
+format_version: 1.3.1
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  test:
+    steps:
+    - script@1.1.3:
+        is_always_run: true
+        inputs:
+        - content: "puts 'Hello Ruby!'"
+        - runner_bin: ruby
+```
+
+Use the `title` property to add a descriptive title to your Step:
+
+```
+format_version: 11
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+workflows:
+  test:
+    steps:
+    - script@1.1.3:
+        title: Print Hello Ruby
+        is_always_run: true
+        inputs:
+        - content: "puts 'Hello Ruby!'"
+        - runner_bin: ruby
+```

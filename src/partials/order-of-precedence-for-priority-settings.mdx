@@ -1,0 +1,51 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Order of precedence for priority settings
+
+You can set priority levels for:
+
+- Pipelines and Workflows.
+- Triggers.
+- Manually triggered builds.
+
+These priorities can conflict. For example, you have a Workflow called test. It has a priority of 10. You also have a trigger configured for this Workflow: it is triggered if code is pushed to the development branch. This trigger has a priority of 15.
+
+In such a scenario, Bitrise determines the build priority by the order of precedence:
+
+1. Manual overrides: Manually starting a build overrides all other priority settings.
+1. Trigger-specific priority settings: A trigger's priority setting overrides the priority settings of the Pipelines or Workflows it triggers.
+1. Pipeline-level priority settings: The Pipeline's priority overrides the priority settings of its constituents Workflows which are all given the same priority as the Pipeline.
+1. Workflow-level settings: If no other configuration element is given a priority setting, the Workflow priority determines overall build priority.
+
+Here’s an example snippet that shows how to set priorities at various levels:
+
+```
+workflows:
+    A:
+     steps: []
+    B:
+     steps: []
+     priority: 4
+     triggers:
+       push:
+       - branch: release
+         priority: 2
+       - branch: development
+
+
+  pipelines:
+   P:
+    priority: 3
+    workflows:
+      A: {}
+      B: {}
+```
+
+In this example:
+
+- If Workflow A is run as a standalone build, it has a priority of 0 (the default priority value).
+- If Workflow B is run as a standalone build (for example, if code is pushed to the `development` branch), it has a priority of 4.
+- If code is pushed to the `release` branch, Workflow B is triggered with a priority of 2.
+- If Pipeline P is triggered, both A and B Workflows will run with priority 3.

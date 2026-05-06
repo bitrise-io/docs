@@ -1,0 +1,42 @@
+---
+title: "Configuring runner pools"
+description: "Running Bitrise on self-hosted infrastructure requires setting up agent pools in your Bitrise Workspace. This reserves build agents for use in your self-hosted builds, and provides a token to authenticate the agent to Bitrise."
+sidebar_position: 8
+slug: /bitrise-platform/infrastructure/configuring-runner-pools
+sidebar_label: Configuring runner pools for self-hosted builds
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkspaceSettingsPage from '@site/src/partials/opening-the-workspace-settings-page.mdx';
+
+You can run Bitrise builds on hardware you control. We offer two different options:
+
+- [Running builds on Amazon EC2 instances](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup.html).
+- [Using our on-premise runner](/en/bitrise-platform/infrastructure/running-bitrise-builds-on-premise.html) to run builds on your own machines, or at other cloud providers.
+
+Both options require setting up runner pools in your Bitrise Workspace. This reserves build runners for use in your self-hosted builds. Each reserved pool comes with a unique token: this token is required for both an Amazon EC2 instance and the on-premise runner to be able to connect to your Bitrise Workspace and run builds of the apps owned by the Workspace. You can configure and run these builds from the Workflow Editor, as any other build.
+
+To do so:
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. On the left, select **Self-hosted infrastructure**.
+1. Select the **Bitrise runners** tab.
+1. In the **Runner pools** section, click **Add new**.
+
+   ![_2025-11-03-runner-pool.png](/img/_paligo/uuid-3ca810bc-4569-859b-f0be-784644322a22.png)
+1. Type a name into the **Name** field then click **Next**.
+
+   ![add-pool.png](/img/_paligo/uuid-e5387f19-bcbb-472b-a2fa-9c9d9aeb1c6d.png)
+1. You will receive a token. Copy this token: you will need it for authentication.
+1. Open the app you need on Bitrise and click **Workflows**.
+1. Click **Edit bitrise.yml** to go the Workflow Editor, and select **Stacks & Machines** on the left navigation menu.
+1. Find your own stack in the stack selection dropdown menus: it will be called **Self-hosted Runner: <Pool name>**.
+
+   ![stack-select.png](/img/_paligo/uuid-1ec5901d-3577-8321-6e4f-faa9fa366c21.png)
+
+   For example, if you named your pool `my-pool`, the stack will be called **Self-hosted Runner: my-pool**.
+1. Click **Save** in the top right corner.
+
+Now your builds will run using the reserved runner pools

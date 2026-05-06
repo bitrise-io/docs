@@ -1,0 +1,42 @@
+---
+title: "Managing iOS code signing files - manual provisioning"
+description: "To manage your code signing files manually, you need to upload your .p12 signing certificates and the app's provisioning profiles to Bitrise. There are multiple ways to do this."
+sidebar_position: 3
+slug: "/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---manual-provisioning"
+sidebar_label: iOS code signing with manual provisioning
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/src/partials/getting-to-the-project-settings-page.mdx';
+
+To manage your code signing files manually, you need to upload your .p12 signing certificates and the <GlossTerm baseform="app">app's</GlossTerm> provisioning profiles to Bitrise.
+
+You always need to upload at least a Developer certificate and a Development type provisioning profile! That is necessary for our Xcode Steps to be able to test and build your apps properly.
+
+:::tip[Generating code signing files]
+
+If you don't have the necessary code signing files ready, you can generate new files: [Generating iOS code signing files](/en/bitrise-ci/code-signing/ios-code-signing/generating-ios-code-signing-files)
+
+:::
+
+To upload the code signing files to Bitrise, first you need to export the files in the .p12 file format. Once you successfully exported the files, you need to upload them to Bitrise. You have two options:
+
+- [Via an API call](/en/bitrise-ci/api/managing-ios-code-signing-files/creating-and-uploading-an-ios-code-signing-file).
+- Uploading it manually to Bitrise. This guide focuses on this option.
+
+To manually upload your code signing files to Bitrise:
+
+1. Make sure you have your .p12 certificates and provisioning profiles exported and ready. Check out [Exporting iOS code signing files](/en/bitrise-ci/code-signing/ios-code-signing/exporting-ios-code-signing-files-without-codesigndoc) for more information.
+1. <Partial_GettingToTheProjectSettingsPage />
+1. On the left, select **Code signing** from the menu.
+1. Add your files:
+
+   - To add a certificate, click the **Add .p12 file** button. In the dialog box, upload the file and, if required, provide the password for the certificate.
+   - To add provisioning profiles, click the **Add profile(s)** button. In the dialog box, upload the file(s).
+1. Make sure you have the **Certificate and profile installer**<GlossTerm baseform="Step">Step</GlossTerm> in your app’s <GlossTerm baseform="Workflow">Workflow</GlossTerm>. You can check it on the **Workflow** tab of the <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>.
+
+   Please note that these Steps must be **BEFORE** the Steps that archive and export your app (for example, **Xcode Archive & Export for iOS**) in your Workflow.
+
+   ![certificate_and_profile_installer.png](/img/_paligo/uuid-fda915ec-d2ed-00a0-707c-b8a120221095.png)

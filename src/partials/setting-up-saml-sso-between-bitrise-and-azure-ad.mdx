@@ -1,0 +1,47 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Setting up SAML SSO between Bitrise and Entra ID
+
+1. Click **Single sign-on** on the left menu. Select **SAML**.
+
+   ![singlesignonazuread.png](/img/_paligo/uuid-9a20bdb0-2c68-3ce5-1f41-ac710e25b7be.png)
+1. You will land on the **Set up Single Sign-On with SAML** page.
+
+   ![sso2-1.jpg](/img/_paligo/uuid-6b74d41d-4d91-adb5-0d73-17380c293ab9.png)
+1. Click the pencil symbol at **Basic SAML Configuration** to edit two fields.
+
+   ![sso2a-1.jpg](/img/_paligo/uuid-954473da-632b-0628-2a76-9ff4471fcc9d.png)
+1. Add `Bitrise` as the **Identifier (Entity ID)**. Leave this window open! We will come back to it with some information from Bitrise in a second.
+
+   :::important[Multiple workspaces with the same Entra instance]
+
+   If more than one Bitrise workspace uses the same EntraID instance, each workspace needs to be configured with its own distinct Entity ID. For each workspace, use its own Entity ID at any subsequent step in the process that requires it.
+
+   For example, if you have an Alpha workspace and a Beta workspace, you can set **alpha** and **beta** as the Entity IDs.
+
+   :::
+
+   ![sso3-2.jpg](/img/_paligo/uuid-39c02a1a-b3f2-3922-a9d1-fac312c98f92.png)
+1. Head back to your workspace on Bitrise: open the **Workspace settings** page and go to **Single Sign-On**
+1. If you have more than one workspace using the same Entra instance, add its own Entity ID in the **Application identifier** field.
+1. Click the **Copy Link** button to copy the **Assertion Consumer Service URL (ACS URL)** from Bitrise.
+1. Let’s head back to the **Basic SAML Configuration** window of Entra ID.
+1. Paste the **Assertion Consumer Service URL** from Bitrise to the **Reply URL field on the Basic SAML Configuration** page of Entra ID.
+1. Click **Save** and close the **Basic SAML Configuration** window.
+
+   ![616541a82bf14.jpg](/img/_paligo/uuid-681bee8c-6be9-b47f-06fa-72a587e7add7.png)
+1. On the **Single sign-on** page of Entra ID, scroll down to the **Set up Bitrise** section.
+1. Copy the **Login URL** and paste it to the **SAML SSO provider Single Sign-On URL** **(SSO URL)** field on Bitrise.
+1. On the **Single sign-on** page of Entra ID, scroll up a bit to the **SAML Signing Certificate** section.
+1. Click **Download** next to **Certificate (Base64)** to download the certificate to your local computer.
+
+   ![singlesignonsummary.jpg](/img/_paligo/uuid-da7593a8-e6df-1d97-e903-d375dc504b05.png)
+1. Open the certificate file and copy/paste its content into the **SAML SSO provider certificate** field of Bitrise or you can upload the file itself from your local computer too.
+
+   (If manually adding the content, you will need the full content (including `----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----` as well).
+1. Open the **Workspace settings** page on Bitrise and go to **Single Sign-On**.
+1. Click **Apply SSO configuration**.
+
+You have successfully set up Bitrise as a SAML SSO app on Entra ID.

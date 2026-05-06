@@ -1,0 +1,42 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Testing Ionic/Cordova apps
+
+You can run unit tests for Ionic/Cordova apps on Bitrise by using our **Karma Jasmine Test Runner** or **Jasmine Test Runner** Steps.
+
+If your Cordova/Ionic project has a Karma Jasmine dependency in its **package.json** file, our scanner will detect it when you're adding your app and automatically insert the respective testing Step into your Workflow. If this dependency is missing from your project, you can manually insert one of our testing steps to your Workflow using our Workflow Editor.
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+
+   ![workflows-button.png](/img/_paligo/uuid-99bb894c-3e79-91c8-9e62-7e475573495d.png)
+1. Make sure you have a testing Step in your Workflow.
+
+   :::important[Installing dependencies]
+
+   [You must install dependencies](/en/bitrise-ci/getting-started/quick-start-guides/getting-started-with-expo-projects/installing-dependencies-for-ioniccordovareact-apps) before you can run tests.
+
+   :::
+
+   You can choose between the **Karma Jasmine Test Runner** and the **Jasmine Test Runner** Steps.
+
+**Cordova app configuration with Karma Jasmine Test Runner**
+
+In this example, you can find a `bitrise.yml` configuration that includes a Workflow called **primary**. This Workflow includes the **Karma Jasmine Test Runner** Step.
+
+```
+primary:
+    steps:
+    - activate-ssh-key@4.0.3:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+    - git-clone@4.0.11: {}
+    - script@1.1.5:
+        title: Do anything with Script step
+    - npm@0.9.1:
+        inputs:
+        - command: install
+    - karma-jasmine-runner@0.9.1: {}
+    - deploy-to-bitrise-io@1.3.15: {}
+```

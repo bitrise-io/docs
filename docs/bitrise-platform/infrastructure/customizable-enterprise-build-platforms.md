@@ -1,0 +1,31 @@
+---
+title: "Customizable enterprise build platforms"
+description: "Bitrise offers two types of custom build platforms for enterprises: dedicated build platforms behind the Bitrise firewall and private build platforms on the user's own environment."
+sidebar_position: 5
+slug: /bitrise-platform/infrastructure/customizable-enterprise-build-platforms
+---
+
+Bitrise offers fully-managed build platforms tailored to the needs of [enterprise](https://bitrise.io/pricing) customers. Using a custom enterprise build platform means running your Bitrise builds on virtual machines (VM) dedicated and specifically configured to your needs. With a private cloud, you have complete control over how and when your builds run.
+
+Bitrise offers three types of custom build platforms for enterprises:
+
+- Dedicated build platform: a set of dedicated machines behind the Bitrise firewall that serve our public and dedicated pools. These virtual build machines will be seen from [the same public IP address as any Bitrise build machine](/en/bitrise-platform/infrastructure/build-machines/configuring-your-network-to-access-our-build-machines) but the build nodes (the hypervisors running the virtual build machines) are reserved for your exclusive use during the build.
+- Dedicated plus build platform: same setup as the dedicated build platform with additional IP range reserved for the customer for increased network secure connection.
+- Private build platform: the private machines are reserved for your exclusive use at all times. The solution also is provisioned to you and includes your own firewall, more flexible storage capacity options, and a more flexible computing environment setup. It allows you to create custom virtualization configuration, as well as includes [site-to-site VPN option](https://docs.bitrise.io/en/bitrise-platform/integrations/connecting-to-a-vpn-during-a-build.html).
+
+The private build platform is an advanced set-up with plenty of configuration options. To learn more about the details, [contact us](https://bitrise.io/contact)!
+
+Check out the most important differences between the dedicated and the private build platforms:
+
+| Available service | Dedicated build platform | Dedicated plus build platform | Private build platform |
+| --- | --- | --- | --- |
+| Reserved IP address | - | Yes | Yes |
+| Private network with a dedicated firewall | - | - | Yes |
+| High Availability continental US setup, served by multiple Bitrise Data Centers for redundancy | Yes | Yes | Yes |
+| Served from single EU Bitrise Data Center without redundancy | Yes | Yes | Yes |
+| macOS virtual machines tailored to unique Enterprise requirements | Served by M4 Pro 14-core, M4 10-core or M2 Pro 12-core machines up to 54 GB RAM |  |  |
+| Linux virtual machines tailored to unique Enterprise requirements | Offering machine types between 2 vCPU 8 GB RAM and 192 vCPU 768 GB RAM powered by AMD EPYC Zen5 and Zen4 architectures. |  |  |
+| Dedicated Customer Success Engineer, who is an expert in Mobile CI/CD. | Yes | Yes | Yes |
+| Initial onboarding assistance for the first month with weekly calls. | Yes | Yes | Yes |
+| Continued CI/CD best practices mentoring with monthly check-ins from Bitrise Account Managers and Customer Success Engineers. | Yes | Yes | Yes |
+| Weekly Infrastructure maintenance that includes licenses for virtualization, orchestration, and data storage. | Yes | Yes | Yes |

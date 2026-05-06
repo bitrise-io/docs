@@ -1,0 +1,46 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Defining Pipelines with stages
+
+The `bitrise.yml` file contains the full configuration of your Pipelines. As with all `bitrise.yml` files, first you need to define the format version and the project type.
+
+```
+---
+format_version: '8'
+default_step_lib_source: 
+project_type: android
+```
+
+This is a bare minimum `bitrise.yml` configuration. To define your Pipelines, you will need to use the `pipelines` attribute.
+
+```
+pipelines:  
+  pipeline-successful:
+    stages:
+    - stage-successful-1: {}
+    - stage-successful-2: {}
+    - stage-successful-3: {}
+```
+
+In this example, we have a Pipeline called `pipeline-successful`, with three Stages that will run consecutively. This means that if `stage-successful-1` finishes successfully, `stage-successful-2` starts. If any of the Stages fail, the subsequent Stage will not start: instead, the Pipeline will be aborted and marked as failed.
+
+Each Stage has to be defined separately under the `stages` attribute. Defining a Stage means specifying the Workflows that are part of the Stage.
+
+```
+stages:
+  stage-successful-1:
+    workflows:
+    - test-1: {}
+  stage-successful-2:
+    workflows:
+    - build-1: {}
+    - build-2: {}
+  stage-successful-3:
+    workflows:
+    - deploy-1: {}
+    - deploy-2: {}
+```
+
+In this example, the Stages run the `test-1`, `build-1`, `build-2`, `deploy-1`, and `deploy-2` Workflows.

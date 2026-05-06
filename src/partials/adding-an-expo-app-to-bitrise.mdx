@@ -1,0 +1,84 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Adding an Expo project to Bitrise
+
+First, let’s see how to add a React Native Expo project to [bitrise.io](https://www.bitrise.io/).
+
+1. Log in to Bitrise and go to the **Dashboard**.
+1. Click the **New project** button.
+1. Select **Configure Bitrise CI**.
+1. Under **Project access**, select the workspace that will own the project.
+
+   ![20251219-adding-project-workspace-select.png](/img/_paligo/uuid-d1d45e63-f66b-fd5d-f4af-4d893ff388fb.png)
+1. Set who has access to the project's CI builds:
+
+   :::caution[Privacy is final]
+
+   You cannot change this setting later! If you realize you've accidentally added your project as a public project even though you need it to be private, you'll have to delete the project and add it again.
+
+   :::
+
+   Private projects are only accessible to you, your workspace members and those who are invited to work on a project. They require authentication to access the repository of the project.
+
+   [Public projects](/en/bitrise-platform/projects/public-projects.html) expose their configuration YAML and their build logs to everyone. If you have a public project’s build URL, you can view its build log, to help with troubleshooting, for example. Public projects do not require authentication and they cannot have SSH keys.
+1. Open the **Provider** dropdown menu and select the [repository access](/en/bitrise-platform/repository-access/about-repository-access.html) type.
+
+   You can select from:
+
+   - Connected Git provider accounts: Either via [OAuth connection](/en/bitrise-platform/repository-access/repository-access-with-oauth) or the [GitHub app integration](/en/bitrise-platform/repository-access/github-app-integration).
+   - Not connected Git provider accounts: you will be prompted to connect one.
+   - **Other**: A Git provider other than GitHub/GitLab/Bitbucket.
+
+   ![20251219-repo-access.png](/img/_paligo/uuid-2970ac6b-3d97-8318-0863-aff6e1f106da.png)
+1. Select a repository.
+
+   - If you selected a connected Git account, you can click **Select a repository** to select from the available repositories on that account.
+   - In any case, you can type the URL manually in the **Git repository (clone) URL**. We strongly recommend using an SSH URL, unless you are setting up a [public project](/en/bitrise-platform/projects/public-projects.html).
+
+   :::note[Repository URL]
+
+   You will be able to [change your project's repository URL](/en/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch) later. You can also connect or disconnect your account to Git provider services at any time.
+
+   :::
+1. If you use an OAuth connection, you need to [add an SSH key](/en/bitrise-platform/repository-access/configuring-ssh-keys.html) in the **Authorize Bitrise** section.
+
+   You don't need SSH keys if:
+
+   - Your project is a public project.
+   - You connect to your Git repository via a [GitHub app installation](/en/bitrise-platform/repository-access/github-app-integration).
+
+   ![20251219-authorize-bitrise.png](/img/_paligo/uuid-cd752575-c17c-0ccd-25b3-a2c97daadd57.png)
+
+   **Auto-add a generated SSH key to your repository**: We recommend using this option. We automatically generate an SSH key pair and register the public key to your repository. Requires your connected Git provider account to have admin rights to the repository.
+
+   **Copy a generated SSH key to your Git provider manually**: We generate an SSH key pair for you and you can copy the public key and register it manually to your Git provider. It is useful if, for example, you need to access multiple repositories with the same SSH key.
+
+   **Add your own SSH key to Bitrise**: You can generate your own SSH key and paste the private key here after choosing this option. You also need to add the public key to the repository manually. To generate your SSH key pair: [Generating your own SSH keypair](/en/bitrise-platform/repository-access/configuring-ssh-keys/generating-your-own-ssh-keypair).
+
+   :::note[Configure SSH keys at any time]
+
+   If you can't set up a valid, working SSH key connection at this time, don't worry: proceed with adding your project. You can set up the SSH connection afterwards: [Configuring SSH keys](/en/bitrise-platform/repository-access/configuring-ssh-keys).
+
+   :::
+1. Select the default branch of your repository. This branch should contain the configuration of your project.
+
+   - If you successfully configured SSH access in the previous step or if you're adding a public project, Bitrise will parse your repository and allow you to select a branch from a dropdown menu.
+   - If you didn't configure repository access, you need to type the branch name manually.
+
+   [You can change the default branch of the project later](/en/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch).
+
+   ![20251219-choose-branch.png](/img/_paligo/uuid-95a678d3-4251-c9b6-555a-6a1a0b48ae24.png)
+1. Select **Yes, auto-detect configuration**. Bitrise will scan your repository and attempt to set up a <GlossTerm baseform="stack">stack</GlossTerm> and default Workflows based on the results of the scan. In most cases, we recommend choosing this option.
+
+   :::note[Project type]
+
+   Detecting a project type serves to assist in the initial configuration of your project. But don't worry, you can change every setting, including the project type, at any time after you added the project.
+
+   :::
+1. Wait while Bitrise is validating your project. If automatic validation fails, you can set the project up manually.
+1. Register a webhook when prompted so that Bitrise can start a build automatically when code is pushed to your repository, or a pull request is created.
+1. Once you are done, click **View Project Page** to go to the newly added project's home page. From there, you can start [editing your Workflows](/en/bitrise-ci/workflows-and-pipelines/workflows/workflows-overview.html) and [run builds](/en/bitrise-ci/run-and-analyze-builds/starting-builds.html).
+
+You have successfully set up your React Native project on [bitrise.io](https://www.bitrise.io/)! Your first build gets kicked off automatically using the primary workflow. You can check the generated reports of the first build on the **Artifacts** tab on your Build’s page.

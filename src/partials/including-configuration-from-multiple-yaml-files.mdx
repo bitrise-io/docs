@@ -1,0 +1,51 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Including configuration from multiple YAML files
+
+To create a modular configuration, you need to:
+
+1. Store your `bitrise.yml` file in your repository.
+1. Create more YAML files in addition to `bitrise.yml` and commit them to your repository. We refer to these files as configuration modules.
+
+:::important[File limit]
+
+You can have a total of 35 configuration files, including the root level `bitries.yml` file.
+
+:::
+
+In `bitrise.yml`, you can include the YAML configuration modules with the `include` keyword. If the module is in the same repository as the `bitrise.yml` file, the `include` keyword requires one parameter: `path` which points to the location of the module.
+
+The provided path must be relative to the repository's root:
+
+```
+include:
+  - path: file/path/common.yml
+```
+
+You can include a YAML configuration module from a different repository by specifying the repository that contains the file. In addition to the `repository` property, you need to also set at least one of the following:
+
+- `branch`: The branch containing the YAML configuration module.
+- `commit`: The specific commit hash from which to include the YAML configuration module.
+- `tag`: The Git tag that points to the YAML configuration module.
+
+The repository must belong to the same Git account or organization that your project's primary repository belongs to. You can check your [Bitrise project's repository URL](/en/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch/changing-the-repository-url) on bitrise.io. For example, if your repository URL is git@github.com:MyOrg/main_repo.git, you can only refer to repositories belonging to MyOrg on GitHub.
+
+You only need to refer to the repository's name. For example, you can refer to git@github.com:MyOrg/another_repo.git with the value `another_repo`.
+
+```
+include:
+  - path: shared/common.yml
+    branch: test_branch
+    repository: another_repo
+```
+
+:::important[Accessing other repositories]
+
+Bitrise needs `read` access to all repositories where configuration YAML files are hosted. There are two ways to make sure Bitrise can access your repo:
+
+- If you use the [GitHub App](/en/bitrise-platform/repository-access/github-app-integration) integration, you can [link additional repositories](/en/bitrise-platform/repository-access/github-app-integration/additional-linked-repositories) to your project.
+- For other authentication methods, check out this guide: [Apps with submodules or private repo dependencies](/en/bitrise-platform/repository-access/apps-with-submodules-or-private-repo-dependencies)
+
+:::

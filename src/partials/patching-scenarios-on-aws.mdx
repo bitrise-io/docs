@@ -1,0 +1,34 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Patching scenarios
+
+The method for applying security patches differs based on whether or not you are using the [Bitrise Controller](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller.html).
+
+### Patching without the controller
+
+If you are using a manual setup, you have more flexibility for applying patches or updates in general to the instance. You can:
+
+- Create a custom AMI: start a Bitrise AMI, make a change (like an OS patch), take a new AMI snapshot, and then configure your environment to run with the ID of this new, custom AMI.
+- Use a [user data script](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html): define your own script to execute commands upon instance startup.
+- Use SSH updates: connect to your instances via SSH to perform updates manually with a guarantee that the updates will persist.
+
+### Patching with the controller
+
+You have multiple options to apply patches when using the controller:
+
+- Host warmup script: this script runs when an instance is started (a one-time operation). To apply updates to the instance, you can modify the host warmup script, drain the instance pool and then bring it back up, which will run the script for a fully updated instance.
+
+  :::caution[Availability]
+
+  Be mindful of Mac EC2 availability when performing this operation.
+
+  :::
+- Controller with virtualization: the VM OS on stable stacks does not receive general updates, however, Bitrise monitors for OS vulnerabilities and publishes new AMIs based on internal information security assessments. The VM warmup script runs in the fresh VM for every new build that is started. This may not be a good option for VM OS patches due to the time they consume.
+
+:::important[Custom AMIs]
+
+You cannot use a custom AMI with the Bitrise Controller, which means you cannot take a snapshot of an updated AMI and use it with the Controller. The Controller only permits specific Bitrise AMIs. If you think this may be a requirement, please [contact us](https://bitrise.io/contact) to discuss.
+
+:::

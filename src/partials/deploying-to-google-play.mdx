@@ -1,0 +1,85 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Deploying to Google Play
+
+Deploying to Google Play requires [a signed APK or AAB file](/en/bitrise-ci/code-signing/android-code-signing/android-code-signing-using-the-android-sign-step.html) and the **[Google Play Deploy](https://www.bitrise.io/integrations/steps/google-play-deploy)** <GlossTerm baseform="Step">Step</GlossTerm>.
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. [Upload your service account JSON key to the **Files** section](/en/bitrise-ci/run-and-analyze-builds/managing-build-files/uploading-files-for-your-builds.html).
+1. In the **Files** section, copy the **Download URL** of your service account file.
+
+   For example, `BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL`.
+1. Open the Workflow Editor and select **Secrets**.
+1. Create a Secret with the copied download URL as the value.
+
+   If you uploaded the JSON key file to Bitrise, the download URL is an Environment Variable so check the **Replace variables in inputs** checkbox.
+
+   :::note[Direct link]
+
+   If you use a direct link to your keystore file without uploading it to Bitrise, you don't need to check the **Replace the variables in inputs** option.
+
+   :::
+1. Add the **Google Play Deploy** Step to your Workflow.
+1. In the **Service Account JSON key file path** input, paste the Secret you created.
+1. In the **Package name** input, add the package name of your app.
+1. In the **Track** input, add the track where you want to deploy your APK (for example, alpha/beta/rollout/production or any custom track you set).
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. [Upload your service account JSON key to the **Files** section](/en/bitrise-ci/run-and-analyze-builds/managing-build-files/uploading-files-for-your-builds.html).
+
+   :::note[Uploading the service account JSON key file]
+
+   We recommend uploading the service account JSON key to Bitrise but it is not mandatory: you can store it elsewhere and provide a direct link to it.
+
+   :::
+1. Open your app's Configuration YAML file and add the `google-play-deploy` Step to it.
+
+   ```
+   deploy-workflow:
+     steps: 
+     - google-play-deploy: 
+         inputs:
+   ```
+1. In the `service_account_json_key_path` input, you need to provide the path to the service account JSON key file.
+
+   [Create a Secret](/en/bitrise-ci/configure-builds/secrets.html) to the path and reference that here.
+
+   ```
+   deploy-workflow:
+     steps: 
+     - google-play-deploy: 
+         inputs:   
+         - service_account_json_key_path: "$BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL"
+   ```
+1. In the `package` input, add [the package name](https://support.google.com/admob/answer/9972781?hl=en#:~:text=The%20package%20name%20of%20an,supported%20third%2Dparty%20Android%20stores.) of your app.
+
+   ```
+   deploy-workflow:
+     steps: 
+     - google-play-deploy: 
+         inputs:   
+         - service_account_json_key_path: "$BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL"
+         - package_name: myApp
+   ```
+1. In the `track` input, add the track where you want to deploy your app binary (for example, alpha/beta/rollout/production or any custom track you set).
+
+   ```
+   deploy-workflow:
+     steps: 
+     - google-play-deploy: 
+         inputs:   
+         - service_account_json_key_path: "$BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL"
+         - package_name: myApp
+         - track: alpha
+   ```
+
+</TabItem>
+</Tabs>
+
+That’s all! Start or schedule a build and share the URL with external testers or distribute your app on an app store of your choice!

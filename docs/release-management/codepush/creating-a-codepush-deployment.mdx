@@ -1,0 +1,74 @@
+---
+title: "Creating a CodePush deployment"
+description: "Create a CodePush deployment to get your deployment key. You need the deployment key to release CodePush updates to your apps."
+sidebar_position: 2
+slug: /release-management/codepush/creating-a-codepush-deployment
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_ReleaseManagementConfiguration from '@site/src/partials/release-management-configuration.mdx';
+
+Create a CodePush deployment to get your deployment key. You need the deployment key to release CodePush updates to your apps.
+
+You can create a deployment either via the [API](/en/release-management/release-management-api.html) or on the Release Management GUI.
+
+GUI
+
+API
+
+1. For each React Native project, make sure you have [two apps](/en/release-management/getting-started-with-release-management/adding-a-new-app-to-release-management) in Release Management: one for iOS, one for Android.
+1. <Partial_ReleaseManagementConfiguration />
+1. Select **Deployments**.
+1. Click **New deployment**.
+1. Enter a name.
+
+   If you have multiple deployments, each must have a unique name. We recommend including the target of the deployment in the name (for example, Staging Deployment).
+1. In the **Deployment key** field, you can paste an existing deployment key.
+
+   If you leave it blank, Bitrise generates a secure deployment key for you.
+
+1. Make sure you have a [personal access token](/en/bitrise-platform/accounts/personal-access-tokens/creating-a-personal-access-token) or a [workspace API token](/en/bitrise-platform/workspaces/workspace-api-token/creating-a-workspace-api-token).
+
+   A token is required for authorization with the [Release Management API](/en/release-management/release-management-api.html).
+1. For each React Native project, make sure you have [two apps](/en/release-management/getting-started-with-release-management/adding-a-new-app-to-release-management) in Release Management: one for iOS, one for Android.
+1. Get the app ID for each app. You can see it in the URL of the app page: https://app.bitrise.io/release-management/workspaces/<worskspace-id>/connected-apps/<connected-app-id>.
+
+   :::tip[ID from the API]
+
+   You can [use the API to add apps](https://api.bitrise.io/release-management/api-docs/index.html#/Connected%20Apps/CreateConnectedApp). The response of the `/connected-apps` endpoint contains an `id` field: this is the app ID you need.
+
+   :::
+1. Create a CodePush deployment for each app by calling the `/connected-apps/{connected_app_id}/code-push/deployments` endpoint. The request requires:
+
+   - The connected app ID.
+   - A token for authorization.
+   - A name you will use for the deployment.
+
+   In this example, we're using the name `prod`:
+
+   ```
+   curl -X 'POST' \
+     'https://api.bitrise.io/release-management/v1/connected-apps/<connected-app-id>/code-push/deployments' \
+     -H 'accept: application/json' \
+     -H 'authorization: <access-token>' \
+     -H 'Content-Type: application/json' \
+     -d '{
+       "name": "prod"
+     }'
+   ```
+
+   :::tip[Existing deploymentKey]
+
+   If you already have a `deploymentKey` (for example, if you are migrating your setup from Microsoft App Center), you can use the `key` parameter in the API request:
+
+   ```
+   {
+       "name": "prod",
+       "key": "<existing-deploymentKey>"
+   }
+   ```
+
+   :::
+1. Copy the base64-encoded `key` returned in the response. This is the CodePush deployment key: you need this to [configure your app for CodePush](/en/release-management/codepush/configuring-your-app-for-codepush.html).

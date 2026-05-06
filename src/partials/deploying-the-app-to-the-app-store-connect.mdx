@@ -1,0 +1,36 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Deploying the app to the App Store Connect
+
+If you set up your code signing files and created an .app or .pkg file for your internal testers, it is time to involve external testers and then to publish your macOS <GlossTerm baseform="App">app</GlossTerm> to the App Store. Let’s see how!
+
+:::tip[Developer ID]
+
+If you want to distribute your app outside the App Store, you can sign it with a [Developer ID](https://developer.apple.com/support/developer-id/). This method is not in the scope of this guide but on Bitrise, it works the same way: you just need to upload the appropriate code signing files.
+
+:::
+
+To deploy to the App Store, you will need these code signing files:
+
+- a **Mac App** **Distribution** certificate.
+- a **Mac** **Installer Distribution** certificate.
+
+1. On your local machine, set up App Store code signing for your project in Xcode, and export an .app or .pkg file. If this fails locally, it will definitely fail on Bitrise, too!
+1. Collect and upload the code signing files.
+1. Go to the app’s <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm> and create a new <GlossTerm baseform="Workflow">Workflow</GlossTerm>: click the **+** button next to the Workflow dropdown menu, enter the name of your new Workflow and in the **BASED ON** dropdown menu, select **deploy**. This way the new Workflow will be a copy of the basic **deploy** Workflow.
+1. Click on the the **app/pkg export methods** , and set the **Export Method** input of the **Xcode Archive for Mac** <GlossTerm baseform="Step">Step</GlossTerm> to **app-store**.
+
+   You can export multiple binaries with different export methods: use the **Export macOS Xcode archive** Step in your Workflow, to do so.
+1. Add the **Deploy to App Store Connect - Application Loader (formerly iTunes Connect)** Step to your workflow, after the **Xcode Archive for Mac** Step but preferably before the **Deploy to Bitrise.io** Step.
+1. Provide your Apple credentials in the **Deploy to App Store Connect - Application Loader (formerly iTunes Connect)** Step.
+
+   The Step will need your:
+
+   - Apple ID.
+   - password or, if you use two-factor authentication on iTunes Connect, your application password.
+
+   Don’t worry, the password will not be visible in the logs or exposed - [that’s why it is marked SENSITIVE](/en/bitrise-ci/configure-builds/secrets.html).
+
+And that’s it! Start a build - if everything went well, you should see your app on Testflight. From there, you can distribute it to external testers or release it to the App Store.

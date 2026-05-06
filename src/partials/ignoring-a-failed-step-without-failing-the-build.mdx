@@ -1,0 +1,33 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Ignoring a failed Step without failing the build
+
+Usually, when a Step fails during a build, the built itself fails, too. This isn't the case with every Step, of course: both the **Bitrise.io Cache:Pull** and the **Bitrise.io Cache:Push** Steps can fail without failing the build. You can also configure any other Step to ensure their failure doesn't fail the build.
+
+:::note[YAML mode only]
+
+You can't do this on the graphical UI of the Workflow Editor: you have to edit your app's `bitrise.yml` file.
+
+:::
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+
+   ![workflows-button.png](/img/_paligo/uuid-99bb894c-3e79-91c8-9e62-7e475573495d.png)
+1. On the left, select **Configuration YAML** from the navigation menu.
+1. Find the Step you need.
+1. Add the `is_skippable` flag to it and set it to `true`:
+
+   ```
+   - script: 
+       is_skippable: true 
+       inputs: 
+       - content: |- 
+           # !/bin/bash 
+           echo "Failing Step." 
+           exit 1 
+           # exit 1 would mark this step as Failed, but it won't break the Build 
+           # because of the is_skippable: true flag / property
+   ```
