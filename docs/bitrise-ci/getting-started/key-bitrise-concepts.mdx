@@ -1,0 +1,51 @@
+---
+title: "Key Bitrise concepts"
+description: "Bitrise uses Steps, Workflows and Pipelines to manage your CI/CD builds. It supports using Environment Variables and Secrets to store and access data. Everything is configured in a YAML format."
+sidebar_position: 2
+slug: /bitrise-ci/getting-started/key-bitrise-concepts
+sidebar_label: Key Bitrise CI concepts
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitrise manages your builds with Steps, Workflows, and Pipelines.
+
+- <GlossTerm baseform="Step">Steps</GlossTerm> are individual build tasks: for example, cloning your repository, running unit tests, or creating an installable binary are all individual build tasks.
+- <GlossTerm baseform="Workflow">Workflows</GlossTerm> are sequences of Steps: when running a Bitrise build, each Step is executed in the order that is defined in a Workflow.
+- <GlossTerm baseform="Pipeline">Pipelines</GlossTerm> represent the top level of a Bitrise CI/CD configuration. Pipelines can be used to organize the entire CI/CD process and to set up advanced configurations with multiple different tasks running parallel and/or sequentially.
+
+The configuration is defined entirely in a `bitrise.yml` file that you can store on Bitrise or in your own repository. It also defines the infrastructure used for the build: Bitrise builds run in a clean virtual machine, with preinstalled tools and services for most mobile development use cases. These are defined by our stacks which are updated regularly.
+
+## Steps and Workflows
+
+[Workflows](/en/bitrise-ci/workflows-and-pipelines/workflows/workflows-overview.html) are a collection of [Steps](/en/bitrise-ci/workflows-and-pipelines/steps/steps-overview.html) which are executed in order. This order can be configured in the Workflow Editor, or by editing the `bitrise.yml` file directly.
+
+Each Bitrise build runs at least one Workflow. You can start builds by triggering a specific Workflow: in such a build, Workflows can be chained together but they run sequentially. In a Pipeline, Workflows are organized in stages, and in each stage, Workflows run in parallel.
+
+When you add a new <GlossTerm baseform="App">app</GlossTerm> on Bitrise, we automatically create default Workflows for you. They contain the most frequently used Step for the app's platform. You can add or remove Steps any time from a Workflow. Steps can be configured via Step inputs and they can generate data that can be used by subsequent Steps in the same Workflow.
+
+Bitrise Steps are open source: you can suggest improvements to existing Steps or develop, share, and use your own.
+
+## Pipelines
+
+[Pipelines](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/pipelines-with-stages.html) enable a complex CI/CD configuration for advanced use cases. Pipelines can be used to organize the entire CI/CD process and to set up advanced configurations with multiple different tasks running parallel and/or sequentially.
+
+A Pipeline allows you to configure dependencies between Workflows. Each Workflow starts executing when its parent Workflows are done. Workflows on the same level are executed in parallel.
+
+You can configure build triggers to trigger a Pipeline directly. When a Pipeline is triggered, the build machine starts executing all the Workflows of the first stage.
+
+## Environment Variables and Secrets
+
+You can store and use configuration data, or any other data in key-value pairs called [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables.html). This enables, among other things, the reuse of build configurations across multiple different apps: in each app, Env Vars with the same key can store different values.
+
+Env Vars have different scopes: You can configure app-level and Workflow-level Env Vars, as well as create new variables during the build, and pass these on to subsequent Steps and Workflows in the build. Any Bitrise Step that generates some sort of output makes that output available to subsequent Steps in the form of Env Vars.
+
+Secrets are specific types of Env Vars: they are stored in encrypted format and their values are never exposed in build logs or in the `bitrise.yml` file.
+
+## Build machines and stacks
+
+Bitrise builds run in clean virtual machines that are destroyed once the build is finished, ensuring the security of your code. You can select the type of the build machine: the operating system (macOS or Linux) and the amount of computing resources the machine offers.
+
+A build stack defines what tools and services are installed on the VM that runs your build. For example, our Xcode stacks each come with a different version of Xcode.

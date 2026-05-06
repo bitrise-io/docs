@@ -1,0 +1,143 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Deploying a Flutter app
+
+To build and deploy a Flutter app, a Workflow must contain these Flutter Steps:
+
+- **Flutter Install**
+- **Flutter Build**
+
+If you have platforms specified in your repository, a deployment Workflow will be automatically generated when adding the project on Bitrise. The content of this Workflow depends on the platforms: for example, if your Flutter project contains only an iOS project, the Workflow will contain the **Certificate and profile installer** Step.
+
+You can build both iOS and Android projects at the same time or you can build them separately, each using their own Workflow. You can set this in the **Platform** input of the **Flutter Build** Step any time. By default, the Step is configured according to the platform or platforms that the scanner detected when adding the app on Bitrise.
+
+Here’s an example Workflow we’ll use in this configuration, with all the necessary Steps:
+
+![Getting_started_with_Flutter_apps.jpg](/img/_paligo/uuid-f655a8a5-c151-d103-6de5-55a0b3355322.png)
+
+:::tip[Pipelines for parallelization]
+
+In these examples, we're assuming that you are building and deploying both the iOS and Android versions of your app in the same Workflow, performing the necessary operations serially. However, you can do both versions in parallel with a single build trigger by using Pipelines:
+
+- [Build Pipelines](/en/bitrise-ci/workflows-and-pipelines/build-pipelines)
+- [Configuring a Bitrise Pipeline](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline)
+
+:::
+
+:::note[Packages and libraries]
+
+We also support building Flutter packages and libraries. Unlike in the case of apps, there is no artifact to build so there is no need for a **Flutter Build** Step in your Workflow.
+
+:::
+
+### Deploying a cross-platform app to bitrise.io
+
+The **Deploy to bitrise.io** Step uploads all the artifacts related to your build into the [**Artifacts**]() tab on your Build’s page.
+
+You can share the generated binary file (APK for Android or an IPA file for iOS) with your team members using the public install page. The public install page is a URL you can share with others who can install the generated app binary on their device. You can also notify user groups or individual users that your APK or IPA file has been built.
+
+:::important[Publishing to expo.io]
+
+The **Deploy to Bitrise.io** Step does not use Expo commands and doesn’t publish to [expo.io](https://docs.expo.io/workflow/publishing/). This Step publishes artifacts to Bitrise and is not specific to a particular platform.
+
+If you need to publish to [expo.io](https://docs.expo.io/workflow/publishing/), set the **Run expo publish after eject?** input of the **Eject Expo** Step to `yes`. Be aware that in that case you have to provide your username and password for your Expo account to publish to [expo.io.](http://expo.io/)
+
+:::
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+1. Make sure you have the **Deploy to bitrise.io** Step in your Workflow.
+1. In the **Notify: User Roles**, add the role so that only those get notified who have been granted with this role. Or fill out the **Notify: Emails** field with email addresses of the users you want to notify.
+
+   Make sure you set those email addresses as [Secrets](/en/bitrise-ci/configure-builds/secrets.html)! These details can be also modified under **Notifications** if you click the **eye** icon next to your generated binary in the **Artifacts** tab.
+1. If you want the Step to generate a public install page for you, set the **Enable public page for the App?** input to `true`.
+
+### Deploying a Flutter app to App Store Connect
+
+To deploy your iOS Flutter project to the App Store, you’ll need to build the app, export an IPA file and submit it to the App Store.
+
+Unlike testing, this requires code signing files:
+
+- An iOS Distribution Certificate (a .p12 file).
+- An App Store Provisioning Profile.
+
+For Flutter applications, code signing requires setting a Team ID in the project settings in Xcode.
+
+#### Configuring Team ID for Flutter apps
+
+Once you created your iOS project locally, you will need to review the project settings for it in Xcode. More specifically, you need to set a valid Team ID: without that, your build will fail on Bitrise.
+
+1. In Xcode, open **Runner.xcworkspace** in your app’s **ios** folder.
+1. To view your app’s settings, select the **Runner** project in the Xcode project navigator. Then, in the main view sidebar, select the **Runner** target.
+1. Select the **General** tab.
+1. In the **Signing** section, find the **Team** menu and set it to the team associated with your registered Apple Developer account.
+1. Commit the change to your repository!
+
+   :::important[Don't forget to commit your changes!]
+
+   If you only set the Team ID locally, your build will still FAIL on Bitrise!
+
+   :::
+
+#### Configuring Flutter deployment to the App Store on Bitrise
+
+To deploy your app to the App Store, you need to upload the code signing files. You have two options:
+
+- Upload the code signing certificate(s) to Bitrise and use automatic code signing with the [Manage iOS Code signing](https://bitrise.io/integrations/steps/manage-ios-code-signing) Step.
+- Upload the provisioning profile(s) and the code signing certificate(s) to Bitrise and use manual code signing with the [Certificate and profile installer](https://bitrise.io/integrations/steps/certificate-and-profile-installer) Step.
+
+In this guide, we will focus on the second option, manual code signing:
+
+1. Make sure you have the **Certificate and profile installer** Step in your Workflow.
+1. Upload the required code signing files to [Bitrise](https://app.bitrise.io/users/sign_in).
+1. Open the **Flutter Build** Step and find the **iOS Platform Configs** input group.
+1. Make sure the **Additional parameters** input has the value `--release`.
+1. Check the **Platform** input of the Step: make sure it’s set to either `iOS` or `both`.
+1. Set the **iOS output artifact type** input to **archive**.
+
+   ![flutter-build-ios-config.png](/img/_paligo/uuid-821c4edf-e9a6-a85e-a6e5-8cce61ab5f42.png)
+1. Add the **Export iOS and tvOS Xcode archive** Step to your Workflow.
+
+   It should be after the **Flutter Build** Step.
+1. Set the **Distribution method** input of the Step to **app-store**.
+1. Add the **Deploy to App Store Connect** Step to the end of the Workflow.
+1. Provide your Apple credentials in the respective input fields.
+
+   - Apple ID.
+   - password or, if you use two-factor authentication on App Store Connect, your application password.
+
+   Don’t worry, the password will not be visible in the logs or exposed .
+1. Start a build!
+
+If all goes well, the Step will submit the app to App Store Connect. You can, from the App Store Connect page, distribute the app to external testers via Testflight, or release it to the App Store itself.
+
+### Deploying a Flutter app to Google Play
+
+To deploy your app to Google Play, you need to export an App Bundle file and sign it. You have two options:
+
+- You can [configure code signing](https://flutter.dev/docs/deployment/android#configure-signing-in-gradle) in the app’s `build.gradle` file and then Flutter will sign your app during the build phase.
+- Sign your AAB or APK file on Bitrise with our dedicated Step.
+
+The scope of this guide is the second option: signing your AAB/APK file with the **Android Sign** Step.
+
+1. [Generate a keystore file](https://flutter.io/docs/deployment/android#create-a-keystore).
+
+   The keystore file is required for code signing.
+1. Open an app on Bitrise and go to **Workflow** > **Code signing** > **Android Code Signing**.
+1. Drag and drop the keystore file, and fill out the metadata.
+1. [Configure Google Play access.](/en/bitrise-ci/deploying/android-deployment/generating-and-deploying-android-app-bundles/deploying-your-android-app-bundle-to-google-play/setting-up-google-play-deployment-for-the-first-time)
+
+   You only need to do this for your very first Google Play deployment of the app.
+1. In the **Flutter Build** Step, find the **Android Platform Configs** input group and make sure the **Additional parameters** input has the value `--release`.
+1. In the **Android output artifact type** input field, select either **APK** or **appbundle** depending on your deployment requirements.
+1. In the **Output (.apk, .aab) pattern** input, set the path where the **Deploy to Google Play** Step will be able to access the generated binary.
+
+   The path should be relative to the project source directory, stored in the BITRISE_SOURCE_DIR Environment Variable.
+1. Make sure you have the **Deploy to Google Play** Step after the **Android Sign****Cordova Archive** or **Ionic Archive** Step in your Workflow.
+1. Fill out the required input fields as follows:
+
+   - **Service Account JSON key file path**: This field can accept a remote URL so you have to provide the Env Var which contains your uploaded service account JSON key. For example: `$BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL`.
+   - **Package name**: The package name of your Android app.
+   - **Track**: The track where you want to deploy your APK (for example, alpha/beta/rollout/production or any custom track you set).

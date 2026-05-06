@@ -1,0 +1,135 @@
+---
+title: "Configuring Slack and Teams notifications"
+description: "You can enable Slack and Microsoft Teams notifications for Bitrise Release Management events. You need to create an incoming webhook at your preferred service (or both), and add the webhook URL in Release Management."
+sidebar_position: 2
+slug: /release-management/releases/configuring-a-release/configuring-slack-and-teams-notifications
+sidebar_label: Configuring Slack and Teams notifications for releases
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToReleaseConfiguration from '@site/src/partials/getting-to-release-configuration.mdx';
+
+You can enable Slack and Microsoft Teams notifications for Release Management events. You need to create an incoming webhook at your preferred service (or both), and add the webhook URL in Release Management.
+
+:::important[Standard plan only]
+
+Please note that this feature is only available on a [paid plan](https://bitrise.io/pricing).
+
+:::
+
+## Configuring notifications for a release
+
+You can configure notifications for each individual release:
+
+<Tabs>
+<TabItem value="slack" label="Slack" default>
+
+1. [Configure a Slack integration for your workspace](/en/bitrise-platform/workspaces/workspace-slack-integration).
+1. <Partial_GettingToReleaseConfiguration />
+1. Find the **Release process** section and the **Notifications** card.
+1. Click **Show details**.
+1. Click ![3_dots.png](/img/_paligo/uuid-49a6993c-5bb1-9295-d85d-6608aff04419.png) next to **Slack**.
+
+   ![2025-08-08-rm-slack-notification.png](/img/_paligo/uuid-40c38dac-74da-dcc2-0e07-64366c2732dc.png)
+1. In the dialog, select your previously configured Slack configuration.
+
+   :::tip[Test notification]
+
+   Click **Send test notification** to make sure your configuration works.
+
+   :::
+
+</TabItem>
+<TabItem value="teams" label="Teams">
+
+1. Configure [an incoming webhook for Teams](https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook?tabs=dotnet):
+1. <Partial_GettingToReleaseConfiguration />
+1. Find the **Release process** section and the **Notifications** card.
+1. Click **Show details**.
+1. Click ![3_dots.png](/img/_paligo/uuid-49a6993c-5bb1-9295-d85d-6608aff04419.png) next to **Teams**.
+1. Select **Edit webhook URL**
+
+   ![2025-08-08-rm-configure-teams-notification.png](/img/_paligo/uuid-823c9a6f-187a-6778-36eb-130492487193.png)
+1. In the dialog, copy and paste your webhook URL in the **URL** field and click **Save**.
+
+   :::tip[Test notification]
+
+   Click **Send test notification** to make sure your webhook works.
+
+   :::
+
+</TabItem>
+</Tabs>
+
+## Configuring notifications as a release preset
+
+You can configure notifications as part of [a release preset template](/en/release-management/releases/release-presets.html). These notification settings will be applied to every new release that uses the template.
+
+<Tabs>
+<TabItem value="slack" label="Slack" default>
+
+1. [Configure a Slack integration for your workspace](/en/bitrise-platform/workspaces/workspace-slack-integration).
+1. Open Release Management and select your app from the list.
+1. Select **Release presets** from the left navigation menu.
+
+   ![release-presets-notif.png](/img/_paligo/uuid-7c480e99-66d6-8197-a63a-e9275e127d78.png)
+1. Click ![3_dots.png](/img/_paligo/uuid-49a6993c-5bb1-9295-d85d-6608aff04419.png) next to the template you need, and select **Change**.
+1. In the **Notifications** section, find Slack, and click the ellipsis next to its name.
+
+   ![slack-int-rm.png](/img/_paligo/uuid-0876f906-f150-c883-a882-3d1da1ae42dc.png)
+1. Click **Change configuration**.
+1. Select your previously configured integration in the dialog.
+
+   :::tip[Test notification]
+
+   Click **Send test notification** to make sure your configuration works.
+
+   :::
+
+</TabItem>
+<TabItem value="teams" label="Teams">
+
+1. Configure [an incoming webhook at Teams](https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook?tabs=dotnet).
+1. Open Release Management and select your app from the list.
+1. Select **Release presets** from the left navigation menu.
+
+   ![release-presets-notif.png](/img/_paligo/uuid-7c480e99-66d6-8197-a63a-e9275e127d78.png)
+1. Click ![3_dots.png](/img/_paligo/uuid-49a6993c-5bb1-9295-d85d-6608aff04419.png) next to the template you need, and select **Change**.
+1. In the **Notifications** section, find Teams, and click the ellipsis next to it.
+1. Click **Edit webhook URL**.
+1. In the dialog, copy and paste the webhook URL in the **URL** field and click **Save**.
+
+   :::tip[Test notification]
+
+   Click **Send test notification** to make sure your webhook works.
+
+   :::
+
+</TabItem>
+</Tabs>
+
+## Notification events
+
+| Stage | Event | Event description |
+| --- | --- | --- |
+| Release candidate | Release candidate set | This event is triggered each time there is a new release candidate is selected in the Release candidate stage. This can happen automatically (a new build generated a new IPA) or manually (the release manager locks a specific artifact on the Release candidate stage). |
+| TestFlight upload | Upload and processing finished | This event is triggered when TestFlight processing is finished for an uploaded IPA. First we upload the IPA to TestFlight, then the TestFlight processing starts. When the processing finishes, we trigger the event. |
+| Approved by TestFlight App Review | This event is triggered when Apple approves the beta app review that is required for sharing the app with external beta testers. |  |
+| Rejected by TestFlight App Review | This event is triggered when Apple rejects the beta app review that is required for sharing the app with external beta testers. |  |
+| Approvals | Release approved | This event is triggered when all tasks are approved at the Approval stage. It will not be triggered for each approval, only when all tasks are done. If there are no approval tasks set, the event will trigger immediately after the previous event. |
+| App Store review | Release sent for review | This event happens when the store review submission starts. (Release Manager clicks on the submit button, and Apple accepts it) |
+| Status of review submission changed | This event is triggered each time there is a change in the status of the review submission. (Approved, rejected, canceled) |  |
+| Release | Release started | This event is triggered after the submission was accepted, and the release rollout started (so the new version becomes available in App Store Connect) |
+| Release finished | This event is triggered when the release gets a completed status in Release Management (which means the release is fully rolled out to Google Play or the App Store.) |  |
+
+| Stage | Event | Event description |
+| --- | --- | --- |
+| Release candidate | Release candidate set | This event is triggered each time there is a new release candidate is selected in the Release Candidate stage. This can happen automatically (a new build generated a new AAB) or manually (the release manager locks a specific artifact on the Release candidate stage). |
+| Google Play upload | Upload and processing finished | This event is triggered after the AAB is uploaded to Google Play console and is available in the App bundle explorer. |
+| Release on testing track | This event is triggered after the release candidate is released on a Google Play testing track. |  |
+| Approvals | Release approved | This event is triggered when all tasks are approved at the Approval stage. It will not be triggered for each approval, only when all tasks are done. |
+| Release | Release started | This event is triggered when a release is started. It can be a full release or a staged rollout. For a staged rollout, it only happens once, at the first rollout. |
+| Release finished | This event is triggered when release is completed in Release Management. |  |
+| Rollout percentage changed | This event is triggered if the rollout percentage changes from any percentage other than 0%. For example, if the rollout percentage goes from 10% to 20%. It is NOT triggered when the first rollout happens. |  |

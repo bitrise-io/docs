@@ -1,0 +1,74 @@
+---
+title: "(Android) Example pull request Workflow"
+sidebar_position: 7
+---
+
+## Description
+
+Example Workflow for Android pull request validation. The Workflow contains:
+
+1. [Running unit tests](/en/bitrise-ci/workflows-and-pipelines/workflows/workflow-recipes-for-android-projects/android-run-unit-tests).
+1. [Running UI tests on a virtual device](/en/bitrise-ci/workflows-and-pipelines/workflows/workflow-recipes-for-android-projects/android-run-instrumentation-tests-on-virtual-devices).
+1. [Running Lint](/en/bitrise-ci/workflows-and-pipelines/workflows/workflow-recipes-for-android-projects/android-run-lint).
+1. [Building a test app and uploading to bitrise.io](/en/bitrise-ci/workflows-and-pipelines/workflows/workflow-recipes-for-android-projects/android-deploy-to-bitriseio).
+1. [Sending the QR code of the test build to the pull request](/en/bitrise-ci/workflows-and-pipelines/workflows/generic-workflow-recipes/iosandroid-send-qr-code-to-slack).
+1. Triggering the Workflow for pull requests.
+
+## bitrise.yml
+
+```
+---
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: android
+workflows:
+  pull-request:
+    steps:
+    - activate-ssh-key@4:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+    - git-clone@6: {}
+    - cache-pull@2: {}
+    - android-unit-test@1:
+        inputs:
+        - project_location: $PROJECT_LOCATION
+        - variant: $VARIANT
+    - android-build-for-ui-testing@0:
+        inputs:
+        - variant: $VARIANT
+        - module: $MODULE
+    - virtual-device-testing-for-android@1:
+        inputs:
+        - test_type: instrumentation
+    - android-lint@0:
+        inputs:
+        - variant: "$VARIANT"
+    - android-build@1:
+        inputs:
+        - project_location: "$PROJECT_LOCATION"
+        - module: "$MODULE"
+        - variant: "$VARIANT"
+    - deploy-to-bitrise-io@2: {}
+    - create-install-page-qr-code@1: {}
+    - comment-on-github-pull-request@0:
+        inputs:
+        - body: |-
+            ![QR code]($BITRISE_PUBLIC_INSTALL_PAGE_QR_CODE_IMAGE_URL)
+
+            $BITRISE_PUBLIC_INSTALL_PAGE_URL
+        - personal_access_token: "$GITHUB_ACCESS_TOKEN"
+    - cache-push@2: {}
+app:
+  envs:
+  - opts:
+      is_expand: false
+    PROJECT_LOCATION: "."
+  - opts:
+      is_expand: false
+    MODULE: app
+  - VARIANT: debug
+    opts:
+      is_expand: false
+trigger_map:
+- pull_request_source_branch: "*"
+  workflow: pull-request
+```

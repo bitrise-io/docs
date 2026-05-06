@@ -1,0 +1,73 @@
+---
+title: "React Native dependencies"
+description: "You can use both npm and Yarn to install Javascript package dependencies for React Native app on Bitrise. Bitrise also offers dedicated Steps to cache these dependencies."
+sidebar_position: 5
+slug: /bitrise-ci/dependencies-and-caching/react-native-dependencies
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+[npm](https://docs.npmjs.com/) and [Yarn](https://yarnpkg.com/) are both package managers for Node.js. They can manage the dependencies of a project, or globally installed Javascript tools. For mobile development, they are frequently used as package managers for React Native projects. If you have a React Native <GlossTerm baseform="App">app</GlossTerm> on Bitrise, you can use our dedicated npm or Yarn <GlossTerm baseform="Step">Steps</GlossTerm> to install and cache your dependencies.
+
+You can also install native dependencies by using the dedicated Steps: [see topic](#section-idm4593899820200033631167468577).
+
+## Installing dependencies with npm and Yarn
+
+<Tabs>
+<TabItem value="npm" label="npm" default>
+
+1. Make sure your project has [a package.json file](https://docs.npmjs.com/creating-a-package-json-file) defined in it.
+1. Add the **Run npm command** Step to your <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
+1. Set the **The npm command with arguments to run** to `install`.
+
+   You can add additional options to the `install` command. For example, if you need to [link a library with native dependencies to your React Native project](https://docs.flutter.dev/development/packages-and-plugins/developing-packages#dependencies), use the `--save` or `--save-dev` flag. For the available options, see the [npm documentation](https://docs.npmjs.com/cli/v9/commands/npm-install).
+
+   ![run-npm-command.png](/img/_paligo/uuid-676b848d-85db-ff48-883e-6ca489d799d3.png)
+1. Optionally, you can set [the npm version](https://www.npmjs.com/package/npm?activeTab=versions) that will run the `npm install` command in the **Version of npm to use** input.
+
+</TabItem>
+<TabItem value="yarn" label="Yarn">
+
+1. Make sure your project has [a package.json file](https://docs.npmjs.com/creating-a-package-json-file) defined in it.
+1. Add the **Run yarn command** Step to your <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
+1. Set the **Yarn command to run** to `install`.
+1. Optionally, add arguments to the yarn command in the **Arguments for running yarn commands**.
+
+   You can specify multiple arguments, separated by a space.
+
+</TabItem>
+</Tabs>
+
+## Caching npm and Yarn dependencies
+
+With key-based caching, you only need the **Restore NPM cache** and the **Save NPM cache** Steps to cache your node modules. These Steps require no configuration as they automatically set up the cache keys needed for your dependencies.
+
+1. Add the **Restore NPM cache** Step to the start of your Workflow.
+
+   ![restore-npm-cache.png](/img/_paligo/uuid-68fb84b2-a10a-f7b9-f1e3-7ab0accbae3a.png)
+1. Add the **Save NPM cache** Step to the end of your Workflow.
+
+## Installing native dependencies for a React Native app
+
+You might need to install native dependencies that are declared in the `ios` and `android` folders. For example, CocoaPods dependencies defined in a `Podfile`. You can do this quite easily on Bitrise, too: once you bundle your React Native app to be ready to build the Android and iOS binaries, you can simply use the dependency manager Steps for Android and iOS apps.
+
+:::tip[Demo app]
+
+Check out our React Native demo app for a working example. If you add the app to Bitrise, you can see that the **deploy-ios-release** Workflow, for example, contains both the **Run npm command** and the **Run CocoaPods install** Steps, to install both npm packages and pods: [React Native demo app](https://github.com/bitrise-io/react-native-demo-app).
+
+:::
+
+1. Make sure your Workflow installs your npm packages: [see topic](#section-idm4494876304081633627858529405).
+
+   You can have a separate Workflow that is only responsible for installing npm packages, and it's inserted to run before your main Workflow: [Chaining Workflows together](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows/chaining-workflows-together). It can be a [utility Workflow](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows/utility-workflows).
+1. Add the **React Native Bundle** Step to your Workflow.
+
+   It must come after the npm packages are installed.
+1. Add the required dependency manager Steps or build Steps to the Workflow. The exact Steps you need depend on the project type and the dependency manager you use:
+
+   - [Android dependencies](/en/bitrise-ci/dependencies-and-caching/android-dependencies)
+   - [Managing dependencies with SPM](/en/bitrise-ci/dependencies-and-caching/ios-dependencies/managing-dependencies-with-spm)
+   - [Managing dependencies with CocoaPods](/en/bitrise-ci/dependencies-and-caching/ios-dependencies/managing-dependencies-with-cocoapods)
+   - [Managing dependencies with Carthage](/en/bitrise-ci/dependencies-and-caching/ios-dependencies/managing-dependencies-with-carthage)

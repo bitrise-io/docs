@@ -1,0 +1,35 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Gradle tasks and caching
+
+In the Gradle build system, the basic unit of action is a task. A task could be compiling classes, running unit tests, or creating a JAR. Each task has its own inputs, such as files or environmental variables, and outputs.
+
+Tasks usually generate their output in a specific build directory which is configurable for each module. The contents of this directory can be often reused between builds on the same machine. As such, Gradle saves time by executing only the tasks that can't be reused. For other tasks, the output from the build directory is reused and the task gets the `UP-TO-DATE` label. This process is what Gradle calls an [incremental build](https://docs.gradle.org/current/userguide/incremental_build.html).
+
+:::note[Incremental build vs incremental task execution]
+
+Incremental builds are not the same as incremental task execution! You can read about incremental tasks [in Gradle's official docs](https://docs.gradle.org/current/userguide/custom_tasks.html#incremental_tasks).
+
+:::
+
+### Gradle tasks in a CI environment
+
+When running Gradle in a CI environment, all tasks are either executed or retrieved from cache because the build directory is empty. After execution, Gradle saves metadata about the task inputs in the [project cache directory](https://docs.gradle.org/current/userguide/directory_layout.html). Gradle uses this metadata to be able to perfom incremental builds.
+
+For example, in the case of a compile task, Gradle saves the checksum of the source files and only re-compiles files that have changed, based on the checksums. For more information on how Gradle checks task inputs, [read Gradle’s docs on task inputs and outputs.](https://docs.gradle.org/current/userguide/incremental_build.html#sec:task_inputs_outputs)
+
+If metadata is not available, Gradle will execute all tasks.
+
+### Caching tasks
+
+If the metadata indicates that a task has to be executed, and the Bitrise build cache is enabled, the task inputs and certain Gradle properties such as the version are hashed into the cache key. If either the remote or local cache has a match for the cache key, the task does not have to be fully executed: its execution result is loaded from the cache and gets the `FROM-CACHE` outcome label.
+
+If there is no match for the cache key in the remote or local cache (a cache miss), the task is fully executed and its outputs are stored in the cache.
+
+When a task doesn't have the `UP-TO-DATE` label, the reasons for this are recorded and displayed in the task's row in the invocation details on Bitrise. Some of the possible reasons are as follows:
+
+- If the metadata is missing, **No history available** is displayed.
+- If the outputs are missing, **Output... has been removed** is displayed.
+- Tasks without the `UP-DO-DATE` label can still be cached if their inputs were cached at least once previously.

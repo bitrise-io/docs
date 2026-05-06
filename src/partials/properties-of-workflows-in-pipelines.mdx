@@ -1,0 +1,145 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Properties of Workflows in Pipelines
+
+### `workflows:depends_on`
+
+This property defines the Workflows that this Workflow depends on. If any of the Workflows in the list fails, this Workflow won't run.
+
+You can use both types of YAML array syntax to list dependant Workflows: block sequence and flow sequence. Any Workflow appearing in the dependency list must be part of the same Pipeline.
+
+:::caution[No circle or loop configuration]
+
+The dependency graph resulting from your configuration can't contain a circle or loop. You can't start builds with an invalid Pipeline configuration.
+
+:::
+
+**Supported values**: Workflow names with YAML array syntax.
+
+Read more: [Configuring a Bitrise Pipeline](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline).
+
+**Example of `workflows:depends_on`**
+
+Block sequence array syntax:
+
+```yaml
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        depends_on:
+        - A
+      C:
+        depends_on:
+        - A
+      D:
+        depends_on:
+        - B
+        - C
+```
+
+Flow sequence array syntax:
+
+```yaml
+D:
+  depends_on: [B, C]
+```
+
+### `workflows:abort_on_fail`
+
+When this property is `true`, the Pipeline and any other running Workflows are aborted if this Workflow fails.
+
+**Supported values**: boolean
+
+Read more: [Configuring a Bitrise Pipeline](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline).
+
+**Example of `workflows:abort_on_fail`**
+
+In this example, both A and B are running in parallel. If B fails, the entire Pipeline, including Workflow A, is immediately aborted.
+
+```yaml
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        abort_on_fail: true
+```
+
+### `workflows:should_always_run`
+
+This property defines whether a Workflow should run if a previous Workflow failed.
+
+Be aware of transitive dependency: if a Workflow that is set to always run has a parent Workflow that fails, it will still run. However, Workflows that depend on it will not. For example, let's say we have Workflow C that depends on Workflow B. Workflow B depends on Workflow A. Of the three Workflows, only B is set to always run:
+
+- If A fails, B will run but regardless of its result, C won't run because by depending on B, it also depends on A.
+- C only runs if both A and B are successful.
+
+**Supported values:**
+
+- `none`: If a parent Workflow fails, the Workflow will not run. This is the default value.
+- `workflow`: If a parent Workflow fails, the Workflow will run anyway.
+
+Read more: [Configuring a Bitrise Pipeline](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline)
+
+**Example of `workflows:should_always_run`**
+
+```yaml
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        depends_on: [ A ]
+        should_always_run: workflow
+      C:
+        depends_on: [ B ]
+      D:
+        depends_on: [ C ]
+        should_always_run: workflow
+```
+
+### `workflows:run_if`
+
+A Go template expression that defines the conditions for running the Workflow.
+
+The property needs an `expression` field that contains a Go template, with three helper functions:
+
+- `getenv`: Accesses an Environment Variable's value.
+- `enveq`: Compares an Environment Variable to a given value.
+- `envcontain`: Checks whether an Environment Variable contains a given string.
+
+The Bitrise CLI evaluates the expression during runtime. If a Workflow is skipped because of a `run_if` expression, it will be counted as a successful Workflow so its dependent Workflows will run.
+
+Read more: [Examples of run_if expressions](/en/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally/examples-of-run-if-expressions).
+
+**Example of `workflows:run_if`**
+
+In this example, B will only run if the EXAMPLE_KEY Environment Variable has the value example value.
+
+```yaml
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        run_if:
+          expression: {{ enveq "EXAMPLE_KEY" "example value" }}
+        depends_on: [A]
+```
+
+### `workflows:parallel`
+
+The `parallel` property allows you to run copies of the same Workflow in parallel, in a single instruction. This is particularly useful for test sharding.
+
+The property determines the number of copies running in parallel. Each copy receives two new environment variables:
+
+- $BITRISE_IO_PARALLEL_INDEX: a zero based index for each copy of the Workflow.
+- $BITRISE_IO_PARALLEL_TOTAL: the total number of copies.
+
+**Supported values**: An integer.
+
+Read more: [Parallelism in Pipelines](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline/parallelism-in-pipelines).

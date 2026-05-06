@@ -1,0 +1,147 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Registering devices on the Apple Developer Portal with the Xcode Archive Step
+
+The **Xcode Archive & Export for iOS** Step allows you to automatically register your test devices on the Apple Developer Portal. By default, the Step registers all test devices that you registered to your Bitrise account but you can configure it to only register a specific selection of devices.
+
+:::important[Apple Developer Portal limit]
+
+Please note that the Apple Developer Portal has a limit for devices registered for testing purposes, typically set at 100 devices per account. Devices registered with the **Xcode Archive & Export for iOS** Step count towards this limit and you can only remove registered devices once a year.
+
+:::
+
+### Registering all devices on the Apple Developer Portal
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Register your devices on Bitrise.
+
+   - [Register using an iOS device](/en/bitrise-ci/testing/testing-ios-apps/registering-a-test-device/register-an-ios-device-using-safari).
+   - [Register manually on the **Profile settings** page](/en/bitrise-ci/testing/testing-ios-apps/registering-a-test-device/register-a-test-device-manually).
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+1. Add the **Xcode Archive & Export for iOS** Step to your Workflow.
+1. In the **Automatic code signing** input group, set the **Register test devices on the Apple Developer Portal** input to `yes`.
+
+   ![register-yes.png](/img/_paligo/uuid-113925d0-226c-da20-a0ea-41eec556f750.png)
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. Register your devices on Bitrise.
+
+   - [Register using an iOS device](/en/bitrise-ci/testing/testing-ios-apps/registering-a-test-device/register-an-ios-device-using-safari).
+   - [Register manually on the **Profile settings** page](/en/bitrise-ci/testing/testing-ios-apps/registering-a-test-device/register-a-test-device-manually).
+1. In the Configuration YAML file, add the `xcode-archive` Step to your Workflow.
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-archive:
+           inputs:
+   ```
+1. Set the `register_test_devices` input to `yes`.
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-archive:
+           inputs:
+           - register_test_devices: 'yes'
+   ```
+
+</TabItem>
+</Tabs>
+
+### Registering a selection of devices on the Apple Developer Portal
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Get the UDID of the devices you want to register: [Checking the available test devices for an app](/en/bitrise-ci/testing/testing-ios-apps/registering-a-test-device/checking-the-available-test-devices-for-an-app).
+1. Create a `.txt` file and add the UDIDs of all devices you want to register to the file in a comma-separated list:
+
+   ```
+   00000000-0000000000000001,00000000-0000000000000002,00000000-0000000000000003
+   ```
+1. Make sure Bitrise can access the file in a Workflow:
+
+   You can commit it to your repository.
+
+   [You can upload it to the Generic File Storage and use the **File Downloader** Step to access it](/en/bitrise-ci/run-and-analyze-builds/managing-build-files/using-files-in-your-builds/downloading-a-file-using-the-file-downloader-step).
+
+   You can dynamically generate the file during the build.
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+1. Add the **Xcode Archive & Export for iOS** Step to your Workflow.
+1. In the **Automatic code signing** input group, set the **Register test devices on the Apple Developer Portal** input to **yes**.
+1. In the same input group, add the path to the `.txt` file containing the UDIDs to the **Path of file containing the devices to be registered** input.
+
+   ![registering-test-devices.png](/img/_paligo/uuid-139f4940-4762-210c-2a4d-59bc4e2b561d.png)
+
+   :::note[Devices registered on Bitrise]
+
+   This input takes priority over the devices registered to your Bitrise account.
+
+   :::
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. Get the UDID of the devices you want to register: [Checking the available test devices for an app](/en/bitrise-ci/testing/testing-ios-apps/registering-a-test-device/checking-the-available-test-devices-for-an-app).
+1. Create a `.txt` file and add the UDIDs of all devices you want to register to the file in a comma-separated list:
+
+   ```
+   00000000-0000000000000001,00000000-0000000000000002,00000000-0000000000000003
+   ```
+1. Make sure Bitrise can access the file in a Workflow:
+
+   You can commit it to your repository.
+
+   [You can upload it to the Generic File Storage and use the **File Downloader** Step to access it](/en/bitrise-ci/run-and-analyze-builds/managing-build-files/using-files-in-your-builds/downloading-a-file-using-the-file-downloader-step).
+
+   You can dynamically generate the file during the build.
+1. In the Configuration YAML file, add the `xcode-archive` Step to your Workflow.
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-archive:
+           inputs:
+   ```
+1. Set the `register_test_devices` input to `yes`.
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-archive:
+           inputs:
+           - register_test_devices: 'yes'
+   ```
+1. Set the path to the `.txt` file containing the UDIDs in the `test_device_list_path` input.
+
+   :::note[Devices registered on Bitrise]
+
+   This input takes priority over the devices registered to your Bitrise account.
+
+   :::
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-archive:
+           inputs:
+           - register_test_devices: 'yes'
+           - test_device_list_path: path/to/the/file
+   ```
+
+</TabItem>
+</Tabs>

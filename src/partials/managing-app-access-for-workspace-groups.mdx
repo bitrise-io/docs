@@ -1,0 +1,50 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Managing app access roles for Workspace groups
+
+You can grant [Workspace groups](/en/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/workspace-groups/creating-groups-for-workspaces) access to application teams on Bitrise. It means that all members of the group will be able to work on the app in [the role assigned to the group](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci.html).
+
+List all groups that have been granted a given role on an app's team by using the `GET /apps/{app-slug}/roles/{role-name}` endpoint. The role-name parameter takes three possible values:
+
+- `admin`
+- `manager`: this is the equivalent of the **Developer** role on bitrise.io.
+- `member`: this is the equivalent of **Tester/QA** on bitrise.io.
+
+In this example, we're querying a list of Workspace groups that have been granted Admin role to a specific app:
+
+```
+curl -X 'GET' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/roles/admin' \
+  -H 'accept: application/json' \
+  -H 'Authorization: ACCESS-TOKEN'
+```
+
+Grant access to existing Workspace groups by using the `PUT /apps/{app-slug}/roles/{role-name}` endpoint. This endpoint requires a `groups` object that contains the slugs of all the groups that are granted access with the specified role.
+
+:::important[Specify all groups]
+
+This endpoint replaces all previous groups that had the specified role on the app's team. If, for example, you call the endpoint to grant the groups Alpha and Beta the Admin role on the app's team, only Alpha and Beta will have Admin access to the app afterwards. If another group - let's call it Delta - previously had Admin role on the team, it will be removed.
+
+:::
+
+:::tip[Getting the group slugs]
+
+To get the group slugs of your Workspace, use the `[GET /organizations/{org-slug}/groups](https://api-docs.bitrise.io/#/organizations/organzation-groups-list)` endpoint.
+
+:::
+
+In the following example, we'll be granting several groups Admin access:
+
+```
+curl -X 'PUT' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/roles/admin' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "groups": [
+    "GROUP-SLUG-1", "GROUP-SLUG-2"
+  ]
+}'
+```

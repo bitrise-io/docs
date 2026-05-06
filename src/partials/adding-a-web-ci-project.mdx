@@ -1,0 +1,39 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Adding a web CI project
+
+A web CI project has no specific requirements. Add your web CI project as described in the guide: [Adding a new project](/en/bitrise-ci/getting-started/adding-a-new-project).
+
+The project scanner can detect web CI project types and create a default configuration: after selecting a repository branch, select **Yes, auto-detect configuration**.
+
+The project scanner will scan your project files. Just like with mobile projects, it identifies projects based on key files in the repository. For now, Bitrise can automatically detect the following types:
+
+- **Node.js**: The scanner looks for your `package.json` file, excluding `node_modules` and `.next` directories. Bitrise creates your default Workflows and Pipelines based on the contents:
+
+  - Package manager: presence of `package-lock.json` (npm) or `yarn.lock` (Yarn).
+  - Scripts: detects `lint` and `test` entries in `package.json` scripts.
+  - Framework: checks `dependencies` and `devDependencies` for `next` (→ `nextjs`) or `@nestjs/core` (→ `nestjs`).
+  - Node version: reads from version files or `package.json` engines field.
+- **Kotlin Multiplatform**: The scanner looks for a `gradlew` file and checks it to determine if it's a Kotlin project.
+- **Java**: The scanner can recognize a Java project based on the build tool. Two build tools are supported:
+
+  - Gradle: the scanner looks for the `gradlew` file.
+  - Maven: the scanner looks for the `pom.xml` file.
+- **Ruby**: The scanner identifies Ruby projects by searching for `Gemfile` files in the repository. Each directory containing a Gemfile is treated as a separate Ruby project, enabling monorepo support.
+
+  For Ruby, the scanner inspects:
+
+  - Bundler: the scanner looks for `Gemfile.lock`
+  - Rakefile: looks for a `Rakefile`
+  - Ruby version: reads `.ruby-version` or `.tool-versions` (`asdf` format)
+  - Rails: checks if `rails` gem is declared in the `Gemfile`
+  - Test framework: detects RSpec (via `spec/spec_helper.rb` or `.rspec)`, Minitest (via `test/test_helper.rb`), or falls back to rake test if a `Rakefile` is present
+
+  :::note[Manual configuration]
+
+  If you don't want to use the scanner, the default manual configuration for Ruby assumes Bundler and RSpec with no database, giving you a clean starting point to customize.
+
+  :::
+- Flutter web: The scanner looks for a `web/` directory under the Flutter project.

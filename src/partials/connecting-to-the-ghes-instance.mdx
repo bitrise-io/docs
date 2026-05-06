@@ -1,0 +1,44 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Connecting to the GHES instance via the GitHub app
+
+After creating a new GitHub app, you need to connect your Bitrise Workspace to the GHES instance via the app:
+
+:::important[Webhook secret required]
+
+Make sure you have the webhook secret from the [GitHub app creation process](/en/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise/creating-the-github-app) available.
+
+:::
+
+1. Open your GitHub app's page: on your GitHub organization's **Settings** page, select **GitHub apps** and click **Edit** next to the app's name.
+1. On the left, select **General**.
+1. Generate a new client secret: find the «**Client secrets** and click **Generate a new client secret**. Copy the secret: you will need it later!
+1. Find the **Private keys** section and click **Generate a private key**. This downloads a `.pem` file which you will need to upload to Bitrise later in this process.
+1. On Bitrise, open the **Workspace settings** page and in the **GitHub Enterprise Server** section, click **Connect**.
+1. Fill out the connection form:
+
+   - The **Instance base URL** should be the root URL of your server.
+   - Add the webhook secret and the client secret you generated earlier.
+   - Upload the `.pem` file.
+1. When done, click **Connect**.
+
+   :::note[Instant feedback]
+
+   You will receive immediate feedback about the connection and actionable error messages in the case of failure.
+
+   :::
+1. Go back to GHES and open your GitHub app's page again.
+1. On the left, select **Install app**.
+1. Choose the organization(s) to install the app on.
+1. Under **Repository access**, select the repositories you want Bitrise to be able to access, or select all repositories.
+1. When done, click **Save**.
+
+Bitrise receives a webhook event regarding the installation and automatically enables the corresponding Bitrise projects to use the recently set up GHES integration [which you can check on the app settings page](/en/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise/troubleshooting-the-ghes-integration). Once this is done, you can now store your `bitrise.yml` file in a GHES repository: [Storing the bitrise.yml file in your repository](/en/bitrise-ci/configure-builds/configuration-yaml/managing-a-projects-configuration-yaml-file/storing-the-bitriseyml-file-in-your-repository).
+
+:::tip[Testing the integration]
+
+We recommend testing the integration by creating a dummy project and store its `bitrise.yml` file on your GHES repository. You can use [this demo project](https://github.com/bitrise-io/android-demo-app) for testing purposes.
+
+:::

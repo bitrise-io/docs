@@ -1,0 +1,118 @@
+---
+title: "Using key-based caching"
+description: "Key-based caching requires defining a key that identifies a cache archive. A key can be static or dynamically generated, and you can use templates in your keys. There are dedicated key-based caching Steps for dependency managers that require no configuration."
+sidebar_position: 1
+slug: /bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching
+sidebar_label: Using key-based caching in your builds
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_KeyMatchingForCacheArchives from '@site/src/partials/key-matching-for-cache-archives.mdx';
+import Partial_KeyBasedCachingTemplatesAndFunctions from '@site/src/partials/key-based-caching-templates-and-functions.mdx';
+import Partial_ConditionalCaching from '@site/src/partials/conditional-caching.mdx';
+
+Key-based caching requires two <GlossTerm baseform="Step">Steps</GlossTerm> that must be used together:
+
+- **Save Cache**: saves the build files into a cache archive, identified by a key.
+- **Restore Cache**: restores build files into a cache archive, identified by a key.
+
+:::note[Dedicated key-based caching Steps]
+
+You can use dedicated key-based caching Steps, such as the [Save NPM Cache](https://bitrise.io/integrations/steps/save-npm-cache), to cache npm or yarn dependencies.
+
+For a full list of dedicated key-based caching Steps, check out [Dedicated caching Steps for dependency managers](/en/bitrise-ci/dependencies-and-caching/key-based-caching/dedicated-caching-steps-for-dependency-managers).
+
+:::
+
+Both Steps access cache archives via key strings. These keys need to be specified as the values of the **Cache keys** [Step input](/en/bitrise-ci/workflows-and-pipelines/steps/step-inputs.html); each key identifies a separate cache archive.
+
+## Cache retention and eviction policy
+
+Your cache entries are retained for seven days since the last use. If they're not used in your workflows for a continuous period of seven days, they will be automatically removed.
+
+If you run out of your cache storage allowance, the Least Recently Used (LRU) cache entries on your app will be replaced with any new ones produced. LRU is a cache replacement algorithm that removes the least recently used data in order to make room for new data. This might mean that your cache hit rate could reduce if the replaced cache entries are needed by any Workflows. We recommend upgrading to [a higher plan](http://www.bitrise.io/pricing) to get more storage so that you don't lose any cache entries that might be needed by your Workflows.
+
+## Creating a new cache archive
+
+1. Add the **Save Cache** Step at the end of your Workflow.
+1. In the **Cache key** input, define a cache key. This key will be used to identify the cache archive.
+
+   :::important[Key limitations]
+
+   The maximum length of a cache key is 512 characters (longer keys get truncated). Commas (,) are not allowed in keys.
+
+   :::
+
+   You can use [templates and functions](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching/key-based-caching-templates-and-functions) to create dynamic keys that change depending on the build environment or other factors.
+
+   You can specify multiple keys; the Step will evaluate them in order and match the first one. Read more: [Key matching for cache archives](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching/key-matching-for-cache-archives).
+
+   :::tip[Conditional caching with dynamic keys]
+
+   You can configure the Step in a way that allows it to automatically skip archiving and uploading the cache if its content has not changed during the build: [Conditional caching](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching/conditional-caching).
+
+   :::
+
+   **Creating a new cache archive with a key referring to the OS**
+
+   In this example, we're creating a cache archive with a key that refers to the type of the operating system of the build machine.
+
+   ```
+   - save-cache@1:
+       inputs:
+       - key: |-
+           npm-cache-{{ .OS }}
+   ```
+1. In the **Paths to cache** input, define the files and folders that you want to cache.
+
+   The input allows for wildcards: `*` and `**`. The input value is evaluated at runtime.
+
+   :::caution[Archive size limit]
+
+   The size of a single cache archive cannot exceed 15 GB.
+
+   :::
+
+   **Caching all files and folders recursively in the node_modules folder**
+
+   ```
+   - save-cache@1:
+       inputs:
+       - key: |-
+           npm-cache-{{ .OS }}
+       - paths: node_modules/
+   ```
+
+Once a cache archive has been created, you can access it on the **App Settings** page: [Accessing key-based cache archives](/en/bitrise-ci/dependencies-and-caching/key-based-caching/accessing-key-based-cache-archives).
+
+## Restoring an existing cache archive
+
+1. Add the **Restore Cache** Step at the start of your Workflow.
+1. In the **Cache key** input, type the key of the cache that you want to restore.
+
+   You can use [templates and functions](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching/key-based-caching-templates-and-functions) to create dynamic keys that change depending on the build environment or other factors.
+
+   You can specify multiple keys; the Step will evaluate them in order and select the first matching one. Read more: [Key matching for cache archives](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching/key-matching-for-cache-archives).
+
+   **Restoring a cache archive from one of two keys**
+
+   In this example, we're restoring one of two keys:
+
+   - First, we'll look for a cache archive with a key that includes the name of the current Workflow. For example, if the current Workflow's name is `primary`, the Step will look for an archive with the key `npm-cache-primary`.
+   - Second, we'll look for an archive with a key that includes the name of the current branch. For example, if the current branch's name is `main`, the Step will look for an archive with the key `npm-cache-main`.
+
+   ```
+   - restore-cache@1:
+       inputs:
+       - key: |-
+           npm-cache-{{ .Workflow }}
+           npm-cache-{{ .Branch }}
+   ```
+
+<Partial_KeyBasedCachingTemplatesAndFunctions />
+
+<Partial_KeyMatchingForCacheArchives />
+
+<Partial_ConditionalCaching />

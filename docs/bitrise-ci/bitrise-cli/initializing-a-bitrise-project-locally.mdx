@@ -1,0 +1,48 @@
+---
+title: "Initializing a Bitrise project locally"
+description: "You can use the bitrise init plugin to initialize a new Bitrise app on your own computer, without adding it to Bitrise online."
+sidebar_position: 3
+slug: /bitrise-ci/bitrise-cli/initializing-a-bitrise-project-locally
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+When you add a new <GlossTerm baseform="App">app</GlossTerm> to Bitrise, we detect the type of your project and generate a basic `<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>` file for you, with <GlossTerm baseform="Workflow">Workflows</GlossTerm> that are appropriate for your project type.
+
+With the Bitrise CLI, you can make this work on your own computer:
+
+1. [Install the Bitrise CLI](/en/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli.html) on your computer.
+1. Make sure that `$GOPATH/bin` is added to `$PATH` on your computer.
+
+   By default, your Go workspace is at `$HOME/go/bin`.
+
+   :::note[Installing Go]
+
+   If you don't have Go installed on your computer, `bitrise init` will automatically install it for you.
+
+   :::
+1. Start the `bitrise init` plugin:
+
+   ```
+   bitrise init
+   ```
+1. Wait while the plugin runs all available scanners to determine your project type.
+1. Depending on the detected project type, the scanner asks for some input. Follow the instructions.
+
+   For example, with an iOS project, it asks the user to specify an export method:
+
+   ```
+   Select: ipa export method
+   Please select from the list:
+   [1] : app-store
+   [2] : ad-hoc
+   [3] : enterprise
+   [4] : development
+   (type in the option's number, then hit Enter) :
+   ```
+
+Based on the scanner outputs, the plugin generates a Bitrise configuration, with a `bitrise.yml` file. In the automatically generated Workflows, every required input will have a valid value.
+
+The plugin also generates a `bitrise.secrets.yml` file. You can store your <GlossTerm baseform="Secret">Secrets</GlossTerm> in this file.

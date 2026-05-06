@@ -1,0 +1,132 @@
+---
+title: "Building your own Docker image"
+description: "You can create your own Docker image and push it to a container registry during a Bitrise build with the [Docker Build & Push Step](https://github.com/bitrise-steplib/bitrise-step-docker-build-push/blob/main/step.yml)."
+sidebar_position: 4
+slug: /bitrise-platform/infrastructure/docker-containers-on-bitrise/building-your-own-docker-image
+sidebar_label: Building your own Docker image on Bitrise
+---
+
+You can create your own Docker image and push it to a container registry during a Bitrise build with the [Docker Build & Push Step](https://github.com/bitrise-steplib/bitrise-step-docker-build-push/blob/main/step.yml).
+
+The Step uses the `docker build` [command](https://docs.docker.com/engine/reference/commandline/image_build/): it requires a [Dockerfile](https://docs.docker.com/engine/reference/builder/) that contains the build instructions and a build context. Build context means the set of files located at the specified path. The Step allows you to pass [options](https://docs.docker.com/engine/reference/commandline/image_build/#options) and [build arguments](https://docs.docker.com/build/guide/build-args/) to the build.
+
+To speed up your builds, the Step also supports [key-based caching](/en/bitrise-ci/dependencies-and-caching/key-based-caching.html).
+
+To build the image with build options, build arguments and caching used:
+
+Workflow Editor
+
+bitrise.yml
+
+1. Add the **Docker Build & Push** Step to your Workflow.
+1. Configure the required inputs for the Step:
+
+   - **Image tags**: A list of tags to be applied to the name of the built image. You can add one tag per line. For more information about image tags, their function, and their required format, check out [the Docker documentation](https://docs.docker.com/engine/reference/commandline/image_tag/).
+   - **Build context path**: The path to the files that constitute your build context. It should be relative to your Bitrise working directory.
+   - **Dockerfile path**: The path to the Dockerfile you wish to use. It should be relative to your Bitrise working directory.
+1. If you want to push the built image to a container registry, set the **Push docker image** input to **true**.
+1. To cache the image, set the **Use Bitrise key-value cache** input to **true**.
+
+   The input uses the following cache keys:
+
+   - `docker-imagename-{{ .OS }}-{{ .Arch }}-{{ .Branch }}-{{ .CommitHash }}`
+   - `docker-imagename-{{ .OS }}-{{ .Arch }}-{{ .Branch }}`
+   - `docker-imagename-{{ .OS }}-{{ .Arch }}`
+
+   :::caution[Alternative caching method]
+
+   The Step also supports caching using the `--cache-from` and the `--cache-to` options of the `docker build` command. The **Cache from arguments** and **Cache to arguments** inputs provide this function.
+
+   If using key-based caching, do NOT use these inputs! Leave them empty.
+
+   :::
+1. Optionally, customize the build command with build arguments and options.
+
+   - Add [build arguments](https://docs.docker.com/build/guide/build-args/) in the **Build arguments** input: one argument per line in a `MY_ARG=my_value` format.
+   - Add [options](https://docs.docker.com/engine/reference/commandline/image_build/#options) in the **Extra options** input: one extra option per line in the format of `--option value` or `--option=value`.
+
+     :::caution[Values with quotes]
+
+     When using values with quotes in them (for example, when the value contains spaces) do not use the equal sign. Separate it with spaces instead: `--option "value with spaces"`.
+
+     :::
+
+1. Add the `docker-build-push` Step to your Workflow.
+1. Configure the required inputs for the Step:
+
+   - `tags`: A list of tags to be applied to the name of the built image. You can add one tag per line. For more information about image tags, their function, and their required format, check out [the Docker documentation](https://docs.docker.com/engine/reference/commandline/image_tag/).
+   - `context`: The path to the files that constitute your build context. It should be relative to your Bitrise working directory.
+   - `file`: The path to the Dockerfile you wish to use. It should be relative to your Bitrise working directory.
+
+   ```
+   workflow:
+     steps:
+       - docker-build-push:
+           inputs:
+           - tags: myregistry.com/myimage:latest
+           - context: "./path"
+           - file: "./Dockerfile"
+   ```
+1. If you want to push the built image to a container registry, set the `push` input to **true**.
+
+   ```
+   workflow:
+     steps:
+       - docker-build-push:
+           inputs:
+           - tags: myregistry.com/myimage:latest
+           - context: "./path"
+           - file: "./Dockerfile"
+           - push: "true"
+   ```
+1. To cache the image, set the `use_bitrise_cache` input to **true**.
+
+   The input uses the following cache keys:
+
+   - `docker-imagename-{{ .OS }}-{{ .Arch }}-{{ .Branch }}-{{ .CommitHash }}`
+   - `docker-imagename-{{ .OS }}-{{ .Arch }}-{{ .Branch }}`
+   - `docker-imagename-{{ .OS }}-{{ .Arch }}`
+
+   :::caution[Alternative caching method]
+
+   The Step also supports caching using the `--cache-from` and the `--cache-to` options of the `docker build` command. The `cache_from` and `cache_to` inputs provide this function.
+
+   If using key-based caching, do NOT use these inputs! Leave them empty.
+
+   :::
+
+   ```
+   workflow:
+     steps:
+       - docker-build-push:
+           inputs:
+           - tags: myregistry.com/myimage:latest
+           - context: "./path"
+           - file: "./Dockerfile"
+           - push: "true"
+           - use_bitrise_cache: "true"
+   ```
+1. Optionally, customize the build command with build arguments and options.
+
+   - Add [build arguments](https://docs.docker.com/build/guide/build-args/) in the `build_arg` input: one argument per line in a `MY_ARG=my_value` format.
+   - Add [options](https://docs.docker.com/engine/reference/commandline/image_build/#options) in the `extra_options` input: one extra option per line in the format of `--option value` or `--option=value`.
+
+     :::caution[Values with quotes]
+
+     When using values with quotes in them (for example, when the value contains spaces) do not use the equal sign. Separate it with spaces instead: `--option "value with spaces"`.
+
+     :::
+
+   ```
+   workflow:
+     steps:
+       - docker-build-push:
+           inputs:
+           - tags: myregistry.com/myimage:latest
+           - context: "./path"
+           - file: "./Dockerfile"
+           - push: "true"
+           - use_bitrise_cache: "true"
+           - build_arg: BUILD_ARG=my_value
+           - extra_options: "--option value"
+   ```

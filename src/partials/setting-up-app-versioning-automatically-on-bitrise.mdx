@@ -1,0 +1,57 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Setting up app versioning automatically on Bitrise
+
+Track the version of your app in its Git repository by modifying the file containing the essential information about the app (for example, the `Info.plist` file for iOS apps and either the `build.gradle` file or the `AndroidManifest.xml` file for Android apps).
+
+Bitrise has two steps to do this for you. These two Steps can insert the Bitrise build number or some other specified number into their respective files:
+
+- **Change Android versionCode and versionName** for Android apps.
+- **Set Xcode Project Build Number** for iOS apps.
+
+Both Steps accept either numbers (integers and/or numeric strings) or environment variables in their relevant inputs. By default, both use the $BITRISE_BUILD_NUMBER Environment Variable as their default value for the build number.
+
+### Setting the versionCode and the versionName of an Android app
+
+For an Android app, the setting is used as an internal version number, to determine if a build of the app is more recent than another build. The `versionName` setting is a string used as the version number shown to users.
+
+For in-depth information about Android versioning, please check out [the Android developer guide on the subject](https://developer.android.com/studio/publish/versioning).
+
+:::note[Version information in the manifest file]
+
+In this guide, we’re setting the version information in the `build.gradle` file. This is the recommended method: you can also set it directly in the `AndroidManifest.xml` file but be aware that any version info set in the manifest file before the build will be overwritten by the `build.gradle` file’s settings during the build.
+
+:::
+
+To configure Android versioning:
+
+1. Add the **[Change Android versionCode and versionName](https://bitrise.io/integrations/steps/change-android-versioncode-and-versionname)** Step to your Workflow.
+1. Set the the path to your `build.gradle` file in the **Path to the build.gradle file** input.
+
+   ![change-android-version.png](/img/_paligo/uuid-fb7fb260-5679-1832-9448-228a048e2b80.png)
+1. Add a value in the **New versionCode** input.
+
+   The default value is the $BITRISE_BUILD_NUMBER Environment Variable.
+1. Add a value in the **New versionName** input.
+
+### Setting the CFBundleVersion and CFBundleShortVersionString of an iOS app
+
+For an iOS app, the value of the `CFBundleVersion` key (“Bundle version” in Xcode) is the build number of the app while the value of the `CFBundleShortVersionString` key (“Bundle versions string, short” in Xcode) is the version number of the app.
+
+For in-depth information about iOS versioning, including the functions of the `CFBundleVersion` and the `CFBundleShortVersionString` keys, please check out [this Apple technical note](https://developer.apple.com/library/archive/technotes/tn2420/_index.html); you can also look up the [summary of most important keys](https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html).
+
+:::important[Setting up iOS versioning for apps using Xcode 13+]
+
+To set up iOS versioning on Bitrise using Xcode 13+, update the following in Xcode:
+
+- Set the **Generate Info.plist File** to `No`, under **PROJECT** and **TARGETS** on the **Build Settings** tab.
+- Make sure you have all the necessary keys defined in the `Info.plist` file.
+
+:::
+
+1. Add the **Set Xcode Project Build Number** Step to your Workflow.
+1. Set the file path to the `Info.plist` file in the **Project path, scheme and Target** input.
+1. Add a value in the **Build Number** input. This sets the `CFBundleVersion` key to the specified value in the `Info.plist` file. The default value is the $BITRISE_BUILD_NUMBER Environment Value.
+1. Optionally, add a value in the **Version Number** input. This will set the `CFBundleShortVersionString` key to the specified value in the `Info.plist` file. This input is not required.

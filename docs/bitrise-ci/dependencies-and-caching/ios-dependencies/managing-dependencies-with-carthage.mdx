@@ -1,0 +1,101 @@
+---
+title: "Managing dependencies with Carthage"
+description: "You can use Bitrise's official Carthage Steps to install and cache your iOS dependencies. Carthage doesn't alter your Xcode project in any way and managing it requires very little configuration on Bitrise."
+sidebar_position: 3
+slug: /bitrise-ci/dependencies-and-caching/ios-dependencies/managing-dependencies-with-carthage
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+[Carthage](https://github.com/Carthage/Carthage) is a dependency manager for iOS and macOS. It's a decentralized dependency manager that doesn't alter your Xcode project in any way. You can use it on Bitrise, too, to handle dependencies for your iOS apps.
+
+## Installing Carthage dependencies
+
+To install your dependencies with Carthage:
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Make sure you have a [Cartfile](https://github.com/Carthage/Carthage/blob/master/Documentation/Artifacts.md#cartfile) included in your project.
+1. Add the **Carthage** <GlossTerm baseform="Step">Step</GlossTerm> to your <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
+
+   It should come after any Step that pulls from the cache. If you don't have any caching Steps, add the Step right after the **Git Clone** Step.
+1. In the **Carthage command to run** input, select the command you wish to run.
+
+   ![carthage-command.png](/img/_paligo/uuid-71148b6a-fbf8-6a5f-5423-a5ac2817e866.png)
+
+   The default value is `bootstrap`.
+
+   For a list of available commands, run `carthage help` on a device with Carthage installed.
+1. You can add options to the Carthage call in the **Additional options for carthage command** input.
+
+   For example, the `--platform ios` flag ensures that only the iOS version of frameworks will be installed.
+
+</TabItem>
+<TabItem value="bitriseyml" label="bitrise.yml">
+
+1. Make sure you have a [Cartfile](https://github.com/Carthage/Carthage/blob/master/Documentation/Artifacts.md#cartfile) included in your project.
+1. Add the `carthage` Step to your Workflow.
+
+   It should come after any Step that pulls from the cache. If you don't have any caching Steps, add the Step right after the `git-clone` Step.
+
+   ```yml
+   my-workflow:
+     steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - restore-carthage-cache: {}
+       - carthage:
+       - save-carthage-cache: {}
+   ```
+1. In the `carthage_command` input, select the command you wish to run.
+
+   The default value is `bootstrap`.
+
+   For a list of available commands, run `carthage help` on a device with Carthage installed.
+
+   ```yml
+   my-workflow:
+     steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - restore-carthage-cache: {}
+       - carthage:
+       - save-carthage-cache: {}
+           inputs:
+           - carthage_command: bootstrap 
+       - save-carthage-cache: {}
+   ```
+1. You can add options to the Carthage call in the `carthage_options` input.
+
+   For example, the `--platform ios` flag ensures that only the iOS version of frameworks will be installed.
+
+   ```yml
+   my-workflow:
+     steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - restore-carthage-cache: {}
+       - carthage:
+       - save-carthage-cache: {}
+           inputs:
+           - carthage_command: bootstrap        
+           - carthage_options: "--platform ios"          
+       - save-carthage-cache: {}
+   ```
+
+</TabItem>
+</Tabs>
+
+## Caching Carthage dependencies
+
+With key-based caching, you only need the **Restore Carthage cache** and the **Save Carthage cache** Steps to cache your dependencies. These Steps require no configuration as they automatically set up the cache keys and cache paths.
+
+1. Add the **Restore Carthage cache** Step to your Workflow
+
+   ![carthage-command.png](/img/_paligo/uuid-71148b6a-fbf8-6a5f-5423-a5ac2817e866.png)
+
+   It should come before the **Carthage** Step or any Step that needs dependencies to build your app, such as **Xcode Archive & Export for iOS**.
+1. Add the **Save Carthage cache** Step to the end of your Workflow.

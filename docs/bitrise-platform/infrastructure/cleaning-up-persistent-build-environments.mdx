@@ -1,0 +1,199 @@
+---
+title: "Cleaning up persistent build environments"
+description: "You can configure the Bitrise CLI to run in agent mode: this allows cleaning up persistent build environments when running builds on self-hosted agents."
+sidebar_position: 13
+slug: /bitrise-platform/infrastructure/cleaning-up-persistent-build-environments
+sidebar_label: Cleaning up a persistent build environment
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_NOTESecretsInSelfHostedEnvironments from '@site/src/partials/note-secrets-in-self-hosted-environments.mdx';
+
+On Bitrise, a new virtual machine is created every time a build starts and it is destroyed when the build is finished. You can, however run Bitrise builds in a persistent build environment: for example, you can use [our on-premise runner](/en/bitrise-platform/infrastructure/running-bitrise-builds-on-premise.html) or [run builds on an Amazon EC2 instance](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup.html). In such an environment, the products of one build might affect subsequent builds.
+
+On self-hosted infrastructure, one Bitrise runner executes multiple builds. This allows sharing data between builds on the local filesystem, but it also requires care in order to avoid one build affecting another.
+
+To avoid the problem, you can configure the Bitrise CLI to run in **agent mode**. Agent mode requires placing an `agent-config.yml` in the host machine's `~/.bitrise/` directory. In the file, you can specify which directories to clean up when starting a new build or at the end of a build. It also allows you to run your own custom scripts if you have a more advanced use case than a simple cleanup.
+
+<Partial_NOTESecretsInSelfHostedEnvironments />
+
+## Configuring agent mode
+
+<Tabs>
+<TabItem value="macos" label="macOS" default>
+
+1. Add the `agent-config.yml` file to your `~/.bitrise/` directory.
+1. If you wish to configure the exact folders in which you want to do cleanup operations, define a `bitrise_dirs` property.
+
+   The property overrides the default settings: for example, you can set a different path for the BITRISE_DEPLOY_DIR environment variable than the default.
+1. Under `bitrise_dirs`, define the directories that you wish to perform some action on at the start or at the end of builds in a `KEY: path` format.
+
+   For example, you can define separate directories for all source code checkout, deployable artifacts, and deployable test result artifacts.
+
+   ```
+   # Customize the common Bitrise directories
+   bitrise_dirs:
+     # Root directory for all Bitrise data produced at runtime
+     BITRISE_DATA_HOME_DIR: /Users/ec2-user/bitrise
+
+     # Directory for source code checkout.
+     BITRISE_SOURCE_DIR: /Users/ec2-user/bitrise/workspace/$BITRISE_APP_SLUG
+
+     # Directory for deployable artifacts.
+     BITRISE_DEPLOY_DIR: /Users/ec2-user/bitrise/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/artifacts
+
+     # Directory for deployable test result artifacts.
+     BITRISE_TEST_DEPLOY_DIR: /Users/ec2-user/bitrise/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/test_results
+
+     # Directory for the html reports
+     BITRISE_HTML_REPORT_DIR: /Users/ec2-user/bitrise/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/html_reports
+   ```
+
+   :::caution[Multiple projects of the same Workspace]
+
+   Don’t forget that multiple projects of the same Workspace could run on the same agent. Make sure to always include $BITRISE_APP_SLUG in the directory hierarchy to separate projects and their source code checkouts.
+
+   ```
+   # wrong:
+   BITRISE_SOURCE_DIR: /opt/bitrise/workspace
+   # correct:
+   BITRISE_SOURCE_DIR: /opt/bitrise/workspace/$BITRISE_APP_SLUG
+   ```
+
+   :::
+1. Add a `hooks` property to the `agent-config.yml` file. This property will define the actions to perform at the start or end of builds. It has four different parameters:
+
+   - `cleanup_on_build_start`: Defines a directory that is cleaned up when a new build is started.
+   - `cleanup_on_build_end`: Defines a directory that is cleaned up whenever a build is finished. Not guaranteed to run in the case of build failure.
+   - `do_on_build_start`: Defines a custom script that runs when a new build is started.
+   - `do_on_build_end`: Defines a custom script that runs when a build is finished. Not guaranteed to run in the case of build failure.
+
+   :::important[Nested Workflows]
+
+   A **Script** Step in a Workflow can execute `bitrise run nested_workflow` and trigger a nested workflow. This nested Workflow inherits all the envs and parameters of the parent Workflow, and the parent Workflow waits for the completion of the nested Workflow. When the nested Workflow is launched this way, hooks and directory cleanups are not executed in this process to avoid unexpected behavior.
+
+   :::
+1. To test the agent mode, start a build. The log should show the following message at the top:
+
+   ```
+   Running in agent mode
+   Config file: .bitrise/agent-config.yml
+   ```
+
+</TabItem>
+<TabItem value="linux" label="Linux">
+
+1. Add the `agent-config.yml` file to your `~/.bitrise/` directory.
+1. If you wish to configure the exact folders in which you want to do cleanup operations, define a `bitrise_dirs` property.
+
+   The property overrides the default settings: for example, you can set a different path for the BITRISE_DEPLOY_DIR environment variable than the default.
+1. Under `bitrise_dirs`, define the directories that you wish to perform some action on at the start or at the end of builds in a `KEY: path` format.
+
+   For example, you can define separate directories for all source code checkout, deployable artifacts, and deployable test result artifacts.
+
+   ```
+   # Customize the common Bitrise directories
+   bitrise_dirs:
+     # Root directory for all Bitrise data produced at runtime
+     BITRISE_DATA_HOME_DIR: /opt/bitrise
+
+     # Directory for source code checkout.
+     BITRISE_SOURCE_DIR: /opt/bitrise/workspace/$BITRISE_APP_SLUG
+
+     # Directory for deployable artifacts.
+     BITRISE_DEPLOY_DIR: /opt/bitrise/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/artifacts
+
+     # Directory for deployable test result artifacts.
+     BITRISE_TEST_DEPLOY_DIR: /opt/bitrise/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/test_results
+
+     # Directory for the html reports
+     BITRISE_HTML_REPORT_DIR: /opt/bitrise/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/html_reports
+   ```
+
+   :::caution[Multiple projects of the same Workspace]
+
+   Don’t forget that multiple projects of the same Workspace could run on the same agent. Make sure to always include $BITRISE_APP_SLUG in the directory hierarchy to separate projects and their source code checkouts.
+
+   ```
+   # wrong:
+   BITRISE_SOURCE_DIR: /opt/bitrise/workspace
+   # correct:
+   BITRISE_SOURCE_DIR: /opt/bitrise/workspace/$BITRISE_APP_SLUG
+   ```
+
+   :::
+1. Add a `hooks` property to the `agent-config.yml` file. This property will define the actions to perform at the start or end of builds. It has four different parameters:
+
+   - `cleanup_on_build_start`: Defines a directory that is cleaned up when a new build is started.
+   - `cleanup_on_build_end`: Defines a directory that is cleaned up whenever a build is finished. Not guaranteed to run in the case of build failure.
+   - `do_on_build_start`: Defines a custom script that runs when a new build is started.
+   - `do_on_build_end`: Defines a custom script that runs when a build is finished. Not guaranteed to run in the case of build failure.
+
+   :::important[Nested Workflows]
+
+   A **Script** Step in a Workflow can execute `bitrise run nested_workflow` and trigger a nested workflow. This nested Workflow inherits all the envs and parameters of the parent Workflow, and the parent Workflow waits for the completion of the nested Workflow. When the nested Workflow is launched this way, hooks and directory cleanups are not executed in this process to avoid unexpected behavior.
+
+   :::
+1. To test the agent mode, start a build. The log should show the following message at the top:
+
+   ```
+   Running in agent mode
+   Config file: .bitrise/agent-config.yml
+   ```
+
+</TabItem>
+</Tabs>
+
+## Common configuration examples
+
+**Fully isolated builds**
+
+To minimize state and maximize reliability, each build is assigned unique directories. Source code is checked out from scratch in each build.
+
+```
+bitrise_dirs:
+  BITRISE_DATA_HOME_DIR: /opt/bitrise
+  BITRISE_SOURCE_DIR: /opt/bitrise/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/workspace
+  BITRISE_DEPLOY_DIR: /opt/bitrise/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/artifacts
+  BITRISE_TEST_DEPLOY_DIR: /opt/bitrise/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/test_results
+  BITRISE_HTML_REPORT_DIR: /opt/bitrise/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/html_reports
+
+hooks:
+  # Since dirs are unique to each build, there is nothing to clean up here:
+  cleanup_on_build_start: []
+  
+  # Clean up everything after the build ends:
+  cleanup_on_build_end:
+    - $BITRISE_SOURCE_DIR
+    - $BITRISE_DEPLOY_DIR
+    - $BITRISE_TEST_DEPLOY_DIR
+    - $BITRISE_HTML_REPORT_DIR
+```
+
+**Shared source code directory for warm checkouts**
+
+For faster source code checkouts, it’s possible to reuse a previous build’s source code directory.
+
+```
+bitrise_dirs:
+  BITRISE_DATA_HOME_DIR: /opt/bitrise
+  # Use a warm clone of the repo for all builds:
+  BITRISE_SOURCE_DIR: /opt/bitrise/$BITRISE_APP_SLUG/workspace
+  # For artifacts and test results, it's still a good idea to place them into unique dirs
+  BITRISE_DEPLOY_DIR: /opt/bitrise/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/artifacts
+  BITRISE_TEST_DEPLOY_DIR: /opt/bitrise/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/test_results
+  BITRISE_HTML_REPORT_DIR: /Users/ec2-user/bitrise/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/html_reports
+
+hooks:
+  # Since dirs are unique to each build, there is nothing to clean up here:
+  cleanup_on_build_start: []
+  
+  # Optional: clean up artifacts and test results.
+  # Note that $BITRISE_SOURCE_DIR is NOT clean up here!
+  cleanup_on_build_end:
+    - $BITRISE_DEPLOY_DIR
+    - $BITRISE_TEST_DEPLOY_DIR
+    - $BITRISE_HTML_REPORT_DIR
+```

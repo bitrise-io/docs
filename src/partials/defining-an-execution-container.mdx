@@ -1,0 +1,141 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Defining an execution container
+
+Use the `container` property to define an execution container. You can define them either on the Workflow Editor or directly in your configuration YAML file.
+
+When you have at least one execution container defined, you can run Steps and Step bundles in them: [Running an execution container](/en/bitrise-platform/infrastructure/docker-containers-on-bitrise/execution-containers/running-an-execution-container).
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+
+   ![workflows-button.png](/img/_paligo/uuid-99bb894c-3e79-91c8-9e62-7e475573495d.png)
+1. On the left, select **Containers**.
+1. Go to the **Execution containers** tab and then click **Add container**.
+
+   ![SCR-20260313-pnzl.png](/img/_paligo/uuid-35998534-7cfb-c0c6-7277-bb12dd6bc345.png)
+1. Set the required properties for the container. They are:
+
+   - **Unique ID**: This ID is used to refer to the container in your configuration YAML file.
+   - **Image:** The name and version of the Docker image. You can use any image found on [Docker Hub](https://hub.docker.com/) or you can use other registries.
+
+     For a Docker Hub image, use the `[name]:[version]` format. For other registries, use `[registry server]/[owner]/[name]:[version]`.
+1. Optionally, add port mappings in the **Ports** field in the `[HostPort01]:[ContainerPort01]` format.
+
+   Read more about port publishing and port mapping in [Docker's official documentation](https://docs.docker.com/engine/network/port-publishing/).
+1. Click **Show more options** to access Docker authentication credentials, Environment Variables for your container, and Docker create options.
+1. Optionally, set up your Docker credentials.
+
+   The credentials are used for the `docker login` command. You can set up:
+
+   - **Registry server**: It should be a fully qualified registry server URL. This is optional if the server is already part of the image reference.
+   - **Username**.
+   - **Password**.
+
+   :::tip
+
+   You must use [secrets](/en/bitrise-ci/configure-builds/secrets.html) to pass your Docker credentials to your configuration.
+
+   :::
+1. Optionally, add options in the **Docker create options** field.
+
+   These are Docker container resource options: parameters that will be passed to the `docker container create` command.
+
+   ![SCR-20260313-pruq.png](/img/_paligo/uuid-683647fc-3131-1c5a-8667-2fa719d617cd.png)
+
+   For a list of all available options, see [the Docker documentation](https://docs.docker.com/reference/cli/docker/container/create/#options).
+1. When done, click **Create container**.
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. Add the `containers` property to the top level of your configuration YAML.
+
+   :::tip[YAML syntax reference]
+
+   For detailed YAML syntax reference, see [Docker container properties](/en/bitrise-ci/references/configuration-yaml-reference/docker-container-properties).
+
+   :::
+1. Set an ID for your container.
+
+   It must be unique within the configuration. The ID is used to refer to the container in Steps or Step bundles.
+
+   ```
+   containers:
+     node-18:
+   ```
+1. Set the required properties for the container. They are:
+
+   - The name and version of the Docker image, in a `name:version` format. You can use any image found on [Docker Hub](https://hub.docker.com/).
+   - The container type: `execution`.
+
+   ```
+   containers:
+     node-21:
+       type: execution
+       image: node:21.6
+     node-18: 
+       type: execution
+       image: node:18
+   ```
+1. Optionally, set up a port mapping in the `[HostPort01]:[ContainerPort01]` format.
+
+   Read more about port publishing and port mapping in [Docker's official documentation](https://docs.docker.com/engine/network/port-publishing/).
+
+   ```
+   containers:
+     node-21:
+       type: execution
+       image: node:21.6
+       ports: 
+       - 3000:3000
+   ```
+1. Optionally, set up your Docker credentials.
+
+   The credentials are used for the `docker login` command. You can set up:
+
+   - A server: It should be a fully qualified registry server URL. This is optional if the server is already part of the image reference.
+   - A username.
+   - A password.
+
+   :::tip
+
+   We recommend using secrets to pass your Docker credentials to your configuration.
+
+   :::
+
+   ```
+   containers:
+     node-21:
+       type: execution
+       image: node:21.6
+       credentials:
+         username: $DOCKER_USERNAME
+         password: $DOCKER_PASSWORD
+         server: us-central1-docker.pkg.dev
+   ```
+1. Optionally, use the `options` property to configure additional Docker container resource options: parameters that will be passed to the `docker container create` command.
+
+   In this example, the service is configured to have [healthchecks](https://docs.docker.com/engine/reference/run/#healthchecks).
+
+   ```
+   containers:
+     node-21:
+       type: execution
+       image: node:21.6
+       options: >-
+         --health-cmd pg_isready
+         --health-interval 10s
+         --health-timeout 5s
+         --health-retries 5
+   ```
+
+   For a list of all available options, see [the Docker documentation](https://docs.docker.com/reference/cli/docker/container/create/#options).
+
+</TabItem>
+</Tabs>

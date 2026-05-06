@@ -1,0 +1,52 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Changing the location of the app's bitrise.yml file
+
+The app's `bitrise.yml` configuration file can be stored in two places:
+
+- On bitrise.io. This is the default setting for all apps.
+- [In your app's repository.](/en/bitrise-ci/configure-builds/configuration-yaml/managing-a-projects-configuration-yaml-file/storing-the-bitriseyml-file-in-your-repository) This way you have full control over the versioning and maintenance of the config file. You can still use the graphical Workflow Editor on bitrise.io to modify your configuration but you will need to commit your changes to the repository.
+
+You can get and change the location of the file using the API.
+
+:::important[Admin access required]
+
+Both endpoints related to the location of the `bitrise.yml` file require admin level access to the app.
+
+:::
+
+With the `GET/apps/{app-slug}/bitrise.yml/config` endpoint, you can get the location of the file. Location here means that calling the endpoint tells you whether the file is stored on bitrise.io or in the repository. The endpoint takes no parameters and it returns one of two values in the response:
+
+- `"location": "bitrise.io"`
+- `"location": "repository"`
+
+```
+curl -X 'GET' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/bitrise.yml/config' \
+  -H 'accept: application/json' \
+  -H 'Authorization: ACCESS-TOKEN'
+```
+
+With the `PUT/apps/{app-slug}/bitrise.yml/config` endpoint, you can change the location of the file: that is, you can tell Bitrise whether to look for the config file on bitrise.io or in your repository. This endpoint takes one of two values in a JSON object:
+
+- `"location": "bitrise.io"` to store the config file on bitrise.io.
+- `"location": "repository"` to store the config file in your repository.
+
+:::important[Commit the config file into your repository]
+
+Please note that changing the location to `repository` merely tells Bitrise to look for the `bitrise.yml` file in the app's repository. If the file does not exist in the repository, the endpoint won't return an error but you won't be able to run builds because Bitrise won't find the config file.
+
+:::
+
+```
+curl -X 'PUT' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/bitrise.yml/config' \
+  -H 'accept: application/json' \
+  -H 'Authorization: ACCESS-TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "location": "bitrise.io"
+}'
+```

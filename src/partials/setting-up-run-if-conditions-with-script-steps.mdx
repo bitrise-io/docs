@@ -1,0 +1,43 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Setting up run_if conditions with Script Steps
+
+Sometimes the conditions required to determine whether a Step should run or not are complex and multi-layered. If so, using a complex chain of Go templates in a `run_if` expression can be overwhelming, especially if you prefer other languages instead of Go.
+
+In such cases, we recommend using a workaround: add a **Script** Step in your Workflow, and write a script that evaluates to a certain value. Store that value in an Environment Variable, and then the Step with the conditional expression only needs to check that value.
+
+**Using a non-Go script for a run_if expression**
+
+In this example, we'll create a simple Bash script and store its value, then check whether it matches a preset value.
+
+First, we add a Script Step, and in the script content, we define a value. Once the value is defined, we use `[envman](https://github.com/bitrise-io/envman/)` to store it in an Environment Variable. In this particular case, we define a variable in Bash, and use that variable as the value for our Env Var:
+
+```
+workflows:    
+    example:      
+      steps:     
+      - script@1:
+          title: Do anything with Script step          
+          inputs:          
+          - content: |-              
+              #!/usr/bin/env bash
+              # fail if any commands fails              
+              set -e
+              # debug log
+              set -x
+              # creating the variable and storing it as an Env Var                
+              my_variable='This is the value we need!'          
+              envman add --key OUR_CONDITION --value "$my_variable"
+```
+
+We then create a simple `run_if` expression for the Step for which we need a condition. In this case, our Step is the **Save cache** Step, and we'll check if the value of the OUR_CONDITION variable matches the value stored in the previous Bash variable:
+
+```
+- save-cache@1:        
+        run_if: |-          
+          {{getenv "OUR_CONDITION" | eq "This is the value we need!"}}
+```
+
+Since the values match, the **Save cache** Step will run.
