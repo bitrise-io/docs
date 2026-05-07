@@ -1,7 +1,9 @@
 ---
-title: "Installing and upgrading the offline Workflow Editor"
+title: "Offline Workflow Editor"
+description: "The offline Workflow Editor is the same graphical UI you use on bitrise.io, running on your local machine against your bitrise.yml. Configure your build pipeline without an internet connection."
 sidebar_position: 4
 slug: /bitrise-ci/bitrise-cli/installing-and-upgrading-the-offline-workflow-editor
+sidebar_label: Offline Workflow Editor
 ---
 
 import Tabs from '@theme/Tabs';
@@ -11,10 +13,49 @@ import Partial_InstallingTheOfflineWorkflowEditorToYourComputer from '@site/src/
 import Partial_UpgradingWorkflowEditorVersion from '@site/src/partials/upgrading-workflow-editor-version.mdx';
 import Partial_StartingTheOfflineWorkflowEditor from '@site/src/partials/starting-the-offline-workflow-editor.mdx';
 
-Bitrise Workflow Editor is designed in such a way that you can run it offline on your Mac/PC without having to log into [bitrise.io](https://www.bitrise.io/). The Workflow Editor is open source, you can find its repository [here](https://github.com/bitrise-io/bitrise-workflow-editor). You can also join the discussion around Workflow Editor [here](https://discuss.bitrise.io/t/workflow-editor-v2-open-source-offline-workflow-editor/39).
+The offline Workflow Editor gives you the same graphical Workflow Editor you use on [bitrise.io](https://www.bitrise.io/), running locally against your project's `bitrise.yml` file. You don't need an internet connection or a Bitrise login to use it — your configuration stays on your machine until you push it back to the repository.
+
+The Workflow Editor is open source. The code is on [GitHub](https://github.com/bitrise-io/bitrise-workflow-editor), and the design discussion lives on the [Bitrise discussion forum](https://discuss.bitrise.io/t/workflow-editor-v2-open-source-offline-workflow-editor/39).
+
+## What you can do with it
+
+Once it's running, you have access to the parts of the Workflow Editor that operate on your `bitrise.yml`:
+
+- Browse, add, remove, and reorder <GlossTerm baseform="Step">Steps</GlossTerm> from the [Bitrise StepLib](https://github.com/bitrise-io/bitrise-steplib).
+- Edit Step inputs in the UI without touching YAML by hand.
+- Create, rename, and chain <GlossTerm baseform="Workflow">Workflows</GlossTerm>.
+- Define [Step bundles](/en/bitrise-ci/workflows-and-pipelines/steps/step-bundles) and use them across Workflows.
+- Configure [build triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers) and [Pipelines](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline).
+- Switch between graphical view and raw `bitrise.yml` view in real time.
+
+## When to use it
+
+The offline Workflow Editor is a good fit when you want to:
+
+- **Iterate on `bitrise.yml` without a network round-trip.** Local edits are instant.
+- **Edit configuration on a developer machine** before committing it to the repository, so the change goes through code review like any other source change.
+- **Work without exposing the configuration to bitrise.io** — useful in air-gapped or restricted-network environments.
+- **Run [local builds with the Bitrise CLI](/en/bitrise-ci/bitrise-cli/running-your-first-local-build-with-the-cli) against the same edited config** without leaving your terminal.
+
+If your project [stores `bitrise.yml` in the repository](/en/bitrise-ci/configure-builds/configuration-yaml/managing-a-projects-configuration-yaml-file/storing-the-bitriseyml-file-in-your-repository), the offline Workflow Editor pairs especially well with that setup: edit locally, commit, push — bitrise.io picks up the new config on the next build.
 
 <Partial_InstallingTheOfflineWorkflowEditorToYourComputer />
 
 <Partial_StartingTheOfflineWorkflowEditor />
 
 <Partial_UpgradingWorkflowEditorVersion />
+
+## Best practices
+
+- **Run it from the project root.** `bitrise :workflow-editor` reads the `bitrise.yml` from the current directory. Always `cd` into the project root before starting it so it edits the right file.
+- **Keep your StepLib refreshed.** Run `bitrise plugin update workflow-editor` periodically — the offline editor caches its Step list, so refreshing keeps you on the latest Step versions.
+- **Commit each change.** Treat the offline editor like any other source modification — add the updated `bitrise.yml` to a branch, run `git diff`, open a pull request. The full configuration history then lives in your repository.
+- **Reach for the YAML view when needed.** The graphical UI covers most cases, but features like [modular YAML configuration](/en/bitrise-ci/configure-builds/configuration-yaml/modular-yaml-configuration) or fine-grained [trigger map](/en/bitrise-ci/run-and-analyze-builds/build-triggers/yaml-syntax-of-build-triggers) edits are easier in raw YAML — switch tabs.
+- **Run a local build to verify.** After saving changes, run [a local build with the Bitrise CLI](/en/bitrise-ci/bitrise-cli/running-your-first-local-build-with-the-cli) before pushing. The offline editor only validates structure; a local build catches Step input mistakes early.
+
+## Related topics
+
+- [Installing and updating the Bitrise CLI](/en/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli) — prerequisite for the offline Workflow Editor.
+- [Editing an app's bitrise.yml file](/en/bitrise-ci/configure-builds/configuration-yaml/editing-an-app-s-bitrise-yml-file) — the three ways to edit `bitrise.yml`, including locally.
+- [Storing the bitrise.yml file in your repository](/en/bitrise-ci/configure-builds/configuration-yaml/managing-a-projects-configuration-yaml-file/storing-the-bitriseyml-file-in-your-repository) — the natural pairing for offline editing.
+- [Running your first local build with the CLI](/en/bitrise-ci/bitrise-cli/running-your-first-local-build-with-the-cli) — verify your changes locally before pushing.
