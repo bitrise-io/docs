@@ -12,7 +12,7 @@ Optionally, you can assign an approval task to a team member. Only the assigned 
 1. Open your release.
 1. Select **Approvals** on the left navigation bar.
 
-   ![approvalpage_tasks.jpg](/img/_paligo/uuid-1c68a37c-df87-a7ef-90e6-37ca83ac1ba2.png)
+   ![approvalpage_tasks.jpg](/img/_paligo/uuid-1c68a37c-df87-a7ef-90e6-37ca83ac1ba2.jpg)
 1. Click the **Add New Task** button.
 1. Fill out the necessary fields:
 

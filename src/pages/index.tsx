@@ -1,5 +1,6 @@
 import React from 'react';
 import Layout from '@theme/Layout';
+import SearchBar from '@theme/SearchBar';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import styles from './index.module.css';
 
@@ -44,7 +45,7 @@ const sections = [
     ],
   },
   {
-    id: 'release-management',
+    id: 'bitrise-release-management',
     title: 'Release Management',
     description: 'Test and release your mobile apps in an automated and transparent way.',
     href: '/en/release-management',
@@ -55,7 +56,7 @@ const sections = [
     ],
   },
   {
-    id: 'insights',
+    id: 'bitrise-insights',
     title: 'Insights',
     description: 'Explore analytics, monitor trends, and set up alerts to improve efficiency.',
     href: '/en/insights',
@@ -80,7 +81,7 @@ const sections = [
 
 function PortalCard({section}: {section: typeof sections[0]}) {
   return (
-    <div className={styles.card}>
+    <div className={styles.card} data-section={section.id}>
       <div className={styles.cardHeader}>
         <h3><a href={section.href}>{section.title}</a></h3>
         <p>{section.description}</p>
@@ -92,7 +93,7 @@ function PortalCard({section}: {section: typeof sections[0]}) {
           </li>
         ))}
       </ul>
-      <hr />
+      <hr className={styles.cardDivider} />
       <a href={section.href} className={styles.viewAll}>View all</a>
     </div>
   );
@@ -103,41 +104,36 @@ export default function Home(): React.JSX.Element {
 
   return (
     <Layout title="Home" description={siteConfig.tagline}>
-      <div className={styles.portal}>
-        <div className={styles.header}>
-          <div className={styles.headerInner}>
-            <div className={styles.headerLeft}>
-              <h1>Welcome to Bitrise Documentation</h1>
-              <p>Find product documentation, code samples, API &amp; CLI references, and more.</p>
-              <div className={styles.searchBox}>
-                <input
-                  name="search"
-                  type="text"
-                  placeholder="Search"
-                  id="searchWidgetTrigger"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck={false}
-                  aria-label="Search"
-                />
-              </div>
-            </div>
-            <div className={styles.headerRight}>
-              <img
-                src="/img/brand/portal-header-illustration.png"
-                alt=""
-                className={styles.headerIllustration}
-              />
+      {/* Full-width purple gradient hero */}
+      <div className={styles.hero}>
+        <div className={styles.heroInner}>
+          <div className={styles.heroLeft}>
+            <h1>Welcome to Bitrise Documentation</h1>
+            <p>Find product documentation, code samples, API &amp; CLI references, and more.</p>
+            <div className={styles.searchBox}>
+              <SearchBar />
             </div>
           </div>
+          <div className={styles.heroRight}>
+            <img
+              src="/img/brand/portal-header-illustration.png"
+              alt=""
+            />
+          </div>
         </div>
+      </div>
 
-        <div className={styles.subtitle}>
+      {/* Subtitle section */}
+      <div className={styles.subtitleSection}>
+        <div className={styles.subtitleInner}>
           <h2>Learn how to use Bitrise, the Mobile DevOps Platform tailored for mobile engineering teams</h2>
           <p>Bitrise's Mobile DevOps Platform equips you for success every step of the way, from planning to monitoring.</p>
         </div>
+      </div>
 
-        <div className={styles.cards}>
+      {/* Cards section */}
+      <div className={styles.cardsSection}>
+        <div className={styles.cardsInner}>
           {sections.map((section) => (
             <PortalCard key={section.id} section={section} />
           ))}

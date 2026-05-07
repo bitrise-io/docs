@@ -57,7 +57,7 @@ A new stack is introduced as an edge stack first, then, after a year of testing 
 
 Different stages of a single stack:
 
-![stack-state-change.svg](/img/_paligo/uuid-5169df38-e851-52da-fb4f-d37c3f98e8d8.png)
+![stack-state-change.svg](/img/_paligo/uuid-5169df38-e851-52da-fb4f-d37c3f98e8d8.svg)
 
 Every year, around April and the release of the new Ubuntu version:
 
@@ -68,7 +68,7 @@ Every year, around April and the release of the new Ubuntu version:
 
 Changing states presented with previous and future stacks:
 
-![multiple-stack-state-change.svg](/img/_paligo/uuid-bcc68f5e-feec-8292-2e57-1bfb0dd9d9b9.png)
+![multiple-stack-state-change.svg](/img/_paligo/uuid-bcc68f5e-feec-8292-2e57-1bfb0dd9d9b9.svg)
 
 Before a stack is removed, it’s flagged for removal, and you see the final removal date throughout the UI. Additionally, the remaining users of the stack receive an email notification from Bitrise.
 
@@ -78,13 +78,13 @@ At any given time, you can choose from at least one edge, stable and frozen stac
 
 |  | Edge | Stable | Frozen |
 | --- | --- | --- | --- |
-| Stable stack ID which can be included in bitrise.yml | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.png) | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.png) | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.png) |
-| Security updates to OS components, system libraries and preinstalled tools | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.png) | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.png) | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.png) |
-| Updates to OS components and system libraries | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.png) | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.png) | ![close-small.svg](/img/_paligo/uuid-5de915cb-051d-9584-d965-a36295c3f83c.png) |
-| Addition of new tools and tool versions | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.png) | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.png) | ![close-small.svg](/img/_paligo/uuid-5de915cb-051d-9584-d965-a36295c3f83c.png) |
-| Breaking changes in stack updates to existing tools and tool versions | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.png) | ![close-small.svg](/img/_paligo/uuid-5de915cb-051d-9584-d965-a36295c3f83c.png) | ![close-small.svg](/img/_paligo/uuid-5de915cb-051d-9584-d965-a36295c3f83c.png) |
-| New experimental features and configuration changes | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.png) | ![close-small.svg](/img/_paligo/uuid-5de915cb-051d-9584-d965-a36295c3f83c.png) | ![close-small.svg](/img/_paligo/uuid-5de915cb-051d-9584-d965-a36295c3f83c.png) |
-| Removal of tools and tool versions | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.png) | ![close-small.svg](/img/_paligo/uuid-5de915cb-051d-9584-d965-a36295c3f83c.png) | ![close-small.svg](/img/_paligo/uuid-5de915cb-051d-9584-d965-a36295c3f83c.png) |
+| Stable stack ID which can be included in bitrise.yml | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.svg) | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.svg) | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.svg) |
+| Security updates to OS components, system libraries and preinstalled tools | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.svg) | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.svg) | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.svg) |
+| Updates to OS components and system libraries | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.svg) | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.svg) | ![close-small.svg](/img/_paligo/uuid-5de915cb-051d-9584-d965-a36295c3f83c.svg) |
+| Addition of new tools and tool versions | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.svg) | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.svg) | ![close-small.svg](/img/_paligo/uuid-5de915cb-051d-9584-d965-a36295c3f83c.svg) |
+| Breaking changes in stack updates to existing tools and tool versions | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.svg) | ![close-small.svg](/img/_paligo/uuid-5de915cb-051d-9584-d965-a36295c3f83c.svg) | ![close-small.svg](/img/_paligo/uuid-5de915cb-051d-9584-d965-a36295c3f83c.svg) |
+| New experimental features and configuration changes | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.svg) | ![close-small.svg](/img/_paligo/uuid-5de915cb-051d-9584-d965-a36295c3f83c.svg) | ![close-small.svg](/img/_paligo/uuid-5de915cb-051d-9584-d965-a36295c3f83c.svg) |
+| Removal of tools and tool versions | ![tick.svg](/img/_paligo/uuid-cff0066a-5a70-e7b4-5140-5dabde7188c2.svg) | ![close-small.svg](/img/_paligo/uuid-5de915cb-051d-9584-d965-a36295c3f83c.svg) | ![close-small.svg](/img/_paligo/uuid-5de915cb-051d-9584-d965-a36295c3f83c.svg) |
 
 ## Changelog
 

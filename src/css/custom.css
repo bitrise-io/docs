@@ -16,15 +16,25 @@
   --ifm-font-size-base: 100%;
   --ifm-line-height-base: 1.5;
 
+  /* Match live site heading scale */
+  --ifm-h1-font-size: 1.875rem;
+  --ifm-h2-font-size: 1.5rem;
+  --ifm-h3-font-size: 1.1875rem;
+  --ifm-h4-font-size: 1rem;
+  --ifm-h5-font-size: 0.875rem;
+  --ifm-h6-font-size: 0.75rem;
+
   --ifm-link-color: var(--sys-interactive-base);
   --ifm-link-hover-color: var(--sys-interactive-strong);
 
   --ifm-background-color: var(--sys-bg-surface);
   --ifm-footer-background-color: var(--pal-neutral-10);
 
-  --ifm-navbar-height: 3.5rem;
-  --ifm-navbar-background-color: var(--sys-bg-surface);
-  --ifm-navbar-shadow: var(--elevation-sm);
+  --ifm-navbar-height: 3rem;
+  --ifm-navbar-background-color: var(--pal-purple-30);
+  --ifm-navbar-shadow: none;
+  --ifm-navbar-link-color: rgba(255, 255, 255, 0.9);
+  --ifm-navbar-link-hover-color: #ffffff;
 
   --ifm-code-font-size: 85%;
   --ifm-code-padding-horizontal: 0.3rem;
@@ -43,35 +53,662 @@
   --ifm-color-primary-lightest: var(--pal-purple-93);
 
   --ifm-background-color: #1a1a2e;
-  --ifm-navbar-background-color: #1a1a2e;
+  --ifm-navbar-background-color: var(--pal-purple-10);
+}
+
+/* ---- Navbar ---- */
+
+.navbar {
+  background-color: var(--pal-purple-30);
+  padding: 0 1.5rem;
+}
+
+.navbar__brand {
+  min-width: 300px;
+}
+
+.navbar__logo {
+  display: flex;
+  align-items: center;
 }
 
 .navbar__logo img {
-  height: 28px;
+  height: 25px;
+  width: auto;
 }
 
-.navbar__items--right .navbar__item:last-child {
-  background-color: var(--button-primary-bg);
-  color: var(--button-primary-fg);
-  border-radius: var(--button-md-border-radius);
-  padding: var(--button-md-padding);
-  font-weight: var(--button-md-font-weight);
-  font-size: var(--button-md-font-size);
+.navbar__link {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: var(--button-sm-font-size);
+  font-weight: var(--button-sm-font-weight);
+}
+
+.navbar__link:hover,
+.navbar__link--active {
+  color: #ffffff;
+}
+
+/* "Go to Support" — outlined white button */
+.navbar-support-link {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 0.25rem;
+  padding: 0.375rem 0.75rem !important;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff !important;
   text-decoration: none;
-  transition: background-color 0.2s;
+  font-size: var(--button-sm-font-size);
+  font-weight: var(--button-sm-font-weight);
+  line-height: var(--button-sm-line-height);
 }
 
-.navbar__items--right .navbar__item:last-child:hover {
-  background-color: var(--button-primary-bg-hover);
-  color: var(--button-primary-fg-hover);
+.navbar-support-link:hover {
+  background: rgba(0, 0, 0, 0.1) !important;
+  color: #ffffff !important;
 }
+
+/* "Start for free" — white filled button */
+.navbar-cta-link {
+  border-radius: 0.25rem;
+  padding: 0.375rem 0.75rem !important;
+  background: #ffffff !important;
+  color: var(--pal-purple-30) !important;
+  text-decoration: none;
+  font-size: var(--button-sm-font-size);
+  font-weight: var(--button-sm-font-weight);
+  line-height: var(--button-sm-line-height);
+}
+
+.navbar-cta-link:hover {
+  background: var(--pal-purple-95) !important;
+  color: var(--pal-purple-30) !important;
+}
+
+/* Right-side buttons gap */
+.navbar__items--right {
+  gap: 0.5rem;
+}
+
+/* Navbar search input — pushed to the right of the logo, fills space before the buttons */
+.navbar__items:not(.navbar__items--right) {
+  flex: 1;
+}
+
+/* Hide fake navbar search bar on the homepage (Docusaurus adds plugin-pages to html on custom pages) */
+html.plugin-pages .navbar__item:has(.navbar-search) {
+  display: none;
+}
+
+/* Make the Docusaurus .navbar__item wrapper around the search grow and push right */
+.navbar__item:has(.navbar-search) {
+  flex: 1;
+  padding: 0 0.75rem 0 0;
+  display: flex;
+  align-items: center;
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Space between the separator border and the first right-side button */
+.navbar__items--right {
+  gap: 0.5rem;
+  padding-left: 0.75rem;
+}
+
+.navbar-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  background-color: rgba(255, 255, 255, 0.10);
+  height: 2rem;
+  border-radius: 0.25rem;
+  cursor: text;
+  width: 100%;
+}
+
+.navbar-search::before {
+  content: '';
+  display: block;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  background-color: rgba(255, 255, 255, 0.9);
+  mask-image: url('/img/brand/icon-magnifier-24px.svg');
+  mask-size: cover;
+  mask-repeat: no-repeat;
+}
+
+
+.navbar-search input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: var(--body-md-regular-font-size);
+  line-height: var(--body-md-regular-line-height);
+  width: 100%;
+  cursor: text;
+  font-family: var(--ifm-font-family-base);
+}
+
+.navbar-search input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Hide the local search plugin's SearchBar from the navbar — it lives in the hero on the homepage */
+.navbar .navbar__search {
+  display: none !important;
+}
+
+/* Plugin's SearchBar embedded in the hero .searchBox */
+[class*="searchBox"] [class*="searchBar"] {
+  width: 100%;
+  display: block !important;
+  position: static !important;
+}
+
+[class*="searchBox"] .navbar__search-input {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  height: auto !important;
+  color: var(--pal-neutral-40) !important;
+  font-size: var(--body-md-regular-font-size) !important;
+  line-height: var(--body-md-regular-line-height) !important;
+  font-family: var(--ifm-font-family-base) !important;
+  width: 100% !important;
+}
+
+[class*="searchBox"] .navbar__search-input::placeholder {
+  color: var(--pal-neutral-60) !important;
+}
+
+/* Loading ring, keyboard hint, and clear button inside hero */
+[class*="searchBox"] [class*="searchBarLoadingRing"],
+[class*="searchBox"] [class*="searchHintContainer"],
+[class*="searchBox"] [class*="searchHint"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+}
+
+[class*="searchBox"] [class*="searchClearButton"] {
+  background: none !important;
+  color: var(--pal-neutral-60) !important;
+  padding: 0 !important;
+  min-width: 0 !important;
+}
+
+/* Dropdown results panel inside hero */
+[class*="searchBox"] [class*="dropdownMenu"] {
+  top: calc(100% + 0.5rem) !important;
+  left: -0.75rem !important;
+  right: -0.75rem !important;
+  border-radius: 0.25rem !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  background: #fff !important;
+  z-index: 200 !important;
+}
+
+/* Hide dark mode toggle — live site doesn't have it */
+.navbar__toggle,
+[class*='colorModeToggle'],
+button[title*='dark'],
+button[title*='light'] {
+  display: none !important;
+}
+
+.theme-unlisted-banner {
+  display: none;
+}
+
+.sidebar-hidden-item {
+  display: none !important;
+}
+
+/* ---- Footer ---- */
 
 .footer--dark {
   background-color: var(--pal-neutral-10);
 }
 
+/* ---- Doc content ---- */
+
 article img {
   max-width: 100%;
   border: 1px solid var(--border-minimal);
   border-radius: 0.5rem;
+}
+
+/* ---- Sidebar ---- */
+
+.theme-doc-sidebar-container {
+  border-right: 1px solid var(--border-regular) !important;
+}
+
+.menu {
+  padding: 0.75rem 0;
+}
+
+/* Sidebar section header: back link + bold title + divider */
+.sidebar-section-header {
+  padding: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.sidebar-back-link {
+  display: block;
+  color: var(--sys-interactive-base);
+  font-size: var(--body-sm-regular-font-size);
+  line-height: var(--body-sm-regular-line-height);
+  text-decoration: none;
+  padding: 0.75rem 1.5rem 0.5rem;
+}
+
+.sidebar-back-link:hover {
+  color: var(--sys-interactive-strong);
+  text-decoration: none;
+}
+
+.sidebar-section-title {
+  display: block;
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  color: var(--text-primary) !important;
+  text-decoration: none !important;
+  padding: 0.25rem 1.5rem 0.75rem;
+  border-bottom: 1px solid var(--border-regular);
+  margin-bottom: 0.75rem;
+}
+
+.sidebar-section-title:hover {
+  color: var(--text-primary) !important;
+  text-decoration: underline !important;
+}
+
+.menu__link {
+  color: var(--text-primary);
+  font-size: var(--body-md-regular-font-size);
+  line-height: var(--body-md-regular-line-height);
+  font-weight: var(--body-md-regular-font-weight);
+  border-radius: 0;
+  padding: 0.5rem 3.5rem 0.5rem 1.5rem;
+}
+
+.menu__link:hover,
+.menu__link--sublist:hover {
+  background-color: var(--background-secondary);
+  color: var(--text-primary);
+}
+
+.menu__link--active:not(.menu__link--sublist) {
+  background-color: var(--background-selected);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: inset -2px 0 0 var(--border-selected);
+  border-radius: 0;
+}
+
+.menu__link--active:not(.menu__link--sublist):hover {
+  background-color: var(--background-selected-hover);
+}
+
+/* Nested sidebar items */
+.menu__list .menu__list .menu__link {
+  padding-left: 2.75rem;
+}
+
+.menu__list .menu__list .menu__list .menu__link {
+  padding-left: 4rem;
+}
+
+/* Sidebar caret button */
+.menu__caret {
+  border-radius: 0;
+  padding: 0.5rem 1.25rem;
+}
+
+.menu__caret:hover {
+  background-color: var(--background-secondary);
+}
+
+.menu__caret::before {
+  background: none !important;
+  content: '' !important;
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  mask-image: url('/img/brand/icon-chevron-down-16px.svg') !important;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  background-color: var(--sys-fg-secondary) !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+.menu__caret[aria-expanded='true']::before {
+  mask-image: url('/img/brand/icon-chevron-up-16px.svg') !important;
+}
+
+/* Level-2+ collapsible categories use ::after on the link itself */
+/* Absolutely positioned so it lives in the right padding area and never overlaps wrapped text */
+.menu__link--sublist-caret {
+  position: relative;
+}
+.menu__link--sublist-caret::after {
+  background: none !important;
+  content: '' !important;
+  display: block !important;
+  position: absolute !important;
+  right: 20px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 1rem !important;
+  height: 1rem !important;
+  min-width: 1rem !important;
+  mask-image: url('/img/brand/icon-chevron-down-16px.svg') !important;
+  mask-size: contain !important;
+  mask-repeat: no-repeat !important;
+  background-color: var(--sys-fg-secondary) !important;
+  transition: none !important;
+}
+
+.menu__list-item:not(.menu__list-item--collapsed) > .menu__list-item-collapsible > .menu__link--sublist-caret::after {
+  mask-image: url('/img/brand/icon-chevron-up-16px.svg') !important;
+}
+
+/* ---- Doc content ---- */
+
+[class*='docItemContainer'] {
+  max-width: 720px;
+}
+
+[class*='docItemContainer']:has(.product-homepage) {
+  max-width: none;
+}
+
+/* Match live site heading scale (Docusaurus overrides h1 to 3rem in markdown) */
+.markdown h1:first-child {
+  font-size: 1.875rem;
+  line-height: 2.5rem;
+  --ifm-h1-font-size: 1.875rem;
+}
+
+.markdown h1 { font-size: 1.875rem; line-height: 2.5rem; }
+.markdown h2 { font-size: 1.5rem;   line-height: 2.25rem; }
+.markdown h3 { font-size: 1.1875rem; line-height: 1.75rem; }
+.markdown h4 { font-size: 1rem;     line-height: 1.5rem; }
+.markdown h5 { font-size: 0.875rem; line-height: 1.25rem; }
+
+/* ---- Breadcrumbs ---- */
+
+.breadcrumbs__item--active .breadcrumbs__link {
+  color: var(--text-body);
+  background: transparent;
+}
+
+.breadcrumbs__link {
+  color: var(--text-link);
+  font-size: var(--body-md-regular-font-size);
+  line-height: var(--body-md-regular-line-height);
+  background: transparent;
+}
+
+.breadcrumbs__link:hover {
+  color: var(--text-link-hover);
+  background: transparent;
+}
+
+.breadcrumbs__item--active .breadcrumbs__link {
+  font-weight: 400;
+}
+
+/* ---- Table of contents ---- */
+
+[class*='tableOfContents'] {
+  position: relative;
+}
+
+[class*='tableOfContents']::before {
+  content: 'On this page';
+  display: block;
+  padding-bottom: 0.5rem;
+  font-size: var(--heading-h6-font-size);
+  line-height: var(--heading-h6-line-height);
+  font-weight: var(--heading-h6-font-weight);
+  letter-spacing: var(--heading-h6-letter-spacing);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.table-of-contents {
+  border-left: 1px solid var(--border-regular);
+  font-size: var(--body-md-regular-font-size);
+}
+
+.table-of-contents__link {
+  color: var(--text-body);
+  padding: 0.25rem 1rem;
+}
+
+.table-of-contents__link:hover {
+  color: var(--text-link-hover);
+  text-decoration: underline;
+}
+
+.table-of-contents__link--active {
+  color: var(--text-body);
+  font-weight: 600;
+  position: relative;
+}
+
+.table-of-contents__link--active::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 0;
+  height: 100%;
+  width: 2px;
+  border-left: 2px solid var(--sys-interactive-base);
+}
+
+/* ---- Admonitions ---- */
+
+.alert {
+  --ifm-alert-border-left-width: 0;
+  border-radius: 0.5rem;
+  border-width: 1px;
+  border-style: solid;
+  background-color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  padding: 0.75rem 1.5rem 0.75rem 3.25rem;
+}
+
+/* Colored left gutter strip */
+.alert::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2.5rem;
+  height: 100%;
+  background-color: var(--sys-bg-minimal);
+}
+
+/* Icon via mask */
+.alert::after {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  top: 0.75rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  mask-size: cover;
+  mask-repeat: no-repeat;
+  background-color: var(--sys-neutral-base);
+}
+
+/* Hide built-in Docusaurus admonition icon — we render our own via ::after */
+.admonitionIcon {
+  display: none;
+}
+
+.admonitionHeading {
+  font-size: var(--body-lg-semibold-font-size);
+  line-height: var(--body-lg-semibold-line-height);
+  font-weight: var(--body-lg-semibold-font-weight);
+  color: var(--text-primary);
+  margin-bottom: 0;
+}
+
+.admonitionContent p {
+  margin: 0.5rem 0 0;
+  font-size: var(--body-md-regular-font-size);
+  line-height: var(--body-md-regular-line-height);
+  color: var(--text-body);
+}
+
+/* note / info */
+.alert--secondary,
+.alert--info {
+  border-color: var(--sys-info-muted);
+}
+.alert--secondary::before,
+.alert--info::before {
+  background-color: var(--sys-info-minimal);
+}
+.alert--secondary::after,
+.alert--info::after {
+  mask-image: url('/img/brand/icon-info-circle-24px.svg');
+  background-color: var(--sys-info-strong);
+}
+
+/* tip */
+.alert--success {
+  border-color: var(--sys-interactive-muted);
+}
+.alert--success::before {
+  background-color: var(--sys-interactive-minimal);
+}
+.alert--success::after {
+  mask-image: url('/img/brand/icon-lightbulb-24px.svg');
+  background-color: var(--sys-interactive-strong);
+}
+
+/* caution */
+.alert--warning {
+  border-color: var(--sys-warning-muted);
+}
+.alert--warning::before {
+  background-color: var(--sys-warning-minimal);
+}
+.alert--warning::after {
+  mask-image: url('/img/brand/icon-warning-24px.svg');
+  background-color: var(--sys-warning-strong);
+}
+
+/* danger */
+.alert--danger {
+  border-color: var(--sys-critical-muted);
+}
+.alert--danger::before {
+  background-color: var(--sys-critical-minimal);
+}
+.alert--danger::after {
+  mask-image: url('/img/brand/icon-error-circle-filled-24px.svg');
+  background-color: var(--sys-critical-strong);
+}
+
+/* ── Procedure (numbered steps) ───────────────────────────────────────────── */
+.theme-doc-markdown ol,
+ol.procedure {
+  list-style: none;
+  counter-reset: step-counter;
+  padding-left: 12px;  /* space for left half of badge */
+  margin-left: 0;
+  position: relative;
+}
+
+/* Single continuous vertical line running through all badges */
+.theme-doc-markdown ol::before,
+ol.procedure::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--pal-purple-90);
+}
+
+.theme-doc-markdown ol > li,
+ol.procedure > li {
+  counter-increment: step-counter;
+  position: relative;
+  margin-top: 0;
+  padding-left: 20px;  /* 12px (badge right half) + 8px gap */
+  padding-bottom: 12px;
+}
+
+.theme-doc-markdown ol > li > p,
+ol.procedure > li > p {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.theme-doc-markdown ol > li > p + p,
+.theme-doc-markdown ol > li > p + img,
+.theme-doc-markdown ol > li > img + p,
+ol.procedure > li > p + p,
+ol.procedure > li > p + img,
+ol.procedure > li > img + p {
+  margin-top: 6px;
+}
+
+
+.theme-doc-markdown ol > li::before,
+ol.procedure > li::before {
+  content: counter(step-counter);
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--sys-interactive-minimal);
+  color: var(--pal-purple-40);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  border: 1px solid var(--pal-purple-90);
+  z-index: 1;
+}
+
+/* ── Inline images (icons embedded in sentences) ─────────────────────────── */
+.theme-doc-markdown p > img:not(:only-child),
+.theme-doc-markdown li > img,
+span.inlinemediaobject img {
+  height: 1.5em;
+  width: auto;
+  vertical-align: middle;
+}
+
+/* ── Glossary term links ──────────────────────────────────────────────────── */
+a.glossterm,
+.theme-doc-markdown a[href*="/glossary"] {
+  color: #11bba9;
+}
+
+a.glossterm:hover,
+.theme-doc-markdown a[href*="/glossary"]:hover {
+  color: #0d9e8f;
 }

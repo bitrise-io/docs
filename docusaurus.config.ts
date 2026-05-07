@@ -241,6 +241,18 @@ const config: Config = {
     intercomAppId: 'e2rdidtm',
   },
 
+  themes: [
+    [
+      require.resolve('@easyops-cn/docusaurus-search-local'),
+      {
+        hashed: true,
+        language: ['en'],
+        docsRouteBasePath: 'en',
+        indexBlog: false,
+      },
+    ],
+  ],
+
   presets: [
     [
       'classic',
@@ -262,26 +274,27 @@ const config: Config = {
     navbar: {
       title: '',
       logo: {
-        alt: 'Bitrise',
-        src: 'img/brand/paligo-logo.png',
+        alt: 'Bitrise Docs',
+        src: 'img/brand/bitrise-docs-logo.svg',
         href: '/',
       },
       items: [
         {
-          type: 'docSidebar',
-          sidebarId: 'defaultSidebar',
+          type: 'html',
           position: 'left',
-          label: 'Documentation',
+          value: '<div class="navbar-search"><input type="text" placeholder="Search..." id="navbarSearchTrigger" readonly aria-label="Search" autocomplete="off" autocorrect="off" spellcheck="false" /></div>',
         },
         {
           href: 'https://support.bitrise.io/en/',
-          label: 'Support',
+          label: 'Go to Support',
           position: 'right',
+          className: 'navbar-support-link',
         },
         {
           href: 'https://app.bitrise.io/users/sign_up',
           label: 'Start for free',
           position: 'right',
+          className: 'navbar-cta-link',
         },
       ],
     },
