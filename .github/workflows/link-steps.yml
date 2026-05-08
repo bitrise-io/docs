@@ -1,0 +1,47 @@
+name: Link Step names
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'docs/**/*.mdx'
+
+permissions:
+  contents: write
+
+jobs:
+  link-steps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Get changed MDX files
+        id: changed
+        run: |
+          files=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
+            | grep '\.mdx$' | tr '\n' ' ')
+          echo "files=$files" >> "$GITHUB_OUTPUT"
+
+      - name: Link Step names in changed files
+        if: steps.changed.outputs.files != ''
+        run: |
+          python3 scripts/link_steps.py --files ${{ steps.changed.outputs.files }}
+
+      - name: Commit changes
+        if: steps.changed.outputs.files != ''
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/
+          if ! git diff --cached --quiet; then
+            git commit -m "[skip ci] Link Bitrise Step names to GitHub source"
+            git push
+          fi
