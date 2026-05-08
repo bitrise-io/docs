@@ -19,6 +19,8 @@ What it does:
   3. Single-word titles (e.g. "Script") are only linked when followed by "Step".
 """
 
+from __future__ import annotations
+
 import json
 import re
 import subprocess
