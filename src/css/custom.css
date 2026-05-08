@@ -123,37 +123,37 @@
   color: var(--pal-purple-30) !important;
 }
 
-/* Right-side buttons gap */
-.navbar__items--right {
-  gap: 0.5rem;
-}
-
-/* Navbar search input — pushed to the right of the logo, fills space before the buttons */
+/* Left items keep their natural width (logo only); right items fill the remaining space */
 .navbar__items:not(.navbar__items--right) {
-  flex: 1;
+  flex: none;
 }
 
-/* Hide fake navbar search bar on the homepage (Docusaurus adds plugin-pages to html on custom pages) */
-html.plugin-pages .navbar__item:has(.navbar-search) {
+/* Right items expand to fill the space between logo and right edge; search goes first */
+.navbar__items--right {
+  flex: 1;
+  gap: 0.5rem;
+  padding-left: 0;
+}
+
+/* Hide the plugin's navbar search bar on the homepage */
+html.plugin-pages .navbar :has(> .navbar__search) {
   display: none;
 }
 
-/* Make the Docusaurus .navbar__item wrapper around the search grow and push right */
-.navbar__item:has(.navbar-search) {
+/* Plugin's SearchBar wrapper: move before the support/CTA buttons, fill available space */
+.navbar :has(> .navbar__search) {
+  order: -1;
   flex: 1;
-  padding: 0 0.75rem 0 0;
+  /* !important overrides the plugin's .navbar__items--right > :last-child { padding-right: 0 } */
+  padding: 0 0.75rem 0 0 !important;
   display: flex;
   align-items: center;
   border-right: 1px solid rgba(255, 255, 255, 0.3);
+  margin-right: 0.25rem;
 }
 
-/* Space between the separator border and the first right-side button */
-.navbar__items--right {
-  gap: 0.5rem;
-  padding-left: 0.75rem;
-}
-
-.navbar-search {
+/* Style the plugin's search container to look like the old fake search bar */
+.navbar .navbar__search {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -163,9 +163,10 @@ html.plugin-pages .navbar__item:has(.navbar-search) {
   border-radius: 0.25rem;
   cursor: text;
   width: 100%;
+  position: relative;
 }
 
-.navbar-search::before {
+.navbar .navbar__search::before {
   content: '';
   display: block;
   width: 1.5rem;
@@ -177,26 +178,56 @@ html.plugin-pages .navbar__item:has(.navbar-search) {
   mask-repeat: no-repeat;
 }
 
-
-.navbar-search input {
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: var(--body-md-regular-font-size);
-  line-height: var(--body-md-regular-line-height);
-  width: 100%;
-  cursor: text;
-  font-family: var(--ifm-font-family-base);
+.navbar .navbar__search-input {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-size: var(--body-md-regular-font-size) !important;
+  line-height: var(--body-md-regular-line-height) !important;
+  width: 100% !important;
+  cursor: text !important;
+  font-family: var(--ifm-font-family-base) !important;
+  padding: 0 !important;
+  height: auto !important;
 }
 
-.navbar-search input::placeholder {
-  color: rgba(255, 255, 255, 0.7);
+.navbar .navbar__search-input::placeholder {
+  color: rgba(255, 255, 255, 0.7) !important;
 }
 
-/* Hide the local search plugin's SearchBar from the navbar — it lives in the hero on the homepage */
-.navbar .navbar__search {
+/* Hide loading ring and keyboard shortcut hint in the navbar */
+.navbar [class*="searchBarLoadingRing"],
+.navbar [class*="searchHintContainer"] {
   display: none !important;
+}
+
+/* Match the clear button colour to the magnifying glass icon */
+.navbar [class*="searchClearButton"] {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Expand the input span to fill the pill so the entire bar is clickable */
+.navbar span[class*="searchBar"] {
+  flex: 1;
+}
+
+/* The plugin's inner searchBar span is position:relative, making it the containing block for the
+   dropdown. That causes the dropdown to align to the input area (140px wide) instead of the full
+   pill. Setting it to static forces the dropdown to use .navbar__search (position:relative below)
+   as its containing block instead. */
+.navbar span[class*="searchBar"] {
+  position: static !important;
+}
+
+/* Align the dropdown to the left edge of the search pill.
+   Needs 3-class specificity (0,3,0) to beat the plugin's .searchBar_RVTs .dropdownMenu_qbY6
+   rule (0,2,0) which also uses !important and loads after this stylesheet. */
+.navbar .navbar__search [class*="dropdownMenu"] {
+  left: 0 !important;
+  right: auto !important;
 }
 
 /* Plugin's SearchBar embedded in the hero .searchBox */

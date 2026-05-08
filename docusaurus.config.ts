@@ -280,11 +280,6 @@ const config: Config = {
       },
       items: [
         {
-          type: 'html',
-          position: 'left',
-          value: '<div class="navbar-search"><input type="text" placeholder="Search..." id="navbarSearchTrigger" readonly aria-label="Search" autocomplete="off" autocorrect="off" spellcheck="false" /></div>',
-        },
-        {
           href: 'https://support.bitrise.io/en/',
           label: 'Go to Support',
           position: 'right',
