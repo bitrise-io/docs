@@ -9,26 +9,26 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 
-You can create a signed APK using the **Android Sign** <GlossTerm baseform="Step">Step</GlossTerm> in your Bitrise <GlossTerm baseform="Workflow">Workflow</GlossTerm>. This Step is configured to run if you have already uploaded your [keystore file](https://developer.android.com/studio/publish/app-signing#generate-key) to Bitrise.
+You can create a signed APK using the [**Android Sign**](https://github.com/bitrise-steplib/steps-sign-apk) <GlossTerm baseform="Step">Step</GlossTerm> in your Bitrise <GlossTerm baseform="Workflow">Workflow</GlossTerm>. This Step is configured to run if you have already uploaded your [keystore file](https://developer.android.com/studio/publish/app-signing#generate-key) to Bitrise.
 
-The **Android Sign** Step is not required if signing is configured in your project’s `build.gradle` file. If so, running the **Android Build** Step (or the **Gradle Runner** Step) signs the output (APK or AAB) automatically. Nevertheless, we recommend that you use the **Android Sign** Step to sign your project in an easy and secure way.
+The [**Android Sign**](https://github.com/bitrise-steplib/steps-sign-apk) Step is not required if signing is configured in your project’s `build.gradle` file. If so, running the [**Android Build**](https://github.com/bitrise-steplib/bitrise-step-android-build) Step (or the [**Gradle Runner**](https://github.com/bitrise-io/steps-gradle-runner) Step) signs the output (APK or AAB) automatically. Nevertheless, we recommend that you use the **Android Sign** Step to sign your project in an easy and secure way.
 
 :::note[jarsign and apksigner]
 
-APKs can be signed with either `jarsigner` or `apksigner`. For APKs, if you wish to use apksigner to sign your project, then in the Android Sign Step you have to first set the Enables `apksigner` input to true and leave the APK Signature Scheme input on automatic. This way `apksigner` checks your APK’s minimum and target SDK versions and chooses the required schemes. It signs your project with V1 scheme if your minimum supported version is low and it also signs with other schemes for newer systems.
+APKs can be signed with either `jarsigner` or `apksigner`. For APKs, if you wish to use apksigner to sign your project, then in the [Android Sign](https://github.com/bitrise-steplib/steps-sign-apk) Step you have to first set the Enables `apksigner` input to true and leave the APK Signature Scheme input on automatic. This way `apksigner` checks your APK’s minimum and target SDK versions and chooses the required schemes. It signs your project with V1 scheme if your minimum supported version is low and it also signs with other schemes for newer systems.
 
 Please note that AAB files can only be signed with jarsigner. The Step uses `jarsigner` if it detects a file ending with `.aab`
 
 :::
 
 1. [Upload your keystore file to Bitrise](/en/bitrise-ci/code-signing/android-code-signing/uploading-android-keystore-files-to-bitrise.html).
-1. Add the **Android Sign** Step to your Workflow after the Step that builds your APK or AAB file.
+1. Add the [**Android Sign**](https://github.com/bitrise-steplib/steps-sign-apk) Step to your Workflow after the Step that builds your APK or AAB file.
 
-   Bitrise uses the above Environment Variables and sets them as inputs into the respective fields of the **Android Sign** Step. Once the Step runs, it produces either a signed APK or an AAB. The signed APK or AAB is used in deploy Steps, for example, the**Google Play Deploy** Step or the **Deploy to Bitrise.io** Step. The latter deploys the APK/AAB on the **Artifacts** tab. You can also use [Release Management](urn:resource:publication:90740) to deploy your app once you built an installable artifact.
+   Bitrise uses the above Environment Variables and sets them as inputs into the respective fields of the [**Android Sign**](https://github.com/bitrise-steplib/steps-sign-apk) Step. Once the Step runs, it produces either a signed APK or an AAB. The signed APK or AAB is used in deploy Steps, for example, the[**Google Play Deploy**](https://github.com/bitrise-io/steps-google-play-deploy) Step or the **Deploy to Bitrise.io** Step. The latter deploys the APK/AAB on the **Artifacts** tab. You can also use [Release Management](urn:resource:publication:90740) to deploy your app once you built an installable artifact.
 
 :::note[Downloading your keystore file]
 
-You can download your keystore file to the project directory using the **[File Downloader](https://www.bitrise.io/integrations/steps/file-downloader)** Step:
+You can download your keystore file to the project directory using the **[File Downloader](https://github.com/bitrise-steplib/steps-file-downloader)** Step:
 
 ```
 - file-downloader:
@@ -37,7 +37,7 @@ You can download your keystore file to the project directory using the **[Fil
    - destination: "$HOME/keystores/my_keystore.jks" #native android#
 ```
 
-If a Step requires the keystore file, make sure to include that Step AFTER the [**File Downloader**](https://bitrise.io/integrations/steps/file-downloader) Step.
+If a Step requires the keystore file, make sure to include that Step AFTER the [**File Downloader**](https://github.com/bitrise-steplib/steps-file-downloader) Step.
 
 After this Step, `my_keystore.jks` will be available at `$HOME/keystores/my_keystore.jks`.
 
