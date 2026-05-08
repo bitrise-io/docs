@@ -11,7 +11,7 @@ import GlossTerm from '@site/src/components/GlossTerm';
 
 [CocoaPods](https://cocoapods.org/) is a dependency manager for Swift and Objective-C Cocoa projects. An iOS app with CocoaPods dependencies needs to have a `Podfile` with a number of pods listed in it: these pods are installed during the process of building the <GlossTerm baseform="App">app</GlossTerm>.
 
-You can, of course, easily install CocoaPods dependencies during a Bitrise build. You just need our dedicated <GlossTerm baseform="Step">Step</GlossTerm>: **[Run CocoaPods Install](https://bitrise.io/integrations/steps/cocoapods-install)**. The Step can run both `pod install` and `pod update` commands.
+You can, of course, easily install CocoaPods dependencies during a Bitrise build. You just need our dedicated <GlossTerm baseform="Step">Step</GlossTerm>: **[Run CocoaPods Install](https://github.com/bitrise-io/steps-cocoapods-install)**. The Step can run both `pod install` and `pod update` commands.
 
 ## Installing CocoaPods dependencies
 
@@ -24,7 +24,7 @@ To install your dependencies with CocoaPods:
 
    The Step first looks for the `cocoapods` gem in the `Gemfile`. If there's no `cocoapods` gem, the Step uses the CocoaPods version defined in the `Podfile`. If the version is not defined there either, the preinstalled system version will be used which you can check in the [system reports](https://github.com/bitrise-io/bitrise.io/tree/master/system_reports/MACOS).
 1. Make sure that the Xcode Step building your app uses your `.xcworkspace` file: the **Project path** input of the Step should point to the path of `.xcworkspace`.
-1. Add the [**Run CocoaPods Install**](https://bitrise.io/integrations/steps/cocoapods-install) Step to your <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
+1. Add the [**Run CocoaPods Install**](https://github.com/bitrise-io/steps-cocoapods-install) Step to your <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
 
    It should come after any Step that pulls [from the build cache](/en/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache). If you don't have any caching Steps, add the Step right after the **Git Clone** Step.
 1. In the **CocoaPods command** input, select the command you wish to run.
@@ -100,11 +100,11 @@ To install your dependencies with CocoaPods:
 
 ## Caching CocoaPods dependencies
 
-With key-based caching, you only need the **Restore CocoaPods cache** and the **Save CocoaPods cache** Steps to cache your pods. These Steps require no configuration as they automatically set up the cache keys needed for your dependencies.
+With key-based caching, you only need the [**Restore CocoaPods cache**](https://github.com/bitrise-steplib/bitrise-step-restore-cocoapods-cache) and the [**Save CocoaPods cache**](https://github.com/bitrise-steplib/bitrise-step-save-cocoapods-cache) Steps to cache your pods. These Steps require no configuration as they automatically set up the cache keys needed for your dependencies.
 
-1. Add the **Restore CocoaPods cache** Step to your Workflow
+1. Add the [**Restore CocoaPods cache**](https://github.com/bitrise-steplib/bitrise-step-restore-cocoapods-cache) Step to your Workflow
 
    It should come before the [**Run CocoaPods install**](https://github.com/bitrise-io/steps-cocoapods-install) Step or any Step that needs dependencies to build your app, such as [**Xcode Archive & Export for iOS**](https://github.com/bitrise-steplib/steps-xcode-archive).
 
    ![restore-pods.png](/img/_paligo/uuid-3305dee6-a952-5073-e44b-02fd8c3925c1.png)
-1. Add the **Save CocoaPods cache** Step to the end of your Workflow.
+1. Add the [**Save CocoaPods cache**](https://github.com/bitrise-steplib/bitrise-step-save-cocoapods-cache) Step to the end of your Workflow.
