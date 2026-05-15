@@ -51,7 +51,7 @@ Android
    **Set app-level service account**: You can select any of the service accounts added to your workspace from the **Service account** dropdown menu. With this option, it doesn't matter what API key is configured on the project level.
 1. Enter the Google Play app's package name in the field and click **Validate**.
 
-   If the package name is found on Google Play, the **Connect** button will be enabled.
+   - If the package name is found on Google Play, the **Connect** button will be enabled.
 
-   If the validation doesn't find a match, check if you typed the package name correctly and make sure your Google Play service account is working.
+   - If the validation doesn't find a match, check if you typed the package name correctly and make sure your Google Play service account is working.
 1. Click **Connect**.

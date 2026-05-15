@@ -25,6 +25,10 @@ function NavbarSearchPortal(): ReactNode {
         </svg>
         <input class="navbar-search__input" type="text" placeholder="Search all documentation" id="searchWidgetTrigger" readonly />
       `;
+      searchEl.addEventListener('click', () => {
+        const input = searchEl!.querySelector<HTMLInputElement>('#searchWidgetTrigger');
+        input?.click();
+      });
       navbar.insertBefore(searchEl, navbar.querySelector('.navbar__items--right'));
     }
 
