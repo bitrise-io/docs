@@ -233,6 +233,18 @@ const config: Config = {
           },
         ]
       : []),
+    ...(process.env.GEN_SEARCH_WIDGET_ID
+      ? [
+          {
+            src: 'https://cloud.google.com/ai/gen-app-builder/client?hl=en_US',
+            async: true,
+          },
+        ]
+      : []),
+  ],
+
+  clientModules: [
+    './src/clientModules/genSearchWidget.ts',
   ],
 
   customFields: {
@@ -262,28 +274,28 @@ const config: Config = {
     navbar: {
       title: '',
       logo: {
-        alt: 'Bitrise',
-        src: 'img/brand/paligo-logo.png',
+        alt: 'Bitrise Docs',
+        src: 'img/brand/logo-white.svg',
         href: '/',
       },
       items: [
         {
-          type: 'docSidebar',
-          sidebarId: 'defaultSidebar',
-          position: 'left',
-          label: 'Documentation',
-        },
-        {
           href: 'https://support.bitrise.io/en/',
-          label: 'Support',
+          label: 'Go to support',
           position: 'right',
+          className: 'navbar-btn navbar-btn--ghost',
         },
         {
           href: 'https://app.bitrise.io/users/sign_up',
           label: 'Start for free',
           position: 'right',
+          className: 'navbar-btn navbar-btn--solid',
         },
       ],
+      hideOnScroll: false,
+    },
+    colorMode: {
+      disableSwitch: true,
     },
     footer: {
       style: 'dark',

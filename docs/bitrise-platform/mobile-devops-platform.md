@@ -3,6 +3,8 @@ title: "Mobile DevOps Platform"
 description: "Bitrise is a Mobile DevOps platform for every step of the mobile development process, from planning to monitoring. The platform equips mobile development teams with the necessary resources to build high-quality applications using their preferred tools, all while eliminating the interruptions and overhead that come with managing infrastructure and environments."
 sidebar_position: 1
 slug: /bitrise-platform/mobile-devops-platform
+sidebar_custom_props:
+  icon: Cycle
 ---
 
 Bitrise is a Mobile DevOps platform for every step of the mobile development process, from planning to monitoring. The platform equips mobile development teams with the necessary resources to build high-quality applications using their preferred tools, all while eliminating the interruptions and overhead that come with managing infrastructure and environments.
