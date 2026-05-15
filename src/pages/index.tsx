@@ -39,13 +39,13 @@ const sections: Section[] = [
     columns: [
       [
         {label: 'Getting started with Bitrise', href: '/en/bitrise-platform/getting-started/getting-started-with-the-bitrise-platform'},
-        {label: 'Workspaces', href: '/en/bitrise-platform/workspaces/workspaces-overview'},
-        {label: 'Projects', href: '/en/bitrise-platform/getting-started/adding-a-new-project'},
+        {label: 'Integrations', href: '/en/bitrise-platform/integrations/about-integrations'},
+        {label: 'Migrating from Jenkins', href: '/en/bitrise-platform/getting-started/migrating-to-bitrise/migrating-from-jenkins-to-bitrise'},
       ],
       [
-        {label: 'Integrations', href: '/en/bitrise-platform/integrations/about-integrations'},
-        {label: 'Infrastructure', href: '/en/bitrise-platform/infrastructure/available-stacks'},
-        {label: 'User account', href: '/en/bitrise-platform/account/your-bitrise-account'},
+        {label: 'Workspaces', href: '/en/bitrise-platform/workspaces/workspaces-overview'},
+        {label: 'Migrating from App Center', href: '/en/bitrise-platform/getting-started/migrating-to-bitrise/migrating-from-app-center-to-bitrise'},
+        {label: 'Bitrise AI FAQs', href: '/en/bitrise-platform/getting-started/ai-faq---how-bitrise-leverages-ai-technologies-in-its-features-and-services'},
       ],
     ],
   },
@@ -80,9 +80,9 @@ const sections: Section[] = [
     iconColor: '#b27e00',
     columns: [
       [
-        {label: 'Getting started with Build Cache', href: '/en/bitrise-build-cache'},
-        {label: 'Gradle', href: '/en/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-the-bitrise-ci-environment'},
-        {label: 'Bazel', href: '/en/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-the-bitrise-ci-environment'},
+        {label: 'Build Cache for Xcode', href: '/en/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-the-bitrise-ci-environment'},
+        {label: 'Build Cache for Gradle', href: '/en/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-the-bitrise-ci-environment'},
+        {label: 'Build Cache for Bazel', href: '/en/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-the-bitrise-ci-environment'},
       ],
     ],
   },
@@ -97,7 +97,7 @@ const sections: Section[] = [
     columns: [
       [
         {label: 'Build distribution for testing', href: '/en/release-management/build-distribution/managing-distributable-builds'},
-        {label: 'Release management', href: '/en/release-management/release-management/releasing-apps-to-app-stores'},
+        {label: 'Bitrise CodePush', href: '/en/release-management/codepush/about-codepush'},
         {label: 'Distribution API', href: '/en/release-management/release-management-api'},
       ],
     ],
@@ -121,16 +121,16 @@ const sections: Section[] = [
   {
     id: 'bitrise-build-hub',
     title: 'Build Hub',
-    description: 'Test and release your mobile apps in an automated and transparent way.',
+    description: 'Use high-performance build infrastructure for GitHub Actions, purpose-built for mobile app development.',
     href: '/en/bitrise-build-hub',
     icon: IconCpu,
     iconBg: '#efebef',
     iconColor: '#7d7184',
     columns: [
       [
-        {label: 'Build distribution for testing', href: '/en/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview'},
-        {label: 'Release management', href: '/en/bitrise-build-hub/build-hub-for-github-actions/configuring-build-hub-for-github-actions'},
-        {label: 'Distribution API', href: '/en/bitrise-build-hub/infrastructure/build-machine-types'},
+        {label: 'Build Hub overview', href: '/en/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview'},
+        {label: 'Configuring Build Hub for Github Actions', href: '/en/bitrise-build-hub/build-hub-for-github-actions/configuring-build-hub-for-github-actions'},
+        {label: 'Machine types', href: '/en/bitrise-build-hub/infrastructure/build-machine-types'},
       ],
     ],
   },
