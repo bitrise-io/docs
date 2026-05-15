@@ -149,7 +149,7 @@ function ProductCard({section}: {section: Section}) {
             <Icon size="24" />
           </div>
           <div className={styles.cardTextBlock}>
-            <h3 className={styles.cardTitle}>{section.title}</h3>
+            <a href={section.href} className={styles.cardTitleLink}><h3 className={styles.cardTitle}>{section.title}</h3></a>
             <p className={styles.cardDescription}>{section.description}</p>
           </div>
         </div>
