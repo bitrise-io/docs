@@ -40,12 +40,12 @@ const sections: Section[] = [
       [
         {label: 'Getting started with Bitrise', href: '/en/bitrise-platform/getting-started/getting-started-with-the-bitrise-platform'},
         {label: 'Integrations', href: '/en/bitrise-platform/integrations/about-integrations'},
-        {label: 'Migrating from Jenkins', href: '/en/bitrise-platform/getting-started/migrating-to-bitrise/migrating-from-jenkins-to-bitrise'},
+        {label: 'Migrating from Jenkins', href: '/en/bitrise-ci/getting-started/migrating-to-bitrise/migrating-from-jenkins-to-bitrise'},
       ],
       [
         {label: 'Workspaces', href: '/en/bitrise-platform/workspaces/workspaces-overview'},
-        {label: 'Migrating from App Center', href: '/en/bitrise-platform/getting-started/migrating-to-bitrise/migrating-from-app-center-to-bitrise'},
-        {label: 'Bitrise AI FAQs', href: '/en/bitrise-platform/getting-started/ai-faq---how-bitrise-leverages-ai-technologies-in-its-features-and-services'},
+        {label: 'Migrating from App Center', href: '/en/bitrise-ci/getting-started/migrating-to-bitrise/migrating-from-app-center-to-bitrise'},
+        {label: 'Bitrise AI FAQs', href: '/en/bitrise-platform/ai/ai-faq---how-bitrise-leverages-ai-technologies-in-its-features-and-services'},
       ],
     ],
   },
@@ -65,7 +65,7 @@ const sections: Section[] = [
       ],
       [
         {label: 'Code signing', href: '/en/bitrise-ci/code-signing/ios-code-signing/ios-code-signing'},
-        {label: 'Testing', href: '/en/bitrise-ci/testing/testing-android-apps'},
+        {label: 'Testing', href: '/en/bitrise-ci/testing/testing-android-apps/android-unit-tests'},
         {label: 'Bitrise API', href: '/en/bitrise-ci/api/authenticating-with-the-bitrise-api'},
       ],
     ],
@@ -96,7 +96,7 @@ const sections: Section[] = [
     iconColor: '#2582d0',
     columns: [
       [
-        {label: 'Build distribution for testing', href: '/en/release-management/build-distribution/managing-distributable-builds'},
+        {label: 'Build distribution for testing', href: '/en/release-management/build-distribution/distributing-builds-to-testers'},
         {label: 'Bitrise CodePush', href: '/en/release-management/codepush/about-codepush'},
         {label: 'Distribution API', href: '/en/release-management/release-management-api'},
       ],
