@@ -17,7 +17,7 @@ If you generated your tokens before November 2024, regenerate them to make sure 
 
 We recommend regenerating your tokens if you encounter any other issues, too.
 
-- [Regenerating a personal access token](/en/bitrise-platform/accounts/personal-access-tokens/regenerating-a-personal-access-token).
-- [Regenerating a Workspace API token](/en/bitrise-platform/workspaces/workspace-api-token/regenerating-a-workspace-api-token).
+- [Regenerating a personal access token](/en/bitrise-platform/accounts/personal-access-tokens#regenerating-a-personal-access-token).
+- [Regenerating a Workspace API token](/en/bitrise-platform/workspaces/workspace-api-token#regenerating-a-workspace-api-token).
 
 :::

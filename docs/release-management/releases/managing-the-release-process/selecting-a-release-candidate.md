@@ -48,4 +48,4 @@ Once you selected a release candidate, you will see the details of the artifact 
 You can proceed to:
 
 - [The TestFlight upload stage](/en/release-management/releases/managing-the-release-process/testflight-upload-stage.html) for iOS apps.
-- [The Google Play upload stage](/en/release-management/releases/managing-the-release-process/google-play-upload-stage/uploading-the-release-candidate-to-google-play) for Android apps.
+- [The Google Play upload stage](/en/release-management/releases/managing-the-release-process/google-play-upload-stage#uploading-the-release-candidate-to-google-play) for Android apps.

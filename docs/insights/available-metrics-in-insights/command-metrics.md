@@ -23,5 +23,5 @@ The following metrics are available:
 
 Like for any other metrics in Insights, you can:
 
-- [Create a dashboard](/en/insights/getting-started-with-insights/the-dashboards-page).
+- [Create a dashboard](/en/insights/getting-started-with-insights#the-dashboards-page).
 - [Set alerts](/en/insights/configuring-alerts-in-insights) for specific thresholds.

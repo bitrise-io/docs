@@ -8,7 +8,7 @@ sidebar_position: 12
 Example Workflow for uploading a release draft of an iOS app to the App Store. The Workflow contains:
 
 1. Installing [Cocoapods](/en/bitrise-ci/workflows-and-pipelines/workflows/workflow-recipes-for-ios-projects/ios-cache-cocoapods-dependencies) and [Carthage](/en/bitrise-ci/workflows-and-pipelines/workflows/workflow-recipes-for-ios-projects/ios-install-carthage-dependencies) dependencies.
-1. [Setting the version number](https://www.bitrise.io/integrations/steps/set-ios-version) based on [Env Vars passed to build](/en/bitrise-ci/configure-builds/environment-variables/setting-a-custom-env-var-when-starting-a-build) ($VERSION_NUMBER).
+1. [Setting the version number](https://www.bitrise.io/integrations/steps/set-ios-version) based on [Env Vars passed to build](/en/bitrise-ci/configure-builds/environment-variables#setting-a-custom-env-var-when-starting-a-build) ($VERSION_NUMBER).
 1. [Building a release build and uploading to App Store](/en/bitrise-ci/workflows-and-pipelines/workflows/workflow-recipes-for-ios-projects/ios-deploy-to-app-store-connect-testflight).
 
 ## bitrise.yml

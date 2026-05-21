@@ -7,7 +7,7 @@ sidebar_position: 9
 
 Example Workflow for uploading a release draft of an app to Google Play. The Workflow contains:
 
-1. Setting the version name based on [Env Vars passed to the build](/en/bitrise-ci/configure-builds/environment-variables/setting-a-custom-env-var-when-starting-a-build) ($VERSION_NAME).
+1. Setting the version name based on [Env Vars passed to the build](/en/bitrise-ci/configure-builds/environment-variables#setting-a-custom-env-var-when-starting-a-build) ($VERSION_NAME).
 1. [Creating a release Android App Bundle and uploading it to Google Play](/en/bitrise-ci/workflows-and-pipelines/workflows/workflow-recipes-for-android-projects/android-deploy-to-google-play-internal-alpha-beta-production).
 
 ## bitrise.yml

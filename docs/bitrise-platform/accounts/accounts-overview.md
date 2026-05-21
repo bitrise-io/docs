@@ -19,8 +19,8 @@ You can connect your personal account to:
 Your Bitrise account is managed from your [Account settings page](http://app.bitrise.io/me/account). From this page, you can:
 
 - [Edit your profile](/en/bitrise-platform/accounts/editing-your-profile-settings.html), including username, email address, password, and avatar.
-- Set up [Apple ID connection](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id/adding-apple-id-authentication-data-on-bitrise).
-- [Enable two-factor authentication](/en/bitrise-platform/accounts/two-factor-authentication/enabling-two-factor-authentication).
+- Set up [Apple ID connection](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id#adding-apple-id-authentication-data-on-bitrise).
+- [Enable two-factor authentication](/en/bitrise-platform/accounts/two-factor-authentication#enabling-two-factor-authentication).
 - Connect [LaunchDarkly feature flags](/en/release-management/configuring-connected-apps/integrating-launchdarkly-feature-flags.html) for Release Management.
 - Create and manage personal access tokens used to access the [Bitrise API](/en/bitrise-ci/api/api-overview.html).
 - [Register test devices](/en/bitrise-ci/testing/testing-ios-apps/registering-a-test-device).

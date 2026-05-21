@@ -66,7 +66,7 @@ android {
    } ...
 ```
 
-You can then download the keystore file [using the File Downloader Step](/en/bitrise-ci/run-and-analyze-builds/managing-build-files/using-files-in-your-builds/downloading-a-file-using-the-file-downloader-step), using the `$HOME/keystores/my_keystore.jks` as the destination path.
+You can then download the keystore file [using the File Downloader Step](/en/bitrise-ci/run-and-analyze-builds/managing-build-files/using-files-in-your-builds#downloading-a-file-using-the-file-downloader-step), using the `$HOME/keystores/my_keystore.jks` as the destination path.
 
 If you use Environment Variables as `keyPassword` and `storePassword` on the **Code signing** tab, your `build.gradle` will look like this:
 

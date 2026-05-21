@@ -15,7 +15,7 @@ To set up the configuration cache:
 1. Run a build locally with the `--configuration-cache` flag.
 
    This ensures that your Gradle project supports configuration caching. To enable configuration caching in the Gradle settings, [refer to Gradle's official guide](https://docs.gradle.org/current/userguide/configuration_cache.html#config_cache:usage:enable).
-1. Generate a Bitrise [personal access token](/en/bitrise-platform/accounts/personal-access-tokens/creating-a-personal-access-token) and add it as a [Secret](/en/bitrise-ci/configure-builds/secrets.html) with the BITRISE_BUILD_CACHE_AUTH_TOKEN key.
+1. Generate a Bitrise [personal access token](/en/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token) and add it as a [Secret](/en/bitrise-ci/configure-builds/secrets.html) with the BITRISE_BUILD_CACHE_AUTH_TOKEN key.
 
    :::note[Token consistency]
 

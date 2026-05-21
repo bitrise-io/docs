@@ -12,7 +12,7 @@ The current API supports two types of authentication:
 
 Every API endpoint requires authentication, except the “root” URL ([https://api.bitrise.io](https://api.bitrise.io)).
 
-1. Create either a [personal access token](/en/bitrise-platform/accounts/personal-access-tokens/creating-a-personal-access-token) or [a Workspace API token](/en/bitrise-platform/workspaces/workspace-api-token/creating-a-workspace-api-token).
+1. Create either a [personal access token](/en/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token) or [a Workspace API token](/en/bitrise-platform/workspaces/workspace-api-token#creating-a-workspace-api-token).
 1. Save it in a secure way.
 1. Add an `Authorization` header with the access token to your API calls.
 

@@ -29,7 +29,7 @@ To start using the Bitrise Build Cache, you have to add a new connection. The pr
 - Selecting a CI provider: you can use either Bitrise or another CI provider.
 - Selecting a build tool: currently, Bazel, Gradle, and Xcode are supported.
 - If you use Bitrise as your CI provider, selecting a Bitrise project.
-- If you use a different CI provider, adding [a personal access token](/en/bitrise-platform/accounts/personal-access-tokens/creating-a-personal-access-token) to allow the Bitrise Build Cache access to your CI.
+- If you use a different CI provider, adding [a personal access token](/en/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token) to allow the Bitrise Build Cache access to your CI.
 - Adding the cache activation scripts to your CI process. On Bitrise, we have dedicated [Steps](/en/bitrise-ci/workflows-and-pipelines/steps/steps-overview.html) for this.
 
 To add a new connection:
