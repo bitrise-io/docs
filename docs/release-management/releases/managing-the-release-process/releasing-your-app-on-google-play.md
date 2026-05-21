@@ -30,7 +30,7 @@ If the rollout stage fails for any reason, we’ll try it again later, until it 
 
 ### Clearing the automated staged rollout schedule
 
-You can clear the schedule before the first stage of the scheduled rollout is completed. If the first stage fails, you can still clear the rollout schedule, but after it is completed you can only [pause the automation](#section-idm4566296030356834170833265238), or [cancel it](#section-idm4575678678283234170834608148).
+You can clear the schedule before the first stage of the scheduled rollout is completed. If the first stage fails, you can still clear the rollout schedule, but after it is completed you can only [pause the automation](#clearing-the-automated-staged-rollout-schedule), or [cancel it](#cancelling-an-automated-staged-rollout).
 
 ![release-scheduled.png](/img/_paligo/uuid-7b4d08a4-23ee-c089-5e7a-a8f2ea99abda.png)
 

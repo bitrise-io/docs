@@ -36,7 +36,7 @@ When done, you can proceed to:
 
 ## Assigning an approval task to a team member with the REST API
 
-You can assign an approval task to a team member with the help of our [Release Management API](/en/release-management/release-management-api#release-management-api). For more information on our API endpoint, check out our [API docs](https://api-docs.bitrise.io/).
+You can assign an approval task to a team member with the help of our [Release Management API](/en/release-management/release-management-api). For more information on our API endpoint, check out our [API docs](https://api-docs.bitrise.io/).
 
 :::note[Limited access]
 

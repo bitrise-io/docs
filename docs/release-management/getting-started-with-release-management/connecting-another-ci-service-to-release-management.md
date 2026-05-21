@@ -11,7 +11,7 @@ For now, using Release Management still requires a Bitrise CI project as it's th
 
 To connect your CI service to Release Management:
 
-1. Sign up for Bitrise and [add a new Bitrise CI project](/en/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache#adding-your-first-project).
+1. Sign up for Bitrise and [add a new Bitrise CI project](/en/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache#adding-a-new-connection-to-the-build-cache).
 1. [Connect an app](/en/release-management/getting-started-with-release-management/connecting-an-app) in Release Management.
 
    This includes setting up your project's connection to App Store Connect and/or Google Play.

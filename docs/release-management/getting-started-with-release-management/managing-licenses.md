@@ -28,7 +28,7 @@ To assign licenses to connected apps:
 
 ## Exceeding your plan limit
 
-If the number of assigned licenses exceeds the plan limit, a notification will appear. You can go back to [change assigned licenses](#section-idm4588447990824034242818467543) or change your plan to proceed with the selected configuration.
+If the number of assigned licenses exceeds the plan limit, a notification will appear. You can go back to [change assigned licenses](#assigning-licenses-to-connected-apps) or change your plan to proceed with the selected configuration.
 
 To solve the issue:
 

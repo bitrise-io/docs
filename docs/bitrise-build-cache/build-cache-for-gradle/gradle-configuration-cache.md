@@ -68,7 +68,7 @@ If your build doesn't reuse the configuration cache, you can check a number of p
 
 - Make sure to add the Save/Restore Gradle cache Steps to utilize dependency caching. Gradle configuration cache references artifacts that must be present.
 - It may take multiple runs before the configuration cache is fully applied and reused.
-- Check the Gradle logs to find out why Gradle didn't reuse the configuration cache. You can [save the gradle configuration cache log](#section-idm23460613639422) to your build artifacts.
+- Check the Gradle logs to find out why Gradle didn't reuse the configuration cache. You can [save the gradle configuration cache log](#saving-the-gradle-configuration-cache-log) to your build artifacts.
 - Updates to the **Build Cache for Gradle** Step will cause a one-off invalidation of the configuration cache. Just run another build to fix the problem.
 
 ### Failed to instrument class error

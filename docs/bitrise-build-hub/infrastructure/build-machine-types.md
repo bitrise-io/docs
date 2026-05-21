@@ -17,7 +17,7 @@ Not all machines are available on all subscription plans. Visit [the pricing pag
 
 Machine types are divided into resource classes. The same resource class offers multiple machine types with broadly similar performances. Bitrise automatically assigns machine types from a resource class, which means that on the same day, your builds might run on different machine types.
 
-| Operating system | Resource class | Hardware types | Specs | Machine type ID for [YAML configuration](/en/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds#setting-the-stack-in-the-bitriseyml-file) |
+| Operating system | Resource class | Hardware types | Specs | Machine type ID for [YAML configuration](/en/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds#setting-the-stack-in-the-configuration-yaml) |
 | --- | --- | --- | --- | --- |
 | macOS |  |  |  |  |
 | Medium | - M2 Pro Medium - M4 Medium | - 4 CPU @3.49GHz and 6 GB RAM - 5 CPU @4.4 GHz and 6 GB RAM | `g2.mac.medium` |  |

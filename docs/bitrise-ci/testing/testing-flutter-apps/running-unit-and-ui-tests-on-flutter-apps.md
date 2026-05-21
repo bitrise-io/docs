@@ -58,7 +58,7 @@ Configuration YAML
 1. Optionally, set the **Generate code coverage files?** input to **yes** to generate code coverage files.
 
    With this input turned on, the `--coverage` flag is appended to the `flutter test` command.
-1. Optionally, you can access the generated json test report and the code coverage file (`lcov.info`) in subsequent Steps by using the BITRISE_FLUTTER_TESTRESULT_PATH and the BITRISE_FLUTTER_COVERAGE_PATH [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables#exposing-env-vars-and-using-them-in-another-step-or-workflow).
+1. Optionally, you can access the generated json test report and the code coverage file (`lcov.info`) in subsequent Steps by using the BITRISE_FLUTTER_TESTRESULT_PATH and the BITRISE_FLUTTER_COVERAGE_PATH [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables#setting-and-managing-env-vars-during-a-build).
 1. Add the **Deploy to Bitrise.io** Step to your Workflow to view test results: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
 
 1. Include tests in your Flutter project.
@@ -171,7 +171,7 @@ Configuration YAML
        inputs:
        - generate_code_coverage_files: 'yes'
    ```
-1. Optionally, you can access the generated json test report and the code coverage file (`lcov.info`) in subsequent Steps by using the BITRISE_FLUTTER_TESTRESULT_PATH and the BITRISE_FLUTTER_COVERAGE_PATH [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables#exposing-env-vars-and-using-them-in-another-step-or-workflow).
+1. Optionally, you can access the generated json test report and the code coverage file (`lcov.info`) in subsequent Steps by using the BITRISE_FLUTTER_TESTRESULT_PATH and the BITRISE_FLUTTER_COVERAGE_PATH [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables#setting-and-managing-env-vars-during-a-build).
 1. Add the `deploy-to-bitrise-io` Step to view test results: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
 
    ```

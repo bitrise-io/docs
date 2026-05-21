@@ -78,6 +78,6 @@ To check the differences:
 
 :::tip[Invocation details]
 
-You can also access the compare function [from the **Invocation details** page](#section-idm234872184294415): you can find the button in the top right corner of the page.
+You can also access the compare function [from the **Invocation details** page](#invocation-details): you can find the button in the top right corner of the page.
 
 :::

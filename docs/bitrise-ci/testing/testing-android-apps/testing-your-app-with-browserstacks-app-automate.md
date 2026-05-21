@@ -31,7 +31,7 @@ To configure the Browserstack integration:
    | **App & Test Suite** | **Android app under test** | The path to your test APK file. By default. you don't need to modify it: the **Android Build for UI testing** Step exports the path as an Env Var which is used as the default value. |
    | **Espresso test suite** | The path to your test suite file. By default. you don't need to modify it: the **Android Build for UI testing** Step exports the path as an Env Var which is used as the default value. |  |
    | **Devices** | **Devices** | Set to one or more device-OS combinations in a new line.  You can find the possible combinations [in this list](https://www.browserstack.com/list-of-browsers-and-platforms/app_automate). |
-1. Optionally, [set advanced configuration options](#section-idm234784175354164).
+1. Optionally, [set advanced configuration options](#advanced-configuration-for-app-automate-espresso).
 
 ## Advanced configuration for App Automate Espresso
 

@@ -17,7 +17,7 @@ Note that every run attempt of the AI build fixer costs two AI credits.
 
 To run the AI build fixer, you need to:
 
-- Turn on [AI build summary.](/en/bitrise-platform/ai/ai-features-on-bitrise#ai-build-summary-99942) The AI build fixer builds on the outputs and suggestions of the build summary.
+- Turn on [AI build summary.](/en/bitrise-platform/ai/ai-features-on-bitrise#ai-build-summary) The AI build fixer builds on the outputs and suggestions of the build summary.
 - Enable the AI build fixer on the **Project settings** page.
 - Add your own trusted domains to the build fixer configuration.
 

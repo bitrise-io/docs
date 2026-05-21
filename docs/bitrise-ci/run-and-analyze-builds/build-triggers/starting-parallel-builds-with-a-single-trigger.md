@@ -42,7 +42,7 @@ Since the **Bitrise Build Start** Step heavily relies on the parameters of the c
 
 :::tip[bitrise.yml example]
 
-You can edit your `bitrise.yml` file on the **bitrise.yml** tab of the Workflow Editor, or you can edit the file locally. The example below focuses on the Bitrise UI, but if you prefer to use YAML format, [check out our example](#section-idm4542014264953632888099751584)!
+You can edit your `bitrise.yml` file on the **bitrise.yml** tab of the Workflow Editor, or you can edit the file locally. The example below focuses on the Bitrise UI, but if you prefer to use YAML format, [check out our example](#bitriseyml-example)!
 
 :::
 
