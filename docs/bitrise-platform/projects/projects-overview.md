@@ -17,4 +17,4 @@ Once you have access to a [workspace](/en/bitrise-platform/workspaces/workspaces
 - [Change your project's repository URL](/en/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch/changing-the-repository-url).
 - [Setting up service credentials](/en/bitrise-platform/integrations/the-service-credential-user/changing-the-service-credential-user).
 - [Update your project's SSH keys](/en/bitrise-platform/repository-access/configuring-ssh-keys.html).
-- [Register new webhooks and update existing ones](/en/bitrise-platform/integrations/webhooks.html).
+- [Register new webhooks and update existing ones](/en/bitrise-platform/integrations/webhooks/adding-incoming-webhooks).

@@ -7,7 +7,7 @@ slug: /bitrise-ci/run-and-analyze-builds/build-triggers/starting-parallel-builds
 
 :::tip[Using Build Pipelines to start parallel builds with a single trigger]
 
-If you have a credit-based account and you are planning on running multiple tasks parallel with a single trigger, we recommend using Build Pipelines. For more information, check out [Build Pipelines](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/pipelines-with-stages.html).
+If you have a credit-based account and you are planning on running multiple tasks parallel with a single trigger, we recommend using Build Pipelines. For more information, check out [Build Pipelines](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/pipelines-with-stages/configuring-a-pipeline-with-stages).
 
 :::
 

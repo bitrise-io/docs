@@ -23,7 +23,7 @@ The build machine IP ranges listed below are for the Bitrise multi-tenant enviro
 
 - [Connect by VPN](/en/bitrise-platform/integrations/connecting-to-a-vpn-during-a-build.html).
 - [Select a single-tenant environment](/en/bitrise-platform/infrastructure/customizable-enterprise-build-platforms.html).
-- [Deploy runners to your own AWS account](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller.html).
+- [Deploy runners to your own AWS account](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates).
 
 Feel free to [contact us](https://bitrise.io/contact) if you have questions.
 

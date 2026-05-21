@@ -14,7 +14,7 @@ In the release candidate stage you select an installable artifact that will be u
 
 The installable artifact must be a SIGNED artifact (IPA or AAB). Check out our code signing guides:
 
-- [iOS code signing](/en/bitrise-ci/code-signing/ios-code-signing)
+- [iOS code signing](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)
 - [Android code signing](/en/bitrise-ci/code-signing/android-code-signing/android-code-signing-using-the-android-sign-step.html)
 
 :::

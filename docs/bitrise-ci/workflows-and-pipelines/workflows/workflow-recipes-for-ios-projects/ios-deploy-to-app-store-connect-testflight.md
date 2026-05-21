@@ -10,8 +10,8 @@ Archive the app and upload to App Store Connect to either release it to App Stor
 ## Prerequisites
 
 1. The source code is cloned and the dependencies (for example, Cocoapods, Carthage) are installed.
-1. You have code signing set up. See [iOS code signing](/en/bitrise-ci/code-signing/ios-code-signing.html) for more details.
-1. You have Apple Developer connection set up. See [Apple services connection](/en/bitrise-platform/integrations/apple-services-connection.html) for more details.
+1. You have code signing set up. See [iOS code signing](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects) for more details.
+1. You have Apple Developer connection set up. See [Apple services connection](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services) for more details.
 
 ## Instructions
 

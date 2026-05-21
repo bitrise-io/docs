@@ -13,7 +13,7 @@ Build and distribute your app to testers via Firebase App Distribution.
 1. Obtain a token from Firebase by running firebase `login:ci` locally. See the [Firebase CLI](https://firebase.google.com/docs/cli#sign-in-test-cli) docs for more details.
 1. Add this token as a Secret to your Bitrise project with the name FIREBASE_TOKEN.
 1. Get your Firebase App ID from your project's **General Settings** page and pass this value as an input variable to the **[BETA] Firebase App Distribution** Step.
-1. You have code signing set up. See [iOS code signing](/en/bitrise-ci/code-signing/ios-code-signing.html) for more details.
+1. You have code signing set up. See [iOS code signing](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects) for more details.
 
 ## Instructions
 

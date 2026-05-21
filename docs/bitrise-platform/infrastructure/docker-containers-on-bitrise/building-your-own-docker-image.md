@@ -10,7 +10,7 @@ You can create your own Docker image and push it to a container registry during 
 
 The Step uses the `docker build` [command](https://docs.docker.com/engine/reference/commandline/image_build/): it requires a [Dockerfile](https://docs.docker.com/engine/reference/builder/) that contains the build instructions and a build context. Build context means the set of files located at the specified path. The Step allows you to pass [options](https://docs.docker.com/engine/reference/commandline/image_build/#options) and [build arguments](https://docs.docker.com/build/guide/build-args/) to the build.
 
-To speed up your builds, the Step also supports [key-based caching](/en/bitrise-ci/dependencies-and-caching/key-based-caching.html).
+To speed up your builds, the Step also supports [key-based caching](/en/bitrise-ci/dependencies-and-caching/key-based-caching/accessing-key-based-cache-archives).
 
 To build the image with build options, build arguments and caching used:
 

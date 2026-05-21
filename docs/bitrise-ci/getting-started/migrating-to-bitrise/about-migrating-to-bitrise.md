@@ -25,4 +25,4 @@ Once you're familiar with these concepts, we offer quick start guides to get you
 - [Getting started with the Bitrise platform](/en/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache/getting-started-with-the-bitrise-platform).
 - [Getting started with web CI](/en/bitrise-ci/getting-started/quick-start-guides/getting-started-with-web-ci).
 - [Getting started with the Build Cache](/en/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache).
-- [Getting started with Release Management](/en/release-management/getting-started-with-release-management).
+- [Getting started with Release Management](/en/release-management/getting-started-with-release-management/adding-a-new-app-to-release-management).

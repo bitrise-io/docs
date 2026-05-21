@@ -9,7 +9,7 @@ Build and distribute your app to testers via Bitrise.io Ship.
 
 ## Prerequisites
 
-You have code signing set up. See [iOS code signing](/en/bitrise-ci/code-signing/ios-code-signing.html) for more details.
+You have code signing set up. See [iOS code signing](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects) for more details.
 
 ## Instructions
 

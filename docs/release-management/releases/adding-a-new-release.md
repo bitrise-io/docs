@@ -26,4 +26,4 @@ To add a new release to [a connected app](/en/release-management/getting-started
    You can configure templates in [Release presets](/en/release-management/releases/release-presets.html).
 1. Click **Add app version**.
 
-After successfully adding a release, you can modify its configuration at any time: [Configuring a release](/en/release-management/releases/configuring-a-release).
+After successfully adding a release, you can modify its configuration at any time: [Configuring a release](/en/release-management/releases/configuring-a-release/configuring-auto-upload).
