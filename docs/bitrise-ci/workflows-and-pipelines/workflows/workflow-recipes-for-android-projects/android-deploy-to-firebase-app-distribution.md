@@ -11,9 +11,9 @@ Build and distribute your app to testers via Firebase App Distribution. This exa
 
 - An existing Firebase project where your exact package name is registered. See [the Firebase documentation](https://firebase.google.com/docs/app-distribution/android/distribute-console?apptype=apk) for details.
 - Obtain a token from Firebase by running `firebase login:ci` locally. See [the Firebase CLI docs](https://firebase.google.com/docs/cli#sign-in-test-cli) for details.
-- Add this token as a [Secret](/en/bitrise-ci/configure-builds/secrets.html) to your Bitrise app with the name FIREBASE_TOKEN.
+- Add this token as a [Secret](/en/bitrise-ci/configure-builds/secrets) to your Bitrise app with the name FIREBASE_TOKEN.
 - Get your Firebase App ID from your project's **General Settings** page and pass this value as an input to the **Firebase App Distribution** Step.
-- If you want to deploy a release build, don't forget [to set up code signing on Bitrise](/en/bitrise-ci/code-signing/android-code-signing/android-code-signing-using-the-android-sign-step.html) to build and sign the APK with your release key.
+- If you want to deploy a release build, don't forget [to set up code signing on Bitrise](/en/bitrise-ci/code-signing/android-code-signing/android-code-signing-using-the-android-sign-step) to build and sign the APK with your release key.
 
 ## Instructions
 

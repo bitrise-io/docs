@@ -8,7 +8,7 @@ You can receive debugging information from Bitrise builds in Pull Request (PR) c
 
 :::note[Service Credential User and PR comments]
 
-Note that PR comments will be posted using a [service credential user account](https://docs.bitrise.io/en/bitrise-platform/integrations/the-service-credential-user.html) or the [Bitrise GitHub App](/en/bitrise-platform/repository-access/github-app-integration) if that is in use, rather than your personal account.
+Note that PR comments will be posted using a [service credential user account](/en/bitrise-platform/integrations/the-service-credential-user) or the [Bitrise GitHub App](/en/bitrise-platform/repository-access/github-app-integration) if that is in use, rather than your personal account.
 
 :::
 
@@ -58,7 +58,7 @@ To prevent receiving comments on your successful builds from Bitrise, uncheck th
 
 **Who is the author of these PR comments?**
 
-This depends on the type of authentication. The [Service Credential User](https://docs.bitrise.io/en/bitrise-platform/integrations/the-service-credential-user.html) account posts comments if you [authenticate with the OAuth method](https://docs.bitrise.io/en/bitrise-platform/integrations/connecting-your-github-gitlab-bitbucket-account-to-bitrise.html). This applies for all Git providers, for example, Github, Gitlab, Bitbucket.
+This depends on the type of authentication. The [Service Credential User](/en/bitrise-platform/integrations/the-service-credential-user) account posts comments if you [authenticate with the OAuth method](/en/bitrise-platform/repository-access/repository-access-with-oauth). This applies for all Git providers, for example, Github, Gitlab, Bitbucket.
 
 If you use the [Bitrise GitHub app](/en/bitrise-platform/repository-access/github-app-integration), the associated Bitrise bot will post the comment.
 

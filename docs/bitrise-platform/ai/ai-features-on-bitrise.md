@@ -7,7 +7,7 @@ slug: /bitrise-platform/ai/ai-features-on-bitrise
 
 :::tip[AI FAQ]
 
-This page offers a short summary of the available AI features on Bitrise. For a detailed breakdown of how Bitrise uses AI and how we handle customer data related to AI features, see the [AI FAQ](/en/bitrise-platform/ai/ai-faq---how-bitrise-leverages-ai-technologies-in-its-features-and-services.html).
+This page offers a short summary of the available AI features on Bitrise. For a detailed breakdown of how Bitrise uses AI and how we handle customer data related to AI features, see the [AI FAQ](/en/bitrise-platform/ai/ai-faq---how-bitrise-leverages-ai-technologies-in-its-features-and-services).
 
 :::
 
@@ -17,7 +17,7 @@ The following features are available:
 
 ## Code reviewer
 
-The AI [code reviewer](/en/bitrise-platform/integrations/ai-code-reviewer.html) creates a comment every time a new pull request is opened on GitHub, and every time a user adds a new commit to the pull request. It can provide:
+The AI [code reviewer](/en/bitrise-platform/integrations/ai-code-reviewer) creates a comment every time a new pull request is opened on GitHub, and every time a user adds a new commit to the pull request. It can provide:
 
 - A summary: Highlights key code changes and their potential impact.
 - Walkthrough: Generates context-aware documentation to help team members quickly understand code changes.
@@ -35,17 +35,17 @@ If you need more projects or AI credits, go to **Workspace settings** →**Plan 
 
 ## AI build summary
 
-The [AI build summary](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/ai-build-summary.html) gives you a summary of why a CI build failed and suggests the fix right there on the build page. You can turn off the feature at any time.
+The [AI build summary](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/ai-build-summary) gives you a summary of why a CI build failed and suggests the fix right there on the build page. You can turn off the feature at any time.
 
 ![2025-09-30-ai-summary.png](/img/_paligo/uuid-09bb51b3-e156-8f2e-4141-e71b46951f5c.png)
 
 ## AI build fixer
 
-If you have a failed build, the [AI build fixer](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/ai-build-fixer.html) corrects it right on the build’s details page without you having to switch to other tools and processes. The AI build fixer executes the suggested code changes and pushes a PR to your GitHub repository. You can check the changes through a link to the repo. Based on your configured build triggers, Bitrise kicks off a new CI build to validate the AI changes. This means less fragmented work and quicker debugging.
+If you have a failed build, the [AI build fixer](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/ai-build-fixer) corrects it right on the build’s details page without you having to switch to other tools and processes. The AI build fixer executes the suggested code changes and pushes a PR to your GitHub repository. You can check the changes through a link to the repo. Based on your configured build triggers, Bitrise kicks off a new CI build to validate the AI changes. This means less fragmented work and quicker debugging.
 
 ## Bitrise MCP
 
-The [Bitrise Model Context Protocol (MCP) Server](/en/bitrise-platform/ai/bitrise-mcp.html) lets you talk to Bitrise via an AI client of your choice. It enables seamless interaction with your existing CI setup.
+The [Bitrise Model Context Protocol (MCP) Server](/en/bitrise-platform/ai/bitrise-mcp) lets you talk to Bitrise via an AI client of your choice. It enables seamless interaction with your existing CI setup.
 
 - Troubleshoot issues by directly asking about failure reasons. The AI analyzes logs and configurations, providing actionble recommendations.
 - Optimize configurations by instructing the AI to suggest improvements. You will receive instant insights and practical suggestions.

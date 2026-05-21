@@ -12,11 +12,11 @@ To successfully use Release Management, there are a few concepts you need to be 
 
 You [connect your app](https://devcenter.bitrise.io/en/release-management/getting-started-with-release-management/connecting-an-app.html) from the App Store or Google Play to a Bitrise project. This is what we call a connected app.
 
-You need at least one connected app to be able to add and manage releases in Release Management. To use [build distribution](/en/release-management/build-distribution/distributing-builds-to-testers.html), you don't actually need to connect an app.
+You need at least one connected app to be able to add and manage releases in Release Management. To use [build distribution](/en/release-management/build-distribution/distributing-builds-to-testers), you don't actually need to connect an app.
 
 ## Releases
 
-You [manage releases](/en/release-management/releases/adding-a-new-release.html) of a connected app: each release is a new version of an app. An iOS release has a version number, and an Android release has a version name.
+You [manage releases](/en/release-management/releases/adding-a-new-release) of a connected app: each release is a new version of an app. An iOS release has a version number, and an Android release has a version name.
 
 ## Release Manager
 
@@ -24,9 +24,9 @@ A team member in Release Management with the [required permissions](https://devc
 
 ## Release presets
 
-For each connected app, you can define [presets](/en/release-management/releases/release-presets.html), which are configuration values automatically applied in a new blank release. After the presets are applied, you can still edit these values during the release process.
+For each connected app, you can define [presets](/en/release-management/releases/release-presets), which are configuration values automatically applied in a new blank release. After the presets are applied, you can still edit these values during the release process.
 
-You can create a [release note preset](/en/release-management/releases/release-presets.html) as well. This means every release will be submitted to the App Store or Google Play with the same release notes. A release note preset can be identical in all localizations or you can manually edit it in the release stage.
+You can create a [release note preset](/en/release-management/releases/release-presets) as well. This means every release will be submitted to the App Store or Google Play with the same release notes. A release note preset can be identical in all localizations or you can manually edit it in the release stage.
 
 ## Release stages
 
@@ -36,20 +36,20 @@ iOS
 
 Android
 
-1. [Release candidate](/en/release-management/releases/managing-the-release-process/selecting-a-release-candidate.html): In the **Release candidate** stage, specify the release branch and select the Workflow that generates an IPA file.
+1. [Release candidate](/en/release-management/releases/managing-the-release-process/selecting-a-release-candidate): In the **Release candidate** stage, specify the release branch and select the Workflow that generates an IPA file.
 1. [TestFlight](/en/release-management/releases/managing-the-release-process/testflight-upload-stage#uploading-the-release-candidate-to-testflight): Upload the release candidate to TestFlight, and distribute it for testing.
 1. [Approvals](/en/release-management/releases/managing-the-release-process/creating-tasks-for-the-approvals-stage): You can create tasks for any stakeholder or team member whose approval is needed to continue with the release to the App Store.
-1. [App Store review](/en/release-management/releases/managing-the-release-process/sending-your-app-to-app-store-review.html): Submit your update to review in the App Store, and get information on the approval progress.
-1. [Release on the App Store](/en/release-management/releases/managing-the-release-process/releasing-your-app-on-the-app-store.html): You can release your app to all users at the same time, or configure a phased release.
+1. [App Store review](/en/release-management/releases/managing-the-release-process/sending-your-app-to-app-store-review): Submit your update to review in the App Store, and get information on the approval progress.
+1. [Release on the App Store](/en/release-management/releases/managing-the-release-process/releasing-your-app-on-the-app-store): You can release your app to all users at the same time, or configure a phased release.
 
-1. [Release candidate](/en/release-management/releases/managing-the-release-process/selecting-a-release-candidate.html): In the **Release candidate** stage, specify the release branch and select the Workflow that generates an AAB file.
+1. [Release candidate](/en/release-management/releases/managing-the-release-process/selecting-a-release-candidate): In the **Release candidate** stage, specify the release branch and select the Workflow that generates an AAB file.
 1. [Google Play upload and testing](/en/release-management/releases/managing-the-release-process/google-play-upload-stage#uploading-the-release-candidate-to-google-play): Upload the release candidate to Google Play, and distribute it for testing.
 1. [Approvals](/en/release-management/releases/managing-the-release-process/creating-tasks-for-the-approvals-stage): You can create tasks for any stakeholder or team member whose approval is needed to continue with the release to Google Play.
-1. [Release on Google Play](/en/release-management/releases/managing-the-release-process/releasing-your-app-on-the-app-store.html): You can release your app to all users at the same time, or configure a staged rollout.
+1. [Release on Google Play](/en/release-management/releases/managing-the-release-process/releasing-your-app-on-the-app-store): You can release your app to all users at the same time, or configure a staged rollout.
 
 ## Build distribution
 
-With Release Management [you can distribute the builds of your mobile apps](/en/release-management/build-distribution/distributing-builds-to-testers.html) to testers without having to engage with either TestFlight or Google Play.
+With Release Management [you can distribute the builds of your mobile apps](/en/release-management/build-distribution/distributing-builds-to-testers) to testers without having to engage with either TestFlight or Google Play.
 
 Once you have installable artifacts, Bitrise can generate both private and public install links that testers and other stakeholders can use to install the app on real devices via over-the-air installation.
 

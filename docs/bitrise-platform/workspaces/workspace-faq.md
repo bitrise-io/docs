@@ -27,7 +27,7 @@ Workspace members have access to different projects and different products, depe
 
 **What are groups good for?**
 
-By creating [groups](/en/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/workspace-groups.html), you can assign multiple workspace members to each project at once, making it faster and easier to setup new projects on Bitrise. It also make it faster to reassign, remove and change role of multiple members.
+By creating [groups](/en/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/workspace-groups), you can assign multiple workspace members to each project at once, making it faster and easier to setup new projects on Bitrise. It also make it faster to reassign, remove and change role of multiple members.
 
 Groups can be assigned to a project, the group’s role can be set, and by removing the group from the project, you can revoke the access of every member of that group from the project.
 

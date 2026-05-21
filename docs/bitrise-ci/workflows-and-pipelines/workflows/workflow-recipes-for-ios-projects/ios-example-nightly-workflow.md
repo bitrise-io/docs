@@ -13,7 +13,7 @@ Example Workflow for nightly builds for iOS apps. The Workflow contains:
 1. [Building a test app and uploading to bitrise.io](/en/bitrise-ci/workflows-and-pipelines/workflows/workflow-recipes-for-ios-projects/ios-deploy-to-bitriseio).
 1. [Sending the QR code of the test build to Slack](/en/bitrise-ci/workflows-and-pipelines/workflows/generic-workflow-recipes/iosandroid-send-qr-code-to-slack).
 
-Check out our [guide](/en/bitrise-ci/run-and-analyze-builds/starting-builds/scheduling-builds.html) to run scheduled builds.
+Check out our [guide](/en/bitrise-ci/run-and-analyze-builds/starting-builds/scheduling-builds) to run scheduled builds.
 
 ## bitrise.yml
 

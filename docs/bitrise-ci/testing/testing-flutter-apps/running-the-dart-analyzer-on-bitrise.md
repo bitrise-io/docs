@@ -34,7 +34,7 @@ bitrise.yml
 1. Add the **Flutter Analyze** Step to your Workflow.
 1. Make sure the **Project Location** input points to the root directory of your Flutter project.
 
-   - If the project scanner automatically detected it as a Flutter project when [adding it as an app](/en/bitrise-ci/getting-started/adding-a-new-project.html) on Bitrise, you don't have to change the default value.
+   - If the project scanner automatically detected it as a Flutter project when [adding it as an app](/en/bitrise-ci/getting-started/adding-a-new-project) on Bitrise, you don't have to change the default value.
    - If you configured the app manually, check that the location is correct.
 1. Set the **Fail Severity** input to the desired level.
 
@@ -113,7 +113,7 @@ bitrise.yml
        - project_location: "$BITRISE_SOURCE_DIR"
    ```
 
-   - If the project scanner automatically detected it as a Flutter project when [adding it as an app](/en/bitrise-ci/getting-started/adding-a-new-project.html) on Bitrise, you don't have to change the default value.
+   - If the project scanner automatically detected it as a Flutter project when [adding it as an app](/en/bitrise-ci/getting-started/adding-a-new-project) on Bitrise, you don't have to change the default value.
    - If you configured the app manually, check that the location is correct.
 1. Set the `fail_severity` input to the desired level.
 
@@ -141,4 +141,4 @@ bitrise.yml
        - additional_params: --no-congratulate
    ```
 
-Once your build has run, you can check the Step's output in the [build logs](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/build-logs.html).
+Once your build has run, you can check the Step's output in the [build logs](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/build-logs).

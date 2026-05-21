@@ -5,7 +5,7 @@ slug: /bitrise-build-hub/infrastructure/ip-addresses-for-the-build-machines
 sidebar_label: IP address ranges for the Bitrise build machines
 ---
 
-For most users, who host their repositories on cloud-based service providers, there is no need for any network configuration to be able to use Bitrise. All we need is permission to access the repository and for that, [an SSH key](/en/bitrise-platform/repository-access/configuring-ssh-keys.html) or [an access token](/en/bitrise-platform/repository-access/configuring-https-authorization-credentials) is enough.
+For most users, who host their repositories on cloud-based service providers, there is no need for any network configuration to be able to use Bitrise. All we need is permission to access the repository and for that, [an SSH key](/en/bitrise-platform/repository-access/configuring-ssh-keys) or [an access token](/en/bitrise-platform/repository-access/configuring-https-authorization-credentials) is enough.
 
 However, your company security policy might not allow unknown and unauthorized IP addresses to communicate with the servers where your code is being stored - either on your own datacenter or in a private cloud. In that case, Bitrise won’t work unless the relevant IP addresses are added to your allow list.
 
@@ -21,8 +21,8 @@ If the provided public IP address is a subnet, you need to allow the entire subn
 
 The build machine IP ranges listed below are for the Bitrise multi-tenant environment. Depending on your organization's security requirements, it may not be advisable to allow access to your network from the Bitrise multi-tenant IP range. For organizations with enhanced security requirements, you can:
 
-- [Connect by VPN](/en/bitrise-platform/integrations/connecting-to-a-vpn-during-a-build.html).
-- [Select a single-tenant environment](/en/bitrise-platform/infrastructure/customizable-enterprise-build-platforms.html).
+- [Connect by VPN](/en/bitrise-platform/integrations/connecting-to-a-vpn-during-a-build).
+- [Select a single-tenant environment](/en/bitrise-platform/infrastructure/customizable-enterprise-build-platforms).
 - [Deploy runners to your own AWS account](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates).
 
 Feel free to [contact us](https://bitrise.io/contact) if you have questions.

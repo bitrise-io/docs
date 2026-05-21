@@ -49,7 +49,7 @@ If you use the Bitrise CI, the command card can take you to the project's build 
 
 ![mygreat-project-name.png](/img/_paligo/uuid-79a85107-1f7e-60a6-6934-cbec5be94c28.png)
 
-For even more invocation metrics, check out [Insights](/en/insights/available-metrics-in-insights/command-metrics.html).
+For even more invocation metrics, check out [Insights](/en/insights/available-metrics-in-insights/command-metrics).
 
 ## Comparing invocation differences
 

@@ -45,8 +45,8 @@ Configuration YAML
 
    ![flutter-test-step.png](/img/_paligo/uuid-58597c24-04b0-d59c-c007-abd9c802360a.png)
 
-   - If the project scanner automatically detected it as a Flutter project when [adding it as an app](/en/bitrise-ci/getting-started/adding-a-new-project.html) on Bitrise, you don't have to change the default value.
-   - If you configured the app manually, check that the location is correct. You can do so by going to the **Env Vars** tab on the Workflow Editor, and checking the BITRISE_FLUTTER_PROJECT_LOCATION [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables.html).
+   - If the project scanner automatically detected it as a Flutter project when [adding it as an app](/en/bitrise-ci/getting-started/adding-a-new-project) on Bitrise, you don't have to change the default value.
+   - If you configured the app manually, check that the location is correct. You can do so by going to the **Env Vars** tab on the Workflow Editor, and checking the BITRISE_FLUTTER_PROJECT_LOCATION [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables).
 1. By default, the Step will find and run all tests. But you can configure it to run only selected tests: use the **Test files pattern** input to tell the Step which tests to run.
 
    The input accepts both * and ** glob formats. For example, `lib/**/*_test.dart` is a valid input.
@@ -132,7 +132,7 @@ Configuration YAML
        - project_location: "$BITRISE_FLUTTER_PROJECT_LOCATION"
    ```
 
-   - If the project scanner automatically detected it as a Flutter project when [adding it as an app](/en/bitrise-ci/getting-started/adding-a-new-project.html) on Bitrise, you don't have to change the default value, which is BITRISE_FLUTTER_PROJECT_LOCATION.
+   - If the project scanner automatically detected it as a Flutter project when [adding it as an app](/en/bitrise-ci/getting-started/adding-a-new-project) on Bitrise, you don't have to change the default value, which is BITRISE_FLUTTER_PROJECT_LOCATION.
    - If you configured the app manually, check that the location is correct. You can check where BITRISE_FLUTTER_PROJECT_LOCATION points in the `envs` property of the `app`:
 
      ```

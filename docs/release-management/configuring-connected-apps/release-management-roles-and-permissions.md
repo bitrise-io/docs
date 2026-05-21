@@ -17,11 +17,11 @@ You can assign different roles to different team members. In Release Management,
   - **Workspace owner**: Workspace owners have full administrative control over all aspects of an app in Release Management, without any limits or exceptions.
   - **Workspace manager**: The main purpose of workspace managers is to manage workspace collaboration. In Release Management, they can add a new app when creating a new project. They, however, can't add a new RM app under an already existing project.
   - **Contributor** and **Viewer**: These Workspace-level roles have no default access to Release Management apps.
-- **Project Admin**: The only [project-level role](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci.html) in Release Management. Adding a user to a project doesn't automatically give them any permissions in Release Management, with the exception of users with the Admin role. Project Admins have full administrative rights to apps, builds, Release Management, and app deployment with one exception: the Project Admin cannot add a new app with a new project to Release Management. When adding a new app to Release Management, they can only add it under the project of which they are admin.
+- **Project Admin**: The only [project-level role](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci) in Release Management. Adding a user to a project doesn't automatically give them any permissions in Release Management, with the exception of users with the Admin role. Project Admins have full administrative rights to apps, builds, Release Management, and app deployment with one exception: the Project Admin cannot add a new app with a new project to Release Management. When adding a new app to Release Management, they can only add it under the project of which they are admin.
 - **Release Management-level roles**: These are the roles you can configure within Release Management.
 
   - **Release manager**: The main purpose of Release Managers is to handle releases to online stores. They can't add new apps or access app settings.
-  - **App tester**: The App tester role is meant for internal testers. They can access an app and its artifacts, and the [build distribution](urn:resource:component:92118) and [tester groups](/en/release-management/build-distribution/tester-groups.html) menu. They have no other access.
+  - **App tester**: The App tester role is meant for internal testers. They can access an app and its artifacts, and the [build distribution](urn:resource:component:92118) and [tester groups](/en/release-management/build-distribution/tester-groups) menu. They have no other access.
 
 ## Roles and permissions for Release Management apps
 
@@ -58,7 +58,7 @@ You can assign different roles to different team members. In Release Management,
 
 ## Roles and permissions for Bitrise CodePush
 
-For more information on Bitrise CodePush click [here](https://docs.bitrise.io/en/release-management/codepush.html#bitrise-codepush).
+For more information on Bitrise CodePush click [here](/en/release-management/codepush/about-codepush).
 
 | Action | Workspace owner | Workspace manager | Project admin | Release manager | App tester |
 | --- | --- | --- | --- | --- | --- |

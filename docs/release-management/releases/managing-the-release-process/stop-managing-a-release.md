@@ -9,7 +9,7 @@ If you have started a release on Bitrise but decided to abandon it or complete i
 
 :::note[Feature access]
 
-Only [Release Managers](/en/release-management/configuring-connected-apps/release-management-roles-and-permissions), [Project Admins](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci.html), and [workspace owners](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci#owners) have access to this feature.
+Only [Release Managers](/en/release-management/configuring-connected-apps/release-management-roles-and-permissions), [Project Admins](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci), and [workspace owners](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci#owners) have access to this feature.
 
 :::
 

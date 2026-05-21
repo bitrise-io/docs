@@ -9,7 +9,7 @@ Send a message to Slack with the build status after a build has finished.
 
 ## Prerequisites
 
-You have set up a Slack webhook and added it to [Env Vars](/en/bitrise-ci/configure-builds/environment-variables.html) (for example, $SLACK_WEBHOOK). See [Configuring Slack integration](/en/bitrise-ci/configure-builds/configuring-build-settings/configuring-slack-integration) for details.
+You have set up a Slack webhook and added it to [Env Vars](/en/bitrise-ci/configure-builds/environment-variables) (for example, $SLACK_WEBHOOK). See [Configuring Slack integration](/en/bitrise-ci/configure-builds/configuring-build-settings/configuring-slack-integration) for details.
 
 ## Instructions
 

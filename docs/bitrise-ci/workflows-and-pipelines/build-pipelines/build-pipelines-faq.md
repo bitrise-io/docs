@@ -16,7 +16,7 @@ In the current version, you can set the default stack for your app, or you can s
 
 **How can I use Environment Variables with a Pipeline?**
 
-You can keep using project-level and Workflow-level [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables.html).
+You can keep using project-level and Workflow-level [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables).
 
 **Can I rerun a failed Pipeline?**
 

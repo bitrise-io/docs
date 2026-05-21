@@ -22,4 +22,4 @@ To add CI configuration to a project:
 
    :::
 1. Select a project from the dropdown menu, then click **Continue**.
-1. Go through [the **New CI project** flow](/en/bitrise-ci/getting-started/adding-a-new-project.html).
+1. Go through [the **New CI project** flow](/en/bitrise-ci/getting-started/adding-a-new-project).

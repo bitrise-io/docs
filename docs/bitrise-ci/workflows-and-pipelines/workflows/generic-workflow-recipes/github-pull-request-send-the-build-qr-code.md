@@ -10,7 +10,7 @@ Send a comment to the GitHub pull request with a QR code to the build uploaded t
 ## Prerequisites
 
 - You have your iOS or Android app archived.
-- You have a GitHub personal access token with the `repo` scope and you've added it as a [Secret](/en/bitrise-ci/configure-builds/secrets.html) ($GITHUB_ACCESS_TOKEN) to your Bitrise app.
+- You have a GitHub personal access token with the `repo` scope and you've added it as a [Secret](/en/bitrise-ci/configure-builds/secrets) ($GITHUB_ACCESS_TOKEN) to your Bitrise app.
 
 ## Instructions
 

@@ -15,7 +15,7 @@ Using this method, you can only start builds for the same app. If you would like
 
 ## Prerequisites
 
-- Make sure you have a valid Bitrise API key in your [Secrets](/en/bitrise-ci/configure-builds/secrets.html) ($BITRISE_API_KEY). See [Personal access tokens](/en/bitrise-platform/accounts/personal-access-tokens) for more details.
+- Make sure you have a valid Bitrise API key in your [Secrets](/en/bitrise-ci/configure-builds/secrets) ($BITRISE_API_KEY). See [Personal access tokens](/en/bitrise-platform/accounts/personal-access-tokens) for more details.
 - A Workflow or multiple Workflows you would like to run in parallel (for example, `workflow-1` and `workflow-2`).
 
 ## Instructions

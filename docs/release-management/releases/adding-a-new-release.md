@@ -7,7 +7,7 @@ slug: /release-management/releases/adding-a-new-release
 
 To release a connected app to the App Store or Google Play, you need to add a new release. Each app can have multiple releases.
 
-To add a new release to [a connected app](/en/release-management/getting-started-with-release-management/connecting-an-app.html):
+To add a new release to [a connected app](/en/release-management/getting-started-with-release-management/connecting-an-app):
 
 1. Log in to Bitrise, and on the left sidebar, select **Releases**.
 1. Select your app from the list.
@@ -23,7 +23,7 @@ To add a new release to [a connected app](/en/release-management/getting-started
    :::
 1. Select a template from the **Preset template** dropdown menu.
 
-   You can configure templates in [Release presets](/en/release-management/releases/release-presets.html).
+   You can configure templates in [Release presets](/en/release-management/releases/release-presets).
 1. Click **Add app version**.
 
 After successfully adding a release, you can modify its configuration at any time: [Configuring a release](/en/release-management/releases/configuring-a-release/configuring-auto-upload).

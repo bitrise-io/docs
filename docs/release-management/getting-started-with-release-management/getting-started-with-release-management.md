@@ -14,8 +14,8 @@ To start using Release Management:
 1. Learn about the [key concepts of Release Management](/en/release-management/getting-started-with-release-management/release-management-concepts).
 1. Make sure you have at least one [Bitrise project](/en/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache#adding-your-first-project).
 1. [Add one or more new app(s)](/en/release-management/getting-started-with-release-management/adding-a-new-app-to-release-management).
-1. Check out [build distribution for testing](/en/release-management/build-distribution/distributing-builds-to-testers.html): you can distribute installable artifacts to testers without involving Google Play or the App Store.
-1. [Connect the app(s)](/en/release-management/getting-started-with-release-management/connecting-an-app.html): this requires setting up a connection to App Store Connect or Google Play.
-1. Once you have a connected app, [add a new release](/en/release-management/releases/adding-a-new-release.html).
+1. Check out [build distribution for testing](/en/release-management/build-distribution/distributing-builds-to-testers): you can distribute installable artifacts to testers without involving Google Play or the App Store.
+1. [Connect the app(s)](/en/release-management/getting-started-with-release-management/connecting-an-app): this requires setting up a connection to App Store Connect or Google Play.
+1. Once you have a connected app, [add a new release](/en/release-management/releases/adding-a-new-release).
 1. [Configure your release](/en/release-management/releases/configuring-a-release/configuring-auto-upload).
 1. [Go through the stages of the release process](/en/release-management/releases/managing-the-release-process/about-the-release-process) to release the app.

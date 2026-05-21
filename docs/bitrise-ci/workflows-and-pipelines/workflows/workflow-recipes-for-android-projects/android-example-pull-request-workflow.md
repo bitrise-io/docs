@@ -7,7 +7,7 @@ sidebar_position: 7
 
 Example Workflow for Android pull request validation. The Workflow contains:
 
-1. [Running unit tests](/en/bitrise-ci/workflows-and-pipelines/workflows/workflow-recipes-for-android-projects/android-run-unit-tests).
+1. [Running unit tests](/en/bitrise-ci/testing/testing-android-apps/android-unit-tests).
 1. [Running UI tests on a virtual device](/en/bitrise-ci/workflows-and-pipelines/workflows/workflow-recipes-for-android-projects/android-run-instrumentation-tests-on-virtual-devices).
 1. [Running Lint](/en/bitrise-ci/workflows-and-pipelines/workflows/workflow-recipes-for-android-projects/android-run-lint).
 1. [Building a test app and uploading to bitrise.io](/en/bitrise-ci/workflows-and-pipelines/workflows/workflow-recipes-for-android-projects/android-deploy-to-bitriseio).

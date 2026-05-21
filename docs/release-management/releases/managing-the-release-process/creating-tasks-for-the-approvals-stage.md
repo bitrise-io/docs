@@ -31,18 +31,18 @@ After finishing a task in the approvals stage, you can tick it off using the che
 
 When done, you can proceed to:
 
-- [The App Store Review stage](/en/release-management/releases/managing-the-release-process/sending-your-app-to-app-store-review.html) for iOS apps.
-- [Releasing your app on Google Play](/en/release-management/releases/managing-the-release-process/releasing-your-app-on-google-play.html) for Android apps.
+- [The App Store Review stage](/en/release-management/releases/managing-the-release-process/sending-your-app-to-app-store-review) for iOS apps.
+- [Releasing your app on Google Play](/en/release-management/releases/managing-the-release-process/releasing-your-app-on-google-play) for Android apps.
 
 ## Assigning an approval task to a team member with the REST API
 
-You can assign an approval task to a team member with the help of our [Release Management API](https://docs.bitrise.io/en/release-management/release-management-api.html#release-management-api). For more information on our API endpoint, check out our [API docs](https://api-docs.bitrise.io/).
+You can assign an approval task to a team member with the help of our [Release Management API](/en/release-management/release-management-api#release-management-api). For more information on our API endpoint, check out our [API docs](https://api-docs.bitrise.io/).
 
 :::note[Limited access]
 
-Note that you need a Personal Access Token or a Workspace token to [authenticate your API calls](https://docs.bitrise.io/en/bitrise-ci/api/authenticating-with-the-bitrise-api.html).
+Note that you need a Personal Access Token or a Workspace token to [authenticate your API calls](/en/bitrise-ci/api/authenticating-with-the-bitrise-api).
 
-Only a [Workspace owner, a Project Admin and a Release Manager](https://docs.bitrise.io/en/release-management/configuring-connected-apps/release-management-roles-and-permissions.html) has the right to assign approval tasks to team members.
+Only a [Workspace owner, a Project Admin and a Release Manager](/en/release-management/configuring-connected-apps/release-management-roles-and-permissions) has the right to assign approval tasks to team members.
 
 :::
 

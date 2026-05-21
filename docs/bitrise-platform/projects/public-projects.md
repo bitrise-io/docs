@@ -9,7 +9,7 @@ Open source projects are great - we all love them! They can be a pain to maintai
 
 If your Bitrise project is public, anyone who has the build URL can see the build logs. For example, if the CI status check on GitHub fails on a pull request, anyone can click on the build URL and view the build logs.
 
-To create a public project, simply [add a new project](/en/bitrise-ci/getting-started/adding-a-new-project.html) to Bitrise and at the start of the process, set the privacy of the project to **Public**.
+To create a public project, simply [add a new project](/en/bitrise-ci/getting-started/adding-a-new-project) to Bitrise and at the start of the process, set the privacy of the project to **Public**.
 
 :::warning[Can't modify privacy later]
 
@@ -19,11 +19,11 @@ You can't change this setting later! Once you've added an project as a public pr
 
 When you have a public project, outside contributors can troubleshoot issues easier, find out why, for example, a pull request of theirs resulted in a failed build. They do not have to be invited to a Bitrise team to be able to view Bitrise logs and they do not need the help of a Bitrise team member, either.
 
-Of course, this does not mean anyone can do anything with your public project on Bitrise. If the user viewing the logs is not invited to work on the project in [some role](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci.html), they will only be able to:
+Of course, this does not mean anyone can do anything with your public project on Bitrise. If the user viewing the logs is not invited to work on the project in [some role](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci), they will only be able to:
 
-- View the [build logs](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/build-logs.html).
+- View the [build logs](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/build-logs).
 - Download the build logs.
-- View [the build’s `bitrise.yml` file](/en/bitrise-ci/configure-builds/configuration-yaml/managing-a-projects-configuration-yaml-file).
+- View [the build’s `bitrise.yml` file](/en/bitrise-ci/configure-builds/configuration-yaml/managing-a-project-s-configuration-yaml-file).
 
 :::caution[Public project’s build logs are available for anyone]
 

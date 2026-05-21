@@ -17,7 +17,7 @@ In the example, we have three Workflows of a single app set up to run at the sam
 
 All workflows run on separate, clean Virtual Machines. They can also run on different types of stacks: to choose the stack for any Workflow, go to the Workflow Editor of the app and select the **Stack** tab.
 
-If any of the builds fail, the build will be considered a failed build. If the build is triggered by a webhook, Bitrise will send [a summarized build result](/en/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider.html) to your Git provider. If any of the parallel builds fail, a failed status will be reported.
+If any of the builds fail, the build will be considered a failed build. If the build is triggered by a webhook, Bitrise will send [a summarized build result](/en/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider) to your Git provider. If any of the parallel builds fail, a failed status will be reported.
 
 :::important[No reports for "child" builds]
 

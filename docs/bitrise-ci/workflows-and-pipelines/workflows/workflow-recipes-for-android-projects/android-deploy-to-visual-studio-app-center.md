@@ -10,7 +10,7 @@ Build and distribute your app to testers via Visual Studio App Center.
 ## Prerequisites
 
 1. An existing [Visual Studio App Center](https://docs.microsoft.com/en-us/appcenter/dashboard/) project where your app is registered.
-1. Adding the API token as a [Secret](/en/bitrise-ci/configure-builds/secrets.html) to your Bitrise app with the name APPCENTER_API_TOKEN.
+1. Adding the API token as a [Secret](/en/bitrise-ci/configure-builds/secrets) to your Bitrise app with the name APPCENTER_API_TOKEN.
 1. If you want to deploy a release build, don't forget to set up code signing on Bitrise to build and sign the APK with your release key.
 
 ## Instructions

@@ -5,11 +5,11 @@ sidebar_position: 3
 
 ## Description
 
-An example Workflow that creates a Gitflow release branch for a specific version. The version can be passed on as an [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables.html) for the Workflow.
+An example Workflow that creates a Gitflow release branch for a specific version. The version can be passed on as an [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables) for the Workflow.
 
 ## Prerequisites
 
-Make sure that Bitrise has **write** access to your repository by [manually adding an SSH key](/en/bitrise-platform/repository-access/configuring-ssh-keys.html) with **write** permission on GitHub.
+Make sure that Bitrise has **write** access to your repository by [manually adding an SSH key](/en/bitrise-platform/repository-access/configuring-ssh-keys) with **write** permission on GitHub.
 
 ## bitrise.yml
 

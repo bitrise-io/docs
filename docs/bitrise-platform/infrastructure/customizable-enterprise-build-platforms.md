@@ -11,7 +11,7 @@ Bitrise offers three types of custom build platforms for enterprises:
 
 - Dedicated build platform: a set of dedicated machines behind the Bitrise firewall that serve our public and dedicated pools. These virtual build machines will be seen from [the same public IP address as any Bitrise build machine](/en/bitrise-platform/infrastructure/build-machines/configuring-your-network-to-access-our-build-machines) but the build nodes (the hypervisors running the virtual build machines) are reserved for your exclusive use during the build.
 - Dedicated plus build platform: same setup as the dedicated build platform with additional IP range reserved for the customer for increased network secure connection.
-- Private build platform: the private machines are reserved for your exclusive use at all times. The solution also is provisioned to you and includes your own firewall, more flexible storage capacity options, and a more flexible computing environment setup. It allows you to create custom virtualization configuration, as well as includes [site-to-site VPN option](https://docs.bitrise.io/en/bitrise-platform/integrations/connecting-to-a-vpn-during-a-build.html).
+- Private build platform: the private machines are reserved for your exclusive use at all times. The solution also is provisioned to you and includes your own firewall, more flexible storage capacity options, and a more flexible computing environment setup. It allows you to create custom virtualization configuration, as well as includes [site-to-site VPN option](/en/bitrise-platform/integrations/connecting-to-a-vpn-during-a-build).
 
 The private build platform is an advanced set-up with plenty of configuration options. To learn more about the details, [contact us](https://bitrise.io/contact)!
 

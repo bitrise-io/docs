@@ -9,7 +9,7 @@ Build an Android app and upload to Google Play to internal, alpha, beta or produ
 
 ## Prerequisites
 
-- An [Android keystore file is uploaded](/en/bitrise-ci/code-signing/android-code-signing/android-code-signing-using-the-android-sign-step.html) to Bitrise.
+- An [Android keystore file is uploaded](/en/bitrise-ci/code-signing/android-code-signing/android-code-signing-using-the-android-sign-step) to Bitrise.
 - [Google Play API Access](/en/bitrise-ci/deploying/android-deployment/deploying-android-apps-to-bitrise-and-google-play#setting-up-google-play-api-access) is set up.
 
 ## Instructions

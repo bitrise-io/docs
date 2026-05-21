@@ -15,7 +15,7 @@ Workspaces have owners, managers, and members. They can be sorted into groups: g
 
 ## Projects
 
-[A Bitrise project](/en/bitrise-platform/projects/projects-overview.html) is the container for the entire Mobile DevOps process of your development work. Each workspace can own multiple projects. A project allows you to:
+[A Bitrise project](/en/bitrise-platform/projects/projects-overview) is the container for the entire Mobile DevOps process of your development work. Each workspace can own multiple projects. A project allows you to:
 
 - Create a CI configuration: a project's CI configuration is tied to a Git repository.
 - Set up Release Management to distribute your mobile app to testers and to online stores.

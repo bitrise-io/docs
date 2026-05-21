@@ -18,7 +18,7 @@ Signing up and creating a workspace provides the basis for everything Bitrise of
 
 The platform documentation provides information on the shared structure of these products. This includes:
 
-- [Accounts](/en/bitrise-docs-20/bitrise-platform/accounts/accounts-overview): How to sign up for a Bitrise account and what options you have to manage them.
+- [Accounts](/en/bitrise-platform/accounts/accounts-overview): How to sign up for a Bitrise account and what options you have to manage them.
 - [Workspaces](/en/bitrise-platform/workspaces/workspaces-overview): Workspaces allow you to manage your projects and collaborate with team members. You need a workspace to run CI builds, to manage Release Management apps, or to utilize the Bitrise Build Cache.
-- [Projects](/en/bitrise-platform/projects/projects-overview.html): A Bitrise project can handle all stages of the Mobile DevOps process, including building, testing, and distributing mobile apps.
-- [Integrations](/en/bitrise-platform/integrations/about-integrations.html): Bitrise supports a number of integrations to make sure you can use your preferred tools and environments every step of the way.
+- [Projects](/en/bitrise-platform/projects/projects-overview): A Bitrise project can handle all stages of the Mobile DevOps process, including building, testing, and distributing mobile apps.
+- [Integrations](/en/bitrise-platform/integrations/about-integrations): Bitrise supports a number of integrations to make sure you can use your preferred tools and environments every step of the way.

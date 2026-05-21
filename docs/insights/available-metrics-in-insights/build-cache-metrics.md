@@ -17,7 +17,7 @@ If your Bitrise Build Cache is correctly set up, you need no additional configur
 
 For Build Cache metrics - like any other metrics in Insights - you can:
 
-- [Create a dashboard](/en/insights/getting-started-with-insights/the-dashboards-page/creating-a-new-dashboard).
+- [Create a dashboard](/en/insights/getting-started-with-insights#creating-a-new-dashboard).
 - [Set alerts](/en/insights/configuring-alerts-in-insights) for specific thresholds.
 
 ## Common use cases for build cache metrics

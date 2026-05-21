@@ -176,4 +176,4 @@ Template parameters:
 
 The controller needs certain AWS permissions to perform actions on the build nodes. We did our best to limit the required permissions to a minimal scope. We even made [our CloudFormation template repository](https://github.com/bitrise-io/cloud-controller-cloudformation/blob/production/iam/roles.yaml) public to build trust. Please see the [entire list of (up-to-date) required permissions](https://github.com/bitrise-io/cloud-controller-cloudformation/blob/production/iam/roles.yaml) in the repository.
 
-The controller requires connectivity to certain Bitrise endpoints. See more [in the controller documentation](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/creating-and-configuring-a-controller.html).
+The controller requires connectivity to certain Bitrise endpoints. See more [in the controller documentation](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/creating-and-configuring-a-controller).

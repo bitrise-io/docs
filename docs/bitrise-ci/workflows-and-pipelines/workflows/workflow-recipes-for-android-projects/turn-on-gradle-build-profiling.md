@@ -36,7 +36,7 @@ No matter what Android or Gradle Step you use in your Bitrise Workflow, there is
 
    - The **Summary** tab shows time spent on things other than task execution.
    - The **Task execution** tab lists all tasks sorted by execution time.
-   - Cached tasks are marked as **UP-TO-DATE**. This helps to fine-tune the [Bitrise Cache Steps](/en/bitrise-ci/dependencies-and-caching/key-based-caching/dedicated-caching-steps-for-dependency-managers.html) by comparing the reports of multiple builds.
+   - Cached tasks are marked as **UP-TO-DATE**. This helps to fine-tune the [Bitrise Cache Steps](/en/bitrise-ci/dependencies-and-caching/key-based-caching/dedicated-caching-steps-for-dependency-managers) by comparing the reports of multiple builds.
 
    For Gradle optimization ideas, [check out this article by Google](https://developer.android.com/studio/build/profile-your-build#using-the-gradle---profile-option).
 

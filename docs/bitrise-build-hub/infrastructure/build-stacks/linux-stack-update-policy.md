@@ -12,7 +12,7 @@ Updating a stack to a new version might cause problems with some builds. To help
 
 :::
 
-For macOS specific information, check out [macOS stack update policy](/en/bitrise-build-hub/infrastructure/build-stacks/macos-stack-update-policy.html).
+For macOS specific information, check out [macOS stack update policy](/en/bitrise-build-hub/infrastructure/build-stacks/macos-stack-update-policy).
 
 ## Linux stack offerings
 
@@ -92,4 +92,4 @@ June 2025
 
 **New**
 
-Introduced the concept of Edge, Stable and Frozen stacks with regards to Linux, similar to the [macOS stack update policy](/en/bitrise-build-hub/infrastructure/build-stacks/macos-stack-update-policy.html). Defined the yearly cadence of new Linux stacks, as well as the deprecation and removal of older Linux stacks.
+Introduced the concept of Edge, Stable and Frozen stacks with regards to Linux, similar to the [macOS stack update policy](/en/bitrise-build-hub/infrastructure/build-stacks/macos-stack-update-policy). Defined the yearly cadence of new Linux stacks, as well as the deprecation and removal of older Linux stacks.

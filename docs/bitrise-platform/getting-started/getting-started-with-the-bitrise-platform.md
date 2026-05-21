@@ -12,7 +12,7 @@ The Bitrise platform is organized around accounts, workspaces, and projects. We'
 
 You can sign up via email or via one of three Git providers: GitHub, GitLab, or Bitbucket: [Signing up for Bitrise](/en/bitrise-platform/getting-started/signing-up-for-bitrise).
 
-Bitrise also supports SAML SSO: [SAML SSO in Bitrise](/en/bitrise-docs-20/bitrise-platform/accounts/saml-sso-in-bitrise).
+Bitrise also supports SAML SSO: [SAML SSO in Bitrise](/en/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-saml-sso-on-bitrise).
 
 After signing up, you receive a limited trial:
 

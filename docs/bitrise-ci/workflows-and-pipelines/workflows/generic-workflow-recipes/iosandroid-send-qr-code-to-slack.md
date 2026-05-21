@@ -10,7 +10,7 @@ Send a QR code of the iOS or Android build uploaded to bitrise.io to Slack.
 ## Prerequisites
 
 - You have your iOS or Android app archived.
-- You have set up a Slack webhook and added it to [Env Vars](/en/bitrise-ci/configure-builds/environment-variables.html) (for example, $SLACK_WEBHOOK). See [Configuring Slack integration](/en/bitrise-ci/configure-builds/configuring-build-settings/configuring-slack-integration) for details.
+- You have set up a Slack webhook and added it to [Env Vars](/en/bitrise-ci/configure-builds/environment-variables) (for example, $SLACK_WEBHOOK). See [Configuring Slack integration](/en/bitrise-ci/configure-builds/configuring-build-settings/configuring-slack-integration) for details.
 
 ## Instructions
 

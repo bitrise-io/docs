@@ -18,9 +18,9 @@ We offer a 30-day free trial at no cost; you don't even need to provide payment 
 
 Bitrise supports remote build caching for the following build systems:
 
-- [Build Cache for Gradle](/en/bitrise-build-cache/getting-started-with-the-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-the-bitrise-ci-environment).
-- [Build Cache for Bazel](/en/bitrise-build-cache/getting-started-with-the-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-the-bitrise-ci-environment).
-- [Build Cache for Xcode](/en/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-the-bitrise-ci-environment.html).
+- [Build Cache for Gradle](/en/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-the-bitrise-ci-environment).
+- [Build Cache for Bazel](/en/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-the-bitrise-ci-environment).
+- [Build Cache for Xcode](/en/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-the-bitrise-ci-environment).
 
 ## Adding a new connection to the Build Cache
 
@@ -30,7 +30,7 @@ To start using the Bitrise Build Cache, you have to add a new connection. The pr
 - Selecting a build tool: currently, Bazel, Gradle, and Xcode are supported.
 - If you use Bitrise as your CI provider, selecting a Bitrise project.
 - If you use a different CI provider, adding [a personal access token](/en/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token) to allow the Bitrise Build Cache access to your CI.
-- Adding the cache activation scripts to your CI process. On Bitrise, we have dedicated [Steps](/en/bitrise-ci/workflows-and-pipelines/steps/steps-overview.html) for this.
+- Adding the cache activation scripts to your CI process. On Bitrise, we have dedicated [Steps](/en/bitrise-ci/workflows-and-pipelines/steps/steps-overview) for this.
 
 To add a new connection:
 
@@ -44,8 +44,8 @@ To add a new connection:
 
    For more information on configuring the Build Cache, refer to our dedicated guides:
 
-   - [Build Cache for Gradle](/en/bitrise-build-cache/getting-started-with-the-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-the-bitrise-ci-environment).
-   - [Build Cache for Bazel](/en/bitrise-build-cache/getting-started-with-the-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-the-bitrise-ci-environment).
-   - [Build Cache for Xcode](/en/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-the-bitrise-ci-environment.html).
+   - [Build Cache for Gradle](/en/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-the-bitrise-ci-environment).
+   - [Build Cache for Bazel](/en/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-the-bitrise-ci-environment).
+   - [Build Cache for Xcode](/en/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-the-bitrise-ci-environment).
 
    :::

@@ -1,11 +1,11 @@
 ---
 title: "Configuring a machine pool"
-description: "After [you created an AWS controller](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/creating-and-configuring-a-controller.html), you can configure a machine pool. The pool is a group of instances that share the same configuration and can run Bitrise builds. The Controller ensures that the necessary amounts of matching resources are started on AWS."
+description: "After [you created an AWS controller](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/creating-and-configuring-a-controller), you can configure a machine pool. The pool is a group of instances that share the same configuration and can run Bitrise builds. The Controller ensures that the necessary amounts of matching resources are started on AWS."
 sidebar_position: 5
 slug: /bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/configuring-a-machine-pool
 ---
 
-After [you created an AWS controller](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/creating-and-configuring-a-controller.html), you can configure a machine pool. The pool is a group of instances that share the same configuration and can run Bitrise builds. The Controller ensures that the necessary amounts of matching resources are started on AWS.
+After [you created an AWS controller](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/creating-and-configuring-a-controller), you can configure a machine pool. The pool is a group of instances that share the same configuration and can run Bitrise builds. The Controller ensures that the necessary amounts of matching resources are started on AWS.
 
 ## Creating a new pool
 

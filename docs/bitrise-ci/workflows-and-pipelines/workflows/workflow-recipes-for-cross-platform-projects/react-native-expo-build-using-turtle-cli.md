@@ -9,8 +9,8 @@ Publish an app to Expo's servers and build an iOS App Store `.ipa` and an Andr
 
 ## Prerequisites
 
-1. Generate an iOS Distribution Certificate and an App Store Provisioning Profile based on the [Generating iOS code signing files guide](/en/bitrise-ci/code-signing/ios-code-signing/generating-ios-code-signing-files.html).
-1. Generate an Android Keystore by following the [Android code signing with Android Studio guide](/en/bitrise-ci/code-signing/android-code-signing/android-code-signing-with-android-studio.html).
+1. Generate an iOS Distribution Certificate and an App Store Provisioning Profile based on the [Generating iOS code signing files guide](/en/bitrise-ci/code-signing/ios-code-signing/generating-ios-code-signing-files).
+1. Generate an Android Keystore by following the [Android code signing with Android Studio guide](/en/bitrise-ci/code-signing/android-code-signing/android-code-signing-with-android-studio).
 1. Make sure you can [Publish your Expo project](https://docs.expo.dev/classic/turtle-cli/#publish-your-project) locally.
 
 ## Instructions
@@ -26,7 +26,7 @@ Publish an app to Expo's servers and build an iOS App Store `.ipa` and an Andr
    If not, drag-and-drop your keystore file to the **Upload file (max. 5 MB)** field of the **ANDROID KEYSTORE FILE** section.
 1. Go to the **Secrets** tab.
 1. Create a Secret (IOS_DEVELOPMENT_TEAM) with the ID of the iOS Development Team issued in the project's Certificate and Provisioning Profile.
-1. Store the Expo account's username and password used for publishing in EXPO_USERNAME and EXPO_PASSWORD [Secrets](/en/bitrise-ci/configure-builds/secrets.html).
+1. Store the Expo account's username and password used for publishing in EXPO_USERNAME and EXPO_PASSWORD [Secrets](/en/bitrise-ci/configure-builds/secrets).
 1. On the left, select **Configuration YAML** from the navigation menu.
 1. Copy paste `envs` from `bitrise.yml` below to your Workflow.
 1. Copy paste `steps` from `bitrise.yml` below to your Workflow.
