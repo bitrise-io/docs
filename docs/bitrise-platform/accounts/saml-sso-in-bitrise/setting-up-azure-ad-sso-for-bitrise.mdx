@@ -28,8 +28,93 @@ You will need to:
 1. [Add users and groups to the Bitrise app on Entra ID](#adding-users-groups-to-the-app-on-entra-id).
 1. [Set up SAML SSO between Bitrise and Entra ID](#setting-up-saml-sso-between-bitrise-and-entra-id).
 
-<Partial_AddingBitriseToAzureADAsANewApplication />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
 
-<Partial_AddingUsersGroupsToTheAppOnAzureAD />
+## Adding Bitrise to Entra ID as a new application
 
-<Partial_SettingUpSAMLSSOBetweenBitriseAndAzureAD />
+1. Log into [Microsoft Azure](https://azure.microsoft.com/en-us/) as an admin.
+1. Click the **Azure Active Directory** icon on the **Azure services** page.
+
+   ![azureactivedirstep2-1.jpg](/img/_paligo/uuid-bf8ba810-c8e2-5323-8d6b-30b9a030b59d.png)
+1. Click **Enterprise applications** under **Manage**.
+
+   ![enterpriseapps-1.jpg](/img/_paligo/uuid-39f030dd-13a5-7302-6200-44aa39114f17.png)
+1. Click **New Application** to add Bitrise as a new app to your account.
+
+   ![newapplication-jpg.jpg](/img/_paligo/uuid-fd697193-d536-bade-12f6-341e9ecb2df9.png)
+1. Type `Bitrise` in the **What’s the name of your app?** field. The **Integrate any other application you don’t find in the gallery** button should be automatically selected. Hit **Create**.
+
+   ![createyourownapp-1.jpg](/img/_paligo/uuid-4822cd7c-0379-35e2-9ab3-d483dc8c6355.png)
+
+   You will find your newly created app listed on the **All Applications** page.
+1. Click the **Bitrise** app to go to its **Overview** page.
+1. Continue with configuring Bitrise as a SAML app.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Adding users/ groups to the app on Entra ID
+
+Before setting up SAML to the app, you have to add all the users/groups to the app in Entra ID who will use SAML SSO to log into the Bitrise Workspace. In other words, every Bitrise Workspace member must be added as user in Entra ID.
+
+1. Select **Users and groups** from the left menu.
+1. Click **+ Add user/group**.
+
+   ![azureuser1-1.jpg](/img/_paligo/uuid-f90189a9-c8f8-0720-69f3-b02983eb74f3.png)
+1. On the Users page of **Add Assignment**, select users from the list and click **Select**. Once it’s done, you can select a role for users under the **Select a role** dropdown.
+
+   ![azureuser2-1.jpg](/img/_paligo/uuid-ea5d2cad-6d99-e1e7-e389-6cb1c2170256.png)
+1. On the **Add Assignment** page, click **Assign** to finish adding users.
+
+   ![azureuser3b-1.jpg](/img/_paligo/uuid-ee6c9c9d-82a3-5470-9e0d-f5dd4f971414.png)
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Setting up SAML SSO between Bitrise and Entra ID
+
+1. Click **Single sign-on** on the left menu. Select **SAML**.
+
+   ![singlesignonazuread.png](/img/_paligo/uuid-9a20bdb0-2c68-3ce5-1f41-ac710e25b7be.png)
+1. You will land on the **Set up Single Sign-On with SAML** page.
+
+   ![sso2-1.jpg](/img/_paligo/uuid-6b74d41d-4d91-adb5-0d73-17380c293ab9.png)
+1. Click the pencil symbol at **Basic SAML Configuration** to edit two fields.
+
+   ![sso2a-1.jpg](/img/_paligo/uuid-954473da-632b-0628-2a76-9ff4471fcc9d.png)
+1. Add `Bitrise` as the **Identifier (Entity ID)**. Leave this window open! We will come back to it with some information from Bitrise in a second.
+
+   :::important[Multiple workspaces with the same Entra instance]
+
+   If more than one Bitrise workspace uses the same EntraID instance, each workspace needs to be configured with its own distinct Entity ID. For each workspace, use its own Entity ID at any subsequent step in the process that requires it.
+
+   For example, if you have an Alpha workspace and a Beta workspace, you can set **alpha** and **beta** as the Entity IDs.
+
+   :::
+
+   ![sso3-2.jpg](/img/_paligo/uuid-39c02a1a-b3f2-3922-a9d1-fac312c98f92.png)
+1. Head back to your workspace on Bitrise: open the **Workspace settings** page and go to **Single Sign-On**
+1. If you have more than one workspace using the same Entra instance, add its own Entity ID in the **Application identifier** field.
+1. Click the **Copy Link** button to copy the **Assertion Consumer Service URL (ACS URL)** from Bitrise.
+1. Let’s head back to the **Basic SAML Configuration** window of Entra ID.
+1. Paste the **Assertion Consumer Service URL** from Bitrise to the **Reply URL field on the Basic SAML Configuration** page of Entra ID.
+1. Click **Save** and close the **Basic SAML Configuration** window.
+
+   ![616541a82bf14.jpg](/img/_paligo/uuid-681bee8c-6be9-b47f-06fa-72a587e7add7.png)
+1. On the **Single sign-on** page of Entra ID, scroll down to the **Set up Bitrise** section.
+1. Copy the **Login URL** and paste it to the **SAML SSO provider Single Sign-On URL** **(SSO URL)** field on Bitrise.
+1. On the **Single sign-on** page of Entra ID, scroll up a bit to the **SAML Signing Certificate** section.
+1. Click **Download** next to **Certificate (Base64)** to download the certificate to your local computer.
+
+   ![singlesignonsummary.jpg](/img/_paligo/uuid-da7593a8-e6df-1d97-e903-d375dc504b05.png)
+1. Open the certificate file and copy/paste its content into the **SAML SSO provider certificate** field of Bitrise or you can upload the file itself from your local computer too.
+
+   (If manually adding the content, you will need the full content (including `----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----` as well).
+1. Open the **Workspace settings** page on Bitrise and go to **Single Sign-On**.
+1. Click **Apply SSO configuration**.
+
+You have successfully set up Bitrise as a SAML SSO app on Entra ID.

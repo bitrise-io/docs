@@ -30,10 +30,172 @@ For full configuration YAML syntax reference, see [Configuration YAML reference]
 
 :::
 
-<Partial_StoringTheBitriseYmlFileInYourRepository />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
 
-<Partial_UpdatingABitriseYmlStoredInTheRepository />
+## Storing the bitrise.yml file in your repository
 
-<Partial_StoringABitriseYmlFileOnMultipleBranchesInTheRepository />
+When you store your configuration YAML file(s) in your repository, the build process on Bitrise will use that file to run your builds. This means that:
 
-<Partial_MovingTheBitriseYmlFileBackToBitriseIo />
+- You have full control over versioning your configuration file.
+- Every time you make a change to your Workflows or your trigger map, you must commit the changes to the file in the repository.
+
+You don’t need to create your own configuration YAML file in advance: you can use the file stored on [bitrise.io](https://www.bitrise.io/).
+
+The feature requires [service credential](/en/bitrise-platform/integrations/the-service-credential-user) integration or the [GitHub App integration](/en/bitrise-platform/repository-access/github-app-integration). Hosting the YA file in a privately hosted repository where neither is available needs a [workaround](#privately-hosted-repositories).
+
+1. Open the project on Bitrise and go to the **Project settings** page.
+1. Select **Collaboration**.
+1. Check the **Service credential user** section. The service credential user must be a Bitrise user who has at least `read` access to the repository.
+
+   :::note[GitHub App integration]
+
+   If you use the [GitHub App integration](/en/bitrise-platform/repository-access/github-app-integration), you don't need the service credential user to store the configuration YAML file in your repository.
+
+   :::
+1. Open the Workflow Editor.
+1. In the Workflow Editor, select **Configuration YAML** from the navigation menu on the left.
+
+   ![store-bitrise-yml.png](/img/_paligo/uuid-634355b9-8f8d-e62c-1bd2-1a36cb7921b5.png)
+1. Above the YAML file, you can see where the file is currently stored. Click **Change**.
+1. When prompted to add the `bitrise.yml` to your project's repository, you have two options:
+
+   Copy the content of the current `bitrise.yml` file to the clipboard. You can then create your own file and copy the contents into it.
+
+   Download the current `bitrise.yml` file.
+1. In your repository, commit the `bitrise.yml` file.
+
+   You can either:
+
+   - Commit the file to the root of the repository.
+   - Commit the file to some other location. In this case you will need to provide the path on Bitrise.
+
+   :::important[Default branch]
+
+   The default branch of your app must always have a `bitrise.yml` file on it. You can store different `bitrise.yml` files on the other branches: [Storing a bitrise.yml file on multiple branches in the repository](/en/bitrise-ci/configure-builds/configuration-yaml/managing-a-project-s-configuration-yaml-file#storing-a-bitriseyml-file-on-multiple-branches-in-the-repository).
+
+   You can check your Bitrise project's default branch on [bitrise.io](https://www.bitrise.io/) by going to the **Settings** tab and finding the **DEFAULT BRANCH** option.
+
+   :::
+1. Back on Bitrise, set a path to your configuration file in the **Bitrise.yml location** field:
+
+   - If you store the config file in the root of your repository, leave the field empty.
+   - If you store the file somewhere else in the repository, provide the path.
+1. Click **Validate and save**.
+
+   :::caution[Validation]
+
+   The `bitrise.yml` file in your repository always must be valid! If it contains incorrect syntax, it can break your builds.
+
+   :::
+
+If all goes well, you should receive confirmation of successfully changing your `bitrise.yml` storage settings.
+
+:::tip[Allowlist the Bitrise website IP addresses]
+
+If you use some form of self-hosted solution for storing your code, you might need to allowlist the static IP addresses of the Bitrise website and its background workers. This allows you to use such features as storing the `<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>` file in your own repository, or receiving build status updates from Bitrise: [IP addresses for the Bitrise website](/en/bitrise-platform/infrastructure/build-machines/configuring-your-network-to-access-our-build-machines#ip-address-ranges-for-bitrise-backend-workers).
+
+:::
+
+### Privately hosted repositories
+
+Unfortunately, this feature is not yet supported for users who can't use the service credential user integration or the [GitHub App integration](/en/bitrise-platform/repository-access/github-app-integration); for example, if the repository is is only accessible under a private IP subnet. There's a workaround, however: [Storing the bitrise.yml in a privately hosted repository](https://support.bitrise.io/en/articles/9676637-storing-the-bitrise-yml-in-a-privately-hosted-repository).
+
+For GitHub Enterprise, we offer an integration that allows you to store your `bitrise.yml` file in a GitHub Enterprise repository: [Integrating GitHub Enterprise with Bitrise](/en/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise).
+
+### Setting a custom path for your configuration YAML
+
+By default, Bitrise looks for your configuration YAML in the root of your repository when running builds but you can store the file elsewhere in the repository.
+
+To do so:
+
+1. Commit the configuration YAML file to your repository.
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+1. Select **Configuration YAML** on the left.
+1. Click **Change** next to **Source**.
+1. In the **Bitrise.yml location** field, set the path where you committed the file.
+
+   ![config-yaml-source.png](/img/_paligo/uuid-4908f90e-3721-b82f-2d79-937d6a9b14f3.png)
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Updating a bitrise.yml stored in the repository
+
+When you store the `bitrise.yml` file in your repository, you can still use the online Workflow Editor to make changes to your build configuration. You just need to commit your changes after saving them in the Workflow Editor.
+
+:::note[Read-only mode]
+
+You can't directly edit the `bitrise.yml` file itself in the Workflow Editor. You need to use the GUI to make changes, or edit the file in your repository instead.
+
+:::
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+
+   ![workflows-button.png](/img/_paligo/uuid-99bb894c-3e79-91c8-9e62-7e475573495d.png)
+1. Make changes to the Workflows you want to update.
+1. Click **Save changes** in the top right corner.
+1. You're prompted to update the `bitrise.yml` file in your repository. You have two options:
+
+   Copy the content of the current `bitrise.yml` file to the clipboard. You can then create your own file and copy the contents into it.
+
+   Download the current `bitrise.yml` file.
+1. In your repository, commit the `bitrise.yml` file.
+1. On Bitrise, click **I'm done** to fetch the `bitrise.yml` from your repository.
+
+   :::caution[Commit your changes first!]
+
+   If you haven't committed your changes to the repository, this will overwrite them!
+
+   :::
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Storing a bitrise.yml file on multiple branches in the repository
+
+When you first add the `bitrise.yml` to your repository, it must be committed to the [default branch](/en/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch#changing-the-default-branch). If you store the `bitrise.yml` file in the repository, the default branch must always have a `bitrise.yml`.
+
+However, once you did the initial configuration to set up using the `bitrise.yml` from your repository, you can store `bitrise.yml` files on other branches and use any of them to run builds. If you want to build a branch of your repository on Bitrise, you need to have a `bitrise.yml` file on that branch. And don’t forget that you always need to keep a `bitrise.yml` file on the default branch.
+
+**Bitrise setup with bitrise.yml files on multiple branches**
+
+Let’s say you have an app called FantasticApp. In FantasticApp’s Git repository, the default branch is called `main`. There is also a `deploy` branch.
+
+Any code push or pull request to `main` triggers a Workflow called `main-workflow`. Any code push or pull request to `deploy` triggers a Workflow called `deploy-workflow`.
+
+In the repository, there is a `bitrise.yml` file on both the `main` and the `deploy` branch, containing both Workflows. When making changes to the Workflows, the FantasticApp team commits the modified `bitrise.yml` file to both branches to ensure that their Workflows are up to date on both.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Moving the bitrise.yml file back to bitrise.io
+
+The default setting is to store the `bitrise.yml` file on [bitrise.io](http://bitrise.io/): when you add a new app, we automatically create a `bitrise.yml` file for you and it’s stored on our website. If this works for you, then you don’t need to change anything!
+
+If, however, you changed your storage settings to keep the configuration file in your repository, you can easily change it back any time to store the file on [bitrise.io](http://bitrise.io/).
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+
+   ![workflows-button.png](/img/_paligo/uuid-99bb894c-3e79-91c8-9e62-7e475573495d.png)
+1. In the Workflow Editor, select **Configuration YAML** from the navigation menu on the left.
+1. Click **Change** next to the source of the file.
+
+   ![git-repo-source.png](/img/_paligo/uuid-2bda7822-cd88-2b01-ff4d-8f5eec392c66.png)
+1. Choose which `bitrise.yml` file should be used on [bitrise.io](http://bitrise.io/) from now.
+
+   You can copy the content of the `bitrise.yml` file stored in the app’s repository.
+
+   You can copy the last version of the `bitrise.yml` file that you used on [bitrise.io](http://bitrise.io/).
+
+   ![yaml-source-switchback-dialog.png](/img/_paligo/uuid-82197654-17c3-6b98-320e-cf408f16c8c9.png)
+1. Click **Validate and save**.
+
+If all goes well, you should receive confirmation of successfully changing your `bitrise.yml` storage settings.

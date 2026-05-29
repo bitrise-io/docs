@@ -21,8 +21,179 @@ To use OIDC tokens for AWS, you'll need to:
 
 On Bitrise, you can get the tokens by using either the **Get OIDC identity token** Step or the **Authenticate with AWS** Step.
 
-<Partial_AddingAnOIDCIdentityProviderInIAM />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
 
-<Partial_AddingACustomTrustPolicy />
+## Adding an OIDC identity provider in IAM
 
-<Partial_FetchingAndExchangingTokens />
+Set up an IAM OIDC provider in your AWS account.
+
+:::tip[AWS user guide]
+
+Read more about IAM OIDC providers in the [official AWS user guide](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html).
+
+:::
+
+1. Log in to your AWS account.
+1. Go to **IAM**.
+1. On the left, find **Access Management** and select **Identity providers**.
+1. Click **Add Provider**.
+1. Select **OpenID Connect**.
+1. Set the **Provider URL** field to https://token.builds.bitrise.io.
+1. Set the **Audience** field to `sts.amazonaws.com`.
+1. Click **Add provider**.
+
+   ![2025-11-11-aws-iam-provider.png](/img/_paligo/uuid-019f250f-8d48-a51c-738b-db46d0829339.png)
+1. On the **Identity providers** page, select the newly created identity provider and copy the ARN.
+
+   The ARN looks something like this: `arn:aws:iam::ACCOUNT_NUMBER:oidc-provider/token.builds.bitrise.io`.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Adding a custom trust policy
+
+Add a custom trust policy in AWS IAM to write the rules for the Bitrise identity tokens.
+
+:::tip[AWS docs]
+
+Our guide helps you set up your AWS policy for your Bitrise builds. You can read more about trust policies in the AWS documentation: [Create a role using custom trust policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-custom.html).
+
+:::
+
+1. Log in to your AWS account.
+1. Go to **IAM**.
+1. On the left, find **Access Management** and select **Roles**.
+1. Click **Create role**.
+
+   ![2025-11-11-aws-roles.png](/img/_paligo/uuid-8fc9a70b-c1a9-6ce2-4369-8701e891f0d5.png)
+1. Select **Custom trust policy**.
+
+   ![2025-11-11-custom-trust-policy.png](/img/_paligo/uuid-2aed5814-692a-476b-f993-617cdb2c338f.png)
+1. Create a statement in the custom trust policy editor to set the rules for OIDC tokens:
+
+   :::tip[Creating policies]
+
+   You can read detailed information about how to create policies in the AWS documentation: [Creating IAM policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_create-console.html#access_policies_create-start).
+
+   :::
+
+   - Add a `Principal`: the type should be a federated user session, with your previously created ARN. See `Federated` in the example below.
+   - Add an `Action` with the `sts:AssumeRoleWithWebIdentity` value.
+   - Under `Conditions`, match against the claims in the identity token.
+
+     :::important[Limitation]
+
+     As Bitrise is considered a generic identity provider, AWS keeps only two claims from our token: `aud` and `sub`. You can only use these in your policies.
+
+     You can find more information about claim fields in the [AWS documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html#Conditions_String).
+
+     :::
+
+     The example below checks the audience, the Bitrise project slug, and the Workflow name:
+
+   ```
+   {
+       "Version": "2012-10-17",
+       "Statement": [
+           {
+               "Effect": "Allow",
+               "Principal": {
+                   "Federated": "arn:aws:iam::ACCOUNT_NUMBER:oidc-provider/token.builds.bitrise.io"
+               },
+               "Action": "sts:AssumeRoleWithWebIdentity",
+               "Condition": {
+                   "StringEquals": {
+                       "token.builds.bitrise.io:aud": "sts.amazonaws.com",
+                       "token.builds.bitrise.io:sub": "app:APP_SLUG:workflow:run-tests"
+                   }
+               }
+           }
+       ]
+   }
+   ```
+
+   You can also use wildcards with the `StringLike` operation instead of `StringEquals`: [Wildcard matching](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html#Conditions_String-wildcard).
+1. When done, click **Next**.
+1. Select the required permission for the role.
+
+   The required permission depends on what service you're trying to access on AWS. For example, to upload files to an S3 bucket during a build, you can select **AmazonS3FullAccess**.
+
+   :::note[Custom access policy]
+
+   You can also create your own custom policy in AWS to set up the exact permissions you need.
+
+   :::
+1. When done, click **Next**.
+1. Name your role and optionally, add a description.
+1. Click **Create a role** when done.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Fetching and exchanging tokens
+
+After you successfully configured an OIDC identity provider with a custom trust policy on AWS, your Bitrise builds can exchange tokens with the service of your choice. You can:
+
+- Use the **Authenticate with AWS** Step to handle the whole process.
+- Fetch the token with **Get OIDC Identity Token** Step, then perform the credential exchange with a script.
+
+:::note[Information in the OIDC token]
+
+Bitrise includes the following claims in the OIDC token: [Information in the OIDC token](/en/bitrise-platform/integrations/oidc-authentication/oidc-authentication-overview#information-in-the-oidc-token).
+
+:::
+
+### Using the Authenticate with AWS Step
+
+The **Authenticate with AWS** Step requests an OIDC token and performs the credential exchange with AWS. That means you don't have to create your own script to perform the authentication, the Step will handle it for you.
+
+1. Open the Workflow Editor on Bitrise.
+1. Add the **Authenticate with AWS** Step to your Workflow.
+1. Set the **Token audience** input to `sts.amazonaws.com`.
+1. Set the **AWS Role ARN** to the value of the IAM role ARN that you created earlier.
+
+   :::tip[Docker login]
+
+   Another convenience feature of the Step is that it can log in Docker to the EC2 Container Registry automatically. Find the **Docker** input group in the Step configuration, and set it to `true`.
+
+   This is only supported on Linux stacks.
+
+   :::
+
+### Using the Get OIDC Identity Token Step
+
+1. Open the Workflow Editor on Bitrise.
+1. Add the **Get OIDC Identity Token** Step to your Workflow.
+1. Set the **Token audience** input to `sts.amazonaws.com`.
+1. Use the BITRISE_IDENTITY_TOKEN Environment Variable: it can be fed to any CLI tool or API endpoint.
+
+   You can create a script in a **Script** Step to perform the token exchange and extract credentials from the response. You'll need three Env Vars as credentials:
+
+   - AWS_ACCESS_KEY_ID
+   - AWS_SECRET_ACCESS_KEY
+   - AWS_SESSION_TOKEN
+
+   After they are exported, the AWS CLI will automatically pick them up and use them. Any kind of action through the CLI will just simply work.
+
+   For example, getting short term credentials and printing the current authenticated session details with the AWS CLI would look like this:
+
+   ```
+   # Perform the token exchange and save the response
+   AWS_RESPONSE=$(aws sts assume-role-with-web-identity \
+     --role-arn "arn:aws:iam::065600603509:role/OIDC-TEST" \
+     --role-session-name "bitrise-${BITRISE_BUILD_NUMBER}" \
+     --web-identity-token "$BITRISE_IDENTITY_TOKEN" \
+     --output json)
+
+   # Extract the credentials from the reponse
+   export AWS_ACCESS_KEY_ID=$(echo "$AWS_RESPONSE" | jq -r '.Credentials.AccessKeyId')
+   export AWS_SECRET_ACCESS_KEY=$(echo "$AWS_RESPONSE" | jq -r '.Credentials.SecretAccessKey')
+   export AWS_SESSION_TOKEN=$(echo "$AWS_RESPONSE" | jq -r '.Credentials.SessionToken')
+
+   # The AWS cli will automatically pick up the env vars from the section above
+   aws sts get-caller-identity
+   ```

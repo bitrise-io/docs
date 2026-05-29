@@ -19,6 +19,89 @@ Please note that the **Decrypt file** Step only decrypts files encrypted with GP
 
 :::
 
-<Partial_EncryptingYourFiles />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
 
-<Partial_DecryptingYourFilesDuringABuild />
+## Encrypting your files
+
+In this example, we’ll use the **pwgen** password generator tool and **GPG** as the encryption software to encrypt a file.
+
+1. Open a Terminal/Command Line.
+1. Create a 32 character passphrase for encryption.
+
+   :::important[Keep the passphrase]
+
+   You will need this passphrase to decrypt the file on Bitrise.
+
+   :::
+
+   ```
+   pwgen -s 32 1
+   ```
+1. Encrypt your file. In this example, the file is called `my_secret_file`.
+
+   ```
+   gpg -c my_secret_file
+   ```
+
+   Optionally, you can encrypt your file(s) in a non-interactive way.
+
+   ```
+   gpg --batch --passphrase <passphrase> -c my_secret_file
+   ```
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Decrypting and downloading your files during a build
+
+After you successfully encrypted a file, you need to upload it to Bitrise and you need to be able to decrypt it during the build. In this procedure, we'll use the **Decrypt file** Step to decrypt the file.
+
+:::note[GPG encryption]
+
+Please note that the **Decrypt file** Step only decrypts files encrypted with GPG. If you use other encryption software, you will not be able to decrypt files using the Step. You can, of course, set up your own decryption solution in a **Script** Step.
+
+:::
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+
+   ![workflows-button.png](/img/_paligo/uuid-99bb894c-3e79-91c8-9e62-7e475573495d.png)
+1. Go to the **Secrets** tab, and add your decryption passphrase as a [Secret](/en/bitrise-ci/configure-builds/secrets).
+1. [Upload the file to Bitrise](/en/bitrise-ci/run-and-analyze-builds/managing-build-files/uploading-files-for-your-builds)
+1. Copy the Environment Variable (Env Var) under the name of the uploaded file. This Env Var stores the download URL for the file.
+1. Go to the **Workflows** tab.
+1. Open the <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>.
+1. Add the **Decrypt file** Step to your Workflow.
+1. Paste the Env Var of the file to the **Encrypted file path** input.
+1. In the **Output file path** input, specify the path where you want to place the decrypted file. Subsequent Steps will be able to access the file at this path.
+
+   :::tip[Using an Env Var as the input value]
+
+   You can store the filepath in an App Env Var instead of specifying it directly for the input. That way you can refer to the file through the Env Var in other Steps, you won’t have to specify the path every time.
+
+   For example, if you store the path in the `BITRISEIO_MY_FILE_LOCAL_PATH` Env Var, you can use it as the path for the input, and also use it to access the file in every subsequent Step.
+
+   :::
+
+**A bitrise.yml example for decrypting files**
+
+```
+---
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: macos
+workflows:
+  secret:
+    steps:
+    - activate-ssh-key@4: {}
+    - git-clone@6: {}
+    - decrypt-file@0:
+        inputs:
+        - encrypted_file_path: "./secret.txt.gpg"
+        - output_file_path: "./secret/"
+        - decrypt_passphrase: "$PASSWORD_FOR_ENCRYPT"
+    - deploy-to-bitrise-io@2: {}
+```

@@ -23,18 +23,1581 @@ This document lists the configuration options for the configuration YAML file wh
 - Read more about where to store the configuration YAML file: [Managing a project's configuration YAML file](/en/bitrise-ci/configure-builds/configuration-yaml/managing-a-project-s-configuration-yaml-file).
 - Create advanced modular configurations: [Modular YAML configuration](/en/bitrise-ci/configure-builds/configuration-yaml/modular-yaml-configuration).
 
-<Partial_ProjectLevelProperties />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
 
-<Partial_PipelineLevelProperties />
+## Project level properties
 
-<Partial_PropertiesOfWorkflowsInPipelines />
+### `format_version`
 
-<Partial_WorkflowLevelProperties />
+**Required**: A configuration YAML file is invalid without it.
 
-<Partial_StepBundleProperties />
+The version of the Bitrise configuration format.
 
-<Partial_StepLevelProperties />
+The Bitrise CLI checks it to ensure compatibility between the configuration file and the CLI version. This is relevant for locally run builds: on the Bitrise website, the CLI is always up to date, so the `format_version` property doesn't have an effect on builds triggered.
 
-<Partial_TriggerProperties />
+**Example of `format_version`**
 
-<Partial_DockerContainerProperties />
+```yaml
+format_version: '25'
+```
+
+### `default_step_lib_source`
+
+The default Step library for the Steps used in your configuration. Bitrise uses this source if no specific source is provided for a given Step.
+
+The default value is https://github.com/bitrise-io/bitrise-steplib.git. You can use your own fork of this repository as a Step source, or you can refer to Steps by including their exact source repository: [Step reference/ID format](/en/bitrise-ci/references/steps-reference/step-reference-id-format).
+
+**Example of `default_step_lib_source`**
+
+```yaml
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+```
+
+### `project_type`
+
+The type of your Bitrise project, such as `ios`, `android`, `flutter`, and so on.
+
+The project type can be modified at any point but after the initial setup, it has no relevance.
+
+**Example of `project_type`**
+
+```yaml
+project_type: flutter
+```
+
+### `title`
+
+The title of the Bitrise configuration.
+
+**Example of `title`**
+
+```yaml
+title: My Bitrise project
+```
+
+### `summary`
+
+A short summary of the Bitrise configuration.
+
+**Example of `summary`**
+
+```yaml
+summary: This project runs tests for my app.
+```
+
+### `description`
+
+A detailed description of the Bitrise configuration.
+
+**Example of `description`**
+
+```yaml
+description: This project runs unit and UI tests when a pull request is opened to the dev branch.
+```
+
+### `services`
+
+Docker container definitions used by Steps as service containers on Linux hosts.
+
+:::note[Linux only]
+
+This is only supported on Linux stacks: the property doesn't work on macOS stacks!
+
+:::
+
+One or more service can be configured for a group of Steps, allowing running Docker containers as services for advanced integration testing. These are tied to the lifecycle of a `with` group and will run alongside it in the background. When all Steps within the groups finish, they are cleaned up.
+
+You need to define:
+
+- The ID of the service which is used to refer to the service in a with group.
+- The image name of the service.
+- The image version of the service.
+
+Read more: [Service containers](/en/bitrise-platform/infrastructure/docker-containers-on-bitrise/service-containers).
+
+**Example of `services`**
+
+```yaml
+services:
+ postgres:
+   image: postgres:16
+   envs: 
+   - POSTGRES_USER: postgres
+   - POSTGRES_DB: bitrise 
+   ports:
+   - 5432:5432 
+   options: >-
+     --health-cmd pg_isready
+     --health-interval 10s
+     --health-timeout 5s
+     --health-retries 5
+ redis: 
+   image: redis:7
+     ports: - 6379:6379
+     options: >-
+     --health-cmd "redis-cli ping"
+     --health-interval 10s
+     --health-timeout 5s
+     --health-retries 5
+```
+
+### `containers`
+
+Docker container definitions used by Steps as execution containers.
+
+Docker containers can be defined for any Bitrise project in the configuration YAML file. You define the container in the top level of the configuration file and then refer to it in a `with` group in the Workflow configuration. You need to define:
+
+- The ID of the containers. It will be used to reference this container.
+- The name of the Docker image you want to use.
+- The version of the image.
+
+`containers reference`: [Docker container properties](/en/bitrise-ci/references/configuration-yaml-reference#docker-container-properties).
+
+Read more: [Execution containers](/en/bitrise-platform/infrastructure/docker-containers-on-bitrise/execution-containers).
+
+**Example of `containers`**
+
+```yaml
+containers:
+  node-21:
+    image: node:21.6
+```
+
+### `app`
+
+This property contains project-level configuration information, such as [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables).
+
+Meta information such as the build stack doesn't belong here but to the `meta` property.
+
+**Example of `app`**
+
+```yaml
+app:
+  envs:
+  - TEST: '' 
+    opts:
+      is_expand: false
+```
+
+### `meta`
+
+Stores project metadata key-value pairs related to the Bitrise configuration. Most importantly, it defines the default stack and the build machine type for the project.
+
+Read more: [Setting the stack in the bitrise.yml file](/en/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds#setting-the-stack-in-the-configuration-yaml).
+
+**Example of `meta`**
+
+```yaml
+meta:
+  bitrise.io:
+    stack: linux-docker-android-22.04
+    machine_type_id: g2.linux.2medium
+```
+
+### `trigger_map`
+
+Defines the build triggers on a project level. This is the legacy method of configuring triggers: we recommend using target-based triggers defined within a Pipeline or a Workflow instead.
+
+Read more: [Legacy project-based triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/legacy-project-based-triggers).
+
+**Example of `trigger_map`**
+
+```yaml
+trigger_map:
+- pull_request_source_branch: "*"
+  type: pull_request
+  workflow: primary
+```
+
+### `pipelines`
+
+Define Pipelines in your project's configuration. Pipelines can be used to organize the entire CI/CD process and to set up advanced configurations with multiple different tasks running parallel and/or sequentially.
+
+`pipelines` reference: [Pipeline level properties](/en/bitrise-ci/references/configuration-yaml-reference#pipeline-level-properties).
+
+Read more: [About Pipelines](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/about-pipelines).
+
+**Example of `pipelines`**
+
+```yaml
+pipelines:
+  test:
+  title: Test Pipeline
+  summary: This Pipeline runs unit tests.
+  workflows:
+    primary: {}
+```
+
+### `workflows`
+
+The Workflows included in your configuration. A Workflow is a collection of Steps: reusable, configurable units of work. Steps are executed sequentially within a Workflow.
+
+`workflows` reference: [Workflow level properties](/en/bitrise-ci/references/configuration-yaml-reference#workflow-level-properties).
+
+**Example of `workflows`**
+
+```yaml
+workflows: 
+  primary:
+    steps: 
+    - script: {}
+```
+
+### `step_bundles`
+
+Step bundles allow you to group multiple Steps into a single unit. With Step bundles, you can reuse Steps and sequences of Steps.
+
+You can insert Step bundles into any Workflow. Unlike utility Workflows and Workflow chaining, Step Bundles can be placed anywhere in a Workflow.
+
+`step_bundles` reference: [Step bundle properties](/en/bitrise-ci/references/configuration-yaml-reference#step-bundle-properties).
+
+Read more: [Step bundles](/en/bitrise-ci/workflows-and-pipelines/steps/step-bundles).
+
+**Example of `step_bundles`**
+
+```yaml
+step_bundles:
+  primary:
+    steps:
+    - git-clone: {}
+    - restore-cache: {}
+```
+
+### `include`
+
+The `include` property allows you to use other configuration YAML files in your Bitrise configuration, to break down large, complex YAML files into smaller, modular components.
+
+A modular YAML configuration includes:
+
+- A `bitrise.yml` file in the root of your repository.
+- Other YAML files in the same or a different repository. To include a file from a different repository, the repository must belong to the same Git account or organization as the primary repository.
+- One or more `include` keywords in the bitrise.yml file. These point to other YAML files and bring their configuration into the main project configuration.
+
+Read more: [Modular YAML configuration](/en/bitrise-ci/configure-builds/configuration-yaml/modular-yaml-configuration).
+
+**Example of `include`**
+
+```yaml
+include:
+  - path: path/to/config_module.yml
+```
+
+### `tools`
+
+Tool version to set up. The version syntax supports:
+
+- Exact versions: for example, `'1.2.3'`.
+- Partial matches to the latest release: for example, `'22:latest'`.
+- Partial matches to installed versions: for example, `'1.2:installed'`.
+- Special aliases `'latest'` and `'installed'` to select the latest or the highest installed version.
+
+Read more: [Configuring tool versions](/en/bitrise-ci/configure-builds/configuring-build-settings/configuring-tool-versions).
+
+**Example of `tools`**
+
+```yaml
+tools:
+  nodejs: 22:installed
+  ruby: 3.3:latest
+```
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Pipeline level properties
+
+### `pipelines:<pipeline-ID>:title`
+
+The title of the Pipeline.
+
+This is not the same as the ID of the Pipeline: you set the ID when creating the Pipeline. Unlike the ID, the title does not have to be unique. It appears on the Workflow Editor UI in the **Pipelines** section: if you open the Pipeline selector dropdown menu.
+
+**Example of `pipelines:<pipeline-ID>:title`**
+
+```yaml
+pipelines:
+  test:
+    title: Test pipeline
+```
+
+### `pipelines:<pipeline-ID>:summary`
+
+A short summary of the Pipeline. Optional.
+
+**Example of `pipelines:<pipeline-ID>:summary`**
+
+```yaml
+pipelines:
+  test:
+    summary: This Pipeline runs unit tests.
+```
+
+### `pipelines:<pipeline-ID>:description`
+
+A detailed description of the Pipeline. Optional.
+
+**Example of `pipelines:<pipeline-ID>:description`**
+
+```yaml
+pipelines:
+  test:
+    description: 'This Pipeline runs unit tests in parallel, using test sharding.'
+```
+
+### `pipelines:<pipeline-ID>:triggers`
+
+Target-based triggers defined for the Pipeline: if a code event matches the condition defined in a trigger, Bitrise will trigger a build with the Pipeline.
+
+For the detailed syntax of the `triggers` property and its available options, check out:
+
+Read more: [YAML syntax for build triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/yaml-syntax-for-build-triggers).
+
+**Example of `pipelines:<pipeline-ID>:triggers`**
+
+In this example, any commit pushed to the `main` branch triggers a build of the Pipeline.
+
+```yaml
+pipelines:
+  test:
+    triggers:
+      push:
+      - branch: main
+```
+
+### `pipelines:<pipeline-ID>:status_report_name`
+
+The name that will appear on the status report sent to connected services (like GitHub, GitLab, Bitbucket, and so on) after the build is finished.
+
+It can have both static and dynamic values, as well as combine the two types.
+
+**Supported characters and variables**:
+
+- `A-Za-z,.():/-_0-9 []|<>`
+- `<project_slug>`: The unique identifier of your project.
+- `<project_title>`: Optional title of your project.
+- `<target_id>`: The ID of the triggered Workflow or Pipeline.
+- `<event_type>`: The code event that triggered the build: `PR/push/tag`.
+
+**Example of `pipelines:<pipeline-ID>:status_report_name`**
+
+```yaml
+pipelines:
+  test:
+    status_report_name: ci/bitrise/510526/push
+```
+
+### `pipelines:<pipeline-ID>:workflows`
+
+The Workflows that are part of the Pipeline configuration.
+
+You can create dependencies between Workflows with the `depends_on` property.
+
+**Example of `pipelines:<pipeline-ID>:workflows`**
+
+```yaml
+pipelines:
+  test:
+    workflows:
+      primary:
+```
+
+### `pipelines:<pipeline-ID>:priority`
+
+The priority setting determines the position of the Pipeline build in the build queue: the higher the priority, the sooner the Pipeline build will run.
+
+**Supported values:**
+
+- An integer between -100 and 100.
+
+**Read more:**
+
+- [Pipeline priority](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#pipeline-priority)
+- [Build priority](/en/bitrise-ci/configure-builds/configuring-build-settings/build-priority)
+
+**Example of `pipelines:<pipeline-ID>:priority`**
+
+```yaml
+pipelines:
+  test:
+    priority: 10
+```
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Properties of Workflows in Pipelines
+
+### `workflows:depends_on`
+
+This property defines the Workflows that this Workflow depends on. If any of the Workflows in the list fails, this Workflow won't run.
+
+You can use both types of YAML array syntax to list dependant Workflows: block sequence and flow sequence. Any Workflow appearing in the dependency list must be part of the same Pipeline.
+
+:::caution[No circle or loop configuration]
+
+The dependency graph resulting from your configuration can't contain a circle or loop. You can't start builds with an invalid Pipeline configuration.
+
+:::
+
+**Supported values**: Workflow names with YAML array syntax.
+
+Read more: [Configuring a Bitrise Pipeline](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline).
+
+**Example of `workflows:depends_on`**
+
+Block sequence array syntax:
+
+```yaml
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        depends_on:
+        - A
+      C:
+        depends_on:
+        - A
+      D:
+        depends_on:
+        - B
+        - C
+```
+
+Flow sequence array syntax:
+
+```yaml
+D:
+  depends_on: [B, C]
+```
+
+### `workflows:abort_on_fail`
+
+When this property is `true`, the Pipeline and any other running Workflows are aborted if this Workflow fails.
+
+**Supported values**: boolean
+
+Read more: [Configuring a Bitrise Pipeline](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline).
+
+**Example of `workflows:abort_on_fail`**
+
+In this example, both A and B are running in parallel. If B fails, the entire Pipeline, including Workflow A, is immediately aborted.
+
+```yaml
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        abort_on_fail: true
+```
+
+### `workflows:should_always_run`
+
+This property defines whether a Workflow should run if a previous Workflow failed.
+
+Be aware of transitive dependency: if a Workflow that is set to always run has a parent Workflow that fails, it will still run. However, Workflows that depend on it will not. For example, let's say we have Workflow C that depends on Workflow B. Workflow B depends on Workflow A. Of the three Workflows, only B is set to always run:
+
+- If A fails, B will run but regardless of its result, C won't run because by depending on B, it also depends on A.
+- C only runs if both A and B are successful.
+
+**Supported values:**
+
+- `none`: If a parent Workflow fails, the Workflow will not run. This is the default value.
+- `workflow`: If a parent Workflow fails, the Workflow will run anyway.
+
+Read more: [Configuring a Bitrise Pipeline](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline)
+
+**Example of `workflows:should_always_run`**
+
+```yaml
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        depends_on: [ A ]
+        should_always_run: workflow
+      C:
+        depends_on: [ B ]
+      D:
+        depends_on: [ C ]
+        should_always_run: workflow
+```
+
+### `workflows:run_if`
+
+A Go template expression that defines the conditions for running the Workflow.
+
+The property needs an `expression` field that contains a Go template, with three helper functions:
+
+- `getenv`: Accesses an Environment Variable's value.
+- `enveq`: Compares an Environment Variable to a given value.
+- `envcontain`: Checks whether an Environment Variable contains a given string.
+
+The Bitrise CLI evaluates the expression during runtime. If a Workflow is skipped because of a `run_if` expression, it will be counted as a successful Workflow so its dependent Workflows will run.
+
+Read more: [Examples of run_if expressions](/en/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally#examples-of-run_if-expressions).
+
+**Example of `workflows:run_if`**
+
+In this example, B will only run if the EXAMPLE_KEY Environment Variable has the value example value.
+
+```yaml
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        run_if:
+          expression: {{ enveq "EXAMPLE_KEY" "example value" }}
+        depends_on: [A]
+```
+
+### `workflows:parallel`
+
+The `parallel` property allows you to run copies of the same Workflow in parallel, in a single instruction. This is particularly useful for test sharding.
+
+The property determines the number of copies running in parallel. Each copy receives two new environment variables:
+
+- $BITRISE_IO_PARALLEL_INDEX: a zero based index for each copy of the Workflow.
+- $BITRISE_IO_PARALLEL_TOTAL: the total number of copies.
+
+**Supported values**: An integer.
+
+Read more: [Parallelism in Pipelines](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow).
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Workflow level properties
+
+### `workflows:<workflow-id>:title`
+
+The title of the Workflow.
+
+It appears on the UI of the Workflow Editor.
+
+**Example of `workflows:<workflow-id>:title`**
+
+```yaml
+workflows:
+  primary:
+    title: Primary Workflow
+```
+
+### `workflows:<workflow-id>:summary`
+
+A short summary of the Workflow.
+
+**Example of**
+
+```yaml
+workflows:
+  primary:
+    summary: This Workflow runs unit tests.
+```
+
+### `workflows:<workflow-id>:description`
+
+A detailed description of the Workflow.
+
+**Example of `workflows:<workflow-id>:description`**
+
+```yaml
+workflows:
+  primary:
+    description: This Workflow runs unit tests with test sharding, and exports the test results to the test reports page.
+```
+
+### `workflows:<workflow-id>:triggers`
+
+Target-based triggers defined for the Workflow: if a code event matches the condition defined in a trigger, Bitrise will trigger a build with the Workflow.
+
+Each trigger defines a code event and at least one condition. If you define multiple conditions in a single trigger, all of them must match to trigger a build.
+
+For the detailed syntax of the `triggers` property and its available options, check out:
+
+Read more: [YAML syntax for build triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/yaml-syntax-for-build-triggers).
+
+**Example of `workflows:<workflow-id>:triggers`**
+
+In this example, a build is triggered if:
+
+- A commit is pushed to the `main` branch.
+- A pull request is opened from any branch.
+
+```yaml
+workflows:
+  primary:
+    triggers:
+      push:
+      - branch: main
+      pull_request:
+      - source_branch: "*"
+```
+
+### `workflows:<workflow-id>:status_report_name`
+
+The name that will appear on the status report sent to connected services (like GitHub, GitLab, Bitbucket, and so on) after the build is finished.
+
+It can have both static and dynamic values, as well as combine the two types.
+
+**Supported characters and variables**:
+
+- `A-Za-z,.():/-_0-9 []|<>`
+- `<project_slug>`: The unique identifier of your project.
+- `<project_title>`: Optional title of your project.
+- `<target_id>`: The ID of the triggered Workflow or Pipeline.
+- `<event_type>`: The code event that triggered the build: `PR/push/tag`.
+
+**Example of `workflows:<workflow-id>:status_report_name`**
+
+```yaml
+workflows:
+  test:
+    status_report_name: ci/bitrise/510526/push
+```
+
+### `workflows:<workflow-id>:before_run`
+
+:::tip[Step bundles]
+
+This is a legacy feature. We recommend using Step bundles instead: [Step bundles](/en/bitrise-ci/workflows-and-pipelines/steps/step-bundles).
+
+:::
+
+The Workflows that will run before this Workflow starts.
+
+Use this property and `after_run` to create chains of Workflows.
+
+Read more: [Chaining Workflows together](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together).
+
+**Example of `workflows:<workflow-id>:before_run`**
+
+In this example, we're creating a configuration in which the `test` Workflow runs before the `deploy` Workflow:
+
+```yaml
+workflows:
+  test:
+    steps:
+    # test Steps
+
+  deploy:
+    before_run:
+    - test
+    steps:
+    # deploy Steps
+```
+
+### `workflows:<workflow-id>:after_run`
+
+:::tip[Step bundles]
+
+This is a legacy feature. We recommend using Step bundles instead: [Step bundles](/en/bitrise-ci/workflows-and-pipelines/steps/step-bundles).
+
+:::
+
+The Workflows that will run after this Workflow is successfully finished.
+
+Use this property and `before_run` to create chains of Workflows.
+
+Read more: [Chaining Workflows together](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together).
+
+**Example of `workflows:<workflow-id>:before_run`**
+
+In this example, we're creating a configuration in which the `deploy` Workflow runs after the `ci` Workflow:
+
+```yaml
+workflows:
+  deploy:
+    steps:
+    # deploy Steps
+
+  ci:
+    after_run:
+    - deploy
+    steps:
+    # CI Steps
+```
+
+### `workflows:<workflow-id>:envs`
+
+Environment Variables defined for the Workflow.
+
+Each Environment Variable is a key-value pair. Environment Variables can use other Environment Variables as values: [Using Env Vars in the value of an Env Var](/en/bitrise-ci/configure-builds/environment-variables#using-env-vars-in-the-value-of-an-env-var).
+
+These variables are only available for the selected Workflow. Other Workflows defined in the same configuration YAML file can't access them. Project-level Environment variables have a higher priority: [Availability order of Environment Variables](/en/bitrise-ci/configure-builds/environment-variables#availability-order-of-environment-variables).
+
+Read more: [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables).
+
+**Example of `workflows:<workflow-id>:envs`**
+
+```yaml
+workflows:
+  primary:
+    envs:
+    - TEST: test
+    - ENV_LABEL: dev
+      opts:
+        is_expand: false
+```
+
+### `workflows:<workflow-id>:steps`
+
+The list of Steps in the Workflow.
+
+The basic syntax of a Step reference is: `<step_lib_source>::<step-id>@<version>:`. The Step ID is always required; the source and the version are optional.
+
+- If you don't set a source, `default_step_lib_source` will be used: [Project level properties](/en/bitrise-ci/references/configuration-yaml-reference#project-level-properties).
+- If you don't set a version, the latest version will be used.
+
+Read more:
+
+- [Step reference/ID format](/en/bitrise-ci/references/steps-reference/step-reference-id-format)
+- [Step versions](/en/bitrise-ci/workflows-and-pipelines/steps/step-versions)
+
+**Examples of `workflows:<workflow-id>:steps`**
+
+In this example, we don't specify an exact source and we use the latest version of major version 1:
+
+```yaml
+workflows:
+    steps:
+    - script: {}
+```
+
+In this example we're providing a source for the Step:
+
+```yaml
+workflows:
+    steps:
+    - https://github.com/bitrise-io/bitrise-steplib.git::script@1: {}
+```
+
+### `workflows:<workflow-id>:priority`
+
+The priority setting determines the position of the Workflow build in the build queue: the higher the priority, the sooner the Workflow build will run.
+
+**Supported values**: An integer between -100 and 100.
+
+Read more: [Build priority](/en/bitrise-ci/configure-builds/configuring-build-settings/build-priority).
+
+**Example of `workflows:<workflow-id>:priority`**
+
+```yaml
+workflows:
+  primary:
+    priority: 10
+```
+
+### `workflows:<workflow-id>:tools`
+
+Declarative configuration for tool versions used in the build.
+
+You can define tool versions for specific Workflows. Instead of defining the tools property at the top level of the configuration, you nest it under one or more Workflows.
+
+The version syntax supports:
+
+- Exact versions: for example, `'1.2.3'`.
+- Partial matches to the latest release: for example, `'22:latest'`.
+- Partial matches to installed versions: for example, `'1.2:installed'`.
+- Special aliases `'latest'` and `'installed'` to select the latest or the highest installed version.
+
+Read more: [Configuring tool versions](/en/bitrise-ci/configure-builds/configuring-build-settings/configuring-tool-versions).
+
+**Example of `workflows:<workflow-id>:tools`**
+
+```yaml
+workflows:
+  primary:
+    tools:
+      nodejs: 22:installed
+```
+
+### `workflows:<workflow-id>:meta`
+
+Stores project metadata key-value pairs. Most importantly, it defines the stack and the machine type for the Workflow.
+
+Read more: [Setting the stack in the bitrise.yml file](/en/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds#setting-the-stack-in-the-configuration-yaml).
+
+**Example of `workflows:<workflow-id>:meta`**
+
+```yaml
+workflows:
+  deploy:  
+    meta:      
+      bitrise.io:       
+        stack: linux-docker-android-22.04
+        machine_type_id: g2.linux.2medium
+```
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Step bundle properties
+
+### `step_bundles:<step-bundle-id:title`
+
+The title of the Step bundle. It is an optional property as the Step bundle ID uniquely identifies the bundle.
+
+**Example of `step_bundles:<step-bundle-id>:title`**
+
+```yaml
+step_bundles:
+  test:
+    title: Test bundle
+```
+
+### `step_bundles:<step-bundle-id>:summary`
+
+A short summary of the Step bundle. Optional.
+
+**Example of `step_bundles:<step-bundle-id>:summary`**
+
+```yaml
+step_bundles:
+  test:
+    summary: "It's a bundle to test Step bundles."
+```
+
+### `step_bundles:<step-bundle-id>:description`
+
+A detailed description of the Step bundle.
+
+**Example of `step_bundles:<step-bundle-id>:description`**
+
+```yaml
+step_bundles:
+  test:
+    description: "This Step bundle allows users to try out Step bundles on Bitrise. It includes a Git Clone Repository Step and a Script Step."
+```
+
+### `step_bundles:<step-bundle-id>:envs`
+
+The Environment Variables that are only available for the Step bundle. Steps outside the bundle can't access the variables defined here! As all Env Vars, it takes a key and a value.
+
+**Example of `step_bundles:<step-bundle-id>:envs`**
+
+```yaml
+step_bundles:
+  test:
+    envs:
+    - MY_ENV: "value"
+```
+
+### `step_bundles:<step-bundle-id>:inputs`
+
+Inputs defined for the Step bundle: these are values that can be set when the Step bundle is added to a Workflow.
+
+Read more: [Step bundles](/en/bitrise-ci/workflows-and-pipelines/steps/step-bundles).
+
+**Example of `step_bundles:<step-bundle-id>:inputs`**
+
+```yaml
+step_bundles:
+  test:
+    inputs:
+    - my_input: my_value
+```
+
+### `step_bundles:<step-bundle-id>:execution_container`
+
+The default execution container for all Steps in this bundle. Can be overridden at the call-site or by individual Steps.
+
+Read more: [About Docker containers on Bitrise](/en/bitrise-platform/infrastructure/docker-containers-on-bitrise/about-docker-containers-on-bitrise).
+
+**Example of `step_bundles:<step-bundle-id>:execution_container`**
+
+```yaml
+step_bundles:
+  test:
+    execution_container: 
+        test-container: {}
+```
+
+### `step_bundles:<step-bundle-id>:service_containers`
+
+The default service containers for all Steps in this bundle. Can be overridden at the call-site.
+
+**Supported values**:
+
+Read more: [Service containers](/en/bitrise-platform/infrastructure/docker-containers-on-bitrise/service-containers).
+
+**Example of `step_bundles:<step-bundle-id>:service_containers`**
+
+```yaml
+step_bundles:
+  test:
+    service_containers:
+        test-container: {}
+```
+
+### `step_bundles:<step-bundle-id>:steps`
+
+The Steps included in the Step bundle.
+
+**Example of `step_bundles:<step-bundle-id>:steps`**
+
+```yaml
+step_bundles:
+  test:
+    steps:
+      - git-clone: {}
+      - script: {}
+```
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Step level properties
+
+### `steps:<step-id>:title`
+
+The title of the Step.
+
+This appears on the Workflow Editor, replacing the Step ID.
+
+**Example of `steps:<step-id>:title`**
+
+```yaml
+workflows:
+    steps:
+    - script@1:
+        title: Test sharding script
+```
+
+### `steps:<step-id>:summary`
+
+A short summary of the Step.
+
+**Example of `steps:<step-id>:summary`**
+
+```yaml
+workflows:
+    steps:
+    - script@1:
+        summary: Custom script for sharding.
+```
+
+### `steps:<step-id>:description`
+
+A detailed description of the Step.
+
+**Example of `steps:<step-id>:description`**
+
+```yaml
+workflows:
+    steps:
+    - script@1:
+        summary: A custom script for setting up test sharding for Flutter unit tests.
+```
+
+### `steps:<step-id>:is_always_run`
+
+If this property is true, the Step will always run, even if a previous Step in the Workflow failed.
+
+By default, if a previous Step fails in the Workflow, subsequent Steps will not run. A Step will only run if this property is set to `true`.
+
+**Supported values**: boolean
+
+Read more: [Skipping Steps](/en/bitrise-ci/workflows-and-pipelines/steps/skipping-steps).
+
+**Example of `steps:<step-id>:is_always_run`**
+
+```yaml
+workflows:
+  primary:
+    steps:
+    - script:
+        is_always_run: true
+```
+
+### `steps:<step-id>:is_skippable`
+
+If this property is true, the build won't fail even if this Step fails.
+
+By default if a Step fails, subsequent Steps are not executed. If the first failing step has this property set to `true`, it won't make the build fail. Subsequent Steps will still run and the build can finish successfully.
+
+**Supported values**: boolean
+
+**Example of `steps:<step-id>:is_skippable`**
+
+```yaml
+workflows:
+  primary:
+    steps:
+    - script:
+        is_skippable: true
+```
+
+### `steps:<step-id>:run_if`
+
+This property sets conditions for running a Step. It requires a valid Go template expression.
+
+A `run_if` can be any valid Go template, as long as it evaluates to true or false (or any of the String representation, for example `True`, `t`, `yes` or `y` are all considered to be true). If the template evaluates to `true`, the Step will run, otherwise it won’t.
+
+Read more:
+
+- [Enabling or disabling a Step conditionally](/en/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally).
+- [Examples of run_if expressions](/en/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally#examples-of-run_if-expressions).
+
+**Example of `steps:<step-id>:run_if`**
+
+In this example, the build skips the Step if the value of CUSTOM_ENV_VAR_KEY is not `test value to test against`.
+
+```yaml
+run_if: |-
+        {{enveq "CUSTOM_ENV_VAR_KEY" "test value to test against"}}
+```
+
+### `steps:<step-id>:timeout`
+
+This property defines a time limit for a Step: if the Step runs longer than the defined time, the Step fails. Define the limit in seconds.
+
+This is useful if, for example, your builds hang for not immediately obvious reasons - you can set timeouts for the Step or Steps which are suspected to have caused the problem.
+
+Read more: [Setting a time limit for Steps](/en/bitrise-ci/workflows-and-pipelines/steps/setting-a-time-limit-for-steps).
+
+**Example of `steps:<step-id>:timeout`**
+
+```yaml
+- xcode-test:
+     timeout: 120
+```
+
+### `steps:<step-id>:no_output_timeout`
+
+This property defines a time limit for steps: if a Steps runs longer than the defined time without producing an output, the Step fails. Define the limit in seconds.
+
+Read more: [Detecting and aborting hanging Steps](/en/bitrise-ci/workflows-and-pipelines/steps/detecting-and-aborting-hanging-steps).
+
+**Example of `steps:<step-id>:no_output_timeout`**
+
+```yaml
+output_slows_down:
+    steps:
+    - script:
+        no_output_timeout: 12
+```
+
+### `steps:<step-id>:inputs`
+
+Inputs defined for the Step: these are values that can be set when the Step is added to a Workflow.
+
+Step input syntax consists of a `KEY: value` pair.
+
+Read more: [Step inputs reference](/en/bitrise-ci/references/steps-reference/step-inputs-reference).
+
+**Example of `steps:<step-id>:inputs`**
+
+```yaml
+inputs:
+- my_key_for_the_env: "default value"
+```
+
+### `steps:<step-id>:outputs`
+
+Outputs defined for the Step: these are values that the Step can set during its execution, which can be used by other Steps in the Workflow.
+
+You can check out the default outputs of a Step in the Workflow Editor on bitrise.io or in the `step.yml` file of the Step. Step outputs can be defined in the `step.yml` file of the project by setting the `outputs` attribute. Step out syntax consists of two main parts: a `KEY: value` pair and an `opts` field. The key and the value are required, the `opts` field is optional.
+
+Read more: [Step outputs reference](/en/bitrise-ci/references/steps-reference/step-outputs-reference).
+
+**Example of `steps:<step-id>:outputs`**
+
+```yaml
+workflows:
+  primary:
+  steps:
+  - gradle-runner:
+      outputs:
+      - BITRISE_APK_PATH: ALIAS_APK_PATH
+```
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Trigger properties
+
+### `triggers:enabled`
+
+The property determines whether a defined trigger is active. The default value is `true`. If you want to disable the trigger, set it to `false`.
+
+**Supported values**: boolean
+
+**Example of `triggers:enabled`**
+
+In this example, the trigger is disabled.
+
+```yaml
+workflows:
+  primary:
+    triggers:
+      enabled: false
+```
+
+### `triggers:push`
+
+Code push triggers define the conditions for triggering a Bitrise build when code is pushed to the project's repository.
+
+For example, a commit to the specified branch of the project's repository triggers a build.
+
+**Example of `triggers:push`**
+
+In this example, a code push to the `main` branch triggers a build.
+
+```yaml
+workflows:
+  primary:
+    triggers:
+      push:
+      - branch: main
+```
+
+#### `triggers:push:branch`
+
+Triggers a build when code is pushed to the specified branch.
+
+**Supported values**:
+
+- A string.
+- The `pattern` property which allows simple text matching within all types of triggers.
+- The `regex` property which allows using regular expressions as a trigger condition.
+
+:::important[One type only]
+
+Use exactly one out of a string, a pattern, or a regex. You can't use more than one in the same trigger!
+
+:::
+
+**Example of `triggers:push:branch`**
+
+```yaml
+workflows:
+  primary:
+    triggers:
+      push:
+      - branch: main
+```
+
+##### `triggers:push:commit_message`
+
+Triggers a build when code is pushed with the specified commit message.
+
+**Supported values**:
+
+- A string.
+- The `pattern` property which allows simple text matching within all types of triggers.
+- The `regex` property which allows using regular expressions as a trigger condition.
+- The `last_commit` property that defines whether Bitrise should evaluate every commit message or changed file in a code push or only those belonging to the most recent commit. Its default value is `false`.
+
+:::important[One type only]
+
+Use exactly one out of a string, a pattern, or a regex. You can't use more than one in the same trigger!
+
+:::
+
+**Example of `triggers:push:commit_message`**
+
+In this example, a commit message that contains the string `[workflow: deploy]` triggers a build:
+
+```yaml
+primary
+  triggers:
+    push:
+    - commit_message:
+        regex: '.*\[workflow: deploy\].*'
+```
+
+##### `triggers:push:changed_files`
+
+Triggers a build when a code push results in changes to the specified file or files.
+
+You can specify files or a folders.
+
+**Supported values**:
+
+- A string.
+- The `pattern` property which allows simple text matching within all types of triggers.
+- The `regex` property which allows using regular expressions as a trigger condition.
+- The `last_commit` property that defines whether Bitrise should evaluate every commit message or changed file in a code push or only those belonging to the most recent commit. Its default value is `false`.
+
+:::important[One type only]
+
+Use exactly one out of a string, a pattern, or a regex. You can't use more than one in the same trigger!
+
+:::
+
+**Example of `triggers:push:changed_files`**
+
+```yaml
+primary
+  triggers:
+    push:
+    - changed_files: 
+        pattern: "myfile.txt"
+```
+
+### `triggers:pull_request`
+
+Pull request triggers: they define the conditions for triggering a Bitrise build when a pull request is opened in the project's repository.
+
+**Example of `triggers:pull_request`**
+
+```yaml
+primary
+  triggers:
+    pull_request:
+    - source_branch: *
+```
+
+#### `triggers:pull_request:source_branch`
+
+The branch from which the pull request is opened.
+
+**Supported values**:
+
+- A string.
+- The `regex` property which allows using regular expressions as a trigger condition.
+
+:::important[One type only]
+
+Use exactly one out of a string, or a regex. You can't use more than one in the same trigger!
+
+:::
+
+**Example of `triggers:pull_request:source_branch`**
+
+```yaml
+primary
+  triggers:
+    pull_request:
+    - source_branch: main
+```
+
+#### `triggers:pull_request:target_branch`
+
+The branch which is the merge target of the pull request.
+
+**Supported values**:
+
+- A string.
+- The `regex` property which allows using regular expressions as a trigger condition.
+
+:::important[One type only]
+
+Use exactly one out of a string, or a regex. You can't use more than one in the same trigger!
+
+:::
+
+**Example of `triggers:pull_request:target_branch`**
+
+```yaml
+primary
+  triggers:
+    pull_request:
+    - target_branch: main
+```
+
+#### `triggers:pull_request:label`
+
+The pull request label. A build is triggered when the label is added and when code is pushed to an open pull request that has this label.
+
+**Supported values**:
+
+- A string.
+- The `regex` property which allows using regular expressions as a trigger condition.
+
+:::important[One type only]
+
+Use exactly one out of a string, or a regex. You can't use more than one in the same trigger!
+
+:::
+
+**Example of `triggers:pull_request:label`**
+
+```yaml
+primary
+  triggers:
+    pull_request:
+    - label: bugfix
+```
+
+#### `triggers:pull_request:draft_enabled`
+
+The property defines if draft pull requests trigger builds.
+
+**Supported values**: A boolean.
+
+Read more: [Disabling builds from a draft PR](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers#disabling-builds-from-a-draft-pr).
+
+**Example of `triggers:pull_request:draft_enabled`**
+
+```yaml
+primary
+  triggers:
+    pull_request:
+    - draft_enabled: false
+```
+
+#### `triggers:pull_request:comment`
+
+A comment posted on a pull request.
+
+**Supported values**:
+
+- A string.
+- The `regex` property which allows using regular expressions as a trigger condition.
+
+:::important[One type only]
+
+Use exactly one out of a string, or a regex. You can't use more than one in the same trigger!
+
+:::
+
+**Example of `triggers:pull_request:comment`**
+
+```yaml
+primary
+  triggers:
+    pull_request:
+    - comment: approved
+```
+
+#### `triggers:pull_request:commit_message`
+
+A specific commit message in pushes to a pull request.
+
+**Supported values**:
+
+- A string.
+- The `regex` property which allows using regular expressions as a trigger condition.
+
+:::important[One type only]
+
+Use exactly one out of a string, or a regex. You can't use more than one in the same trigger!
+
+:::
+
+**Example of `triggers:pull_request:commit_message`**
+
+```yaml
+primary
+  triggers:
+    pull_request:
+    - commit_message: "fix for issue"
+```
+
+#### `triggers:pull_request:changed_files`
+
+Specific files that are modified in a pull request.
+
+**Supported values**:
+
+- A string.
+- The `regex` property which allows using regular expressions as a trigger condition.
+
+:::important[One type only]
+
+Use exactly one out of a string, or a regex. You can't use more than one in the same trigger!
+
+:::
+
+**Example of `triggers:pull_request:changed_files`**
+
+```yaml
+primary
+  triggers:
+    pull_request:
+    - changed_files: ./path/to/file
+```
+
+### `triggers:tag`
+
+Git tag triggers define the conditions for triggering a Bitrise build when a Git tag is pushed to the project's repository.
+
+**Example of `triggers:tag`**
+
+```yaml
+primary
+  triggers:
+    tag:
+    - name: *
+```
+
+#### `triggers:tag:name`
+
+The value of the tag that should trigger a build.
+
+**Supported values**:
+
+- A string.
+- The `regex` property which allows using regular expressions as a trigger condition.
+
+:::important[One type only]
+
+Use exactly one out of a string, or a regex. You can't use more than one in the same trigger!
+
+:::
+
+**Example of `triggers:tag:name`**
+
+```yaml
+primary
+  triggers:
+    tag:
+    - name: 1.0
+```
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Docker container properties
+
+### `containers:<container-id>:type`
+
+The type of the container.
+
+**Supported values**:
+
+- `execution`: Containers that run a Step or a Step bundle.
+- `service`: Containers that run alongside a Step or Step bundle, running background services, such as `postgres`.
+
+Read more: [About Docker containers on Bitrise](/en/bitrise-platform/infrastructure/docker-containers-on-bitrise/about-docker-containers-on-bitrise).
+
+**Example of `containers:<container-id>:type`**
+
+```yaml
+containers:
+  node-18:
+    type: execution
+```
+
+### `containers:<container-id>:image`
+
+This property defines the Docker image used for the container, in a `name:tag` format. You can use any public image from Docker Hub.
+
+**Example of `containers:<container-id>:image`**
+
+```yaml
+containers:
+  node-18:
+    image: node:18
+```
+
+### `containers:<container-id>:credentials`
+
+The credentials allow you to control the parameters supplied for the `docker login` command. Check your registries documentation on how to use docker login.
+
+The following properties are supported:
+
+- `username`
+- `password`
+- `server`
+
+**Example of `containers:<container-id>:credentials`**
+
+```yaml
+containers:
+  node-18:
+    credentials:
+      username: user
+      password: pass
+```
+
+#### `containers:<container-id>:credentials:username`
+
+The username that will be used with the `docker login` command.
+
+**Example of `containers:<container-id>:credentials:username`**
+
+```yaml
+containers:
+  node-18:
+    credentials:
+      username: _json_key_base64
+```
+
+#### `containers:<container-id>:credentials:password`
+
+The password that will be used with the `docker login` command.
+
+**Example of `containers:<container-id>:credentials:password`**
+
+```yaml
+containers:
+  node-18:
+    credentials:
+      password: $GCP_SERVICE_ACCOUNT
+```
+
+#### `containers:<container-id>:credentials:server`
+
+Fully qualified registry server URL for the `docker login` command. This is optional if the server is already part of the image reference.
+
+**Example of `containers:<container-id>:credentials:server`**
+
+```yaml
+containers:
+  node-18:
+    credentials:
+      server: ghcr.io
+```
+
+### `containers:<container-id>:ports`
+
+This property defines an array of ports which are used to access the service. Define ports in the format of `[HostPort]:[ContainerPort]`.
+
+**Example of `containers:<container-id>:ports`**
+
+```yaml
+containers:
+  ports:
+  - 3000:3000
+  - 2000:2000
+```
+
+### `containers:<container-id>:envs`
+
+Define an array of Environment Variables for the Docker container. For each Env Var, define a key and a value.
+
+Read more: [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables).
+
+**Example of `containers:<container-id>:envs`**
+
+```yaml
+containers:
+  node-18:
+    envs:
+    - VARIABLE_KEY: variable_value
+```
+
+### `containers:<container-id>:options`
+
+Define additional Docker container resource options. These are parameters that will be passed to the `docker create` command.
+
+Read more about the possible options: [docker service create](https://docs.docker.com/reference/cli/docker/service/create/).
+
+:::important[Not supported options]
+
+`--network`, `--volume (-v)`, and `--entrypoint` are not supported.
+
+:::
+
+**Example of `containers:<container-id>:options`**
+
+```yaml
+containers:
+  node-18:
+    options: "--privileged --health-interval 1s"
+```

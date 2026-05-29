@@ -23,6 +23,202 @@ You can use the Bitrise API to list an <GlossTerm baseform="app">app's</GlossTer
 | GET /apps/\{app-slug\}/builds/\{build-slug\}/log | Get the build log of a specified build of an app. | Developer |
 | GET /builds | List all the Bitrise builds that can be accessed with the authenticated account. | N/A |
 
-<Partial_ViewingTheBuildDataOfAnApp />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
 
-<Partial_ListingTheArchivedBuildsOfAnApp />
+## Viewing the build data of an app
+
+You can access all relevant build information with the help of the API.
+
+You can get all builds of an app with the `GET /apps/{app-slug}/builds` endpoint. You can set additional parameters, such as the Workflow that was used for the build, to act as filters. Set parameters in the following format:
+
+```
+GET /apps/{app-slug}/builds?parameter_name=parameter_value&other_parameter_name=other_parameter_value
+```
+
+The full list of parameters can be found in the [API reference](/en/bitrise-ci/api/api-reference) documentation.
+
+:::note[Build retention for 200 days]
+
+On the **Builds** page of your app, we only show builds from the last 200 days. The same limit applies if you are [searching for specific builds](/en/bitrise-ci/run-and-analyze-builds/finding-a-specific-build) on the page. This limitation also applies to most API calls: the `GET/apps/{app-slug}/builds` endpoint and related endpoints can only return builds from the last 200 days.
+
+However, there are two methods to get a build that is older than 200 days:
+
+- If you know the exact build URL, you can access the build.
+- You can use the `GET/apps/{app-slug}/archived-builds` API endpoint: [Listing the archived builds of an app](/en/bitrise-ci/api/managing-an-app-s-builds#listing-the-archived-builds-of-an-app).
+
+:::
+
+**Listing builds that built the `development` branch with the primary Workflow**
+
+Request:
+
+```
+curl -X GET 'https://api.bitrise.io/v0.1/apps/$APP-SLUG/builds?branch=development&workflow=primary' -H 'accept: application/json' -H 'Authorization: $ACCESS_TOKEN'
+```
+
+Response (in this example, the response shows only a single build):
+
+```
+{
+  "data": [
+    {
+      "triggered_at": "2022-07-18T13:12:35Z",
+      "started_on_worker_at": null,
+      "environment_prepare_finished_at": null,
+      "finished_at": "2022-07-18T13:12:47Z",
+      "slug": "294e02x8-554c-44f8-84a5-59867a66df83",
+      "status": 3,
+      "status_text": "aborted",
+      "abort_reason": "User X requested to abort this build.",
+      "is_on_hold": false,
+      "is_processed": true,
+      "is_status_sent": false,
+      "branch": "development",
+      "build_number": 8,
+      "commit_hash": null,
+      "commit_message": null,
+      "tag": null,
+      "triggered_workflow": "primary",
+      "triggered_by": null,
+      "machine_type_id": "g2.4core",
+      "stack_identifier": "osx-xcode-13.3.x",
+      "original_build_params": {
+        "branch": "development"
+      },
+      "pipeline_workflow_id": null,
+      "pull_request_id": 0,
+      "pull_request_target_branch": null,
+      "pull_request_view_url": null,
+      "commit_view_url": null,
+      "credit_cost": null
+    }
+  ],
+  "paging": {
+    "total_item_count": 1,
+    "page_item_limit": 50
+  }
+}
+```
+
+To get the same data for a specific build, call `GET /apps/{app-slug}/builds/{build-slug}`. You can also view the `bitrise.yml` file of the build by adding `/bitrise.yml` to the end of the URL.
+
+**Listing failed builds using the status integer**
+
+You can use the status integer to filter your builds based on build statuses. The status integers are:
+
+- 0 - Not finished (these are builds that are either starting, running, or on hold)
+- 1 - Successful
+- 2 - Failed
+- 3 - Aborted with failure
+- 4 - Aborted with success
+
+Request:
+
+```
+curl -X GET 'https://api.bitrise.io/v0.1/apps/$APP-SLUG/builds?branch=development&status=2' -H 'accept: application/json' -H 'Authorization: $ACCESS_TOKEN'
+```
+
+Response (in this example there were two failed builds):
+
+```
+{
+  "data": [
+    {
+      "triggered_at": "2022-08-01T09:20:11Z",
+      "started_on_worker_at": "2022-08-01T09:20:15Z",
+      "environment_prepare_finished_at": "2022-08-01T09:20:15Z",
+      "finished_at": "2022-08-01T09:21:32Z",
+      "slug": "104d4527-f6a0-4362-b595-77349ccc1264",
+      "status": 2,
+      "status_text": "error",
+      "abort_reason": null,
+      "is_on_hold": false,
+      "is_processed": true,
+      "is_status_sent": false,
+      "branch": "main",
+      "build_number": 26,
+      "commit_hash": null,
+      "commit_message": null,
+      "tag": null,
+      "triggered_workflow": "Appetize.io",
+      "triggered_by": "manual-danicsorba",
+      "machine_type_id": "g2.4core",
+      "stack_identifier": "osx-xcode-13.2.x",
+      "original_build_params": {
+        "branch": "main",
+        "workflow_id": "Appetize.io"
+      },
+      "pipeline_workflow_id": null,
+      "pull_request_id": 0,
+      "pull_request_target_branch": null,
+      "pull_request_view_url": null,
+      "commit_view_url": null,
+      "credit_cost": 4
+    },
+    {
+      "triggered_at": "2022-04-27T10:25:47Z",
+      "started_on_worker_at": "2022-04-27T10:26:24Z",
+      "environment_prepare_finished_at": "2022-04-27T10:26:24Z",
+      "finished_at": "2022-04-27T10:27:16Z",
+      "slug": "b8599c39-201d-4cc9-8ef5-f28b75b7d910",
+      "status": 2,
+      "status_text": "error",
+      "abort_reason": null,
+      "is_on_hold": false,
+      "is_processed": true,
+      "is_status_sent": false,
+      "branch": "main",
+      "build_number": 25,
+      "commit_hash": null,
+      "commit_message": null,
+      "tag": null,
+      "triggered_workflow": "Appetize.io",
+      "triggered_by": "manual-danicsorba",
+      "machine_type_id": "g2.4core",
+      "stack_identifier": "osx-xcode-13.2.x",
+      "original_build_params": {
+        "branch": "main",
+        "workflow_id": "Appetize.io"
+      },
+      "pipeline_workflow_id": null,
+      "pull_request_id": 0,
+      "pull_request_target_branch": null,
+      "pull_request_view_url": null,
+      "commit_view_url": null,
+      "credit_cost": 2
+    }
+  ],
+  "paging": {
+    "total_item_count": 2,
+    "page_item_limit": 50
+  }
+}
+```
+
+You can try any of these endpoints in the [API reference](/en/bitrise-ci/api/api-reference) documentation.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Listing the archived builds of an app
+
+By default, you can only view builds that aren't older than 200 days. This is true for most API endpoints, too. However, you can also view older, archived builds by calling the `GET /apps/{app-slug}/archived-builds` endpoint.
+
+The endpoint has two required parameters:
+
+- after
+- before
+
+Both parameters are dates represented using Unix timestamps and both are required! In other words, you have to specify the exact time period in which you want to see your archived builds.
+
+**Listing all archived builds between 2021-01-01 and 2022-01-01**
+
+```
+curl -X 'GET' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/archived-builds?after=1609459200&before=1640995200' \
+  -H 'accept: application/json' \
+  -H 'Authorization: THE_ACCESS_TOKEN'
+```

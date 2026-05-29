@@ -18,6 +18,60 @@ Failure rate is especially crucial for long builds, as the engineers will have t
 
 The main goal is to reduce the wait time throughout the development process. If you have builds which fail frequently that means that sooner rather than later you’ll have a failing build, where you’ll have to check why it failed, fix the issue, and then try it again and wait for the build to hopefully pass. As part of this you’ll likely lose time either because of context switching or because you can’t do anything useful while you’re waiting for the results of that build.
 
-<Partial_FindingFrequentlyFailingBuilds />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
 
-<Partial_DiagnosingBottlenecksCausingBuildsToFail />
+## Finding frequently failing builds
+
+When you open Bitrise Insights, you can find the **Build failure** rate chart on the **Overview** page.
+
+Here you can see your overall build failure rate trend in the whole <GlossTerm baseform="Workspace">Workspace</GlossTerm> and you can also see the top 5 most frequently failing apps' build failure rate trends.
+
+From here you can continue your investigation using either the View details button or by clicking the **Builds** page under the **EXPLORE** section in the left sidebar.
+
+After you open the **Builds** page switch to the **Failure rate** tab.
+
+![failure-rate-tab.png](/img/_paligo/uuid-605f48bd-0c0c-9003-4605-0b682c26dc57.png)
+
+On the **Builds** page, depending on which filters are applied, you can start from the Workspace level which you can see on the upper chart. Using the intelligent breakdown (the 2nd, lower chart) you can drill into the data to find which application, which workflow, which step is causing the build failure rate trend that you are checking.
+
+Let's go through an example. Here on the breakdown chart you can see that we have this application which is failing most frequently in this Workspace:
+
+![most-failing-app.png](/img/_paligo/uuid-80961ec0-a95b-8cce-6af1-263d07fcc5a4.png)
+
+Filter down to that application, and on the next level you'll find the per <GlossTerm baseform="Workflow">Workflow</GlossTerm> breakdown.
+
+The upper chart now shows what is filtered on, so in this case it's the selected app's failure rate. On the lower, breakdown chart you can see which is the Workflow which fails most frequently.
+
+Let's filter down to that Workflow:
+
+![workflow-breakdown-chart.png](/img/_paligo/uuid-211085d7-b298-e040-1432-189aa06bca6c.png)
+
+The upper chart now reflects this filtering, and the breakdown chart switched over to per <GlossTerm baseform="Step">Step</GlossTerm> failure rate. Using the breakdown chart you can find out which Step is causing the failure rate trend that we are investigating.
+
+Under the graphs you can also see the build history which is filtered based on the filters that you set at the top and also on the time range that you set in the top right corner.
+
+Hovering on the bars you can see how long specific Steps took and in which build that step failed.
+
+When you find the builds which correlate with the trend that you're checking then you can quickly jump to the relevant build's page and then continue your investigation there.
+
+![failed-build-history.png](/img/_paligo/uuid-6507d4b6-e17c-fe9a-7fcf-286e99bf5447.png)
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Diagnosing bottlenecks causing builds to fail
+
+There’s another page that is worth checking periodically in Insights: the **Bottlenecks** page:
+
+![bottlenecks-menu-option.png](/img/_paligo/uuid-3861bf61-778c-af22-dad4-28d5b52cf1f0.png)
+
+On the **Bottlenecks** page Insights shows you negative trends from the last 7 days. The relevant bottleneck is the **Failing Workflows** one, which lists Workflows which consumed the most amount of time to fail. It lists the Workflows based on the time impact of the failing builds.
+
+This is usually a good place to check as the time impact calculation here reflects both how frequently the builds of a given Workflow fail as well as how long those failing builds take. The time impact listed on this page is the total amount build time of the failing builds for that Workflow in the last 7 days. In the example above it means that the **bullseye** app’s **test** Workflow builds failed in 73.68% of the cases, and in total those failed builds consumed 1 hour and 38 minutes in the last 7 days.
+
+By listing the Workflows based on time impact instead of based on just the failure rate, the **Bottlenecks** page helps you to focus on the most impactful build failure trends. As an example, if you have a Workflow which had only a few builds and those all failed, while another Workflow had tens or hundreds of builds and it failed in 50% of the cases, if both Workflows builds are about the same length the second Workflow will be ranked higher, as overall those failed builds caused more wait time for engineers.
+
+Keeping an eye on and improving your build failure rate helps you to reduce wait time during the app development process and to increase the efficiency and productivity of your team.

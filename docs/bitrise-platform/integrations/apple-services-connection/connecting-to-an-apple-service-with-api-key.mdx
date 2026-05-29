@@ -19,8 +19,136 @@ The API key authentication is the recommended way when connecting Bitrise to App
 
 <Partial_IMPORTANTNoStepInputModificationsNeeded />
 
-<Partial_AddingAPIKeyAuthenticationDataOnBitrise />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
 
-<Partial_AssigningAPIKeyAuthenticationToYourApp />
+## Adding API key authentication data on Bitrise
 
-<Partial_APIAuthenticationForAppleEnterpriseUsers />
+You can add API key authentication data on the **Workspace settings** page. You can add multiple API keys here. You can select between different API keys for each project, using them either for Bitrise CI or Bitrise Release Management.
+
+1. On [App Store Connect](https://appstoreconnect.apple.com/login), [generate a new API key with Admin access](https://developer.apple.com/documentation/appstoreconnectapi/creating_api_keys_for_app_store_connect_api) under **Users and Access**.
+
+   You will need the name of the key, the key ID and the issuer ID on Bitrise.
+
+   :::warning[Requirements]
+
+   - The API key must be [a team API key](https://developer.apple.com/documentation/appstoreconnectapi/creating-api-keys-for-app-store-connect-api#Generate-a-Team-Key-and-Assign-It-a-Role). An individual API key won't work.
+
+     ![apple-app-store-connect.png](/img/_paligo/uuid-b104fac1-d553-69d3-ebcb-b8260e8a3595.png)
+   - The API key must be set up with the **Admin** role on the App Store. Your builds will fail otherwise.
+   - On Bitrise, you must be a workspace **Owner** or **Manager** to be able to add the API key data. For more information, check out [Workspace-level roles](/en/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces#workspace-level-roles).
+
+   :::
+1. On Bitrise, select your workspace from the dropdown menu and go to **Settings**.
+1. On the left, select **Integrations**.
+1. Select **App Store Connect**.
+1. Click **Add API key**.
+
+   :::note[Required roles]
+
+   If you can't see the button, it's because you only have a **Viewer** or **Contributor** role in the workspace. You need to be either an **Owner** or a **Manager**.
+
+   For more information, check out [Workspace-level roles](/en/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces#workspace-level-roles).
+
+   :::
+
+   ![api-key-app-store.png](/img/_paligo/uuid-1bbd8347-eb11-4439-9ece-315d004d74fe.png)
+1. Fill out all required fields:
+
+   - **Name**: Your generated API key's name.
+   - **Issuer ID**: To get your issuer ID, log in to App Store Connect and select **Users and Access**, then select the **API Keys** tab.The issuer ID appears near the top of the page. To copy the issuer ID, click **Copy** next to the ID.
+   - **Key ID**: When you successfully generate a new API key, App Store Connect shows you the key ID.
+
+   ![api-key-dialog.png](/img/_paligo/uuid-22e6048e-7f47-9480-fea3-958eb9a0348b.png)
+1. Upload the `.p8` file: either drag and drop it to the upload field, or click it and select the file from your computer.
+1. Click **Connect**.
+
+Once done, you can now assign this API key to any app that you have access to on this account. From then, the app will use that API connection to access App Store Connect.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Assigning API key authentication to your project
+
+To use API key authentication for Apple services for your <GlossTerm baseform="project">project</GlossTerm>, you must:
+
+- [Add an API key on Bitrise](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key#adding-api-key-authentication-data-on-bitrise): You can add multiple API keys to the same account.
+- Assign an API key to your project: Each project can only have one API key assigned to it.
+
+To assign the API key to the project:
+
+1. Open your project on Bitrise with a user that has the **Admin** [role on the project](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+1. On the main page of the project, click on the **Project settings** button.
+
+   ![project-settings-button.png](/img/_paligo/uuid-14defaa4-472c-2d09-84df-145dc3aef4f5.png)
+1. On the left, select **Integrations**.
+1. Select the **Stores** tab.
+1. Find the **App Store Connect** section.
+
+   ![add-api-key-apple.png](/img/_paligo/uuid-95e5fcc6-46bd-1efe-69a0-538ef9c8c8cb.png)
+1. Find the **API key authentication (recommended)** option.
+1. Click **Add API key**.
+
+   :::note[Multiple projects with the same API key]
+
+   With the **Add API key** button, you can add a new App Store Connect API key to your Bitrise account. Other projects you have access to can use this API key, too.
+
+   :::
+1. If your API key is an Apple Enterprise API key, check **This API key is used for the Apple Enterprise Program API**.
+
+   ![api-key-enterprise.png](/img/_paligo/uuid-7dc1ff71-7abf-8c37-8117-a2f7abb13861.png)
+
+The <GlossTerm baseform="Step">Step</GlossTerm> is now able to connect to the App Store Connect or the Apple Developer Portal during your build.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## API key authentication for Apple Enterprise users
+
+Apple accounts that are part of the Enterprise developer program can also use API key-based authentication.
+
+If your Enterprise account still uses Apple ID authentication, we strongly recommend switching to API key authentication because:
+
+- It's more reliable and secure.
+- It doesn't have to be re-authorized every 30 days.
+- The Apple ID authentication method will be deprecated at some point.
+
+To change your authentication method:
+
+1. [Assign API key authentication](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key#assigning-api-key-authentication-to-your-project) for your project(s) on Bitrise. Make sure to check the **This API key is used for the Apple Enterprise Program API** option for your API key during the process!
+
+   ![api-key-enterprise.png](/img/_paligo/uuid-7dc1ff71-7abf-8c37-8117-a2f7abb13861.png)
+
+   :::caution[Keep the Apple ID connection]
+
+   We strongly recommend not to remove your Apple ID connection. If there are any issues with the API key connection, you can safely roll back to Apple ID-based authentication.
+
+   :::
+1. Adjust all Step inputs that use Apple ID authentication to access Apple services. The following Steps are affected:
+
+   - **Xcode Archive & Export for iOS**: version 5.3.0 and above. The `automatic_code_signing` input should be set to `auto` or `api-key`.
+   - **Xcode Build for Testing**: version 3.1.0 and above. The `automatic_code_signing` input should be set to `auto` or `api-key`.
+   - **Manage iOS Code Signing**: version 2.1.0 and above. The `apple_service_connection` input should be set to `auto` or `api-key`.
+   - **Export iOS and tvOS Xcode archive**: version 4.6.0 and above. The `automatic_code_signing` input should be set to `auto` or `api-key`.
+
+### Multiple API keys for the same project
+
+You can only set up one API connection for each project on the Bitrise website. That means the project can handle the code signing files of only one Apple developer team: API keys only give authorization to a single developer team.
+
+![api-key-chart.png](/img/_paligo/uuid-ea47d90b-0ff0-7cd5-2f80-4013e10f7fb3.png)
+
+If your Bitrise project needs to handle the code signing of multiple developer teams, you can pass additional API keys as Step inputs. Doing so overrides the Bitrise-managed API connection. The following inputs are available to all Steps that can access Apple services:
+
+- `api_key_path`: This can be a local file path or a download URL. You can use the Bitrise project’s file storage (Project settings/Files) to store and get a download URL for the API Keys.
+- `api_key_id`: Private key ID. You can find the key ID for each API key on App Store Connect.
+- `api_key_issuer_id`. The private key issuer ID. You can find the issuer ID for each API key on App Store Connect.
+- `api_key_enterprise_account`: Use it to indicate whether the API key belongs to an account that is part of the Apple Enterprise developer program. Takes two values: `yes` and `no`.
+
+:::note[Inputs on the GUI]
+
+On the graphical UI of the Bitrise Workflow Editor, you can find these inputs under the **App Store Connect connection override** input group on the **Configuration** tab of each Step that can access Apple services.
+
+:::

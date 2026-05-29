@@ -16,8 +16,123 @@ All Bitrise builds have a build number. The first build of your app is, by defau
 
 You can also take care of your app’s versioning automatically, using Bitrise. We have two Steps to do it for you: [Setting up app versioning automatically on Bitrise](/en/bitrise-ci/run-and-analyze-builds/build-numbering-and-app-versioning#setting-up-app-versioning-automatically-on-bitrise)
 
-<Partial_ChangingTheNumberOfYourBuild />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
 
-<Partial_SettingUpAppVersioningAutomaticallyOnBitrise />
+## Adding the SSH key to the machine user
 
-<Partial_OffsettingTheBuildVersion />
+In order for Bitrise to be able to use the machine user to access your repository, you must add the same SSH key to the machine user and the app on Bitrise.
+
+:::note[Negative build numbers]
+
+The build number must be either 0 or a positive integer. Negative numbers are not accepted. You can, however, set any number you have already used.
+
+:::
+
+1. Open your project on Bitrise with a user that has the **Admin** [role on the project](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+1. On the main page of the project, click on the **Project settings** button.
+
+   ![project-settings-button.png](/img/_paligo/uuid-14defaa4-472c-2d09-84df-145dc3aef4f5.png)
+1. On the left, select **Builds**.
+1. Scroll down to **Next build number**.
+
+   ![build-numbering.png](/img/_paligo/uuid-ccdbd639-8424-98d8-f569-ddf58f73cbec.png)
+
+   This number is automatically incremented whenever you run a build but you can set it manually.
+1. To modify the number, click **Edit**.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Setting up app versioning automatically on Bitrise
+
+Track the version of your app in its Git repository by modifying the file containing the essential information about the app (for example, the `Info.plist` file for iOS apps and either the `build.gradle` file or the `AndroidManifest.xml` file for Android apps).
+
+Bitrise has two steps to do this for you. These two Steps can insert the Bitrise build number or some other specified number into their respective files:
+
+- **Change Android versionCode and versionName** for Android apps.
+- **Set Xcode Project Build Number** for iOS apps.
+
+Both Steps accept either numbers (integers and/or numeric strings) or environment variables in their relevant inputs. By default, both use the $BITRISE_BUILD_NUMBER Environment Variable as their default value for the build number.
+
+### Setting the versionCode and the versionName of an Android app
+
+For an Android app, the setting is used as an internal version number, to determine if a build of the app is more recent than another build. The `versionName` setting is a string used as the version number shown to users.
+
+For in-depth information about Android versioning, please check out [the Android developer guide on the subject](https://developer.android.com/studio/publish/versioning).
+
+:::note[Version information in the manifest file]
+
+In this guide, we’re setting the version information in the `build.gradle` file. This is the recommended method: you can also set it directly in the `AndroidManifest.xml` file but be aware that any version info set in the manifest file before the build will be overwritten by the `build.gradle` file’s settings during the build.
+
+:::
+
+To configure Android versioning:
+
+1. Add the **[Change Android versionCode and versionName](https://bitrise.io/integrations/steps/change-android-versioncode-and-versionname)** Step to your Workflow.
+1. Set the the path to your `build.gradle` file in the **Path to the build.gradle file** input.
+
+   ![change-android-version.png](/img/_paligo/uuid-fb7fb260-5679-1832-9448-228a048e2b80.png)
+1. Add a value in the **New versionCode** input.
+
+   The default value is the $BITRISE_BUILD_NUMBER Environment Variable.
+1. Add a value in the **New versionName** input.
+
+### Setting the CFBundleVersion and CFBundleShortVersionString of an iOS app
+
+For an iOS app, the value of the `CFBundleVersion` key (“Bundle version” in Xcode) is the build number of the app while the value of the `CFBundleShortVersionString` key (“Bundle versions string, short” in Xcode) is the version number of the app.
+
+For in-depth information about iOS versioning, including the functions of the `CFBundleVersion` and the `CFBundleShortVersionString` keys, please check out [this Apple technical note](https://developer.apple.com/library/archive/technotes/tn2420/_index.html); you can also look up the [summary of most important keys](https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html).
+
+:::important[Setting up iOS versioning for apps using Xcode 13+]
+
+To set up iOS versioning on Bitrise using Xcode 13+, update the following in Xcode:
+
+- Set the **Generate Info.plist File** to `No`, under **PROJECT** and **TARGETS** on the **Build Settings** tab.
+- Make sure you have all the necessary keys defined in the `Info.plist` file.
+
+:::
+
+1. Add the **Set Xcode Project Build Number** Step to your Workflow.
+1. Set the file path to the `Info.plist` file in the **Project path, scheme and Target** input.
+1. Add a value in the **Build Number** input. This sets the `CFBundleVersion` key to the specified value in the `Info.plist` file. The default value is the $BITRISE_BUILD_NUMBER Environment Value.
+1. Optionally, add a value in the **Version Number** input. This will set the `CFBundleShortVersionString` key to the specified value in the `Info.plist` file. This input is not required.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Offsetting the build version
+
+You can also offset your App’s build version numbers if you handled version tracking in a different way before for the same app: all you need to do is setting the value which should be added to the build number. The value can be either a fixed integer value or an Environment Variable.
+
+To offset your version number by your Bitrise build number every time a build is triggered, use the `$BITRISE_BUILD_NUMBER` Environment Variable:
+
+- For Android apps, find the **versionCode Offset** input of the **Change Android versionCode and versionName** Step and set `$BITRISE_BUILD_NUMBER` as its value. The value of the variable will be added to the value specified in the **versionCode** input.
+- For iOS apps, find the **Build Number Offset** input of the **Set Xcode Project Build Number** Step and set `$BITRISE_BUILD_NUMBER` as its value. The value of the variable will be added to the value specified in the **Build Number** input.
+
+**Offsetting an Android app's version**
+
+Let’s say you have an app and you are about to run its fifth build on Bitrise. You wish to offset the Build Number by 6 as the app had six builds before starting to use Bitrise. The following configuration is used:
+
+```
+- Version Code: $BITRISE_BUILD_NUMBER
+- Version Code Offset: 6
+- Version Name: 1.0.5
+```
+
+The value of $BITRISE_BUILD_NUMBER (which equals 5 in our example) will be added to the Version Code Offset value. As such, android:versionName value will be set to 1.0.5 (11), indicating it’s the 11th build of the 1.0.5 version of your app.
+
+**Offsetting an iOS app's version**
+
+Let’s say you have an app and you are about to run its fifth build on Bitrise. You wish to offset the Build Number by 6 as the app had six builds before starting to use Bitrise. The following configuration is used:
+
+```
+- Build Number: $BITRISE_BUILD_NUMBER
+- Build Number Offset: 6
+- Version Number: 1.1
+```
+
+The value of $BITRISE_BUILD_NUMBER (which equals 5 in our example) will be added to the Build Number Offset value. As such, CFBundleShortVersionString will be set to 1.1 (11), indicating it’s the 11th build of the 1.1 version of your app.

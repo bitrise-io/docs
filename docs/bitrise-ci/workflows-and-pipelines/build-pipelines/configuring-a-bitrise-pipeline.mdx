@@ -255,9 +255,79 @@ pipelines:
 
 In this example, the Pipeline stops running if Workflow B fails: Workflow A will be aborted and no subsequent Workflows will run.
 
-<Partial_PipelinePriority />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
 
-<Partial_UsingThePullPipelineIntermediateFilesStep />
+## Pipeline priority
+
+You can set a priority for each Pipeline. The priority setting determines the position of the Pipeline build in the build queue: the higher the priority, the sooner the Pipeline build will run.
+
+You can assign a priority either in the Workflow Editor or in the configuration YAML file of your project. The priority is always an integer between -100 and 100: the higher the number, the higher the priority. The default priority is 0.
+
+For more information about build priority, and the order of precedence between different types of priorities, check out [Build priority](/en/bitrise-ci/configure-builds/configuring-build-settings/build-priority).
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Sharing files between Workflows in a Pipeline
+
+To share files between Workflows in a Pipeline, you can use the **Deploy to Bitrise.io** Step and the **Pull Pipeline intermediate files** Step. The Step downloads Pipeline intermediate files to a local folder.
+
+To configure file sharing:
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Add the **Deploy to Bitrise.io** Step to the Workflow that generates the file(s) you need.
+1. In the **Pipeline Intermediate File Sharing** input group, find the **Files to share between Pipeline Workflows** input and add the files as a newline-separated list of colon-separated items using the following structure: `<file_or_directory_path>:<environment_variable_key>`.
+
+   You can use another Environment Variable as a filepath: for an iOS project, `$BITRISE_IPA_PATH:BITRISE_IPA_PATH` is a valid way to share a generated IPA with other Workflows.
+1. Add the **[Pull Pipeline intermediate files](https://www.bitrise.io/integrations/steps/pull-intermediate-files)** Step to any Workflow that needs the generated files.
+1. Use the **Intermediate file source** input to specify a set of Workflows from which you need files.
+
+   ![pipeline-intermediate.png](/img/_paligo/uuid-5d9fd00b-0507-1ae7-80a2-b42a4377343e.png)
+
+   You can use wildcards in the input. In the example above, we’re pulling all intermediate files from all Workflows which have a name starting with `workflow`.
+1. When the Step finishes, your files and directories specified via the **[Deploy to Bitrise.io - Apps, Logs, Artifacts](https://www.bitrise.io/integrations/steps/deploy-to-bitrise-io)** Step should be available.
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. Add the **Deploy to Bitrise.io** Step to the Workflow that generates the file(s) you need.
+1. Add the files to the `pipeline_intermediate_files` input as a newline-separated list of colon-separated items using the following structure: `<file_or_directory_path>:<environment_variable_key>`.
+
+   You can use another Environment Variable as a filepath: for an iOS project, `$BITRISE_IPA_PATH:BITRISE_IPA_PATH` is a valid way to share a generated IPA with other Workflows.
+
+   ```
+   steps:
+     - deploy-to-bitrise-io: {
+         inputs:        
+         - pipeline_intermediate_files: "$BITRISE_IPA_PATH:BITRISE_IPA_PATH"
+   ```
+1. Add the **[Pull Pipeline intermediate files](https://www.bitrise.io/integrations/steps/pull-intermediate-files)** Step to any Workflow that needs the generated files:
+
+   ```
+   steps:
+     - pull-intermediate-files: {}
+   ```
+1. Use the `artifact_sources` input to specify a set of Workflows from which you need files:
+
+   ```
+   steps:
+     - pull-intermediate-files@1:
+         inputs:
+           - artifact_sources: workflow.*
+   ```
+
+   You can use wildcards in the input. In the example above, we’re pulling all intermediate files from all Workflows which have a name starting with `workflow`.
+1. When the Step finishes, your files and directories specified via the **[Deploy to Bitrise.io - Apps, Logs, Artifacts](https://www.bitrise.io/integrations/steps/deploy-to-bitrise-io)** Step should be available.
+
+</TabItem>
+</Tabs>
+
+For more information and details, check out the [Step repository](https://www.bitrise.io/integrations/steps/pull-intermediate-files).
 
 ## Sharing Env Vars between Workflows
 
@@ -285,7 +355,83 @@ To do so:
 
    :::
 
-<Partial_ParallelismInPipelines />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Running variations of the same Workflow
+
+Parallelism allows you to split the execution of a single Workflow in a Pipeline over many runners in a single instruction. This is particularly useful for test sharding: you can reuse a single testing Workflow several times over, without needing to specify boilerplate code for each shard. At runtime, Bitrise automatically creates a set of parallel Workflows and provides you with the shard number and total number of shards as environment variables.
+
+You can also use a parallel configuration to build and test multiple white label apps from the same codebase, or to achieve any other goal that requires running the same CI jobs multiple times.
+
+### Parallelism overview
+
+:::important[Graph pipelines only]
+
+Parallelism isn't available for Pipelines containing stages. To take advantage of the feature, convert your stage-based Pipelines into graph Pipelines: [Converting a Pipeline with stages into a graph Pipeline](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/converting-a-pipeline-with-stages-into-a-graph-pipeline).
+
+:::
+
+You can create a parallel configuration for a Workflow by using the `parallel` property. A Pipeline can have multiple Workflows with a parallel configuration. These Workflows can depend on other Workflows. If a Workflow depends on a Workflow with a parallel configuration, it will depend on the execution of all copies of the Workflow.
+
+The `parallel` property takes an integer for a value: for example, if the value is 5, five copies of the Workflow will be executed. Each copy receives two new environment variables:
+
+- $BITRISE_IO_PARALLEL_INDEX: a zero based index for each copy of the Workflow.
+- $BITRISE_IO_PARALLEL_TOTAL: the total number of copies.
+
+### Configuring parallelism
+
+To set up the configuration:
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Open the Workflow Editor.
+1. In the Pipeline graph, find your Workflow and click the gear icon to access the Workflow configuration.
+1. On the **Configuration** tab, find the **Parallel copies** input and set a value.
+
+   :::important[Value limitations]
+
+   The value has to be a fixed number. You can only use integers. The maximum accepted value is 200.
+
+   You can use an Environment Variable as the value: it allows you to dynamically calculate the optimal number of parallel copies during the build.
+
+   :::
+
+   If another Workflow depends on the Workflow with a parallel configuration, it will run only if all copies of the Workflow have been successful.
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. Open your [configuration YAML](/en/bitrise-ci/configure-builds/configuration-yaml/accessing-a-build-s-bitrise-yml-file) file.
+1. In the `workflows` property of your Pipeline, find the Workflow you need.
+1. Add the `parallel` property to it and set a value.
+
+   :::important[Value limitations]
+
+   The value has to be a fixed number. You can only use integers. The maximum accepted value is 50. You can use an Environment Variable as the value.
+
+   You can use an Environment Variable as the value: it allows you to dynamically calculate the optimal number of parallel copies during the build.
+
+   :::
+
+   In this example, the `run-tests` Workflow is executed five times in parallel. The `report-results` Workflow depends on `run-tests` so it only runs once all 5 copies have been successful.
+
+   ```
+   pipelines:
+     my-ci-pipeline:
+       workflows:
+         build-without-testing: {}
+         run-tests:
+           depends_on: [build-without-testing]
+           parallel: 5
+         report-results:
+           depends_on: [run-tests]
+   ```
+
+</TabItem>
+</Tabs>
 
 ## Supported use cases for Pipelines
 

@@ -22,4 +22,201 @@ You might be limited by your overall build time. Also note that a single build c
 
 :::
 
-<Partial_RunningDeviceTestsForIOSApps />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Running device tests with Firebase for iOS apps
+
+To run device tests for iOS apps with the Firebase Test Lab solution, you will need to add two Steps to your Workflow:
+
+- **Xcode Build for testing for iOS**.
+- **iOS Device Testing**.
+
+:::note[Multiplatform apps]
+
+The Step can run device tests for iOS apps built with other frameworks, such as Flutter or React Native. You just need to make sure the **Xcode Build for testing for iOS** Step can access your app's `.xcodeproj` or `.xcworkspace` file.
+
+:::
+
+The **[Xcode Build for testing for iOS](https://www.bitrise.io/integrations/steps/xcode-build-for-test)** Step performs the `xcodebuild` command’s `build-for-testing` action: it builds the tests defined in your iOS app’s [Xcode scheme](https://developer.apple.com/library/archive/featuredarticles/XcodeConcepts/Concept-Schemes.html). The Step exports a .zip file that contains your test directory (by default, it’s `Debug-iphoneos`) and the `xctestrun` file.
+
+To use this Step, you will need [code signing](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects) files for the test app. You can choose between using automatic provisioning and manual provisioning.
+
+The **[iOS Device Testing](https://github.com/bitrise-steplib/steps-virtual-device-testing-for-ios)** Step takes the path to this .zip file - exported as an Environment Variable - as input to run your tests and export the test results to Bitrise.
+
+:::important[Automatic vs manual code signing asset management]
+
+The **Xcode Build for testing for iOS** Step can manage your code signing assets without you having to manually manage your provisioning profiles. This only requires you to select the relevant inputs in the Step (see below) and upload the right certificates to the **Code Signing** tab. This is the [automatic code signing asset management](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning) method.
+
+If you decide to choose the [manual code signing asset management](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---manual-provisioning), then add the **Certificate and Profile Installer** Step before the **Xcode Build for testing for iOS** Step. The former will take care of the code signing asset management while the latter builds your project. Make sure the **Automatic code signing method** input of the **Xcode Build for testing for iOS** Step is set to `off`.
+
+The instructions below detail the steps of setting up automatic code signing asset management on Bitrise with the **Xcode Build for testing for iOS** Step.
+
+:::
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Add the **Xcode Build for testing for iOS** Step to your Workflow.
+
+   :::tip[Build for testing]
+
+   This guide only mentions the most important inputs for setting up an app for device testing. For more information about the Step, see [Xcode Build for testing for iOS](https://bitrise.io/integrations/steps/xcode-build-for-test).
+
+   :::
+1. In the **Scheme name** input, set the Xcode Scheme you want to use. By default, the value of the input is the `$BITRISE_SCHEME` [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables) which is stored when your app is created.
+1. In the **Build Configuration** input, add the name of the [Xcode build configuration](https://developer.apple.com/documentation/xcode/configuring-the-build-settings-of-a-target) you want to use.
+
+   If no configuration is specified, the Xcode project's default build configuration will be used.
+1. Set a destination option for `xcodebuild` in the **Device destination specifier** input of the Step.
+
+   The default value is `generic/platform=ios`: this means the tests can be run on any iOS device.
+1. Set the **Automatic code signing method**input to the Apple service connection you want to use for code signing. The available options are:
+
+   - `off` if you don’t do automatic code signing.
+   - `api-key` if you use [API key authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+   - `apple-id`if you use [Apple ID authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+1. Add the **iOS Device Testing** Step to the Workflow.The Step has to come after the **Xcode Build for testing for iOS** Step.
+
+   :::important[API setting inputs]
+
+   The inputs related to the Test API (**Test API's base URL** and **API token** cannot be changed on the graphical UI. You should not attempt to modify their values.
+
+   :::
+1. In the **Test devices** input field, specify the devices on which you want to test the app.
+
+   Find the list of the available devices [here](https://firebase.google.com/docs/test-lab/ios/available-testing-devices). You can add multiple devices to the input, in the following format: `deviceID,version,language,orientation`
+1. Make sure you have the **Deploy to Bitrise.io** Step in your Workflow, with version 1.4.1 or newer. With the older versions of the Step, you won’t be able to check your results in the **Tests** tab!
+1. [Start a build](/en/bitrise-ci/run-and-analyze-builds/starting-builds/approving-pull-request-builds).
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. Add the `xcode-build-for-test` Step to your Workflow.
+
+   :::tip[Build for testing]
+
+   This guide only mentions the most important inputs for setting up an app for device testing. For more information about the Step, see [Xcode Build for testing for iOS](https://bitrise.io/integrations/steps/xcode-build-for-test).
+
+   :::
+
+   ```
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+   ```
+1. In the `scheme` input, set the Xcode Scheme you want to use. By default, the value of the input is the `$BITRISE_SCHEME` Environment Variable which is stored when your app is created.
+
+   ```
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+           - scheme: $BITRISE_SCHEME
+   ```
+1. In the `configuration` input, add the name of the [Xcode build configuration](https://developer.apple.com/documentation/xcode/configuring-the-build-settings-of-a-target) you want to use.
+
+   If no configuration is specified, the Xcode project's default build configuration will be used.
+
+   ```
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+           - scheme: $BITRISE_SCHEME
+           - configuration: Debug
+   ```
+1. Set a destination option for `xcodebuild` in the `destination` input of the Step.
+
+   The default value is `generic/platform=ios`: this means the tests can be run on any iOS device.
+
+   ```
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+           - scheme: $BITRISE_SCHEME
+           - configuration: Debug
+           - destination: generic/platform=iOS
+   ```
+1. Set the `automatic_code_signing` input to the Apple service connection you want to use for code signing. The available options are:
+
+   - `off` if you don’t do automatic code signing.
+   - `api-key` if you use [API key authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+   - `apple-id` if you use [Apple ID authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+
+   ```
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+           - scheme: $BITRISE_SCHEME
+           - configuration: Debug
+           - destination: generic/platform=iOS
+           - automatic_code_signing: api-key
+   ```
+1. Add the `virtual-device-testing-for-ios` Step to the Workflow. The Step has to come after the `xcode-build-for-test` Step.
+
+   ```
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+           - scheme: $BITRISE_SCHEME
+           - configuration: Debug
+           - destination: generic/platform=iOS
+           - automatic_code_signing: api-key
+       - virtual-device-testing-for-ios:
+           inputs:
+   ```
+1. In the `test_devices` input field, specify the devices on which you want to test the app.
+
+   Find the list of the available devices [here](https://firebase.google.com/docs/test-lab/ios/available-testing-devices). You can add multiple devices to the input, in the following format: `deviceID,version,language,orientation`
+
+   ```
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+           - scheme: $BITRISE_SCHEME
+           - configuration: Debug
+           - destination: generic/platform=iOS
+           - automatic_code_signing: api-key
+       - virtual-device-testing-for-ios:
+           inputs:
+           - test_devices: 'iphone8,14.7,en,portrait
+   ```
+1. Make sure you have the `deploy-to-bitrise-io` Step in your Workflow, with version 1.4.1 or newer. With the older versions of the Step, you won’t be able to check your results in the **Tests** tab!
+
+   ```
+   fmy-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+           - scheme: $BITRISE_SCHEME
+           - configuration: Debug
+           - destination: generic/platform=iOS
+           - test_plan: test
+           - automatic_code_signing: api-key
+           - project_path: $BITRISE_PROJECT_PATH
+       - virtual-device-testing-for-ios:
+           inputs:
+           - test_devices: 'iphone8,14.7,en,portrait'
+       - deploy-to-bitrise-io: {}
+   ```
+1. [Start a build](/en/bitrise-ci/run-and-analyze-builds/starting-builds/approving-pull-request-builds).
+
+</TabItem>
+</Tabs>
+
+If all goes well, you should be able to view your results among the [build artifacts](/en/bitrise-ci/run-and-analyze-builds/managing-build-files/build-artifacts-online) or in the Tests tab.

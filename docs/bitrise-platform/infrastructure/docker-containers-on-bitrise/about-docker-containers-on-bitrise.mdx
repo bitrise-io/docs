@@ -31,8 +31,45 @@ This is a Linux-only feature. macOS-based environments are not supported.
 
 :::
 
-<Partial_ContainerNestingRules />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
 
-<Partial_DockerAuthenticationCredentials />
+## Container nesting rules
 
-<Partial_ContainerResourceOptions />
+Steps and Step bundles both support their own container configuration. This creates a natural hierarchy: a step can define containers that differ from its parent bundle, and bundles can be nested within other bundles — each level can override or extend what came before.
+
+Two rules govern how configurations at different levels combine:
+
+- Execution containers follow closest-wins inheritance. Each Step uses the execution container defined nearest to it in the hierarchy—its own definition takes priority, then its parent bundle's, then its grandparent's. Only one execution container is active per Step.
+- Service containers accumulate additively. A Step inherits service containers from every level of its ancestry, not just the nearest one. The deeper the nesting, the more service containers a Step may have.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Docker authentication credentials
+
+We recommend logging in with your Docker credentials when using containers. To do so, you need to provide Docker credentials when setting up containers:
+
+- Registry server: It should be a fully qualified registry server URL. This is optional if the server is already part of the image reference.
+- Username.
+- Password.
+
+These credentials must be stored as [Secrets](/en/bitrise-ci/configure-builds/secrets). They are used when running the `docker login` command during container setup.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Container resource options
+
+The `docker container create` (or shorthand: `docker create`) command creates a new container from the specified image, without starting it. In your container configuration on Bitrise, you can specify additional options for the command. It shares most of its options with the `docker run` command.
+
+Bitrise supports most options for container creation. The only exceptions are:
+
+- `--network`
+- `--volume (-v)`
+- `--entrypoint`
+
+For all available options, check out [docker container create](https://docs.docker.com/reference/cli/docker/container/create/).

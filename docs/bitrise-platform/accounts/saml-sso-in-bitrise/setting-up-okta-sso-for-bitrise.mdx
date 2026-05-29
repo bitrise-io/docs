@@ -29,12 +29,219 @@ Before connecting SAML SSO to your Workspace:
 1. [Configure Bitrise as a SAML app](#configuring-bitrise-as-a-saml-app-for-okta).
 1. [Set up SCIM previsioning in Okta](/en/bitrise-platform/accounts/saml-sso-in-bitrise/setting-up-okta-sso-for-bitrise#setting-up-scim-provisioning-in-okta).
 
-<Partial_AddingBitriseToOkta />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
 
-<Partial_ConfiguringBitriseAsASAMLAppForOkta />
+## Adding Bitrise to Okta
 
-<Partial_SettingUpSCIMProvisioningInOkta />
+Bitrise is not an integrated app in Okta. You have to add Bitrise manually to Okta first, then you can configure SAML SSO on it.
 
-<Partial_PushingOktaGroupsToBitriseUsingSCIM />
+We will be jumping back and forth from the Bitrise Workspace account to Okta so make sure both pages are available. In practice this means the Workspace owner should be logged into Bitrise and the Okta admin should be logged into Okta.
 
-<Partial_SynchronizingGroupsAndUsersBetweenOktaAndBitrise />
+1. Log into Okta and click **Admin**.
+
+   ![okta_2.png](/img/_paligo/uuid-1640f128-3b4d-356a-f7d0-5d40e60fa6b3.png)
+1. From the left menu, select **Applications** under the **Applications** section.
+1. Click on the **Create App Integration** button.
+
+   ![app_integration_okta.png](/img/_paligo/uuid-aa579855-a0d6-a545-6a4f-24f543dd36ab.png)
+
+   This opens the **Create a new app integration** window.
+1. Select **SAML 2.0** option as the **Sign-in method** and click **Next**.
+
+   ![create_new_app_integration.png](/img/_paligo/uuid-a52e93de-ff50-544e-c914-5aa20dbdeadd.png)
+1. At the **General Settings** step, type Bitrise into the **App name** field. (Optionally, you can add an app logo if you wish.) Click **Next**.
+
+   ![general_settings_okta.png](/img/_paligo/uuid-e0ec0de8-1ae0-a3e9-ea57-fb0fa50b58df.png)
+1. Head over to your Bitrise Workspace and click the **Single Sign On** tab on the left menu.
+1. Click the **Copy** button to copy the **Assertion Consumer Service URL (ACS URL)**.
+1. Head back to Okta’s **Configure SAML** page and paste the copied URL from Step 7. to the **Single sign-on URL** input field.
+1. Type Bitrise at the **Audience URI (SP Entity ID)**.
+
+   You can download the Okta certificate file now, and paste its content or upload the file itself in the **SAML SSO provider certificate** field on your Bitrise Workspace’s **Single Sign-On** page. Even easier if you leave it for later as you will need to fill out the **Assertion Consumer Service URL (ACS URL)** on Bitrise anyway. You will fetch this while configuring Bitrise as a SAML app on Okta. Do not hit **Configure SSO** on the **Single Sing-On** page of Bitrise just yet.
+1. Set the **Name ID format** to **EmailAddress**.
+
+   ![saml_sso_config.png](/img/_paligo/uuid-26903c72-7c1d-66a1-37d7-15be1fbd6379.png)
+1. Click **Next**.
+1. Fill out the **Feedback** section. Hit **Finish**.
+1. In **Applications**, go to the **Sign-on** tab, and click **Edit** next to **Settings**.
+1. Scroll down to the **Credential Details** section, and make sure that **Application username format** is set to **Email**.
+
+   ![credential_details_2.png](/img/_paligo/uuid-23aa2f50-cde3-e87d-c8bd-0c2b1d512540.png)
+1. Click **Save**.
+
+Congrats! Bitrise has been successfully added to Okta as an app.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Configuring Bitrise as a SAML app for Okta
+
+1. Click the **Assignments** tab of your Bitrise app.
+
+   Here you can assign Bitrise to individuals/groups. Make sure you assign Bitrise to all Workspace members who will access the Bitrise Workspace through SAML.
+
+   ![assignments_okta.png](/img/_paligo/uuid-1c93dfa7-c82d-5694-1717-62b9239fe667.png)
+1. Click the **Sign-On** tab of your Bitrise app. You will see that SAML setup is not completed yet. Scroll down, and click **View SAML setup instructions**.
+
+   ![saml_sso_config_samlsso2.png](/img/_paligo/uuid-22736f46-339f-3986-05c1-cbbcf7eb57f6.png)
+
+   The **How to Configure SAML 2.0 for Bitrise application** page is displayed. It summarizes all the information you need to set up the SAML connection between Bitrise and Okta.
+
+   ![configure-bitrise-okta-1.jpg](/img/_paligo/uuid-a01cfa75-834c-9ffe-57bc-0a097a6df676.png)
+1. Copy the **Identity Provider Single Sign-On URL** and paste it in your Bitrise Workspace’s **SSO URL** field.
+
+   If you haven’t pasted the Certificate’s content or uploaded the file itself into the **SAML SSO provider certificate** field of your Bitrise Workspace yet, you can do so now.
+
+   ![saml_sso_url.png](/img/_paligo/uuid-bce20b25-c8cc-fed6-c43c-627647f4c5a4.png)
+1. Click **Configure SSO** on your Bitrise Workspace.
+
+That's it! From now on, whenever you access the **Single Sign-on** page, you can configure the SAML SSO settings.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Setting up SCIM provisioning in Okta
+
+You can set up SCIM provisioning for Bitrise using Okta.
+
+:::important[Managing Workspace groups]
+
+While SCIM is a great way to manage the access of your users for Bitrise Workspaces, you will have to do some initial configuration for your groups in Bitrise after finishing setting up the SCIM provisioning. For more information about configuring your groups, check out [Adding Workspace groups to a project](/en/bitrise-platform/projects/managing-user-access-to-a-project#adding-workspace-groups-to-a-project).
+
+:::
+
+We will be jumping back and forth from the Bitrise Workspace account to Okta, so make sure both pages are available. In practice, this means the Workspace owner should be logged into Bitrise, and the Okta admin should be logged in to Okta.
+
+1. On Bitrise, [configure domain control and generate your SCIM credentials](/en/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-scim). You need to have:
+
+   - A verified domain.
+   - An SCIM base URL and an SCIM authentication token.
+
+   Make sure you save both of these because you will need them during the process later.
+1. Log into Okta and click **Admin**.
+1. From the left menu, select **Applications** under the **Applications** section.
+1. Select your Bitrise app.
+1. Click the **General** tab of your Bitrise app.
+1. Click **Edit** next to the **App Settings** section and select the **SCIM** option using the radio button next to **Provisioning**.
+
+   ![scim_setting.png](/img/_paligo/uuid-61cf9962-6cb6-6c24-74d4-132f9a1c066d.png)
+1. Click **Save**.
+
+   A new tab called **Provisioning** will appear.
+1. Head back to Okta, and select the **Provisioning** tab, then click on **Edit**.
+1. Paste the SCIM base URL you copied from Bitrise in the **SCIM connector base URL** field.
+1. Add **userName** in the **Unique identifier field for users** field.
+
+   ![scim_connection_2.png](/img/_paligo/uuid-96dabdf1-1006-5bdc-4457-92dfb91b8c70.png)
+1. Select which provisioning actions you would like to enable using the checkboxes next to **Supported provisioning actions**.
+
+   :::important[Push Groups are mandatory]
+
+   Please note that you must enable Push Groups. This is because on Bitrise, Workspace membership works via groups and Okta/SCIM can control our Workspace groups via Push Groups.
+
+   :::
+1. Select **HTTP Header** from the **Authorization Mode** dropdown menu.
+1. Copy and paste your SCIM authentication token in the **Authorization** field.
+1. Click **Test Connector Configuration** to test if everything is working correctly.
+
+   ![test_connector.png](/img/_paligo/uuid-0d2d2b23-f9a9-d57d-3b14-44f085bfcc5f.png)
+1. Close the **Test Connector Configuration** window and click **Save**.
+1. Click the **Provisioning** tab of your Bitrise app, then click on **Edit** next to the **Provisioning to App** section.
+
+   ![scim_provisioning.png](/img/_paligo/uuid-87a6ec99-9380-826b-9176-13034fefa22a.png)
+1. Select which provisioning options you would like to enable and click **Save**.
+
+   :::note[Sync password]
+
+   We recommend keeping the **Sync Password** setting disabled.
+
+   :::
+
+That's it! You can now use SCIM provisioning in Okta to manage the access of your users to Bitrise.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Pushing Okta groups to Bitrise using SCIM
+
+You can push groups from Okta to Bitrise using SCIM provisioning. Pushing a group either links an Okta group to an existing Bitrise group or creates a new group in your Bitrise Workspace.
+
+Either way, by pushing a group, you set up synchronization between an Okta group and a Bitrise group.
+
+1. Log into Okta and click **Admin**.
+1. From the left menu, select **Applications** under the **Applications** section.
+1. Select your Bitrise app.
+1. Click the **Push Groups** tab.
+1. Click on **Push Groups** and choose a filtering method.
+
+   ![push_groups.png](/img/_paligo/uuid-da9ac0ed-a8fe-0d52-3e66-a8195414d1fa.png)
+1. Find the group(s) you want to push.
+1. You must either create a new group, which will create a brand new group in your Bitrise Workspace or link the Okta group to an existing Bitrise group.
+
+   You can choose between these methods using the dropdown menu under the **Match result & push action**.
+
+   :::caution[Linking a group]
+
+   If you decide to link an Okta group to an existing Bitrise group, keep the following in mind:
+
+   - If the Okta and Bitrise group names are different, the Bitrise group will be automatically renamed to match the name of the Okta group.
+   - When you manually push a group connected to an existing Bitrise group, if the group had members who were only added on Bitrise and not included in the Okta group, then they will be removed as Okta becomes the single source of truth.
+
+   :::
+
+   ![linkGroup.png](/img/_paligo/uuid-e94688f6-c068-8c29-201a-bba3c7373dca.png)
+1. Click **Save**.
+
+   When the **Push Status** changes to **Active**, the synchronization between Okta and Bitrise is ready. Your group should be updated in a couple of seconds on your Bitrise Workspace as well.
+
+   ![push_status_active.png](/img/_paligo/uuid-28f245c4-7eb3-89b2-1e4d-18d922bbc0a5.png)
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Synchronizing groups and users between Okta and Bitrise
+
+After [pushing Okta groups to Bitrise](/en/bitrise-platform/accounts/saml-sso-in-bitrise/setting-up-okta-sso-for-bitrise#pushing-okta-groups-to-bitrise-using-scim), you can synchronize your groups and users between Okta and Bitrise. To do so, you must manage the app integration assignments in Okta:
+
+1. Log into Okta and click **Admin**.
+1. From the left menu, select **Applications** under the **Applications** section.
+1. Select your Bitrise app.
+1. Make sure that **Create Users** and **Deactivate Users** options are enabled on the **Provisioning** tab.
+
+   ![provisioning_settings.png](/img/_paligo/uuid-d8a157ed-518f-ad9c-67bb-e66a50263ab7.png)
+
+   :::note[Deprovisioning users]
+
+   If you deprovision a user with SCIM, the user will be automatically logged off Bitrise and their PATs will be disabled.
+
+   :::
+1. Go to the **Assignments** tab.
+1. Click **Assign** and choose **Assign to People** to synchronize individual users or **Assign to Groups** to synchronize groups.
+
+   ![assign_people.png](/img/_paligo/uuid-d6dbb0ec-3447-10ab-ba08-1bf5731153be.png)
+1. Select the users or groups that you would like to synchronize, then click **Done**.
+
+   :::important[Domain verification]
+
+   New users without verified domains will receive an email invitation to join the Workspace.
+
+   Existing users will also receive a verification email unless you verify your company domain: [Configuring SCIM](/en/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-scim).
+
+   :::
+1. After synchronizing your groups and users, you can check the **Push Groups** tab to see if the synchronization is finished.
+
+   You can also manually push your updates by clicking on the dropdown menu in the **Push Status** column and selecting **Push now**.
+
+   ![push_now.png](/img/_paligo/uuid-71166a22-3341-0ee5-6599-6b190f83e717.png)
+
+   :::caution["Push now" overrides the Bitrise group]
+
+   Users not included in your Okta group will be automatically removed from the linked Bitrise group.
+
+   :::

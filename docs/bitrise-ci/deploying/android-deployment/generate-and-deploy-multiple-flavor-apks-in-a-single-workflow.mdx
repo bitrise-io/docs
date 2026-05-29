@@ -14,6 +14,41 @@ import Partial_GeneratingMultiFlavorAPKs from '@site/src/partials/generating-mul
 
 You can generate, code sign and deploy multiple flavor (multi-flavor) APKs/AABs in one <GlossTerm baseform="Workflow">Workflow</GlossTerm> using our **Gradle Runner** <GlossTerm baseform="Step">Step</GlossTerm>. Flavor means enhancing an app’s core code with features resulting in different versions of the same <GlossTerm baseform="App">app</GlossTerm> (just to mention the most common examples: free/paid, demo/full). Check out the official Android Studio guide on [build types, flavors and build variants](https://developer.android.com/studio/build/build-variants) for more info! In this tutorial, you will need to do some settings to **Android Sign** and **Google Play Deploy** Steps - so keep your eyes peeled!
 
-<Partial_GeneratingMultiFlavorAPKs />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
 
-<Partial_SigningAndDeployingMultiFlavorAPKs />
+## Generating multi-flavor APKs
+
+To generate APK files for several different flavors:
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+1. Insert **Gradle Runner** Step after the Android testing Steps. **Android Build** Step can only build one variant so if this Step is part of your Workflow, then we advise you to replace it with our **Gradle Runner** Step.
+1. Click the **Config** section of the Step.
+1. Specify **assemble** Gradle tasks by adding your build variants’ task names in the **Gradle task to run** Step input field - as many task names as many build variants you want to build in one workflow. Each task name must be exactly the same build variant name what you have listed in the **Build Variant** window of Android Studio! Make sure you separate them only with a space, no need for a comma ! In this image, you can see the order of the Steps for the deploy workflow and the **Gradle Task to run** Step input with two build variants:
+
+   `assembleDemo` and `assembleFull` (for APKs) or `bundleDemo` and `bundleFull` (for AABs)
+
+   ![Generate_and_deploy_multiple_flavor_APKs_in_a_single_workflow.jpg](/img/_paligo/uuid-b702773a-d24b-62a5-fa83-208936e116a3.png)
+1. **Gradle Runner** generates a `$BITRISE_APK_PATH_LIST` / `$BITRISE_AAB_PATH_LIST` Environment Variable output that contains APKs/AABs built for ALL build variants defined above. We will need this output Environment Variable later.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Signing and deploying multi-flavor APKs
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+1. Add one **Android Sign** <GlossTerm baseform="Step">Step</GlossTerm> AFTER the **Gradle Runner** Step if it’s missing from your <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
+1. Set the **App file path** input to `$BITRISE_APK_PATH_LIST` or `$BITRISE_AAB_PATH_LIST` depending on which <GlossTerm baseform="App">app</GlossTerm> format you built in the previous **Gradle Runner** Step.
+
+   This will make sure all APKs or AABs get code signed with the keystore file you uploaded to the **Code Signing** tab. The Step will export either the `$BITRISE_SIGNED_APK_PATH_LIST` or the `$BITRISE_SIGNED_AAB_PATH_LIST` Environment Variable output which contains the path of the signed app files for each build variant.
+1. Make sure you set the following input fields in the **Android Sign** Step:
+
+   - **Keystore url**
+   - **Keystore password**
+   - **Keystore alias**
+1. Add the **Google Play Deploy** Step AFTER the **Android Sign** Step.
+1. Set the `$BITRISE_SIGNED_APK_PATH` or the `$BITRISE_SIGNED_AAB_PATH` Environment Variable in the **APK or App Bundle file path** Step input field so that the **Google Play Deploy** Step can release all your build variants to the app store.

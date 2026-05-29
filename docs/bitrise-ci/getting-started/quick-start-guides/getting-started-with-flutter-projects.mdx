@@ -15,10 +15,282 @@ import Partial_DeployingAFlutterApp from '@site/src/partials/deploying-a-flutter
 
 Flutter is a mobile app SDK that allows developers to create native apps for both iOS and Android. [Bitrise](https://app.bitrise.io/users/sign_in) supports Flutter apps: we have dedicated <GlossTerm baseform="Step">Steps</GlossTerm> to help you with all your Flutter needs. This guide walks you through setting up, testing, building and deploying a simple Flutter <GlossTerm baseform="Project">project</GlossTerm> on Bitrise.
 
-<Partial_AddingAFlutterAppToBitrise />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
 
-<Partial_TestingAFlutterApp />
+## Adding a Flutter project to Bitrise
 
-<Partial_DeployingAFlutterApp />
+1. Log in to Bitrise and go to the **Dashboard**.
+1. Click the **New project** button.
+1. Select **Configure Bitrise CI**.
+1. Under **Project access**, select the workspace that will own the project.
 
-<Partial_AdditionalFlutterContent />
+   ![20251219-adding-project-workspace-select.png](/img/_paligo/uuid-d1d45e63-f66b-fd5d-f4af-4d893ff388fb.png)
+1. Set who has access to the project's CI builds:
+
+   :::caution[Privacy is final]
+
+   You cannot change this setting later! If you realize you've accidentally added your project as a public project even though you need it to be private, you'll have to delete the project and add it again.
+
+   :::
+
+   Private projects are only accessible to you, your workspace members and those who are invited to work on a project. They require authentication to access the repository of the project.
+
+   [Public projects](/en/bitrise-platform/projects/public-projects) expose their configuration YAML and their build logs to everyone. If you have a public project’s build URL, you can view its build log, to help with troubleshooting, for example. Public projects do not require authentication and they cannot have SSH keys.
+1. Open the **Provider** dropdown menu and select the [repository access](/en/bitrise-platform/repository-access/about-repository-access) type.
+
+   You can select from:
+
+   - Connected Git provider accounts: Either via [OAuth connection](/en/bitrise-platform/repository-access/repository-access-with-oauth) or the [GitHub app integration](/en/bitrise-platform/repository-access/github-app-integration).
+   - Not connected Git provider accounts: you will be prompted to connect one.
+   - **Other**: A Git provider other than GitHub/GitLab/Bitbucket.
+
+   ![20251219-repo-access.png](/img/_paligo/uuid-2970ac6b-3d97-8318-0863-aff6e1f106da.png)
+1. Select a repository.
+
+   - If you selected a connected Git account, you can click **Select a repository** to select from the available repositories on that account.
+   - In any case, you can type the URL manually in the **Git repository (clone) URL**. We strongly recommend using an SSH URL, unless you are setting up a [public project](/en/bitrise-platform/projects/public-projects).
+
+   :::note[Repository URL]
+
+   You will be able to [change your project's repository URL](/en/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch) later. You can also connect or disconnect your account to Git provider services at any time.
+
+   :::
+1. If you use an OAuth connection, you need to [add an SSH key](/en/bitrise-platform/repository-access/configuring-ssh-keys) in the **Authorize Bitrise** section.
+
+   You don't need SSH keys if:
+
+   - Your project is a public project.
+   - You connect to your Git repository via a [GitHub app installation](/en/bitrise-platform/repository-access/github-app-integration).
+
+   ![20251219-authorize-bitrise.png](/img/_paligo/uuid-cd752575-c17c-0ccd-25b3-a2c97daadd57.png)
+
+   **Auto-add a generated SSH key to your repository**: We recommend using this option. We automatically generate an SSH key pair and register the public key to your repository. Requires your connected Git provider account to have admin rights to the repository.
+
+   **Copy a generated SSH key to your Git provider manually**: We generate an SSH key pair for you and you can copy the public key and register it manually to your Git provider. It is useful if, for example, you need to access multiple repositories with the same SSH key.
+
+   **Add your own SSH key to Bitrise**: You can generate your own SSH key and paste the private key here after choosing this option. You also need to add the public key to the repository manually. To generate your SSH key pair: [Generating your own SSH keypair](/en/bitrise-platform/repository-access/configuring-ssh-keys#generating-your-own-ssh-keypair).
+
+   :::note[Configure SSH keys at any time]
+
+   If you can't set up a valid, working SSH key connection at this time, don't worry: proceed with adding your project. You can set up the SSH connection afterwards: [Configuring SSH keys](/en/bitrise-platform/repository-access/configuring-ssh-keys).
+
+   :::
+1. Select the default branch of your repository. This branch should contain the configuration of your project.
+
+   - If you successfully configured SSH access in the previous step or if you're adding a public project, Bitrise will parse your repository and allow you to select a branch from a dropdown menu.
+   - If you didn't configure repository access, you need to type the branch name manually.
+
+   [You can change the default branch of the project later](/en/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch).
+
+   ![20251219-choose-branch.png](/img/_paligo/uuid-95a678d3-4251-c9b6-555a-6a1a0b48ae24.png)
+1. Select **Yes, auto-detect configuration**. Bitrise will scan your repository and attempt to set up a <GlossTerm baseform="stack">stack</GlossTerm> and default Workflows based on the results of the scan. In most cases, we recommend choosing this option.
+
+   :::note[Project type]
+
+   Detecting a project type serves to assist in the initial configuration of your project. But don't worry, you can change every setting, including the project type, at any time after you added the project.
+
+   :::
+1. Wait while Bitrise is validating your project.
+
+   We look for your configuration files and set up your app based on them. In the case of Flutter apps, you definitely need a `pubspec.yaml` file in your project.
+1. Type the name of the branch that includes your project’s configuration - master, for example - then click **Next**.
+1. If you have an iOS project in your Flutter project, you will have to select an .ipa export method.
+1. Register a webhook when prompted so that Bitrise can start a build automatically when code is pushed to your repository, or a pull request is created.
+1. Once you are done, click **View Project Page** to go to the newly added project's home page. From there, you can start [editing your Workflows](/en/bitrise-ci/workflows-and-pipelines/workflows/workflows-overview) and [run builds](/en/bitrise-ci/run-and-analyze-builds/starting-builds/approving-pull-request-builds).
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Testing a Flutter app
+
+You can write and run unit-, widget-, and integration tests with Flutter. For more information, check out [Flutter’s official documentation](https://flutter.io/docs/testing).
+
+You can use our automatically generated **primary** Workflow to test your Flutter app. It can include the **Flutter Test** Step that runs Flutter tests and can also generate code coverage reports.
+
+:::note[Test reports]
+
+The **Deploy to Bitrise.io** Step exports the results of the **Flutter Test** Step to **Tests** tab by default.
+
+:::
+
+To run tests on a Flutter app:
+
+1. Open your app’s Workflow Editor and open the **primary** Workflow, or any of your Workflows that you want to use to run tests.
+1. In the **Flutter Install** Step, fill in the **Flutter SDK Version** input.
+
+   You can specify either tags or branches of the Flutter SDK’s git repository. The default value is `stable`. This will use the latest stable branch of Flutter.
+
+   - To find the available version tags, check: [https://github.com/flutter/flutter/releases](https://github.com/flutter/flutter/releases).
+   - To see the the available branches, check: [https://github.com/flutter/flutter/branches](https://github.com/flutter/flutter/branches).
+1. Add the **Flutter Test** Step. In the **Additional parameters** input, enter any flags you wish to use to.
+
+   The Step runs the `flutter test` command with the specified flags. To check the available flags, open a command line interface on your own machine and run `flutter test --help`.
+
+   ![Getting_started_with_Flutter_apps.png](/img/_paligo/uuid-3c8c65d8-1de1-0a50-62cf-acf76dc76bf9.png)
+1. Make sure the **Project Location** input of the **Flutter Test** Step is correct.
+
+   The default value is the the Environment Variable (Env Var) created for your Flutter project’s location.
+1. If you want to generate code coverage reports, set the **Generate code coverage files?** input to `yes`.
+
+   This runs the `flutter test` command with the `--coverage` flag.
+1. To export the test results to the **Tests** tab, add the **Deploy to Bitrise.io** Step to the end of your Workflow.
+
+   For more information, check out [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Deploying a Flutter app
+
+To build and deploy a Flutter app, a Workflow must contain these Flutter Steps:
+
+- **Flutter Install**
+- **Flutter Build**
+
+If you have platforms specified in your repository, a deployment Workflow will be automatically generated when adding the project on Bitrise. The content of this Workflow depends on the platforms: for example, if your Flutter project contains only an iOS project, the Workflow will contain the **Certificate and profile installer** Step.
+
+You can build both iOS and Android projects at the same time or you can build them separately, each using their own Workflow. You can set this in the **Platform** input of the **Flutter Build** Step any time. By default, the Step is configured according to the platform or platforms that the scanner detected when adding the app on Bitrise.
+
+Here’s an example Workflow we’ll use in this configuration, with all the necessary Steps:
+
+![Getting_started_with_Flutter_apps.jpg](/img/_paligo/uuid-f655a8a5-c151-d103-6de5-55a0b3355322.png)
+
+:::tip[Pipelines for parallelization]
+
+In these examples, we're assuming that you are building and deploying both the iOS and Android versions of your app in the same Workflow, performing the necessary operations serially. However, you can do both versions in parallel with a single build trigger by using Pipelines:
+
+- [Build Pipelines](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/about-pipelines)
+- [Configuring a Bitrise Pipeline](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline)
+
+:::
+
+:::note[Packages and libraries]
+
+We also support building Flutter packages and libraries. Unlike in the case of apps, there is no artifact to build so there is no need for a **Flutter Build** Step in your Workflow.
+
+:::
+
+### Deploying a cross-platform app to bitrise.io
+
+The **Deploy to bitrise.io** Step uploads all the artifacts related to your build into the [**Artifacts**]() tab on your Build’s page.
+
+You can share the generated binary file (APK for Android or an IPA file for iOS) with your team members using the public install page. The public install page is a URL you can share with others who can install the generated app binary on their device. You can also notify user groups or individual users that your APK or IPA file has been built.
+
+:::important[Publishing to expo.io]
+
+The **Deploy to Bitrise.io** Step does not use Expo commands and doesn’t publish to [expo.io](https://docs.expo.io/workflow/publishing/). This Step publishes artifacts to Bitrise and is not specific to a particular platform.
+
+If you need to publish to [expo.io](https://docs.expo.io/workflow/publishing/), set the **Run expo publish after eject?** input of the **Eject Expo** Step to `yes`. Be aware that in that case you have to provide your username and password for your Expo account to publish to [expo.io.](http://expo.io/)
+
+:::
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+1. Make sure you have the **Deploy to bitrise.io** Step in your Workflow.
+1. In the **Notify: User Roles**, add the role so that only those get notified who have been granted with this role. Or fill out the **Notify: Emails** field with email addresses of the users you want to notify.
+
+   Make sure you set those email addresses as [Secrets](/en/bitrise-ci/configure-builds/secrets)! These details can be also modified under **Notifications** if you click the **eye** icon next to your generated binary in the **Artifacts** tab.
+1. If you want the Step to generate a public install page for you, set the **Enable public page for the App?** input to `true`.
+
+### Deploying a Flutter app to App Store Connect
+
+To deploy your iOS Flutter project to the App Store, you’ll need to build the app, export an IPA file and submit it to the App Store.
+
+Unlike testing, this requires code signing files:
+
+- An iOS Distribution Certificate (a .p12 file).
+- An App Store Provisioning Profile.
+
+For Flutter applications, code signing requires setting a Team ID in the project settings in Xcode.
+
+#### Configuring Team ID for Flutter apps
+
+Once you created your iOS project locally, you will need to review the project settings for it in Xcode. More specifically, you need to set a valid Team ID: without that, your build will fail on Bitrise.
+
+1. In Xcode, open **Runner.xcworkspace** in your app’s **ios** folder.
+1. To view your app’s settings, select the **Runner** project in the Xcode project navigator. Then, in the main view sidebar, select the **Runner** target.
+1. Select the **General** tab.
+1. In the **Signing** section, find the **Team** menu and set it to the team associated with your registered Apple Developer account.
+1. Commit the change to your repository!
+
+   :::important[Don't forget to commit your changes!]
+
+   If you only set the Team ID locally, your build will still FAIL on Bitrise!
+
+   :::
+
+#### Configuring Flutter deployment to the App Store on Bitrise
+
+To deploy your app to the App Store, you need to upload the code signing files. You have two options:
+
+- Upload the code signing certificate(s) to Bitrise and use automatic code signing with the [Manage iOS Code signing](https://bitrise.io/integrations/steps/manage-ios-code-signing) Step.
+- Upload the provisioning profile(s) and the code signing certificate(s) to Bitrise and use manual code signing with the [Certificate and profile installer](https://bitrise.io/integrations/steps/certificate-and-profile-installer) Step.
+
+In this guide, we will focus on the second option, manual code signing:
+
+1. Make sure you have the **Certificate and profile installer** Step in your Workflow.
+1. Upload the required code signing files to [Bitrise](https://app.bitrise.io/users/sign_in).
+1. Open the **Flutter Build** Step and find the **iOS Platform Configs** input group.
+1. Make sure the **Additional parameters** input has the value `--release`.
+1. Check the **Platform** input of the Step: make sure it’s set to either `iOS` or `both`.
+1. Set the **iOS output artifact type** input to **archive**.
+
+   ![flutter-build-ios-config.png](/img/_paligo/uuid-821c4edf-e9a6-a85e-a6e5-8cce61ab5f42.png)
+1. Add the **Export iOS and tvOS Xcode archive** Step to your Workflow.
+
+   It should be after the **Flutter Build** Step.
+1. Set the **Distribution method** input of the Step to **app-store**.
+1. Add the **Deploy to App Store Connect** Step to the end of the Workflow.
+1. Provide your Apple credentials in the respective input fields.
+
+   - Apple ID.
+   - password or, if you use two-factor authentication on App Store Connect, your application password.
+
+   Don’t worry, the password will not be visible in the logs or exposed .
+1. Start a build!
+
+If all goes well, the Step will submit the app to App Store Connect. You can, from the App Store Connect page, distribute the app to external testers via Testflight, or release it to the App Store itself.
+
+### Deploying a Flutter app to Google Play
+
+To deploy your app to Google Play, you need to export an App Bundle file and sign it. You have two options:
+
+- You can [configure code signing](https://flutter.dev/docs/deployment/android#configure-signing-in-gradle) in the app’s `build.gradle` file and then Flutter will sign your app during the build phase.
+- Sign your AAB or APK file on Bitrise with our dedicated Step.
+
+The scope of this guide is the second option: signing your AAB/APK file with the **Android Sign** Step.
+
+1. [Generate a keystore file](https://flutter.io/docs/deployment/android#create-a-keystore).
+
+   The keystore file is required for code signing.
+1. Open an app on Bitrise and go to **Workflow** > **Code signing** > **Android Code Signing**.
+1. Drag and drop the keystore file, and fill out the metadata.
+1. [Configure Google Play access.](/en/bitrise-ci/deploying/android-deployment/generating-and-deploying-android-app-bundles#setting-up-google-play-deployment-for-the-first-time)
+
+   You only need to do this for your very first Google Play deployment of the app.
+1. In the **Flutter Build** Step, find the **Android Platform Configs** input group and make sure the **Additional parameters** input has the value `--release`.
+1. In the **Android output artifact type** input field, select either **APK** or **appbundle** depending on your deployment requirements.
+1. In the **Output (.apk, .aab) pattern** input, set the path where the **Deploy to Google Play** Step will be able to access the generated binary.
+
+   The path should be relative to the project source directory, stored in the BITRISE_SOURCE_DIR Environment Variable.
+1. Make sure you have the **Deploy to Google Play** Step after the **Android Sign****Cordova Archive** or **Ionic Archive** Step in your Workflow.
+1. Fill out the required input fields as follows:
+
+   - **Service Account JSON key file path**: This field can accept a remote URL so you have to provide the Env Var which contains your uploaded service account JSON key. For example: `$BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL`.
+   - **Package name**: The package name of your Android app.
+   - **Track**: The track where you want to deploy your APK (for example, alpha/beta/rollout/production or any custom track you set).
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Additional Flutter content
+
+- [Building Android apps with Flutter modules](https://support.bitrise.io/hc/en-us/articles/360015714357)
+- [Flutter Test Step freezes on "Waiting for another flutter command to release the startup lock..."](https://support.bitrise.io/hc/en-us/articles/360015714217)
+- [Reducing build time for Flutter apps](https://support.bitrise.io/hc/en-us/articles/360020722937)
+- [Could not resolve package dependencies in Flutter](https://support.bitrise.io/hc/en-us/articles/360019760178)

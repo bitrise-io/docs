@@ -21,22 +21,240 @@ import Partial_QuickStartGuide from '@site/src/partials/quick-start-guide.mdx';
 
 If you have been looking to switch from [Jenkins](https://www.jenkins.io/) to Bitrise to speed up your mobile CI/CD flow and ease dedicated manpower, look no further. This guide introduces the most important Bitrise features and how you can quickly settle into Bitrise from your Jenkins world.
 
-<Partial_WhyBotherMigrating />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
 
-<Partial_QuickStartGuide />
+## Why bother migrating?
 
-<Partial_ManagingBuildsOnJenkinsAndOnBitrise />
+Jenkins is a self-hosted CI server where you have to manually install and maintain most of the functionalities before you could run any build. It also requires dedicated engineering resources for regular maintenance. When you switch to Bitrise, you get to experience the comfort of using a cloud-based, mobile first CI/CD platform which offers out-of-the box functionalities for all your mobile development needs on one platform. This means there is:
 
-<Partial_JenkinsPluginsAndBitriseSteps />
+- No need to download anything.
+- No need for any on-premise servers or plugins.
+- No need to worry about infrastructure, tools and virtualization.
 
-<Partial_JenkinsPipelineBitriseWorkflow />
+Bitrise takes care of all of the above. We have a vast array of automatized Steps, [API](/en/bitrise-ci/api/api-overview), [CLI](/en/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli), and [up-to-date Stacks](https://stacks.bitrise.io) with a highly intuitive GUI, called Workflow Editor, all available at your fingertips.
 
-<Partial_DashboardsInJenkinsAndBitrise />
+Learn more about our security measures on our [Security page](https://bitrise.io/platform/devops/security)which includes details on product, data, application, network, physical and business security.
 
-<Partial_JenkinsfileBitriseYAML />
+Check out the world of automated mobile development with Bitrise!
 
-<Partial_MasterAndAgentOnJenkinsBitriseStacks />
+:::note[How Bitrise helped top companies migrate]
 
-<Partial_PeopleManagementInJenkinsAndBitrise />
+- Discover how payments giant PagSeguro optimized mobile CI by moving from Jenkins to Bitrise: [Read the case study](https://bitrise.io/blog/post/smart-ways-to-optimize-your-ci).
+- Looking for a feature-by-feature breakdown of Bitrise vs Jenkins? [Check out our comparison page](https://bitrise.io/resources/compare/jenkins).
 
-<Partial_IntegratedSSOManagementOnBitrise />
+:::
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Quick start guide
+
+This Quick Start Guide helps you start your first build on Bitrise with minimum config.
+
+1. [Sign up for Bitrise](/en/bitrise-platform/getting-started/signing-up-for-bitrise) if you don’t have an account yet.
+1. [Connect a repo](/en/bitrise-platform/getting-started/getting-started-with-the-bitrise-platform)and run an automatically configured standard Workflow on any project.
+1. Once you’ve looked through the generated YML, make the changes you need: if you’re opting for a custom code, pop it into our [Script Step](https://www.bitrise.io/integrations/steps/script), and run your first build. Or find the Steps in our [Step Library](https://www.github.com/bitrise-io/bitrise-steplib) to replicate your Jenkinsfile’s behaviors. You can also run builds locally on your computer by installing our [Bitrise CLI](/en/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli), Bitrise's open source runner.
+1. After getting to your new Workflow’s first green build, set up other jobs by configuring [automatic triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers) or [scheduled builds](/en/bitrise-ci/run-and-analyze-builds/starting-builds/scheduling-builds).
+1. Optimize your Workflows with [key-based caching](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching) for faster, safer, and more reproducible builds.
+1. Need help? [Contact us](https://support.bitrise.io/hc/en-us).
+
+If you are interested in the main Jenkins-Bitrise differences and how Bitrise enhance your mobile development process, then continue with the guide below.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Managing builds on Jenkins and on Bitrise
+
+A build on Bitrise is the process specified by the app’s [Workflow](/en/bitrise-ci/workflows-and-pipelines/workflows/workflows-overview). It is a series of [Steps](/en/bitrise-ci/workflows-and-pipelines/steps/steps-overview), defined in a Workflow, executed by the [Bitrise CLI](/en/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli) on a clean virtual machine or locally on your machine. You can check your app’s builds on the Bitrise **Dashboard** or you can analyze your [build logs](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/build-logs) on your app’s own **Builds** page.
+
+### Triggering builds on Jenkins and Bitrise
+
+In this section we describe how you can trigger builds on Bitrise:
+
+- The **Build Now** function on Jenkins corresponds with [starting a build manually](/en/bitrise-ci/run-and-analyze-builds/starting-builds/starting-builds-manually): click the button on your builds page and either simply start a new build or tinker away with the [Advanced configuration options](/en/bitrise-ci/run-and-analyze-builds/starting-builds/scheduling-builds#advanced-configuration-options-for-startingscheduling-builds).
+- The **Build periodically** function of Jenkins is the [Scheduling builds](/en/bitrise-ci/run-and-analyze-builds/starting-builds/scheduling-builds) function on Bitrise. A big advantage of Bitrise is that you don’t have to set up a `cron` job, like you would on Jenkins, to schedule a specific time. Instead, select a day/s from the timeline and type an hour and a month. No confusion over `cron` expressions any more!
+- For any Git related events, such as code push, pull requests, and Git tags, you can [configure triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers) that automatically start a build on Bitrise.
+- The **Build after other projects** function of Jenkins is equivalent to the [chaining Workflows together](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows) on Bitrise where the Workflows run in succession. It’s surprisingly easy to chain Workflows together on Bitrise.
+- You can trigger builds by any other remote system: use [Webhooks overview](/en/bitrise-platform/integrations/webhooks/webhooks-overview). We’re integrated with GitHub, Gitlab, Bitbucket, Gogs, Slack, Visual Studio, Assembla, and Deveo.
+- You can also [push back build status reports](/en/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider) to your Git provider (GitHub/GitLab/Bitbucket).
+
+### Environment Variables and Secrets on Bitrise
+
+[Environment Variables](/en/bitrise-ci/configure-builds/environment-variables) (a key and value pair) can be defined on app, Workflow and Steps level.
+
+You can do lots of interesting things with Env Vars:
+
+- [Expose them and reuse them in another Step.](/en/bitrise-ci/configure-builds/environment-variables#setting-and-managing-env-vars-during-a-build)
+- Copy an Env Var to another key.
+- Overwrite an Env Var.
+- Parameterize a build by adding custom Env Vars to a build.
+- Set up Workflow-specific Env Vars on the **Env Vars** tab to run Workflows with Env Vars that are only available for that particular Workflow.
+
+Secrets are a type of Environment Variables but special ones. They hide sensitive information in an encrypted format so that your private input is not exposed in the build logs or in the `bitrise.yml`. Secret Environment Variables, or Secrets in short, can be set by adding a key and the variable in the **Secrets** tab of the Workflow Editor. This is again a built-in feature of Bitrise which ensures the following:
+
+- Your secrets are not shown in the `bitrise.yml`.
+- Your secrets are stored encrypted.
+- You can prevent exposing secrets on the UI by making them protected.
+- Note that anyone might be able to do a workaround and log the value of secrets with a pull request, thus we advise NOT to expose secrets in PRs.
+
+### Build caching
+
+Every build on Bitrise runs on a clean virtual machine but it does not mean you have to do everything from scratch - [you can cache contents of important files and preserve them between builds.](/en/bitrise-ci/dependencies-and-caching/dependencies-and-caching-overview)
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Jenkins plugins and Bitrise Steps
+
+A [Step](/en/bitrise-ci/workflows-and-pipelines/steps/steps-overview) is a pre-defined task in Bitrise just like the Jenkins Steps, however, a Bitrise Step can be easily configured on our intuitive UI or you can even pull in your own Step from your repository. You can configure the inputs and parameters that define a Step task, and view/reuse the outputs a Step generates. Reusing the output means that another Step in the same Workflow can use it as the value of one of its inputs.
+
+As being a continuous integration tool itself, Jenkins integrates with other services with the help of plugins. Jenkins users have to manage plugins in a centralized place, called **Manage plugins**, install them globally (on their Jenkins server), then use them in their specific projects. If Jenkins notifies of a newer plugin version, Jenkins admins have to doublecheck with their teams if they’re running any builds since updating a plugin requires the server to restart. With Jenkins plugins, reverting to an older version is not possible, since only the latest version is available. In Bitrise, however, you do not have to install any Steps first, because you can add or remove any Step in your Bitrise Workflow at any time as you wish and it won’t block any running builds of the project. You can always revert back to a previous Step version too if that’s what you need.
+
+What’s more: When editing your Workflow in the **Workflow Editor**, you can easily search for a Step based on functionality or platform you are looking for in the **Step Library** and add it to your Workflow straightaway - there is no need to install them prior to setting up your Workflow.
+
+You can [create your own custom Step](/en/bitrise-ci/workflows-and-pipelines/developing-your-own-bitrise-step/developing-a-new-step) too and store in a repository, then you can reference it by a URL in your Workflow.
+
+:::tip[A Step jolly joker: our Script Step]
+
+Do you have a [custom script](https://bitrise.io/integrations/steps/script) you’d like to run in your Workflow? Select the **Script** Step from the Step Library and add your custom code to the **Script content** input.
+
+:::
+
+Discover our Steps on our [Integrations](https://www.bitrise.io/integrations/steps) page or right when editing your Workflow.
+
+Learn what else you can do with Steps:
+
+- [Adding Steps to a Workflow](/en/bitrise-ci/workflows-and-pipelines/steps/adding-steps-to-a-workflow).
+- [Step versions](/en/bitrise-ci/workflows-and-pipelines/steps/step-versions).
+- [Enabling or disabling a Step conditionally](/en/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally).
+- [Developing your own Bitrise Step](/en/bitrise-ci/workflows-and-pipelines/developing-your-own-bitrise-step/creating-your-own-bitrise-project-scanner).
+
+:::note[Using fastlane in Jenkins?]
+
+You can easily put your fastlane lanes to work on Bitrise too. All you have to do is add a Bitrise’s [**Fastlane**](https://www.bitrise.io/integrations/steps/fastlane) Step to your Workflow and add your lane name into the Step. Start a build and your lane will run on Bitrise.
+
+For more information, check out our guide on [see topic](urn:resource:component:77300).
+
+:::
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Jenkins Pipeline - Bitrise Workflow
+
+A Jenkins Pipeline is equivalent to a [Bitrise Workflow](/en/bitrise-ci/workflows-and-pipelines/workflows/workflows-overview), but the Bitrise Workflows are much easier to manage: you can quickly create new Workflows based on existing ones, chain multiple Workflows together in a single build, or delete Workflows that you no longer need.
+
+A Bitrise **Workflow** is a series of Steps, such as test, code sign, build APK/ ipa and deploy. When you add an project to Bitrise, a primary Workflow, created based on the project scanner’s findings, gets kicked off/triggered automatically.
+
+You can have several Workflows for a certain project. For example:
+
+- For any PR events, create a Workflow that, once triggered, runs quickly and only executes basic tests such as smoke tests.
+- For a meatier Workflow, that runs all your test, we recommend creating another Workflow and run it overnight or schedule it on 6/12/24 hour interval.
+
+The **Workflow Editor** is the main place for configuring your Workflow. Jenkins **Stages** are equal to multiple Bitrise Workflows chained together inside a main Workflow. On Bitrise the Workflow Editor helps you to chain Workflows like one would chain toy trains after each other.
+
+The Workflow Editor has other powerful features built in to assist you with mobile development:
+
+- [Code signing](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects): Upload certificates, provisioning profiles, and keystores into Bitrise and and use our [iOS](/en/bitrise-ci/code-signing/ios-code-signing/ios-code-signing)and [Android](/en/bitrise-ci/code-signing/android-code-signing/android-code-signing-using-the-android-sign-step) signing Steps to do all the code signing automatically for you before releasing an app to an app store.
+- [Secrets](/en/bitrise-ci/configure-builds/secrets): check out your project's secret Environment Variables or add new ones.
+- [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables): there is no confusion of secrets and Env Vars in Bitrise. They are neatly organized into separate tabs so that you know where’s what. Add project Env Vars or Workflow specific Env Vars here. You can also reference Secrets as Env Vars with $.
+- [Triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers): You can configure triggers: code push events, pull requests, or tags can all be set up to automatically start builds on Bitrise.
+- [Stack](/en/bitrise-build-hub/infrastructure/build-stacks/about-build-stacks): Check out the default stack of your project, select a new one from a dropdown menu or select a specific stack for one of your Workflows.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Dashboards in Jenkins and Bitrise
+
+This is the main landing page where you find yourself when logging into Bitrise. From here you can navigate to your [projects](/en/bitrise-ci/getting-started/the-bitrise-dashboard#checking-project-details), [your CI builds](/en/bitrise-ci/getting-started/getting-started), [Bitrise Build Cache](/en/bitrise-ci/dependencies-and-caching/dependencies-and-caching-overview) and [Release Management](/en/release-management/getting-started-with-release-management/getting-started-with-release-management).
+
+![bitrisedashboard.png](/img/_paligo/uuid-59d1dcd7-7e29-7221-cbfb-b648ab73102b.png)
+
+On Jenkins, build statuses are listed in the **Build Executor Status** or on the Blue Ocean **Dashboard**. When using Bitrise you get a user-friendly graphical interface right from the start, whereas, with Jenkins, you have to install the plugin first. Bitrise build statuses are shown on both the **Dashboard**, and on the **Builds** page of your app.
+
+### Adding a new app to Bitrise
+
+What **New item** means in Jenkins is the **adding a new project flow** on Bitrise, either [on the web UI](/en/bitrise-ci/getting-started/adding-a-new-project) or [from the CLI](/en/bitrise-ci/bitrise-cli/adding-a-new-project-from-a-cli). This is a highly automated flow where minimal configuration is needed from you and literally within a minute your new build starts. Our flow takes you through all the important phases: setting privacy, connecting your repository, setting up repository access, choosing a branch, configuring your project, setting up your build configuration and [configuring webhooks](/en/bitrise-platform/integrations/webhooks/adding-incoming-webhooks).
+
+### Webhooks on Bitrise
+
+Bitrise makes extensive use of webhooks, which you can enable with a simple click when connecting a project to Bitrise. It all makes sense to add the webhook during the initial setup and not having to search for this functionality when you try to quickly get your project to speed.
+
+In short, there are two types of [Webhooks](/en/bitrise-ci/api/incoming-and-outgoing-webhooks):
+
+- Incoming webhooks, registered with your Git service provider, are used to automatically trigger builds on Bitrise.
+- Outgoing webhooks are used to send reports of build events to other services, such as Slack. They can be added either on the website or via the [API overview](/en/bitrise-ci/api/api-overview).
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Jenkinsfile - Bitrise YAML
+
+A Jenkins Pipeline uses groovy code, while Bitrise uses the more highly structured YAML format. All Workflows are defined in the `bitrise.yml` file in YAML format, which you can edit by clicking the **bitrise.yml** tab of the Workflow Editor.
+
+You can store the `bitrise.yml` file of your app either on [bitrise.io](http://bitrise.io/) or [in your repository](/en/bitrise-ci/configure-builds/configuration-yaml/managing-a-project-s-configuration-yaml-file#storing-the-bitriseyml-file-in-your-repository). Don’t worry, your secrets (for example, credentials and IDs) are safe with us.
+
+You can also download the current `bitrise.yml` configuration of your app and run it locally with the [Installing and updating the Bitrise CLI](/en/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli).
+
+### Jenkinsfile - Bitrise yml file comparison
+
+If you have been using a Jenkinsfile (Pipeline project) in Jenkins and and considering to switch to Bitrise, you can easily match Jenkinsfile stages with Bitrise Steps. If you have been using the old-school Freestyle project, then you have to map your configuration’s settings with a matching Bitrise Step or a Bitrise function. For example, match the **Build** section of your Freestyle project with a Bitrise build Step, such as the [Android Build](https://app.bitrise.io/integrations/steps/android-build) Step, or map the **Build Trigger** section of Jenkins with the [Triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers) function of Bitrise. Make sure you check out our [Step Library](https://www.bitrise.io/integrations/steps) for more inspiration.
+
+:::tip[Migrating your Android app from Jenkins to Bitrise: a step-by-step guide]
+
+Check out our [blogpost](https://blog.bitrise.io/post/migrate-your-android-app-from-jenkins) on how to migrate your Android project from Jenkins to Bitrise.
+
+:::
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Master and agent on Jenkins - Bitrise stack
+
+A stack is the type of virtual machine we use to run your build. For example, for a native iOS app, the best stack is one of our Xcode stacks. Stacks come with all of the necessary tools pre-installed, and are regularly updated to make sure they will serve all of your needs. This way you don’t have to bother with maintaining master and agent instances or adding a node machine to your groovy code to run a build on a certain platform.
+
+When you add your app to Bitrise, our project selector automatically detects the type of your project and based on its platform type, adds a default stack to it. Your first build will run on this stack, which is a virtual machine with all the required tools pre-installed on it. Should you wish to use another stack, you can simply select it from the **Default Stack** dropdown menu on the **Stacks and Machines** tab. If you click the **More information** link, you can see the preinstalled tools with their versions.
+
+We support the latest Xcode version shortly after its official release.
+
+In our [system reports](http:// https://bitrise.io/stacks) you can check the installed tools and their versions on each stack.
+
+Learn more about our [macOS stack update policy](/en/bitrise-build-hub/infrastructure/build-stacks/macos-stack-update-policy).
+
+If you are interested in how to have a Bitrise-managed infrastructure on your AWS environment, check out our [guides](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/bitrise-on-aws-overview). You can also run Bitrise on your self-hosted infrastructure if you follow [this guide](/en/bitrise-platform/infrastructure/running-bitrise-builds-on-premise).
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Managing teams and roles in Jenkins and Bitrise
+
+A Bitrise user is an individual with a Bitrise account and belongs to one or more workspace/s. A workspace is a group of users who collaborate on projects. You can create multiple workspaces and a contributor can be invited to multiple workspaces by other Bitrise contributors. A contributor must be assigned to a project to be able to work on it.
+
+Learn how you can [add contributors to a project](/en/bitrise-platform/projects/managing-user-access-to-a-project) on the web UI either by adding existing workspace members or inviting outside contributors.
+
+Contributors can have different roles in workspaces that determine what they can do and cannot do:
+
+- When it comes to Bitrise CI, we differentiate [Owner, Admin, Platform Engineer, Developer, Testers/QA](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci) roles
+- When it comes to [Release Management](/en/release-management/configuring-connected-apps/release-management-roles-and-permissions), we differentiate workspace-level roles (Workspace Owner, Workspace Manager, Contributor and Viewer) and Release-level roles (Release Manager and App tester). Check out roles and permission tables on [Release management apps](/en/release-management/configuring-connected-apps/release-management-roles-and-permissions#roles-and-permissions-for-release-management-apps) and [build distribution and releases](/en/release-management/configuring-connected-apps/release-management-roles-and-permissions).
+
+You need a workspace to have a [paid subscription plan](https://bitrise.io/pricing?utm_medium=paid_search&utm_source=google&utm_campaign=all_misc_signup_paid_search_all_2025-04-10&utm_content=branding_pricing_emea&utm_source=google&utm_medium=cpc&utm_campaign=&utm_term=bitrise%20pricing&gad_source=1&gad_campaignid=22492269029&gbraid=0AAAAADEBC46C3y8wDrPzZEypPjE85IZGF&gclid=Cj0KCQiAq7HIBhDoARIsAOATDxDmUOF1Nw6xSIWC_imk3x-MBAxQW3VVSarlhc14CuKm4jV2yT3UDxMaApjPEALw_wcB) on Bitrise. Each of your workspaces can have a different subscription plan which determines how many credits your workspace's projects can use.
+
+You can use [SAML SSO or SCIM](/en/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-saml-sso-on-bitrise) to securely onboard or offboard an enterprise to your workspace.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Integrated SSO management on Bitrise
+
+While in Jenkins you have to install an authorization plugin for SSO management, in Bitrise it comes as an integral part of our [paid plans](https://bitrise.io/pricing). Workspace with such plans [can set up SAML SSO](/en/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-saml-sso-on-bitrise) as their single gateway to their Workspace on Bitrise. No more remembering usernames and credentials! All the Workspace owner has to do is set up Bitrise as a SAML SSO app on the SAML SSO provider and invite Workspace members to the Bitrise Org. We have specific guides to the [different SAML SSO providers](/en/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-saml-sso-on-bitrise) to guide you through the steps.

@@ -16,8 +16,115 @@ Both [Bitrise CI](urn:resource:publication:94442) and [Release Management](urn:r
 
 You can authenticate with Apple’s official API key or with Apple ID and password.
 
-<Partial_AppleTwoFactorAuthenticationRequirements />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
 
-<Partial_StepsThatRequireConnectingToYourAppleDeveloperAccount />
+## Apple two-factor authentication requirements
 
-<Partial_AppleServicePermissions />
+Apple’s [two-factor authentication](https://developer.apple.com/support/authentication/) (2FA) provides an extra layer of security on your Apple account.
+
+If you have been authenticating with the API key so far, you are not affected by the two-factor authentication requirement.
+
+If, however, you have been authenticating with an Apple ID and a password, and the [new 2FA requirement](https://developer.apple.com/support/authentication/) affects you, then you’ll have to reconnect your Apple Developer Account on the **Apple Service connection** page of your Bitrise profile. You’ll also have to provide the two-factor authentication/two-step verification code and an app-specific password as well. Please find the official Apple documentation on [how to generate an app-specific password](https://support.apple.com/en-us/HT204397).
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Steps that require connecting to your Apple Developer account
+
+The following Steps require connection to Apple services (such as App Store Connect or the Apple Developer Portal). If you’re using any of these Steps, make sure you establish connection with the right method.
+
+| Steps | Connection type |
+| --- | --- |
+| Manage iOS Code Signing | API key authentication, Apple ID authentication, API key authentication through Step inputs |
+| Xcode Archive & Export for iOS | API key authentication, Apple ID authentication, API key authentication through Step inputs |
+| Export iOS and tvOS Xcode archive | API key authentication, Apple ID authentication, API key authentication through Step inputs |
+| Xcode Build for testing for iOS | API key authentication, Apple ID authentication, API key authentication through Step inputs |
+| fastlane | API key authentication, Apple ID authentication, API key or Apple ID authentication through Step inputs |
+| Deploy to App Store Connect with Deliver (formerly iTunes Connect) | API key authentication, Apple ID authentication, API key or Apple ID authentication through Step inputs |
+| Deploy to App Store Connect - Application Loader (formerly iTunes Connect) | API key authentication, Apple ID authentication, API key or Apple ID authentication through Step |
+
+Depending on which authentication you can use in your project, you have the following options:
+
+- API key authentication: If you can, we recommend you use this authentication method. It does not require two-factor authentication. All it takes is connecting to the Apple services by providing **Name**, **Issuer ID**, **Key ID** and upload a **Private Key (.p8)**, then selecting an account under the **Team** tab in your app’s settings. The data you give automatically populates the respective fields of the Steps that work with API key authentication.
+- Apple ID authentication: If you cannot use the API key authentication, you can authenticate with your Apple ID and password. Provide your **Apple ID**, **password**, **2FA code** and **app-specific password** then select an account under the **Team** tab in your app’s settings. The data you give automatically populates the respective fields of the Steps that work with the Apple ID authentication.
+- API key or Apple Id authentication through Step inputs: If you wish to deploy to multiple teams or deploy to a team where authentication is different from the connected one you’ve been using, then you can add your preferred authentication into the Step’s inputs. Some Steps, such as Xcode Archive & Export for iOS, only have an API key authentication override option, while some Steps, like fastlane, have options for both API key and Apple ID Step level authentication override.
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Apple service permissions
+
+In order to successfully connect Bitrise to Apple services, you need to set up the right roles and accesses in your Apple account for your Apple ID and your API keys. You must set up the appropriate access rights to be able to:
+
+- Use automatic code signing.
+- Deploy your app to the App Store.
+
+The exact roles and accesses you need depend on a number of factors: your authentication method, whether you use Xcode managed signing, and the details of your app deployment process, among other things.
+
+In this guide, we'll list the roles based on the two main [authentication methods](/en/bitrise-platform/integrations/apple-services-connection/steps-requiring-apple-authentication): API key authentication and Apple ID authentication.
+
+### Required access with API key authentication
+
+To use Bitrise Steps with Apple API key authentication, you need to create an App Store Connect API key with the appropriate access level. The appropriate level depends on what you need to do.
+
+If, for example, you use Xcode managed signing in your project and wish to export the generated IPA file with a Distribution certificate and an App Store provisioning profile, the App Store Connect API key must have **Admin** access.
+
+The following table contains the required access for automatic code signing. In the table, we grouped code signing actions based on the type of the IPA file we're attempting to export. There are two main types:
+
+- Development IPA: this is an IPA exported with the **development** method.
+- Distribution IPA: this is an IPA exported with the **app-store**, **ad-hoc**, or **enterprise** distribution method.
+
+| Code signing action | Required access with Xcode managed signing turned ON | Required access with Xcode managed signing turned OFF |
+| --- | --- | --- |
+| Exporting Development IPA. This can include:  - Creating development provisioning profiles. - Deleting development provisioning profiles. - Downloading provisioning profiles. - Registering and configuring App IDs. - Adding device UDIDs | Developer | Developer |
+| Exporting App Store IPA. This can include:  - Creating development and distribution provisioning profiles. - Deleting development and distribution provisioning profiles. - Downloading provisioning profiles. - Registering and configuring App IDs. - Adding device UDIDs | Admin | Developer |
+
+The following table contains the required roles for deploying your app to the App Store.
+
+For App Store deployment, the required access depends on how you wish to upload the generated IPA file. You can either:
+
+- Upload only the IPA without any additional steps.
+- Upload the IPA with metadata and screenshots, and submit the app for review.
+
+| App Store deployment actions | Required access for API key |
+| --- | --- |
+| Uploading a new IPA without any metadata | Developer |
+| Uploading a new IPA and:  - Updating app metadata. - Uploading screenshots. - Submitting the app for App Store review. | App Manager |
+
+### Required access with Apple ID authentication
+
+To use Bitrise Steps with Apple ID authentication, you need to make sure that your Apple ID has the appropriate role in your Apple Developer team.
+
+The following table contains the necessary roles for using automatic code signing on Bitrise. In the table, we grouped code signing actions based on the type of the IPA file we're attempting to export. There are two main types:
+
+- Development IPA: this is an IPA exported with the **development** method.
+- Distribution IPA: this is an IPA exported with the **app-store**, **ad-hoc**, or **enterprise** distribution method.
+
+Read more about the different distribution methods: [Creating a signed IPA for Xcode projects](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects).
+
+:::note[Xcode managed signing]
+
+If you use Apple ID authentication on Bitrise, Xcode managed signing is automatically turned off in your project. Instead, Bitrise uses its own automatic code signing logic.
+
+:::
+
+| Code signing action | Required role |
+| --- | --- |
+| Exporting development IPA. This can include:  - Creating development provisioning profiles. - Deleting development provisioning profiles. - Downloading provisioning profiles. - Registering and configuring App IDs. - Adding device UDIDs | App Manager |
+| Exporting an App Store IPA. This can include:  - Creating development and distribution provisioning profiles. - Deleting development and distribution provisioning profiles. - Downloading provisioning profiles. - Registering and configuring App IDs. - Adding device UDIDs | App Manager |
+
+The following table contains the required roles for deploying your app to the App Store.
+
+For App Store deployment, the required access depends on how you wish to upload the generated IPA file. You can either:
+
+- Upload only the IPA without any additional steps.
+- Upload the IPA with metadata and screenshots, and submit the app for review.
+
+| App Store deployment actions | Required role for Apple ID |
+| --- | --- |
+| Uploading a new IPA without any metadata | Developer |
+| Uploading a new IPA and:  - Updating app metadata. - Uploading screenshots. - Submitting the app for App Store review. | App Manager |

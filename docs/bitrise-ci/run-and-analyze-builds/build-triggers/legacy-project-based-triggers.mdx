@@ -19,7 +19,57 @@ This page is about legacy triggers that are defined on a project level. For new 
 
 Legacy or project-based triggers are defined on the project level: that is, the top level of your configuration YAML file. The trigger defines which Workflow or Pipeline should run when a given code event happens. A single code event can only trigger a single build.
 
-<Partial_CreatingProjectBasedTriggers />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Creating project-based triggers
+
+<GlossTerm baseform="Project">Project</GlossTerm>-based triggers are defined on the project level: that is, the top level of your configuration YAML file. The trigger defines which Workflow or Pipeline should run when a given code event happens. A single code event can only trigger a single build.
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+
+   ![workflows-button.png](/img/_paligo/uuid-99bb894c-3e79-91c8-9e62-7e475573495d.png)
+1. Select a Workflow.
+
+   ![push-trigger.png](/img/_paligo/uuid-cf217fec-a57c-6c47-f625-d7b47d74e9d5.png)
+1. Select the trigger type and click the **Add trigger** button.
+
+   For example, if you want to set up a trigger for pull request events, select the Pull Request tab.
+1. Click the **Add trigger** button.
+1. Configure your trigger in the dialog.
+
+   When setting multiple conditions, all conditions must be fulfilled for a build to start. You can use regular expressions for any of the condition types.
+
+   You can find the full list of supported trigger conditions here: [Supported trigger conditions](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers#supported-trigger-conditions)
+1. When done, click **Add trigger**.
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. Open your configuration YAML file.
+1. In the Workflow, find the `trigger_map` property and set up your trigger under it. You need:
+
+   - A `type` property to define the type of the code event.
+   - A trigger condition. For example, `commit_message`.
+   - The Workflow or Pipeline you want to trigger.
+
+   ```
+   trigger_map:
+   - type: push
+     commit_message: your_message
+     workflow: my-workflow
+   ```
+
+   You can find the exact syntax for the different trigger types here: [YAML syntax for build triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/yaml-syntax-for-build-triggers).
+1. Save the configuration.
+
+</TabItem>
+</Tabs>
 
 ## Disabling a project-based trigger
 
@@ -106,4 +156,36 @@ trigger_map:
 
 This will only select the `primary` workflow if the pull request’s source branch is `develop` AND the target branch is `main`.
 
-<Partial_ProjectBasedTriggerComponents />
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Project-based trigger components
+
+The components listed on this page are valid for legacy, project-based triggers.
+
+| Component | Description | Accepted values | Default value |
+| --- | --- | --- | --- |
+| `type` | Defines the type of a project-based trigger. A trigger with a given type only accepts trigger conditions belonging to that type. | - `push` - `pull_request` - `tag` | N/A |
+| `enabled` | A boolean property that defines if the trigger is currently active. | - `true` - `false` | `true` |
+| `workflow` or `pipeline` | The Workflow or Pipeline that is triggered. You can't set both. | The exact name of the Workflow or Pipeline. | N/A |
+
+| Component | Description | Default value |
+| --- | --- | --- |
+| `push_branch` | The branch of the repository where code is pushed to trigger a build. | `*` |
+| `commit_message` | The commit message to trigger a build. | `*` |
+| `changed_files` | The path to a file or folder where changes should trigger a build. | `*` |
+
+| Component | Description | Default value |
+| --- | --- | --- |
+| `pull_request_source_branch` | The branch of from which the pull request is opened. | `*` |
+| `pull_request_target_branch` | The branch which is the merge target of the pull request. | `*` |
+| `pull_request_label` | The pull request label. | `*` |
+| `draft_pull_request_enabled` | A boolean property that defines if draft pull requests trigger builds. | `true` |
+| `pull_request_comment` | A comment posted on a pull request. | `*` |
+| `commit_message` | A specific commit message in pushes to a pull request. | `*` |
+| `changed_files` | Specific files that are modified in a pull request. | `*` |
+
+| Component | Description | Default value |
+| --- | --- | --- |
+| `tag` | The value of the tag. Accepts a string value or a `regex` property. | `*` |
