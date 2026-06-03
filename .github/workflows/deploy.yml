@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: [main, claude/festive-shamir-31a238]
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -35,7 +35,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CF_API_TOKEN_PAGES }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          command: pages deploy ./build --project-name=bitrise-docs --branch=${{ github.ref_name == 'claude/festive-shamir-31a238' && 'main' || (github.head_ref || github.ref_name) }}
+          command: pages deploy ./build --project-name=bitrise-docs --branch=${{ github.head_ref || github.ref_name }}
 
       - name: Comment preview URL
         if: github.event_name == 'pull_request'
