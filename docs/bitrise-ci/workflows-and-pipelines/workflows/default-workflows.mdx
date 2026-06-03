@@ -8,14 +8,6 @@ slug: /bitrise-ci/workflows-and-pipelines/workflows/default-workflows
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_DefaultWorkflowsForAnAndroidProject from '@site/src/partials/default-workflows-for-an-android-project.mdx';
-import Partial_DefaultWorkflowsForARubyProject from '@site/src/partials/default-workflows-for-a-ruby-project.mdx';
-import Partial_DefaultWorkflowsForAPythonProject from '@site/src/partials/default-workflows-for-a-python-project.mdx';
-import Partial_DefaultWorkflowsForAJavaProject from '@site/src/partials/default-workflows-for-a-java-project.mdx';
-import Partial_DefaultWorkflowsForANodeJsProject from '@site/src/partials/default-workflows-for-a-nodejs-project.mdx';
-import Partial_DefaultWorkflowsForFlutterProjects from '@site/src/partials/default-workflows-for-flutter-projects.mdx';
-import Partial_DefaultWorkflowsForAnIOSProject from '@site/src/partials/default-workflows-for-an-ios-project.mdx';
-import Partial_DefaultWorkflowsForKotlin from '@site/src/partials/default-workflows-for-kotlin.mdx';
 
 When you add a new project on [bitrise.io](https://www.bitrise.io), we create initial <GlossTerm baseform="Pipeline">Pipelines</GlossTerm> and <GlossTerm baseform="Workflow">Workflows</GlossTerm> for you. These are called default Pipelines and Workflows. A default Pipeline consists of default Workflows.
 
@@ -27,18 +19,92 @@ We also create default Pipelines: [Default Pipelines](/en/bitrise-ci/workflows-a
 
 :::
 
-<Partial_DefaultWorkflowsForAnIOSProject />
 
-<Partial_DefaultWorkflowsForAnAndroidProject />
+## Default Workflows for an iOS project
 
-<Partial_DefaultWorkflowsForANodeJsProject />
+For a new iOS project, Bitrise automatically generates several Workflows. You can customize these Workflows or [create new ones](/en/bitrise-ci/workflows-and-pipelines/workflows/creating-a-workflow) based on them.
 
-<Partial_DefaultWorkflowsForKotlin />
+| Workflow ID | Workflow summary | Workflow description |
+| --- | --- | --- |
+| `run_tests` | Run your project’s tests. | The Workflow clones your Git repository, installs Node Version Manager (NVM) and select the Node version, restores cached `node_modules` dependencies, runs your tests using the package manager appropriate to your project and saves the cache. |
+| `build_for_testing` | Builds your Xcode project ready for testing. | The Workflow clones your Git repository, builds your app ready for testing, apportions tests into each test shard and deploys the app plus tests to Bitrise so they can be used in subsequent Workflows.  This Workflow is part of a default Pipeline. |
+| `test_without_building` | Tests your iOS app without needing to rebuild it. | Retrieves the app and tests from the preceding Workflow in a Pipeline and tests compiled bundles using Xcode’s `test_without_building` command.  This Workflow is part of a default Pipeline. |
+| `archive_and_export_app` | Run your Xcode tests and create an IPA file to install your app on a device or share it with your team. | The Workflow clones your Git repository, caches and installs your project’s dependencies if there are any, runs your Xcode tests, and [exports an IPA file from the project](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects). |
+| `build` | Builds your Xcode project.  This Workflow is generated only if the <GlossTerm baseform="Project scanner">project scanner</GlossTerm> didn't find any tests configured in your Xcode project. | The Workflow clones your Git repository, caches and installs your project’s dependencies if there are any, and builds your project. It uses Xcode's [build for testing](/en/bitrise-ci/testing/testing-ios-apps/building-an-ios-app-for-testing) action. |
 
-<Partial_DefaultWorkflowsForAJavaProject />
 
-<Partial_DefaultWorkflowsForARubyProject />
+## Default Workflows for an Android project
 
-<Partial_DefaultWorkflowsForAPythonProject />
+For a new Android project, Bitrise automatically generates three new Workflows. You can customize these Workflows or [create new ones](/en/bitrise-ci/workflows-and-pipelines/workflows/creating-a-workflow) based on them.
 
-<Partial_DefaultWorkflowsForFlutterProjects />
+| Workflow ID | Workflow summary | Workflow description |
+| --- | --- | --- |
+| `run_tests` | Run your Android unit tests and get the test report. | The Workflow clones your Git repository, [caches your Gradle dependencies](/en/bitrise-ci/dependencies-and-caching/android-dependencies), installs Android tools, runs your [Android unit tests](/en/bitrise-ci/testing/testing-android-apps/android-unit-tests) and saves the [test report](/en/bitrise-ci/testing/deploying-and-viewing-test-results). |
+| `build_apk` | Run your Android unit tests and create an APK file to install your app on a device or share it with your team. | The Workflow clones your Git repository, installs Android tools, [sets the project’s version code based on the build number](/en/bitrise-ci/run-and-analyze-builds/build-numbering-and-app-versioning#setting-up-app-versioning-automatically-on-bitrise), [runs Android lint](/en/bitrise-ci/testing/testing-android-apps/running-lint-for-your-android-apps) and unit tests, builds the project’s APK file and save it. |
+| `run_instrumented_tests` | Run your Android instrumented tests with test sharding and get a test report. | The Workflow clones your Git repository, [caches your Gradle dependencies](/en/bitrise-ci/dependencies-and-caching/android-dependencies), installs Android tools, boots up an Android emulator to run your Android instrumented tests and saves the [test report](/en/bitrise-ci/testing/deploying-and-viewing-test-results).  This Workflow is part of a default Pipeline which utilizes [parallelism](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow): it runs multiple copies of the Workflow to shard instrumented tests. |
+
+
+## Default Workflows for a Node.js project
+
+Bitrise generates one default Workflow for a Node.js project: a Workflow to run your project's lint and test scripts. You can customize this Workflow or create new ones based on it.
+
+| Workflow ID | Workflow summary | Workflow description |
+| --- | --- | --- |
+| `run_tests` | Run your project’s tests. | The Workflow clones your Git repository, selects and installs the Node version, installs the `npm` packages, and, depending on the available scripts in your `package.json` file, runs the lint and test scripts. The Workflow also supports `node_modules` caching for better performance.  The `lint` and `test` steps use npm or Yarn depending on which package manager was detected. If neither lock file is present, the user selects the package manager interactively during setup. |
+
+
+## Default Workflows for a Kotlin Multiplatform project
+
+Bitrise generates three default Workflows for a Kotlin Multiplatform project: one to run tests, one to build an Android app, and one to build an iOS app.
+
+| Workflow ID | Workflow summary | Workflow description |
+| --- | --- | --- |
+| `run_tests` | Run your project’s tests. | The Workflow clones your Git repository, runs the `test` Gradle task using the **Gradle Unit Test** Step, and caches your Gradle task outputs. |
+| `android_build` | Builds and signs an Android app from your Kotlin project. | The Workflow clones your Git repository, builds your app using the **Android Build** Step, [signs](/en/bitrise-ci/code-signing/android-code-signing/android-code-signing-using-the-android-sign-step) it with **Android Sign**, and caches your Gradle task outputs. It produces a downloadable APK file. |
+| `ios_build` | Builds and signs an iOS app from your Kotlin project. | The Workflow clones your Git repository, builds and [signs](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects) your app using the **Xcode Archive & Export for iOS** Step, and caches your Gradle task outputs. It produces a downloadable IPA file. |
+
+
+## Default Workflows for a Java project
+
+The project scanner can detect Java projects and create default Workflows for them. A new project is considered a generic Java project if:
+
+- It uses Gradle (the code contains the usual Gradle configuration files and a Gradle Wrapper script in the project root directory) and it doesn't use Android or Kotlin Multiplatform required dependencies.
+- It uses Maven with a `POM.xml` project configuration file in the root directory, and has a Maven Wrapper script.
+
+For a generic Java project, Bitrise generates default Workflows based on the build tool.
+
+| Workflow ID | Workflow summary | Workflow description |
+| --- | --- | --- |
+| `run_tests` | Run your projects tests. | The Workflow clones your Git repository and runs tests by using the **Run Gradle Tests** Step which runs the `test` Gradle task. |
+
+| Workflow ID | Workflow summary | Workflow description |
+| --- | --- | --- |
+| `run_tests` | Run your projects tests. | The Workflow clones your Git repository and runs tests by using a Script step, running the Maven Wrapper’s test command: `./mvnw test`. |
+
+
+## Default Workflows for a Ruby project
+
+| Workflow ID | Workflow summary | Workflow description |
+| --- | --- | --- |
+| `run_tests` | Run your project’s tests. | The Workflow clones your Git repository and restores your gem cache with the `gem-{{ checksum "Gemfile.lock" }}` caching key. It installs dependencies depending on signals in your codebase:  - If MySQL gem is detected, it installs system dependencies. - If Bundler is detected, it installs dependencies with `bundle install`.  If a relation database gem is detected, it performs database setup: `db:create db:schema:load`.  If a test framework or a Rakefile is detected, the Workflow runs your tests.  The Workflow always saves the Ruby gem cache and includes the **Deploy to Bitrise.io** Step. |
+
+
+## Default Workflows for a Python project
+
+For Python, a single `run_tests` Workflow is generated. The included Steps depend on the detected package manager and whether `pytest` was found in the project.
+
+| Workflow ID | Workflow summary | Workflow description |
+| --- | --- | --- |
+| `run_tests` | Run your project’s tests. | The Workflow clones your Git repository and installs Python based on the detected version. If no version is detected, the stack's default Python version is used. Installs dependencies: the exact command used depends on the [detected package manager](urn:resource:component:133846).  If `pytest` is detected, the Workflow runs your tests. |
+
+
+## Default Workflows for a Flutter project
+
+For Flutter projects, Bitrise creates two default Workflows: a `run_tests` Workflow and a `build_app` Workflow.
+
+The exact Steps included in these default Workflows depend on the project type. However, the main goals of the two Workflows are the same, regardless of project type:
+
+| Workflow ID | Workflow summary | Workflow description |
+| --- | --- | --- |
+| `run_tests` | Run your project’s tests. | The Workflow clones your Git repository, installs Flutter with the **Flutter Installer** Step, runs **Restore Dart cache** to pull your Dart cache. It runs:  - The **Flutter Test** Step when there is a `test/` directory in the project. - The **Flutter Analyze** Step when there is no `test/` directory in the project.  After running the tests, it saves the Dart cache and runs the **Deploy to Bitrise.io** Step to deploy any artifacts. |
+| `build_app` | Builds both the iOS and the Android app from the Flutter project. | This Workflow is only generated when the project has an iOS or Android sub-project. For web projects, this Workflow is not generated.  The Workflow clones your Git repository, installs your code signing certificate for the iOS project, installs Flutter, runs the **Flutter Analyze** Step. It also runs the **Flutter Test** Step when a `test/` directory is present.  It builds the app with the **Flutter Build** Step. It builds all detected platforms. |

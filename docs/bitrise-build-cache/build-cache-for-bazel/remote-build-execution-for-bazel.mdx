@@ -8,7 +8,6 @@ slug: /bitrise-build-cache/build-cache-for-bazel/remote-build-execution-for-baze
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_RecommendedFlagsForRemoteBuildExecution from '@site/src/partials/recommended-flags-for-remote-build-execution.mdx';
 
 Remote execution of a Bazel build allows you to distribute build and test actions across multiple machines. This speeds up build and test execution, allows reuse of build outputs across development teams, and provides a consistent environment.
 
@@ -73,4 +72,42 @@ You can use the Bitrise Build Cache with remote build execution both on Bitrise 
 </TabItem>
 </Tabs>
 
-<Partial_RecommendedFlagsForRemoteBuildExecution />
+
+## Recommended flags for remote build execution
+
+Bazel offers a number of command flags that are needed to get the most out of remote build execution.
+
+| Flag and recommend values | Description |
+| --- | --- |
+| `--jobs=100` | Defines the maximum number of build/test actions Bazel may have "in flight" at once. If you omit the flag Bazel silently falls back to the number of logical CPU cores on the host VM. That default is appropriate for local execution but severely under‑utilises the RBE cluster.  `--jobs=100` is a good starting point for most Android/iOS monorepos but it can be increased gradually based on the worker count. |
+| MacOS:  `--remote_default_exec_properties=Arch=arm64`  `--remote_default_exec_properties=OSFamily=Darwin`  Linux:  `--remote_default_exec_properties=Arch=amd64`  `--remote_default_exec_properties=OSFamily=Linux` | Defines the default execution platform (worker pool). Supply key‑value pairs such as `Arch=arm64` or `OSFamily=Darwin`. Multiple occurrences are merged.  Make sure that no other `exec_properties` are set anywhere for the targets, otherwise Bazel will not match the worker pool and the build will fail. |
+| `--spawn_strategy=remote,local` | Determines the order in which Bazel tries to execute an action. Bazel will use the first strategy in the list that can run a given action. The default value is `remote,worker,sandboxed,local`.  Keep remote first so actions run in your remote execution environment, with a graceful fallback to local execution. |
+| `--noremote_upload_local_results` | Skips re‑uploading outputs that were produced locally. Remote workers already push artifacts to the cache, saving bandwidth.  This config flag is also configured via Bitrise Build Cache CLI. If you use it, please make sure that `--cache-push` flag is false or off in the CLI when you use this flag. |
+
+We recommend adding these flags to your `.bazelrc` file and reuse:
+
+MacOS:
+
+```
+build:remote --jobs=100
+build:remote --noremote_upload_local_results
+build:remote --spawn_strategy=remote,local
+build:remote --remote_default_exec_properties=Arch=arm64
+build:remote --remote_default_exec_properties=OSFamily=Darwin
+```
+
+Linux:
+
+```
+build:remote --jobs=100
+build:remote --noremote_upload_local_results
+build:remote --spawn_strategy=remote,local
+build:remote --remote_default_exec_properties=Arch=amd64
+build:remote --remote_default_exec_properties=OSFamily=Linux
+```
+
+With everything in place, you can invoke remote build execution by adding the remote config to any Bazel command:
+
+```
+bazel build //... --config=remote
+```

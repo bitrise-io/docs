@@ -8,7 +8,6 @@ slug: /bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/creating
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_EnablingCloudWatchBitriseAgentLogging from '@site/src/partials/enabling-cloudwatch-bitrise-agent-logging.mdx';
 
 You must create and connect a Cloud Controller to take advantage of our Controller-managed AWS offering. The process has two stages:
 
@@ -143,4 +142,15 @@ For more information, read [the official AWS documentation on VPCs](https://docs
 </TabItem>
 </Tabs>
 
-<Partial_EnablingCloudWatchBitriseAgentLogging />
+
+## Enabling CloudWatch Bitrise Agent logging
+
+Setting up CloudWatch is optional, but we recommend doing so: it enables better build troubleshooting capabilities. Bitrise can provide you with faster support in case of an issue if you share the Bitrise Agent logs from your CloudWatch setup.
+
+To enable your AWS resources, such as EC2 instances, to send logs to CloudWatch, you must configure it in [AWS CloudFormation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html). You need the following settings:
+
+- **CreatedBitriseAgentLogs**: When enabled, this setting initiates the creation of a CloudWatch log group for the log stream, along with the required role and an instance profile named `bitrise-agent-log-instance-profile`.
+- **Bitrise Agent Logs Group Class**: The Bitrise Agent generates logs that are accessible to the customers in AWS. This configuration specifies what features the customer wants to use during log analysis. The default is **Infrequent access**, which provides a limited log analyzing capability at a lower cost.
+- **Bitrise Agent Logs Retention In Days** (required): The days until AWS stores the Bitrise Agent logs.
+
+![agent-logging.png](/img/_paligo/uuid-639ad75f-9b32-7eb3-a08a-0f0a1c5035bf.png)

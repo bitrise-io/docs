@@ -8,7 +8,6 @@ slug: /bitrise-ci/references/steps-reference/step-reference-id-format
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_SpecialStepSources from '@site/src/partials/special-step-sources.mdx';
 
 A <GlossTerm baseform="Step">Step</GlossTerm> reference can contain three components:
 
@@ -39,4 +38,44 @@ https://github.com/bitrise-io/bitrise-steplib.git::script@1:
 
 We recommend pinning the major version of a Step when referencing it. In the example above, `script@1` means major version 1 of the [**Script**](https://github.com/bitrise-io/steps-script) Step is pinned: the Step will run with the latest available minor and patch versions of the Step. For example, if the latest minor version is 1.2, and the latest patch version is 1.2.2 then pinning major version 1 means the Step will use version 1.2.2.
 
-<Partial_SpecialStepSources />
+
+## Special Step sources
+
+There are two special Step sources:
+
+- `git::`
+- and `path::`
+
+When you use one of these sources, the Step won’t be identified through a Step Library but through the ID data you specify.
+
+### The git:: source
+
+The `git::` source is the repository of the Step on your git hosting provider. The `script` Step’s GitHub source is: `https://github.com/bitrise-io/steps-script`. To reference the `script` Step directly through a git reference, you can use the `git::` source, the Step’s git clone URL, and the branch or tag in the repository.
+
+To reference the `1.1.3` version tag of the script Step’s repository:
+
+```
+- git::https://github.com/bitrise-io/steps-script.git@1.1.3:
+```
+
+In general, whenever you can use a Step version through a Step Library, you should do that, instead of using the `git::` source type. Features like local step caching, network caching, or alternative download URLs are only supported for Steps shared in a StepLib.
+
+But this type of referencing allows certain things you can’t get through a StepLib. For example, the `git::` source type can be used for not-yet-published or work-in-progress states of a Step. If you develop your own Step, you can use this `git::` source type to test your step before you publish it in a StepLib.
+
+To reference `soon-to-be-released` branch of your repository where you're developing a Step:
+
+```
+- git::https://github.com/bitrise-io/steps-script.git@soon-to-be-released:
+```
+
+### The path:: source
+
+The `path::` source specifies a local path to a Step's repository, and it requires no version information. Both absolute and relative local paths are supported. A relative path is relative to the folder containing the `bitrise.yml` file.
+
+```
+- path::/path/to/my/step:
+
+- path::./relative/path:
+```
+
+This is useful for Step development. It can also be used if you want to include your build Steps in your project’s source code.

@@ -8,8 +8,6 @@ slug: /bitrise-ci/dependencies-and-caching/migrating-from-branch-based-caching-t
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_ReplacingCachingSteps from '@site/src/partials/replacing-caching-steps.mdx';
-import Partial_DifferencesBetweenCachingSystems from '@site/src/partials/differences-between-caching-systems.mdx';
 
 Branch-based caching is a legacy technology that is no longer supported by Bitrise. Use the more efficient and flexible Key-based caching.
 
@@ -17,6 +15,56 @@ If your builds are using smaller cache archives than 15 GB then the branch-based
 
 This guide will help you transition your projects to the key-based caching infrastructure.
 
-<Partial_DifferencesBetweenCachingSystems />
 
-<Partial_ReplacingCachingSteps />
+## Differences between caching systems
+
+Key-based caching is generally more efficient and far more powerful than branch-based caching. In the table, we compare the two caching methods based on their feature set.
+
+| Features | Branch-based caching | Key-based caching |
+| --- | --- | --- |
+| **Cache scope** | One cache per branch | Multiple caches identified by keys |
+| **Cache sharing across builds** | Limited to same branch and stack | Can be shared across Workflows, branches, and stacks |
+| **Steps used** | [Cache:Pull](https://bitrise.io/integrations/steps/cache-pull) and [Cache:Push](https://bitrise.io/integrations/steps/cache-push) | - The generic [Restore Cache](https://bitrise.io/integrations/steps/restore-cache) and [Save Cache](https://bitrise.io/integrations/steps/save-cache) Steps - [Dedicated caching steps for six dependency managers](/en/bitrise-ci/dependencies-and-caching/key-based-caching/dedicated-caching-steps-for-dependency-managers) |
+| **Expiration** | Seven days without new build on branch | Seven days since last use |
+| **Fallback mechanism** | Default branch cache used as fallback | Multiple fallback keys can be configured |
+| **Maximum cache archive size** | No limit (until migration stated) | 15 GB |
+| **Adding files/paths to the cache archive** | Configured manually or by other Bitrise steps supporting caching | Configured manually or via the dedicated caching Steps |
+| **Ignoring files** | `Ignore paths` parameter | No separate ignore list |
+| **Performance/speed** | Slower (larger gzip archives and slower storage backend) | Faster (state-of-the art [zstd](https://github.com/facebook/zstd) compression and faster storage backend) |
+| **Dedicated caching Steps for dependency managers** | Not available | Available for [most dependency managers](/en/bitrise-ci/dependencies-and-caching/key-based-caching/dedicated-caching-steps-for-dependency-managers) |
+
+
+## Replacing branch-based caching Steps
+
+There are two ways to use key-based caching: either via the generic **Restore Cache** and **Save Cache** Steps or via the dedicated caching Steps for specific dependency managers. We strongly recommend using the dedicated Steps, unless your dependency manager is not supported or you need some special configuration.
+
+### Using the dedicated caching Steps
+
+Dedicated caching Steps cache dependencies for a specific dependency manager.
+
+For example, if you run Gradle in your build, you can cache Gradle dependencies with the dedicated Steps. The dedicated Steps usually don't need any further configuration: you just add them to your Workflow:
+
+:::tip[Full list of dedicated Steps]
+
+The procedure below is only an example for using dedicated key-based caching Steps. The example uses Gradle but we have several dedicated Steps. For the detailed list of Steps, see: [Dedicated caching Steps for dependency managers](/en/bitrise-ci/dependencies-and-caching/key-based-caching/dedicated-caching-steps-for-dependency-managers).
+
+:::
+
+1. Replace the **Cache:Pull** Step with the **Restore Gradle Cache** Step in your Workflow. This Step will download your Gradle cache.
+1. Replace the **Cache:Push** Step with the **Save Gradle Cache** Step. This Step updates the Gradle cache.
+
+All key-based caching Steps follow a similar naming convention: the Restore Steps download the cache while the Save Steps update it. After you ran at least two builds with a key-based setup, you can find and download the cache archive from the **Project settings** page: [Accessing key-based cache archives](/en/bitrise-ci/dependencies-and-caching/key-based-caching/accessing-key-based-cache-archives).
+
+### Using the generic key-based caching Steps
+
+If the dedicated caching Steps don't produce the desired results, consider using the generic **Restore Cache** and **Save Cache** Steps. You can configure these Steps to perfectly fit your needs. You can:
+
+- [Use key-based caching templates and functions](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-based-caching-templates-and-functions).
+- [Define multiple keys to match your cache archives](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-matching-for-cache-archives).
+- [Use conditional caching with dynamic keys](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#using-conditional-caching-with-dynamic-keys).
+
+:::tip[Cache recipes with the generic Steps]
+
+Check out our key-based cache recipes utilising the generic Steps: [Advanced key-based cache recipes](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/key-cache-advanced.md).
+
+:::

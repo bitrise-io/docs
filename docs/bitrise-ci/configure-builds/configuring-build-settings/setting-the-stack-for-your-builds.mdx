@@ -8,9 +8,6 @@ slug: /bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_SettingTheStackInTheWorkflowEditor from '@site/src/partials/setting-the-stack-in-the-workflow-editor.mdx';
-import Partial_BuildMachineTypes from '@site/src/partials/build-machine-types.mdx';
-import Partial_SettingTheStackInTheBitriseYmlFile from '@site/src/partials/setting-the-stack-in-the-bitriseyml-file.mdx';
 
 [The build stack](/en/bitrise-build-hub/infrastructure/build-stacks/about-build-stacks) indicates the virtual machine version that we will use to run your build. You can set the <GlossTerm baseform="Stack">stack</GlossTerm> for all your builds, or you can set <GlossTerm baseform="Workflow">Workflow</GlossTerm>-specific stacks.
 
@@ -20,8 +17,190 @@ You can also change build machine types for all apps owned by a single user or W
 
 :::
 
-<Partial_SettingTheStackInTheWorkflowEditor />
 
-<Partial_SettingTheStackInTheBitriseYmlFile />
+## Setting the stack in the Workflow Editor
 
-<Partial_BuildMachineTypes />
+The simplest way to configure the [build stack](/en/bitrise-build-hub/infrastructure/build-stacks/about-build-stacks) is in the <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>. You can set both the default stack and Workflow-specific stacks.
+
+### Setting the default stack
+
+The default stack of your app is the stack that is used if you haven't set a specific stack for a Workflow.
+
+:::note[Project type]
+
+Note that if you change the project type on the app's **Settings** tab to a type that isn't compatible with your selected default stack, we'll automatically change the stack to a compatible one.
+
+:::
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+
+   ![workflows-button.png](/img/_paligo/uuid-99bb894c-3e79-91c8-9e62-7e475573495d.png)
+1. On the left, select **Stacks & Machines**.
+1. In the **Default Stack** section, open the dropdown menu and select the stack you need.
+1. Click **Save changes** in the top right corner.
+
+### Setting a Workflow-specific stack
+
+When you set a stack for a Workflow, that Workflow will always run on that stack, regardless of the default stack.
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+
+   ![workflows-button.png](/img/_paligo/uuid-99bb894c-3e79-91c8-9e62-7e475573495d.png)
+1. On the left, select **Stacks & Machines**.
+1. Scroll down to find the Workflow you need.
+1. Select a stack.
+1. Click **Save changes** in the top right corner.
+
+### Setting the machine type in the Workflow Editor
+
+You can define the machine type you want to use for your build in the Workflow Editor. The available machine types depend on the type of stack you use: [Build machine types](/en/bitrise-build-hub/infrastructure/build-machine-types).
+
+To set the machine type:
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+
+   ![workflows-button.png](/img/_paligo/uuid-99bb894c-3e79-91c8-9e62-7e475573495d.png)
+1. On the left, select **Stacks & Machines**.
+1. In the **Default Stack** section, find the **Machine type for the default stack** section and choose a machine type.
+
+   ![machine-type-selector.png](/img/_paligo/uuid-3541a0b4-b1d8-6530-46f1-0e3badfff2b3.png)
+1. Optionally, choose a Workflow-specific machine type for any Workflow that has a Workflow-specific stack set.
+
+
+## Setting the stack in the Configuration YAML
+
+You can set both the default stack and Workflow-specific tasks in your project's Configuration YAML. Use the `meta` field with the appropriate stack ID:
+
+```
+meta:      
+  bitrise.io:       
+    stack: <stack-id>
+```
+
+This is particularly useful if you [keep your `bitrise.yml` file stored in your app's repository](/en/bitrise-ci/configure-builds/configuration-yaml/managing-a-project-s-configuration-yaml-file#storing-the-bitriseyml-file-in-your-repository).
+
+:::note[Stack IDs]
+
+You can find the stack IDs on the top of each stack report: [Bitrise stack reports](https://stacks.bitrise.io/stack_reports/). Alternatively, you can set a stack in the Workflow Editor and then check out the ID on the **bitrise.yml** tab, by finding the `meta` field.
+
+The stack reports also show every [pre-installed tool](/en/bitrise-platform/infrastructure/build-stacks/preinstalled-tools-on-bitrise-stacks) that is available on the stack.
+
+:::
+
+### Setting the default stack in the Configuration YAML
+
+The default stack of your app is the stack that is used if you haven't set a specific stack for a Workflow.
+
+1. Open your project's Configuration YAML.
+1. Add a `meta` entry outside the `workflows` property or at the end of your Configuration YAML:
+
+   ```
+   meta:      
+     bitrise.io:       
+       stack:
+   ```
+
+   Make sure you use double indentation.
+1. Add the stack ID.
+
+   You can find the stack IDs on the [stack reports page](https://stacks.bitrise.io/stack_reports/): the filenames without the `.log` extension are the stack IDs.
+
+   ```
+   meta:      
+     bitrise.io:       
+       stack: <stack-id>
+   ```
+
+### Setting Workflow-specific stacks in the Configuration YAML
+
+When you set a stack for a Workflow, that Workflow will always run on that stack, regardless of the default stack.
+
+1. Open your project's Configuration YAML.
+1. Find the `workflows` property and find the name of the Workflow you need within.
+1. Add a `meta` entry under the Workflow itself:
+
+   ```
+   workflows:
+     deploy:  
+       meta:      
+         bitrise.io:       
+           stack:
+   ```
+1. Add the stack ID.
+
+   You can find the stack IDs on the top of each [stack report page](https://stacks.bitrise.io/stack_reports/).
+
+   ```
+   workflows:
+     deploy:  
+       meta:      
+         bitrise.io:       
+           stack: <stack-id>
+   ```
+
+### Setting the machine type in the Configuration YAML
+
+You can also define the machine type you want to use for your build in your project's Configuration YAML. Machine type refers to the hardware resources used in your build; for example, an Elite machine has more CPU cores and available RAM than a Standard machine.
+
+To set the machine type in Configuration YAML file, you need to use the `machine_type_id` attribute in a `meta` entry:
+
+:::note[Available machine IDs]
+
+You can find the available machine type IDs here: [Build machine types](/en/bitrise-build-hub/infrastructure/build-machine-types).
+
+:::
+
+1. Open your project's Configuration YAML file.
+1. Find the `workflows` property and find the name of the Workflow you need within.
+1. Add a `meta` entry:
+
+   ```
+   # setting an 8-core Gen2 machine for an Xcode stack as the default machine type of the app:
+   meta:
+     bitrise.io:
+       machine_type_id: g2.8core
+   # setting a 12-core Gen2 machine as a Workflow-specific machine type
+   workflows:
+     deploy:  
+       meta:      
+         bitrise.io:       
+           machine_type_id: <machine-id>
+   ```
+
+
+## Build machine types
+
+Bitrise offers multiple build machines with different specifications You can choose between them based on your needs.
+
+You can track how much time you spent building your apps on each machine type with Insights: [Bitrise CI metrics](/en/insights/available-metrics-in-insights/bitrise-ci-metrics).
+
+:::tip[Machine availability by subscription plan]
+
+Not all machines are available on all subscription plans. Visit [the pricing page](http://www.bitrise.io/pricing) to find out which machines are available on your plan!
+
+:::
+
+Machine types are divided into resource classes. The same resource class offers multiple machine types with broadly similar performances. Bitrise automatically assigns machine types from a resource class, which means that on the same day, your builds might run on different machine types.
+
+| Operating system | Resource class | Hardware types | Specs | Machine type ID for [YAML configuration](/en/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds#setting-the-stack-in-the-configuration-yaml) |
+| --- | --- | --- | --- | --- |
+| macOS |  |  |  |  |
+| Medium | - M2 Pro Medium - M4 Medium | - 4 CPU @3.49GHz and 6 GB RAM - 5 CPU @4.4 GHz and 6 GB RAM | `g2.mac.medium` |  |
+| Large | - M2 Pro Large - M4 Large | - 6 CPU @3.49GHz and 14 GB RAM - 5 CPU @4.4 GHz and 14 GB RAM | `g2.mac.large` |  |
+| X Large | - M2 Pro X Large - M4 X Large | - 12 CPU @3.49GHz and 28 GB RAM - 10 CPU @4.4 GHz and 28 GB RAM | `g2.mac.x-large` |  |
+| 4Large | M4 Pro Large | 7 CPU @4.52GHz and 27 GB RAM | `g2.mac.4large` |  |
+| 4X Large | M4 Pro X Large | 14 CPU @4.52GHz and 54 GB RAM | `g2.mac.4x-large` |  |
+| Linux | Medium | 4 vCPU @ 3.1 GHz | 4 vCPU @3.1 GHz and 16 GB RAM | `standard` |
+| Large | 8 vCPU @ 3.1 GHz | 8 vCPU @3.1 GHz and 32 GB RAM | `elite` |  |
+| X Large | 16 vCPU @ 3.1 GHz | 16 vCPU @3.1 GHz and 64 GB RAM | `elite-xl` |  |
+| M | AMD EPYC Zen 4 and Zen 5 | 4 vCPU @3.7 GHz and 16 GB RAM | `g2.linux.medium` |  |
+| 2M | AMD EPYC Zen 4 and Zen 5 | 6 vCPU @3.7 GHz and 24 GB RAM | `g2.linux.2medium` |  |
+| L | AMD EPYC Zen 4 and Zen 5 | 8 vCPU @3.7 GHz and 32 GB RAM | `g2.linux.large` |  |
+| 4L | AMD EPYC Zen 4 and Zen 5 | 14 vCPU @3.7 GHz and 56 GB RAM | `g2.linux.4large` |  |
+| XL | AMD EPYC Zen 4 and Zen 5 | 16 vCPU @3.7 GHz and 64 GB RAM | `g2.linux.x-large` |  |
+| 3XL | AMD EPYC Zen 4 and Zen 5 | 24 vCPU @3.7 GHz and 96 GB RAM | `g2.linux.3x-large` |  |
+| 5XL | AMD EPYC Zen 4 and Zen 5 | 32 vCPU @3.7 GHz and 128 GB RAM | `g2.linux.5x-large` |  |
+| 7XL | AMD EPYC Zen 4 and Zen 5 | 48 vCPU @3.7 GHz and 192 GB RAM | `g2.linux.7x-large` |  |

@@ -9,12 +9,6 @@ sidebar_label: Getting started with Bitrise CI
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_ManagingYourWorkspaces from '@site/src/partials/managing-your-workspaces.mdx';
-import Partial_ChangingYourProjectSettings from '@site/src/partials/changing-your-project-settings.mdx';
-import Partial_RunningABuild from '@site/src/partials/running-a-build.mdx';
-import Partial_EditingYourBuildConfiguration from '@site/src/partials/editing-your-build-configuration.mdx';
-import Partial_TestingAndDeployment from '@site/src/partials/testing-and-deployment.mdx';
-import Partial_AddingYourFirstProject from '@site/src/partials/adding-your-first-project.mdx';
 
 Bitrise is the CI/CD Platform built for Mobile DevOps. With scalable infrastructure, robust collaboration features, and a wide range of integrations, our platform offers the tools to fit all your Mobile DevOps needs.
 
@@ -30,14 +24,143 @@ To start the 30-day trial, you need to provide credit card details:
 
 For more information about the trial and the paid subscription plans, check out our [Pricing page](https://bitrise.io/pricing).
 
-<Partial_AddingYourFirstProject />
 
-<Partial_ChangingYourProjectSettings />
+## Adding your first CI project
 
-<Partial_EditingYourBuildConfiguration />
+Watch the walkthrough to get set up with your first CI project on Bitrise, or follow the step-by-step guide below.
 
-<Partial_RunningABuild />
+After signing up, select **Build, test and deploy my mobile or web project**.
 
-<Partial_ManagingYourWorkspaces />
+![new-getting-started-page.png](/img/_paligo/uuid-87e4d1a2-b6f1-9870-17b4-54d76e188eb8.png)
 
-<Partial_TestingAndDeployment />
+:::note[First workspace]
+
+Bitrise automatically creates your first [workspace](/en/bitrise-platform/workspaces/workspaces-overview). You need at least one workspace to be able to add projects and run builds. Your subscriptions are also tied to your workspaces.
+
+:::
+
+Follow the instructions to add your project. During the process, you will:
+
+1. [Configure repository access](/en/bitrise-platform/repository-access/repository-access-with-oauth).
+
+   :::note
+
+   For self-hosted GitLab or Bitbucket Server, use the dedicated menu option in the **Provider** dropdown menu. Do not paste the URL into **Other**.
+
+   :::
+1. Set up authentication, if necessary: [Configuring SSH keys](/en/bitrise-platform/repository-access/configuring-ssh-keys). We recommend using the GitHub app for authentication, however: [GitHub app integration](/en/bitrise-platform/repository-access/github-app-integration).
+1. Set up a default branch. Bitrise will build from this branch unless your configuration specifies a different one.
+1. Choose between manual configuration or automatic configuration. Automatic configuration means the project scanner scans your repository and identifies your project type. Based on the project type, a configuration is generated.
+1. [Register a webhook](/en/bitrise-platform/integrations/webhooks/adding-incoming-webhooks). Webhooks allow you to automatically trigger builds.
+
+After you’ve completed these steps, Bitrise will kick off your first build and you can watch it running in real time.
+
+
+## Changing your project settings
+
+You can change your project settings at any time. To do so, open your project on the [Bitrise CI page](https://app.bitrise.io/dashboard) and click **Project settings**.
+
+![project-settings-button.png](/img/_paligo/uuid-56c193b1-5aaf-9bc1-63f3-61739dfcd68d.png)
+
+Clicking the button takes you to the **Project settings** page.
+
+![project-settings-main-page.png](/img/_paligo/uuid-b76a80c6-dd43-0542-65aa-98a4f8e44407.png)
+
+The settings you can change include:
+
+- Name and project type.
+- [Repository URL and default branch](/en/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch).
+- [Team members of the project](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+- [Git connection](/en/bitrise-platform/repository-access/repository-access-with-oauth) and [access to online services](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services) such as the Apple Store or Google Play.
+- [Build notification settings](/en/bitrise-ci/configure-builds/configuring-build-settings/configuring-email-notifications).
+
+You can also set up [rolling builds](/en/bitrise-ci/configure-builds/configuring-build-settings/rolling-builds) and [selective builds](/en/bitrise-ci/configure-builds/configuring-build-settings/selective-builds), upload [code signing files](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects), upload [generic files to Bitrise](/en/bitrise-ci/run-and-analyze-builds/managing-build-files/artifact-retention-policy), [register test devices](/en/bitrise-ci/testing/testing-ios-apps/registering-a-test-device), and check your [caching](/en/bitrise-ci/dependencies-and-caching/dependencies-and-caching-overview) data.
+
+
+## Editing your build configuration
+
+Your CI build configuration is defined in YAML format. The root configuration file is called `bitrise.yml`: it contains a project's entire build configuration.
+
+To edit the configuration on Bitrise:
+
+1. Open the [Bitrise CI page](https://app.bitrise.io/dashboard).
+1. Select your project from the list of projects on the right. You can use the Search field to search for a specific one.
+
+   ![project-list.png](/img/_paligo/uuid-624fc88e-8389-faf0-8638-465d3a7978ee.png)
+1. Click **Workflows**. This takes you to the Workflow Editor where you can configure:
+
+   - [Steps, Workflows, and Pipelines](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/about-pipelines).
+   - [Build stacks](/en/bitrise-build-hub/infrastructure/build-stacks/about-build-stacks) and [machine types](/en/bitrise-build-hub/infrastructure/build-machine-types).
+   - [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables) on the project level.
+   - [Build triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers) that allow you to automatically trigger builds when a code event happens.
+
+   :::note[Editing the YAML file directly]
+
+   Select **Configuration YAML** to edit the configuration file directly. For detailed YAML syntax, see [Configuration YAML reference](/en/bitrise-ci/references/configuration-yaml-reference).
+
+   :::
+
+
+## Running a build
+
+After successfully adding a project, your first build starts automatically. You are automatically taken to the **Builds** page of your project where you can see the build in progress. Click on the build to see its [details](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/checking-build-details) and current progress.
+
+To start a CI build manually, click **Start build**.
+
+![start-build.png](/img/_paligo/uuid-111feaf8-6180-9531-fae4-51424aeb75dc.png)
+
+This opens up the dialog for [manually starting a build](/en/bitrise-ci/run-and-analyze-builds/starting-builds/starting-builds-manually).
+
+![start-build-basic.png](/img/_paligo/uuid-2fe105a3-6faa-4394-35fd-41fd3ed5cc42.png)
+
+A build is a series of jobs, defined in the project's [Workflows](/en/bitrise-ci/workflows-and-pipelines/workflows/workflows-overview) and [Pipelines](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/about-pipelines). The jobs are called [Steps](/en/bitrise-ci/workflows-and-pipelines/steps/steps-overview) which represent blocks of script executions.
+
+You only need to specify a branch and a Workflow or Pipeline to run a build with the **Basic** options. When adding a new project, Bitrise automatically generates at least one [default Workflow](/en/bitrise-ci/workflows-and-pipelines/workflows/default-workflows) for you so you can immediately run your first build.
+
+When ready, click **Start build**. It takes you to the build page where you can track the progress of the build, view the [build logs](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/build-logs), and check the [generated build artifacts](/en/bitrise-ci/run-and-analyze-builds/managing-build-files/build-artifacts-online).
+
+:::note[Triggering builds]
+
+You can also trigger builds automatically. Whenever a specified code event happens, Bitrise automatically starts a build: [Configuring build triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers).
+
+:::
+
+
+## Managing your Workspaces
+
+Workspaces are fundamental to all aspects of Bitrise: only Workspaces can own projects and all subscriptions belong to Workspaces.
+
+When signing up for a personal account, we automatically create a new Workspace for you. A Bitrise personal account can own multiple Workspaces and can be invited to Workspaces owned by other accounts.
+
+To manage your Workspace, you have to get to the **Workspace settings** page:
+
+1. Log in to Bitrise and hover over the left navigation bar.
+1. Make sure you have the right workspace selected in the **Workspace** menu.
+1. Select **Settings**.
+
+   ![workspace-settings.png](/img/_paligo/uuid-b9660c7d-79af-481d-c05a-17356619dd07.png)
+
+On the **Workspace settings** page, you can:
+
+- Edit the basic information of the Workspace.
+- Manage your subscription.
+- [Invite members to your Workspace](/en/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/workspace-collaboration) and create [Workspace groups](/en/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/workspace-groups).
+- Set up [SAML SSO](/en/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-saml-sso-on-bitrise).
+- Check your projects, [transfer project ownership](/en/bitrise-platform/projects/changing-the-owner-of-a-project), and add new projects.
+- Configure [Git integration for repository access](/en/bitrise-platform/repository-access/github-app-integration) and access to online stores.
+
+
+## Testing, installing, deploying
+
+Testing your app and deploying your app are both done with the help of our Steps: we have Steps dedicated to both these functions, based on the platform type. Unit testing, UI testing, and real device testing are all possible on Bitrise:
+
+- [Device testing for Android](/en/bitrise-ci/testing/device-testing-with-firebase/device-testing-for-android)
+- [Device testing for iOS](/en/bitrise-ci/testing/device-testing-with-firebase/device-testing-for-ios)
+- [Android unit tests](/en/bitrise-ci/testing/testing-android-apps/android-unit-tests)
+- [Running unit and UI tests for iOS apps](/en/bitrise-ci/testing/testing-ios-apps/running-unit-and-ui-tests-for-ios-apps)
+
+You can find all your generated installable binaries in one place on Bitrise: [The Installable artifacts page](/en/bitrise-ci/run-and-analyze-builds/managing-build-files/build-artifacts-online#the-installable-artifacts-page). From this page, you can easily install your apps on test devices, using either a private install page or by distributing a link to [a public install page](/en/bitrise-ci/deploying/ios-deployment/installing-an-ipa-file-from-the-public-install-page).
+
+Once your app is tested, built and ready to go, you can quickly deploy it to the store of your choice, for example, Google Play or the App Store.
+
+We also recommend trying out Release Management, our one-stop solution for all release-specific tasks. Once you have an installable binary, you can use Release Management to automatically take care of everything else related to releases: [see topic](urn:resource:publication:90740).

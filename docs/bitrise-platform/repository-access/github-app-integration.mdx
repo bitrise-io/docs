@@ -9,13 +9,7 @@ sidebar_label: GitHub app integration for GitHub Cloud
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_RunningGitCloneWithLinkedRepositories from '@site/src/partials/running-git-clone-with-linked-repositories.mdx';
-import Partial_ExtendingGitHubAppPermissionsToTheBuilds from '@site/src/partials/extending-github-app-permissions-to-the-builds.mdx';
-import Partial_InstallingTheGitHubAppIntegration from '@site/src/partials/installing-the-github-app-integration.mdx';
-import Partial_UsingAPrivateStepLibraryViaTheGitHubApp from '@site/src/partials/using-a-private-step-library-via-the-github-app.mdx';
 import Partial_SwitchingFromOAuthConnectionToTheGitHubApp from '@site/src/partials/switching-from-oauth-connection-to-the-github-app.mdx';
-import Partial_RevertingToAnOAuthConnection from '@site/src/partials/reverting-to-an-oauth-connection.mdx';
-import Partial_AdditionalLinkedRepositories from '@site/src/partials/additional-linked-repositories.mdx';
 
 :::important[Supported for GitHub Cloud users]
 
@@ -35,16 +29,318 @@ The GitHub App requires an HTTPS URL for your repository instead of an SSH one. 
 
 :::
 
-<Partial_InstallingTheGitHubAppIntegration />
 
-<Partial_ExtendingGitHubAppPermissionsToTheBuilds />
+## Installing the GitHub app integration
 
-<Partial_AdditionalLinkedRepositories />
+This guide is intended for GitHub Cloud users, including GitHub Enterprise Cloud users, who wish to install the Bitrise GitHub app and connect their Bitrise Workspace to a GitHub account or organization with the app.
 
-<Partial_UsingAPrivateStepLibraryViaTheGitHubApp />
+For GitHub Enterprise Server users, we have a separate guide: [Integrating GitHub Enterprise with Bitrise](/en/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise)
 
-<Partial_RunningGitCloneWithLinkedRepositories />
+You can connect via the GitHub app integration in two ways:
+
+- From the **Workspace settings** page.
+- When adding a new Bitrise project.
+
+:::important[GitHub App installations per Workspace]
+
+Note that:
+
+- A maximum of ten GitHub app installations can be connected to a Workspace.
+- A GitHub app installation cannot be connected to multiple Workspaces.
+- The GitHub Checks functionality of the app is available for repositories owned by other GitHub accounts.
+
+:::
+
+### Connecting a GitHub app from the Workspace settings page
+
+A Bitrise GitHub app installation is tied to a Workspace. You can always install and check its connection from the **Workspace settings** page.
+
+:::note[SSO on GitHub]
+
+If you install the GitHub App integration for a GitHub organization that requires SAML SSO, you need to have an active SAML SSO session on GitHub to be able to connect to the organization's repositories.
+
+If your installed GitHub app can't access all repositories it should, you might to need to revoke the app and authorize it again on GitHub while you have an active SAML SSO session.
+
+For more information and the detailed procedure, [check GitHub's documentation](https://docs.github.com/en/enterprise-cloud@latest/apps/using-github-apps/saml-and-github-apps).
+
+:::
+
+1. On the Bitrise main page, select your Workspace from the dropdown menu.
+1. From the navigation menu on the left, select **Settings**.
+1. On the **Workspace settings** page, select **Integrations**.
+1. Select **GitHub** and click **Connect**.
+
+   ![github-account-connection.png](/img/_paligo/uuid-1b49695a-ea36-fe03-f9a1-48a6bfc9a737.png)
+1. If you haven't authorized the Bitrise GitHub app before, you will be prompted for authorization at this point.
+1. You will be prompted to select the GitHub account or organization you want to connect. If you don't find the one you need in the list, you need to install the App to that account or organization first: click the link below the list of accounts.
+
+   ![install-the-app.png](/img/_paligo/uuid-cae94617-17e3-33ce-8cf7-99205e85bd22.png)
+1. Once you click the link, you will be prompted to select an account or organization. After selecting one, you will be transferred to the **Install & Authorize** page.
+1. On the **Install & Authorize** page, select the access type:
+
+   - **All repositories**: the Bitrise GitHub App will have access to all repositories belonging to the account or organization, including future ones.
+   - **Only select repositories**: Select one or more repositories that Bitrise will be able to access. You can add more later but to do so, you will need to reconfigure your repository access on the GitHub App's page.
+
+   ![authorizing-app.png](/img/_paligo/uuid-a25560d9-ce2a-4181-2dc6-59cc4318c577.png)
+1. When done, click **Install & Authorize**. You will be redirected to the **Workspace settings** page.
+
+   :::important[Authorization]
+
+   If you are not authorized on GitHub to install the app, you can still request the installation. Once a GitHub Admin approves the installation, you can come back and select the **App installation** from the list.
+
+   :::
+1. If you have existing apps with OAuth connection, we recommend [switching them over to the GitHub App connection](/en/bitrise-platform/repository-access/github-app-integration#switching-from-oauth-connection-to-the-github-app).
+
+### Connecting a GitHub app when adding a new project
+
+:::note[SSO on GitHub]
+
+If you install the GitHub App integration for a GitHub organization that requires SAML SSO, you need to have an active SAML SSO session on GitHub to be able to connect to the organization's repositories.
+
+If your installed GitHub app can't access all repositories it should, you might to need to revoke the app and authorize it again on GitHub while you have an active SAML SSO session.
+
+For more information and the detailed procedure, [check GitHub's documentation](https://docs.github.com/en/enterprise-cloud@latest/apps/using-github-apps/saml-and-github-apps).
+
+:::
+
+During the process of [adding a new project](/en/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache#adding-a-new-connection-to-the-build-cache) on Bitrise, you have to select how Bitrise can access your repository. This process allows connecting the project via the GitHub app.
+
+1. Start the process of [adding a new project](/en/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache#adding-a-new-connection-to-the-build-cache).
+1. At the **Select a repository** section, select **GitHub App (recommended)** from the **Provider** dropdown menu.
+
+   ![select-repository.png](/img/_paligo/uuid-5fa460a4-aa40-627b-9ccd-d820ef1af5db.png)
+1. Click **Connect account**.
+
+   ![connect-github-app.png](/img/_paligo/uuid-bbcc5c35-f82c-f026-b5a7-92bb3040d6da.png)
+1. You will be prompted to select the GitHub account or organization you want to connect. If you don't find the one you need in the list, you need to install the App to that account or organization first: click the link below the list of accounts.
+
+   ![install-the-app.png](/img/_paligo/uuid-cae94617-17e3-33ce-8cf7-99205e85bd22.png)
+1. Once you click the link, you will be prompted to select an account or organization. After selecting one, you will be transferred to the **Install & Authorize** page.
+1. On the **Install & Authorize** page, select the access type:
+
+   - **All repositories**: the Bitrise GitHub App will have access to all repositories belonging to the account or organization, including future ones.
+   - **Only select repositories**: Select one or more repositories that Bitrise will be able to access. You can add more later but to do so, you will need to reconfigure your repository access on the GitHub App's page.
+
+   ![authorizing-app.png](/img/_paligo/uuid-a25560d9-ce2a-4181-2dc6-59cc4318c577.png)
+1. When done, click **Install & Authorize**. You will be redirected to continue adding your new Bitrise project.
+
+:::note[Connecting multiple GitHub organizations to a Bitrise workspace]
+
+If you wish your builds to access code that is stored in different GitHub organizations/accounts from your main source code, you can connect multiple GitHub orgs to your Bitrise Workspace using the **+ Add GitHub account**button.
+
+On the **GitHub** app page of your Workspace, Project Admins, who have installed the Bitrise GitHub app, can find the **+ Add GitHub account** button. This way they can connect up to **10 GitHub accounts/orgs** to their workspace.
+
+![multipleGithuborgs.png](/img/_paligo/uuid-6986251f-485b-cef8-01b9-c6110f4e4e4f.png)
+
+:::
+
+
+## Extending GitHub app permissions to the builds
+
+:::tip[Using the API]
+
+This section describes how to configure the feature on the Bitrise website. You can also configure it via the Bitrise API: [GitHub app configuration API](/en/bitrise-ci/api/github-app-configuration-api).
+
+:::
+
+The Bitrise GitHub app generates a short-term, temporary token for each build that is triggered via the app. This token has only one permission by default: `content:read`. This means the build can access the GitHub repository but can't do anything else.
+
+You can extend these permissions so that you can perform other operations during a build. For example, this can enable users to push Git tags from their builds, create custom status reports, put a label on a pull request, or push a new version number.
+
+:::important[Linked repositories]
+
+When extending permissions, you extend permissions to all [additional linked repositories](/en/bitrise-platform/repository-access/github-app-integration#additional-linked-repositories-via-a-github-app) as well!
+
+:::
+
+The exact permissions you can extend depends on your GitHub account:
+
+- On GitHub Cloud, the GitHub app has the following permissions:
+
+  - Read access to issues and metadata
+  - Read and write access to checks, code, commit statuses, and pull requests
+- [GitHub Enterprise Server](/en/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise) users define their GitHub app permissions when creating the app.
+
+To extend the permissions:
+
+1. Open your project on Bitrise with a user that has the **Admin** [role on the project](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+1. On the main page of the project, click on the **Project settings** button.
+
+   ![project-settings-button.png](/img/_paligo/uuid-14defaa4-472c-2d09-84df-145dc3aef4f5.png)
+1. Select **Repository** from the menu.
+1. Find the **Extend GitHub App permissions to builds** option and toggle it on. This extends permissions to the default repository and all additional linked repositories, too.
+
+
+## Additional linked repositories via a GitHub App
+
+:::tip[Using the API]
+
+This section describes how to configure the feature on the Bitrise website. You can also configure it via the Bitrise API: [GitHub app configuration API](/en/bitrise-ci/api/github-app-configuration-api).
+
+:::
+
+Each Bitrise project has a primary Git repository. This is where your project's code is stored and this repository is cloned when we start a build. By default, a Bitrise project can't access other repositories.
+
+However, your project might require other repositories. For example, it might have private submodules that it must access during a build. If you use the GitHub App, you can do this via linking additional repositories. The feature is available on both GitHub Cloud and GitHub Enterprise Server.
+
+:::note[Other connection methods]
+
+If you are not using the Bitrise GitHub App, you can still configure access to additional repositories: [Apps with submodules or private repo dependencies](/en/bitrise-platform/repository-access/apps-with-submodules-or-private-repo-dependencies).
+
+:::
+
+A linked repository is a repository that a Bitrise project can access using a GitHub App installation but it's not the project's primary repository.
+
+When running a build of a project connected via a GitHub App installation, Bitrise generates a temporary token that, by default, can only access the primary repository. Once an additional repository is linked, the tokens generated for the build can access the additional repository.
+
+To be able to link a repository, all of the following conditions must be met:
+
+- The GitHub App is installed to the account or organization that owns the repository on GitHub.
+- The app installation is enabled for the repository.
+- The user attempting to link the repository can access the repository on GitHub. If your GitHub user account doesn't have access to a repository, you can't link it on Bitrise.
+
+  :::note[GitHub Enterprise Server]
+
+  If you use a GitHub App to connect to a [GitHub Enterprise Server](/en/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise) instance, the app doesn't check user access. You can link any repository that your GitHub App has access to.
+
+  :::
+
+### Linking additional repositories
+
+To link additional repositories to a project with an established GitHub App connection:
+
+1. Open your project on Bitrise with a user that has the **Admin** [role on the project](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+1. On the main page of the project, click on the **Project settings** button.
+
+   ![project-settings-button.png](/img/_paligo/uuid-14defaa4-472c-2d09-84df-145dc3aef4f5.png)
+1. On the left, select **Repository**.
+1. Under **Authorization**, find the **Additional repositories** card and click **Change**.
+1. In the **Enable additional repositories** dialog, select the repositories you want to link.
+
+   ![SCR-20260331-pmhi.png](/img/_paligo/uuid-324a0ec5-3e09-e10f-9e9e-7ae1359ffdc2.png)
+
+   You can link a maximum of 50 additional repositories.
+
+   You will see a list of repositories. To see a repository on the list:
+
+   - On GitHub Cloud, your GitHub user needs to have access to it. If you use [GitHub Enterprise Server](/en/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise), user permissions are not checked.
+   - The GitHub App installation has access to it.
+
+   :::important[Disabling repositories]
+
+   If you already have repositories linked, please note that users who otherwise don't have access to those repositories can disable them but cannot add them back!
+
+   :::
+1. When done, click **Save changes**.
+
+### Linking all repositories automatically
+
+GitHub organization owners can switch the **Grant access to all current and future repositories** toggle so that Bitrise builds can have access to every GitHub repository your GitHub App is allowed to access, including any new repositories added in future.
+
+To successfully use this functionality:
+
+- For security reasons, you have to be logged in as a Bitrise user who is also the GitHub **owner** of your organization. If you aren't the owner, ask the owner to log in to Bitrise and toggle the feature on.
+- Make sure you configured the GitHub App to have access to necessary repositories.
+
+1. On Bitrise, go to the **Project Settings** page of your project.
+1. On the left, select **Repository**.
+1. Under **Authorization**, find **Additional repositories** and click **Change**.
+1. Toggle the **Grant access to all current and future repositories** switch to the right.
+
+   ![linkadditionalrepositories.png](/img/_paligo/uuid-bfc425a6-84a8-0672-31bb-d3d7b07b56ce.png)
+
+   Your project's build will now have access to all current and future GitHub repositories the Bitrise GitHub App has access to.
+
+:::note[GitHub email notification about allowing permission]
+
+When Bitrise released this feature, Bitrise GitHub App users will have received an email from GitHub on a new permission which is needed to use the Grant access to all current and future repositories toggle. Bitrise GitHub App requests additional permission which is called: read organization membership. Only GitHub organization ownershave the necessary rights to follow the link in the email and to make this functionality available for their teams.
+
+This is a standard and legitimate message from GitHub and allowing this permission will not have any detrimental effect on Bitrise builds. You can read more about the new permission Bitrise requires [here](https://docs.github.com/en/rest/orgs/members?apiVersion=2022-11-28#get-organization-membership-for-a-user).
+
+:::
+
+
+## Using a private Step library via the GitHub App
+
+Each Bitrise project has a default Step library: a repository of Steps. If the exact source of a Step is not specified in the configuration, the Bitrise CLI pulls the Step data from the default library.
+
+This library can be a private Step library. To access such a library via the GitHub App, you need to add the **[Authenticate host with netrc](https://bitrise.io/integrations/steps/authenticate-host-with-netrc)** Step as the very first Step which will run in your Workflow:
+
+```
+format_version: "13"
+default_step_lib_source: https://github.com/my-private-org/my-bitrise-steplib.git
+project_type: ios
+workflows:
+  example:
+    steps:
+    - https://github.com/bitrise-io/bitrise-steplib.git::authenticate-host-with-netrc@0:
+```
+
+Note that the **[Authenticate host with netrc](https://bitrise.io/integrations/steps/authenticate-host-with-netrc)**Step has [a full source identifier](/en/bitrise-ci/references/steps-reference/step-reference-id-format) to ensure it is pulled from the official Bitrise Step library, not your private library.
+
+Using the Step requires specifying three inputs: the host, the Git username, and the Git password. The Bitrise GitHub App integration uses token-based authentication: each build receives a one time token under the GIT_HTTP_PASSWORD Environment Variable. This Env Var can be used as the password. The username can't be empty because the Step will fail but it is not used so it doesn't matter what you put there.
+
+```
+format_version: '13'
+default_step_lib_source: https://github.com/tothszabi/steplib.git
+project_type: ios
+workflows:
+  example:
+    steps:
+    - https://github.com/bitrise-io/bitrise-steplib.git::authenticate-host-with-netrc@0:
+        inputs:
+        - host: github.com
+        - username: username
+        - password: "$GIT_HTTP_PASSWORD"
+    - private-script@1: {}
+```
+
+
+## Running git clone with linked repositories
+
+If you attempt to run `git clone` or other git commands for a [linked repository](/en/bitrise-platform/repository-access/github-app-integration#additional-linked-repositories-via-a-github-app), your build might fail with an authentication error. This is because the authentication credentials are stored in a local `netrc` file. This file is automatically generated by the official **Git Clone** Step.
+
+However, if you use your own script to perform `git clone`, or you use any other Git command requiring authentication before the **Git Clone** Step, you need to create the `netrc` file. You have two ways:
+
+- You can do it manually.
+- You can use the **[Authenticate host with netrc](https://bitrise.io/integrations/steps/authenticate-host-with-netrc)** Step. It should be the first Step of your Workflow.
+
+:::important[HTTP URLs]
+
+Make sure you always use HTTP URLs when cloning private repository dependencies.
+
+:::
+
+Using the Step requires specifying three inputs: the host, the Git username, and the Git password. The Bitrise GitHub App integration uses token-based authentication: each build receives a one time token under the GIT_HTTP_PASSWORD Environment Variable. This Env Var can be used as the password. The username can't be empty because the Step will fail but it is not used so it doesn't matter what you put there.
+
+```
+workflows:
+  example:
+    steps:
+    - authenticate-host-with-netrc@0:
+        inputs:
+        - host: github.com
+        - username: "username"
+        - password: "$GIT_HTTP_PASSWORD"
+```
 
 <Partial_SwitchingFromOAuthConnectionToTheGitHubApp />
 
-<Partial_RevertingToAnOAuthConnection />
+
+## Reverting back to OAuth connection
+
+If you used an OAuth connection for repository access before switching to the GitHub app, you can revert back to it at any time.
+
+:::note
+
+The OAuth connection requires an SSH key or a personal access token at the Git provider, depending on the authorization method. When switching to the GitHub app, you don't have to remove these: if you didn't, you can use them when reverting to the OAuth connection.
+
+:::
+
+1. Open your project on Bitrise with a user that has the **Admin** [role on the project](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+1. On the main page of the project, click on the **Project settings** button.
+
+   ![project-settings-button.png](/img/_paligo/uuid-14defaa4-472c-2d09-84df-145dc3aef4f5.png)
+1. Under **Bitrise CI**, select **Integrations** and then the **Git provider** tab.
+1. Find the **Connection type** card and click **Change**.
+1. In the dialog, select **OAuth** and click **Change**.

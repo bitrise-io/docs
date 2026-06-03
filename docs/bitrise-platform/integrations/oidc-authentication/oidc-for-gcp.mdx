@@ -8,9 +8,6 @@ slug: /bitrise-platform/integrations/oidc-authentication/oidc-for-gcp
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_ConnectingAGoogleServiceAccountToTheWorkloadIdentityPool from '@site/src/partials/connecting-a-google-service-account-to-the-workload-identity-pool.mdx';
-import Partial_FetchingAndExchangingTokensWithGCP from '@site/src/partials/fetching-and-exchanging-tokens-with-gcp.mdx';
-import Partial_CreatingAWorkloadIdentityPool from '@site/src/partials/creating-a-workload-identity-pool.mdx';
 
 Generate OIDC tokens during your Bitrise build to exchange them for scoped access tokens with Google Cloud Platform (GCP).
 
@@ -21,8 +18,116 @@ To use OIDC tokens for GCP, you'll need to:
 
 On Bitrise, you can get the tokens by using either the [**Get OIDC Identity Token**](https://github.com/bitrise-steplib/bitrise-step-get-identity-token) Step or the [**Authenticate with Google Cloud Platform (GCP)**](https://github.com/bitrise-steplib/bitrise-step-authenticate-with-gcp) Step.
 
-<Partial_CreatingAWorkloadIdentityPool />
 
-<Partial_ConnectingAGoogleServiceAccountToTheWorkloadIdentityPool />
+## Creating a workload identity pool
 
-<Partial_FetchingAndExchangingTokensWithGCP />
+Create a workload identity pool in GCP to enable Workload Identity Federation.
+
+:::tip[Workload Identity Federation]
+
+Read more about how authentication with Workload Identity Federation works on GCP in the [official Google documentation.](https://cloud.google.com/sap/docs/abap-sdk/on-premises-or-any-cloud/latest/authentication-wif)
+
+:::
+
+1. In the Google Cloud console, go to **IAM & Admin** then **Workload Identity Federation**.
+1. In the **Create an identity pool** section, enter a value for the following fields:
+
+   - **Name**: The name for the pool. The name is used as the pool ID and you can't change the pool ID later.
+   - **Description**: The purpose of the pool.
+1. Under **Add a provider to pool**, add Bitrise as a provider:
+
+   - In the **Select a provider** field, select **OpenID Connect (OIDC)**.
+   - **Provider name**: Enter a name. For simplicity, we recommend using `Bitrise`.
+   - **Issuer URL**: https://token.builds.bitrise.io.
+   - **Audience**: Select **Allowed audience**. When using the token, GCP will check if the allowed audience matches the audience encoded in the `aud` claim. On Bitrise, you can set the audience in our Steps providing OIDC services: [Fetching and exchanging tokens with GCP](/en/bitrise-platform/integrations/oidc-authentication/oidc-for-gcp#fetching-and-exchanging-tokens-with-gcp).
+1. Click **Continue**.
+1. Under **Configure provider attributes**, configure the required attribute mapping values:
+
+   - The `google.subject` key is a unique identifier for the user. You can use `assertion.sub` to identify the build that requests the token.
+   - Use the `attribute.NAME` format to add up to 50 custom attributes, each with a value in the `assertion.VALUE` format. You can find the list of available attributes in the Bitrise token here: [Information in the OIDC token](/en/bitrise-platform/integrations/oidc-authentication/oidc-authentication-overview#information-in-the-oidc-token).
+
+   :::important[Explicit mapping required]
+
+   You must map all the attributes you want to use. Google only lets you use the attributes which are explicitly mapped. Read more about [attribute mappings in Google's documentation](https://cloud.google.com/iam/docs/workload-identity-federation?_gl=1*1sz7kri*_ga*MTM0MTUyNjA1OC4xNzYyNTMwMjA5*_ga_WH2QY8WWF5*czE3NjM0Nzc1MzYkbzIkZzEkdDE3NjM0Nzc4MDEkajUwJGwwJGgw#mapping).
+
+   :::
+1. Optionally, add attribute conditions. You will also be able to filter identity tokens based on attributes directly at the pool level when creating the service account.
+
+
+## Connecting a Google service account to the workload identity pool
+
+To start using OIDC authentication for GCP services, you need to connect a workload identity pool to a Google service account. This involves:
+
+- Creating a service account.
+- Granting access to the identity pool using a service account impersonation.
+
+### Create a service account
+
+1. In Google Cloud console, go to **IAM & Admin** and then **Service accounts**.
+1. Click **Create service account**.
+1. Add a display name, a unique service account ID, and a description.
+1. Click **Create and continue**.
+1. Under **Permissions**, add all roles that you need.
+
+   :::note[IAM conditions]
+
+   Optionally, you can add IAM conditions based on the previously mapped attribute values by clicking **Add IAM condition**.
+
+   :::
+1. Click **Done**.
+
+### Granting access to the workload identity pool
+
+1. In Google Cloud console, go to **IAM & Admin** and then **Workload Identity Federation**.
+1. Select your identity pool.
+1. Click **Grant access**.
+1. Select the **Grant access using service account impersonation** option.
+1. Select the service account you've created.
+1. Select the principals: identities that can access the service account.
+
+   The available options are limited to the keys from the provider attribute mapping of the identity pool. For example, if you use the attribute mapping `google.subject=assertion.sub`, set **Attribute name** to `subject` and **Attribute value** to `sub`. You can see the available values in the Bitrise token here:
+1. Click **Save**.
+1. In the dialog, select the provider you created for Bitrise OIDC tokens.
+1. Add the OIDC ID token path: https://token.builds.bitrise.io and set the format to **text**.
+1. Click **Download config** and save the file somewhere you can access it.
+
+
+## Fetching and exchanging tokens with GCP
+
+After you successfully configured a workload identity pool and connected it to a Google service account, your Bitrise builds can exchange tokens with GCP. You can:
+
+- Use the **Authenticate with GCP** Step to handle the whole process.
+- Fetch the token with **Get OIDC Identity Token** Step, then perform the credential exchange with a script.
+
+:::note[Information in the OIDC token]
+
+Bitrise includes the following claims in the OIDC token: [Information in the OIDC token](/en/bitrise-platform/integrations/oidc-authentication/oidc-authentication-overview#information-in-the-oidc-token).
+
+:::
+
+### Using the Authenticate with GCP Step
+
+1. Open the Workflow Editor on Bitrise.
+1. Add the **Authenticate with GCP** Step to your Workflow.
+1. Set the **Client config** and the **Token audience** inputs:
+
+   - The token audience should match the allowed audience you set when configuring the workload identity pool on Google Cloud.
+   - The **Client config** input should point to the file you downloaded at the end of the process.
+
+### Using the Get OIDC Identity token Step
+
+1. Open the Workflow Editor on Bitrise.
+1. Add the **Get OIDC Identity Token** Step to your Workflow.
+1. Use the BITRISE_IDENTITY_TOKEN Environment Variable: write it to a file and update the [client library configuration file](/en/bitrise-platform/integrations/oidc-authentication/oidc-for-gcp#connecting-a-google-service-account-to-the-workload-identity-pool) to reference the file containing the Env Var. You can set this up in a **Script** Step:
+
+   ```
+   tmpfile="$(mktemp)"       
+   printf '%s' "$BITRISE_IDENTITY_TOKEN" > "$tmpfile"
+
+   # Replace the token path in client library configuration
+
+   gcloud auth login --cred-file=/path/to/updated-client-library-config.json
+   gcloud auth list
+   ```
+
+   After, the gcloud CLI will automatically pick them up and use them. Any kind of action through the CLI will just simply work.

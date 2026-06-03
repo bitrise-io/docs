@@ -8,9 +8,6 @@ slug: /bitrise-ci/configure-builds/configuring-build-settings/reporting-the-buil
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_TroubleshootingBuildStatusReporting from '@site/src/partials/troubleshooting-build-status-reporting.mdx';
-import Partial_CreatingCustomStatusReports from '@site/src/partials/creating-custom-status-reports.mdx';
-import Partial_ConfiguringBuildStatusReporting from '@site/src/partials/configuring-build-status-reporting.mdx';
 
 Bitrise can send build status reports to your Git provider (GitHub/GitLab/Bitbucket). This helps developers make informed decisions quickly and eliminates the need to switch between platforms.
 
@@ -24,8 +21,176 @@ If the triggered entity is a Pipeline, it will report its build status but the i
 
 :::
 
-<Partial_ConfiguringBuildStatusReporting />
 
-<Partial_CreatingCustomStatusReports />
+## Setting up build status reporting
 
-<Partial_TroubleshootingBuildStatusReporting />
+There are two ways to set up Git status reports on Bitrise:
+
+- By using the [GitHub App integration](/en/bitrise-platform/repository-access/github-app-integration). It automatically sends status reports without any additional configuration, other than optionally customizing your reports.
+- Via the [service credential user](/en/bitrise-platform/integrations/the-service-credential-user). If you use [OAuth authentication for repository access](/en/bitrise-platform/repository-access/repository-access-with-oauth), this is how you can send status reports. The service credential user must have their Bitrise account connected to the Git provider account and must have access to the Git repository. The following permissions are required:
+
+  - GitHub: **Write**
+  - Bitbucket: **Write**
+  - GitLab: **Developer**.
+
+  You can test the service credential user's connection at any time: [Troubleshooting build status reporting](/en/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#troubleshooting-build-status-reporting).
+
+:::tip[Allowlist the Bitrise website IP addresses]
+
+If you use some form of self-hosted solution for storing your code, you might need to allowlist the static IP addresses of the Bitrise website and its background workers. This allows you to use such features as storing the `<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>` file in your own repository, or receiving build status updates from Bitrise: [IP addresses for the Bitrise website](/en/bitrise-platform/infrastructure/build-machines/configuring-your-network-to-access-our-build-machines#ip-address-ranges-for-bitrise-backend-workers).
+
+:::
+
+You can send both project level and Workflow or Pipeline level reports with both methods.
+
+### Branch protection rules
+
+When updating your build status report settings, you might need to change your branch protection rules at your Git provider.
+
+If you use [Workflow/Pipeline level status reports](/en/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#custom-status-reports) or use the `target-id` [dynamic variable](/en/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#custom-status-reports), you will have a different status check for every Workflow or Pipeline that was run. This means you might need more than one branch protection rule IF all checks are mandatory for all your pull requests.
+
+
+## Custom status reports
+
+You can create custom Git status reports: You can tailor the commit status message to your team's preferences and requirements. You can give your report a name that allows you to immediately identify it on the Git provider site. You can use dynamic variables in the status report's name, like the title of your project or the name of the Workflow.
+
+The default status report name is `ci/bitrise/<project_slug>/<event_type>`. For legacy GitHub Checks reports, the default name is `Bitrise`.
+
+You can set up custom reports on two levels:
+
+- Project level reports apply to all Workflows and Pipelines within a project. This provides a consistent format for the status of any build in the same project.
+- On the level of individual Workflows or Pipelines. These custom reports will take precedence over the general project-level status report. This is useful when you want to provide more specific information about a particular build stage or to differentiate between different types of builds.
+
+:::important[Character limit and accepted characters]
+
+Keep your status message concise. The limit is 100 characters, and BitBucket allows only 40 characters.
+
+The following characters are supported: `, . / ( ) : - _ (space) (a-z) (A-Z) (0-9) &lt; &gt; [ ] |`
+
+:::
+
+### Project level status reports
+
+To create a custom status report on a project level, add the `status_report_name` property under `app` in your configuration YAML file. It can have static values:
+
+```
+app:
+  status_report_name: 'Bitrise build'
+```
+
+Or you can use dynamic values:
+
+```
+app:
+  status_report_name: 'PR check for <project_title>'
+```
+
+You can also combine multiple dynamic values:
+
+```
+app:
+  status_report_name: 'Executing <target_id> for <project_title>'
+```
+
+We recommend using `target_id`: it's the name of the Workflow or Pipeline that the build uses. With this variable, Git commit statuses from different Workflows/Pipelines on the same commit don't override each other.
+
+Find the available variables here: [see topic](#dynamic-variables).
+
+### Workflow/Pipeline level status reports
+
+To create a custom status report on the Workflow level, add the `status_report_name` property under the name of the Workflow in the configuration YAML file:
+
+```
+workflows:
+  build-ios:
+    status_report_name: build-report
+```
+
+Similarly, to create one on the Pipeline level, add the property under the name of the Pipeline:
+
+```
+pipeline:
+  deploy-pipeline:
+    status_report_name: build-report
+```
+
+:::important[No additional report]
+
+If a Workflow in a Pipeline has the `status_report_name` property, it does NOT produce an additional, separate status report when the Workflow runs as part of a Pipeline. It only adds a custom name to the status report when the Workflow runs as a standalone build.
+
+:::
+
+You can also combine multiple dynamic values:
+
+```
+pipeline:
+  deploy-pipeline:
+    status_report_name: 'Executing <target_id> for <project_title>'
+```
+
+We recommend using `target_id`: it's the name of the Workflow or Pipeline that the build uses. With this variable, Git commit statuses from different Workflows/Pipelines on the same commit don't override each other.
+
+Find the available variables here: [see topic](#dynamic-variables).
+
+:::note[Branch protection rules]
+
+When switching from project-based status reports to Workflow level status reports, you might need to update [branch protection rules](/en/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#setting-up-build-status-reporting).
+
+:::
+
+You can also set Workflow-level status reports in the Workflow Editor: open the Workflow, and go to its **Properties** tab, then find the **Git status name** input.
+
+![workflow-level-status-report.png](/img/_paligo/uuid-5e4c921b-80ff-3392-c91f-22e7389ce5e3.png)
+
+### Dynamic variables
+
+You can use the following dynamic variables in your status reports:
+
+| Variable name | Description |
+| --- | --- |
+| `project_slug` | The unique alphanumeric identifier of the project on Bitrise which is part of the project’s URL. |
+| `project_title` | The human-readable title of the project. |
+| `target_id` | The name of the specific Workflow or Pipeline that was used for the build. |
+| `event_type` | Represents the type of event that triggered the status report. The possible values are:  - `pr`: pull request (GitHub, Bitbucket) - `mr`: merge request (GitLab) - `push`: code push (GitLab, GitHub, Bitbucket - `tag`: Git tag (GitLab, GitHub, Bitbucket) |
+
+
+## Troubleshooting build status reporting
+
+If your builds do not send status reports to your Git hosting provider - GitHub, GitLab or Bitbucket -, you will need to do a little investigating to find out what causes the problem. Let’s take a look at the potential issues!
+
+### Checking the service credential user
+
+[The service credential user](/en/bitrise-platform/integrations/the-service-credential-user) of the <GlossTerm baseform="app">app</GlossTerm> on [bitrise.io](https://www.bitrise.io) must have connected their Bitrise account to their Git hosting account and must have access to the repository of the app on that Git account.
+
+You can check the service credential user and test their Git connection.
+
+1. Open your project on Bitrise with a user that has the **Admin** [role on the project](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+1. On the main page of the project, click on the **Project settings** button.
+
+   ![project-settings-button.png](/img/_paligo/uuid-14defaa4-472c-2d09-84df-145dc3aef4f5.png)
+1. Go to your app’s page on [bitrise.io](https://www.bitrise.io).
+1. Find the **Service credential user** section.
+
+   ![service-credential-user.png](/img/_paligo/uuid-6519a945-1fd2-97fd-da4a-fdab48705503.png)
+
+   :::note[Current user]
+
+   In the figure, the current active user is the service credential user. If the service credential user is a different user, this looks a little different, including the button's text.
+
+   :::
+1. Click the **Test &lt;Git provider&gt; connection** button to test the user's Git connection.
+
+### Checking repository permissions and repository URL
+
+Make sure that you granted Bitrise access to your Workspace or team. It might be that you did not grant Bitrise access or denied access to the GitHub Workspace or Bitbucket team that owns the repository.
+
+Make sure the URL repository is up to date:
+
+1. Open your project on Bitrise with a user that has the **Admin** [role on the project](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+1. On the main page of the project, click on the **Project settings** button.
+
+   ![project-settings-button.png](/img/_paligo/uuid-14defaa4-472c-2d09-84df-145dc3aef4f5.png)
+1. On the left, select **General**.
+1. Find the repository URL and make sure it's correct.
+
+   ![apps-repository-url.png](/img/_paligo/uuid-0d8102bf-6e48-8787-cfe2-d24617d96950.png)

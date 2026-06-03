@@ -6,17 +6,112 @@ sidebar_position: 1
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_DefiningPipelinesStepsAndWorkflows from '@site/src/partials/defining-pipelines-steps-and-workflows.mdx';
-import Partial_SharingEnvVarsBetweenStages from '@site/src/partials/sharing-env-vars-between-stages.mdx';
-import Partial_ConfiguringAStageToAlwaysRun from '@site/src/partials/configuring-a-stage-to-always-run.mdx';
-import Partial_AbortingWorkflowsOfAFailedStage from '@site/src/partials/aborting-workflows-of-a-failed-stage.mdx';
 
 Configuring a <GlossTerm baseform="Pipeline">Pipeline</GlossTerm> that contains stages is only possible by directly editing the <GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm> file. You can create and modify <GlossTerm baseform="Workflow">Workflows</GlossTerm> in the graphical Workflow Editor but you need to define Pipelines and Stages in YAML format.
 
-<Partial_DefiningPipelinesStepsAndWorkflows />
 
-<Partial_ConfiguringAStageToAlwaysRun />
+## Defining Pipelines with stages
 
-<Partial_AbortingWorkflowsOfAFailedStage />
+The `bitrise.yml` file contains the full configuration of your Pipelines. As with all `bitrise.yml` files, first you need to define the format version and the project type.
 
-<Partial_SharingEnvVarsBetweenStages />
+```
+---
+format_version: '8'
+default_step_lib_source: 
+project_type: android
+```
+
+This is a bare minimum `bitrise.yml` configuration. To define your Pipelines, you will need to use the `pipelines` attribute.
+
+```
+pipelines:  
+  pipeline-successful:
+    stages:
+    - stage-successful-1: {}
+    - stage-successful-2: {}
+    - stage-successful-3: {}
+```
+
+In this example, we have a Pipeline called `pipeline-successful`, with three Stages that will run consecutively. This means that if `stage-successful-1` finishes successfully, `stage-successful-2` starts. If any of the Stages fail, the subsequent Stage will not start: instead, the Pipeline will be aborted and marked as failed.
+
+Each Stage has to be defined separately under the `stages` attribute. Defining a Stage means specifying the Workflows that are part of the Stage.
+
+```
+stages:
+  stage-successful-1:
+    workflows:
+    - test-1: {}
+  stage-successful-2:
+    workflows:
+    - build-1: {}
+    - build-2: {}
+  stage-successful-3:
+    workflows:
+    - deploy-1: {}
+    - deploy-2: {}
+```
+
+In this example, the Stages run the `test-1`, `build-1`, `build-2`, `deploy-1`, and `deploy-2` Workflows.
+
+
+## Configuring a Stage to always run
+
+By default, if a Stage fails - because one of its Workflows failed -, any other subsequent Stages of the Pipeline will not run. However, you can configure your Pipeline to run certain Stages unless the Pipeline is aborted.
+
+To do so, you just need to set the should_always_run attribute of the Stage to true:
+
+```
+stages:
+  stage-always-run-successful-1:
+    should_always_run: true
+    workflows:
+    - deploy-1: {}
+    - deploy-2: {}
+```
+
+In the example above, the Stage called `stage-always-run-successful-1` will always run, regardless of the status of previous Stages. The only way these Stages will not run is if the Pipeline build is aborted by the user.
+
+
+## Aborting the Workflows of a failed Stage
+
+By default, if a Workflow in a particular Stage fails, the other Workflows in the same Stage aren’t automatically aborted: these Workflows will run but the next Stage won’t start. However, you can change this behavior to immediately and automatically abort all other Workflows in the same Stage.
+
+To do so, you need to set the abort_on_fail attribute to `true`:
+
+```
+stages:
+  stage-abort-on-fail-1:
+    abort_on_fail: true
+    workflows:
+    - deploy-1: {}
+    - deploy-2: {}
+```
+
+
+## Sharing Env Vars between Pipeline Stages
+
+You can reuse any environment variable from a <GlossTerm baseform="Workflow">Workflow</GlossTerm> and reuse it in subsequent Workflows using the [Share Pipeline variables](https://github.com/bitrise-steplib/bitrise-step-share-pipeline-variable) <GlossTerm baseform="Step">Step</GlossTerm>.
+
+:::tip[Optional Workflows using run_if conditions]
+
+You can easily combine the **Share Pipeline variables** Step with `run_if` expressions to create Pipelines with optional Workflows. For more information, check out [Enabling or disabling a Step conditionally](/en/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally).
+
+:::
+
+To do so:
+
+1. Add the **Share Pipeline variables** Step to the Workflow.
+1. Optionally, you can define additional run conditions in the **Additional run conditions** input. The Step will only run if the conditions you specify here are true.
+1. Add the Env Var(s) you would like to use in subsequent Workflows in the **Variables to share between Pipeline Workflows** input.
+
+   :::tip[Using environment variable keys]
+
+   You can define Env Vars using a `{key}={value}` syntax. For example, `MY_ENV_KEY=value`, or `INSTALL_PAGE_URL=$BITRISE_PUBLIC_PAGE_URL`.
+
+   If you want to use the default environment variable keys, you can use a shorthand syntax. For example, `EXISTING_ENV_KEY`.
+
+   Sharing Env Vars using this Step does not override existing Env Vars defined in the <GlossTerm baseform="App">app</GlossTerm>.
+
+   :::
+
+That's it! You can now use the Env Var in any subsequent Stage!

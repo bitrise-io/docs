@@ -10,8 +10,6 @@ sidebar_custom_props:
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_SubAPIs from '@site/src/partials/sub-apis.mdx';
-import Partial_MigrationFromV1ToV2 from '@site/src/partials/migration-from-v1-to-v2.mdx';
 
 Bitrise offers a REST API for Release Management. The base URL for the API is .
 
@@ -27,9 +25,29 @@ The API offers the same features that are available on the GUI. You can:.
 - Manage releases in all stages, including the release candidate stage and the approval stage.
 - Distribute your apps.
 
-<Partial_SubAPIs />
 
-<Partial_MigrationFromV1ToV2 />
+## Sub APIs
+
+The v2 API is organized into four sub APIs, each with its own base URL:
+
+| Sub-API | Description | Base URL |
+| --- | --- | --- |
+| Apps | Covers connected apps, installable artifacts, presets, public assets, outgoing webhooks, and Apple App Store draft versions. | `https://api.bitrise.io/release-management/v2/apps/v1` |
+| Build Distributions | Covers tester groups, testers, and build distributions. | `https://api.bitrise.io/release-management/v2/build-distributions/v1` |
+| Store Releases | Covers app versions, approvals, beta distribution, and store releases for both the App Store and Google Play. | `https://api.bitrise.io/release-management/v2/store-releases/v1` |
+| Code Push | Covers deployments and updates. | `https://api.bitrise.io/release-management/v2/code-push/v1` |
+
+
+## Migration from v1 to v2
+
+The main structural differences between v1 and v2:
+
+- App identification: In v1, the app ID was a path parameter (for example, `/apps/{app_id}/installable-artifacts`). In v2, `app_id` is passed as a query parameter to the relevant sub-API.
+- Tester groups and build distributions: Moved from the Apps sub-API to the dedicated Build Distributions sub-API.
+- Code Push packages renamed: The `packages` resource in v1 Code Push is called `updates` in v2.
+- Store releases: Apple App Store and Google Play store release management is now under the Store Releases sub-API.
+
+Each deprecated v1 endpoint's description specifies the equivalent v2 endpoint to use. Refer to [the API docs](https://api.bitrise.io/release-management/api-docs/index.html) for the full list.
 
 ## Authentication
 

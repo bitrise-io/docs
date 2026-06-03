@@ -9,9 +9,6 @@ sidebar_label: Step versioning
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_LockingAStepToAMajorOrMinorVersion from '@site/src/partials/locking-a-step-to-a-major-or-minor-version.mdx';
-import Partial_UsingASpecificStepVersion from '@site/src/partials/using-a-specific-step-version.mdx';
-import Partial_UsingTheLatestAvailableVersionOfTheStep from '@site/src/partials/using-the-latest-available-version-of-the-step.mdx';
 
 Bitrise <GlossTerm baseform="Step">Step</GlossTerm> versions follow semantic versioning: a version number looks like MAJOR.MINOR.PATCH. For example, version 3.2.1 is the first patch of the second minor version of the third major version.
 
@@ -19,8 +16,87 @@ You can use any existing version of a Step in your Workflows, and different vers
 
 We regularly update our Steps to make sure they are fully equipped for our users’ needs. However, you don’t have to use the latest version if you don’t want to: if an old version is stable and compatible with your build, feel free to continue using that, or roll back to it any time.
 
-<Partial_LockingAStepToAMajorOrMinorVersion />
 
-<Partial_UsingASpecificStepVersion />
+## Locking a Step to a major or minor version
 
-<Partial_UsingTheLatestAvailableVersionOfTheStep />
+On the graphical UI of the Workflow Editor, you can choose between locking a Step to either a major version or a minor version in any of your Workflows. This determines what version of the Step your Workflow will use.
+
+Locking a Step to a version means that your Workflow is automatically updated to use the latest release of the Step’s selected version type, either major or minor, but it won’t get updated if a different major or minor version is released.
+
+- If a Step is locked to a major version, it is automatically updated if a new minor version or a new patch for that major version is released. If a new major version is released, it won’t be updated.
+- If a Step is locked to a minor version, it is automatically updated only if a new patch for that minor version is released. If a new minor or major version is released, it won’t be updated.
+
+**Version locking**
+
+The Example Step’s current version in the Workflow is 2.3.3. A new minor version comes out: 2.4.0.
+
+- If the Step is locked to major version 2.x.x, the Step is updated to 2.4.0.
+- If the Step is locked to minor version 2.3.x, the Step is NOT updated to 2.4.0.
+
+Now let’s say the Example Step gets a new major version: 3.0.0!
+
+In that case, the Step will not be automatically updated either way. If you want to use the new version, you need to lock the Step to either major version 3.x.x or minor version 3.0.x. This way you can be sure that a new update will not break your builds.
+
+To lock a Step to a major or minor version:
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+1. Select the Step.
+1. Go to the **Properties** tab.
+1. Open the **Version updates** dropdown menu, and select your version.
+
+   ![step-versions.png](/img/_paligo/uuid-eec007b7-1459-0f25-5112-9c312f47a189.png)
+
+
+## Using a specific Step version
+
+You have the option of using a specific, static Step version. For example, version 3.2.2. This means that no matter what new versions are released for the Step, your Step version will not be updated in the Workflow.
+
+:::important[YAML mode only!]
+
+Please note that you cannot set a specific Step version on the graphical UI: you can only lock the Step to either a major or minor version. Setting a specific Step version is only possible in YAML mode.
+
+:::
+
+To set a specific Step version, you need to add that version to the Step reference in your app’s configuration YAML file:
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+
+   ![workflows-button.png](/img/_paligo/uuid-99bb894c-3e79-91c8-9e62-7e475573495d.png)
+1. On the left, select **Configuration YAML**
+1. Find the Workflow and the Step you need.
+1. Set the Step version as part of the Step reference.
+
+   In this example, we're setting the **Activate SSH key** Step of the **primary** Workflow to version 4.0.3:
+
+   ```
+   workflows:
+     primary:
+       steps:
+       - activate-ssh-key@4.0.3:
+   ```
+
+
+## Using the latest available version of the Step
+
+Locking on to the latest release of a Step means that if a new version of the Step is released, the user’s Workflow is updated to use that. This includes automatic update to a new major version, potentially breaking the build. So be careful!
+
+To make sure your Workflow will always use the latest available version of a given Step, all you have to do is remove any version information from the Step reference in the `bitrise.yml` file of your app:
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+
+   ![workflows-button.png](/img/_paligo/uuid-99bb894c-3e79-91c8-9e62-7e475573495d.png)
+1. On the left, select **Configuration YAML** from the navigation menu.
+1. Find the Workflow and the Step you need.
+1. Make sure the Step has no version information:
+
+   In this example, we're setting the **Activate SSH key** Step of the **primary** Workflow to the latest version:
+
+   ```
+   workflows:
+     primary:
+       steps:
+       - activate-ssh-key:
+   ```
