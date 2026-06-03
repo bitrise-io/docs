@@ -43,7 +43,7 @@ The Bitrise Build Cache CLI can be downloaded and run on any third-party CI prov
 
    :::note
 
-   For more information about wrapping, see [Wrapping native build commands](/en/bitrise-build-cache/getting-started-with-the-build-cache/build-cache-for-react-native/wrapping-native-build-commands).
+   For more information about wrapping, see [Wrapping native build commands](/en/bitrise-build-cache/build-cache-for-react-native/wrapping-native-build-commands).
 
    :::
 
