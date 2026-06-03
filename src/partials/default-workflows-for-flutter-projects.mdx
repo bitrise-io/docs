@@ -1,0 +1,14 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Default Workflows for a Flutter project
+
+For Flutter projects, Bitrise creates two default Workflows: a `run_tests` Workflow and a `build_app` Workflow.
+
+The exact Steps included in these default Workflows depend on the project type. However, the main goals of the two Workflows are the same, regardless of project type:
+
+| Workflow ID | Workflow summary | Workflow description |
+| --- | --- | --- |
+| `run_tests` | Run your project’s tests. | The Workflow clones your Git repository, installs Flutter with the **Flutter Installer** Step, runs **Restore Dart cache** to pull your Dart cache. It runs:  - The **Flutter Test** Step when there is a `test/` directory in the project. - The **Flutter Analyze** Step when there is no `test/` directory in the project.  After running the tests, it saves the Dart cache and runs the **Deploy to Bitrise.io** Step to deploy any artifacts. |
+| `build_app` | Builds both the iOS and the Android app from the Flutter project. | This Workflow is only generated when the project has an iOS or Android sub-project. For web projects, this Workflow is not generated.  The Workflow clones your Git repository, installs your code signing certificate for the iOS project, installs Flutter, runs the **Flutter Analyze** Step. It also runs the **Flutter Test** Step when a `test/` directory is present.  It builds the app with the **Flutter Build** Step. It builds all detected platforms. |
