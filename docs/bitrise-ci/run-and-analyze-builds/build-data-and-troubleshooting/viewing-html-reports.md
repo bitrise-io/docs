@@ -7,7 +7,7 @@ slug: /bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/viewing-
 
 If you generate some form of rich HTML content (for example, code coverage reports or performance reports) during your Bitrise build, you do not have to download and view the report in a separate tool: you can view the content directly on the Bitrise UI. You don't have to embed everything in the HTML file either: Bitrise will parse all images, CSS files and Javascript files to display the full content as intended.
 
-![after.gif](/img/_paligo/uuid-ab2808a9-e648-a309-8e76-6aa126e8047c.png)
+![after.gif](/img/_paligo/uuid-ab2808a9-e648-a309-8e76-6aa126e8047c.gif)
 
 To view an HTML report on Bitrise:
 
