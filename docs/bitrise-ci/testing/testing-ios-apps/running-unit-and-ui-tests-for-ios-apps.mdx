@@ -8,8 +8,6 @@ slug: /bitrise-ci/testing/testing-ios-apps/running-unit-and-ui-tests-for-ios-app
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_RerunningFailedTestsNotAvailableInXcode13 from '@site/src/partials/rerunning-failed-tests-not-available-in-xcode-13.mdx';
-import Partial_TestRepetitions from '@site/src/partials/test-repetitions.mdx';
 
 You can run both unit and UI tests for iOS apps on Bitrise with our dedicated <GlossTerm baseform="Step">Step</GlossTerm>. The Step runs the [test targets you defined](https://developer.apple.com/documentation/xctest/defining_test_cases_and_test_methods/) in your Xcode project and [exports the results for you to view it in detail](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
 
@@ -182,6 +180,29 @@ The `xcpretty` output tool does not support parallel tests. If parallel tests ar
 
 :::
 
-<Partial_RerunningFailedTestsNotAvailableInXcode13 />
 
-<Partial_TestRepetitions />
+## Rerunning failed tests (Not available in Xcode 13)
+
+The **Should retry test on failure? (Not available in Xcode 13+)** input in the **Test repetition** section of the **Xcode Test for iOS** Step allows you to automatically rerun ALL your tests, not just the failed ones. If you set this input to `yes`, the Step will run `xcodebuild` one more time in the case of test failure.
+
+From Xcode 13 and above, the feature is not available anymore. Use the **Test Repetitions Mode (Available in Xcode 13+)** input with the `retry_on_failure` option selected. This allows you to rerun only the failed test/s instead of running all your tests. You can find this test repetition feature with our **Xcode Test for iOS** Step from version 3.0.0 and above.
+
+
+## Test Repetitions
+
+[Xcode’s test repetition modes](https://developer.apple.com/videos/play/wwdc2021/10296/) are available with the [Xcode Test for iOS Step](https://www.bitrise.io/integrations/steps/xcode-test) on stacks running Xcode 13 and above on Bitrise. With test repetitions, you can run any type of tests multiple times in various ways such as retry on failure, until failure and until max repetitions.
+
+The **Xcode Test for iOS** Step’s **Test Repetitions Mode (Available in Xcode 13+)** input offers the following options:
+
+- `none`: The tests won’t repeat.
+- `until_failure`: Repeats a test until the test fails or until the maximum repetition. The default number of test runs is three.
+- `retry_on_failure`: Failed tests run until they succeed or until the repetition number you specify. The default number of test repetitions is three.
+- `up_until_maximum_repetitions`: Reruns all tests until maximum test repetition is reached regardless of the test outcomes.
+
+![test-repetition.png](/img/_paligo/uuid-d2ee7fd1-7743-7720-d114-5f38632cd2e1.png)
+
+Please note that these options are only available from **Xcode Test for iOS** version 3.0.0 and above.
+
+With the **Maximum Test Repetitions (Available in Xcode 13+)** input you can specify the maximum number of test repetitions. Please note that you have to add a greater number than one if the **Test Repetition Mode (Available in Xcode 13+)** input is set to other than `none`.
+
+Enable the **Relaunch Tests for Each Repetition (Available in Xcode 13+)** input to launch tests in a completely new process for each repetition.

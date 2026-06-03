@@ -9,10 +9,6 @@ sidebar_label: Registering test devices for iOS apps
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_RegisterAnIOSDeviceUsingSafari from '@site/src/partials/register-an-ios-device-using-safari.mdx';
-import Partial_RegisterATestDeviceManually from '@site/src/partials/register-a-test-device-manually.mdx';
-import Partial_RegisteringDevicesWithTheXcodeArchiveStep from '@site/src/partials/registering-devices-with-the-xcode-archive-step.mdx';
-import Partial_CheckingTheAvailableTestDevicesForAnApp from '@site/src/partials/checking-the-available-test-devices-for-an-app.mdx';
 
 You have multiple options to register test devices on [bitrise.io](http://bitrise.io):
 
@@ -30,10 +26,222 @@ There is a limit on registrable devices on the Apple Developer Portal, so make s
 
 :::
 
-<Partial_RegisterAnIOSDeviceUsingSafari />
 
-<Partial_RegisterATestDeviceManually />
+## Register an iOS device using Safari
 
-<Partial_CheckingTheAvailableTestDevicesForAnApp />
+The most comfortable way to register your iOS test device on [bitrise.io](https://www.bitrise.io) is to open [bitrise.io](https://www.bitrise.io) with Safari. This way we can open your device’s Settings and create a temporary profile to get your Unique Device Identifier (UDID). This way you don’t have to look for it and manually copy/paste it.
 
-<Partial_RegisteringDevicesWithTheXcodeArchiveStep />
+:::important[Clear the cache]
+
+When trying to install an app from the public install page, you should clear the cache: click the link appearing in the **If you synced your settings from your old device, you need to clear the cache and register your new device** line. The link redirects to the **Profile settings** page where you can follow the procedure described below.
+
+Read more about installing an app from the public install page in our [Deploying an iOS app to Bitrise.io]() guide.
+
+:::
+
+1. Open Safari in **non-incognito mode** on your iOS device and log into [bitrise.io](https://www.bitrise.io).
+1. Go to your **Profile**.
+1. Tap **Account Settings**.
+1. Tap **Test devices** on the left.
+1. Tap **Register this device**.
+1. In the pop-up window, Tap **Allow** so that [bitrise.io](https://www.bitrise.io) can show your configuration profile.
+1. Tap **Install** when the **Install Profile** dialog appears.
+1. Enter your devices’s passcode.
+1. Tap **Install** on the **Install Profile** again. Now you can see your UDID and your iOS device name in the **Register device** dialog.
+1. Tap **Register device**.
+1. Register this test device to the [Apple Developer Portal](https://developer.apple.com/) with the correct provisioning profile added to your device or use our [Auto Provisioning]() step with enabling profile generation.
+
+If you go back to `Test devices`, you can see the registered device:
+
+![test_devices.png](/img/_paligo/uuid-941f46db-0d8e-cfd4-0f29-7e89b30471a1.png)
+
+You can delete the registered device any time if you click on the **Remove** button.
+
+:::note[Safari as default browser]
+
+If you encounter any issues with your registered device, we recommend you make Safari your default browser.
+
+:::
+
+
+## Register a test device manually
+
+1. On bitrise.io, open the account selector menu on the top right and select **Profile settings**.
+
+   ![profile-settings-menu.png](/img/_paligo/uuid-99b0eb76-b2f2-4c0c-ae11-abdce5177774.png)
+1. On the menu on the left side, select **Test devices**.
+
+   ![test-devices-menu.png](/img/_paligo/uuid-7fb72644-6457-f137-c769-10345e5cb120.png)
+1. Click on **Register device manually**.
+
+   ![register-device-button.png](/img/_paligo/uuid-3b5d8be9-8f71-2547-1c6c-7c41113bf6b9.png)
+1. In the **Register device** dialog, fill out the **Title** field and the **Identifier** field with your device’s UDID.
+1. Click **Register Devices**.
+
+   You can **get your UDID** if you plug your device into a computer, and open iTunes. Under **Summary**, you should see a Serial Number. If you click on it, it will reveal your device’s **UDID** which you can paste into the **Identifier** field on our [Test Devices](https://app.bitrise.io/users/sign_in#/test_devices).
+1. Register this test device to the [Apple Developer Portal](https://developer.apple.com/) with the correct provisioning profile added to your device or use our [Auto Provisioning Step](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning) with enabling profile generation.
+
+Now you can see your registered test device under the **Registered test devices** section.
+
+You can remove this registered device any time if you click the orange **x** icon.
+
+
+## Checking the available test devices for an app
+
+For any Bitrise <GlossTerm baseform="App">app</GlossTerm>, you can check out the registered test devices available on the **App Settings** page. This will show an aggregated list of all registered test devices associated with users who have access to your app, regardless of their role. You can use any of those devices to run tests of your app.
+
+You can also download the list of registered devices as a `.json` file.
+
+1. Open your project on Bitrise with a user that has the **Admin** [role on the project](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+1. On the main page of the project, click on the **Project settings** button.
+
+   ![project-settings-button.png](/img/_paligo/uuid-14defaa4-472c-2d09-84df-145dc3aef4f5.png)
+1. On the menu on the left side, select **Test devices**.
+
+   ![test-devices-menu.png](/img/_paligo/uuid-7fb72644-6457-f137-c769-10345e5cb120.png)
+1. Optionally, you can download the entire list as a `.json` file: click the **Download as json** button.
+
+
+## Registering devices on the Apple Developer Portal with the Xcode Archive Step
+
+The **Xcode Archive & Export for iOS** Step allows you to automatically register your test devices on the Apple Developer Portal. By default, the Step registers all test devices that you registered to your Bitrise account but you can configure it to only register a specific selection of devices.
+
+:::important[Apple Developer Portal limit]
+
+Please note that the Apple Developer Portal has a limit for devices registered for testing purposes, typically set at 100 devices per account. Devices registered with the **Xcode Archive & Export for iOS** Step count towards this limit and you can only remove registered devices once a year.
+
+:::
+
+### Registering all devices on the Apple Developer Portal
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Register your devices on Bitrise.
+
+   - [Register using an iOS device](/en/bitrise-ci/testing/testing-ios-apps/registering-a-test-device#register-an-ios-device-using-safari).
+   - [Register manually on the **Profile settings** page](/en/bitrise-ci/testing/testing-ios-apps/registering-a-test-device#register-a-test-device-manually).
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+1. Add the **Xcode Archive & Export for iOS** Step to your Workflow.
+1. In the **Automatic code signing** input group, set the **Register test devices on the Apple Developer Portal** input to `yes`.
+
+   ![register-yes.png](/img/_paligo/uuid-113925d0-226c-da20-a0ea-41eec556f750.png)
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. Register your devices on Bitrise.
+
+   - [Register using an iOS device](/en/bitrise-ci/testing/testing-ios-apps/registering-a-test-device#register-an-ios-device-using-safari).
+   - [Register manually on the **Profile settings** page](/en/bitrise-ci/testing/testing-ios-apps/registering-a-test-device#register-a-test-device-manually).
+1. In the Configuration YAML file, add the `xcode-archive` Step to your Workflow.
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-archive:
+           inputs:
+   ```
+1. Set the `register_test_devices` input to `yes`.
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-archive:
+           inputs:
+           - register_test_devices: 'yes'
+   ```
+
+</TabItem>
+</Tabs>
+
+### Registering a selection of devices on the Apple Developer Portal
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Get the UDID of the devices you want to register: [Checking the available test devices for an app](/en/bitrise-ci/testing/testing-ios-apps/registering-a-test-device#checking-the-available-test-devices-for-an-app).
+1. Create a `.txt` file and add the UDIDs of all devices you want to register to the file in a comma-separated list:
+
+   ```
+   00000000-0000000000000001,00000000-0000000000000002,00000000-0000000000000003
+   ```
+1. Make sure Bitrise can access the file in a Workflow:
+
+   You can commit it to your repository.
+
+   [You can upload it to the Generic File Storage and use the **File Downloader** Step to access it](/en/bitrise-ci/run-and-analyze-builds/managing-build-files/using-files-in-your-builds#downloading-a-file-using-the-file-downloader-step).
+
+   You can dynamically generate the file during the build.
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+1. Add the **Xcode Archive & Export for iOS** Step to your Workflow.
+1. In the **Automatic code signing** input group, set the **Register test devices on the Apple Developer Portal** input to **yes**.
+1. In the same input group, add the path to the `.txt` file containing the UDIDs to the **Path of file containing the devices to be registered** input.
+
+   ![registering-test-devices.png](/img/_paligo/uuid-139f4940-4762-210c-2a4d-59bc4e2b561d.png)
+
+   :::note[Devices registered on Bitrise]
+
+   This input takes priority over the devices registered to your Bitrise account.
+
+   :::
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. Get the UDID of the devices you want to register: [Checking the available test devices for an app](/en/bitrise-ci/testing/testing-ios-apps/registering-a-test-device#checking-the-available-test-devices-for-an-app).
+1. Create a `.txt` file and add the UDIDs of all devices you want to register to the file in a comma-separated list:
+
+   ```
+   00000000-0000000000000001,00000000-0000000000000002,00000000-0000000000000003
+   ```
+1. Make sure Bitrise can access the file in a Workflow:
+
+   You can commit it to your repository.
+
+   [You can upload it to the Generic File Storage and use the **File Downloader** Step to access it](/en/bitrise-ci/run-and-analyze-builds/managing-build-files/using-files-in-your-builds#downloading-a-file-using-the-file-downloader-step).
+
+   You can dynamically generate the file during the build.
+1. In the Configuration YAML file, add the `xcode-archive` Step to your Workflow.
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-archive:
+           inputs:
+   ```
+1. Set the `register_test_devices` input to `yes`.
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-archive:
+           inputs:
+           - register_test_devices: 'yes'
+   ```
+1. Set the path to the `.txt` file containing the UDIDs in the `test_device_list_path` input.
+
+   :::note[Devices registered on Bitrise]
+
+   This input takes priority over the devices registered to your Bitrise account.
+
+   :::
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-archive:
+           inputs:
+           - register_test_devices: 'yes'
+           - test_device_list_path: path/to/the/file
+   ```
+
+</TabItem>
+</Tabs>

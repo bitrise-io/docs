@@ -8,9 +8,6 @@ slug: /bitrise-ci/deploying/android-deployment/generating-and-deploying-android-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_GeneratingAnAndroidAppBundleFile from '@site/src/partials/generating-an-android-app-bundle-file.mdx';
-import Partial_DeployingYourAndroidAppBundleToGooglePlay from '@site/src/partials/deploying-your-android-app-bundle-to-google-play.mdx';
-import Partial_SigningAnAndroidAppBundleFile from '@site/src/partials/signing-an-android-app-bundle-file.mdx';
 
 Creating an Android App Bundle with Bitrise is almost the same as generating an APK. All you have to do is tweaking a few <GlossTerm baseform="Step">Step</GlossTerm> inputs to compile an Android App Bundle (.aab) file from your code, then get the bundle signed and deployed to Google Play Store.
 
@@ -25,8 +22,335 @@ The following Steps must be of the indicated version or newer - older versions o
 
 :::
 
-<Partial_GeneratingAnAndroidAppBundleFile />
 
-<Partial_SigningAnAndroidAppBundleFile />
+## Generating an Android App Bundle file
 
-<Partial_DeployingYourAndroidAppBundleToGooglePlay />
+You can create an Android App Bundle with either the **Gradle Runner** <GlossTerm baseform="Step">Step</GlossTerm> or with the **Android Build** Step.
+
+### Using the Gradle Runner Step
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+1. Insert the **Gradle Runner** Step after the **Android Unit Test** and **Android Lint** Steps in your <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
+1. Click the **Config** section of **Gradle Runner**.
+1. In the **Gradle task to run** input field, set, for example, `bundleRelease` or `bundleDebug` to create a bundle of your project.
+
+   ![Generating_and_deploying_Android_app_bundles.jpg](/img/_paligo/uuid-b0a21607-f817-bdff-5480-e82a6f9a0152.jpg)
+
+   :::tip[APK and AAB in the same Workflow]
+
+   If you wish to generate an Android App Bundle and an APK in one Workflow, you can specify an additional task in the **Gradle task to run** input field: set the input value to `bundleRelease assembleRelease` to generate release versions.
+
+   :::
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. Open your app's Configuration YAML file.
+1. Insert the `gradle-runner` Step after the `android-unit-test` and `android-lint` Steps in your <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
+
+   ```
+   my-workflow:
+     steps:
+       - activate-ssh-key:
+           run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+       - git-clone: {}
+       - install-missing-android-tools: {}
+       - android-lint: {}
+       - android-unit-test: {}
+       - gradle-runner:
+   ```
+1. In the `gradle_task` input of `gradle-runner`, set, for example, `bundleRelease` or `bundleDebug` to create a bundle of your project.
+
+   ```
+   my-workflow:
+     steps:
+       - activate-ssh-key:
+           run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+       - git-clone: {}
+       - install-missing-android-tools: {}
+       - android-lint: {}
+       - android-unit-test: {}
+       - gradle-runner:
+           inputs:
+             - gradle_task: bundleRelease
+   ```
+
+   :::tip[APK and AAB in the same Workflow]
+
+   If you wish to generate an Android App Bundle and an APK in one Workflow, you can specify an additional task in the `gradle_task` input field: set the input value to `bundleRelease assembleRelease` to generate release versions.
+
+   :::
+
+</TabItem>
+</Tabs>
+
+This way the Step will generate an Android App Bundle instead of an APK.
+
+### Using the Android Build Step
+
+You can generate an Android App Bundle for your Android app with our **Android Build** Step as well:
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+1. Add the **Android Build** Step after the **Android Unit Test** and **Android Lint** Steps in your Workflow.
+1. Provide the root directory of your Android project in the **Project Location** input field.
+1. Go to **Build type** and select `aab` as build type.
+
+   ![Generating_and_deploying_Android_app_bundles.jpg](/img/_paligo/uuid-e786c907-9370-70be-0d2f-7c9c6f028ac7.jpg)
+
+   :::tip[APK and AAB in the same Workflow]
+
+   If you wish to generate an APK and an Android App Bundle in one Workflow, add two **Android Build** Steps after each other and configure one to build an Android App Bundle and the other to build an APK.
+
+   :::
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. Open your app's Configuration YAML.
+1. Add the `android-build` Step after the `android-unit-test` and `android-lint` Steps in your Workflow.
+
+   ```
+   my-workflow:
+     steps:
+       - activate-ssh-key:
+           run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+       - git-clone: {}
+       - install-missing-android-tools: {}
+       - android-lint: {}
+       - android-unit-test: {}
+       - android-build:
+   ```
+1. Provide the root directory of your Android project in the `project_location` input field.
+1. Set the value of the `build-type` input to `aab`.
+
+   ```
+   my-workflow:
+     steps:
+       - activate-ssh-key:
+           run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+       - git-clone: {}
+       - install-missing-android-tools: {}
+       - android-lint: {}
+       - android-unit-test: {}
+       - android-build:
+           inputs:
+             - build-type: aab
+   ```
+
+   :::tip[APK and AAB in the same Workflow]
+
+   If you wish to generate an APK and an Android App Bundle in one Workflow, add two `android-build` Steps after each other and configure one to build an Android App Bundle and the other to build an APK.
+
+   :::
+
+</TabItem>
+</Tabs>
+
+
+## Signing an Android App bundle
+
+Signing an Android App Bundle file works the same way as signing an APK: the most convenient method is to upload your keystore files to Bitrise and use the **Android Sign** Step:
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Upload your keystore file to Bitrise.
+1. Open your Workflow in the Workflow Editor, and add the **Android Sign** <GlossTerm baseform="Step">Step</GlossTerm> AFTER the build Step.
+1. Make sure that the **Keystore password**, **Key alias** and the **Key password** input fields are filled out.
+
+   :::tip[Default input values]
+
+   If you have uploaded your keystore file and filled out the required credentials, the **Android Sign** Step's **Keystore url**, **Keystore password**, **Keystore alias**, and the **Private key password** inputs will get populated automatically!
+
+   :::
+1. Make sure the **App file path** input field displays the same output env var as the output of the build Step you've been using.
+
+   For example, **Android Build** exports either a $BITRISE_APK_PATH or a $BITRISE_AAB_PATH Env Var that points to the APK and/or AAB file the Step generated. By default, this input points at these Env Vars.
+
+   ![Generating_and_deploying_Android_app_bundles.jpg](/img/_paligo/uuid-8b24a99b-a80b-f23a-7708-af1136ffbedb.jpg)
+
+   :::tip[Further configuration options]
+
+   Check out all the available configuration options of the **Android Sign** Step in the Workflow Editor. You can:
+
+   - Enable or disable memory page alignment with the **Page alignment** input.
+   - Use `apksigner` instead of the default `jarsigner` with the **Enables apksigner** input.
+   - Enforce a specific [Signature Scheme](https://source.android.com/docs/security/features/apksigning#schemes) with the **APK Signature Scheme** input.
+
+   :::
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. Upload your keystore file to Bitrise.
+1. In your app's Configuration YAML file, add the `sign-apk` <GlossTerm baseform="Step">Step</GlossTerm> AFTER the build Step - for example, `android-build` - in your <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
+
+   ```
+   sign-android-workflow:
+     steps:
+       - android-build: {}
+       - sign-apk@1:
+           inputs:
+   ```
+1. Make sure that the `keystore_url`, `keystore_password`, and `keystore_alias` inputs point to the correct location.
+
+   ```
+   sign-android-workflow:
+     steps:
+       - android-build: {}
+       - sign-apk@:
+           inputs:
+           - keystore_url: "$BITRISEIO_ANDROID_KEYSTORE_URL"
+           - keystore_password: "$BITRISEIO_ANDROID_KEYSTORE_PASSWORD"
+           - keystore_alias: "$BITRISEIO_ANDROID_KEYSTORE_ALIAS"
+   ```
+
+   :::tip[Default input values]
+
+   If you have uploaded your keystore file to Bitrise and filled out the required credentials, you do not have to set the inputs at all: the default values, defined in the Step's `step.yml` configuration file, will point to the keystore file and the necessary credentials.
+
+   :::
+1. Make sure the `android_app` input field displays the same output Env Var as the output of the build Step you've been using.
+
+   For example, `android-build` exports either a $BITRISE_APK_PATH or a $BITRISE_AAB_PATH Env Var that points to the APK and/or AAB file the Step generated. By default, this input points at these Env Vars.
+
+   The Step will look for a binary to sign at the locations provided in this input.
+
+   ```
+   sign-android-workflow:
+     steps:
+       - android-build: {}
+       - sign-apk@1:
+           inputs:
+           - keystore_url: "$BITRISEIO_ANDROID_KEYSTORE_URL"
+           - keystore_password: "$BITRISEIO_ANDROID_KEYSTORE_PASSWORD"
+           - keystore_alias: "$BITRISEIO_ANDROID_KEYSTORE_ALIAS"
+           - android_app: "$BITRISE_APK_PATH\\n$BITRISE_AAB_PATH"
+   ```
+
+   :::tip[Further configuration options]
+
+   Check out all the available configuration options of the `android-sign` Step in [its step.yml file](https://github.com/bitrise-steplib/steps-sign-apk/blob/master/step.yml). You can:
+
+   - Enable or disable memory page alignment with the `page_align` input.
+   - Use `apksigner` instead of the default `jarsigner` with the `use_apk_signer` input.
+   - Enforce a specific [Signature Scheme](https://source.android.com/docs/security/features/apksigning#schemes) with the `signer_scheme` input.
+
+   :::
+
+</TabItem>
+</Tabs>
+
+
+## Deploying your Android App Bundle to Google Play
+
+Deploying an AAB file isn't significantly different from deploying an APK to Google Play.
+
+If you want to check the bundle prior to app store distribution, you can add the **Deploy to Bitrise.io** Step after the **Gradle Runner / Android Build** Steps. It uploads the bundle into the **Artifacts** tab of your Build’s page.
+
+### Setting up Google Play deployment for the first time
+
+Deploying to Google play publishes your app to Google's online store. When you do it for the first time, this requires a bit more work than simply deploying to [bitrise.io](https://www.bitrise.io/). Once the necessary configurations are in place, it becomes very simple.
+
+When configuring Google Play deployment for the first time, you need to link your Google Play Developer account to an API project, set up API access, and upload the service account JSON key to Bitrise.
+
+1. Upload the first AAB or APK manually to Google Play [using the Google Play Console](https://support.google.com/googleplay/android-developer/answer/113469?hl=en).
+1. [Link](https://developers.google.com/android-publisher/getting_started) your Google Play Developer Console to an API project.
+1. [Set up API Access Clients using a service account](https://developers.google.com/android-publisher/getting_started): Please note when you create your service account on the Google Developer Console, you have to choose `json` as **Key Type**.
+1. Grant the necessary rights to the service account with your [Google Play Console](https://play.google.com/apps/publish). Go to **Settings**, then **Users & permissions**, then **Invite new user**. Due to the way the Google Play Publisher API works, you have to grant at least the following permissions to the service account:
+
+   - Access level: View app information.
+   - Release management: Manage production releases, manage testing track releases.
+   - Store presence: Edit store listing, pricing & distribution.
+1. As an optional step, you can add translations to your Store Listing: [Translate & localize your app](https://support.google.com/googleplay/android-developer/answer/3125566?hl=en).
+1. [Connect your Google service account to Bitrise](/en/bitrise-platform/integrations/connecting-a-google-service-account-to-bitrise).
+
+### Deploying to Google Play
+
+Deploying to Google Play requires [a signed APK or AAB file](/en/bitrise-ci/code-signing/android-code-signing/android-code-signing-using-the-android-sign-step) and the **[Google Play Deploy](https://www.bitrise.io/integrations/steps/google-play-deploy)** <GlossTerm baseform="Step">Step</GlossTerm>.
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. [Upload your service account JSON key to the **Files** section](/en/bitrise-ci/run-and-analyze-builds/managing-build-files/uploading-files-for-your-builds).
+1. In the **Files** section, copy the **Download URL** of your service account file.
+
+   For example, `BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL`.
+1. Open the Workflow Editor and select **Secrets**.
+1. Create a Secret with the copied download URL as the value.
+
+   If you uploaded the JSON key file to Bitrise, the download URL is an Environment Variable so check the **Replace variables in inputs** checkbox.
+
+   :::note[Direct link]
+
+   If you use a direct link to your keystore file without uploading it to Bitrise, you don't need to check the **Replace the variables in inputs** option.
+
+   :::
+1. Add the **Google Play Deploy** Step to your Workflow.
+1. In the **Service Account JSON key file path** input, paste the Secret you created.
+1. In the **Package name** input, add the package name of your app.
+1. In the **Track** input, add the track where you want to deploy your APK (for example, alpha/beta/rollout/production or any custom track you set).
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. [Upload your service account JSON key to the **Files** section](/en/bitrise-ci/run-and-analyze-builds/managing-build-files/uploading-files-for-your-builds).
+
+   :::note[Uploading the service account JSON key file]
+
+   We recommend uploading the service account JSON key to Bitrise but it is not mandatory: you can store it elsewhere and provide a direct link to it.
+
+   :::
+1. Open your app's Configuration YAML file and add the `google-play-deploy` Step to it.
+
+   ```
+   deploy-workflow:
+     steps: 
+     - google-play-deploy: 
+         inputs:
+   ```
+1. In the `service_account_json_key_path` input, you need to provide the path to the service account JSON key file.
+
+   [Create a Secret](/en/bitrise-ci/configure-builds/secrets) to the path and reference that here.
+
+   ```
+   deploy-workflow:
+     steps: 
+     - google-play-deploy: 
+         inputs:   
+         - service_account_json_key_path: "$BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL"
+   ```
+1. In the `package` input, add [the package name](https://support.google.com/admob/answer/9972781?hl=en#:~:text=The%20package%20name%20of%20an,supported%20third%2Dparty%20Android%20stores.) of your app.
+
+   ```
+   deploy-workflow:
+     steps: 
+     - google-play-deploy: 
+         inputs:   
+         - service_account_json_key_path: "$BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL"
+         - package_name: myApp
+   ```
+1. In the `track` input, add the track where you want to deploy your app binary (for example, alpha/beta/rollout/production or any custom track you set).
+
+   ```
+   deploy-workflow:
+     steps: 
+     - google-play-deploy: 
+         inputs:   
+         - service_account_json_key_path: "$BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL"
+         - package_name: myApp
+         - track: alpha
+   ```
+
+</TabItem>
+</Tabs>
+
+That’s all! Start or schedule a build and share the URL with external testers or distribute your app on an app store of your choice!

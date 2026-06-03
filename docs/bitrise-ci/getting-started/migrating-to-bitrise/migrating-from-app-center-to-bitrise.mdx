@@ -8,11 +8,6 @@ slug: /bitrise-ci/getting-started/migrating-to-bitrise/migrating-from-app-center
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_AppCenterOrgsAndBitriseWorkspaces from '@site/src/partials/app-center-orgs-and-bitrise-workspaces.mdx';
-import Partial_TestingOnAppCenterAndOnBitrise from '@site/src/partials/testing-on-app-center-and-on-bitrise.mdx';
-import Partial_UserRolesAndCollaboration from '@site/src/partials/user-roles-and-collaboration.mdx';
-import Partial_AppCenterBuildServiceAndBitriseBuilds from '@site/src/partials/app-center-build-service-and-bitrise-builds.mdx';
-import Partial_DeployingOnAppCenterAndBitrise from '@site/src/partials/deploying-on-app-center-and-bitrise.mdx';
 
 Visual Studio App Center has been taken offline on March 31, 2025. This guide is meant to help you migrating your projects from App Center to Bitrise.
 
@@ -20,12 +15,108 @@ We strongly recommend going through our [Getting started](/en/bitrise-build-cach
 
 In this guide, we'll be going through the similarities and differences between Bitrise and App Center.
 
-<Partial_AppCenterOrgsAndBitriseWorkspaces />
 
-<Partial_UserRolesAndCollaboration />
+## App Center orgs and Bitrise Workspaces
 
-<Partial_AppCenterBuildServiceAndBitriseBuilds />
+On App Center, your user account can own apps. Organizations are optional: App Center recommends creating an organization for any apps with multiple collaborators.
 
-<Partial_TestingOnAppCenterAndOnBitrise />
+A [Bitrise Workspace](/en/bitrise-platform/workspaces/workspaces-overview) is a little different: when you sign up for the first time, we automatically create your first Workspace, too. This is because only Workspaces can own Bitrise projects. Projects are not tied to your account but to Workspaces. A Workspace can own several projects but a project cannot be linked to multiple Workspaces.
 
-<Partial_DeployingOnAppCenterAndBitrise />
+A Bitrise Workspace has three main roles:
+
+- **Owner**: The owner of the Workspace. Full administrative control over the Workspace without restrictions. A Workspace can have multiple Owners. The default Owner is the account that created the Workspace.
+- **Manager**: The user can access and modify Workspace settings such as connected service accounts, can manage members but can't access billing details and can't delete the Workspace.
+- **Viewer**: The user can't access Workspace settings and can't add new members or manage existing members.
+
+On App Center, you can create teams within organizations. On Bitrise, Workspace members can be added to Workspace groups: this makes it easier to assign multiple people to projects at the same time.
+
+
+## User roles and collaboration
+
+App Center offers three different roles to manage access to your apps. On Bitrise, control is a little more granular: on each project's team, you can set five different roles to make sure that your team members have the exact right access to the project.
+
+For more information, check out [Roles and permissions for Bitrise CI](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+
+
+## App Center Build service and Bitrise builds
+
+The App Center Build service helps you build your apps using a secure cloud infrastructure. A Bitrise build works the same way: you can [connect a repository](/en/bitrise-platform/repository-access/repository-access-with-oauth) to our service and build your project every time a code event happens in the repository.
+
+Bitrise supports multiple mobile frameworks, including iOS, Android, React Native, Flutter, Ionic, and Cordova. When [adding a new project](/en/bitrise-ci/getting-started/adding-a-new-project), we automatically detect your framework and set up a configuration best suited for that particular framework.
+
+### Repository connections
+
+Bitrise supports connections to multiple code repository services:
+
+- GitHub
+- GitLab
+- Bitbucket
+- Azure DevOps
+- Deveo
+- Gogs
+- Assembla
+
+For most cases, you can use OAuth connections and [SSH keys](/en/bitrise-platform/repository-access/configuring-ssh-keys) to set up repository access. [HTTPS authorization](/en/bitrise-platform/repository-access/configuring-https-authorization-credentials) is also supported.
+
+### GitHub App
+
+Just like App Center, Bitrise offers a [GitHub App](/en/bitrise-platform/repository-access/github-app-integration) to integrate your Bitrise Workspace to a GitHub account or organization. With the GitHub App, you can:
+
+- Connect Bitrise to GitHub without using an SSH key.
+- Improve code security: the app relies on short-lived one-time tokens for access.
+- [Link multiple repositories](/en/bitrise-platform/repository-access/github-app-integration#additional-linked-repositories-via-a-github-app) to the same project.
+- Report your build status to GitHub.
+
+### Configuring your build
+
+On App Center, your build configuration is tied to the branches of your repository. On Bitrise, these are separate: the build configuration is independent of the branches of the repository. The process generally works like this:
+
+1. You set up a build configuration: create [Workflows and Pipelines](/en/bitrise-ci/workflows-and-pipelines/workflows/workflows-overview) and configure the Steps inside them. Your configuration is stored in YAML format but you can create and modify it using the graphical Workflow Editor. You can also set up [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables) on the project level or on Workflow level.
+1. You create [automatic build triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers): define the code events that should automatically start Bitrise builds. In addition to simple code push, you can create triggers for pull requests and Git tags. And you have further, more granular control: for example, you can configure a trigger that only starts a build if a certain file has changed in a pull request. You can also specify a branch or branches for a trigger so that only code events on the specified branch trigger a build.
+1. You select the [stack](/en/bitrise-build-hub/infrastructure/build-stacks/about-build-stacks) and the [machine type](/en/bitrise-build-hub/infrastructure/build-machine-types) of your build.
+1. On the **Project settings** page, you can configure additional options for your builds:
+
+   - Set up [build notifications](/en/bitrise-ci/configure-builds/configuring-build-settings/configuring-email-notifications).
+   - Set up [rolling builds](/en/bitrise-ci/configure-builds/configuring-build-settings/rolling-builds).
+   - Configure [connection to services](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services) such as App Store Connect or Google Play to ensure your builds can can always access them.
+   - Upload [code signing](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects) files or any other files that your builds need.
+   - Configure or download your [build cache](/en/bitrise-ci/dependencies-and-caching/key-based-caching/accessing-key-based-cache-archives).
+
+### Running a build
+
+Just like on App Center, every Bitrise build runs in a clean virtual machine that is discarded once the build is finished while generated artifacts are stored on our servers. On Bitrise, you can also select your build stack: for example, you can always choose between several different versions of Xcode. And we're always aiming to make new Xcode versions available as soon as possible.
+
+You can [start builds manually](/en/bitrise-ci/run-and-analyze-builds/starting-builds/starting-builds-manually), trigger them automatically, or [schedule them](/en/bitrise-ci/run-and-analyze-builds/starting-builds/scheduling-builds). Once a build has run, you can check out detailed, structured [build logs](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/build-logs).
+
+
+## Testing on App Center and on Bitrise
+
+App Center Test is a test automation service for mobile apps: you can upload your app binary and test files to execute tests.
+
+Bitrise offers everything App Center Test does in our CI/CD service: we have multiple, platform-specific dedicated testing Steps that can find and run tests within your code. You can run your tests in simulators and on real devices. In addition to the dedicated testing Steps, you can run any script you want, so you can fully customize your tests.
+
+Just like building and deploying, testing is also automatic: set up build triggers so that code events trigger builds with tests. Everything can be integrated: you can build, test, and deploy your app within the very same Workflow, if you choose to.
+
+You can view all your test results and generated test artifacts in one place: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
+
+:::note[Test distribution solution]
+
+An enhanced Release Management solution with test distribution features is coming soon. You will be able to:
+
+- Easily access and distribute different versions of your app for testing from a directory-like page for IPA, APK, and AAB files.
+- Share your app via either a public or a private install page, or distribute builds to your testers early, in the pre-production phase.
+
+:::
+
+
+## App Center Distribute and Bitrise Release Management
+
+The App Center Distribute service allows you to manage app distribution across multiple platforms in one place. Bitrise [Release Management](urn:resource:publication:90740) offers exactly that: a one-stop shop for your release requirements. You can:
+
+- Automate all your releases.
+- Release your apps across multiple platforms at the same time.
+- Have full granular control over the entire release process without leaving Release Management.
+
+To get started, you just need to [connect an app](/en/release-management/getting-started-with-release-management/connecting-an-app). Once you successfully connected an app, you don't have to go through any of the online stores to manage your releases.
+
+We also offer [a fully featured REST API](/en/release-management/release-management-api) to make the most of Release Management.

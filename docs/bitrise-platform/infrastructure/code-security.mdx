@@ -8,9 +8,6 @@ slug: /bitrise-platform/infrastructure/code-security
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_SourceCode from '@site/src/partials/source-code.mdx';
-import Partial_Passwords from '@site/src/partials/passwords.mdx';
-import Partial_CodeSigningAndOtherFiles from '@site/src/partials/code-signing-and-other-files.mdx';
 
 To guarantee the security of your code, every Bitrise build runs in its own, clean virtual machine and we discard the whole virtual machine after the build finishes, erasing every file your build uses and every change you make during your build.
 
@@ -18,8 +15,19 @@ This is also true for the Android & Docker <GlossTerm baseform="Stack">stacks</G
 
 This way your builds are always protected from changes made by others and from your previous builds, no one else can access your code and you can use a stable environment to define your build <GlossTerm baseform="Workflow">Workflow</GlossTerm>. Every build is completed in an isolated environment, unrelated to any previous or parallelly running builds.
 
-<Partial_SourceCode />
 
-<Partial_CodeSigningAndOtherFiles />
+## Source code
 
-<Partial_Passwords />
+We don’t store your source code. The source code is only accessed on the build machines (virtual machines) the way you define it in your [Bitrise configuration](/en/bitrise-ci/configure-builds/configuration-yaml/managing-a-project-s-configuration-yaml-file). If you don’t have a **Git Clone** <GlossTerm baseform="Step">Step</GlossTerm> or some other Step that accesses your Git repository in your configuration, then the source code won’t be touched at all. At the end of the build the whole virtual machine is destroyed. As such, any change you made to your source code on the virtual machine will be lost unless you commit your changes and push them to a remote repository.
+
+
+## Code signing and other files
+
+The files you upload in the **Code Signing** tab of the <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm> are stored on `Amazon S3` in a way that it’s only accessible for the web servers.
+
+The required credentials are not stored in any database, it is only available in the web servers’ environment. Build servers can’t access the files directly either. When a build starts, the web server generates a read-only, time limited access URL for these files, using [Amazon S3 pre-signed URLs](https://docs.aws.amazon.com/aws-sdk-php/v3/guide/service/s3-presigned-url.html).
+
+
+## Passwords
+
+Passwords are stored in a hashed, encrypted form. We are encrypting the passwords with [bcrypt algorithm](https://en.wikipedia.org/wiki/Bcrypt), using multiple stretches.

@@ -8,9 +8,6 @@ slug: /bitrise-ci/run-and-analyze-builds/build-triggers/about-build-triggers
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_TriggerVariables from '@site/src/partials/trigger-variables.mdx';
-import Partial_MergeQueueSupport from '@site/src/partials/merge-queue-support.mdx';
-import Partial_TriggerPriority from '@site/src/partials/trigger-priority.mdx';
 
 Use build triggers to start one or more Bitrise builds automatically. A trigger's definition contains a code event and one or more conditions that the event must match in order to trigger a build.
 
@@ -40,8 +37,58 @@ Different Git providers support different conditions. For the full table, see [S
 
 Trigger conditions can be combined within a single trigger: for example, you can set up a pull request trigger that only triggers a build if the PR targets a specific branch AND contains a specific label.
 
-<Partial_TriggerPriority />
 
-<Partial_TriggerVariables />
+## Trigger priority
 
-<Partial_MergeQueueSupport />
+Triggers can be assigned a priority setting: this determines the priority of a build triggered by a specific trigger. The higher the priority, the higher the build is in the build queue.
+
+You can assign a priority either in the Workflow Editor or in the configuration YAML file of your project. The priority is always an integer between -100 and 100: the higher the number, the higher the priority. The default priority is 0.
+
+For more information about build priority, and the order of precedence between different types of priorities, check out [Build priority](/en/bitrise-ci/configure-builds/configuring-build-settings/build-priority).
+
+
+## Trigger variables
+
+A number of Environment Variables related to build triggers are available during an automatically triggered build. These variables can give detailed context about build triggers and pull request attributes. Use these trigger variables to:
+
+- Use pull request data, such as comments, labels, and changed files, to automate complex workflows and decision-making processes.
+- Understand who and how your builds are triggered and use that to better debug your workflows
+- Implement precise build conditions to reduce unnecessary runs, saving time and resources.
+
+You can find all trigger variables and their definition in our reference table: [Available environment variables](/en/bitrise-ci/references/available-environment-variables).
+
+Trigger variables are only available if the requirements are met. For example, the BITRISE_GIT_PULL_REQUEST_COMMENT variable is only available if the build is triggered by a PR comment; in other words, the build trigger has a `pr_comment` condition. You can find the exact conditions in [Available environment variables](/en/bitrise-ci/references/available-environment-variables).
+
+### Use cases for trigger variables
+
+Here are some example use cases for trigger variables. These are merely suggestions: you can experiment with variables to find what suits your needs best.
+
+**Reporting back to the PR comment**
+
+BITRISE_GIT_PULL_REQUEST_COMMENT_ID: Use the pull request comment ID to post a status update directly to the original comment on the pull request. This can include details such as success, failure, logs, or any other relevant information.
+
+**Conditional test execution**
+
+BITRISE_GIT_CHANGED_FILES : Identify modified parts of the codebase and based on these changes, trigger specific test suites, such as running frontend tests for UI changes and backend tests for API modifications.
+
+**Deploying to different environments based on commit messages or labels**
+
+Use BITRISE_GIT_COMMIT_MESSAGES and BITRISE_GIT_PULL_REQUEST_LABELS to determine the deployment environment. For instance, if a commit message includes "[staging]" or a label "ready-for-staging" is present, deploy the code to the staging environment.
+
+
+## Merge queue support
+
+GitHub Merge Queues allow multiple pull requests (PRs) to be merged automatically into a branch. You can verify the changes in each PR with a Bitrise build by setting up a trigger with `gh-readonly-queue/*` as the branch filter. You can read more about this prefix in the [GitHub documentation](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue#triggering-merge-group-checks-with-third-party-ci-providers).
+
+The merge queue will only function correctly if your builds, triggered for the queue, report the same status names as the PR builds.
+
+For example, with the configuration below, all branches that are merged from a merge queue, trigger a build with the `ci-pipeline` Pipeline:
+
+```
+pipelines:
+  ci-pipeline:
+    triggers:
+      push:
+      - branch: "gh-readonly-queue/*"
+    status_report_name: ci/bitrise/<project_slug>/pr
+```

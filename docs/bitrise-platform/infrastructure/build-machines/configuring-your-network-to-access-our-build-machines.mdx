@@ -9,16 +9,126 @@ sidebar_label: Configuring network access with IP allowlists
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_IPAddressesForTheBuildMachines from '@site/src/partials/ip-addresses-for-the-build-machines.mdx';
-import Partial_IPAddressesForTheBitriseWebsite from '@site/src/partials/ip-addresses-for-the-bitrise-website.mdx';
-import Partial_DocumentChangelog from '@site/src/partials/document-changelog.mdx';
 
 Our datacenters are behind a set of public static IP addresses, with the virtual machines having their own internal subnets behind these addresses. Depending on your company security policy, you may need to allowlist the public IP addresses to be able to access the build machine: [see topic](#ip-address-ranges-for-the-bitrise-build-machines).
 
 Similarly, the Bitrise background workers powering [app.bitrise.io](http://app.bitrise.io) UI and related control plane, configuration management, signaling to your services are accessible at a set of static IP addresses. Allowlisting these addresses can ensure you can still receive build status updates or that Bitrise can access the `<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>` file: [see topic](#ip-address-ranges-for-bitrise-backend-workers) of your <GlossTerm baseform="App">app</GlossTerm>.
 
-<Partial_IPAddressesForTheBuildMachines />
 
-<Partial_IPAddressesForTheBitriseWebsite />
+## IP address ranges for the Bitrise build machines
 
-<Partial_DocumentChangelog />
+For most users, who host their repositories on cloud-based service providers, there is no need for any network configuration to be able to use Bitrise. All we need is permission to access the repository and for that, [an SSH key](/en/bitrise-platform/repository-access/configuring-ssh-keys) or [an access token](/en/bitrise-platform/repository-access/configuring-https-authorization-credentials) is enough.
+
+However, your company security policy might not allow unknown and unauthorized IP addresses to communicate with the servers where your code is being stored - either on your own datacenter or in a private cloud. In that case, Bitrise won’t work unless the relevant IP addresses are added to your allow list.
+
+You will see IP addresses from the following ranges as source when your Bitrise build machines reach out to your services like Git to download your source code, or call into your test backend services, or any other services you run outside Bitrise that are required to be reached as part of your CI workflow.
+
+:::warning[Allowlist the entire subnet]
+
+If the provided public IP address is a subnet, you need to allow the entire subnet on your network! For example, 208.52.166.128/28 means all IP addresses between 208.52.166.128 and 208.52.166.143 (208.52.166.128, 208.52.166.129, 208.52.166.130, and so on, all the way to and including 208.52.166.143) have to be allowlisted.
+
+:::
+
+:::warning[Multi-tenant vs Single-tenant]
+
+The build machine IP ranges listed below are for the Bitrise multi-tenant environment. Depending on your organization's security requirements, it may not be advisable to allow access to your network from the Bitrise multi-tenant IP range. For organizations with enhanced security requirements, you can:
+
+- [Connect by VPN](/en/bitrise-platform/integrations/connecting-to-a-vpn-during-a-build).
+- [Select a single-tenant environment](/en/bitrise-platform/infrastructure/customizable-enterprise-build-platforms).
+- [Deploy runners to your own AWS account](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates).
+
+Feel free to [contact us](https://bitrise.io/contact) if you have questions.
+
+:::
+
+| Stack type | Public IP |
+| --- | --- |
+| Xcode stacks  If you run your builds using Xcode stacks, they will run on machines with the IP address ranges in the **Public IP** column. For example, if you run `curl` from a build, the source IP will be from these IP ranges. | 74.122.**200**.224/27 (74.122.**200.224** - 74.122.**200.255**)  74.122.**201**.224/27 (74.122.**201.224** - 74.122.**201.255**)  74.122.**202**.224/27 (74.122.**202.224** - 74.122.**202.255**)  74.122.**203**.224/27 (74.122.**203.224** - 74.122.**203.255**) |
+| 185.55.**252**.224/27 (185.55.**252.224** - 185.55.**252.255**)  185.55.**253**.224/27 (185.55.**253.224** - 185.55.**253.255**)  185.55.**254**.224/27 (185.55.**254.224** - 185.55.**254.255**)  185.55.**255**.224/27 (185.55.**255.224** - 185.55.**255.255**) |  |
+| 208.52.166.154/**32**  208.52.166.128/**28** |  |
+| 207.254.0.248/**29**  207.254.0.208/**28** |  |
+| 207.254.34.148/**32**  207.254.33.176/**28** |  |
+| Linux/Docker stacks  If you run your builds using Linux/Docker stacks, they will run on machines with the IP address ranges in the **Public IP** column. For example, if you run `curl` from a build, the source IP will be from these IP ranges. | 74.122.**200**.224/27 (74.122.**200.224** - 74.122.**200.255**)  74.122.**201**.224/27 (74.122.**201.224** - 74.122.**201.255**)  74.122.**202**.224/27 (74.122.**202.224** - 74.122.**202.255**)  74.122.**203**.224/27 (74.122.**203.224** - 74.122.**203.255**) |
+| 185.55.**252**.224/27 (185.55.**252.224** - 185.55.**252.255**)  185.55.**253**.224/27 (185.55.**253.224** - 185.55.**253.255**)  185.55.**254**.224/27 (185.55.**254.224** - 185.55.**254.255**)  185.55.**255**.224/27 (185.55.**255.224** - 185.55.**255.255**) |  |
+| 104.197.15.74/32 |  |
+| 34.123.172.192/32 |  |
+| 34.125.50.224/32 |  |
+| 34.125.82.130/32 |  |
+| 34.134.193.138/32 |  |
+| 34.138.187.10/32 |  |
+| 34.150.152.190/32 |  |
+| 34.162.185.129/32 |  |
+| 34.162.202.37/32 |  |
+| 34.162.229.32/32 |  |
+| 34.162.29.153/32 |  |
+| 34.162.88.79/32 |  |
+| 34.23.207.105/32 |  |
+| 34.85.139.176/32 |  |
+| 34.85.240.93/32 |  |
+| 34.86.56.118/32 |  |
+| 35.202.121.43/32 |  |
+| 35.225.44.167/32 |  |
+| 35.231.56.118/32 |  |
+| 35.237.165.17/32 |  |
+| 35.243.148.182/32 |  |
+| 35.245.56.67/32 |  |
+
+
+## IP address ranges for Bitrise backend workers
+
+Bitrise backend workers are operating behind firewalls and NAT gateways. There are some use cases when our backend workers need to reach your services.
+
+These addresses may be relevant if you use self-hosted Git services or store your `bitrise.yml` file in the repository. In this way Bitrise can, for example, access the `bitrise.yml` file, or [send build status updates](/en/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider) on commits and pull requests in a self-hosted repository.
+
+| Service type | IP address ranges for backend workers |
+| --- | --- |
+| Backend workers  Our backend systems reach out to your services and webhooks, or send build status updates on commits, pull requests, and tags in a self-hosted repository. | 35.232.76.43 |
+| 34.68.119.18 |  |
+| 34.135.186.58 |  |
+| 74.122.**200**.64/28 (74.122.**200.64** - 74.122.**200.78**)  74.122.**201**.64/28 (74.122.**201.64** - 74.122.**201.78**)  74.122.**202**.64/28 (74.122.**202.64** - 74.122.**202.78**)  74.122.**203**.64/28 (74.122.**203.64** - 74.122.**203.78**) |  |
+| 185.55.**252**.64/28 (185.55.**252.64** - 185.55.**252.78**)  185.55.**253**.64/28 (185.55.**253.64** - 185.55.**253.78**)  185.55.**254**.64/28 (185.55.**254.64** - 185.55.**254.78**)  185.55.**255**.64/28 (185.55.**255.64** - 185.55.**255.78**) |  |
+
+
+## Document changelog
+
+**November 2025**
+
+Added the 185.55.252.0/22 range to the IP ranges of both the build machines and the backend workers, which will utilize the new IP range from the 21st of January, 2026. The exact IP ranges are as follows:
+
+Build machines:
+
+- 185.55.252.224/27
+- 185.55.253.224/27
+- 185.55.254.224/27
+- 185.55.255.224/27
+
+Backend workers:
+
+- 185.55.252.64/28
+- 185.55.253.64/28
+- 185.55.254.64/28
+- 185.55.255.64/28
+
+**May 2025**
+
+Narrowed the Bitrise build machines IP range from 74.122.200.0/22 to:
+
+- 74.122.200.224/27
+- 74.122.201.224/27
+- 74.122.202.224/27
+- 74.122.203.224/27
+
+Narrowed the Bitrise backend workers IP range: from 74.122.200.0/22 to:
+
+- 74.122.200.64/28
+- 74.122.201.64/28
+- 74.122.202.64/28
+- 74.122.203.64/28
+
+**April 2024**
+
+Added the 74.122.200.0/22 range to the IP ranges of both the build machines and the backend workers.
+
+**October 2022**
+
+Significantly increased the Linux/Docker stacks IP range.

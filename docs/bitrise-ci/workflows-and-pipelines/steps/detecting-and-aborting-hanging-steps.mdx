@@ -8,8 +8,6 @@ sidebar_label: Detecting and aborting hanging Steps without output
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_EnablingTheNoOutputTimeoutFunctionForSpecificSteps from '@site/src/partials/enabling-the-no-output-timeout-function-for-specific-steps.mdx';
-import Partial_EnableTheNoOutputTimeoutFunctionGloballyForAllSteps from '@site/src/partials/enable-the-no-output-timeout-function-globally-for-all-steps.mdx';
 
 You can detect and abort hanging <GlossTerm baseform="Step">Steps</GlossTerm> that do not produce any log output for a certain amount of time using the **No Output Timeout** function. You can use this function to automatically abort hung builds after a configurable timeout period to save credits and to enable Bitrise to gather data on hanging builds.
 
@@ -20,6 +18,101 @@ You can use the **No Output Timeout** function in two ways:
 
 The **No Output Timeout** function can be used alongside other timeout functionalities, such as the one described in the [M1 Hanging builds issue guide](https://devcenter.bitrise.io/en/infrastructure/build-stacks/apple-silicon-m1-stacks.html#hanging-builds-issue) or in [Setting a time limit for Steps](/en/bitrise-ci/workflows-and-pipelines/steps/setting-a-time-limit-for-steps).
 
-<Partial_EnableTheNoOutputTimeoutFunctionGloballyForAllSteps />
 
-<Partial_EnablingTheNoOutputTimeoutFunctionForSpecificSteps />
+## Enabling the No Output Timeout function globally for all Steps
+
+:::important[Bitrise 1.50.0 or newer is required]
+
+You must use Bitrise 1.50.0 or a newer version to use the **No Output Timeout** function.
+
+:::
+
+To enable the **No Output Timeout** globally for all Steps:
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+
+   ![workflows-button.png](/img/_paligo/uuid-99bb894c-3e79-91c8-9e62-7e475573495d.png)
+1. Go to the **Secrets** tab.
+1. Add a new secret Env Var: `BITRISE_NO_OUTPUT_TIMEOUT` and set its value to the number of seconds you want the build to wait for output logs before aborting.
+
+   We recommend setting it to 600 seconds (10 minutes).
+
+   ![app-level-secret.png](/img/_paligo/uuid-7d34c319-a1a2-05a1-90b0-ded10c048482.png)
+
+   :::note[Aborting a hanging build automatically]
+
+   Compared to [setting a time limit for Steps](/en/bitrise-ci/workflows-and-pipelines/steps/setting-a-time-limit-for-steps), the **No Output Timeout** function only aborts a build no output log is generated for a set amount of time.
+
+   Any log output will reset the timeout. This can result in a Step running longer than the value you set in `BITRISE_NO_OUTPUT_TIMEOUT`.
+
+   :::
+1. Click **Save**. You can check the Build log of your build to determine if the function is enabled.
+
+   ![step-force-output.png](/img/_paligo/uuid-dc3bfafa-9720-8935-557a-97c317a8a624.png)
+
+And that's it! From now on, whenever a Step does not produce an output log for the number of seconds you set in `BITRISE_NO_OUTPUT_TIMEOUT` , your build automatically aborts with the message: `Abort via Bitrise CLI (no output timeout)`.
+
+:::tip[Disabling the No Output Timeout function for a specific Step]
+
+If you enabled the **No Output Timeout** function globally and want to disable it for specific Steps, you can add the `no_output_timeout: 0` Step property just above the `inputs:` part of the chosen Step(s) in the `bitrise.yml`.
+
+For example:
+
+```
+steps:    
+    - virtual-device-testing-for-ios@1:
+        no_output_timeout: 0
+        inputs:
+        - zip_path: "$BITRISE_PROJECT_PATH"
+```
+
+:::
+
+
+## Enabling the No Output Timeout function for specific Steps
+
+:::important[Bitrise 1.50.0 or newer is required]
+
+You must use Bitrise 1.50.0 or a newer version to use the **No Output Timeout** function.
+
+:::
+
+You can enable the **No Output Timeout** function for specific Steps by adding the `no_output_timeout` Step property below a Step in your <GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm> file.
+
+To do so with the Workflow Editor:
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+
+   ![workflows-button.png](/img/_paligo/uuid-99bb894c-3e79-91c8-9e62-7e475573495d.png)
+1. Go to the **bitrise.yml** tab.
+1. Search for the Step(s) where you would like to use the function.
+1. Insert `no_output_timeout: 12` Step property and value just above the `inputs:` part of the chosen Step(s) to automatically abort a build if the Step does not produce an output log for 12 seconds.
+
+   :::tip[Setting the `no_output_timeout` Step property to 0]
+
+   You can disable the **No Output Timeout** function for a Step by setting the `no_output_timeout` Step property to 0.
+
+   :::
+
+   Let's look at an example where a Script Step will always be aborted automatically:
+
+   ```
+   output_slows_down:
+       steps:
+       - script@1:
+           title: Output is slower and slower
+           no_output_timeout: 12
+           inputs:
+           - content: |-
+               #!/usr/bin/env bash
+               for i in {1..5}
+               do
+                 DURATION=$((5*i))
+                 echo "🏃‍step output (sleeping ${DURATION}s)"
+                 sleep $DURATION
+               done
+   ```
+
+And that's it! Now, if your Step hangs and does not produce a single output log for the number of seconds you specified in the `no_output_timeout` Step property, the build will be aborted automatically.

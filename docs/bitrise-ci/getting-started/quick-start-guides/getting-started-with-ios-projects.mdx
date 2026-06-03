@@ -9,9 +9,6 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 import Partial_DeployingTheAppToAppStoreConnect from '@site/src/partials/deploying-the-app-to-app-store-connect.mdx';
-import Partial_TestingYourIOSApp from '@site/src/partials/testing-your-ios-app.mdx';
-import Partial_CreatingASignedIPAForXcodeProjects from '@site/src/partials/creating-a-signed-ipa-for-xcode-projects.mdx';
-import Partial_AddingAnIOSAppToBitrise from '@site/src/partials/adding-an-ios-app-to-bitrise.mdx';
 
 Developing for iOS is complex - our aim is to make it as easy as possible for you! In this guide, we’ll walk you through how to add an iOS project to Bitrise, how to run Xcode tests, manage your code signing files, and deploy the finished app to [bitrise.io](https://www.bitrise.io/) and to the App Store.
 
@@ -21,10 +18,229 @@ You can run your fastlane lane on Bitrise with the same commands you would use
 
 :::
 
-<Partial_AddingAnIOSAppToBitrise />
 
-<Partial_TestingYourIOSApp />
+## Adding an iOS project to Bitrise
 
-<Partial_CreatingASignedIPAForXcodeProjects />
+:::note[Do you have a Bitrise account?]
+
+Make sure you have signed up to [bitrise.io](https://www.bitrise.io) and can access your Bitrise account. There are multiple ways of registering an account:
+
+- [Signing up with email](/en/bitrise-platform/getting-started/signing-up-for-bitrise#signing-up-with-email)
+- [Signing up with a Git provider](/en/bitrise-platform/getting-started/signing-up-for-bitrise#signing-up-with-a-git-provider)
+
+:::
+
+1. Log in to Bitrise and go to the **Dashboard**.
+1. Click the **New project** button.
+1. Select **Configure Bitrise CI**.
+1. Under **Project access**, select the workspace that will own the project.
+
+   ![20251219-adding-project-workspace-select.png](/img/_paligo/uuid-d1d45e63-f66b-fd5d-f4af-4d893ff388fb.png)
+1. Set who has access to the project's CI builds:
+
+   :::caution[Privacy is final]
+
+   You cannot change this setting later! If you realize you've accidentally added your project as a public project even though you need it to be private, you'll have to delete the project and add it again.
+
+   :::
+
+   Private projects are only accessible to you, your workspace members and those who are invited to work on a project. They require authentication to access the repository of the project.
+
+   [Public projects](/en/bitrise-platform/projects/public-projects) expose their configuration YAML and their build logs to everyone. If you have a public project’s build URL, you can view its build log, to help with troubleshooting, for example. Public projects do not require authentication and they cannot have SSH keys.
+1. Open the **Provider** dropdown menu and select the [repository access](/en/bitrise-platform/repository-access/about-repository-access) type.
+
+   You can select from:
+
+   - Connected Git provider accounts: Either via [OAuth connection](/en/bitrise-platform/repository-access/repository-access-with-oauth) or the [GitHub app integration](/en/bitrise-platform/repository-access/github-app-integration).
+   - Not connected Git provider accounts: you will be prompted to connect one.
+   - **Other**: A Git provider other than GitHub/GitLab/Bitbucket.
+
+   ![20251219-repo-access.png](/img/_paligo/uuid-2970ac6b-3d97-8318-0863-aff6e1f106da.png)
+1. Select a repository.
+
+   - If you selected a connected Git account, you can click **Select a repository** to select from the available repositories on that account.
+   - In any case, you can type the URL manually in the **Git repository (clone) URL**. We strongly recommend using an SSH URL, unless you are setting up a [public project](/en/bitrise-platform/projects/public-projects).
+
+   :::note[Repository URL]
+
+   You will be able to [change your project's repository URL](/en/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch) later. You can also connect or disconnect your account to Git provider services at any time.
+
+   :::
+1. If you use an OAuth connection, you need to [add an SSH key](/en/bitrise-platform/repository-access/configuring-ssh-keys) in the **Authorize Bitrise** section.
+
+   You don't need SSH keys if:
+
+   - Your project is a public project.
+   - You connect to your Git repository via a [GitHub app installation](/en/bitrise-platform/repository-access/github-app-integration).
+
+   ![20251219-authorize-bitrise.png](/img/_paligo/uuid-cd752575-c17c-0ccd-25b3-a2c97daadd57.png)
+
+   **Auto-add a generated SSH key to your repository**: We recommend using this option. We automatically generate an SSH key pair and register the public key to your repository. Requires your connected Git provider account to have admin rights to the repository.
+
+   **Copy a generated SSH key to your Git provider manually**: We generate an SSH key pair for you and you can copy the public key and register it manually to your Git provider. It is useful if, for example, you need to access multiple repositories with the same SSH key.
+
+   **Add your own SSH key to Bitrise**: You can generate your own SSH key and paste the private key here after choosing this option. You also need to add the public key to the repository manually. To generate your SSH key pair: [Generating your own SSH keypair](/en/bitrise-platform/repository-access/configuring-ssh-keys#generating-your-own-ssh-keypair).
+
+   :::note[Configure SSH keys at any time]
+
+   If you can't set up a valid, working SSH key connection at this time, don't worry: proceed with adding your project. You can set up the SSH connection afterwards: [Configuring SSH keys](/en/bitrise-platform/repository-access/configuring-ssh-keys).
+
+   :::
+1. Select the default branch of your repository. This branch should contain the configuration of your project.
+
+   - If you successfully configured SSH access in the previous step or if you're adding a public project, Bitrise will parse your repository and allow you to select a branch from a dropdown menu.
+   - If you didn't configure repository access, you need to type the branch name manually.
+
+   [You can change the default branch of the project later](/en/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch).
+
+   ![20251219-choose-branch.png](/img/_paligo/uuid-95a678d3-4251-c9b6-555a-6a1a0b48ae24.png)
+1. Select **Yes, auto-detect configuration**. Bitrise will scan your repository and attempt to set up a <GlossTerm baseform="stack">stack</GlossTerm> and default Workflows based on the results of the scan. In most cases, we recommend choosing this option.
+
+   :::note[Project type]
+
+   Detecting a project type serves to assist in the initial configuration of your project. But don't worry, you can change every setting, including the project type, at any time after you added the project.
+
+   :::
+1. Wait while Bitrise is validating your project.
+
+   We look for your configuration files and set up your app based on them. In the case of an iOS app, we’re looking for your Xcode Project (`.xcodeproj`) or Xcode Workspace (`.xcworkspace`) path. Note that the validation will fail if you do not have a SHARED scheme in your project. You can still point Bitrise manually to your Xcode scheme but if it’s shared, we automatically detect it for you.
+1. Select the IPA export method. You can modify this later - for now, select **development**.
+
+   Once you clicked it, you should see your:
+
+   - Project or Workspace path.
+   - Scheme name
+   - IPA export method.
+   - iOS stack.
+1. Register a webhook when prompted so that Bitrise can start a build automatically when code is pushed to your repository, or a pull request is created.
+1. Once you are done, click **View Project Page** to go to the newly added project's home page. From there, you can start [editing your Workflows](/en/bitrise-ci/workflows-and-pipelines/workflows/workflows-overview) and [run builds](/en/bitrise-ci/run-and-analyze-builds/starting-builds/approving-pull-request-builds).
+
+
+## Testing your iOS app
+
+If you have test targets defined, the default Workflows of an iOS project include the two Steps you need to run your Xcode tests, and view their results on [bitrise.io](https://www.bitrise.io/):
+
+- **Xcode Test for iOS**
+- **Deploy to Bitrise.io**
+
+The **Xcode Test for iOS** Step runs the pre-defined Xcode tests. It has a default configuration that does not need to be modified: if the tests are written correctly, they will work. You can find the same configuration options in Xcode, too.
+
+:::tip[Checking your selected stack]
+
+We recommend checking that the stack selected for your project has the same Xcode version you used to build the project. For example, if your simulator test fails with the Ineligible destinations for the scheme message, then make sure the Xcode version in the **Stacks & Machines** section is correct. You can read more about our stacks: [Build stacks](/en/bitrise-build-hub/infrastructure/build-stacks/about-build-stacks).
+
+:::
+
+The Deploy to Bitrise.io Step will deploy the following to the **Logs** and **Artifacts** tab of the build:
+
+- Your Xcode test results.
+- Your raw xcodebuildoutput log.
+
+The **Deploy to Bitrise.io** Step also exports the results of the **Xcode Test for iOS** Step to [test reports](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
+
+
+## Creating a signed IPA for Xcode projects
+
+:::note[Overview on iOS code signing in Bitrise]
+
+For a comprehensive overview on what Steps are available for code signing asset management, visit the [iOS code signing page](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects).
+
+:::
+
+You can easily create a signed IPA file for your Xcode project with Bitrise.
+
+- You have set up [Apple service connection](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services) on Bitrise.
+- Your [code signing files are managed correctly](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects).
+- You set the relevant inputs of our **Xcode Archive and Export for iOS** <GlossTerm baseform="Step">Step</GlossTerm>.
+
+:::important[Upload the distribution AND the development signing certificates]
+
+We strongly recommend uploading BOTH the development and distribution signing certificates for your project. If you don't have an uploaded development signing certificate, Steps with automatic provisioning options will generate one on the fly every time you start a build. This can eventually lead to reaching the maximum number of certificates, blocking you from starting new builds.
+
+:::
+
+If you’re all set, proceed to setting up IPA export in your <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Make sure the necessary [code signing files have been collected and uploaded](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning#uploading-ios-code-signing-certificates-to-bitrise).
+1. Make sure you have the **Xcode Archive & Export for iOS** Step in your Workflow.
+1. Set the **Distribution method** input of the Step.
+
+   ![xcode-archive.png](/img/_paligo/uuid-fced107c-9b69-e5af-1472-4d96fbada364.png)
+
+   The options are:
+
+   - `app-store`: Choose this if you want to deploy the app to the App Store. Requires a Distribution certificate and an App Store provisioning profile.
+   - `ad-hoc`: Choose this if you want to deploy the app to ad-hoc testers. Requires a Distribution certificate and an Ad Hoc provisioning profile.
+   - `enterprise`: Choose this if you have an Apple Enterprise account and want to use that to distribute your app.
+   - `development`: Choose this for internal testing. Requires a Developer certificate and a Development provisioning profile.
+1. Set the **Automatic code signing** input to the Apple service connection you want to use for code signing. The available options are:
+
+   - `off` if you don’t use automatic code signing.
+   - `api-key` [if you use API key authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+   - `apple-id` [if you use Apple ID authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+1. Save the Workflow, and start a new build.
+
+</TabItem>
+<TabItem value="bitriseyml" label="bitrise.yml">
+
+1. Make sure all the [necessary code signing files](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects) are available for your build.
+1. Open the `bitrise.yml` file of your app.
+1. Make sure you have the `xcode-archive` Step in your Workflow.
+
+   ```
+   my-workflow:
+     steps:
+     - xcode-archive:
+         inputs:
+   ```
+1. Set the `distribution_method` input to the correct value. The available options are:
+
+   - `app-store`: Choose this if you want to deploy the app to the App Store. Requires a Distribution certificate and an App Store provisioning profile.
+   - `ad-hoc`: Choose this if you want to deploy the app to ad-hoc testers. Requires a Distribution certificate and an Ad Hoc provisioning profile.
+   - `enterprise`: Choose this if you have an Apple Enterprise account and want to use that to distribute your app.
+   - `development`: Choose this for internal testing. Requires a Developer certificate and a Development provisioning profile.
+
+   ```
+   my-workflow:
+     steps:
+     - xcode-archive:
+         inputs:
+         - distribution_method: development
+   ```
+1. Set the `automatic_code_signing` input to the Apple service connection you want to use for code signing. The available options are:
+
+   - `off` if you don’t do automatic code signing.
+   - `api-key` [if you use API key authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+   - `apple-id` [if you use Apple ID authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+
+   ```
+   my-workflow:
+     steps:
+     - xcode-archive:
+         inputs:
+         - automatic_code_signing: api-key
+         - distribution_method: development
+   ```
+
+</TabItem>
+</Tabs>
+
+That’s all. Xcode will automatically select the right signing files based on your project’s Bundle ID and Team ID settings, and the export method you set.
+
+### Signing an IPA file with a different team’s code signing file
+
+You might want to sign the IPA file with a different team’s code signing files. For example:
+
+- If you use your company’s code signing files for internal builds, but your client’s code signing files are used for App Store distribution.
+- If you use Apple ID for automatic code signing and the Apple ID belongs to multiple teams, use The Developer Portal team to use for this export input to specify which team should be used for automatic code signing asset management.
+
+To do so:
+
+1. Make sure the right code signing files of the new development team are uploaded to Bitrise.
+1. Set the The Developer Portal team to use for this export option as well (in addition to the **Distribution method**).
+1. Set the **Distribution method**.
 
 <Partial_DeployingTheAppToAppStoreConnect />

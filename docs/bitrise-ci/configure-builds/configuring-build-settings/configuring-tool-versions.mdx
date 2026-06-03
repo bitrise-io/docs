@@ -8,11 +8,6 @@ slug: /bitrise-ci/configure-builds/configuring-build-settings/configuring-tool-v
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_LimitationsAndAlternatives from '@site/src/partials/limitations-and-alternatives.mdx';
-import Partial_SupportedTools from '@site/src/partials/supported-tools.mdx';
-import Partial_ToolVersionManagers from '@site/src/partials/tool-version-managers.mdx';
-import Partial_ToolSetupDuringWorkflowExecution from '@site/src/partials/tool-setup-during-workflow-execution.mdx';
-import Partial_DeclarativeToolSetup from '@site/src/partials/declarative-tool-setup.mdx';
 
 Bitrise can automatically set up any tools with the right version for your CI project. For example, most CI workflows often start with installing the right version of Ruby or Node.js that is compatible with the project.
 
@@ -30,12 +25,264 @@ To help you choose the right approach, consider the differences and limitations 
 | No additional configuration required: tools automatically become available in `$PATH` in Workflow Steps. | Our dedicated Step requires no additional configuration.  If you use your own script, shell sourcing is required before the tools become active in the current shell or script step (see details below). |
 | Doesn't configure the local development environment (except when running Workflows locally via `bitrise run workflow_name`). | Configures the local developer environment if tools versions are defined in a version file (for example, `.ruby-version`) and everyone in the team has a tool version manager set up (for example, `Mise`). |
 
-<Partial_DeclarativeToolSetup />
 
-<Partial_ToolSetupDuringWorkflowExecution />
+## Declarative tool setup
 
-<Partial_SupportedTools />
+Add your tool and its version to the `tools` property on the top level of your configuration YAML file.:
 
-<Partial_ToolVersionManagers />
+```
+tools:
+  nodejs: 22:latest
+  ruby: 3.3:installed
+  golang: 1.24.5
 
-<Partial_LimitationsAndAlternatives />
+workflows:
+# ...
+```
+
+When running a build, tool setup is executed before the first Step of the Workflow. You can see it in a build log:
+
+![20250808-build-log-tool-setup.png](/img/_paligo/uuid-b80417cb-80b7-3d51-5609-11f078c68a79.png)
+
+There are three ways to define version numbers for the tools you want to set up at the start of a build:
+
+- [Set exact version numbers](#setting-exact-version-numbers).
+- [Set partial version numbers](#setting-partial-version-numbers).
+- [Use special aliases](#using-other-aliases).
+
+### Setting exact version numbers
+
+You can define an exact version number in your `tools` property:
+
+```
+tools:
+  nodejs: 22.1.0
+```
+
+This provides the most deterministic behavior and reproducible builds, but installs could take a long time.
+
+### Setting partial version numbers
+
+If your project doesn't require precise tool versions, you can define partial version numbers. With a partial version version number, Bitrise will check for either a version preinstalled on the Bitrise build machines or the latest released version available.
+
+For a preinstalled version of a tool, use the `x.y:installed` syntax:
+
+```
+tools:
+  ruby: 3.3:installed
+```
+
+This checks which Ruby 3.3 patch version is preinstalled on the Bitrise build machines and uses that version. If no preinstalled version matches the partial version, the highest matching version is going to be downloaded and installed at runtime. It will not result in a build failure.
+
+For the latest released version of a tool, use the `x.y:latest` syntax:
+
+```
+tools:
+  ruby: 3.3:latest
+```
+
+This installs the latest 3.3 patch version of Ruby, regardless of what is preinstalled on the Bitrise build machines.
+
+### Workflow-specific definitions
+
+You can define tool version definitions globally or for one or more Workflows specifically. Instead of defining the `tools` property at the top level of the configuration, you nest it under one or more Workflows.
+
+You can also unset some tools for certain Workflows with the keyword `unset`. Unsetting means that tool won't be installed for that Workflow. Unsetting has no effect in the global context.
+
+We recommend using one of three common patterns when using Workflow-specific definitions:
+
+- Workflow-specific definitions only:
+
+  ```
+  workflows:
+    test:
+      tools:
+        nodejs: 22:installed
+  ```
+
+  In this example, the `test` Workflow uses the highest preinstalled version of Node.js v22. No global tool definitions are set.
+- Override the global definition in one or more Workflows:
+
+  ```
+  tools:
+    nodejs: 22:installed
+    ruby: 3.3:installed
+
+  workflows:
+    test-latest-node:
+      tools:
+        nodejs: "24.7.0"
+  ```
+
+  In this example, the global setting is the highest preinstalled version of Node.js v22. The Workflow `test-latest-node`, however, uses Node.js version 24.7.0.
+- Unset global tool versions in one or more Workflows:
+
+  ```
+  tools:
+    nodejs: 22:installed
+    ruby: 3.3:installed
+
+  workflows:
+    lint:
+      tools:
+        ruby: unset # this workflow only needs Node.js
+  ```
+
+  In this example, the Workflow called `lint` won't have Ruby installed.
+
+### Using other aliases
+
+It’s also possible to use the special `latest` and `installed` version strings to select the highest released or highest installed version of a tool:
+
+The `installed` value means using the highest installed version at the time of build:
+
+```
+tools:
+  ruby: installed
+```
+
+The `latest` value means using the highest released version at the time of build:
+
+```
+tools:
+  nodejs: latest
+```
+
+
+## Tool setup during Workflow execution
+
+To perform tool setup during Workflow execution, you can use a purpose-built dependency installer Step or a CLI subcommand that you call from your own scripts.
+
+### Tool setup with CLI subcommand
+
+Call the `bitrise tools setup` from your Workflow. The tool looks for configuration or version file paths: if you don't specify a path, the tool detects files in the working directory.
+
+In the example, we're calling the command from a **Script** Step with a `--config` flag that finds the `.tool-versions` file.
+
+```
+workflows:
+  build-and-test:
+    steps:
+      # Project stores tool config in a .tool-versions file committed to the repo
+      - git-clone: {}
+      - script:
+          title: Set up environment
+          inputs:
+            # Set up tools based on the .tool-versions file in the repo
+            - content: bitrise tools setup --config .tool-versions
+      
+      # Rest of the workflow has access to the right tools and versions in $PATH
+```
+
+You can also install specific tools without a configuration file:
+
+```
+bitrise tools install [--provider PROVIDER] [--format FORMAT] <TOOL> <VERSION>[:SUFFIX]
+
+# Examples:
+bitrise tools install nodejs 20.10.0
+bitrise tools install nodejs 22:latest
+eval "$(bitrise tools install ruby 3.2.0 --format bash)"  # activate in shell
+```
+
+By default, running `bitrise tools setup` doesn't activate tool changes in the same shell session (for example, if the tool setup and tool use happens in the same **Script** Step). In the example, we're installing a new Ruby version:
+
+```
+#! /bin/bash
+
+bitrise tools setup --config .ruby-version
+
+ruby --version
+```
+
+If you run this command in a **Script** Step, `PATH` will still point to the previous Ruby version.
+
+You can install and activate the tool in the same shell session using `eval`:
+
+```
+eval "$(bitrise tools setup --config .ruby-version --format bash)"
+
+ruby --version # $PATH is updated with the newly set up ruby version
+```
+
+Alternatively, you can run `bitrise tools setup` in a separate Step.
+
+```
+workflows:
+  build-and-test:
+    steps:
+      - git-clone: {}
+      - script:
+          title: Set up environment
+          inputs:
+            # Set up tools based on the .tool-versions file in the repo
+            - content: bitrise tools setup --config .tool-versions
+      
+      # Rest of the workflow has access to the right tools and versions in $PATH
+      - cocoapods-install: {}
+```
+
+### Tool setup with the Dependency installer Step
+
+The **[Dependency installer](https://bitrise.io/integrations/steps/dependency-installer)** Step is a wrapper for the CLI subcommand that executes tool install. It accepts several types of tool version files: for the full list, see the Step description.
+
+To use the Step, add it to your Workflow before the Steps that need the tools:
+
+```
+steps:
+ - activate-ssh-key@4: {}
+ - git-clone@8: {}
+ - dependency-installer@1:
+     inputs:
+     - tool_version_file: ".tool-versions"
+```
+
+
+## Supported tools
+
+The system is designed to support a growing list of tools and languages, but Bitrise only verifies and tests the stability of the most common tools listed. If you need a tool not listed here, read more how to use community plugins.
+
+:::tip[Other tools]
+
+If you don’t find a tool listed on this page, you can use community plugins to perform the tool setup. If a community `asdf` plugin exists for the given tool, you can provide the tool-plugin’s `git clone` URL in the config. For example, this is how you set up the right version of Deno using its `asdf` plugin:
+
+```
+tools:
+  deno: 2.4.3
+
+tool_config:
+  extra_plugins:
+    deno: https://github.com/asdf-community/asdf-deno.git
+```
+
+:::
+
+| Tool name | YAML example | Notes |
+| --- | --- | --- |
+| **Ruby** | Using a 3.3.x version, preferring a preinstalled version to save install time:  ``` tools:   ruby: 3.3:installed ``` | At the moment, Ruby versions have to be built from source using the [ruby-build project](https://github.com/rbenv/ruby-build), so each install adds a few minutes to each build.  [Bitrise stacks](https://bitrise.io/stacks/) come with multiple preinstalled Ruby versions at all times, so you can avoid the install time by using a partial version that uses a preinstalled Ruby (if available). |
+| **Go** | Installing the 1.24.0 version:  ``` tools:   golang: 1.24.0 ``` |  |
+| **Python** | Using a 3.12.x version, preferring a preinstalled version to save install time:  ``` tools:   python: 3.12:installed ``` | At the moment, Python versions have to be built from source, so each install adds a few minutes to each build.  [Bitrise stacks](https://bitrise.io/stacks/) come with a preinstalled Python version at all times, so you can avoid the install time by using a partial version that uses a preinstalled Python (if available). |
+| **Node.js** | Using a 22.x.y version, preferring a preinstalled version to save install time:  ``` tools:   nodejs: 22:installed ``` |  |
+| **Java** | Installing Java 25:  ``` tools:   java: openjdk-25.0.0 ``` |  |
+| **Flutter** | Flutter versions need to include the release channel as a suffix:  ``` tools:   flutter: 3.32.5-stable ``` |  |
+| **Tuist** | Installing the 4.54.0 version:  ``` tools:   tuist: 4.54.0 ``` |  |
+
+
+## Changing tool version managers
+
+Bitrise uses tool version managers to install and provide the required tool at runtime. The primary manager is [mise](https://mise.jdx.dev/), but [asdf](https://asdf-vm.com/) is also supported and behaves the same. If you want to switch implementations for any reason, you can do so:
+
+```
+tool_config:
+  provider: asdf
+```
+
+
+## Limitations and alternatives
+
+- **No visual editor**: This feature is configurable only in configuration YAML for now.
+- **Dedicated version manager tools**: We recommend you use the approaches described in this page for installing tools.
+
+  If you need to use `mise` or another tool directly, be aware that it is not installed on the stacks. You need to install it according to the official instructions.
+
+  `asdf` is installed on stacks by default. We do not make guarantees that we pin a specific version, especially on edge stacks. `asdf` may be removed in a future edge stack.
