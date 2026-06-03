@@ -1,0 +1,103 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Setting the stack in the Configuration YAML
+
+You can set both the default stack and Workflow-specific tasks in your project's Configuration YAML. Use the `meta` field with the appropriate stack ID:
+
+```
+meta:      
+  bitrise.io:       
+    stack: <stack-id>
+```
+
+This is particularly useful if you [keep your `bitrise.yml` file stored in your app's repository](/en/bitrise-ci/configure-builds/configuration-yaml/managing-a-project-s-configuration-yaml-file#storing-the-bitriseyml-file-in-your-repository).
+
+:::note[Stack IDs]
+
+You can find the stack IDs on the top of each stack report: [Bitrise stack reports](https://stacks.bitrise.io/stack_reports/). Alternatively, you can set a stack in the Workflow Editor and then check out the ID on the **bitrise.yml** tab, by finding the `meta` field.
+
+The stack reports also show every [pre-installed tool](/en/bitrise-platform/infrastructure/build-stacks/preinstalled-tools-on-bitrise-stacks) that is available on the stack.
+
+:::
+
+### Setting the default stack in the Configuration YAML
+
+The default stack of your app is the stack that is used if you haven't set a specific stack for a Workflow.
+
+1. Open your project's Configuration YAML.
+1. Add a `meta` entry outside the `workflows` property or at the end of your Configuration YAML:
+
+   ```
+   meta:      
+     bitrise.io:       
+       stack:
+   ```
+
+   Make sure you use double indentation.
+1. Add the stack ID.
+
+   You can find the stack IDs on the [stack reports page](https://stacks.bitrise.io/stack_reports/): the filenames without the `.log` extension are the stack IDs.
+
+   ```
+   meta:      
+     bitrise.io:       
+       stack: <stack-id>
+   ```
+
+### Setting Workflow-specific stacks in the Configuration YAML
+
+When you set a stack for a Workflow, that Workflow will always run on that stack, regardless of the default stack.
+
+1. Open your project's Configuration YAML.
+1. Find the `workflows` property and find the name of the Workflow you need within.
+1. Add a `meta` entry under the Workflow itself:
+
+   ```
+   workflows:
+     deploy:  
+       meta:      
+         bitrise.io:       
+           stack:
+   ```
+1. Add the stack ID.
+
+   You can find the stack IDs on the top of each [stack report page](https://stacks.bitrise.io/stack_reports/).
+
+   ```
+   workflows:
+     deploy:  
+       meta:      
+         bitrise.io:       
+           stack: <stack-id>
+   ```
+
+### Setting the machine type in the Configuration YAML
+
+You can also define the machine type you want to use for your build in your project's Configuration YAML. Machine type refers to the hardware resources used in your build; for example, an Elite machine has more CPU cores and available RAM than a Standard machine.
+
+To set the machine type in Configuration YAML file, you need to use the `machine_type_id` attribute in a `meta` entry:
+
+:::note[Available machine IDs]
+
+You can find the available machine type IDs here: [Build machine types](/en/bitrise-build-hub/infrastructure/build-machine-types).
+
+:::
+
+1. Open your project's Configuration YAML file.
+1. Find the `workflows` property and find the name of the Workflow you need within.
+1. Add a `meta` entry:
+
+   ```
+   # setting an 8-core Gen2 machine for an Xcode stack as the default machine type of the app:
+   meta:
+     bitrise.io:
+       machine_type_id: g2.8core
+   # setting a 12-core Gen2 machine as a Workflow-specific machine type
+   workflows:
+     deploy:  
+       meta:      
+         bitrise.io:       
+           machine_type_id: <machine-id>
+   ```

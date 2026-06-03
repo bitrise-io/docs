@@ -1,0 +1,299 @@
+---
+title: "Configuring a Bitrise Pipeline"
+description: "Configure a Bitrise Pipeline by adding Workflows and optionally, defining dependencies between the Workflows."
+sidebar_position: 2
+slug: /bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline
+sidebar_label: Configuring Pipelines
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_PipelinePriority from '@site/src/partials/pipeline-priority.mdx';
+import Partial_WorkflowPropertiesInPipelines from '@site/src/partials/workflow-properties-in-pipelines.mdx';
+import Partial_ParallelismInPipelines from '@site/src/partials/parallelism-in-pipelines.mdx';
+import Partial_UsingThePullPipelineIntermediateFilesStep from '@site/src/partials/using-the-pull-pipeline-intermediate-files-step.mdx';
+
+:::important[Pipelines with stages]
+
+If you have an existing Pipeline configuration from before December 2024, you probably have stages in your Pipeline. We strongly recommend to stop using stages and instead focus on configuring dependencies between Workflows. These dependencies determine the order of execution in a Pipeline. This eliminates unnecessary waiting time in stages and allows you to create more flexible CI configurations.
+
+You can keep using Pipelines with stages but they will receive no updates in the future. You can have both types of Pipelines in the same configuration YAML file but you can't mix and match the two types: you can't have both stages and Workflow dependencies in the same Pipeline.
+
+You can find the documentation for Pipelines with stages here: [Pipelines with stages](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/pipelines-with-stages/configuring-a-pipeline-with-stages).
+
+You can convert a Pipeline with stages into the new format: [Converting a Pipeline with stages into a graph Pipeline](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/converting-a-pipeline-with-stages-into-a-graph-pipeline).
+
+:::
+
+You can define your Pipelines under a `pipelines` element in a configuration YAML file. You can use the following elements to set up a Pipeline:
+
+- A Pipeline name: the human readable identifier of the Pipeline.
+- The `workflows` element: this contains a list of the Workflows that are part of the Pipeline.
+- The `depends_on` property: This is a property of the `workflows element` and accepts an array of Workflow names. It defines the dependencies between Workflows.
+
+For example, here's a simple Pipeline configuration:
+
+![pipeline-example.png](/img/_paligo/uuid-e85b689a-0101-6664-7f58-6e9ae5c851a7.png)
+
+In this Pipeline, we have four Workflows:
+
+1. Workflow A runs first.
+1. Once Workflow A is finished, Workflows B and C start at the same time.
+1. Workflow D starts only when both Workflows B and C are successfully finished.
+
+## Creating a Pipeline
+
+Workflow Editor
+
+Configuration YAML
+
+Open the Workflow Editor and select **Pipelines** on the left. Click **Create Pipeline** and set a name, then click **Create Pipeline** again.
+
+To add your first Workflow, click **Workflows**.
+
+![add-workflow-pipeline.png](/img/_paligo/uuid-6f5bdb24-c8e6-3923-723f-07a33eae84bc.png)
+
+You can keep adding Workflows this way. This method creates no dependencies between Workflows: they will all run at the same time.
+
+![basic-pipeline.png](/img/_paligo/uuid-13e965a3-cef3-17c5-970b-b4308460ae26.png)
+
+A Workflow can depend on one or more Workflows: if any of the Workflows it depends on fails, the Workflow won't run. To create Workflow dependencies, hover over the right end of a Workflow and click the plus sign:
+
+![add-dependent-workflow.png](/img/_paligo/uuid-cc676406-6eb6-010a-1daa-9a687d3902ea.png)
+
+You can add multiple dependent Workflows to the same Workflow this way:
+
+![multiple-dependent-flows.png](/img/_paligo/uuid-9e8845d9-aa8e-6c98-642a-4e13fddf93ea.png)
+
+The same Workflow can depend on two or more different Workflows: you can create a path by dragging from the plus sign to another Workflow already in the Pipeline:
+
+![drag-and-drop-dep.png](/img/_paligo/uuid-636d0224-45fb-307d-a1d5-69a7d8e84d9f.png)
+
+A bare minimum Pipeline configuration consists of a single Workflow:
+
+```
+pipelines:
+  example:
+    workflows:
+      A: {}
+```
+
+You can have multiple Workflows that all run in parallel:
+
+```
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B: {}
+      C: {}
+```
+
+A Workflow can depend on one or more Workflows: if any of the Workflows it depends on fails, the Workflow won't run. To create Workflow dependencies, you need to use the `depends_on` property:
+
+```
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        depends_on:
+        - A
+      C:
+        depends_on:
+        - A
+      D:
+        depends_on:
+        - B
+        - C
+```
+
+If a Workflow depends on multiple Workflows, both YAML array syntaxes can be used:
+
+```
+# Option 1
+D:
+  depends_on:
+  - B
+  - C
+# Option 2
+D:
+  depends_on: [A, B]
+```
+
+## Configuration restrictions
+
+- A Pipeline can have a maximum of 200 Workflows. Each must be an existing Workflow under the root level `workflows` element.
+- [Utility Workflows](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#utility-workflows) can't be added to a Pipeline. If you want to use utility Workflows, include them as part of a regular Workflow.
+- Each Workflow can be added to the same Pipeline only once. You can't include the same Workflow in multiple different parts of a Pipeline.
+- Any Workflow defined in the dependency list must be part of the same Pipeline.
+- The dependency graph resulting from your configuration can't contain a circle or loop. You can't start builds with an invalid Pipeline configuration.
+
+## Conditional Workflow execution in a Pipeline
+
+Use `run_if` expressions to control Workflow execution: you can set conditions under which a Workflow should or should not run.
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. <Partial_WorkflowPropertiesInPipelines />
+1. In the **Additional running conditions** input, add a valid [Go template](https://pkg.go.dev/text/template).
+
+   The input accepts three helper functions:
+
+   - `getenv`: Accesses an Environment Variable's value.
+   - `enveq`: Compares an Environment Variable to a given value.
+   - `envcontain`: Checks whether an Environment Variable contains a given string.
+
+   ![run-if-template.png](/img/_paligo/uuid-4ababac0-1bb5-1f86-165a-f31d14fa9f28.png)
+1. Close the Edit Workflow dialog, and click **Save changes**.
+
+</TabItem>
+</Tabs>
+
+In Pipelines, the `run_if` property needs an `expression` field that contains a [Go template](https://pkg.go.dev/text/template):
+
+```
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        run_if:
+          expression: {{ enveq "EXAMPLE_KEY" "example value" }}
+        depends_on: [A]
+```
+
+The `expression` field accepts three helper functions:
+
+- `getenv`: Accesses an Environment Variable's value.
+- `enveq`: Compares an Environment Variable to a given value.
+- `envcontain`: Checks whether an Environment Variable contains a given string.
+
+The Bitrise CLI evaluates the expression during runtime: a Workflow only runs if its `run_if` expression evaluates to `true`. A Workflow that is skipped because of a `run_if` expression is counted as a successful Workflow so its dependent Workflows will run.
+
+In this example, B will only run if the EXAMPLE_KEY Environment Variable has the value `example value`.
+
+## Always executing a Workflow in a Pipeline
+
+You can mark a Workflow to make sure it runs even if a Workflow it depends on failed.
+
+:::important[Transitive dependency]
+
+Even if a Workflow is configured to always run, its dependent Workflows might not run. If one or more of its parent Workflows failed, the Workflow in question will still run but its dependent Workflows might not.
+
+For example, let's say we have Workflow C that depends on Workflow B. Workflow B depends on Workflow A. Of the three Workflows, only B is set to always run:
+
+- If A fails, B will run but regardless of its result, C won't run because by depending on B, it also depends on A.
+- C only runs if both A and B are successful.
+
+:::
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. <Partial_WorkflowPropertiesInPipelines />
+1. Set the **Always run** input to **Workflow**.
+
+   This setting means the Workflow will run even if one or more of its parent Workflows fail. However, its dependent Workflows might not run!
+
+</TabItem>
+</Tabs>
+
+Use the `should_always_run` property. It requires a string to specify the scope of the configuration. It has two available values:
+
+- `none`: If a parent Workflow fails, the Workflow will not run. This is the default value.
+- `workflow`: If a parent Workflow fails, the Workflow will run anyway.
+
+```
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        depends_on: [ A ]
+        should_always_run: workflow
+      C:
+        depends_on: [ B ]
+      D:
+        depends_on: [ C ]
+        should_always_run: workflow
+```
+
+In this example:
+
+- If A fails, B still runs.
+- If either A or B fails, C won't run.
+- If C won't run or runs but fails, D will still run.
+
+## Aborting the Pipeline on Workflow failure
+
+You can configure the Pipeline to immediately terminate when any given Workflow fails. By default, the Pipeline won't terminate
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. <Partial_WorkflowPropertiesInPipelines />
+1. Toggle the **Abort Pipeline on failure** input on.
+
+   If the Workflow in question fails, the Pipeline will immediately stop running.
+
+</TabItem>
+</Tabs>
+
+Add the `abort_on_fail` field set to `true` to the selected Workflows:
+
+```
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        abort_on_fail: true
+```
+
+In this example, the Pipeline stops running if Workflow B fails: Workflow A will be aborted and no subsequent Workflows will run.
+
+<Partial_PipelinePriority />
+
+<Partial_UsingThePullPipelineIntermediateFilesStep />
+
+## Sharing Env Vars between Workflows
+
+You can reuse any environment variable from a <GlossTerm baseform="Workflow">Workflow</GlossTerm> and reuse it in subsequent Workflows using the [Share Pipeline variables](https://github.com/bitrise-steplib/bitrise-step-share-pipeline-variable) <GlossTerm baseform="Step">Step</GlossTerm>.
+
+:::tip[Optional Workflows using run_if conditions]
+
+You can easily combine the **Share Pipeline variables** Step with `run_if` expressions to create Pipelines with optional Workflows. For more information, check out [Enabling or disabling a Step conditionally](/en/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally).
+
+:::
+
+To do so:
+
+1. Add the **Share Pipeline variables** Step to the Workflow.
+1. Optionally, you can define additional run conditions in the **Additional run conditions** input. The Step will only run if the conditions you specify here are true.
+1. Add the Env Var(s) you would like to use in subsequent Workflows in the **Variables to share between Pipeline Workflows** input.
+
+   :::tip[Using environment variable keys]
+
+   You can define Env Vars using a `{key}={value}` syntax. For example, `MY_ENV_KEY=value`, or `INSTALL_PAGE_URL=$BITRISE_PUBLIC_PAGE_URL`.
+
+   If you want to use the default environment variable keys, you can use a shorthand syntax. For example, `EXISTING_ENV_KEY`.
+
+   Sharing Env Vars using this Step does not override existing Env Vars defined in the <GlossTerm baseform="App">app</GlossTerm>.
+
+   :::
+
+<Partial_ParallelismInPipelines />
+
+## Supported use cases for Pipelines
+
+We have prepared some Pipeline recipes based on common iOS and Android use cases. These contain some of the most frequent tasks our users need to run. You can find them in our [GitHub repository](https://github.com/bitrise-io/workflow-recipes/tree/main/recipes).
+
+## Troubleshooting a Pipeline
+
+If a Pipeline build fails, you have two main options:
+
+- [Rebuild the Pipeline](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/rebuilding-a-failed-build#rebuilding-a-failed-pipeline). You can rebuild either the entire Pipeline, or the failed Workflows.
+- Rebuild with [remote access](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/remote-access) which allows you to access the build machine while the build is running.

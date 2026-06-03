@@ -1,0 +1,110 @@
+---
+title: "Managing dependencies with CocoaPods"
+description: "With the Run CocoaPods install Step, you can easily install CocoaPods dependencies on Bitrise. You just need a Podfile and the Step. Bitrise also offers dedicated Steps to cache your pods."
+sidebar_position: 2
+slug: /bitrise-ci/dependencies-and-caching/ios-dependencies/managing-dependencies-with-cocoapods
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+[CocoaPods](https://cocoapods.org/) is a dependency manager for Swift and Objective-C Cocoa projects. An iOS app with CocoaPods dependencies needs to have a `Podfile` with a number of pods listed in it: these pods are installed during the process of building the <GlossTerm baseform="App">app</GlossTerm>.
+
+You can, of course, easily install CocoaPods dependencies during a Bitrise build. You just need our dedicated <GlossTerm baseform="Step">Step</GlossTerm>: **[Run CocoaPods Install](https://bitrise.io/integrations/steps/cocoapods-install)**. The Step can run both `pod install` and `pod update` commands.
+
+## Installing CocoaPods dependencies
+
+To install your dependencies with CocoaPods:
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. If you need a specific version of CocoaPods, make sure you define it either in the `Gemfile` or the `Podfile`.
+
+   The Step first looks for the `cocoapods` gem in the `Gemfile`. If there's no `cocoapods` gem, the Step uses the CocoaPods version defined in the `Podfile`. If the version is not defined there either, the preinstalled system version will be used which you can check in the [system reports](https://github.com/bitrise-io/bitrise.io/tree/master/system_reports/MACOS).
+1. Make sure that the Xcode Step building your app uses your `.xcworkspace` file: the **Project path** input of the Step should point to the path of `.xcworkspace`.
+1. Add the **Run CocoaPods Install** Step to your <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
+
+   It should come after any Step that pulls [from the build cache](/en/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache). If you don't have any caching Steps, add the Step right after the **Git Clone** Step.
+1. In the **CocoaPods command** input, select the command you wish to run.
+
+   **install**: Installs the version specified in the `Podfile` for each pod.
+
+   **update**: Installs the latest version for each pod listed in the `Podfile`.
+
+   ![pod-install.png](/img/_paligo/uuid-92405804-e42c-f788-4026-7339492f1113.png)
+1. Optionally, you can specify a path to your `Podfile` in the **Podfile path** input.
+
+   This is not mandatory: if you leave the input empty, the Step performs a recursive search in the root directory of your app, and uses the first `Podfile` it finds.
+
+</TabItem>
+<TabItem value="bitriseyml" label="bitrise.yml">
+
+1. If you need a specific version of CocoaPods, make sure you define it either in the `Gemfile` or the `Podfile`.
+
+   The Step first looks for the `cocoapods` gem in the `Gemfile`. If there's no `cocoapods` gem, the Step uses the CocoaPods version defined in the `Podfile`. If the version is not defined there either, the preinstalled system version will be used which you can check in the [stack reports](https://stacks.bitrise.io/stack_reports/).
+1. Make sure that the Xcode Step building your app uses your `.xcworkspace` file: the `project_path` input of the Step should point to the path of `.xcworkspace`.
+1. Add the `cocoapods-install` Step to your Workflow.
+
+   It should come after any Step that pulls [from the build cache](/en/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache). If you don't have any caching Steps, add the Step right after the `git-clone` Step.
+
+   ```yml
+   my-workflow:
+     steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - restore-cocoapods-cache: {}
+       - cocoapods-install:
+           is_always_run: true
+       - save-cocoapods-cache: {}
+   ```
+1. In the `command` input, select the command you wish to run.
+
+   **install**: Installs the version specified in the `Podfile` for each pod.
+
+   **update**: Installs the latest version for each pod listed in the `Podfile`.
+
+   ```yml
+   my-workflow:
+     steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - restore-cocoapods-cache: {}
+       - cocoapods-install:
+           is_always_run: true
+           inputs:
+             - command: update
+       - save-cocoapods-cache: {}
+   ```
+1. Optionally, you can specify a path to your `Podfile` in the `podfile_path` input.
+
+   ```yml
+   my-workflow:
+     steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - restore-cocoapods-cache: {}
+       - cocoapods-install:
+           is_always_run: true
+           inputs:
+             - command: update
+             - podfile_path: ./path/to/podfile/
+       - save-cocoapods-cache: {}
+   ```
+
+   This is not mandatory: if you leave the input empty, the Step performs a recursive search in the root directory of your app, and uses the first `Podfile` it finds.
+
+</TabItem>
+</Tabs>
+
+## Caching CocoaPods dependencies
+
+With key-based caching, you only need the **Restore CocoaPods cache** and the **Save CocoaPods cache** Steps to cache your pods. These Steps require no configuration as they automatically set up the cache keys needed for your dependencies.
+
+1. Add the **Restore CocoaPods cache** Step to your Workflow
+
+   It should come before the **Run CocoaPods install** Step or any Step that needs dependencies to build your app, such as **Xcode Archive & Export for iOS**.
+
+   ![restore-pods.png](/img/_paligo/uuid-3305dee6-a952-5073-e44b-02fd8c3925c1.png)
+1. Add the **Save CocoaPods cache** Step to the end of your Workflow.

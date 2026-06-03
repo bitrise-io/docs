@@ -1,0 +1,70 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Configuring the Steps for automatic provisioning
+
+There are two ways to handle automatic provisioning on Bitrise:
+
+- Using the official Xcode Steps that can both manage code signing files and build your app.
+- Using the **Manage iOS Code Signing** Step.
+
+The following table describes the use cases for the two methods. To be able to configure the necessary Steps, check out either:
+
+- [Using the Xcode Steps](#using-the-xcode-steps)
+- [Using the Manage iOS Code Signing Step](#using-the-manage-ios-code-signing-step)
+
+:::important[Don't use the Certificate and profile installer Step]
+
+If you use automatic provisioning, you never need to use the **Certificate and profile installer** Step.
+
+:::
+
+| Steps | How they work | When to use |
+| --- | --- | --- |
+| Xcode Steps:  - **Xcode Archive and Export for iOS** - **Export iOS and tvOS Xcode Archive** - **Xcode build for testing for iOS** | These Steps set up code signing in your Xcode project automatically with nearly zero configuration. | We recommend using these Steps in most scenarios. |
+| **Manage iOS Code Signing** Step | This Step will set up code signing in your Xcode project before running a build. | You can use this dedicated Step if:  - You are building the app from script or fastlane. - You have a cross-platform project. For example, React Native, Flutter, Ionic or Cordova. - You are building a macOS app. |
+
+### Using the Xcode Steps
+
+You can use any of the Xcode Steps with built-in automatic management of code signing assets.
+
+1. Set up connection to Apple services.
+
+   You can choose between [API key authentication](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key) or [Apple ID authentication](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id). We generally recommend API key authentication.
+1. Add any of the following Steps to your Workflow, depending on what you need:
+
+   - **Xcode Archive and Export for iOS**: Builds your Xcode app and exports an IPA of the type you choose.
+   - **Export iOS and tvOS Xcode Archive**: Exports an IPA from an already existing archive.
+   - **Xcode build for testing for iOS**: Builds your Xcode app with the `build-for-testing` action.
+1. Set the **Automatic code signing method** input to the Apple service authentication type you set up.
+
+   For example, if you chose API key authentication, choose the **api-key** option.
+
+**YAML example for setting code signing method**
+
+In this example, the **Xcode Archive and Export for iOS** Step is set to use API key authentication.
+
+```
+- xcode-archive@4:        
+    inputs:        
+    - automatic_code_signing: api-key
+```
+
+In most cases, the default values for all other inputs are sufficient if you set up your Apple connection correctly.
+
+### Using the Manage iOS Code Signing Step
+
+Use our dedicated Step for automatically managing code signing assets if you do not use one of the Xcode Steps to build your iOS app, or if you have a cross-platform app.
+
+1. Add the **Manage iOS Code Signing** Step after any dependency installer Step in your Workflow, such as **Run CocoaPods install** or **Carthage**.
+
+   ![manage-ios-code.png](/img/_paligo/uuid-1b7bc413-da80-4910-5b25-f2a057bbf4d0.png)
+1. Set the **Apple service connection method** input to the Apple service connection you want to use.
+
+   You can choose between [API key authentication](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-step-inputs#authenticating-in-a-step-with-api-key) or [Apple ID authentication](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-step-inputs#authenticating-in-a-step-with-apple-id-and-password).
+1. If you use Apple ID authentication, you should also enter your team ID to **The Developer Portal team ID** input.
+1. Make sure you do NOT modify your Xcode project after this Step.
+
+   For example, don't change the bundle ID.
+1. Add a Step that builds and archives the app, such as the **fastlane** Step.

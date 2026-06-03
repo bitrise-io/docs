@@ -1,0 +1,47 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Disabling the public install page of an artifact
+
+:::note[Required role]
+
+You must have a developer, admin, or owner role on the app's team to disable the public install page of an artifact using the API.
+
+For a complete list of user roles and role cheatsheets, check [Roles and permissions for Bitrise CI](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+
+:::
+
+You can update the `is_public_page_enabled` parameter of your APK and IPA files. Please note this parameter’s value is set to `true` by default so you can only disable it with this endpoint.
+
+The required parameters are:
+
+- app slug
+- build slug
+- artifact slug
+
+**Disabling the public install page for an APK file**
+
+Request:
+
+```
+curl -X PATCH "https://api.bitrise.io/v0.1/apps/87a5991e180d91a9/builds/b234f959745082e0/artifacts/54ae701761c4f956" -H "accept: application/json" -H "Authorization: THE-ACCESS-TOKEN" -H "Content-Type: application/json" -d "{ \"is_public_page_enabled\": false}"
+```
+
+Response:
+
+```
+{
+  "data": {
+    "title": "app-debug.apk",
+    "artifact_type": "android-apk",
+    "expiring_download_url": "https://bitrise-prod-build-storage.s3.amazonaws.com/builds/b234f959745082e0/artifacts/7626904/app-debug.apk?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAIV2YZWMVCNWNR2HA%2F20190503%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20190503T082800Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host&X-Amz-Signature=7251fcbc0574ffac60b3f1d4a8c398658e49f0b86fb3cfec1500bde125738abc",
+    "is_public_page_enabled": false,
+    "slug": "54ae701761c4f956",
+    "public_install_page_url": "",
+    "file_size_bytes": 1574793
+  }
+}
+```
+
+If you check the build’s `Artifacts` tab, you will see that the `Public install page` toggle is disabled.

@@ -1,0 +1,52 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Retrieving a specific file's data
+
+:::note[Required role]
+
+You must have an admin or owner role role on the app's team to manage files in the Generic File Storage using the Bitrise API.
+
+For a complete list of user roles and role cheatsheets, check [Roles and permissions for Bitrise CI](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+
+:::
+
+Retrieve a specific file’s data from the Generic File Storage with the GET method of the `generic-project-files` endpoint. The returned data includes, among other things, the file's name, size, and download URL, as well as its current status.
+
+The required parameters are:
+
+- App slug
+- Generic project file slug
+
+**Retrieving a file**
+
+Request:
+
+```
+curl -X GET -H  'Authorization: <ACCESS-TOKEN>' 'https://api.bitrise.io/v0.1/apps/<APP-SLUG>/generic-project-files/<GENERIC-PROJECT-FILE-SLUG>'
+```
+
+Response:
+
+```
+{
+  "data": {
+    "upload_file_name": "Test_File.md",
+    "upload_file_size": 4865,
+    "slug": "01D7F228E7N8Q8WQJKJM8FV3XM",
+    "processed": true,
+    "is_expose": true,
+    "is_protected": false,
+    "download_url": "https://concrete-userfiles-production.s3.us-west-2.amazonaws.com/project_file_storage_documents/uploads/24043/original/Test-File?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAIV2YZWMVCNWNR2HA%2F20190402%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20190402T132712Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host&X-Amz-Signature=241be52184b63867262360743931c546c166a99719787ce417e3be11bc12bbed",
+    "user_env_key": "Test_File",
+    "exposed_meta_datastore": null
+  }
+}
+```
+
+:::note[Availability of the `download_url`]
+
+Note that the `download_url` is generated only when the file’s `is_protected` attribute is false.
+
+:::

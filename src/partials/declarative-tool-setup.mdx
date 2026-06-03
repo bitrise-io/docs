@@ -1,0 +1,125 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Declarative tool setup
+
+Add your tool and its version to the `tools` property on the top level of your configuration YAML file.:
+
+```
+tools:
+  nodejs: 22:latest
+  ruby: 3.3:installed
+  golang: 1.24.5
+
+workflows:
+# ...
+```
+
+When running a build, tool setup is executed before the first Step of the Workflow. You can see it in a build log:
+
+![20250808-build-log-tool-setup.png](/img/_paligo/uuid-b80417cb-80b7-3d51-5609-11f078c68a79.png)
+
+There are three ways to define version numbers for the tools you want to set up at the start of a build:
+
+- [Set exact version numbers](#setting-exact-version-numbers).
+- [Set partial version numbers](#setting-partial-version-numbers).
+- [Use special aliases](#using-other-aliases).
+
+### Setting exact version numbers
+
+You can define an exact version number in your `tools` property:
+
+```
+tools:
+  nodejs: 22.1.0
+```
+
+This provides the most deterministic behavior and reproducible builds, but installs could take a long time.
+
+### Setting partial version numbers
+
+If your project doesn't require precise tool versions, you can define partial version numbers. With a partial version version number, Bitrise will check for either a version preinstalled on the Bitrise build machines or the latest released version available.
+
+For a preinstalled version of a tool, use the `x.y:installed` syntax:
+
+```
+tools:
+  ruby: 3.3:installed
+```
+
+This checks which Ruby 3.3 patch version is preinstalled on the Bitrise build machines and uses that version. If no preinstalled version matches the partial version, the highest matching version is going to be downloaded and installed at runtime. It will not result in a build failure.
+
+For the latest released version of a tool, use the `x.y:latest` syntax:
+
+```
+tools:
+  ruby: 3.3:latest
+```
+
+This installs the latest 3.3 patch version of Ruby, regardless of what is preinstalled on the Bitrise build machines.
+
+### Workflow-specific definitions
+
+You can define tool version definitions globally or for one or more Workflows specifically. Instead of defining the `tools` property at the top level of the configuration, you nest it under one or more Workflows.
+
+You can also unset some tools for certain Workflows with the keyword `unset`. Unsetting means that tool won't be installed for that Workflow. Unsetting has no effect in the global context.
+
+We recommend using one of three common patterns when using Workflow-specific definitions:
+
+- Workflow-specific definitions only:
+
+  ```
+  workflows:
+    test:
+      tools:
+        nodejs: 22:installed
+  ```
+
+  In this example, the `test` Workflow uses the highest preinstalled version of Node.js v22. No global tool definitions are set.
+- Override the global definition in one or more Workflows:
+
+  ```
+  tools:
+    nodejs: 22:installed
+    ruby: 3.3:installed
+
+  workflows:
+    test-latest-node:
+      tools:
+        nodejs: "24.7.0"
+  ```
+
+  In this example, the global setting is the highest preinstalled version of Node.js v22. The Workflow `test-latest-node`, however, uses Node.js version 24.7.0.
+- Unset global tool versions in one or more Workflows:
+
+  ```
+  tools:
+    nodejs: 22:installed
+    ruby: 3.3:installed
+
+  workflows:
+    lint:
+      tools:
+        ruby: unset # this workflow only needs Node.js
+  ```
+
+  In this example, the Workflow called `lint` won't have Ruby installed.
+
+### Using other aliases
+
+It’s also possible to use the special `latest` and `installed` version strings to select the highest released or highest installed version of a tool:
+
+The `installed` value means using the highest installed version at the time of build:
+
+```
+tools:
+  ruby: installed
+```
+
+The `latest` value means using the highest released version at the time of build:
+
+```
+tools:
+  nodejs: latest
+```

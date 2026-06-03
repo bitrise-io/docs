@@ -1,0 +1,187 @@
+---
+title: "Running unit and UI tests for iOS apps"
+description: "You need two Steps to run Xcode tests and view their results: Xcode Test for iOS, and Deploy to Bitrise.io."
+sidebar_position: 1
+slug: /bitrise-ci/testing/testing-ios-apps/running-unit-and-ui-tests-for-ios-apps
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_RerunningFailedTestsNotAvailableInXcode13 from '@site/src/partials/rerunning-failed-tests-not-available-in-xcode-13.mdx';
+import Partial_TestRepetitions from '@site/src/partials/test-repetitions.mdx';
+
+You can run both unit and UI tests for iOS apps on Bitrise with our dedicated <GlossTerm baseform="Step">Step</GlossTerm>. The Step runs the [test targets you defined](https://developer.apple.com/documentation/xctest/defining_test_cases_and_test_methods/) in your Xcode project and [exports the results for you to view it in detail](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
+
+To run Xcode tests on Bitrise, you need two Steps to run Xcode tests and view their results:
+
+**Xcode Test for iOS**.
+
+**Deploy to**[**Bitrise.io**](http://Bitrise.io).
+
+:::note[Code signing files]
+
+Running Xcode tests and deploying their results to Bitrise do not require any [code signing](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects) files. So don’t worry about them just yet!
+
+:::
+
+The **Xcode Test for iOS** Step runs your tests, exports your test results, the `.xcresult` file, all test attachments, and the log of the `xcodebuild test` command.
+
+:::tip[Xcode test results in HTML]
+
+You can also view your Xcode test results in a rich HTML format, using the **Generate Xcode test report html** Step: [Viewing Xcode test results in rich HTML format](/en/bitrise-ci/testing/testing-ios-apps/viewing-xcode-test-results-in-rich-html-format).
+
+:::
+
+To run tests using the Step:
+
+Workflow Editor
+
+bitrise.yml
+
+1. Make sure [you install all of the app's dependencies](/en/bitrise-ci/dependencies-and-caching/ios-dependencies/managing-dependencies-with-carthage) in your Workflow.
+1. Add the **Xcode Test for iOS** Step to the Workflow.
+1. Make sure the **Project path** input points to the correct location.
+
+   The input asks for the path to your `.xcodeproj,``.xcworkspace` , or `Package.swift` file. In most cases, you don't need to change this input: when adding a new app, the project scanner automatically finds the relevant file and stores its location in the [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables) that is the default value of the input.
+
+   ![xcode-test-for-ios.png](/img/_paligo/uuid-bba07440-4913-8b44-0391-1dd275534500.png)
+1. Make sure the **Scheme** input points to the scheme you want to use to build the app.
+
+   The default value is the [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables) that stores the scheme you set during the initial configuration of the app. If you wish to use a different scheme, type its name to the input field.
+
+   :::important[Shared scheme only]
+
+   The scheme must be a shared Xcode scheme!
+
+   :::
+1. Configure the device destination in the **Device destination specifier** input: the input takes comma-separated key-value pairs. For example, if you wish to build an app to test on an iPhone 14 with the latest available OS:
+
+   ```
+   platform=iOS,name=iPhone 14 Plus,OS=latest
+   ```
+
+   The input sets the `-destination` option of `xcodebuild`. Read more about the possible options: [How do I run unit tests from the command line?](https://developer.apple.com/library/archive/technotes/tn2339/_index.html#//apple_ref/doc/uid/DTS40014588-CH1-UNIT)
+1. Optionally, set a specific [test plan](https://developer.apple.com/documentation/xcode/organizing-tests-to-improve-feedback?changes=_8) in the **Test plan** input.
+
+   The input sets the `-testPlan` option of the `test` action of `xcodebuild`. If you leave this empty, the test plan specified in the Xcode scheme will be used.
+1. Add the **Deploy to Bitrise.io** Step to the end of your Workflow to be able to access the test results and other outputs: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
+
+1. Make sure [you install all of the app's dependencies](/en/bitrise-ci/dependencies-and-caching/ios-dependencies/managing-dependencies-with-carthage) in your Workflow.
+1. Add the `xcode-test` Step to the Workflow.
+
+   ```
+   your-workflow:
+     steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - xcode-test:
+           inputs:
+   ```
+1. Make sure the `project_path` input points to the correct location.
+
+   The input asks for the path to your `.xcodeproj,``.xcworkspace` , or `Package.swift` file. In most cases, you don't need to change this input: when adding a new app, the project scanner automatically finds the relevant file and stores its location in the [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables) that is the default value of the input.
+
+   ```
+   your-workflow:
+     steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - xcode-test:
+           inputs:
+           - project_path: "$BITRISE_PROJECT_PATH"
+   ```
+1. Make sure the `scheme` input points to the scheme you want to use to build the app.
+
+   The default value is the [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables) that stores the scheme you set during the initial configuration of the app. If you wish to use a different scheme, type its name to the input field.
+
+   ```
+   your-workflow:
+     steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - xcode-test:
+           inputs:
+           - project_path: "$BITRISE_PROJECT_PATH"
+           - scheme: test
+   ```
+
+   :::important[Shared scheme only]
+
+   The scheme must be a shared Xcode scheme!
+
+   :::
+1. Configure the device destination in the `destination` input: the input takes comma-separated key-value pairs. For example, if you wish to build an app to test on an iPhone 14 with the latest available OS:
+
+   ```
+   your-workflow:
+     steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - xcode-test:
+           inputs:
+           - project_path: "$BITRISE_PROJECT_PATH"
+           - scheme: test
+           - destination: platform=iOS Simulator,name=iPhone 14 Plus,OS=latest
+   ```
+
+   The input sets the `-destination` option of `xcodebuild`. Read more about the possible options: [How do I run unit tests from the command line?](https://developer.apple.com/library/archive/technotes/tn2339/_index.html#//apple_ref/doc/uid/DTS40014588-CH1-UNIT)
+1. Optionally, set a specific [test plan](https://developer.apple.com/documentation/xcode/organizing-tests-to-improve-feedback?changes=_8) in the `test_plan` input.
+
+   The input sets the `-testPlan` option of the `test` action of `xcodebuild`. If you leave this empty, the test plan specified in the Xcode scheme will be used.
+
+   ```
+   your-workflow:
+     steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - xcode-test:
+           inputs:
+           - project_path: "$BITRISE_PROJECT_PATH"
+           - scheme: test
+           - destination: platform=iOS Simulator,name=iPhone 11 Plus,OS=latest
+           - test_plan: my_plan
+   ```
+1. Add the `deploy-to-bitrise-io` Step to the end of your Workflow to be able to access the test results and other outputs: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
+
+   ```
+   your-workflow:
+     steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - xcode-test:
+           inputs:
+           - project_path: "$BITRISE_PROJECT_PATH"
+           - scheme: test
+           - destination: platform=iOS Simulator,name=iPhone 11 Plus,OS=latest
+           - test_plan: my_plan
+       - deploy-to-bitrise-io:
+   ```
+
+:::note[Headless mode]
+
+From Xcode 9 onwards, tests are run in headless mode by default: this means that the simulator will run in the background only. To change it, go to the Step’s Debug input group and set the **Run the simulator in headless mode** input’s value to `no`. However, with this option, tests will take more time.
+
+```
+- xcode-test:
+    inputs:
+      - headless_mode: 'no'
+```
+
+:::
+
+:::important[Using xcpretty]
+
+The `xcpretty` output tool does not support parallel tests. If parallel tests are enabled in your project, go to the Step’s **xcodebuild log formatting** input group and set the **Log formatter** input’s value to `xcodebuild` or `xcbeautify`.
+
+```
+- xcode-test:
+    inputs:
+      - log_formatter: xcbeautify
+```
+
+:::
+
+<Partial_RerunningFailedTestsNotAvailableInXcode13 />
+
+<Partial_TestRepetitions />

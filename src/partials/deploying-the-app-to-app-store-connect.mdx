@@ -1,0 +1,32 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Deploying the app to App Store Connect
+
+Keep in mind that every time you want to push an app to App Store Connect, it must have a unique build and version number: [increment either or both](/en/bitrise-ci/run-and-analyze-builds/build-numbering-and-app-versioning) before deploying.
+
+1. Make sure you have a working [connection to your Apple Developer account](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+1. Generate an IPA file on your own machine at least once.
+1. [Upload all necessary code signing files](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects) to Bitrise.
+
+   To deploy an app to App Store Connect, you need a Distribution type certificate and an App Store type provisioning profile.
+1. Make sure the **Xcode Archive & Export for iOS** Step is in your Workflow.
+1. Set the **Automatic code signing** input to the Apple service connection you want to use for code signing. The available options are:
+
+   - `off` if you don’t use automatic code signing, or if you exclusively use Step inputs for Apple service authentication.
+   - `api-key` if you use [API key authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+   - `apple-id` if you use [Apple ID authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+1. Set the **Distribution method** input of the Step to `app-store`.
+
+   The Step will store the path of the exported .ipa file in the $BITRISE_IPA_PATH Environment Variable.
+1. Add the **Deploy to App Store Connect** Step to your Workflow.
+1. Fill the required inputs.
+
+   - Either the app’s Apple ID or its Bundle ID is a required input. One of the two must be provided.
+   - If you set the **Submit for Review** to `yes`, the Step will wait for your submission to be processed on App Store Connect and then submit the given version of the app for review.
+   - The default value of the **Skip App Version Update** input is `No`. Change it only if you incremented the app version number in another way.
+   - If you use an App Store Connect account that is linked to multiple teams, provide either a Team ID or a Team name!
+1. Start a build.
+
+If all goes well, your app will be submitted to App Store and you can distribute it via Testflight or via the App Store!

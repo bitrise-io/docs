@@ -1,0 +1,44 @@
+---
+title: "Step outputs reference"
+description: "Step outputs are environment items that are the result of running a given Step. You can check out the default outputs of a Step in the `Workflow Editor` on [bitrise.io](https://www.bitrise.io) or in the `step.yml` file of the Step."
+sidebar_position: 6
+slug: /bitrise-ci/references/steps-reference/step-outputs-reference
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+<GlossTerm baseform="Step">Step</GlossTerm> outputs are environment items that are the result of running a given Step. For example, the **Deploy to Bitrise.io** Step generates two output envs by default:
+
+- $BITRISE_PUBLIC_INSTALL_PAGE_URL
+- BITRISE_PUBLIC_INSTALL_PAGE_URL_MAP
+
+You can check out the default outputs of a Step in the <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm> on [bitrise.io](https://www.bitrise.io) or in the `step.yml` file of the Step.
+
+Step outputs can be defined in the `step.yml` file of the project by setting the `outputs` attribute. They have the same syntax as every environment property. It consists of two main parts: a `KEY: value` pair and an `opts` field. The key and the value are required, the `opts` field is optional.
+
+```
+- MY_KEY_FOR_THE_ENV: my value for the env
+  opts:
+    title: An example env var item
+    is_dont_change_value: false
+    category: example
+```
+
+- `MY_KEY_FOR_THE_ENV`: The key of the environment item (required).
+- `my value for the env`: The value of the item (required).
+- `opts`: Optional attributes.
+
+The default outputs of a Step cannot be changed by the user in the `bitrise.yml` file of the project: they can only be changed in the `step.yml` file. However, you can export the output in a custom [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables). This is useful, for example, if you have the same step twice in your <GlossTerm baseform="Workflow">Workflow</GlossTerm> and you wish to use the generated output of both steps:
+
+```
+workflows:
+  primary:
+  steps:
+  - gradle-runner:
+      outputs:
+      - BITRISE_APK_PATH: ALIAS_APK_PATH
+```
+
+In this example, the value for the `BITRISE_APK_PATH` Environment Variable will be exported under the `ALIAS_APK_PATH` key.

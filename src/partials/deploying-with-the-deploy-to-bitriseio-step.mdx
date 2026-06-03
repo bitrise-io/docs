@@ -1,0 +1,67 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Deploying with the Deploy to Bitrise.io Step
+
+The **Deploy to Bitrise.io** <GlossTerm baseform="Step">Step</GlossTerm> can perform several different functions:
+
+- It allows you to create and distribute a public install page for your <GlossTerm baseform="App">app</GlossTerm> and notify users about new builds of the app.
+- It uploads app binaries and other build artifacts to the **Artifacts** tab of the build's page.
+- It can send test results and logs to [test reports](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
+
+In this guide, we'll talk about how to use the Step to deploy app binaries (IPA/APK/AAB files) and distribute the link to the public install page.
+
+![Bitrise_OTA_app_Deployment.png](/img/_paligo/uuid-23eca453-8f3c-1bbf-e189-eae6a638e144.png)
+
+### The deploy directory
+
+The **Deploy directory or file path** input defines the path that the Step will check for files to deploy. If the input value is a file path, it will deploy that file. If the input value is a directory, it will deploy all files in the directory.
+
+The default value is the BITRISE_DEPLOY_DIR [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables) (Env Var). In most cases, you don't have to change this or worry about it in any way. If you use the official Bitrise Steps to build your apps, they will export all necessary files into this directory. In certain cases, it's worth checking whether your files end up in the correct location for deployment:
+
+- If you use a **Script** Step to build your app, the best practice is to configure the Step to export the files to the BITRISE_DEPLOY_DIR Env Var.
+- If you use a Step that isn't maintained by Bitrise, check where the Step exports any files it generates. If it isn't the BITRISE_DEPLOY_DIR, set the input to point to that location.
+
+:::tip[Compressing all files into a .zip]
+
+If you wish to compress all files found in the deploy directory into a single .zip file, set the **Compress artifacts into one file?** input to **true**.
+
+:::
+
+### The public install page
+
+The **Enable public page for the App?** input determines whether the app can be installed by accessing a publicly available web page. Anyone who has the link to the page can install the app on their device.
+
+:::note[Registering test devices]
+
+For Android apps, you don’t have to register your test devices to be able to install the app on them, as Android apps don’t have per-device install restrictions. However, you’ll have to enable the **Unknown Sources** option in Android to be able to install the APK/AAB from outside of the Google Play Store.
+
+For iOS apps, [the test devices must be registered and provisioned](/en/bitrise-ci/deploying/ios-deployment/installing-an-ipa-file-from-the-public-install-page), otherwise, you can't install the app from the public install page on them.
+
+:::
+
+The page includes all the important details of the build, such as filename, size, version code, minimum SDK version, and build number. If the public install page is enabled, users defined in the **Notify: Emails** and **Notify: User Roles** inputs rec3eive the link to the page.
+
+By default, the input value is set to **true**. If you disable the option, only the members of your app's Bitrise team will be able to install the app on their devices. They can find the installable binary on the **Artifacts** tab on the build page.
+
+### Notifying users
+
+The **Deploy to Bitrise.io Step** can send email notifications to specified users. The notification can include the build URL and the public install page link. The Step can notify users in two ways:
+
+- The **Notify: User Groups** input allows you to notify the users on the app's Bitrise team. If the **Enable public page for the App?** input is set to **true**, the notification includes the link to the public install page. If it's set to **false**, the specified user groups will receive the build URL instead.
+
+  The default value is **everyone**: this means everyone on the app's Bitrise team gets a notification. You can choose any other role: in that case, only users with that particular role will get a notification.
+- The **Notify: Email** input allows you to notify anyone via email. This includes people who don't have a Bitrise account. This way, you can send the public install page to anyone, inviting them to install the app.
+
+  :::important[Public install page required]
+
+  If the **Enable public page for the App?** input is set to **false**, the **Notify: Email** input is ignored!
+
+  :::
+
+  :::caution[Use a Secret]
+
+  The input only takes [Secrets](/en/bitrise-ci/configure-builds/secrets) as a value: you must create a <GlossTerm baseform="Secret">Secret</GlossTerm> and specify the email addresses in the Secret's value.
+
+  :::

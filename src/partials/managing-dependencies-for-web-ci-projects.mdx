@@ -1,0 +1,58 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Managing dependencies
+
+Bitrise supports several dependency managers with dedicated Steps that make it easy to handle dependencies. For web CI projects, the most important ones are:
+
+- [Run npm command](https://bitrise.io/integrations/steps/npm): Default Workflows for Node.js contain the **npm** Step that runs `npm install`. This command installs all necessary packages defined in your `package.json` file. You can specify flags to configure the installation procedure to suit your requirements.
+
+  Set up the command in the **The npm command with arguments to run** input. The default input value is **install**. In the configuration YAML file, look for the `command` input:
+
+  ```
+  - npm:
+      inputs:
+      - command: install -g
+  ```
+- [Run yarn command](https://bitrise.io/integrations/steps/yarn): Yarn, like npm, looks for your dependencies in the `package.json` file. The Step allows you to specify the `yarn` command you want to run, as well as any additional arguments.
+
+  Add your command to **The yarn command to run** input. In your configuration YAML file, the input is called `command`. Leave it empty to install dependencies.
+
+  ```
+  - yarn:   
+      inputs:
+      - command:
+  ```
+
+  Specify your yarn command arguments in the **Arguments for running yarn commands** input. In your configuration YAML file, the input is called `args`. You can add multiple arguments separated by a space character.
+
+  ```
+  - yarn:      
+      inputs:        
+      - args: "-dev"
+  ```
+- [Gradle Runner](https://bitrise.io/integrations/steps/gradle-runner): If your project is built with Gradle, you can use this Step to install your dependencies during the process. To do this, you need:
+
+  - A Gradle Wrapper.
+  - A Gradle task that is configured correctly.
+  - Dependencies declared in your build script.
+
+  The Step requires two inputs: the **Gradle task to run** input defines the Gradle task that will run during the build. The **Gradle Wrapper path** input defines the path to the `gradlew` file in your project. In your configuration YAML file, these inputs are called `gradle_task` and `gradlew_path`.
+
+  ```
+  - gradle-runner:
+      inputs:
+      - gradlew_path: ./cool_project/
+      - gradle_task: install
+  ```
+
+### Package manager detection for Python
+
+For a Python project, Bitrise creates a dependency management configuration after checking package manager sources in the following order:
+
+1. `uv.lock` for the `uv` package manager.
+1. `poetry.lock` for `poetry`.
+1. `requirements.txt` for `pip`.
+
+If none of these are found, the package manager is left undetected. The user picks one during setup, and a configuration is generated for every choice.

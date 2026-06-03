@@ -1,0 +1,57 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Ionic/Cordova code signing with automatic code signing asset management
+
+1. Make sure your .p12 signing certificates are uploaded to [bitrise.io](https://www.bitrise.io).
+1. Add the **Cordova prepare** or the **Ionic prepare** Step to your Workflow. These Steps call the `platform rm` and `platform add` commands.
+1. Add the **[Manage iOS Code Signing](https://www.bitrise.io/integrations/steps/manage-ios-code-signing)** Step to your Workflow. If you have both the **Certificate and Profile Installer** and the **Manage iOS Code Signing** Steps in your Workflow, your build might encounter unexpected issues.
+
+   The Step will export:
+
+   - The project’s development team.
+   - The installed codesign identity’s name.
+   - The installed provisioning profile.
+
+   :::caution[One code signing Step only]
+
+   If you have both the **Certificate and profile installer** and the **Manage iOS Code Signing** Steps in your Workflow, your build might encounter unexpected issues.
+
+   :::
+1. Select the **Apple service connection method** (based on the [Apple service you have set up in Bitrise](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)) and the **Distribution method**.
+
+   ![manage-ios-code.png](/img/_paligo/uuid-de743a8c-7a79-dda4-b9de-e3c71f2ac32a.png)
+1. Add the **Generate cordova build configuration** Step to your Workflow.
+1. Configure the Step to use the code signing settings exported by the **Manage iOS Code Signing** Step:
+
+   **Development distribution example**:
+
+   ```
+   - generate-cordova-build-configuration:
+       inputs:
+       - development_team: $BITRISE_DEVELOPER_TEAM 
+       - package_type: development 
+       - code_sign_identity: iPhone Developer
+       - configuration: debug
+   ```
+
+   **Production distribution example**:
+
+   ```
+   - generate-cordova-build-configuration:
+       inputs:
+       - development_team: $BITRISE_DEVELOPER_TEAM 
+       - package_type: app-store 
+       - code_sign_identity: iPhone Developer
+       - configuration: release
+   ```
+1. Add the **Cordova Archive** or the **Ionic Archive** Step to your Workflow.
+1. Fill in the required inputs.
+
+   - The **Platform** input needs to be set to: `device`.
+   - The **Build command configuration** input must match the **Build configuration** input of the **Generate cordova build configuration** Step.
+
+     ![gen-cordova-build.png](/img/_paligo/uuid-bc068222-9d71-6b17-2d07-9bdca30fa368.png)
+1. Set the **Should remove platforms as prepare step?** to `false`. This is crucial: it ensures the Step will not remove and re-add the platform of the native projects generated in the **Cordova prepare** or the **Ionic prepare** Step.
+1. Run your build!

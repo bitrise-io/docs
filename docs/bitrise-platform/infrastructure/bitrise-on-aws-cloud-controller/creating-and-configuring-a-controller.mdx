@@ -1,0 +1,146 @@
+---
+title: "Creating and configuring a controller"
+description: "To create and configure an AWS Cloud Controller to run Bitrise builds, you need to configure it on Bitrise first and then set up an instance running the controller agent on AWS."
+sidebar_position: 3
+slug: /bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/creating-and-configuring-a-controller
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_EnablingCloudWatchBitriseAgentLogging from '@site/src/partials/enabling-cloudwatch-bitrise-agent-logging.mdx';
+
+You must create and connect a Cloud Controller to take advantage of our Controller-managed AWS offering. The process has two stages:
+
+1. [Configuring the Controller on Bitrise.](#configuring-the-controller-on-bitrise)
+1. Setting up an instance running the controller agent on AWS.
+
+## Configuring the controller on Bitrise
+
+1. Get access to the AWS controller feature from the Bitrise team.
+1. Log in to your Bitrise Workspace as a Workspace owner.
+
+   Only Workspace owners can access and configure this feature.
+1. Open the **Workspace settings** page of the Workspace.
+1. Select **Self-hosted infrastructure** and go to the **Bitrise on AWS** tab.
+
+   ![create-controller-1.png](/img/_paligo/uuid-bfadf366-bdfc-4440-d2db-5e9f68843f9f.png)
+1. Click **Connect with AWS**. This should bring up a dialog box.
+1. Set a name for your controller and specify if you want to use the controller in an air-gapped network.
+
+   For more information on air-gapped mode, see [Bitrise on AWS: Cloud Controller](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates).
+
+   ![create-controller-1.png](/img/_paligo/uuid-a4204c31-4165-2af9-290e-e3116ef784a3.png)
+1. Copy and save your token.
+
+   :::important[Save the token]
+
+   This token is only accessible only right after creation. If the token is lost, you need to delete the controller and create a new one which would generate a new token.
+
+   :::
+
+After successful creation, the Bitrise on AWS screen should indicate that the controller on the Bitrise side is prepared, and it’s waiting for an AWS connection. In all cases the Controller and the build machines will initiate network calls toward the Bitrise control plane, no external inbound traffic is required.
+
+## Setting up the controller instance on AWS
+
+After a successful controller creation on Bitrise, go to AWS and create an instance running the Controller Agent.
+
+:::note[New or existing VPC]
+
+The configuration will need a Virtual Private Cloud (VPC). Every AWS region contains a default VPC but if necessary, you can create your own VPC within each region. If you wish to share your VPC between Bitrise-specific resources and your other resources you can reuse the already existing and configured VPC. If you prefer to separate resources, you can create a new VPC with the provided template.
+
+For more information, read [the official AWS documentation on VPCs](https://docs.aws.amazon.com/vpc/latest/userguide/configure-your-vpc.html).
+
+:::
+
+<Tabs>
+<TabItem value="setup-with-an-existing-vpc" label="Setup with an existing VPC" default>
+
+1. Log in to your AWS account.
+1. Select the template option you need and you'll get the HTTP link to your template. You can read more about templates on the [AWS CloudFormation templates](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates) page.
+
+   - [Link to the base template](https://bitrise-cloudformation-templates.s3.amazonaws.com/cloud-controller-with-existing-vpc.yaml).
+   - [Link to the airgapped template](https://bitrise-cloudformation-templates.s3.amazonaws.com/cloud-controller-with-existing-vpc-airgapped.yaml). Use this if the Bitrise Controller is expected to run [in airgapped mode](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates).
+
+   :::note[Additional manual configuration]
+
+   The airgapped support requires some manual configuration in AWS that is not automated via CloudFormation. For details, please check the [AWS CloudFormation templates](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates) page.
+
+   :::
+1. Navigate to CloudFormation and select **Create stack with new resources (standard)**.
+
+   ![controller-create-stack.png](/img/_paligo/uuid-336544f8-0f74-08ad-8a5d-616f33d62736.png)
+1. Create a stack using the **Template is ready** and **Amazon S3 URL** options.
+1. In the **Amazon S3 URL** field, provide the URL gathered in the previous step and click **Next**.
+
+   ![create-stack-template.png](/img/_paligo/uuid-d2e802df-0b0d-afba-f36c-ad6a9af244bb.png)
+1. On the following prompt, specify the following fields:
+
+   - **Stack name**: Any value works here. This helps to identify the stack if you have multiple stacks.
+   - **Latest AMI ID**: This AMI ID is used as a base AMI to run the Cloud Controller on.
+   - **Bitrise Controller Token**: The token is generated as part of controller creation on Bitrise: [see topic](#configuring-the-controller-on-bitrise).
+   - **Bitrise Workspace ID**: [Identifying Workspaces and apps with their slugs](/en/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs).
+   - **Controller Log Group Class** : The Cloud Controller generates logs that are accessible to the customers in AWS. This configuration specifies what features the customer wants to use during log analysis. The default is **Infrequent access**, which provides a limited log analyzing capability at a lower cost.
+   - **Controller Log Retention In Days** : Determines how long AWS stores the Cloud Controller logs.
+   - **Controller SSH Key** : Select one previously configured SSH key. With this key, you can log into the created instance and, if needed, investigate.
+   - **Subnet IDs** : Choose at least two subnets in two different Availability Zones from the previously configured subnets, but make sure not to select more than one subnet from the same Availability Zone. The selected subnets should belong to the selected VPC. The subnets should have a route table configuration enabling the created instances to communicate to the Bitrise Services. There is no incoming communication required for the Controller.
+   - **VPC CIDR Block** : Default value is provided. Make sure you select a CIDR Block matching the VPC’s CIDR Block. For more info, see [the official AWS docs](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-cidr-blocks.html).
+   - **VPC ID** : Select from the previously configured VPCs.
+
+   :::note[Only one controller per VPC/region]
+
+   We do not recommend running more than one Controller in one VPC/one region. These Controllers could start more resources than necessary which can cost money.
+
+   :::
+1. The other stack option configurations are optional. For details, check [AWS’s official documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-add-tags.html).
+1. Review your previous settings on the **Review** screen. If everything looks correct, acknowledge your CloudFormation capabilities at the bottom and then submit your request.
+1. Once the AWS CloudFormation successfully creates the instance running the Controller (this process can take 5-7 minutes), go back to your Workspace page on Bitrise to confirm the connectivity between the instance and AWS. If the Controller’s status is **Connected**, the connection works correctly.
+
+   ![controller-ready.png](/img/_paligo/uuid-85d4125e-c0ef-ea64-d916-d04725b00581.png)
+
+</TabItem>
+<TabItem value="setup-with-a-new-vpc" label="Setup with a new VPC">
+
+1. Log in to your AWS account.
+1. Select the template option you need and you'll get the HTTP link to your template. You can read more about templates on the [AWS CloudFormation templates](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates) page.
+
+   - [Link to the base template](https://bitrise-cloudformation-templates.s3.amazonaws.com/cloud-controller-with-new-vpc.yaml).
+   - [Link to the airgapped template](https://bitrise-cloudformation-templates.s3.amazonaws.com/cloud-controller-with-new-vpc-airgapped.yaml). Use this if the Bitrise Controller is expected to run [in airgapped mode](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates).
+
+   :::note[Additional manual configuration]
+
+   The airgapped support requires some manual configuration in AWS that is not automated via CloudFormation. For details, please check the [AWS CloudFormation templates](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates) page.
+
+   :::
+1. Navigate to CloudFormation and select **Create stack with new resources (standard)**.
+
+   ![controller-create-stack.png](/img/_paligo/uuid-336544f8-0f74-08ad-8a5d-616f33d62736.png)
+1. Create a stack using the **Template is ready** and **Amazon S3 URL** options.
+1. In the **Amazon S3 URL** field, provide the URL gathered in the previous step and click **Next**.
+
+   ![create-stack-template.png](/img/_paligo/uuid-d2e802df-0b0d-afba-f36c-ad6a9af244bb.png)
+1. On the following prompt, specify the following fields (all mentioned fields are required unless specified otherwise):
+
+   - **Stack name**: Any value works here. This helps to identify the stack if you have multiple stacks.
+   - **Latest AMI ID**: This AMI ID is used as a base AMI to run the Cloud Controller on.
+   - **Bitrise Controller Token**: The token is generated as part of controller creation on Bitrise: [see topic](#configuring-the-controller-on-bitrise).
+   - **Bitrise Workspace ID**: [Identifying Workspaces and apps with their slugs](/en/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs).
+   - **Controller Log Group Class** : The Cloud Controller generates logs that are accessible to the customers in AWS. This configuration specifies what features the customer wants to use during log analysis. The default is **Infrequent access**, which provides a limited log analyzing capability at a lower cost.
+   - **Controller Log Retention In Days** : Determines how long AWS stores the Cloud Controller logs.
+   - **Controller SSH Key** : Select one previously configured SSH key. With this key, you can log into the created instance and, if needed, investigate.
+   - **Environment Name**: Optional. The provided value will appear in the names of the created VPC, subnets, and route tables.
+   - **Private Subnet 1 CIDR**: Default value is provided. IP range (CIDR notation) for the private subnet of the new VPC in the first Availability Zone. The value must be between a /28 netmask and /16 netmask.
+   - **Private Subnet 2 CIDR**: Default value is provided. IP range (CIDR notation) for the private subnet of the new VPC in the second Availability Zone. The value must be between a /28 netmask and /16 netmask.
+   - **Public Subnet 1 CIDR**: Default value is provided. IP range (CIDR notation) for the public subnet of the new VPC in the first Availability Zone. The value must be between a /28 netmask and /16 netmask.
+   - **Public Subnet 2 CIDR**: Default value is provided. IP range (CIDR notation) for the public subnet of the new VPC in the second Availability Zone. The value must be between a /28 netmask and /16 netmask.
+   - **VPC CIDR**: Default value is provided. Select the Classless Inter-Domain Routing (CIDR) for the new VPC.
+1. The other stack option configurations are optional. For details, check [AWS’s official documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-add-tags.html).
+1. Review your previous settings on the **Review** screen. If everything looks correct, acknowledge your CloudFormation capabilities at the bottom and then submit your request.
+1. Once the AWS CloudFormation successfully creates the instance running the Controller (this process can take 5-7 minutes), go back to your Workspace page on Bitrise to confirm the connectivity between the instance and AWS. If the Controller’s status is **Connected**, the connection works correctly.
+
+   ![controller-ready.png](/img/_paligo/uuid-85d4125e-c0ef-ea64-d916-d04725b00581.png)
+
+</TabItem>
+</Tabs>
+
+<Partial_EnablingCloudWatchBitriseAgentLogging />

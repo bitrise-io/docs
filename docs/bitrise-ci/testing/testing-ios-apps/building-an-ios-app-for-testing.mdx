@@ -1,0 +1,270 @@
+---
+title: "Building an iOS app for testing"
+description: "You can build an iOS app specifically for testing: our dedicated Step builds your app and its associated tests and also exports an `.xctestrun` file. Once built, you can upload the app to a third-party testing service or install it on a simulator or a physical device. You can also use this Step to set up [virtual device testing with Firebase](/en/bitrise-ci/testing/device-testing-with-firebase/device-testing-for-ios)."
+sidebar_position: 2
+slug: /bitrise-ci/testing/testing-ios-apps/building-an-ios-app-for-testing
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+You can build an iOS app specifically for testing: our dedicated <GlossTerm baseform="Step">Step</GlossTerm> builds your app and its associated tests and also exports an `.xctestrun` file. Once built, you can upload the app to a third-party testing service or install it on a simulator or a physical device. You can also use this Step to set up [virtual device testing with Firebase](/en/bitrise-ci/testing/device-testing-with-firebase/device-testing-for-ios).
+
+The Step uses the `build-for-testing` action of `xcodebuild`. To learn more about it, see [How do I implement the Build For Testing and Test Without Building features from the command line?](https://developer.apple.com/library/archive/technotes/tn2339/_index.html#//apple_ref/doc/uid/DTS40014588-CH1-PRODUCT)
+
+:::important[Code signing]
+
+Installing the app on a test device requires [code signing](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects). The **Xcode Build for testing for iOS** Step has a built in code signing configuration: it allows [code signing with automatic provisioning](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning). In most use cases, you don't need any other Step to code sign your app for testing.
+
+:::
+
+To build your iOS app for testing:
+
+Workflow Editor
+
+bitrise.yml
+
+1. For code signing, make sure you have connected your [Apple service account](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services) to Bitrise.
+
+   The Step accepts Apple ID and API key authentication for automatic code signing. We recommend using API key authentication.
+
+   :::tip[Manual code signing]
+
+   You can also use [manual code signing](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---manual-provisioning): in that case, do not configure the automatic code signing options of the Step.
+
+   :::
+1. Make sure [you install all of the app's dependencies](/en/bitrise-ci/dependencies-and-caching/ios-dependencies/managing-dependencies-with-carthage) in your Workflow.
+1. Add the **Xcode Build for testing for iOS** Step to your <GlossTerm baseform="Workflow">Workflow</GlossTerm> after the Step or Steps installing dependencies.
+1. Make sure the **Project path** input points to the correct location.
+
+   The input asks for the path to your `.xcodeproj` or `.xcworkspace` file. In most cases, you don't need to change this input: when adding a new app, the project scanner automatically finds the relevant file and stores its location in the [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables) that is the default value of the input.
+
+   :::note[Checking the default value]
+
+   If you are not sure whether the default value of the **Project path** input points to the right location, go to the **Env Vars** tab and check that the $BITRISE_PROJECT_PATH variable's value is the correct path to your `.xcodeproj` or `.xcworkspace` file.
+
+   :::
+
+   :::important[CocoaPods]
+
+   If you use CocoaPods as your dependency manager, the **Project path** input must point to the `.xcworkspace` file.
+
+   :::
+1. Make sure the **Scheme** input points to the scheme you want to use to build the app.
+
+   The default value is the Environment Variable that stores the scheme you set during the initial configuration of the app. If you wish to use a different scheme, type its name into the input field.
+1. Set [the build configuration](https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project) you want to build in the **Build Configuration** input.
+
+   The default value is `Debug`.
+
+   ![build-for-testing-step.png](/img/_paligo/uuid-2a3bef35-3d78-72e7-102b-8aa11def397f.png)
+1. Configure the device destination in the **Device destination specifier** input: the input takes comma-separated key-value pairs.
+
+   Since the `build-for-testing` action can be performed without an actual specific device, we recommend targeting a platform generically:
+
+   ```yaml
+   // building for physical iOS devices
+   generic/platform=iOS
+
+   // building for simulators
+   generic/platform=iOS Simulator
+   ```
+
+   The input sets the `-destination` option of `xcodebuild`. Read more about the possible options: [How do I run unit tests from the command line?](https://developer.apple.com/library/archive/technotes/tn2339/_index.html#//apple_ref/doc/uid/DTS40014588-CH1-UNIT)
+1. Optionally, set a specific [test plan](https://developer.apple.com/documentation/xcode/organizing-tests-to-improve-feedback?changes=_8) in the **Test plan** input.
+
+   The input sets the `-testPlan` option of the `build-for-testing` action of `xcodebuild`. If you leave this empty, the test plan specified in the Xcode scheme will be used.
+1. If you need code signing, we recommend using the [automatic code signing](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning) option: find the **Automatic code signing** input group, and choose a method from the dropdown menu of the **Automatic code signing method** input.
+
+   ![auto-code-signing-input.png](/img/_paligo/uuid-cae7939a-c5e3-917f-5121-e7ef852362d5.png)
+
+   :::note[Code signing certificates]
+
+   Keep in mind that you need to upload [code signing certificates](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning#uploading-ios-code-signing-certificates-to-bitrise) to Bitrise in order to successfully sign your app.
+
+   :::
+
+   We recommend using [API key authentication](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key#adding-api-key-authentication-data-on-bitrise): a Bitrise-managed authentication method configured on the **App settings** page.
+
+   If you want to control API authentication on a Step level instead, you can override the default Bitrise-managed connection by setting all three inputs that define a different API key authentication in the **App Store Connect connection override** input group:
+
+   ![api-connect-override.png](/img/_paligo/uuid-a41c4d89-eb5f-0913-ac80-a0af31f99b54.png)
+1. Add the **Deploy to Bitrise.io** Step to the end of your Workflow to be able to access the generated artifacts either [on the **Artifacts** tab](/en/bitrise-ci/run-and-analyze-builds/managing-build-files/build-artifacts-online) or in the **Tests** tab.
+
+1. For code signing, make sure you have connected your [Apple service account](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services) to Bitrise.
+
+   The Step accepts Apple ID and API key authentication for automatic code signing. We recommend using API key authentication.
+
+   :::tip[Manual code signing]
+
+   You can also use [manual code signing](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---manual-provisioning): in that case, do not configure the automatic code signing options of the Step.
+
+   :::
+1. Make sure [you install all of the app's dependencies](/en/bitrise-ci/dependencies-and-caching/ios-dependencies/managing-dependencies-with-carthage) in your Workflow.
+1. Add the `xcode-build-for-test` Step to your <GlossTerm baseform="Workflow">Workflow</GlossTerm> after the Step or Steps installing dependencies.
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test: {}
+   ```
+1. Make sure the `project_path` input points to the correct location.
+
+   The input asks for the path to your `.xcodeproj` or `.xcworkspace` file. In most cases, you don't need to change this input: when adding a new app, the project scanner automatically finds the relevant file and stores its location in the [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables) that is the default value of the input.
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test: {}
+           inputs:        
+           - project_path: "$BITRISE_PROJECT_PATH"
+   ```
+
+   :::note[Checking the default value]
+
+   If you are not sure whether the default value of the **Project path** input points to the right location, go to the **Env Vars** tab and check that the $BITRISE_PROJECT_PATH variable's value is the correct path to your `.xcodeproj` or `.xcworkspace` file.
+
+   :::
+
+   :::important[CocoaPods]
+
+   If you use CocoaPods as your dependency manager, the **Project path** input must point to the `.xcworkspace` file.
+
+   :::
+1. Make sure the `scheme` input points to the scheme you want to use to build the app.
+
+   The default value is the Environment Variable that stores the scheme you set during the initial configuration of the app. If you wish to use a different scheme, type its name into the input field.
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+             - scheme: $BITRISE_SCHEME
+             - project_path: $BITRISE_PROJECT_PATH
+   ```
+1. Set [the build configuration](https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project) you want to build in the `configuration` input.
+
+   The default value is `Debug`: if you do not set a value for the input, the build will target the **Debug** configuration.
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+             - scheme: $BITRISE_SCHEME
+             - configuration: Debug
+             - project_path: $BITRISE_PROJECT_PATH
+   ```
+1. Configure the device destination in the `destination` input: the input takes comma-separated key-value pairs.
+
+   Since the `build-for-testing` action can be performed without an actual specific device, we recommend targeting a platform generically:
+
+   ```yaml
+   // building for physical iOS devices
+   - destination: generic/platform=iOS
+
+   // building for simulators
+   - destination: generic/platform=iOS Simulator
+   ```
+
+   The input sets the `-destination` option of `xcodebuild`. Read more about the possible options: [How do I run unit tests from the command line?](https://developer.apple.com/library/archive/technotes/tn2339/_index.html#//apple_ref/doc/uid/DTS40014588-CH1-UNIT)
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+             - scheme: $BITRISE_SCHEME
+             - configuration: Debug
+             - destination: generic/platform=iOS Simulator
+             - project_path: $BITRISE_PROJECT_PATH
+   ```
+1. Optionally, set a specific [test plan](https://developer.apple.com/documentation/xcode/organizing-tests-to-improve-feedback?changes=_8) in the `test_plan` input.
+
+   The input sets the `-testPlan` option of the `build-for-testing` action of `xcodebuild`. If you leave this empty, the test plan specified in the Xcode scheme will be used.
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+             - scheme: $BITRISE_SCHEME
+             - configuration: Debug
+             - destination: generic/platform=iOS Simulator
+             - test_plan: my_plan
+             - project_path: $BITRISE_PROJECT_PATH
+   ```
+1. If you need code signing, we recommend using the [automatic code signing](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning) option: set the `automatic-code-signing` input to either of two values:
+
+   `apple-id`: Use [Apple ID authentication](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id) to manage code signing.
+
+   `api-key`: Use [API key authentication](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key) to manage code signing.
+
+   :::note[Code signing certificates]
+
+   Keep in mind that you need to upload [code signing certificates](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning#uploading-ios-code-signing-certificates-to-bitrise) to Bitrise in order to successfully sign your app.
+
+   :::
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+             - scheme: $BITRISE_SCHEME
+             - configuration: Debug
+             - destination: generic/platform=iOS Simulator
+             - test_plan: my_plan
+             - automatic_code_signing: api-key
+             - project_path: $BITRISE_PROJECT_PATH
+   ```
+
+   We recommend using [API key authentication](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key#adding-api-key-authentication-data-on-bitrise): a Bitrise-managed authentication method configured on the **App settings** page.
+
+   If you want to control API authentication on a Step level instead, you can override the default Bitrise-managed connection by setting three inputs that define a different API key authentication:
+
+   - `api_key_path`: Local path or remote URL to the private key (p8 file) for the App Store Connect API.
+   - `api_key_id`: Private key ID used for App Store Connect authentication.
+   - `api_key_issuer_id`: Private key issuer ID used for App Store Connect authentication.
+
+   :::important[All inputs required]
+
+   All three inputs must be set for the authentication override to work!
+
+   :::
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+             - api_key_path: path/to/p8        
+             - api_key_id: key_id        
+             - api_key_issuer_id: issuer_id
+   ```
+1. Add the `deploy-to-bitrise-io` Step to the end of your Workflow to be able to access the generated artifacts either [on the **Artifacts** tab](/en/bitrise-ci/run-and-analyze-builds/managing-build-files/build-artifacts-online) or in the **Tests** tab.
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+             - scheme: $BITRISE_SCHEME
+             - configuration: Debug
+             - destination: generic/platform=iOS Simulator
+             - test_plan: my_plan
+             - automatic_code_signing: api-key
+             - project_path: $BITRISE_PROJECT_PATH
+       - deploy-to-bitrise-io: {}
+   ```

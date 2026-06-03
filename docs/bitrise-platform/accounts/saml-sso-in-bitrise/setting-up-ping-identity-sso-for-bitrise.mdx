@@ -1,0 +1,60 @@
+---
+title: "Setting up Ping Identity SSO for Bitrise"
+description: "Add SAML SSO to your Bitrise Workspace using Ping Identity."
+sidebar_position: 11
+slug: /bitrise-platform/accounts/saml-sso-in-bitrise/setting-up-ping-identity-sso-for-bitrise
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_SAMLSSOBeforeYouStart from '@site/src/partials/saml-sso-before-you-start.mdx';
+import Partial_CAUTIONSAMLSSORestrictions from '@site/src/partials/caution-saml-sso-restrictions.mdx';
+
+This guide provides step-by-step instructions on setting up Bitrise as a SAML SSO application in [Ping Identity](https://www.pingidentity.com/en.html).
+
+<Partial_CAUTIONSAMLSSORestrictions />
+
+Before connecting SAML SSO to your Workspace:
+
+- A PingOne administrator who is logged into [PingOne](https://admin.pingone.com/web-portal/login).
+- <Partial_SAMLSSOBeforeYouStart />
+
+To add Bitrise to Ping Identity:
+
+1. Click **APPLICATIONS** on the top bar of [PingOne](https://admin.pingone.com/web-portal/login).
+1. On **My Applications** tab, make sure **SAML** is selected. Click the **Add Application** drop-down and select **New SAML Application**.
+
+   ![Setting_up_Ping_Identity_SSO_for_Bitrise.jpg](/img/_paligo/uuid-ba20e7c6-49cf-1ec0-ca6a-5630eb89c357.png)
+1. At **Application Details,** fill out the required fields and click **Continue to Next Step**.
+
+   ![Setting_up_Ping_Identity_SSO_for_Bitrise.jpg](/img/_paligo/uuid-6ebb926e-6275-81b7-fdb8-559128c87944.png)
+1. At **Application Configuration**, leave the **I have the SAML configuration** selected. Fill out the following:
+
+   - **Assertion Consumer Service (ACS)** field: Insert the **Assertion Consumer Service URL (ACS URL)** link here from your Bitrise Workspace’s **Single Sign-On** tab.
+
+     ![enablesinglesignonpage.png](/img/_paligo/uuid-11509388-3538-06e7-23f3-7ef27a956386.png)
+   - **Entity ID field**: Type `Bitrise`.
+   - **Signing**: Click the **Sign Response** option.
+
+     Here is an overview of the above settings: ![Setting_up_Ping_Identity_SSO_for_Bitrise.jpg](/img/_paligo/uuid-b3f12826-15e7-22c6-5688-9f3be3f519fd.png)
+1. Continue to the next step.
+1. At **SSO Attribute Mapping**, you don’t have to change anything, proceed to the next step.
+1. At **Group Access**, add the group(s) to your application. These groups will be able to access Bitrise through SAML SSO. Continue to the next step.
+
+   ![Setting_up_Ping_Identity_SSO_for_Bitrise.jpg](/img/_paligo/uuid-cfafb8d7-1a0e-d967-5609-385cc5db90e2.png)
+1. At the **Review Setup** page, you can doublecheck the details you provided in the previous steps. Make sure you download the following files from this review page:
+
+   - Click **Download** to get the **Signing Certificate** and **SAML Metadata** files.
+
+     ![Setting_up_Ping_Identity_SSO_for_Bitrise.jpg](/img/_paligo/uuid-d626ceb8-0cf3-d459-5cd7-9e59e0fef81a.png)
+1. Click **Finish**.
+1. Let’s open the two files.
+
+   - Copy the entire content of the **SAML Metadata** file and paste it in the **SAML SSO provider** **certificate** field of your Bitrise **Single Sign-On** page.
+   - Open the **Signing Certificate** file and copy the `HTTP-POST` `SingleSignOnService Location` link and paste it in the **SAML SSO provider Single Sign-On URL (SSO URL)** field on Bitrise.
+
+     ![enablesinglesignonpage.png](/img/_paligo/uuid-11509388-3538-06e7-23f3-7ef27a956386.png)
+1. Click **Configure SSO** on Bitrise.
+
+Now you have set up SAML SSO on your Bitrise Workspace.

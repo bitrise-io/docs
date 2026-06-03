@@ -1,0 +1,54 @@
+---
+title: "Artifact retention policy"
+description: "Bitrise stores both build artifacts and build logs for a limited amount of time. The retention period varies by artifact type to balance storage costs with typical usage patterns."
+sidebar_position: 5
+slug: /bitrise-ci/run-and-analyze-builds/managing-build-files/artifact-retention-policy
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitrise stores both build artifacts and build logs for a limited amount of time. The retention period varies by artifact type to balance storage costs with typical usage patterns.
+
+You can download build artifacts via the Bitrise API in order to store them: [Managing build artifacts](/en/bitrise-ci/api/managing-build-artifacts).
+
+When artifacts are removed, they are permanently deleted with no way to recover them.
+
+:::note[Older artifacts]
+
+Artifacts created before 31 March 2026 will be subject to the old retention policy: 365 days for standards artifacts, installable artifacts, and pipeline intermediate files, and 7 days for HTML reports.
+
+:::
+
+| Artifact Type | Retention Period | Custom retention period |
+| --- | --- | --- |
+| Builds and [build logs](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/build-logs) | 200 days  Builds older than 200 days can still be accessed via the Bitrise API. | Unavailable |
+| [Test results and all non-installable artifacts](/en/bitrise-ci/testing/deploying-and-viewing-test-results) | 90 days | Available for Enterprise customers |
+| Installable artifacts (.ipa, .akp and .aab files) | 150 days | Available for Enterprise customers |
+| [HTML reports](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/viewing-html-reports) | 7 days | Unavailable |
+| <GlossTerm baseform="Pipeline">Pipeline</GlossTerm> intermediate files | 7 days | Unavailable |
+| [CodePush](/en/release-management/codepush/about-codepush) packages | Retention limits are based upon size rather than age: your subscription plan determines the amount of storage you have. | Unavailable |
+
+## Archiving artifacts to your own storage
+
+To keep artifacts beyond the retention period, archive them using the Bitrise API:
+
+1. Generate a list of build artifacts to be archived: use `/apps/{app-slug}/builds` to generate a list of all the builds in one project.
+1. For each build, list out all the artifacts for a given build using `/apps/{app-slug}/builds/{buildslug}/artifacts`.
+1. For each artifact, get its download URL via `/apps/{app-slug}/builds/{buildslug}/artifacts/{artifact-slug}`.
+1. Download each artifact using the list of download URLs.
+1. Save all the artifacts in your storage of choice.
+
+## Custom retention policies
+
+Custom retention policies are available for Enterprise customers. Contact your Customer Success Manager to discuss.
+
+- Shorter retention: Available at no additional cost (useful for reducing storage overhead).
+- Extended retention: Available for an additional fee.
+
+:::note[Standard and installable artifacts only]
+
+Custom retention periods only apply to standard artifacts and installable artifacts (not HTML reports or pipeline intermediate files). If you have multiple workspaces, you can apply your custom retention period across all of them, or request different retention periods for each one.
+
+:::

@@ -1,0 +1,73 @@
+---
+title: "Deploying apps to Huawei AppGallery"
+description: "You can deploy your Android apps to Huawei AppGallery via a verified Bitrise Step called Deploy to Huawei App Gallery. The Step can be used to deploy any APK file that you build on Bitrise."
+sidebar_position: 2
+slug: /bitrise-ci/deploying/android-deployment/deploying-apps-to-huawei-appgallery
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+You can deploy your Android apps to [Huawei AppGallery](https://appgallery.huawei.com/) via a verified Bitrise <GlossTerm baseform="Step">Step</GlossTerm> called **Deploy to Huawei App Gallery**. The Step can be used to deploy any APK file that you build on Bitrise.
+
+The Step will need:
+
+- The App ID of the app.
+- The Client ID of the API client.
+- The Key generated for the API client.
+
+To successfully deploy your <GlossTerm baseform="App">app</GlossTerm> to Huawei AppGallery, you need a Workflow that:
+
+- Builds and signs an APK or AAB file.
+- Includes the **Deploy to Huawei App Gallery** Step to deploy the app.
+
+To configure deploying with the **Deploy to Huawei App Gallery Step**:
+
+1. [Manually upload the first APK of the app to Huawei AppGallery using the website interface on AppGallery Connect.](https://developer.huawei.com/consumer/en/doc/distribution/app/agc-create_app)
+1. [Create a team-level API client on AppGallery Connect](https://developer.huawei.com/consumer/en/doc/distribution/app/appgallerykit-createapiclient).
+
+   ![huawei_api.png](/img/_paligo/uuid-e444bc09-0aed-9c9d-6ebb-8531a391fb75.png)
+1. Open the Workflow Editor on Bitrise.
+1. Go to the <GlossTerm baseform="Workflow">Workflow</GlossTerm> that you want to use for deploying the app.
+1. Add the **Deploy to Huawei App Gallery** Step after the Steps that build and sign your APK.
+
+   ![huawei_step.png](/img/_paligo/uuid-f1bdccd2-c501-e9ae-ace8-61c3c7e82a9b.png)
+1. Open the **Config** input group.
+1. Fill in the required inputs.
+
+   - **File path**: If you used a Step that automatically exports the `BITRISE_APK_PATH` Environment Variable after building your APK, leave this unchanged. The **Android Build** Step is such a Step, for example.
+   - **File name**: The unique name of the APK file. This name will be used when uploading to the AppGallery Connect.
+   - **App ID**: The identified can be found in the **App information** section on AppGallery Connect.
+   - **Client ID**: The API client ID generated on AppGallery Connect.
+   - **Key**: The key generated with the API client on AppGallery connect.
+
+Take a look at the following <GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm> file to see an example configuration that uses the **Deploy to Huawei AppGallery** Step to deploy an app.
+
+```
+workflows:
+  deploy:
+    steps:
+    - activate-ssh-key@4:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+    - git-clone@4: {}
+    - cache-pull@2: {}
+    - install-missing-android-tools@2:
+        inputs:
+        - gradlew_path: "$PROJECT_LOCATION/gradlew"
+    - gradle-runner@1.9:
+        inputs:
+        - gradle_file: "$GRADLE_BUILD_FILE_PATH"
+        - gradle_task: assembleRelease
+        - gradlew_path: "$GRADLEW_PATH"
+    - sign-apk@1.7: {}
+    - deploy-to-bitrise-io@1: {}
+    - cache-push@2: {}
+    - appgallery-deploy@0:
+        inputs:
+        - huawei_client_id: 'XXX'
+        - huawei_client_secret: "$CLIENT_SECRET"
+        - huawei_app_id: 'YYY'
+```
+
+Run a build! If all goes well, you should see your app on Huawei AppGallery.

@@ -1,0 +1,121 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Pipeline level properties
+
+### `pipelines:<pipeline-ID>:title`
+
+The title of the Pipeline.
+
+This is not the same as the ID of the Pipeline: you set the ID when creating the Pipeline. Unlike the ID, the title does not have to be unique. It appears on the Workflow Editor UI in the **Pipelines** section: if you open the Pipeline selector dropdown menu.
+
+**Example of `pipelines:<pipeline-ID>:title`**
+
+```yaml
+pipelines:
+  test:
+    title: Test pipeline
+```
+
+### `pipelines:<pipeline-ID>:summary`
+
+A short summary of the Pipeline. Optional.
+
+**Example of `pipelines:<pipeline-ID>:summary`**
+
+```yaml
+pipelines:
+  test:
+    summary: This Pipeline runs unit tests.
+```
+
+### `pipelines:<pipeline-ID>:description`
+
+A detailed description of the Pipeline. Optional.
+
+**Example of `pipelines:<pipeline-ID>:description`**
+
+```yaml
+pipelines:
+  test:
+    description: 'This Pipeline runs unit tests in parallel, using test sharding.'
+```
+
+### `pipelines:<pipeline-ID>:triggers`
+
+Target-based triggers defined for the Pipeline: if a code event matches the condition defined in a trigger, Bitrise will trigger a build with the Pipeline.
+
+For the detailed syntax of the `triggers` property and its available options, check out:
+
+Read more: [YAML syntax for build triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/yaml-syntax-for-build-triggers).
+
+**Example of `pipelines:<pipeline-ID>:triggers`**
+
+In this example, any commit pushed to the `main` branch triggers a build of the Pipeline.
+
+```yaml
+pipelines:
+  test:
+    triggers:
+      push:
+      - branch: main
+```
+
+### `pipelines:<pipeline-ID>:status_report_name`
+
+The name that will appear on the status report sent to connected services (like GitHub, GitLab, Bitbucket, and so on) after the build is finished.
+
+It can have both static and dynamic values, as well as combine the two types.
+
+**Supported characters and variables**:
+
+- `A-Za-z,.():/-_0-9 []|<>`
+- `<project_slug>`: The unique identifier of your project.
+- `<project_title>`: Optional title of your project.
+- `<target_id>`: The ID of the triggered Workflow or Pipeline.
+- `<event_type>`: The code event that triggered the build: `PR/push/tag`.
+
+**Example of `pipelines:<pipeline-ID>:status_report_name`**
+
+```yaml
+pipelines:
+  test:
+    status_report_name: ci/bitrise/510526/push
+```
+
+### `pipelines:<pipeline-ID>:workflows`
+
+The Workflows that are part of the Pipeline configuration.
+
+You can create dependencies between Workflows with the `depends_on` property.
+
+**Example of `pipelines:<pipeline-ID>:workflows`**
+
+```yaml
+pipelines:
+  test:
+    workflows:
+      primary:
+```
+
+### `pipelines:<pipeline-ID>:priority`
+
+The priority setting determines the position of the Pipeline build in the build queue: the higher the priority, the sooner the Pipeline build will run.
+
+**Supported values:**
+
+- An integer between -100 and 100.
+
+**Read more:**
+
+- [Pipeline priority](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#pipeline-priority)
+- [Build priority](/en/bitrise-ci/configure-builds/configuring-build-settings/build-priority)
+
+**Example of `pipelines:<pipeline-ID>:priority`**
+
+```yaml
+pipelines:
+  test:
+    priority: 10
+```

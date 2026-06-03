@@ -1,0 +1,40 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Pre-warming the disk after booting
+
+:::note[User data]
+
+To make sure instance behavior is consistent across all instances, we recommend configuring this as part of [user data](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-console) during [instance creation](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/launching-an-ec2-instance-for-the-bitrise-ami).
+
+User data is provided either in plain text or in base64 encoded format.
+
+:::
+
+You can improve Amazon EBS performance by pre-warming the disk right after booting it up. You only need to do it once.
+
+:::important[Recommended for virtualization]
+
+We highly recommend pre-warming the disk if you use our virtualized offering.
+
+:::
+
+Mac instance
+
+Linux instance
+
+- ```
+  export cnt=$(($(df -h | grep "/$" | awk '{print $4}' | grep -oE "[0-9]+")-2))
+  sudo dd if=/dev/random of=bigfile bs=1g count=$cnt
+  ```
+
+- ```
+  sudo dd if=/dev/xvdf of=/dev/null bs=1M
+  ```
+
+  :::note[dev/xvfd]
+
+  Be aware that `xvdf` might be different on your machine
+
+  :::

@@ -1,0 +1,45 @@
+---
+title: "Configuring the Build Cache for Xcode in non-Bitrise CI environments"
+description: "The Bitrise Build Cache does not require using the Bitrise CI. You can use other CI/CD services and still take advantage of the cache to improve your Xcode build times. To do so, you need to configure your CI environment to download the Bitrise Build Cache CLI during the build and then run the CLI to enable the Bitrise Build Cache."
+sidebar_position: 2
+slug: /bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-non-bitrise-ci-environments
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+The Bitrise Build Cache does not require using the Bitrise CI. You can use other CI/CD services and still take advantage of the cache to improve your Xcode build times.
+
+To do so, you need to configure your CI environment to download the Bitrise Build Cache CLI during the build and then run the CLI to enable the Bitrise Build Cache.
+
+1. Generate a Personal Access Token on Bitrise: [Creating a personal access token](/en/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token).
+
+   Copy the value of the token, as you will need it during the process.
+1. [Find your <GlossTerm baseform="Workspace">Workspace</GlossTerm> ID](/en/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs): open the **Workspace settings** page and select **General settings** on the left navigation menu. You can find and copy the slug from there.
+1. Set the following Environment Variables in your CI configuration:
+
+   - BITRISE_BUILD_CACHE_AUTH_TOKEN: The value should be your Personal Access Token.
+   - BITRISE_BUILD_CACHE_WORKSPACE_ID: The value should be the Bitrise Workspace slug.
+1. Add the following script to your CI configuration before the step you want to speed up:
+
+   :::important[Environment]
+
+   Make sure to run the script in the same environment as the Xcode command(s) you want to speed up.
+
+   If you already have a workflow set up for other build tools (for example, Gradle), you need to make sure to install the latest CLI version that supports Xcode, i.e. at least v1.0.0.
+
+   The Xcode Compilation Cache requires Xcode 26 or later version.
+
+   :::
+
+   ```
+   #!/usr/bin/env bash
+   set -euxo pipefail
+
+   # download Bitrise Build Cache CLI
+   curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+
+   # run the CLI to enable Bitrise build cache for Xcode
+   /tmp/bin/bitrise-build-cache activate xcode --cache --cache-push
+   ```

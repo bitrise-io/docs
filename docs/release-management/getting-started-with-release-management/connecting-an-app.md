@@ -1,0 +1,57 @@
+---
+title: "Connecting an app"
+description: "After successfully adding a new app to Release Management, you need to connect it to an existing app in the App Store or Google Play."
+sidebar_position: 3
+slug: /release-management/getting-started-with-release-management/connecting-an-app
+---
+
+After successfully adding a new app to Release Management, connect it to an app in either the App Store or Google Play to be able to create releases for the app.
+
+- For iOS, this means an app with a valid bundle ID on App Store Connect.
+- For Android, this means an app with a valid package name on Google Play.
+
+iOS
+
+Android
+
+1. Make sure your iOS app is registered on the App Store.
+
+   Later in the connecting process, you will have to enter the bundle ID of the app.
+1. Make sure you have a Bitrise CI project.
+
+   If you created your project when adding the app to Release Management, you can extend it with a CI configuration: [Adding a CI configuration to a project](/en/bitrise-ci/getting-started/adding-a-ci-configuration-to-a-project).
+1. Make sure you have at least one App Store Connect API key added to your workspace: [Connecting to an Apple service with API key](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key).
+1. Open your app in Release Management and select **Releases** in the left navigation.
+1. Click **Connect app**.
+
+   If you don't have a valid CI configuration, you will see **Add CI configuration** instead of the **Connect app** button.
+
+   ![release-man-connect-app.png](/img/_paligo/uuid-58be0b4a-94fa-0a4b-1bac-91d7f81078a1.png)
+1. Set an App Store Connect API key. You have two options in the dialog:
+
+   **Use the project's API key**: This means connecting to the App Store with the API key set on the project level. Changing the API key of the project changes the API key for the Release Management app, too.
+
+   **Set app-level API key**: You can select any of the API keys added to your workspace from the **API key** dropdown menu. With this option, it doesn't matter what API key is configured on the project level.
+1. Enter the bundle ID and click **Validate**.
+
+   The bundle ID must be an exact match of the bundle ID of an existing app on the App Store. If the validation is successful, the **Connect** button will be enabled.
+1. Click **Connect**.
+
+1. Make sure your Android app is registered on Google Play.
+1. Make sure you have at least one Google service account added to your workspace: [Connecting a Google service account to Bitrise](/en/bitrise-platform/integrations/connecting-a-google-service-account-to-bitrise).
+1. Make sure you have a Bitrise CI project.
+1. Open your app in Release Management and select **Releases** in the left navigation.
+1. Click **Connect app**.
+
+   ![release-man-connect-app.png](/img/_paligo/uuid-58be0b4a-94fa-0a4b-1bac-91d7f81078a1.png)
+1. Set a service account. You have two options in the dialog:
+
+   **Use the project's service account**: This means connecting to Google Play with the service account set on the project level. Changing the service account of the project changes the service account for the Release Management app, too.
+
+   **Set app-level service account**: You can select any of the service accounts added to your workspace from the **Service account** dropdown menu. With this option, it doesn't matter what API key is configured on the project level.
+1. Enter the Google Play app's package name in the field and click **Validate**.
+
+   - If the package name is found on Google Play, the **Connect** button will be enabled.
+
+   - If the validation doesn't find a match, check if you typed the package name correctly and make sure your Google Play service account is working.
+1. Click **Connect**.

@@ -1,0 +1,98 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Deploying a React Native app
+
+You can deploy your React Native app to:
+
+- bitrise.io: This allows you download the generated binary, and to share it with others via the public install page.
+- Online stores: we have integrations for multiple different online stores. In these guides, we'll show you how to publish to Google Play and to Apple's App Store.
+
+:::note[CodePush]
+
+You can deploy updates to your users' devices with Bitrise CodePush. CodePush is part of [Release Management](urn:resource:publication:90740) and it is supported for React Native and Expo apps.
+
+For more information about CodePush, check out the official guides: [CodePush](/en/release-management/codepush/about-codepush).
+
+:::
+
+### Deploying a cross-platform app to bitrise.io
+
+The **Deploy to bitrise.io** Step uploads all the artifacts related to your build into the [**Artifacts**]() tab on your Build’s page.
+
+You can share the generated binary file (APK for Android or an IPA file for iOS) with your team members using the public install page. The public install page is a URL you can share with others who can install the generated app binary on their device. You can also notify user groups or individual users that your APK or IPA file has been built.
+
+:::important[Publishing to expo.io]
+
+The **Deploy to Bitrise.io** Step does not use Expo commands and doesn’t publish to [expo.io](https://docs.expo.io/workflow/publishing/). This Step publishes artifacts to Bitrise and is not specific to a particular platform.
+
+If you need to publish to [expo.io](https://docs.expo.io/workflow/publishing/), set the **Run expo publish after eject?** input of the **Eject Expo** Step to `yes`. Be aware that in that case you have to provide your username and password for your Expo account to publish to [expo.io.](http://expo.io/)
+
+:::
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+1. Make sure you have the **Deploy to bitrise.io** Step in your Workflow.
+1. In the **Notify: User Roles**, add the role so that only those get notified who have been granted with this role. Or fill out the **Notify: Emails** field with email addresses of the users you want to notify.
+
+   Make sure you set those email addresses as [Secrets](/en/bitrise-ci/configure-builds/secrets)! These details can be also modified under **Notifications** if you click the **eye** icon next to your generated binary in the **Artifacts** tab.
+1. If you want the Step to generate a public install page for you, set the **Enable public page for the App?** input to `true`.
+
+### Deploying the app to App Store Connect
+
+Keep in mind that every time you want to push an app to App Store Connect, it must have a unique build and version number: [increment either or both](/en/bitrise-ci/run-and-analyze-builds/build-numbering-and-app-versioning) before deploying.
+
+1. Make sure you have a working [connection to your Apple Developer account](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+1. Generate an IPA file on your own machine at least once.
+1. [Upload all necessary code signing files](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects) to Bitrise.
+
+   To deploy an app to App Store Connect, you need a Distribution type certificate and an App Store type provisioning profile.
+1. Make sure the **Xcode Archive & Export for iOS** Step is in your Workflow.
+1. Set the **Automatic code signing** input to the Apple service connection you want to use for code signing. The available options are:
+
+   - `off` if you don’t use automatic code signing, or if you exclusively use Step inputs for Apple service authentication.
+   - `api-key` if you use [API key authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+   - `apple-id` if you use [Apple ID authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+1. Set the **Distribution method** input of the Step to `app-store`.
+
+   The Step will store the path of the exported .ipa file in the $BITRISE_IPA_PATH Environment Variable.
+1. Add the **Deploy to App Store Connect** Step to your Workflow.
+1. Fill the required inputs.
+
+   - Either the app’s Apple ID or its Bundle ID is a required input. One of the two must be provided.
+   - If you set the **Submit for Review** to `yes`, the Step will wait for your submission to be processed on App Store Connect and then submit the given version of the app for review.
+   - The default value of the **Skip App Version Update** input is `No`. Change it only if you incremented the app version number in another way.
+   - If you use an App Store Connect account that is linked to multiple teams, provide either a Team ID or a Team name!
+1. Start a build.
+
+If all goes well, your app will be submitted to App Store and you can distribute it via Testflight or via the App Store!
+
+### Deploying your Android project to Google Play
+
+You can use the **Deploy to Google Play** Step in your Workflow to upload your digitally signed AAB/APK to the Google Play Store.
+
+1. Add the **Cordova archive** or the **Ionic archive** Step to your Workflow.
+
+   Note that if you’re building for both iOS and Android in one project, and either of your apps fails, the whole **Cordova archive/Ionic archive** Step will fail.
+1. Fill in the required inputs.
+
+   - The **Platform** input needs to be set to **device**.
+   - The **Build command configuration** input must match the **Build configuration** input of the **Generate cordova build configuration** Step.
+
+   The archive Step must come after the **Generate cordova build configuration** Step in the Workflow.
+1. [Configure code signing](/en/bitrise-ci/getting-started/quick-start-guides/getting-started-with-react-native-projects#signing-your-android-project) for your app.
+1. [Configure Google Play access.](/en/bitrise-ci/deploying/android-deployment/generating-and-deploying-android-app-bundles#setting-up-google-play-deployment-for-the-first-time)
+
+   You only need to do this for your very first Google Play deployment of the app.
+1. In the **Flutter Build** Step, find the **Android Platform Configs** input group and make sure the **Additional parameters** input has the value `--release`.
+1. In the **Android output artifact type** input field, select either **APK** or **appbundle** depending on your deployment requirements.
+1. In the **Output (.apk, .aab) pattern** input, set the path where the **Deploy to Google Play** Step will be able to access the generated binary.
+
+   The path should be relative to the project source directory, stored in the BITRISE_SOURCE_DIR Environment Variable.
+1. Make sure you have the **Deploy to Google Play** Step after the **Android Sign****Cordova Archive** or **Ionic Archive** Step in your Workflow.
+1. Fill out the required input fields as follows:
+
+   - **Service Account JSON key file path**: This field can accept a remote URL so you have to provide the Env Var which contains your uploaded service account JSON key. For example: `$BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL`.
+   - **Package name**: The package name of your Android app.
+   - **Track**: The track where you want to deploy your APK (for example, alpha/beta/rollout/production or any custom track you set).

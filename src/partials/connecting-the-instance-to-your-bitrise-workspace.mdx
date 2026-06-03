@@ -1,0 +1,112 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Connecting the EC2 Mac or Linux instance to your Bitrise Workspace
+
+<Tabs>
+<TabItem value="mac-bare-metal-instance" label="Mac bare metal instance" default>
+
+1. Make sure that your instance can access the following endpoints:
+
+   - https://den.services.bitrise.io
+   - https://build-log.services.bitrise.io
+1. [Modify the User data of the instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-cloud-init): add the command to launch the Bitrise runner, using the Secret you created in the AWS Secrets Manager:
+
+   :::important
+
+   When modifying the user data scripts for an EC2 Mac instance, make sure that there is no empty space before the start of the script. The first line should always be `#!/bin/bash`. If there is empty space before this line, the instance won't work.
+
+   :::
+
+   ```bash
+   TOKEN=$(aws secretsmanager get-secret-value --secret-id MY_SECRET | jq -r '.SecretString | fromjson | .["MY_SECRET"]')
+
+   sudo sed -i '' "s/BITRISE_AGENT_TOKEN/$TOKEN/" /Users/ec2-user/Library/LaunchDaemons/io.bitrise.self-hosted-agent.plist
+   sudo launchctl load -w /Users/ec2-user/Library/LaunchDaemons/io.bitrise.self-hosted-agent.plist
+   ```
+1. You can also set shell scripts or other custom data in the **User data** section.
+
+   In the [Advanced options for EC2 Mac and Linux instances](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances) section, you can find recommendations for optimizing your instance with user data:
+
+   - [Instance passwords](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#connectivity-and-security-of-your-ec2-mac-and-linux-instance)
+   - [Pre-warming the disk after booting](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#pre-warming-the-disk-after-booting)
+   - [Increasing disk size on a Mac instance](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#increasing-disk-size-on-an-ec2-mac-instance)
+
+</TabItem>
+<TabItem value="mac-virtualized-instance" label="Mac virtualized instance">
+
+1. Make sure that your instance can access the following endpoints:
+
+   - https://den.services.bitrise.io
+   - https://build-log.services.bitrise.io
+1. [Modify the User data of the instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-cloud-init): add the command to launch the Bitrise runner, using the Secret you created in the AWS Secrets Manager. You also need to provide the number of concurrencies and the stack you wish to run.
+
+   :::important
+
+   When modifying the user data scripts for a macOS instance, make sure that there is no empty space before the start of the script. The first line should always be `#!/bin/bash`. If there is empty space before this line, the instance won't work.
+
+   :::
+
+   You can get the list of available stacks with the following command:
+
+   ```bash
+   /opt/virtualization-cli/bin/virtualization-cli list
+   ```
+
+   The allowed values for your concurrency preference are 1 or 2.
+
+   - With 1 CC, the runner will schedule 1 VM with 8 vCPU and 12 GB RAM.
+   - With 2 CC, the runner will schedule 2 VMs with 4 vCPU and 6 GB RAM each.
+
+   ```bash
+   TOKEN=$(aws secretsmanager get-secret-value --secret-id MY_SECRET | jq -r '.SecretString | fromjson | .["MY_SECRET"]')
+   sudo sed -i '' 's/BITRISE_AGENT_CC/<YOUR_CONCURRENCY_PREFERENCE>/' /Users/ec2-user/Library/LaunchDaemons/io.bitrise.self-hosted-agent.plist
+   sudo sed -i '' 's/BITRISE_AGENT_STACK/<YOUR_DESIRED_STACK>/' /Users/ec2-user/Library/LaunchDaemons/io.bitrise.self-hosted-agent.plist
+   sudo sed -i '' "s/BITRISE_AGENT_TOKEN/$TOKEN/" /Users/ec2-user/Library/LaunchDaemons/io.bitrise.self-hosted-agent.plist
+   sudo launchctl load -w /Users/ec2-user/Library/LaunchDaemons/io.bitrise.self-hosted-agent.plist
+   ```
+1. You can also set shell scripts or other custom data in the **User data** section.
+
+   In the [Advanced options for EC2 instances](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances) section, you can find recommendations for optimizing your instance with user data:
+
+   - [Instance passwords](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#connectivity-and-security-of-your-ec2-mac-and-linux-instance)
+   - [Pre-warming the disk after booting](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#pre-warming-the-disk-after-booting)
+   - [Increasing disk size on a Mac instance](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#increasing-disk-size-on-an-ec2-mac-instance)
+
+</TabItem>
+<TabItem value="linux-instance" label="Linux instance">
+
+1. Make sure that your instance can access the following endpoints:
+
+   - https://den.services.bitrise.io
+   - https://build-log.services.bitrise.io
+1. [Modify the User data of the instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-cloud-init): add the command to launch the Bitrise runner, using the Secret you created in the AWS Secrets Manager:
+
+   ```bash
+   TOKEN=$(aws secretsmanager get-secret-value --secret-id MY_SECRET | jq -r '.SecretString | fromjson | .["MY_SECRET"]')
+   /opt/bitrise/releases/bitrise-den-agent-configure.sh $TOKEN
+   ```
+
+   :::caution[Linux image version]
+
+   If your Linux image version is EARLIER than `v2025W10`, the required command is slightly different:
+
+   ```bash
+   TOKEN=$(aws secretsmanager get-secret-value --secret-id MY_SECRET | jq -r '.SecretString | fromjson | .["MY_SECRET"]')
+
+   sudo sed -i “s/BITRISE_AGENT_TOKEN/$TOKEN/” /etc/systemd/system/bitrise-den-agent.service
+   sudo systemctl start bitrise-den-agent.service
+   ```
+
+   :::
+1. You can also set shell scripts or other custom data in the **User data** section.
+
+   In the [Advanced options for EC2 instances](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances) section, you can find recommendations for optimizing your instance with user data:
+
+   - [Instance passwords](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#connectivity-and-security-of-your-ec2-mac-and-linux-instance)
+   - [Pre-warming the disk after booting](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#pre-warming-the-disk-after-booting)
+   - [Increasing disk size on a Mac instance](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#increasing-disk-size-on-an-ec2-mac-instance)
+
+</TabItem>
+</Tabs>

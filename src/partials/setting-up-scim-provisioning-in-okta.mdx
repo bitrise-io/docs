@@ -1,0 +1,62 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Setting up SCIM provisioning in Okta
+
+You can set up SCIM provisioning for Bitrise using Okta.
+
+:::important[Managing Workspace groups]
+
+While SCIM is a great way to manage the access of your users for Bitrise Workspaces, you will have to do some initial configuration for your groups in Bitrise after finishing setting up the SCIM provisioning. For more information about configuring your groups, check out [Adding Workspace groups to a project](/en/bitrise-platform/projects/managing-user-access-to-a-project#adding-workspace-groups-to-a-project).
+
+:::
+
+We will be jumping back and forth from the Bitrise Workspace account to Okta, so make sure both pages are available. In practice, this means the Workspace owner should be logged into Bitrise, and the Okta admin should be logged in to Okta.
+
+1. On Bitrise, [configure domain control and generate your SCIM credentials](/en/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-scim). You need to have:
+
+   - A verified domain.
+   - An SCIM base URL and an SCIM authentication token.
+
+   Make sure you save both of these because you will need them during the process later.
+1. Log into Okta and click **Admin**.
+1. From the left menu, select **Applications** under the **Applications** section.
+1. Select your Bitrise app.
+1. Click the **General** tab of your Bitrise app.
+1. Click **Edit** next to the **App Settings** section and select the **SCIM** option using the radio button next to **Provisioning**.
+
+   ![scim_setting.png](/img/_paligo/uuid-61cf9962-6cb6-6c24-74d4-132f9a1c066d.png)
+1. Click **Save**.
+
+   A new tab called **Provisioning** will appear.
+1. Head back to Okta, and select the **Provisioning** tab, then click on **Edit**.
+1. Paste the SCIM base URL you copied from Bitrise in the **SCIM connector base URL** field.
+1. Add **userName** in the **Unique identifier field for users** field.
+
+   ![scim_connection_2.png](/img/_paligo/uuid-96dabdf1-1006-5bdc-4457-92dfb91b8c70.png)
+1. Select which provisioning actions you would like to enable using the checkboxes next to **Supported provisioning actions**.
+
+   :::important[Push Groups are mandatory]
+
+   Please note that you must enable Push Groups. This is because on Bitrise, Workspace membership works via groups and Okta/SCIM can control our Workspace groups via Push Groups.
+
+   :::
+1. Select **HTTP Header** from the **Authorization Mode** dropdown menu.
+1. Copy and paste your SCIM authentication token in the **Authorization** field.
+1. Click **Test Connector Configuration** to test if everything is working correctly.
+
+   ![test_connector.png](/img/_paligo/uuid-0d2d2b23-f9a9-d57d-3b14-44f085bfcc5f.png)
+1. Close the **Test Connector Configuration** window and click **Save**.
+1. Click the **Provisioning** tab of your Bitrise app, then click on **Edit** next to the **Provisioning to App** section.
+
+   ![scim_provisioning.png](/img/_paligo/uuid-87a6ec99-9380-826b-9176-13034fefa22a.png)
+1. Select which provisioning options you would like to enable and click **Save**.
+
+   :::note[Sync password]
+
+   We recommend keeping the **Sync Password** setting disabled.
+
+   :::
+
+That's it! You can now use SCIM provisioning in Okta to manage the access of your users to Bitrise.

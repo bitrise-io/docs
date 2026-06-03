@@ -1,0 +1,70 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## AWS offering types
+
+There are two basic types of Bitrise on AWS AMIs:
+
+- **Bare metal**: Your builds run directly on an AWS machine. This means that the build environment is persistent, the same way it would be on your own computer. Artifacts or cache items from a build can have an effect on subsequent builds, unless you clean up the environment.
+- **Virtualized/VM-based:** Just like on Bitrise, every build runs in its own virtual machine that is destroyed once the build is finished. It is powered by Bitrise’s virtualization solution that has run millions of builds on the Bitrise-managed machines built on top of Apple’s virtualization framework. Our macOS offerings, including the virtualized solution, are only available on Apple silicon machines.
+
+:::important[Updating the AMIs]
+
+The Bitrise AMIs are constantly updated with the latest versions of the pre-installed tools. However, providing the latest Xcode and Android Studio versions in the form of AMIs are slower than on the Bitrise-managed machines, because of the AWS AMI review process. You can check out the currently available versions on the [AWS stack reports](https://stacks.bitrise.io/stack_reports/aws/).
+
+:::
+
+:::note[AWS pricing for Mac dedicated hosts]
+
+For macOS instances, a dedicated host must be allocated. On-Demand Amazon EC2 Mac Dedicated Hosts have a minimum host allocation and billing duration of 24 hours. For more details, check out the official AWS documentation: [Amazon EC2 Dedicated Hosts Pricing](https://aws.amazon.com/ec2/dedicated-hosts/pricing/#Pricing_for_Dedicated_Hosts).
+
+:::
+
+### Bare metal macOS
+
+[The bare metal macOS AMI](https://aws.amazon.com/marketplace/pp/prodview-gvebicfl7c37w) is only available on Apple silicon machines, on the following Amazon EC2 Mac instance types:
+
+- `mac-m4.metal`
+- `mac-m4pro.metal`
+- `mac2.metal`
+- `mac2-m2.metal`
+- `mac2-m2pro.metal`
+
+Android emulators are supported on all the instance types above.
+
+### Virtualized macOS
+
+[The virtualized macOS AMI](https://aws.amazon.com/marketplace/pp/prodview-aqc5tyfdeozky) is only available on Apple silicon machines, on the following Amazon EC2 Mac instance types:
+
+- `mac-m4.metal`
+- `mac-m4pro.metal`
+- `mac2.metal`
+- `mac2-m2.metal`
+- `mac2-m2pro.metal`
+
+Virtualization offers an ephemeral build environment: the virtual machine is destroyed at the end of every build. This means that all builds run in a completely clean environment, and previous builds have no effect on them.
+
+You have the option of running either one or two VMs per build. Depending on how resource intensive a build is, running two VMs can mean significant savings in hardware costs.
+
+:::caution[No Android emulation]
+
+Android emulation is not available as the Apple silicon architecture doesn't support nested virtualization.
+
+:::
+
+### Bare metal Linux
+
+[The bare metal Linux AMI](https://aws.amazon.com/marketplace/pp/prodview-7h5yynaygkhls) is available on the following Amazon EC2 Linux instance types:
+
+- `t2.2xlarge`
+- `t2.xlarge`
+- `c5n.metal`
+- `c5.xlarge`
+- `c5.metal`
+- `c5.4xlarge`
+- `c5.2xlarge`
+
+Different instance types suit different computing needs. To find out more about the functions and capabilities of the different instance types, check out [the official AWS documentation](https://aws.amazon.com/ec2/instance-types/).
+
+You can run Android emulators on the `metal` instance types only. The other instance types don't support the use of emulators.

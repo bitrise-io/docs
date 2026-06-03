@@ -1,0 +1,47 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Retrieving a specific build artifact's data
+
+:::note[Required role]
+
+You must have a tester/QA, developer, admin, or owner role on the app's team to retrive a specific build's artifact data using the API.
+
+For a complete list of user roles and role cheatsheets, check [Roles and permissions for Bitrise CI](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+
+:::
+
+You can retrieve detailed data of a specific build's artifacts with the artifacts endpoint. The response shows the filename, the artifact type, the download URL, and the file size.
+
+The required parameters are:
+
+- app slug
+- build slug
+- artifact slug
+
+**Retrieving the data of a specific artifact**
+
+Request:
+
+```
+curl -X GET "https://api.bitrise.io/v0.1/apps/87a5991e180d91a9/builds/b234f959745082e0/artifacts/92e0b6ecae87b832" -H "accept: application/json" -H "Authorization: THE-ACCESS-TOKEN"
+```
+
+Response:
+
+```
+{
+  "data": {
+    "title": "another_app-debug.apk",
+    "artifact_type": "android-apk",
+    "expiring_download_url": "https://bitrise-prod-build-storage.s3.amazonaws.com/builds/b234f959745082e0/artifacts/7626902/another_app-debug.apk?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAIV2YZWMVCNWNR2HA%2F20190426%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20190426T131627Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host&X-Amz-Signature=9f1af26787f34b5cf0cbc18b2372313607b1e3c0203a9ce7e42da884a6ddf70f",
+    "is_public_page_enabled": true,
+    "slug": "92e0b6ecae87b832",
+    "public_install_page_url": "https://www.bitrise.io/artifact/7626902/p/8e5b2c62abe28fecef09b271de767920",
+    "file_size_bytes": 1574799
+  }
+}
+```
+
+By default, the value of the `is_public_page_enabled` input is set to `true`. This way the `public_install_page_url` becomes available and you can view some basic information about the artifact via this URL. You can also download the artifact using the download URL from the response output.

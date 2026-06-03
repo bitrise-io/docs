@@ -1,0 +1,106 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Custom status reports
+
+You can create custom Git status reports: You can tailor the commit status message to your team's preferences and requirements. You can give your report a name that allows you to immediately identify it on the Git provider site. You can use dynamic variables in the status report's name, like the title of your project or the name of the Workflow.
+
+The default status report name is `ci/bitrise/<project_slug>/<event_type>`. For legacy GitHub Checks reports, the default name is `Bitrise`.
+
+You can set up custom reports on two levels:
+
+- Project level reports apply to all Workflows and Pipelines within a project. This provides a consistent format for the status of any build in the same project.
+- On the level of individual Workflows or Pipelines. These custom reports will take precedence over the general project-level status report. This is useful when you want to provide more specific information about a particular build stage or to differentiate between different types of builds.
+
+:::important[Character limit and accepted characters]
+
+Keep your status message concise. The limit is 100 characters, and BitBucket allows only 40 characters.
+
+The following characters are supported: `, . / ( ) : - _ (space) (a-z) (A-Z) (0-9) &lt; &gt; [ ] |`
+
+:::
+
+### Project level status reports
+
+To create a custom status report on a project level, add the `status_report_name` property under `app` in your configuration YAML file. It can have static values:
+
+```
+app:
+  status_report_name: 'Bitrise build'
+```
+
+Or you can use dynamic values:
+
+```
+app:
+  status_report_name: 'PR check for <project_title>'
+```
+
+You can also combine multiple dynamic values:
+
+```
+app:
+  status_report_name: 'Executing <target_id> for <project_title>'
+```
+
+We recommend using `target_id`: it's the name of the Workflow or Pipeline that the build uses. With this variable, Git commit statuses from different Workflows/Pipelines on the same commit don't override each other.
+
+Find the available variables here: [see topic](#dynamic-variables).
+
+### Workflow/Pipeline level status reports
+
+To create a custom status report on the Workflow level, add the `status_report_name` property under the name of the Workflow in the configuration YAML file:
+
+```
+workflows:
+  build-ios:
+    status_report_name: build-report
+```
+
+Similarly, to create one on the Pipeline level, add the property under the name of the Pipeline:
+
+```
+pipeline:
+  deploy-pipeline:
+    status_report_name: build-report
+```
+
+:::important[No additional report]
+
+If a Workflow in a Pipeline has the `status_report_name` property, it does NOT produce an additional, separate status report when the Workflow runs as part of a Pipeline. It only adds a custom name to the status report when the Workflow runs as a standalone build.
+
+:::
+
+You can also combine multiple dynamic values:
+
+```
+pipeline:
+  deploy-pipeline:
+    status_report_name: 'Executing <target_id> for <project_title>'
+```
+
+We recommend using `target_id`: it's the name of the Workflow or Pipeline that the build uses. With this variable, Git commit statuses from different Workflows/Pipelines on the same commit don't override each other.
+
+Find the available variables here: [see topic](#dynamic-variables).
+
+:::note[Branch protection rules]
+
+When switching from project-based status reports to Workflow level status reports, you might need to update [branch protection rules](/en/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#setting-up-build-status-reporting).
+
+:::
+
+You can also set Workflow-level status reports in the Workflow Editor: open the Workflow, and go to its **Properties** tab, then find the **Git status name** input.
+
+![workflow-level-status-report.png](/img/_paligo/uuid-5e4c921b-80ff-3392-c91f-22e7389ce5e3.png)
+
+### Dynamic variables
+
+You can use the following dynamic variables in your status reports:
+
+| Variable name | Description |
+| --- | --- |
+| `project_slug` | The unique alphanumeric identifier of the project on Bitrise which is part of the project’s URL. |
+| `project_title` | The human-readable title of the project. |
+| `target_id` | The name of the specific Workflow or Pipeline that was used for the build. |
+| `event_type` | Represents the type of event that triggered the status report. The possible values are:  - `pr`: pull request (GitHub, Bitbucket) - `mr`: merge request (GitLab) - `push`: code push (GitLab, GitHub, Bitbucket - `tag`: Git tag (GitLab, GitHub, Bitbucket) |

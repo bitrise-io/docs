@@ -1,0 +1,54 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Key-based caching templates and functions
+
+Both key-based caching Steps support using template elements in their Step inputs. The Steps evaluate the key template at runtime and the final cache key to be used can change depending on the build environment or on certain files in the repository.
+
+### Available caching templates
+
+| Template expression | Definition | Possible values |
+| --- | --- | --- |
+| `cache-key-{{ .Branch }}` | Current git branch the build runs on. | The exact name of any existing branch of the app. |
+| `cache-key-{{ .CommitHash }}` | SHA-256 hash of the git commit the build runs on. | Any existing commit hash. |
+| `cache-key-{{ .Workflow }}` | Current Bitrise workflow name (for example, `primary`). | The exact name of any existing Workflow of the app. |
+| `{{ .OS }}-cache-key` | Current operating system of the build stack (`linux` or `darwin`). | - `linux`: For Linux-based stacks. - `darwin`: For macOS-based stacks. |
+
+### Using functions in caching templates
+
+The key-based caching templates support the use of two different functions:
+
+- `checksum`: This function computes the SHA-256 checksum of the contents of one or more files. This is useful for creating unique cache keys based on files that describe content to cache. See the examples below.
+- `getenv`: This function returns the value of an [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables) (Env Var) or an empty string if the variable is not defined. See the examples below.
+
+**Using the checksum function**
+
+Use the `checksum` function to create a key that computes the checksum of the `package-lock.json` file:
+
+```
+- save-cache@1:
+    inputs:
+    - key: npm-cache-{{ checksum "package-lock.json" }}
+    - paths: node_modules
+```
+
+Use the `checksum` function to create a key that computes a checksum for any `.gradle` file and the `gradle.properties` file:
+
+```
+- save-cache@1:
+    inputs:
+    - key: gradle-cache-{{ checksum "**/*.gradle*" "gradle.properties" }}
+    - paths: AndroidApp
+```
+
+**Using the getenv function**
+
+Use the `getenv` function to create a key that contains the value of the BITRISE_BUILD_NUMBER Env Var.
+
+```
+- save-cache@1:
+    inputs:
+    - key: npm-cache-{{ getenv "BITRISE_BUILD_NUMBER" }}
+    - paths: node_modules
+```

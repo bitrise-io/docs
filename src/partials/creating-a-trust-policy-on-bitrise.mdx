@@ -1,0 +1,57 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Creating a trust policy on Bitrise
+
+Create an OIDC trust policy to grant external services access to Bitrise resources via an OIDC token exchange.
+
+1. Log in to Bitrise and hover over the left navigation bar.
+1. Make sure you have the right workspace selected in the **Workspace** menu.
+1. Select **Settings**.
+
+   ![workspace-settings.png](/img/_paligo/uuid-b9660c7d-79af-481d-c05a-17356619dd07.png)
+1. Select **Security** and then go to the **OIDC trust policies** tab.
+
+   ![2026-03-11-oicd-trust-policies.png](/img/_paligo/uuid-3424f770-b6c1-749a-b936-6d073bab7469.png)
+1. Click **New OIDC policy**.
+1. Fill out the policy details:
+
+   - **Policy name**: The policy identifier.
+   - **Issuer**: The HTTPS URLs for identity providers that Bitrise will trust.
+   - **Session duration**: How long the token will be valid.
+
+   ![2026-03-11-oicd-new-policy.png](/img/_paligo/uuid-fb66f7d5-2c56-4480-4a54-4d79a29c6c67.png)
+1. On the next page, set matching rules in a JSON format.
+
+   Matching rules define which claims Bitrise must see in the token to match the trust policy.
+
+   :::important
+
+   You must have at least one matching rule. The `sub` claim is mandatory: it identifies the subject that triggered the token exchange.
+
+   :::
+
+   For example, you can create matching rules for a specific branch of a repository and names a Workflow:
+
+   ```json
+   {
+     "sub": "repo:my-org/my-repo:environment:prod",
+     "workflow": "CI",
+     "ref": "refs/heads/main",
+     "repository": "my-account/my-repo"
+   }
+   ```
+1. On the next page, set up a workspace role for the short-lived token.
+
+   The workspace role determines the access level of the token. Read more: [Roles and permissions in workspaces](/en/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces).
+1. On the next page, configure product access. Grant full admin access to all products, or grant granular access to either Bitrise CI or Release Management or both:
+
+   - Select **Admin access** to grant admin access to all projects owned by the workspace.
+   - Select **Bitrise CI** and/or then select the projects or Release Management apps and access roles for the token. It can have different levels of access on different projects!
+
+     Read more: [Roles and permissions for Bitrise CI](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)
+   - Select **Release Management** then select the Release Management apps and access roles for the token. It can have different access levels on different Release Management apps.
+
+     Read more: [Release Management roles and permissions](/en/release-management/configuring-connected-apps/release-management-roles-and-permissions)
+1. When ready, click **Create policy**.

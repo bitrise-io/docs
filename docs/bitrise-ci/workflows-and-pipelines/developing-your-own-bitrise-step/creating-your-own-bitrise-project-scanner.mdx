@@ -1,0 +1,71 @@
+---
+title: "Creating your own Bitrise project scanner"
+description: "A Bitrise project scanner must have a scan result model. Every platform scanner writes its possible options, configurations, and warnings into this model. These will be translated into Step input values by choosing the desired values for the given options."
+sidebar_position: 4
+slug: /bitrise-ci/workflows-and-pipelines/developing-your-own-bitrise-step/creating-your-own-bitrise-project-scanner
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_Scanners from '@site/src/partials/scanners.mdx';
+import Partial_Options from '@site/src/partials/options.mdx';
+
+The project scanner is a tool that identifies the given project’s type and generates a basic Bitrise configuration. Each supported project type has its own scanner: these scanners are stored as separate packages.
+
+A project type scanner defines at least two <GlossTerm baseform="Workflow">Workflows</GlossTerm>: one for testing (`primary`) and one for building (`deploy`). [It includes the minimal amount of Steps to successfully run them]().
+
+:::important[Build and test Steps]
+
+Build Steps and test Steps have specific requirements:
+
+- A build <GlossTerm baseform="Step">Step</GlossTerm> must build your app so that it is ready for deployment and it must output an Environment Variable that points to the output file(s). For example, a build Step to build an iOS app must output an .ipa file (not, say, `.xcodearchive`) and the path to this .ipa file.
+- A test Step must output the test results so that they are available for viewing on the build page on bitrise.io.
+
+:::
+
+When adding a new project on the website or initializing a project on your own machine, the [bitrise-init](https://github.com/bitrise-core/bitrise-init) tool iterates through every scanner, calls the scanner interface methods on each of them and collects their outputs. Based on these outputs, a basic configuration is generated.
+
+The possible Workflows are described in a scan result model. The model consists of:
+
+- options
+- configs
+- warnings
+
+Here is the basic structure of the model, in YAML:
+
+```
+options:
+  DETECTED_PLATFORM_1: OptionModel
+  DETECTED_PLATFORM_2: OptionModel
+  ...
+
+configs:
+  DETECTED_PLATFORM_1:
+    CONFIG_NAME_1: ConfigModel
+    CONFIG_NAME_2: ConfigModel
+    ...
+  DETECTED_PLATFORM_2:
+    CONFIG_NAME_1: ConfigModel
+    CONFIG_NAME_2: ConfigModel
+    ...
+  ...
+
+warnings:
+  DETECTED_PLATFORM_1:
+  - "warning message 1"
+  - "warning message 2"
+  ...
+  DETECTED_PLATFORM_2:
+  - "warning message 1"
+  - "warning message 2"
+  ...
+```
+
+- Every platform scanner writes its possible options, configurations and warnings into this model. These will be translated into Step input values by choosing the desired values for the given options.
+- Every option chain’s last option selects a configuration.
+- Warnings display the issues with the given project setup.
+
+<Partial_Options />
+
+<Partial_Scanners />

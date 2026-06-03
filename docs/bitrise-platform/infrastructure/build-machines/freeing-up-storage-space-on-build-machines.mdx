@@ -1,0 +1,42 @@
+---
+title: "Freeing up storage space on build machines"
+description: "To free up additional disk space on Bitrise build machines, delete unneeded tools and resources by using a Script Step in your build."
+sidebar_position: 3
+slug: /bitrise-platform/infrastructure/build-machines/freeing-up-storage-space-on-build-machines
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditorAndSelectingAWorkflow from '@site/src/partials/opening-the-workflow-editor-and-selecting-a-workflow.mdx';
+
+If you need additional disk space on Bitrise build machines, you can always delete tools and resources that you do not use. You just need to use a **Script** <GlossTerm baseform="Step">Step</GlossTerm> at the start of your build.
+
+:::note[java.io.IOException: No space left on device]
+
+If you get the `java.io.IOException: No space left on device` error during a build, you can try to free up additional space with the below method - the error indicates there's no more space available on the build machine.
+
+:::
+
+1. Check your <GlossTerm baseform="Stack">stack's</GlossTerm> [System Report on GitHub](http://stacks.bitrise.io/).
+
+   The System Report includes the list of [pre-installed tools](/en/bitrise-platform/infrastructure/build-stacks/preinstalled-tools-on-bitrise-stacks) and their version on the stack.
+1. Find the tools you don't need in your build.
+1. <Partial_OpeningTheWorkflowEditorAndSelectingAWorkflow />
+1. Add a **Script** Step to the beginning of your Workflow.
+1. In the **Script content** input of the Step, add the necessary commands to uninstall the tools.
+
+**Uninstalling unneeded tools**
+
+If your app doesn't need Android SDK tools, you can remove them with the following commands in your **Script** Step:
+
+```
+sudo rm -rf /usr/local/share/android-sdk 
+sudo rm -rf /opt/android-ndk
+```
+
+You can delete iOS simulators that you don't use:
+
+```
+sudo rm -rf ~/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS\\ 10.3.simruntime/
+```

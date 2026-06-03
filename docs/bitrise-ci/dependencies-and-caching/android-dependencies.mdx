@@ -1,0 +1,57 @@
+---
+title: "Android dependencies"
+description: "If you have your Android dependencies defined in your build.gradle file, the dedicated Android Steps on Bitrise can handle installing and even caching them."
+sidebar_position: 3
+slug: /bitrise-ci/dependencies-and-caching/android-dependencies
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+The Gradle build system handles dependencies for Android <GlossTerm baseform="App">apps</GlossTerm>. If you have your dependencies defined in your `build.gradle` file, the dedicated Android <GlossTerm baseform="Step">Steps</GlossTerm> on Bitrise can handle installing and even caching them.
+
+## Installing dependencies for Android apps
+
+Building an Android app with Gradle dependencies is straighforward on Bitrise. When you first [add the app](/en/bitrise-ci/getting-started/adding-a-new-project), our <GlossTerm baseform="Project scanner">project scanner</GlossTerm> determines that it's an Android app by locating the `build.gradle` file. Our official Android Steps can handle installing dependencies during the build process, and can build different modules and variants easily.
+
+To make sure all your dependencies will be installed during the build:
+
+1. [Define dependencies](https://developer.android.com/build/dependencies) in your Android project.
+1. Use one of our Android Steps to build your app. The following Steps can install dependencies and build the app:
+
+   - **Android Build**
+   - **Android Build for UI Testing**
+   - **Gradle Runner**
+
+   Each of these Steps run a Gradle task the same way you would run it on your own device. They can build specific modules and install the relevant dependencies for those modules in the process.
+
+## Installing missing Android SDK components
+
+Our build machines come with all the most commonly used Android tools pre-installed. However, if you need additional components of the Android SDK installed, we have a dedicated Step that handles the job for you.
+
+This Step requires you to have [the Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html) in your project, as it looks for the ``gradlew` file. It runs the `gradlew dependencies --stacktrace` command to list and install the missing dependencies.
+
+To install missing Android SDK components in a Bitrise build:
+
+1. Define the Android SDK components you need in the top level `build.gradle` file of your project.
+1. Make sure you have a `gradlew` file in your project's repository.
+1. On Bitrise, add the **Install missing Android SDK components** Step to your <GlossTerm baseform="Workflow">Workflow</GlossTerm>. It should be before any Step that requires Android SDK components.
+1. In the **gradlew file path** input, set the path to your `gradlew` file, relative to the root of the repository.
+
+   ![install-sdk.png](/img/_paligo/uuid-3138c36f-fad8-3630-46b8-dfd9910807cc.png)
+1. If you use the Native Development Kit in your project, set the required version in the **NDK version** input.
+
+   If you don't use NDK, leave the input empty.
+1. In the **Additional options for the gradlew dependencies command** input, you can set flags in addition to the default command call.
+
+## Caching Gradle dependencies
+
+With key-based caching, you only need the **Restore Gradle cache** and the **Save Gradle cache** Steps to cache your Gradle dependencies. These Steps require no configuration as they automatically set up the cache keys needed for your dependencies.
+
+1. Add the **Restore Gradle cache** Step to your Workflow
+
+   ![restore-gradle.png](/img/_paligo/uuid-527aa0a4-a647-f9e9-7a56-ea38c1366f33.png)
+
+   It should come before any Step that handles dependencies in any way, such as **Android Build**.
+1. Add the **Save Gradle Cache** Step to the end of your Workflow.

@@ -1,0 +1,62 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Connectivity and security of your EC2 Mac and Linux instance
+
+Once your EC2 Mac or Linux instance is ready, make sure you can connect to the instance and that it can connect to the relevant Bitrise services. You can connect to the instance using SSH or in the case of EC2 Mac instances, VNC.
+
+You can also set a password for your instance.
+
+### Instance passwords
+
+:::note[User data]
+
+To make sure instance behavior is consistent across all instances, we recommend configuring this as part of [user data](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-console) during [instance creation](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/launching-an-ec2-instance-for-the-bitrise-ami).
+
+User data is provided either in plain text or in base64 encoded format.
+
+:::
+
+By default, the Bitrise AMI doesn't have user passwords. It is the subscriber's responsibility to set the desired password.
+
+For an EC2 Mac instance, you need to set a user password and the default `login.keychain` password:
+
+```
+sudo /usr/bin/dscl . -passwd /Users/ec2-user
+security set-keychain-password  -o "" -p "<new password>" ~/Library/Keychains/login.keychain-db
+```
+
+For a Linux instance:
+
+```
+sudo passwd
+```
+
+### Connecting to the instance
+
+To connect to your instance using SSH, we recommend using TCP port 22. To connect to the instance via SSH:
+
+macOS
+
+Linux
+
+- ```
+  ssh -i "&lt;your-ssh-key&gt;" ec2-user@&lt;your-mac2-instance&gt;
+  ```
+
+  You can also connect with VNC. We recommend using TCP port 5900. To connect:
+
+  ```
+  open vnc://ec2-user@&lt;aws-mac2-instance&gt;
+  ```
+
+- ```
+  ssh -i ~/.ssh/key   ubuntu@<your-aws-instance>
+  ```
+
+:::important[Security group configuration]
+
+Make sure to enable the use of both ports in your [security group configuration](https://docs.aws.amazon.com/cli/latest/userguide/cli-services-ec2-sg.html) of the instance!
+
+:::

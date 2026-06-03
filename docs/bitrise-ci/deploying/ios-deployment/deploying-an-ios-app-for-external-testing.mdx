@@ -1,0 +1,34 @@
+---
+title: "Deploying an iOS app for external testing"
+description: "Before deploying your app to the App Store, you might want to release it to external testers who can test it on their devices outside the development environment. If you do not want to use Testflight, then you can do this by exporting an IPA file with the app-store export method."
+sidebar_position: 2
+slug: /bitrise-ci/deploying/ios-deployment/deploying-an-ios-app-for-external-testing
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Before deploying your app to the App Store, you might want to release it to external testers who can test it on their devices outside the development environment. If you do not want to use Testflight, then you can do this by exporting an IPA file with the `ad-hoc` export method.
+
+:::important[Using Testflight]
+
+If you wish to invite external testers using Testflight, you CANNOT use the `ad-hoc` export method. You need an IPA with the `app-store` export method.
+
+:::
+
+1. Generate an IPA file on your own machine at least once.
+1. [Upload all necessary code signing files](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects) to Bitrise.
+
+   For the `ad-hoc` export method, you need a Distribution type certificate and an Ad Hoc type provisioning profile. Only upload a provisioning profile if you use manual provisioning: [Managing iOS code signing files - manual provisioning](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---manual-provisioning).
+1. Make sure the **Xcode Archive & Export for iOS** <GlossTerm baseform="Step">Step</GlossTerm> is in your <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
+1. Set the **Distribution method** input of the Step to `ad-hoc`.
+1. Set the**Automatic code signing method** input to the Apple service connection you want to use for code signing. The available options are:
+
+   - `off` if you don’t do automatic code signing.
+   - `api-key` [if you use API key authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+   - `apple-id` [if you use Apple ID authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+1. Make sure you have the **Deploy to Bitrise.io** Step in your Workflow.
+1. Start a build.
+1. When the build is finished, go to the app’s **Builds** page and click the latest build.
+1. Click the **Artifacts** tab to find your IPA file that you can distribute.

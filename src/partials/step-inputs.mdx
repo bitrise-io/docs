@@ -1,0 +1,45 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Step inputs
+
+Step inputs are Bitrise [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables): they consist of a key and value pair that users of the Step can set to control the Step behavior. For example, the **Git Clone** Step has an input with the key branch:
+
+```
+title: Git Clone Repository
+summary: Clone a repository to the specified path on the VM
+inputs:
+- branch: master
+```
+
+The value of this input - master in the above example - is used to determine which branch of the repository will be cloned.
+
+Step inputs are visible on the Workflow Editor: they are presented in the order as they appear in the `step.yml`. As such, required and frequently used inputs should be at the top.
+
+### Step input keys and values
+
+Use lower case [snake case](https://en.wikipedia.org/wiki/Snake_case) style input keys. For example, project_path.
+
+:::warning[Using `opts` as an input key]
+
+The input key can not be `opts`, as it is a reserved word used for the input’s options.
+
+:::
+
+There is no need to add domain-specific prefixes to the input keys, as inputs are only exposed for the Step run process. This means project_path input will not overlap with subsequent Steps’ project_path inputs.
+
+Step input values are strings: the Bitrise CLI exposes the Step inputs as Environment Variables to the Steps.
+
+Provide default values for Step inputs if possible (and if it makes sense). That makes the Step configuration easier for Bitrise users.
+
+Environment Variables must not be used as default values, unless:
+
+- They are exposed by the [Bitrise CLI or by bitrise.io]().
+- They are generated as an output by another Step (for example, $BITRISE_IPA_PATH, $BITRISE_AAB_PATH).
+
+This is because the Workflow Editor highlights required inputs without values to express the Step will not work without setting a valid value for the given input. If you set an Env Var, which does not have an automatically assigned value, as the default value for an input, the Workflow Editor will think the required input in question has a valid value set (even if the default Env Var has no value yet).
+
+Also, there is no reason to suggest a certain name for an Environment Variable this way: users might have the same value assigned to an Env Var with a different name.
+
+Let’s talk about how Step inputs are passed to code and how they are presented.

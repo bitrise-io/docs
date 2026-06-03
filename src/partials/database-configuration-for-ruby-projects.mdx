@@ -1,0 +1,11 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Database configuration for Ruby projects
+
+When adding a Ruby project, our project scanner detects database gems: `pg`, `mysql2`, `redis`, `mongoid/mongo`, and `sqlite3`. For each detected database gem, the scanner generates the appropriate service container: Postgres, MySQL, Redis, or MongoDB. Each container has the correct image, port mapping, and health checks so the container is fully ready before your tests try to connect.
+
+The scanner also parses your `config/database.yml` for relational databases and the `config/mongoid.yml` for MongoDB, to extract connection details. It resolves ERB expressions: if your `database.yml` contains something like `ENV.fetch("DB_HOST", "localhost")`, the scanner picks up both the environment variable name and its default value. These are then set as app-level environment variables in your Bitrise configuration, which means your test Workflow connects to the service containers without any manual environment setup.
+
+The scanner prefers the `test` environment section in your `database.yml`, falling back to default if a test block isn't present — which is exactly the lookup order Rails itself uses.

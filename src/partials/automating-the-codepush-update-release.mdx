@@ -1,0 +1,49 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Automating the CodePush update release
+
+After creating a Workflow to generate and upload your CodePush updates, you have two ways of running it:
+
+- [Run the Workflow manually](/en/bitrise-ci/run-and-analyze-builds/starting-builds/starting-builds-manually).
+- [Triggering a build automatically](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers) when a defined condition is met. For the available conditions, see [Supported trigger conditions](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers#supported-trigger-conditions).
+
+You can set up several different types of triggers to automate the process. Our example configuration uses a pull request trigger with a label:
+
+**Release a CodePush update when a pull request is opened to a specific branch**
+
+In this example, we're setting up a trigger where:
+
+- Bitrise looks for pull requests opened with `updates` as the target branch.
+- The `codepush_update_deploy` Workflow is triggered when a pull request to the branch receives the `release-update` label to the PR.
+
+1. [Create the trigger](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers#creating-build-triggers): set up a pull request trigger with two conditions, `target_branch` and `label`:
+
+   - Set `target_branch` to `updates`.
+   - Set `label` to `release-update`.
+
+   :::tip[GUI config]
+
+   You can set these up on the GUI of the Workflow Editor, too. Here we're showing you the YAML configuration.
+
+   :::
+
+   ```
+   format_version: "13"
+   default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+   project_type: react-native
+   workflows:
+     codepush_update_deploy:
+       status_report_name: 'Executing <target_id> for <project_title>'
+       description: |
+         Uploads Update Bundle to Bitrise CodePush Server
+       steps:
+       [...]
+       triggers:
+         pull_request:
+         - target_branch: updates
+           label: release-update
+   ```
+1. When you want to release CodePush updates, open a pull request to the `updates` branch.
+1. After the PR has been reviewed and approved, add the `release-update` label to it.

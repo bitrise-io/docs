@@ -1,0 +1,107 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Running an execution container
+
+You can run a Step or a Step bundle in an execution container. To do so, refer to [a defined container](/en/bitrise-platform/infrastructure/docker-containers-on-bitrise/execution-containers#defining-an-execution-container) in the Step or Step bundle configuration.
+
+You can:
+
+- Refer to the container in a Step or a Step bundle within a Workflow. When that Workflow runs, the Step or the Step bundle will run within that container.
+- [Refer to the container in the Step bundle definition](#running-an-execution-container). When that Step bundle is added to the Workflow, it will run within that container by default, unless you override it within the Workflow.
+
+This guide covers both options.
+
+:::note[Container nesting]
+
+You can define containers on different levels: Steps and Step bundles both support their own container configuration. This creates a hierarchy between different levels. For the principles governing the hierarchy, see [Container nesting rules](/en/bitrise-platform/infrastructure/docker-containers-on-bitrise/about-docker-containers-on-bitrise#container-nesting-rules).
+
+:::
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Open the Workflow Editor.
+1. Select a Step or a Step bundle in a Workflow.
+
+   Alternatively, you can select **Step Bundles** on the left navigation menu and set a container in the Step bundle definition. The subsequent steps in the procedure are the same.
+
+   :::important[Bundle definition override]
+
+   By default, if you set a container in the Step bundle definition the Step bundle will run in the referred container in any Workflow you add it to.
+
+   However, if you set a container in a Step bundle instance (the Step bundle within a Workflow), it overrides the container set in the Step bundle definition.
+
+   :::
+1. Select **Containers**.
+1. Under **Execution Container**, click **Add container** and select a container from the menu.
+1. If your container is already running but you want to run a clean instance of the container, check the **Recreate container** option.
+
+   By default, the Step or Step bundle will use an already running container if there is one.
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. Open your configuration YAML file and find your Workflow.
+1. Add the `execution_container` property with a container name to the Step or Step bundle you need. You can only refer to a single execution container.
+
+   Add an execution container to a Step within a Workflow format:
+
+   ```
+   workflows:
+     ci:
+       steps:
+       - git-clone: {}
+       - script:
+           execution_container: node-21
+   ```
+
+   Add an execution container to a Step bundle within a Workflow:
+
+   ```
+   workflows:
+     ci:
+       steps:
+       - git-clone: {}
+       - script: {}
+       - bundle::test-bundle-id:
+           execution_container: node-21
+   ```
+
+   Add the execution container to a Step bundle definition:
+
+   ```
+   step_bundles:
+     test-bundle-id:
+       steps:
+       - git-clone@8: {}
+       - restore-cache@2: {}
+       execution_container: test-container
+   ```
+
+   :::important[Bundle definition override]
+
+   By default, the Step bundle will run in the referred container in any Workflow you add it to. However, if you set a container for the Step bundle within a Workflow, it overrides the container set in the Step bundle definition.
+
+   :::
+1. If your container is already running but you want to run a clean instance of the container, set the `recreate` property to `true` .
+
+   By default, the Step or Step bundle will use an already running container if there is one. Use the property to change the default behavior.
+
+   ```
+   workflows:
+     ci:
+       steps:
+       - git-clone: {}
+       - script:
+           execution_container:
+           node:21
+       - bundle::test-bundle-id:
+           execution_container:
+             node-21:
+               recreate: true
+   ```
+
+</TabItem>
+</Tabs>

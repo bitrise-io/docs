@@ -1,0 +1,76 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Configuring the GitLab connection
+
+To access privately hosted GitLab repositories on Bitrise, you need to create a new OAuth application on your GitLab account, and assign the appropriate credentials to access your server.
+
+:::warning
+
+When you create a new Bitrise project, you must pick the dedicated **GitLab Self-hosted** option in the provider picker. If you paste your repository URL into the **Other** field instead, Bitrise will save the project as a generic Custom-provider repository, and the following features will be silently unavailable:
+
+- The [Service Credential User](/en/bitrise-platform/integrations/the-service-credential-user) UI in App Settings.
+- The [Store bitrise.yml in repository](/en/bitrise-ci/configure-builds/configuration-yaml/managing-a-project-s-configuration-yaml-file#storing-the-bitriseyml-file-in-your-repository) option.
+- Build status reporting back to GitLab merge requests.
+
+This cannot be fixed by editing the repository URL afterwards. If you have already created the project this way, contact support to have the provider type corrected.
+
+:::
+
+:::warning[Publicly resolvable IP address]
+
+Your self-hosted instance must have a publicly resolvable IP address, otherwise Bitrise won’t be able to connect to it.
+
+:::
+
+The connection requires two URLs: a Bitrise OAuth callback URL and a **GitLab instance** URL:
+
+| URL | Where it goes | Example |
+| --- | --- | --- |
+| Bitrise's OAuth callback URL | In GitLab, in the OAuth application's **Callback URL** field | `https://app.bitrise.io/users/auth/gitlab/callback` |
+| Your GitLab instance URL | In Bitrise, in the Workspace Integrations **Self-hosted URL** field | `https://gitlab.example.com` |
+
+1. Allowlist the Bitrise backend workers for your GitLab instance: [Configuring your network to access our build machines](/en/bitrise-platform/infrastructure/build-machines/configuring-your-network-to-access-our-build-machines).
+
+   Be aware that the Bitrise backend workers that power, among other things, app.bitrise.io and the Bitrise build machines have a different IP address range. Allowlisting the build machines is not sufficient for this feature.
+
+   If allowlisting the backend workers is not an option for you, [reach out to Bitrise](https://www.bitrise.io/contact) so we can discuss other options.
+1. Log in to your GitLab instance with **root** privileges. If you connect to Bitrise **without root privileges**, your Workspace’s other team members will **not have access to the repository on the GitLab instance**.
+1. Go to the admin area by clicking the little wrench icon on the top menu bar.
+1. On the left menu bar, select **Applications**, then click **New Application**.
+
+   ![New_Application.png](/img/_paligo/uuid-c139a2c3-3f9a-980e-41f0-a85bc3ea6bbb.png)
+1. In the **Name** field, enter a name that clearly identifies the application. For the sake of simplicity, we recommend `Bitrise`.
+1. In the **Callback URL** field, enter `https://app.bitrise.io/users/auth/gitlab/callback`.
+
+   This is Bitrise's URL. GitLab will redirect users here after they authenticate.
+1. In the **Scopes** menu, check **api**.
+
+   ![New_Application_settings.png](/img/_paligo/uuid-9e8a91b7-c03a-f513-62a7-0e91426f1676.png)
+1. Set the **Confidential** option to **No**.
+
+   If the newly created app is configured to be confidential, Bitrise won't be able to access it!
+1. Click **Submit**. On the next page, you should find the **Application Id** and a **Secret**. You’ll need both to connect to your GitLab instance on [bitrise.io](https://www.bitrise.io).
+
+   ![Connecting_self-hosted_GitLab_instances.png](/img/_paligo/uuid-94e2570d-ce4b-720a-db91-52b46de0a96a.png)
+1. Log in to Bitrise and select your workspace.
+1. On the left, select **Integrations**.
+1. Find the **Self-hosted GitLab self-managed** section.
+
+   ![self-hosted-gitlab.png](/img/_paligo/uuid-ee43070a-a23d-02a4-3860-9899749044e2.png)
+1. Click **Add credentials** and add your self-hosted GitLab credentials:
+
+   - **App ID**
+   - **Secret**
+   - **Self-hosted URL**
+
+     The Self-hosted URL is your GitLab instance's URL (for example, https://gitlab.example.com). It is not the same as the Bitrise callback URL that you pasted in the GitLab instance configuration!
+
+   :::note
+
+   Optionally, you can add custom HTTP headers: [Connecting through a proxy](/en/bitrise-platform/repository-access/connecting-self-hosted-gitlab-instances#connecting-through-a-proxy).
+
+   :::
+
+You are done! Now you are able to access your privately hosted repositories with Bitrise.

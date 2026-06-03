@@ -1,0 +1,86 @@
+---
+title: "Customizing your configuration YAML"
+description: "Any tool that can edit `bitrise.yml` can add custom properties to it. This way you can add special properties or notes to your env vars, or even try new configurations of your Workflow in `bitrise.yml`. All you have to add is add a `meta` field and a namespace label with key and value to the right place."
+sidebar_position: 6
+slug: /bitrise-ci/configure-builds/configuration-yaml/customizing-your-configuration-yaml
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+:::note[Full reference]
+
+This is a basic reference for the most important aspects of CI/CD configuration in YAML. For the full reference, see [Configuration YAML reference](/en/bitrise-ci/references/configuration-yaml-reference).
+
+:::
+
+Any tool that can edit a configuration YAML file can add custom properties to it. This way you can add special properties or notes to your [Env Vars](/en/bitrise-ci/configure-builds/environment-variables), or even try new configurations of your <GlossTerm baseform="Workflow">Workflow</GlossTerm>. All you have to add is add a `meta` field and a namespace label with key and value to the right place.
+
+Use the following format to add custom values to your configuration:
+
+```
+KEY: "VALUE",
+opts: {
+  title: "My env var"
+  description: "Description of my env var."
+  summary: "Summary of env var."
+  ...
+  meta: {
+    custom_namespace_id_1: {
+      key1: "value1",
+      key2: "value2",
+      ...
+    }
+    custom_namespace_id_2: {
+      ...
+    }
+}
+```
+
+**Using your own version of the Workflow Editor**
+
+You can fork our <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm> and use your own version of it. Then you can use `meta`: for example, let's say you want to keep an eye on one of the Environment Variables (Env Var), you want to know when it was last modified and by who.
+
+```
+app:
+   envs:
+   - ASXaS: "`ZX`ZX"
+     opts:
+       is_expand: false
+       meta:
+         audit: # used by the Audited Workflow Editor imaginary tool: that works like the WFE but it also saves the modifier and modification date, and displays it
+           last_modified_at: 2018.09.12.
+           last_modifier: Jane Doe
+```
+
+**Adding background color to an Environment Variable**
+
+You can use `meta` to add background color to an env var in your own tool:
+
+```
+meta: {
+   my_fancy_new_workflow_editor: {
+     env_var_background_color: "red"
+   }
+ }
+```
+
+When you change the stack configuration on the Workflow Editor UI, you modify `meta`under the hood. In this example, the `deploy` Workflow is configured to run on Xcode 16.1.
+
+```
+workflows:
+  deploy:
+    steps:
+    - activate-ssh-key@4:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+    - git-clone@4: {}
+    - script@1:
+        title: Do anything with Script step
+    - deploy-to-bitrise-io@1: {}
+    meta:
+      bitrise.io:
+        stack: osx-xcode-16.1.x
+```
+
+Since this meta is only interpreted on [bitrise.io](https://www.bitrise.io/) and not locally or on the Bitrise CLI, it is categorized by a `bitrise.io` namespace (where the stack is the key and `osx-xcode-12.1.x` is the value). The Workflow Editor always validates the saved variable and throws an error if there is a syntax error, but with `meta` added, its content is fully ignored by the Workflow Editor validation process.

@@ -1,0 +1,31 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Bundling and pushing your updates
+
+To update your app via CodePush, you need to create an update bundle and then push it to the Codepush server. The CodePush CLI plugin has two commands for this purpose:
+
+- `codepush bundle`: Generates JavaScript bundles for React Native and Expo projects. It auto-detects the project type, entry file, Hermes configuration, and Metro config.
+- `codepush push`: Pushes the pre-built bundle to devices. You need to specify the app version and the deployment name or ID.
+
+Bundle your app for each platform separately:
+
+```
+codepush bundle --platform ios
+codepush bundle --platform android
+```
+
+Push a pre-built bundle. Replace the APP_UUID with your app's UUID which you can get from the app URL in Release Management:
+
+```
+codepush push ./codepush-bundle \
+  --app-id <APP_UUID> --deployment Staging --app-version 1.0.0
+```
+
+You can also bundle and push the app in one step:
+
+```
+codepush push --bundle --platform ios \
+  --app-id <APP_UUID> --deployment Staging --app-version 1.0.0
+```

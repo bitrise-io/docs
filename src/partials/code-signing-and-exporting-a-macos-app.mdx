@@ -1,0 +1,34 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Code signing and exporting a macOS app
+
+To install and test the app on other physical devices, you will need to create and export an .app or .pkg file. This requires setting up code signing. In the example, we’ll be exporting an app with the **development** export method: you cannot upload such an app to Testflight but you can test it, for example, on the devices of your internal testers.
+
+:::note[Automatic Provisioining]
+
+The example procedure described here uses manual provisioning, with the **Certificate and profile installer** Step. However, Bitrise also supports [automatic provisioning](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning) but it is not in the scope of this guide.
+
+:::
+
+You will need:
+
+- the automatically created `deploy` workflow.
+- a **Development** certificate (a .p12 certificate file).
+- a **Development** type Provisioning Profile. For a macOS project, the file extension of the provisioning profile is `.provisionprofile`.
+
+1. Set the code signing type of your project in Xcode to either manual or automatic (Xcode managed), and generate the package file locally.
+1. Collect and upload the code signing files.
+
+   The tool can also upload your code signing files to Bitrise - we recommend doing so! Otherwise, upload them manually: enter the Workflow Editor and select the **Code signing** tab, then upload the files in their respective fields.
+1. Go to your app’s Workflow Editor, and select the **deploy** workflow in the **WORKFLOW** dropdown menu in the top left corner.
+1. Check that you have the **Certificate and profile installer** Step in your Workflow. It must be before the **Xcode Archive for Mac** Step (you can have other Steps between the two, like **Xcode Test for Mac**).
+1. Check the **Export method** input under the **app/pkg export configs** input group of the **Xcode Archive for Mac** Step.
+
+   If you selected **development** when you added the app to Bitrise, you don’t need to change the input. Otherwise, manually set it to **development**.
+
+   ![macOS_export_method.png](/img/_paligo/uuid-0edf6398-0b97-f558-978e-f7d8bae394e0.png)
+1. Start a build.
+
+If you uploaded the correct code signing files, the **Certificate and profile installer** Step should install your code signing files and the **Xcode Archive for Mac** Step should export an .app or .pkg file with the development export method. If you have the **Deploy to Bitrise.io** Step in your workflow, you can find the binary package file on the **Artifacts** tab of the build page.

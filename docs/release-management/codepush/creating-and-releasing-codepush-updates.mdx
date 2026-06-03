@@ -1,0 +1,170 @@
+---
+title: "Creating and releasing CodePush updates"
+description: "Create an update bundle and upload it to the Bitrise CodePush Server to push updates to your users' devices."
+sidebar_position: 4
+slug: /release-management/codepush/creating-and-releasing-codepush-updates
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_TargetVersions from '@site/src/partials/target-versions.mdx';
+import Partial_GettingYourCodePushCredentials from '@site/src/partials/getting-your-codepush-credentials.mdx';
+
+Create an update bundle and upload it to the Bitrise CodePush Server to push updates to your users' devices.
+
+:::important
+
+This guide describes the general process of releasing your CodePush updates. We recommend using Bitrise CI to automate the process: [CodePush updates with Bitrise CI](/en/release-management/codepush/codepush-updates-with-bitrise-ci).
+
+:::
+
+<Partial_GettingYourCodePushCredentials />
+
+## Creating an update bundle
+
+<Tabs>
+<TabItem value="react-native" label="React Native" default>
+
+1. Make the updates to your code.
+1. Create an update bundle for both iOS and Android:
+
+   - iOS:
+
+     ```bash
+     npx react-native bundle \
+       --platform ios \
+       --dev false \
+       --entry-file index.js \
+       --bundle-output ./build/main.jsbundle \
+       --assets-dest ./build
+     ```
+   - Android:
+
+     ```bash
+     npx react-native bundle \
+       --platform android \
+       --dev false \
+       --entry-file index.js \
+       --bundle-output ./build/index.android.bundle \
+       --assets-dest ./build
+     ```
+1. Zip the build folder:
+
+   ```
+   zip -r update.zip ./build
+   ```
+
+</TabItem>
+<TabItem value="expo" label="Expo">
+
+1. Make the updates to your code.
+1. Create an update bundle for both iOS and Android:
+
+   - iOS:
+
+     ```bash
+     npx expo export:embed \
+       --entry-file index.js \
+       --platform ios \
+       --dev false \
+       --reset-cache \
+       --bundle-output ./build/main.jsbundle \
+       --assets-dest ./build \
+       --minify false
+     ```
+   - Android:
+
+     ```bash
+     npx expo export:embed \
+       --entry-file index.js \
+       --platform android \
+       --dev false \
+       --reset-cache \
+       --bundle-output ./build/index.android.bundle \
+       --assets-dest ./build \
+       --minify false
+     ```
+1. Zip the build folder:
+
+   ```
+   zip -r update.zip ./build
+   ```
+
+</TabItem>
+</Tabs>
+
+## Uploading the package to the Bitrise CodePush Server
+
+You can upload the package either via the Release Management GUI or the Release Management API.
+
+<Tabs>
+<TabItem value="gui" label="GUI" default>
+
+1. Open your app in Release Management.
+1. Select **CodePush** on the left.
+1. Select your deployment.
+
+   ![20251217-rm-deployments.png](/img/_paligo/uuid-87908768-bac5-5e86-6412-826381a0b8a4.png)
+1. Click **New update**.
+1. In the **Target versions** field, add the version range of the update.
+
+   You can use range expressions: [see topic](#target-versions).
+1. Optionally, add an update description.
+1. Check **Enabled** to make sure users can download the update.
+
+   ![20251217-new-codepush-update-dialog.png](/img/_paligo/uuid-8e971849-b560-9393-f308-ed2587195b2c.png)
+1. Optionally, check **Mandatory** to prompt users to update immediately.
+1. Drag and drop the update file to the drag-and-drop area or click the area and select a file.
+
+   :::important[File requirements]
+
+   - Upload a `.bundle`, `.jsbundle`, or `.zip` file.
+   - The maximum file size is 50 MB.
+
+   :::
+1. Set the percentage of users that will receive the update in the **Rollout percentage** field.
+
+   You can increase the percentage value later. The default value is 100%.
+1. Click **Release update**.
+
+</TabItem>
+<TabItem value="api" label="API">
+
+1. Make sure your CodePush credentials are available: [see topic](#getting-your-codepush-credentials).
+1. Clone the `release-management-recipes` repository from Bitrise.
+
+   The repository contains a helper script that we will use to upload the update package.
+
+   ```
+   git clone https://github.com/bitrise-io/release-management-recipes
+   ```
+1. Go in to the `release-management-recipes` folder:
+
+   ```
+   cd release-management-recipes
+   ```
+1. Run the script to upload.
+
+   The script requires the following input data:
+
+   - The path of the `update.zip` file.
+   - Your Bitrise API token: this can be either a [personal access token](/en/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token) or a [workspace API token](/en/bitrise-platform/workspaces/workspace-api-token).
+   - The app ID of your Release Management app.
+   - A deployment ID.
+   - The version of your app. For more information, see [Target versions](/en/release-management/codepush/creating-and-releasing-codepush-updates#target-versions).
+
+   The final command should look something like this:
+
+   ```
+   PACKAGE_PATH=../update.zip \
+   AUTHORIZATION_TOKEN=<api-token> \
+   CONNECTED_APP_ID=<connected-app-id> \
+   DEPLOYMENT_ID=<deployment-id> \
+   APP_VERSION=<app-version>  /bin/bash ./api/upload_code_push_package.sh
+   ```
+
+</TabItem>
+</Tabs>
+
+<Partial_TargetVersions />

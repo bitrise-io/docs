@@ -1,0 +1,37 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Step outputs
+
+Steps can generate outputs which can then be used in other Steps as inputs. That means that if a Step generates an artifact, the path to that artifact can be the input of another Step in the build. For example, the **Xcode Archive & Export for iOS** Step exposes the $BITRISE_API_PATH output which can then be used as an input value for the **Deploy to iTunesConnect** Step.
+
+Outputs are also defined in the `step.yml` file, under the outputs property. They have the same structure as inputs: they consist of a key and value pair. An output’s key can be used as an input value in a subsequent Step, just as Environment Variables exposed by [bitrise.io](http://bitrise.io) or the Bitrise CLI can be.
+
+### Step output keys and values
+
+For output keys, use upper case [snake case](https://en.wikipedia.org/wiki/Snake_case) style output keys, for example: OUTPUT_PATH.
+
+### Naming and describing Step outputs
+
+Step outputs are always exported as Environment Variables (Env Var). For example, the **Xcode Archive & Export for iOS Step** generates an IPA file: this output is exported as the BITRISE_IPA_PATH Env Var:
+
+```
+outputs:
+- BITRISE_IPA_PATH:  
+  opts:    
+    title: .ipa file path   
+    summary: Local path of the created .ipa file
+```
+
+As the example shows, the output definition contains a key (BITRISE_IPA_PATH) and under the `opts` property, it also includes a title and a summary. In the Workflow Editor, the key and the title are visible by default: these are required. In addition, you can add a summary and a description:
+
+- `title`: It should be a short and descriptive sentence or half sentence: Generated IPA path. This is required.
+- `summary`: It is the short version of the description, which provides a quick overview of the output. This is optional, and only visible in the Workflow Editor if you click on the title.
+- `description`: It is the user facing description of the Step output: this should provide a deeper, more detailed explanation of the output. This is optional, and only visible in the Workflow Editor if you click on the title.
+
+### Outputs with list of values
+
+It is absolutely possible to provide a list of values for a given output. If you wish to do so, we strongly recommend adding a LIST suffix to the key of the output (for example, `BITRISE_APK_PATH_LIST`), and expect the values to be provided as a newline character (\n) separated list (for example, first value\nsecond value).
+
+Please use this solution unless you really need to use another character for separating values. Based on our experience, the newline character (\n) works really well as a universal separator character, as it’s quite rare in input values (compared to ,, ;, = or other more common separator characters).

@@ -1,0 +1,49 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Modifying and deleting outgoing webhooks with the API
+
+To modify an existing webhook, you need to specify all the mandatory parameters in your request. In other words, even if you only want to change the URL, the request still has to contain a valid value for the `events` parameter.
+
+:::note[Required role]
+
+You must have an admin or owner role on the app's team to manage incoming or outgoing webhooks using the API.
+
+For a complete list of user roles and role cheatsheets, check [Roles and permissions for Bitrise CI](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+
+:::
+
+**Modifying an outgoing webhook**
+
+Request:
+
+```
+curl -X PUT "https://api.bitrise.io/v0.1/apps/APP-SLUG/outgoing-webhooks/WEBHOOK-SLUG" -H "accept: application/json" -H "Authorization: ACCESS-TOKEN" -H "Content-Type: application/json" -d" { \"events\": [ \"all\" ], \"headers\": { \"Modified\": \"1212\" }, \"url\": \"example2.webhook.com\"}"
+```
+
+Response:
+
+```
+{
+  "data": {
+    "slug": "WEBHOOK-SLUG",
+    "url": "example2.webhook.com",
+    "events": [
+      "all"
+    ],
+    "headers": {
+      "Modified": "1212"
+    },
+    "registered_by_addon": false,
+    "created_at": "2019-03-28T14:20:22.436825Z",
+    "updated_at": "2019-03-28T14:20:22.436825Z"
+  }
+}
+```
+
+To delete an outgoing webhook, all you need to do is provide the app slug and the webhook slug in your request:
+
+```
+curl -X DELETE "https://api.bitrise.io/v0.1/apps/APP-SLUG/outgoing-webhooks/WEBHOOK-SLUG" -H "accept: application/json" -H "Authorization: ACCESS-TOKEN"
+```

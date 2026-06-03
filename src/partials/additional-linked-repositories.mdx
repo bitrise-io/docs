@@ -1,0 +1,91 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Additional linked repositories via a GitHub App
+
+:::tip[Using the API]
+
+This section describes how to configure the feature on the Bitrise website. You can also configure it via the Bitrise API: [GitHub app configuration API](/en/bitrise-ci/api/github-app-configuration-api).
+
+:::
+
+Each Bitrise project has a primary Git repository. This is where your project's code is stored and this repository is cloned when we start a build. By default, a Bitrise project can't access other repositories.
+
+However, your project might require other repositories. For example, it might have private submodules that it must access during a build. If you use the GitHub App, you can do this via linking additional repositories. The feature is available on both GitHub Cloud and GitHub Enterprise Server.
+
+:::note[Other connection methods]
+
+If you are not using the Bitrise GitHub App, you can still configure access to additional repositories: [Apps with submodules or private repo dependencies](/en/bitrise-platform/repository-access/apps-with-submodules-or-private-repo-dependencies).
+
+:::
+
+A linked repository is a repository that a Bitrise project can access using a GitHub App installation but it's not the project's primary repository.
+
+When running a build of a project connected via a GitHub App installation, Bitrise generates a temporary token that, by default, can only access the primary repository. Once an additional repository is linked, the tokens generated for the build can access the additional repository.
+
+To be able to link a repository, all of the following conditions must be met:
+
+- The GitHub App is installed to the account or organization that owns the repository on GitHub.
+- The app installation is enabled for the repository.
+- The user attempting to link the repository can access the repository on GitHub. If your GitHub user account doesn't have access to a repository, you can't link it on Bitrise.
+
+  :::note[GitHub Enterprise Server]
+
+  If you use a GitHub App to connect to a [GitHub Enterprise Server](/en/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise) instance, the app doesn't check user access. You can link any repository that your GitHub App has access to.
+
+  :::
+
+### Linking additional repositories
+
+To link additional repositories to a project with an established GitHub App connection:
+
+1. Open your project on Bitrise with a user that has the **Admin** [role on the project](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+1. On the main page of the project, click on the **Project settings** button.
+
+   ![project-settings-button.png](/img/_paligo/uuid-14defaa4-472c-2d09-84df-145dc3aef4f5.png)
+1. On the left, select **Repository**.
+1. Under **Authorization**, find the **Additional repositories** card and click **Change**.
+1. In the **Enable additional repositories** dialog, select the repositories you want to link.
+
+   ![SCR-20260331-pmhi.png](/img/_paligo/uuid-324a0ec5-3e09-e10f-9e9e-7ae1359ffdc2.png)
+
+   You can link a maximum of 50 additional repositories.
+
+   You will see a list of repositories. To see a repository on the list:
+
+   - On GitHub Cloud, your GitHub user needs to have access to it. If you use [GitHub Enterprise Server](/en/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise), user permissions are not checked.
+   - The GitHub App installation has access to it.
+
+   :::important[Disabling repositories]
+
+   If you already have repositories linked, please note that users who otherwise don't have access to those repositories can disable them but cannot add them back!
+
+   :::
+1. When done, click **Save changes**.
+
+### Linking all repositories automatically
+
+GitHub organization owners can switch the **Grant access to all current and future repositories** toggle so that Bitrise builds can have access to every GitHub repository your GitHub App is allowed to access, including any new repositories added in future.
+
+To successfully use this functionality:
+
+- For security reasons, you have to be logged in as a Bitrise user who is also the GitHub **owner** of your organization. If you aren't the owner, ask the owner to log in to Bitrise and toggle the feature on.
+- Make sure you configured the GitHub App to have access to necessary repositories.
+
+1. On Bitrise, go to the **Project Settings** page of your project.
+1. On the left, select **Repository**.
+1. Under **Authorization**, find **Additional repositories** and click **Change**.
+1. Toggle the **Grant access to all current and future repositories** switch to the right.
+
+   ![linkadditionalrepositories.png](/img/_paligo/uuid-bfc425a6-84a8-0672-31bb-d3d7b07b56ce.png)
+
+   Your project's build will now have access to all current and future GitHub repositories the Bitrise GitHub App has access to.
+
+:::note[GitHub email notification about allowing permission]
+
+When Bitrise released this feature, Bitrise GitHub App users will have received an email from GitHub on a new permission which is needed to use the Grant access to all current and future repositories toggle. Bitrise GitHub App requests additional permission which is called: read organization membership. Only GitHub organization ownershave the necessary rights to follow the link in the email and to make this functionality available for their teams.
+
+This is a standard and legitimate message from GitHub and allowing this permission will not have any detrimental effect on Bitrise builds. You can read more about the new permission Bitrise requires [here](https://docs.github.com/en/rest/orgs/members?apiVersion=2022-11-28#get-organization-membership-for-a-user).
+
+:::

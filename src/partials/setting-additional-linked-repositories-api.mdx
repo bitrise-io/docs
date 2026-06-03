@@ -1,0 +1,36 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Setting additional linked repositories
+
+A linked repository is a repository that a Bitrise project can access using a GitHub app installation but it's not the project's primary repository. When an additional repository is linked to your Bitrise GitHub app installation, the tokens generated for the build can access the additional repository.
+
+Read more about additional linked repositories: [Additional linked repositories](/en/bitrise-platform/repository-access/github-app-integration#additional-linked-repositories-via-a-github-app).
+
+Use the `POST /apps/APP-SLUG/github-app-connection-configuration/update-linked-repositories` to link an additional repository. You have two choices:
+
+- Manually listing the full names of the repository.
+
+  ```bash
+  curl -X 'POST' \
+    'https://api.bitrise.io/v0.1/apps/APP-SLUG/github-app-connection-configuration/update-linked-repositories' \
+    -H 'accept: application/json' \
+    -H 'Authorization: ACCESS-TOKEN' \
+    -H 'Content-Type: application/json' \
+    -d '{
+    "repositories": ["org1/repo1", "org1/repo2"]
+  }'
+  ```
+- Set the `unlimited_repo_access` field to true to let the builds access all the current and future repositories.
+
+  ```bash
+  curl -X 'POST' \
+    'https://api.bitrise.io/v0.1/apps/APP-SLUG/github-app-connection-configuration/update-linked-repositories' \
+    -H 'accept: application/json' \
+    -H 'Authorization: ACCESS-TOKEN' \
+    -H 'Content-Type: application/json' \
+    -d '{
+    "unlimited_repo_access": true
+  }'
+  ```

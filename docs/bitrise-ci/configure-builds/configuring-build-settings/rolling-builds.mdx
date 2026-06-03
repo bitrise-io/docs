@@ -1,0 +1,53 @@
+---
+title: "Rolling builds"
+description: "With the rolling builds feature, you can configure Bitrise to automatically abort on-hold builds or already running builds if another build is triggered on the same branch."
+sidebar_position: 5
+slug: /bitrise-ci/configure-builds/configuring-build-settings/rolling-builds
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/src/partials/getting-to-the-project-settings-page.mdx';
+
+You can cancel running builds or builds on hold with the **Rolling Builds** feature. The previous builds of your <GlossTerm baseform="App">project</GlossTerm> can be automatically aborted once a new one is started.
+
+Please note that manual and scheduled builds are also cancelled if you start a new build with the **Rolling builds** option enabled.
+
+:::note[When is a build aborted?]
+
+If you <GlossTerm baseform="trigger">trigger</GlossTerm> a build on a branch where a build is already running, the running build is aborted only if it runs the same <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
+
+For example, if you trigger a build on the **main** branch of your repository with the **deploy** Workflow, it will NOT cancel a build running on the same **main** branch with the **primary** Workflow.
+
+:::
+
+## Configuring rolling builds
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. On the left, select **Builds**.
+1. Find the **Build strategy** section.
+1. Select the type(s) of builds you wish to abort when a new build is started.
+
+   ![rolling-builds.png](/img/_paligo/uuid-74153d13-4c04-d223-7389-268265192245.png)
+
+   - **Abort builds triggered by pull requests**: Cancel all previous builds still **on-hold** for Pull Requests and all related Pushes. **Running** builds will **not** be canceled unless **Running builds are aborted** is also enabled.
+   - **Abort builds triggered by pushes**: Cancel all previous builds still **on-hold** for Pushes to the same branch. **Running** builds will **not** be canceled unless **Running builds are aborted** is also enabled. You can configure exclusions for push events: [see topic](#managing-exclusions-for-push-events)
+   - **Abort on-hold builds triggered by tags**: Cancel all previous builds still **on-hold** if they were triggered by Git tags.
+   - **Abort running builds**: Auto-cancel running builds in addition to on-hold ones.
+
+## Managing exclusions for push events
+
+You can configure Bitrise to never abort certain code push builds. To do so, add exclusions when configuring rolling builds. You can exclude:
+
+- Repository branches.
+- Pipelines and Workflows.
+
+A build that involves an excluded branch, Pipeline or Workflow will never be aborted.
+
+1. [Go to the Build strategy section to configure rolling builds](#configuring-rolling-builds).
+1. Enable **Abort on-hold builds triggered by pushes**.
+1. Click **Add exclusions**.
+1. Enter excluded branches or excluded Pipelines or Workflows. Both fields accept a list of values separated by a comma.
+
+   ![add-exclusions.png](/img/_paligo/uuid-563e93b4-6feb-8322-27f7-7b86d6957992.png)

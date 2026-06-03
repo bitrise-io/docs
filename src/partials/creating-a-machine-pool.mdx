@@ -1,0 +1,107 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Creating a machine pool
+
+Create a machine pool that allows running GitHub Action builds on Bitrise hardware. The process is slightly different based on whether you use [a GitHub app](/en/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview#authentication) or a [GitHub personal access token](/en/bitrise-build-hub/build-hub-for-github-actions/configuring-build-hub-for-github-actions#creating-github-personal-access-tokens-for-build-hub) for authentication.
+
+<Tabs>
+<TabItem value="github-app-authentication" label="GitHub app authentication" default>
+
+1. On the left navigation bar, select **Build Hub**.
+
+   ![SCR-20260320-nseo.png](/img/_paligo/uuid-77517798-21b7-dd6d-6df8-5fdf12758e59.png)
+1. Click **+Machine pool**.
+1. Open the **Select account** dropdown menu and click **Connect account**.
+1. Select GitHub **(GitHub App)** and click **Continue to install**.
+
+   ![SCR-20260320-mmwy.png](/img/_paligo/uuid-115c121e-082e-a3b6-6741-f53cdab5d89e.png)
+1. Select the resource owner.
+1. Select the repository scope.
+
+   - **All repositories**: Applies to all current and future repositories owned by the resource owner. Also includes public repositories (read-only).
+   - **Only select repositories**: Select at least one repository. Also includes public repositories (read-only).
+
+   ![SCR-20260320-nqmt.png](/img/_paligo/uuid-6186a9bb-4a81-f79c-3200-1e65de613b47.png)
+1. Add a runner group and optionally, a runner version.
+
+   - The runner version needs to be exact, such as v2.328.0. If you don't specify a runner version, the latest version will be used.
+   - [Runner groups](https://docs.github.com/en/actions/concepts/runners/runner-groups) are used to collect sets of runners and create a security boundary around them.
+1. Check **Use Bitrise for GitHub Actions caching** if you want Bitrise infrastructure to handle GitHub Actions cache requests instead of GitHub's cache backend.
+
+   This results in faster cache operations.
+1. Click **Next**.
+1. Set a unique name for the pool.
+1. Select the image in the **Image** dropdown menu and the amount of machines you need in the **Nr. of machines** field.
+
+   You can check the images on the [stack reports page](https://bitrise.io/stacks).
+
+   ![SCR-20260309-pxsf.png](/img/_paligo/uuid-1bc3b149-c8cd-82d2-2d94-62bbc35b89df.png)
+1. Select a machine type.
+
+   For more information about Bitrise machines, check out [Build machines](/en/bitrise-platform/infrastructure/build-machines/about-build-machines).
+1. Set a rolling update percentage: this is the amount of machines to be rebooted simultaneously after reconfiguration.
+1. When done, click **Next**.
+1. Create labels: they allow your [GitHub Actions configuration](/en/bitrise-build-hub/build-hub-for-github-actions/configuring-build-hub-for-github-actions#configuring-your-github-actions-workflow) to target your Bitrise runner pool. You must have at least one label.
+
+   Labels are a key-value pair but only the key is mandatory. By default, Bitrise suggests labels for the pool name, the image, and the machine type. You can change these at any time.
+1. Optionally, add a warmup script to customize your build environment. When done, click **Create pool**.
+
+   Leave it empty if you don’t need a warmup script.
+
+   :::important[Non-zero exit code]
+
+   Make sure that it returns a non-zero exit code in case of an error. The script will only fail if your script returns with a non-zero exit code.
+
+   :::
+
+</TabItem>
+<TabItem value="github-personal-access-token" label="GitHub personal access token">
+
+1. On the left navigation bar, select **Build Hub**.
+
+   ![SCR-20260320-nseo.png](/img/_paligo/uuid-77517798-21b7-dd6d-6df8-5fdf12758e59.png)
+1. Click **+ Machine pool**.
+1. Open the **Select account** dropdown menu and click **Connect account**.
+1. Click **Connect account** and select **GitHub (PAT)**.
+1. Set a connection name and a target scope URL.
+
+   Read more about target scopes here: [Target scope](/en/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview#target-scope)
+
+   ![SCR-20260320-nsxn.png](/img/_paligo/uuid-22b5a6f5-fedb-0cc6-b685-1bb5406d1e12.png)
+1. In the **Personal access token** field, add your GitHub personal access token then click **Connect**.
+1. Add a runner group and, optionally, a runner version.
+
+   - The runner version needs to be exact, such as v2.328.0. If you don't specify a runner version, the latest version will be used.
+   - [Runner groups](https://docs.github.com/en/actions/concepts/runners/runner-groups) are used to collect sets of runners and create a security boundary around them.
+1. Check **Use Bitrise for GitHub Actions caching** if you want Bitrise infrastructure to handle GitHub Actions cache requests instead of GitHub's cache backend.
+
+   This results in faster cache operations.
+1. Click **Next**.
+1. Set a unique name for the pool.
+1. Select the image in the **Image** dropdown menu and the amount of machines you need in the **Nr. of machines** field.
+
+   You can check the images on the [stack reports page](https://bitrise.io/stacks).
+
+   ![SCR-20260309-pxsf.png](/img/_paligo/uuid-1bc3b149-c8cd-82d2-2d94-62bbc35b89df.png)
+1. Select a machine type.
+
+   For more information about Bitrise machines, check out [Build machines](/en/bitrise-platform/infrastructure/build-machines/about-build-machines).
+1. Set a rolling update percentage: this is the amount of machines to be rebooted simultaneously after reconfiguration.
+1. When done, click **Next**.
+1. Create labels: they allow your [GitHub Actions configuration](/en/bitrise-build-hub/build-hub-for-github-actions/configuring-build-hub-for-github-actions#configuring-your-github-actions-workflow) to target your Bitrise runner pool. You must have at least one label.
+
+   Labels are a key-value pair but only the key is mandatory. By default, Bitrise suggests labels for the pool name, the image, and the machine type. You can change these at any time.
+1. Optionally, add a warmup script to customize your build environment. When done, click **Create pool**.
+
+   Leave it empty if you don’t need a warmup script.
+
+   :::important[Non-zero exit code]
+
+   Make sure that it returns a non-zero exit code in case of an error. The script will only fail if your script returns with a non-zero exit code.
+
+   :::
+
+</TabItem>
+</Tabs>

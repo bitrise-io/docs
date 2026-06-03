@@ -1,0 +1,86 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Deploying an Android app to bitrise.io
+
+In this section, we'll go through how to deploy your Android <GlossTerm baseform="Project">project</GlossTerm> to [bitrise.io](https://www.bitrise.io/).
+
+Deploying to [bitrise.io](https://www.bitrise.io) means that the build artifacts generated during the build will be available for download once the build is finished. You can use this to test your Android app on your own test devices, for example.
+
+To deploy your app to [bitrise.io](https://www.bitrise.io/):
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Make sure your <GlossTerm baseform="Workflow">Workflow</GlossTerm> contains the **[Android Build](https://www.bitrise.io/integrations/steps/android-build)** <GlossTerm baseform="Step">Step</GlossTerm> to build your app.
+
+   Optionally, you can build your app with the **[Gradle Runner](https://www.bitrise.io/integrations/steps/gradle-runner)** Step. This requires a bit more configuration from you but allows for more extensive customization.
+1. Add the **[Deploy to Bitrise.io](https://www.bitrise.io/integrations/steps/deploy-to-bitrise-io)** Step to your Workflow.
+
+   :::tip[Notifying other users]
+
+   You can use the **Notify: User Roles** and the **Notify: Emails** inputs of the Step to set up notifications about your deploy. Click the input names to reveal more information about how to configure them.
+
+   :::
+1. Optionally, set the **Enable public page for the App?** input of the Step to **true** so the Step [enables the public install page](/en/bitrise-ci/deploying/bitrise-ota-app-deployment#deploying-with-the-deploy-to-bitriseio-step) for your app.
+1. Run a build.
+
+</TabItem>
+<TabItem value="bitriseyml" label="bitrise.yml">
+
+1. Open the `bitrise.yml` file of your app.
+1. Make sure your <GlossTerm baseform="Workflow">Workflow</GlossTerm> contains the `android-build` <GlossTerm baseform="Step">Step</GlossTerm> to build your app.
+
+   ```
+   workflows:
+     example-workflow:
+       steps:
+       - android-build@1:
+   ```
+
+   Optionally, you can build your app with the `gradle-runner` Step. This requires a bit more configuration from you but allows for more extensive customization.
+1. Set the `module` and/or `variant` input to tell the Step what to build.
+
+   In this example, we're building a debug variant of the Android project.
+
+   ```
+   workflows:
+     example-workflow:
+       steps:
+       - android-build@1:
+           inputs:
+           - variant: debug
+       - deploy-to-bitrise-io: {}
+   ```
+1. Add the `deploy-to-bitrise-io` Step to your Workflow.
+
+   ```
+   workflows:
+     example-workflow:
+       steps:
+       - android-build@1:
+           inputs:
+           - variant: debug
+       - deploy-to-bitrise-io: {}
+   ```
+
+   :::tip[Notifying other users]
+
+   You can use the `notify_user_groups` and the `notify_email_list` inputs of the Step to set up notifications about your deploy:
+
+   - The `notify_user_groups` input allows you to send notifications based on the [access roles](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci) granted to users. For example, you can set the input to notify everyone with an **Admin** and a **Developer** role. Set multiple roles separated by a comma: `- notify_user_groups: admins, testers`.
+   - The `notify_email_list` input only accepts Secrets, and the Secret should contain comma-separated lists of email addresses.
+
+   :::
+1. Optionally, set the **Enable public page for the App?** input of the Step to **true** so the Step [enables the public install page](/en/bitrise-ci/deploying/bitrise-ota-app-deployment#deploying-with-the-deploy-to-bitriseio-step) for your app.
+1. Run a build.
+
+</TabItem>
+</Tabs>
+
+The **Deploy to Bitrise.io** Step will deploy the app. You can share the generated binary with your team members using the build’s URL.
+
+**A bitrise.yml for deploying an Android app to Bitrise**
+
+In this example, we're building the `debug` variant of an Android app, and deploy it to bitrise.io, as.

@@ -1,0 +1,279 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Project level properties
+
+### `format_version`
+
+**Required**: A configuration YAML file is invalid without it.
+
+The version of the Bitrise configuration format.
+
+The Bitrise CLI checks it to ensure compatibility between the configuration file and the CLI version. This is relevant for locally run builds: on the Bitrise website, the CLI is always up to date, so the `format_version` property doesn't have an effect on builds triggered.
+
+**Example of `format_version`**
+
+```yaml
+format_version: '25'
+```
+
+### `default_step_lib_source`
+
+The default Step library for the Steps used in your configuration. Bitrise uses this source if no specific source is provided for a given Step.
+
+The default value is https://github.com/bitrise-io/bitrise-steplib.git. You can use your own fork of this repository as a Step source, or you can refer to Steps by including their exact source repository: [Step reference/ID format](/en/bitrise-ci/references/steps-reference/step-reference-id-format).
+
+**Example of `default_step_lib_source`**
+
+```yaml
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+```
+
+### `project_type`
+
+The type of your Bitrise project, such as `ios`, `android`, `flutter`, and so on.
+
+The project type can be modified at any point but after the initial setup, it has no relevance.
+
+**Example of `project_type`**
+
+```yaml
+project_type: flutter
+```
+
+### `title`
+
+The title of the Bitrise configuration.
+
+**Example of `title`**
+
+```yaml
+title: My Bitrise project
+```
+
+### `summary`
+
+A short summary of the Bitrise configuration.
+
+**Example of `summary`**
+
+```yaml
+summary: This project runs tests for my app.
+```
+
+### `description`
+
+A detailed description of the Bitrise configuration.
+
+**Example of `description`**
+
+```yaml
+description: This project runs unit and UI tests when a pull request is opened to the dev branch.
+```
+
+### `services`
+
+Docker container definitions used by Steps as service containers on Linux hosts.
+
+:::note[Linux only]
+
+This is only supported on Linux stacks: the property doesn't work on macOS stacks!
+
+:::
+
+One or more service can be configured for a group of Steps, allowing running Docker containers as services for advanced integration testing. These are tied to the lifecycle of a `with` group and will run alongside it in the background. When all Steps within the groups finish, they are cleaned up.
+
+You need to define:
+
+- The ID of the service which is used to refer to the service in a with group.
+- The image name of the service.
+- The image version of the service.
+
+Read more: [Service containers](/en/bitrise-platform/infrastructure/docker-containers-on-bitrise/service-containers).
+
+**Example of `services`**
+
+```yaml
+services:
+ postgres:
+   image: postgres:16
+   envs: 
+   - POSTGRES_USER: postgres
+   - POSTGRES_DB: bitrise 
+   ports:
+   - 5432:5432 
+   options: >-
+     --health-cmd pg_isready
+     --health-interval 10s
+     --health-timeout 5s
+     --health-retries 5
+ redis: 
+   image: redis:7
+     ports: - 6379:6379
+     options: >-
+     --health-cmd "redis-cli ping"
+     --health-interval 10s
+     --health-timeout 5s
+     --health-retries 5
+```
+
+### `containers`
+
+Docker container definitions used by Steps as execution containers.
+
+Docker containers can be defined for any Bitrise project in the configuration YAML file. You define the container in the top level of the configuration file and then refer to it in a `with` group in the Workflow configuration. You need to define:
+
+- The ID of the containers. It will be used to reference this container.
+- The name of the Docker image you want to use.
+- The version of the image.
+
+`containers reference`: [Docker container properties](/en/bitrise-ci/references/configuration-yaml-reference#docker-container-properties).
+
+Read more: [Execution containers](/en/bitrise-platform/infrastructure/docker-containers-on-bitrise/execution-containers).
+
+**Example of `containers`**
+
+```yaml
+containers:
+  node-21:
+    image: node:21.6
+```
+
+### `app`
+
+This property contains project-level configuration information, such as [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables).
+
+Meta information such as the build stack doesn't belong here but to the `meta` property.
+
+**Example of `app`**
+
+```yaml
+app:
+  envs:
+  - TEST: '' 
+    opts:
+      is_expand: false
+```
+
+### `meta`
+
+Stores project metadata key-value pairs related to the Bitrise configuration. Most importantly, it defines the default stack and the build machine type for the project.
+
+Read more: [Setting the stack in the bitrise.yml file](/en/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds#setting-the-stack-in-the-configuration-yaml).
+
+**Example of `meta`**
+
+```yaml
+meta:
+  bitrise.io:
+    stack: linux-docker-android-22.04
+    machine_type_id: g2.linux.2medium
+```
+
+### `trigger_map`
+
+Defines the build triggers on a project level. This is the legacy method of configuring triggers: we recommend using target-based triggers defined within a Pipeline or a Workflow instead.
+
+Read more: [Legacy project-based triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/legacy-project-based-triggers).
+
+**Example of `trigger_map`**
+
+```yaml
+trigger_map:
+- pull_request_source_branch: "*"
+  type: pull_request
+  workflow: primary
+```
+
+### `pipelines`
+
+Define Pipelines in your project's configuration. Pipelines can be used to organize the entire CI/CD process and to set up advanced configurations with multiple different tasks running parallel and/or sequentially.
+
+`pipelines` reference: [Pipeline level properties](/en/bitrise-ci/references/configuration-yaml-reference#pipeline-level-properties).
+
+Read more: [About Pipelines](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/about-pipelines).
+
+**Example of `pipelines`**
+
+```yaml
+pipelines:
+  test:
+  title: Test Pipeline
+  summary: This Pipeline runs unit tests.
+  workflows:
+    primary: {}
+```
+
+### `workflows`
+
+The Workflows included in your configuration. A Workflow is a collection of Steps: reusable, configurable units of work. Steps are executed sequentially within a Workflow.
+
+`workflows` reference: [Workflow level properties](/en/bitrise-ci/references/configuration-yaml-reference#workflow-level-properties).
+
+**Example of `workflows`**
+
+```yaml
+workflows: 
+  primary:
+    steps: 
+    - script: {}
+```
+
+### `step_bundles`
+
+Step bundles allow you to group multiple Steps into a single unit. With Step bundles, you can reuse Steps and sequences of Steps.
+
+You can insert Step bundles into any Workflow. Unlike utility Workflows and Workflow chaining, Step Bundles can be placed anywhere in a Workflow.
+
+`step_bundles` reference: [Step bundle properties](/en/bitrise-ci/references/configuration-yaml-reference#step-bundle-properties).
+
+Read more: [Step bundles](/en/bitrise-ci/workflows-and-pipelines/steps/step-bundles).
+
+**Example of `step_bundles`**
+
+```yaml
+step_bundles:
+  primary:
+    steps:
+    - git-clone: {}
+    - restore-cache: {}
+```
+
+### `include`
+
+The `include` property allows you to use other configuration YAML files in your Bitrise configuration, to break down large, complex YAML files into smaller, modular components.
+
+A modular YAML configuration includes:
+
+- A `bitrise.yml` file in the root of your repository.
+- Other YAML files in the same or a different repository. To include a file from a different repository, the repository must belong to the same Git account or organization as the primary repository.
+- One or more `include` keywords in the bitrise.yml file. These point to other YAML files and bring their configuration into the main project configuration.
+
+Read more: [Modular YAML configuration](/en/bitrise-ci/configure-builds/configuration-yaml/modular-yaml-configuration).
+
+**Example of `include`**
+
+```yaml
+include:
+  - path: path/to/config_module.yml
+```
+
+### `tools`
+
+Tool version to set up. The version syntax supports:
+
+- Exact versions: for example, `'1.2.3'`.
+- Partial matches to the latest release: for example, `'22:latest'`.
+- Partial matches to installed versions: for example, `'1.2:installed'`.
+- Special aliases `'latest'` and `'installed'` to select the latest or the highest installed version.
+
+Read more: [Configuring tool versions](/en/bitrise-ci/configure-builds/configuring-build-settings/configuring-tool-versions).
+
+**Example of `tools`**
+
+```yaml
+tools:
+  nodejs: 22:installed
+  ruby: 3.3:latest
+```

@@ -1,0 +1,24 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Authentication to Bitrise with OIDC
+
+Bitrise supports using external OIDC tokens to authenticate to Bitrise and receive short-lived Bitrise [workspace access tokens](/en/bitrise-platform/workspaces/workspace-api-token). The issued token will be matched against your Bitrise trust policy.
+
+A service that receives a Bitrise token essentially becomes a temporary member of your workspace that can perform certain actions defined in your trust policy. For example, it can receive data from a build triggered on a specific branch of a given repository.
+
+### Trust policy
+
+An OIDC trust policy defines who to trust, under what conditions, and how to validate the OIDC tokens. A Bitrise trust policy defines:
+
+- The OIDC issuers that Bitrise will trust. Claims from OIDC providers that aren't listed as issuers in our trust policy are automatically rejected.
+- The duration of the short-lived token: how long it is valid.
+- Its level of access: the roles and permissions it grants in workspaces and projects.
+- The matching rules of the token: the claims that must be matched. For example, the claim can include the repository, the branch of the repository, the Workflow that should be triggered. The matching rules are in a JSON format.
+
+### OIDC token request
+
+After a policy is successfully created, Bitrise automatically generates a unique policy ID. This policy ID must be included in every token request.
+
+When a service sends an OIDC token to request a short-lived Bitrise workspace access token, Bitrise matches the policy ID in the request to the corresponding trust policy and checks that trust policy's matching rules. If the rules match the OIDC token's claims, the short-lived token is granted.

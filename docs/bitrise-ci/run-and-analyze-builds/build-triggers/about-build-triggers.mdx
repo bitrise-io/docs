@@ -1,0 +1,47 @@
+---
+title: "About build triggers"
+description: "Use build triggers to start one or more Bitrise builds automatically. A trigger's definition contains a code event and one or more conditions that the event must match in order to trigger a build."
+sidebar_position: 1
+slug: /bitrise-ci/run-and-analyze-builds/build-triggers/about-build-triggers
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_TriggerVariables from '@site/src/partials/trigger-variables.mdx';
+import Partial_MergeQueueSupport from '@site/src/partials/merge-queue-support.mdx';
+import Partial_TriggerPriority from '@site/src/partials/trigger-priority.mdx';
+
+Use build triggers to start one or more Bitrise builds automatically. A trigger's definition contains a code event and one or more conditions that the event must match in order to trigger a build.
+
+You can define triggers within a Workflow or a Pipeline. They allow a single code event to trigger multiple different Workflows or Pipelines so you can run all the relevant parts of your CI process together based on the scope of code change, without bundling everything into a single Workflow or Pipeline. Each build will run independently and deliver individual results.
+
+For the detailed syntax of triggers and the exact trigger conditions, see [YAML syntax for build triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/yaml-syntax-for-build-triggers).
+
+## Code events
+
+You can use three types of code events to trigger builds:
+
+- **Code push**: Trigger a build automatically whenever you push code using commits that match your trigger conditions. For example, a commit to the specified branch of the project's repository triggers a build.
+- **Pull request**: Trigger a build automatically whenever a pull request matches your trigger conditions. For example, you can specify source and/or destination branches where any pull request will trigger a build.
+
+  :::important[Initial PR event]
+
+  A pull request only triggers a build once, at its initial event. In most cases, that initial event is the creation of the pull request. For example, converting a PR to a draft PR will never trigger another build. To trigger builds for updates to a pull request, configure code push triggers for the new commits.
+
+  :::
+- **Git Tag**: Trigger a build automatically whenever a commit with a specific tag triggers a build.
+
+## Conditions
+
+A trigger condition is a filter for code events: instead of triggering a build on every pull request, you can configure triggers for pull requests targeting a specific branch.
+
+Different Git providers support different conditions. For the full table, see [Supported trigger conditions](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers#supported-trigger-conditions).
+
+Trigger conditions can be combined within a single trigger: for example, you can set up a pull request trigger that only triggers a build if the PR targets a specific branch AND contains a specific label.
+
+<Partial_TriggerPriority />
+
+<Partial_TriggerVariables />
+
+<Partial_MergeQueueSupport />

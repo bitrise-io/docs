@@ -1,0 +1,114 @@
+---
+title: "Identifying Workspaces and apps with their slugs"
+description: "The API (and the Bitrise support team) often asks for slugs: a Workspace slug or a project slug. A slug is a unique identifier of one of these resources, consisting of hexadecimal numbers. You can find the slugs of a given Workspace or app both on the UI and in the API."
+sidebar_position: 5
+slug: /bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs
+sidebar_label: Identifying Workspaces and projects with their slugs
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkspaceSettingsPage from '@site/src/partials/opening-the-workspace-settings-page.mdx';
+
+The API (and the Bitrise support team) often asks for slugs: a <GlossTerm baseform="Workspace">Workspace</GlossTerm> slug or a project slug. A slug is a unique identifier of one of these resources, consisting of hexadecimal numbers. You can find the slugs of a given Workspace or project both on the UI and in the API.
+
+## Finding a slug on the Bitrise website
+
+You can find both Workspace slugs and project slugs on the Bitrise website.
+
+<Tabs>
+<TabItem value="workspace-slugs" label="Workspace slugs" default>
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. On the **Workspace settings** page, select `**General settings** from the left navigation menu.
+1. Find the Workspace slug in the **Workspace information** section. You can copy the slug by clicking the copy button next to it.
+
+   ![workspace-slug.png](/img/_paligo/uuid-c82d552a-8d31-148f-82e4-bb4ec929c183.png)
+
+</TabItem>
+<TabItem value="project-slugs" label="Project slugs">
+
+1. Open [Bitrise CI](https://app.bitrise.io/dashboard) and select your project.
+1. Once on the project's page, go to your browser's address bar.
+
+   The URL will look like this: `https://app.bitrise.io/app/5c89d92-8be6-4892-b11d-efbc1fdd607`.
+1. Find the hexadecimal number after the `/app/` section of the URL. That is your project's slug.
+
+</TabItem>
+</Tabs>
+
+## Finding a slug with the Bitrise API
+
+You can get the slug for all Workspaces and apps you have access to with simple API calls.
+
+<Tabs>
+<TabItem value="workspace-slugs" label="Workspace slugs" default>
+
+1. [Authenticate](/en/bitrise-ci/api/authenticating-with-the-bitrise-api) with the Bitrise API.
+1. Call the `GET /organizations` endpoint with your Personal Access Token:
+
+   ```
+   curl -X 'GET' \
+     'https://api.bitrise.io/v0.1/organizations' \
+     -H 'accept: application/json' \
+     -H 'Authorization: <ACCESS-TOKEN>'
+   ```
+1. Find the slug in the response:
+
+   ```
+   {
+         "name": "TestOrg",
+         "slug": "2dec5c71bbce73d9",
+         "avatar_icon_url": "https://bitrise-public-content-production.s3.amazonaws.com/org-icons/default_avatar-09.png",
+         "concurrency_count": null,
+         "owners": [
+           {
+             "slug": "1b3f130835b1c09ef2",
+             "username": "bitbot",
+             "email": "bit.bot@bitrise.io"
+           },
+         ]
+       },
+   ```
+
+</TabItem>
+<TabItem value="app-slugs" label="App slugs">
+
+1. [Authenticate](/en/bitrise-ci/api/authenticating-with-the-bitrise-api) with the Bitrise API.
+1. Call the `GET /apps` endpoint with your Personal Access Token.
+
+   ```
+   curl -X 'GET' \
+     'https://api.bitrise.io/v0.1/apps' \
+     -H 'accept: application/json' \
+     -H 'Authorization: <ACCESS-TOKEN>'
+   ```
+1. Find the slug in the response:
+
+   ```
+   {
+     "data": [
+       {
+         "slug": "13aa9897-3891-4fe7-8cf5-5b2f75638b0e",
+         "title": "TestApp",
+         "project_type": "ios",
+         "provider": "github",
+         "repo_owner": "bitrise",
+         "repo_url": "git@github.com:bitrise/TestApp.git",
+         "repo_slug": "TestApp",
+         "is_disabled": false,
+         "status": 1,
+         "is_public": false,
+         "is_github_checks_enabled": false,
+         "owner": {
+           "account_type": "organization",
+           "name": "Bitrise",
+           "slug": "03a9543ede4d12bd"
+         },
+         "avatar_url": null
+       },
+   ```
+
+</TabItem>
+</Tabs>

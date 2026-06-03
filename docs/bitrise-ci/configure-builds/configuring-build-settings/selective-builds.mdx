@@ -1,0 +1,79 @@
+---
+title: "Selective builds"
+description: "The Selective builds setting provides change detection for your builds. Enabling it allows you to only trigger a build of an app if certain files or folders have been modified."
+sidebar_position: 4
+slug: /bitrise-ci/configure-builds/configuring-build-settings/selective-builds
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/src/partials/getting-to-the-project-settings-page.mdx';
+
+:::caution[Using build triggers instead]
+
+This is a legacy feature.
+
+Instead of using this feature, you can now [configure build triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers) to only trigger builds when certain files or folders have changed: to do so, create a new trigger for push or pull request events, and choose the **Files changed** trigger condition. We strongly recommend using this option instead of Selective builds.
+
+:::
+
+The **Selective builds** setting provides change detection for your builds. Enabling it allows you to only <GlossTerm baseform="Trigger">trigger</GlossTerm> a build of an <GlossTerm baseform="App">app</GlossTerm> if certain files or folders have been modified.
+
+You may want to use this setting if:
+
+- You have a monorepo; that is, you build multiple apps from a single repository.
+- Multiple apps share common files in your repository.
+
+:::important[Selective Builds with non-Github projects]
+
+The current version of our Selective Builds feature only works with GitHub projects. If your repository is hosted by another Git hosting service, the option will not be available.
+
+:::
+
+**Using the Selective builds feature**
+
+Let's say you want to make sure that a commit to your app's repository triggers a Bitrise build only if the `mycode.go` file on the `develop` branch is modified in the commit.
+
+- In this example, you have a branch called `develop`.
+- You have a trigger that starts a build every time a code push happens on the `develop` branch.
+- In the selective builds feature, you specified the `mycode.go` file in the input field.
+
+If you make a commit on the `develop` branch that modifies the `mycode.go` file, Bitrise will trigger a build. If your commit doesn't modify the file in any way, Bitrise will not trigger a build.
+
+To configure selective builds:
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. Make sure the appropriate [service credential user](/en/bitrise-platform/integrations/the-service-credential-user) is set on the **Integrations** page.
+
+   This user must have admin right for the GitHub repository of the project.
+1. On the left, select **Builds**.
+1. Find the **Selective builds** section and toggle it on.
+
+   ![selectuve-builds.png](/img/_paligo/uuid-974582cb-d9c3-a954-0909-c78a76915d55.png)
+1. Click **Add path** .
+
+   :::important[Can't find the button?]
+
+   If you can't find the button - like in the screenshot above -, it is because of two possible reasons:
+
+   - The app's repository isn't hosted on GitHub.
+   - The [service credential user](/en/bitrise-platform/integrations/the-service-credential-user) isn't set correctly or doesn't have admin rights to the repo.
+
+   :::
+1. In the pop-up window, set the paths you need.
+
+   You can add one path at a time.
+
+## Using patterns in the file name or file path
+
+You do not need to set an exact file name or file path for the Selective builds feature: you can set patterns. Using regular expressions is not supported but the pattern may contain certain metacharacters:
+
+- `*`: Matches all files.
+- `a*`: Matches all files beginning with a.
+- `*a`: Matches all files ending with a.
+- `*a*`: Matches all files that have a in them (including at the beginning or end).
+- `**`: Matches directories recursively.
+- `?`: Matches any one character.
+- `\`: Escapes the next metacharacter.
+- `[set]`: Matches any one character in set.
