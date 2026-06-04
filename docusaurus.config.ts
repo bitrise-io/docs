@@ -266,6 +266,17 @@ const config: Config = {
         theme: {
           customCss: './src/css/custom.css',
         },
+        // Only register the plugin when a container ID is configured: its
+        // containerId option is required (Joi-validated), so passing
+        // undefined would fail the build. Injection itself happens in
+        // production builds only, same guard as the CookieConsent scripts.
+        ...(process.env.GTM_ID
+          ? {
+              googleTagManager: {
+                containerId: process.env.GTM_ID,
+              },
+            }
+          : {}),
       } satisfies Preset.Options,
     ],
   ],
