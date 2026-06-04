@@ -27,67 +27,74 @@ You can easily create a signed IPA file for your Xcode project with Bitrise.
 
 If you’re all set, proceed to setting up IPA export in your <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
 
-Workflow Editor
 
-bitrise.yml
+<Tabs>
+  <TabItem value="workflow-editor" label="Workflow Editor">
 
-1. Make sure the necessary [code signing files have been collected and uploaded](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning#uploading-ios-code-signing-certificates-to-bitrise).
-1. Make sure you have the [**Xcode Archive & Export for iOS**](https://github.com/bitrise-steplib/steps-xcode-archive) Step in your Workflow.
-1. Set the **Distribution method** input of the Step.
+  1. Make sure the necessary [code signing files have been collected and uploaded](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning#uploading-ios-code-signing-certificates-to-bitrise).
+  1. Make sure you have the [**Xcode Archive & Export for iOS**](https://github.com/bitrise-steplib/steps-xcode-archive) Step in your Workflow.
+  1. Set the **Distribution method** input of the Step.
 
-   ![xcode-archive.png](/img/_paligo/uuid-fced107c-9b69-e5af-1472-4d96fbada364.png)
+     ![xcode-archive.png](/img/_paligo/uuid-fced107c-9b69-e5af-1472-4d96fbada364.png)
 
-   The options are:
+     The options are:
 
-   - `app-store`: Choose this if you want to deploy the app to the App Store. Requires a Distribution certificate and an App Store provisioning profile.
-   - `ad-hoc`: Choose this if you want to deploy the app to ad-hoc testers. Requires a Distribution certificate and an Ad Hoc provisioning profile.
-   - `enterprise`: Choose this if you have an Apple Enterprise account and want to use that to distribute your app.
-   - `development`: Choose this for internal testing. Requires a Developer certificate and a Development provisioning profile.
-1. Set the **Automatic code signing** input to the Apple service connection you want to use for code signing. The available options are:
+     - `app-store`: Choose this if you want to deploy the app to the App Store. Requires a Distribution certificate and an App Store provisioning profile.
+     - `ad-hoc`: Choose this if you want to deploy the app to ad-hoc testers. Requires a Distribution certificate and an Ad Hoc provisioning profile.
+     - `enterprise`: Choose this if you have an Apple Enterprise account and want to use that to distribute your app.
+     - `development`: Choose this for internal testing. Requires a Developer certificate and a Development provisioning profile.
+  1. Set the **Automatic code signing** input to the Apple service connection you want to use for code signing. The available options are:
 
-   - `off` if you don’t use automatic code signing.
-   - `api-key` [if you use API key authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
-   - `apple-id` [if you use Apple ID authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
-1. Save the Workflow, and start a new build.
+     - `off` if you don’t use automatic code signing.
+     - `api-key` [if you use API key authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+     - `apple-id` [if you use Apple ID authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+  1. Save the Workflow, and start a new build.
 
-1. Make sure all the [necessary code signing files](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects) are available for your build.
-1. Open the `bitrise.yml` file of your app.
-1. Make sure you have the `xcode-archive` Step in your Workflow.
+  </TabItem>
+  <TabItem value="yaml" label="Configuration YAML">
 
-   ```yaml
-   my-workflow:
-     steps:
-     - xcode-archive:
-         inputs:
-   ```
-1. Set the `distribution_method` input to the correct value. The available options are:
+  1. Make sure all the [necessary code signing files](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects) are available for your build.
+  1. Open the `bitrise.yml` file of your app.
+  1. Make sure you have the `xcode-archive` Step in your Workflow.
 
-   - `app-store`: Choose this if you want to deploy the app to the App Store. Requires a Distribution certificate and an App Store provisioning profile.
-   - `ad-hoc`: Choose this if you want to deploy the app to ad-hoc testers. Requires a Distribution certificate and an Ad Hoc provisioning profile.
-   - `enterprise`: Choose this if you have an Apple Enterprise account and want to use that to distribute your app.
-   - `development`: Choose this for internal testing. Requires a Developer certificate and a Development provisioning profile.
+     ```
+     my-workflow:
+       steps:
+       - xcode-archive:
+           inputs:
+     ```
+  1. Set the `distribution_method` input to the correct value. The available options are:
 
-   ```yaml
-   my-workflow:
-     steps:
-     - xcode-archive:
-         inputs:
-         - distribution_method: development
-   ```
-1. Set the `automatic_code_signing` input to the Apple service connection you want to use for code signing. The available options are:
+     - `app-store`: Choose this if you want to deploy the app to the App Store. Requires a Distribution certificate and an App Store provisioning profile.
+     - `ad-hoc`: Choose this if you want to deploy the app to ad-hoc testers. Requires a Distribution certificate and an Ad Hoc provisioning profile.
+     - `enterprise`: Choose this if you have an Apple Enterprise account and want to use that to distribute your app.
+     - `development`: Choose this for internal testing. Requires a Developer certificate and a Development provisioning profile.
 
-   - `off` if you don’t do automatic code signing.
-   - `api-key` [if you use API key authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
-   - `apple-id` [if you use Apple ID authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+     ```
+     my-workflow:
+       steps:
+       - xcode-archive:
+           inputs:
+           - distribution_method: development
+     ```
+  1. Set the `automatic_code_signing` input to the Apple service connection you want to use for code signing. The available options are:
 
-   ```yaml
-   my-workflow:
-     steps:
-     - xcode-archive:
-         inputs:
-         - automatic_code_signing: api-key
-         - distribution_method: development
-   ```
+     - `off` if you don’t do automatic code signing.
+     - `api-key` [if you use API key authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+     - `apple-id` [if you use Apple ID authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
+
+     ```
+     my-workflow:
+       steps:
+       - xcode-archive:
+           inputs:
+           - automatic_code_signing: api-key
+           - distribution_method: development
+     ```
+
+  </TabItem>
+</Tabs>
+
 
 That’s all. Xcode will automatically select the right signing files based on your project’s Bundle ID and Team ID settings, and the export method you set.
 
