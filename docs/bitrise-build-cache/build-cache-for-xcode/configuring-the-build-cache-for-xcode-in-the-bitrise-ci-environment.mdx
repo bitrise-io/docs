@@ -12,31 +12,36 @@ import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-wor
 
 You need the **Bitrise [Build Cache for Xcode](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-xcode)** Step to activate the Build Cache for your Xcode project. After the Step executes, Xcode tasks will automatically read from the build cache and push new entries, too.
 
-Workflow Editor
+<Tabs>
+  <TabItem value="workflow-editor" label="Workflow Editor">
 
-Configuration YAML
+  1. Make sure your build runs on a stack with Xcode 26 or higher version installed: [Setting the stack for your builds](/en/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds).
+  1. <Partial_OpeningTheWorkflowEditor />
+  1. Add the [**Build Cache for Xcode**](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-xcode) Step to your Workflow.
 
-1. Make sure your build runs on a stack with Xcode 26 or higher version installed: [Setting the stack for your builds](/en/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds).
-1. <Partial_OpeningTheWorkflowEditor />
-1. Add the [**Build Cache for Xcode**](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-xcode) Step to your Workflow.
+     The Step should be before any Step that executes Xcode tasks. For example, **fastlane** or [**Xcode Archive & Export for iOS**](https://github.com/bitrise-steplib/steps-xcode-archive).
+  1. Optionally, you can disable pushing new cache entries: set the **Push new cache entries** input to **false**.
 
-   The Step should be before any Step that executes Xcode tasks. For example, **fastlane** or [**Xcode Archive & Export for iOS**](https://github.com/bitrise-steplib/steps-xcode-archive).
-1. Optionally, you can disable pushing new cache entries: set the **Push new cache entries** input to **false**.
+     In read-only mode, your build only reads from the cache but doesn't update it.
+  1. Click **Save changes**.
 
-   In read-only mode, your build only reads from the cache but doesn't update it.
-1. Click **Save changes**.
+  </TabItem>
+  <TabItem value="yaml" label="Configuration YAML">
 
-1. Make sure your build runs on a stack with Xcode 26 or higher version installed: [Setting the stack for your builds](/en/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds).
-1. Add the `activate-build-cache-for-xcode` Step to your Workflow.
+  1. Make sure your build runs on a stack with Xcode 26 or higher version installed: [Setting the stack for your builds](/en/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds).
+  1. Add the `activate-build-cache-for-xcode` Step to your Workflow.
 
-   The Step should be before any Step that executes Xcode tasks. For example, `fastlane` or `xcode-archive`.
+     The Step should be before any Step that executes Xcode tasks. For example, `fastlane` or `xcode-archive`.
 
-   ```yaml
-   your-workflow:
-     meta:
-       bitrise.io:
-         stack: osx-xcode-26.0.x-edge
-     steps:
-       - git-clone: {}
-       - activate-build-cache-for-xcode: {}
-   ```
+     ```yaml
+     your-workflow:
+       meta:
+         bitrise.io:
+           stack: osx-xcode-26.0.x-edge
+       steps:
+         - git-clone: {}
+         - activate-build-cache-for-xcode: {}
+     ```
+
+  </TabItem>
+</Tabs>

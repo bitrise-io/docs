@@ -10,87 +10,92 @@ import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-wor
 
 You can add the activation either through the Workflow Editor or directly in `bitrise.yml`.
 
-Workflow Editor
+<Tabs>
+  <TabItem value="workflow-editor" label="Workflow Editor">
 
-Configuration YAML
+  1. Make sure you have:
 
-1. Make sure you have:
+     - An active Bitrise Build Cache trial or subscription. You can check your subscription status on the [Bitrise Build Cache page](https://app.bitrise.io/build-cache/).
+     - A React Native project that already builds successfully without Build Cache (so you have a clear baseline).
+     - For iOS projects: **Xcode 26 or later**.
+  1. <Partial_OpeningTheWorkflowEditor />
+  1. Select the Workflow you need.
+  1. Add the **Build Cache for React Native** step *before* any Step that triggers a native build.
 
-   - An active Bitrise Build Cache trial or subscription. You can check your subscription status on the [Bitrise Build Cache page](https://app.bitrise.io/build-cache/).
-   - A React Native project that already builds successfully without Build Cache (so you have a clear baseline).
-   - For iOS projects: **Xcode 26 or later**.
-1. <Partial_OpeningTheWorkflowEditor />
-1. Select the Workflow you need.
-1. Add the **Build Cache for React Native** step *before* any Step that triggers a native build.
+     For example, before **Script** Steps that run `yarn`, `npm`, `npx`, `expo`, `fastlane`, or direct Gradle/Xcode commands. You can place it right after `git-clone`.
+  1. Leave the inputs at their defaults unless you have a specific reason to change them. The step has two main inputs:
 
-   For example, before **Script** Steps that run `yarn`, `npm`, `npx`, `expo`, `fastlane`, or direct Gradle/Xcode commands. You can place it right after `git-clone`.
-1. Leave the inputs at their defaults unless you have a specific reason to change them. The step has two main inputs:
+     - **Enable Xcode cache**: Activates Bitrise Build Cache for iOS builds. A background proxy is started automatically.
+     - **Enable Gradle cache**: Activates Bitrise Build Cache for Android builds. C++ native modules are also cached via `ccache`, with a background storage helper started automatically.
+  1. In **Script** Steps that invoke a native build, prefix the command with `bitrise-build-cache react-native run`.
 
-   - **Enable Xcode cache**: Activates Bitrise Build Cache for iOS builds. A background proxy is started automatically.
-   - **Enable Gradle cache**: Activates Bitrise Build Cache for Android builds. C++ native modules are also cached via `ccache`, with a background storage helper started automatically.
-1. In **Script** Steps that invoke a native build, prefix the command with `bitrise-build-cache react-native run`.
+     :::note
 
-   :::note
+     If you use the official Bitrise Steps **Gradle Runner**, **Android Build**, or **Xcode Archive** to drive your React Native build, make sure you are on the latest version: the wrapping is handled automatically and you do not need to change inputs.
 
-   If you use the official Bitrise Steps **Gradle Runner**, **Android Build**, or **Xcode Archive** to drive your React Native build, make sure you are on the latest version: the wrapping is handled automatically and you do not need to change inputs.
+     For more information about wrapping, see [Wrapping native build commands](/en/bitrise-build-cache/build-cache-for-react-native/wrapping-native-build-commands).
 
-   For more information about wrapping, see [Wrapping native build commands](/en/bitrise-build-cache/build-cache-for-react-native/wrapping-native-build-commands).
+     :::
+  1. Save the Workflow and run a build.
 
-   :::
-1. Save the Workflow and run a build.
+  </TabItem>
+  <TabItem value="yaml" label="Configuration YAML">
 
-1. Make sure you have:
+  1. Make sure you have:
 
-   - An active Bitrise Build Cache trial or subscription. You can check your subscription status on the [Bitrise Build Cache page](https://app.bitrise.io/build-cache/).
-   - A React Native project that already builds successfully without Build Cache (so you have a clear baseline).
-   - For iOS projects: **Xcode 26 or later**.
-1. Add the `activate-build-cache-for-react-native` Step before any step that triggers a native build:
+     - An active Bitrise Build Cache trial or subscription. You can check your subscription status on the [Bitrise Build Cache page](https://app.bitrise.io/build-cache/).
+     - A React Native project that already builds successfully without Build Cache (so you have a clear baseline).
+     - For iOS projects: **Xcode 26 or later**.
+  1. Add the `activate-build-cache-for-react-native` Step before any step that triggers a native build:
 
-   ```yaml
-   workflows:
-     build-react-native:
-       steps:
-       - activate-ssh-key@4: {}
-       - git-clone@8: {}
-       - activate-build-cache-for-react-native@0: {}
-       # JS dependencies — no wrapping needed.
-       - script@1:
-           title: Install dependencies
-           inputs:
-           - content: yarn install
-   ```
-1. Wrap commands that trigger native builds with the CLI:
+     ```yaml
+     workflows:
+       build-react-native:
+         steps:
+         - activate-ssh-key@4: {}
+         - git-clone@8: {}
+         - activate-build-cache-for-react-native@0: {}
+         # JS dependencies — no wrapping needed.
+         - script@1:
+             title: Install dependencies
+             inputs:
+             - content: yarn install
+     ```
+  1. Wrap commands that trigger native builds with the CLI:
 
-   :::note
+     :::note
 
-   If you use the official Bitrise Steps **Gradle Runner**, **Android Build**, or **Xcode Archive** to drive your React Native build, make sure you are on the latest version: the wrapping is handled automatically and you do not need to change inputs.
+     If you use the official Bitrise Steps **Gradle Runner**, **Android Build**, or **Xcode Archive** to drive your React Native build, make sure you are on the latest version: the wrapping is handled automatically and you do not need to change inputs.
 
-   For more information about wrapping, see [Wrapping native build commands](/en/bitrise-build-cache/build-cache-for-react-native/wrapping-native-build-commands).
+     For more information about wrapping, see [Wrapping native build commands](/en/bitrise-build-cache/build-cache-for-react-native/wrapping-native-build-commands).
 
-   :::
+     :::
 
-   ```yaml
-   workflows:
-     build-react-native:
-       steps:
-       - activate-ssh-key@4: {}
-       - git-clone@8: {}
-       - activate-build-cache-for-react-native@0: {}
-       # JS dependencies — no wrapping needed.
-       - script@1:
-           title: Install dependencies
-           inputs:
-           - content: yarn install
-       - script@1:
-           title: Build Android
-           inputs:
-           - content: bitrise-build-cache react-native run npx react-native run-android --mode=release
-       - script@1:
-           title: Build iOS
-           inputs:
-           - content: bitrise-build-cache react-native run npx react-native run-ios --configuration=Release
-       - deploy-to-bitrise-io@2: {}
-   ```
+     ```yaml
+     workflows:
+       build-react-native:
+         steps:
+         - activate-ssh-key@4: {}
+         - git-clone@8: {}
+         - activate-build-cache-for-react-native@0: {}
+         # JS dependencies — no wrapping needed.
+         - script@1:
+             title: Install dependencies
+             inputs:
+             - content: yarn install
+         - script@1:
+             title: Build Android
+             inputs:
+             - content: bitrise-build-cache react-native run npx react-native run-android --mode=release
+         - script@1:
+             title: Build iOS
+             inputs:
+             - content: bitrise-build-cache react-native run npx react-native run-ios --configuration=Release
+         - deploy-to-bitrise-io@2: {}
+     ```
+
+  </TabItem>
+</Tabs>
 
 ## Validating the setup
 
