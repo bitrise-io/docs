@@ -21,7 +21,7 @@ The command creates a `.codepush.json` file in the current directory. This file 
 
 When running the `init` command for the first time, the CLI will prompt you for the app ID. You can get it from the URL of the app in Release Management: https://app.bitrise.io/release-management/workspaces/&lt;workspace-slug&gt;/connected-apps/&lt;app-id&gt;/, or [via the API](https://api.bitrise.io/release-management/api-docs/index.html#/Connected%20Apps/ListApps).
 
-```
+```yaml
 Enter your app ID (UUID):
 >a3f47d2c-6b9e-4f1a-9d2b-7c8e5a1b2c3d
 ```
@@ -54,21 +54,21 @@ To update your app via CodePush, you need to create an update bundle and then pu
 
 Bundle your app for each platform separately:
 
-```
+```bash
 codepush bundle --platform ios
 codepush bundle --platform android
 ```
 
 Push a pre-built bundle. Replace the APP_UUID with your app's UUID which you can get from the app URL in Release Management:
 
-```
+```bash
 codepush push ./codepush-bundle \
   --app-id <APP_UUID> --deployment Staging --app-version 1.0.0
 ```
 
 You can also bundle and push the app in one step:
 
-```
+```bash
 codepush push --bundle --platform ios \
   --app-id <APP_UUID> --deployment Staging --app-version 1.0.0
 ```
@@ -99,13 +99,13 @@ Pass `--no-duplicate-release-error` to exit 0 with a warning instead of an error
 
 Patch a specific release:
 
-```
+```bash
 codepush patch --deployment Production --label v5 --mandatory true --app-id <APP_UUID>
 ```
 
 Increase rollout on the latest release:
 
-```
+```bash
 codepush patch --deployment Production --rollout 50 --app-id <APP_UUID>
 ```
 
@@ -116,13 +116,13 @@ You can create a new release that mirrors a previous version with the `rollback`
 
 Rollback to the immediately previous release:
 
-```
+```bash
 codepush rollback --deployment Production --app-id <APP_UUID>
 ```
 
 Rollback to a specific release
 
-```
+```bash
 codepush rollback --deployment Production --target-release v3 --app-id <APP_UUID>
 ```
 
@@ -135,57 +135,57 @@ The CLI plugin also allows you to list deployments, view their details and relea
 
 List all deployments:
 
-```
+```bash
 codepush deployment list --app-id <APP_UUID>
 codepush deployment list --display-keys --app-id <APP_UUID>
 ```
 
 Create a new deployment with the `deployment add` command. You need to set a name and provide the app ID:
 
-```
+```bash
 codepush deployment add Beta --app-id <APP_UUID>
 ```
 
 Create a new deployment with an existing, custom deployment key:
 
-```
+```bash
 codepush deployment add Beta --key my-custom-key --app-id <APP_UUID>
 ```
 
 View deployment details and the latest release with `deployment info`. You must provide a deployment name and the app ID.
 
-```
+```bash
 codepush deployment info Staging --app-id <APP_UUID>
 ```
 
 View release history with the `deployment history` command. By default, it shows the last 10 releases but you can use the `--limit` flag to modify that value.
 
-```
+```bash
 codepush deployment history Staging --app-id <APP_UUID>
 codepush deployment history Staging --limit 25 --app-id <APP_UUID>
 ```
 
 You can also query the author of the releases:
 
-```
+```bash
 codepush deployment history Staging --display-author --app-id <APP_UUID>
 ```
 
 Rename a deployment with the `deployment rename` command. You must set the `OldName` and `NewName` attributes:
 
-```
+```bash
 codepush deployment rename OldName --name NewName --app-id <APP_UUID>
 ```
 
 Clear all releases from a deployment with `deployment clear`. It's a destructive operation that requires the `--yes` flag in a CI setting.
 
-```
+```bash
 codepush deployment clear Staging --app-id <APP_UUID> --yes
 ```
 
 Delete a deployment with the `deployment remove` command. It's a destructive operation that requires the `--yes` flag in a CI setting.
 
-```
+```bash
 codepush deployment remove Beta --app-id <APP_UUID> --yes
 ```
 
@@ -196,24 +196,24 @@ Use the CodePush CLI plugin to manage updates for your app. You can view update 
 
 View details of the latest update with the `update info` command:
 
-```
+```bash
 codepush update info Staging --app-id <APP_UUID>
 ```
 
 View a specific update by label with the `--label` flag:
 
-```
+```bash
 codepush update info Staging --label v5 --app-id <APP_UUID>
 ```
 
 Check the processing status of an update with the `update status` command. This is useful after a push:
 
-```
+```bash
 codepush update status Staging --app-id <APP_UUID>
 ```
 
 Delete a specific update with the `update remove` command. Use the `--label` flag to specify the update and `--yes` to confirm the deletion:
 
-```
+```bash
 codepush update remove Staging --label v3 --app-id <APP_UUID> --yes
 ```

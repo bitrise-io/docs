@@ -32,14 +32,14 @@ By default, the Bitrise AMI doesn't have user passwords. It is the subscriber's 
 
 For an EC2 Mac instance, you need to set a user password and the default `login.keychain` password:
 
-```
+```bash
 sudo /usr/bin/dscl . -passwd /Users/ec2-user
 security set-keychain-password  -o "" -p "<new password>" ~/Library/Keychains/login.keychain-db
 ```
 
 For a Linux instance:
 
-```
+```bash
 sudo passwd
 ```
 
@@ -50,20 +50,20 @@ To connect to your instance using SSH, we recommend using TCP port 22. To connec
 <Tabs>
   <TabItem value="macos" label="macOS">
 
-  - ```
+  - ```bash
     ssh -i "&lt;your-ssh-key&gt;" ec2-user@&lt;your-mac2-instance&gt;
     ```
 
     You can also connect with VNC. We recommend using TCP port 5900. To connect:
 
-    ```
+    ```bash
     open vnc://ec2-user@&lt;aws-mac2-instance&gt;
     ```
 
   </TabItem>
   <TabItem value="linux" label="Linux">
 
-  - ```
+  - ```bash
     ssh -i ~/.ssh/key   ubuntu@<your-aws-instance>
     ```
 
@@ -98,7 +98,7 @@ We highly recommend pre-warming the disk if you use our virtualized offering.
 <Tabs>
   <TabItem value="mac" label="Mac instance">
 
-  - ```
+  - ```bash
     export cnt=$(($(df -h | grep "/$" | awk '{print $4}' | grep -oE "[0-9]+")-2))
     sudo dd if=/dev/random of=bigfile bs=1g count=$cnt
     ```
@@ -106,7 +106,7 @@ We highly recommend pre-warming the disk if you use our virtualized offering.
   </TabItem>
   <TabItem value="linux" label="Linux instance">
 
-  - ```
+  - ```bash
     sudo dd if=/dev/xvdf of=/dev/null bs=1M
     ```
 
@@ -132,7 +132,7 @@ User data is provided either in plain text or in base64 encoded format.
 
 If you have configured a bigger Amazon EBS storage for your EC2 Mac instance than the default (400 GB), resize the partition so macOS can use all available disk space:
 
-```
+```bash
 PDISK=$(diskutil list physical external | head -n1 | cut -d" " -f1)
 APFSCONT=$(diskutil list physical external | grep "Apple_APFS" | tr -s " " | cut -d" " -f8)
 yes | sudo diskutil repairDisk $PDISK

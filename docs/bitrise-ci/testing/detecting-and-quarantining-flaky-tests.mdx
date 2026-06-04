@@ -82,7 +82,7 @@ These Steps populate the BITRISE_FLAKY_TEST_CASES Env Var with tests that failed
 
 The  BITRISE_FLAKY_TEST_CASES Env Var contains a newline-separated list of flaky test identifiers:
 
-```
+```yaml
 - TestTarget_1.TestClass_1.TestMethod_1
 - TestTarget_1.TestClass_1.TestMethod_2  
 - TestTarget_1.TestClass_2.TestMethod_1
@@ -95,7 +95,7 @@ Here are a couple of use cases when using this Env Var comes handy:
 
 1. The test fails if flaky tests are detected:
 
-   ```
+   ```yaml
    steps:
    ...
    - script:    
@@ -109,7 +109,7 @@ Here are a couple of use cases when using this Env Var comes handy:
    ```
 1. To send Slack notification if flaky tests are detected:
 
-   ```
+   ```yaml
    steps:
    ...
    - slack:    
@@ -122,7 +122,7 @@ Here are a couple of use cases when using this Env Var comes handy:
    ```
 1. Creates a GitHub issue automatically:
 
-   ```
+   ```yaml
    steps:
    ...
    - script:    
@@ -250,7 +250,7 @@ We recommend that you scope narrowly; quarantine on the branches/workflows where
 
 During builds, Bitrise injects the scoped list of quarantined tests into the $BITRISE_QUARANTINED_TESTS_JSON Environment Variable. Supported Steps read this variable to skip those tests and exclude them from automatic reruns. If you use custom Steps or direct runner calls, parse $BITRISE_QUARANTINED_TESTS_JSON and filter your test runner arguments accordingly. Here is an example of the value in the Env Var:
 
-```
+```yaml
 BITRISE_QUARANTINED_TESTS_JSON = "[
   {
      testCaseName: 'EnableQuarantiningDisabledByPlan',
@@ -296,7 +296,7 @@ You can convert the JSON data either in the configuration YAML file or in the fa
 
   1. In this example, a **Script** Step converts the quarantined test JSON data to a comma-separated list of `TestTarget/TestClass/TestMethod` items and exposes the list in the BITRISE_QUARANTINED_TESTS_LIST Environment Variable:
 
-     ```
+     ```yaml
      workflows:
        test:
          steps:
@@ -326,7 +326,7 @@ You can convert the JSON data either in the configuration YAML file or in the fa
      ```
   1. The BITRISE_QUARANTINED_TESTS_LIST variable can then be used to set the `skip testing` option for the `scan` action in fastlane:
 
-     ```
+     ```ruby
      lane :test do
        ...
        scan(skip_testing: ENV['BITRISE_QUARANTINED_TESTS_LIST'].split(','))
@@ -339,7 +339,7 @@ You can convert the JSON data either in the configuration YAML file or in the fa
 
   - Converting the data in the Fastfile also requires the BITRISE_QUARANTINED_TESTS_JSON variable. In the example below, the fastlane lane parses the list of quarantined tests into test identifiers and passes them to scan as `skip_testing`:
 
-    ```
+    ```ruby
     lane :test do
       ...
       skip_testing = JSON.parse(ENV['BITRISE_QUARANTINED_TESTS_JSON']).map do |item|
@@ -357,7 +357,7 @@ You can convert the JSON data either in the configuration YAML file or in the fa
 
 This example converts the BITRISE_QUARANTINED_TESTS_JSON variable's value to `skip-testing` options for xcodebuild `test` or `test-without-building` commands.
 
-```
+```yaml
 workflows:
   test:
     steps:
@@ -388,7 +388,7 @@ workflows:
 
 When running Android local unit tests through Gradle (`/gradlew testUnitTest)`, a Gradle Init script can be used to skip quarantined test cases.
 
-```
+```yaml
 workflows:
   test:
     steps:
@@ -446,7 +446,7 @@ workflows:
 
 The `Create skip testing init script` Step creates the following Gradle init script:
 
-```
+```groovy
 allprojects {
     tasks.withType<Test>().configureEach {
         filter.excludeTestsMatching("<package_name>.<test_class>.<test_method_1>")
