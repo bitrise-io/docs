@@ -40,7 +40,7 @@ Before creating a new Step, you will need to install the Bitrise CLI, set it up,
 1. Run `bitrise setup`.
 1. Install the Step plugin with the following command:
 
-   ```
+   ```bash
    bitrise plugin install step
    ```
 
@@ -192,7 +192,7 @@ The available values are:
 
 Step inputs are Bitrise [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables): they consist of a key and value pair that users of the Step can set to control the Step behavior. For example, the **Git Clone** Step has an input with the key branch:
 
-```
+```yaml
 title: Git Clone Repository
 summary: Clone a repository to the specified path on the VM
 inputs:
@@ -237,7 +237,7 @@ Step inputs are defined and configured in the `step.yml` file.
 
 In addition to a key and a value, Step inputs are required to have an `opts` property. This property contains the different options that define how the inputs are passed to the code of the Step and how it is presented in the Workflow Editor. The possible values of the input can be set in `opts` as well. Let’s see an example.
 
-```
+```yaml
 - install_defaults: "yes"
   opts:
     title: Installs default Codesign Files
@@ -277,7 +277,7 @@ Both `description` and `summary` accept Markdown formatting in its values.
 
 Here is an example:
 
-```
+```yaml
 - install_defaults: "yes"
   opts:
     description: Installs default (Bitrise) Wildcard Provisioning Profile and
@@ -294,7 +294,7 @@ Required inputs must have a valid value, otherwise the Step will fail.
 
 To mark a Step input as required, use the is_required option of the `opts` property. It has two values: `true` and `false`. If set to `true`, the input will be displayed as **REQUIRED** on the Workflow Editor.
 
-```
+```yaml
 - keychain_password: $BITRISE_KEYCHAIN_PASSWORD
   opts:
     title: "Keychain's password"
@@ -305,7 +305,7 @@ To mark a Step input as required, use the is_required option of the `opts` prope
 
 As noted earlier, it is possible to use Environment Variables as the value of any given input. By default, the Step will expand the Env Var and pass its value to the Step execution. This is defined by the `is_expand` option of the `opts` property.
 
-```
+```yaml
 - project_path: $BITRISE_PROJECT_PATH
   opts:
     is_expand: true
@@ -331,7 +331,7 @@ If you mark an input as sensitive, the `is_expand` option of the input also must
 
 :::
 
-```
+```yaml
 inputs:
   - certificate_urls: $BITRISE_CERTIFICATE_URL
     opts:
@@ -343,7 +343,7 @@ inputs:
 
 The category option is used to group inputs together. Inputs belonging to the same category are displayed together and collapsed by default in the Workflow Editor.
 
-```
+```yaml
 - default_certificate_passphrase: $BITRISE_DEFAULT_CERTIFICATE_PASSPHRASE
   opts:
     category: Default code signing files
@@ -395,7 +395,7 @@ For output keys, use upper case [snake case](https://en.wikipedia.org/wiki/Snake
 
 Step outputs are always exported as Environment Variables (Env Var). For example, the **Xcode Archive & Export for iOS Step** generates an IPA file: this output is exported as the BITRISE_IPA_PATH Env Var:
 
-```
+```yaml
 outputs:
 - BITRISE_IPA_PATH:  
   opts:    
@@ -439,7 +439,7 @@ Step dependencies should not include toolkit dependencies, as the Bitrise CLI wi
 
 The Bitrise CLI can install Step dependencies available in the Homebrew package manager:
 
-```
+```yaml
 deps:
   brew:
   - name: cmake
@@ -447,7 +447,7 @@ deps:
 
 It can install apt-get dependencies available in the sources listed in the sources.list file on the host machine:
 
-```
+```yaml
 deps:
   apt_get:
   - name: cmake

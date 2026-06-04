@@ -133,7 +133,7 @@ The key-based caching templates support the use of two different functions:
 
 Use the `checksum` function to create a key that computes the checksum of the `package-lock.json` file:
 
-```
+```yaml
 - save-cache@1:
     inputs:
     - key: npm-cache-{{ checksum "package-lock.json" }}
@@ -142,7 +142,7 @@ Use the `checksum` function to create a key that computes the checksum of the `p
 
 Use the `checksum` function to create a key that computes a checksum for any `.gradle` file and the `gradle.properties` file:
 
-```
+```yaml
 - save-cache@1:
     inputs:
     - key: gradle-cache-{{ checksum "**/*.gradle*" "gradle.properties" }}
@@ -153,7 +153,7 @@ Use the `checksum` function to create a key that computes a checksum for any `.g
 
 Use the `getenv` function to create a key that contains the value of the BITRISE_BUILD_NUMBER Env Var.
 
-```
+```yaml
 - save-cache@1:
     inputs:
     - key: npm-cache-{{ getenv "BITRISE_BUILD_NUMBER" }}
@@ -165,7 +165,7 @@ Use the `getenv` function to create a key that contains the value of the BITRISE
 
 It's possible to define more than one key in the **Cache keys** input of the key-based caching Steps. You can specify additional keys by listing one key per line. The list is in priority order, so the Step will first try to find a match for the first key you provided, and if there is no cache stored for the key, it will move on to find a match for the second key (and so on).
 
-```
+```yaml
 inputs:
   key: |
     key-1
@@ -175,7 +175,7 @@ inputs:
 
 In addition to listing multiple keys, each key can be a prefix of a saved cache key and still get a matching cache archive. For example, the key `my-cache-` can match an existing archive saved with the key `my-cache-a6a102ff`. We recommend configuring the keys in a way that the first key is an exact match to a checksum key, and to use a more generic prefix key as a fallback:
 
-```
+```yaml
 inputs:
   key: |
     npm-cache-{{ checksum "package-lock.json" }}
@@ -220,7 +220,7 @@ If everything is configured correctly, if the keys in the two caching Steps matc
 
 In this example, the cache key calculates the sum for any `.gradle` file and the `gradle.properties` file. Both the **Restore cache** and the **Save cache** Step looks for the same cache key:
 
-```
+```yaml
 workflows:    
   caching:      
     steps:      
