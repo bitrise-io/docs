@@ -30,7 +30,7 @@ Run any kind of tests (unit, instrumentation) on a local emulator instance.
 
 ## bitrise.yml
 
-```
+```yaml
 - avd-manager@1: {}
 - android-build-for-ui-testing@0:
         inputs:

@@ -17,7 +17,7 @@ Check out our [guide](/en/bitrise-ci/run-and-analyze-builds/starting-builds/sch
 
 ## bitrise.yml
 
-```
+```yaml
 ---
 format_version: '11'
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git

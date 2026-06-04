@@ -18,7 +18,7 @@ Every API endpoint requires authentication, except the “root” URL ([https://
 
    For example, the following call retrieves a list of apps you or your Workspace has access to:
 
-   ```
+   ```yaml
    curl -X 'GET' \
      'https://api.bitrise.io/v0.1/apps' \
      -H 'Authorization: <ACCESS-TOKEN>'

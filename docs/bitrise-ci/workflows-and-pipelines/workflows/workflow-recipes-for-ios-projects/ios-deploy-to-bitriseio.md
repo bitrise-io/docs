@@ -22,7 +22,7 @@ You have code signing set up. See [iOS code signing](/en/bitrise-ci/code-signin
 
 ## bitrise.yml
 
-```
+```yaml
 - xcode-archive@4:
         inputs:
         - project_path: "$BITRISE_PROJECT_PATH"

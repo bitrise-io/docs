@@ -26,7 +26,7 @@ Build and distribute your app to testers via Firebase App Distribution.
 
 ## bitrise.yml
 
-```
+```yaml
 - xcode-archive@6:
     inputs:
     - distribution_method: development

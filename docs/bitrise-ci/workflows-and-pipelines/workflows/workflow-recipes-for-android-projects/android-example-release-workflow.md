@@ -12,7 +12,7 @@ Example Workflow for uploading a release draft of an app to Google Play. The Wor
 
 ## bitrise.yml
 
-```
+```yaml
 ---
 format_version: '11'
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git

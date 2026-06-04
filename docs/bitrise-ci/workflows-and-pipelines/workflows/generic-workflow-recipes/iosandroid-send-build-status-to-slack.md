@@ -22,7 +22,7 @@ Check out other options in the Step documentation or in the Workflow Editor.
 
 ## bitrise.yml
 
-```
+```yaml
 - slack@3:
     inputs:
     - channel: "#build-notifications"

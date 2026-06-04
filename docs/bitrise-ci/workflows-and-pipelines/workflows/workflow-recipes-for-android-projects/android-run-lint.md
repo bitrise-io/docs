@@ -20,7 +20,7 @@ Runs Lint on your Android project.
 
 ## bitrise.yml
 
-```
+```yaml
 - android-lint@0:
     inputs:
     - variant: $VARIANT

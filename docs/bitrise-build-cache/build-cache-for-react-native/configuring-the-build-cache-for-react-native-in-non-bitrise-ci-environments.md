@@ -49,7 +49,7 @@ The Bitrise Build Cache CLI can be downloaded and run on any third-party CI prov
 
 **Example configuration: GitHub Actions**
 
-```
+```yaml
 jobs:
   build-rn:
     runs-on: macos-latest

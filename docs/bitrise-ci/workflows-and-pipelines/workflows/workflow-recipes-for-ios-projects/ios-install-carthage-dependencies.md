@@ -22,7 +22,7 @@ If your project needs a Carthage version currently unavailable on our stacks, ch
 
 ## bitrise.yml
 
-```
+```yaml
 - carthage@3:
     inputs:
     - carthage_options: "--use-xcframeworks --platform iOS"
