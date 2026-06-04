@@ -11,7 +11,7 @@ After activation, prefix every command that triggers a *native* build with `bitr
 
 **Before:**
 
-```
+```bash
 npx react-native run-android
 ```
 

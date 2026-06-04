@@ -86,7 +86,7 @@ And you are done! Once you trigger the **Trigger** workflow, the **Bitrise Start
 
 ## bitrise.yml example
 
-```
+```yaml
 Trigger:
   steps:
   - build-router-start@0:

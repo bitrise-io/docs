@@ -21,7 +21,7 @@ Set up caching for dependencies (`node_modules` folder) of a React Native app.
 
 Using `yarn`:
 
-```
+```yaml
 - cache-pull@2: {}
 - yarn@0:
     inputs:
@@ -34,7 +34,7 @@ Using `yarn`:
 
 Using `npm`:
 
-```
+```yaml
 - cache-pull@2: {}
 - npm@1:
     inputs:

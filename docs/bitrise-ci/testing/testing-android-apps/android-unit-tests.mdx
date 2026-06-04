@@ -20,119 +20,125 @@ You can run multiple unit tests in parallel, for different devices or shards, by
 
 To run your unit tests:
 
-Workflow Editor
 
-bitrise.yml
+<Tabs>
+  <TabItem value="workflow-editor" label="Workflow Editor">
 
-1. Make sure you included [unit tests](https://developer.android.com/training/testing/local-tests) in your Android project.
-1. Add the [**Android Unit Test**](https://github.com/bitrise-steplib/bitrise-step-android-unit-test) Step to your <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
-1. Make sure the **Project Location** input points to the root directory of your Android project.
+  1. Make sure you included [unit tests](https://developer.android.com/training/testing/local-tests) in your Android project.
+  1. Add the [**Android Unit Test**](https://github.com/bitrise-steplib/bitrise-step-android-unit-test) Step to your <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
+  1. Make sure the **Project Location** input points to the root directory of your Android project.
 
-   The root directory is the directory where your `build.gradle` file exists. If you configured your Android project automatically when [adding it as an app](/en/bitrise-ci/getting-started/adding-a-new-project) on Bitrise, you don't have to change the default value.
-1. In the **Module** and **Variant** inputs, set the module and the variant you want to test. Leave the inputs blank to test all modules and/or variants.
+     The root directory is the directory where your `build.gradle` file exists. If you configured your Android project automatically when [adding it as an app](/en/bitrise-ci/getting-started/adding-a-new-project) on Bitrise, you don't have to change the default value.
+  1. In the **Module** and **Variant** inputs, set the module and the variant you want to test. Leave the inputs blank to test all modules and/or variants.
 
-   You can check the available modules and variants of your project in [the Project window in Android Studio](https://developer.android.com/studio/projects).
+     You can check the available modules and variants of your project in [the Project window in Android Studio](https://developer.android.com/studio/projects).
 
-   ![android-unit-test.png](/img/_paligo/uuid-6affd72d-61b9-8755-539a-5b26f62516a5.png)
-1. In the **Options** input group, you can [pass additional Gradle arguments](https://docs.gradle.org/current/userguide/custom_tasks.html#sec:declaring_and_using_command_line_options) to the build task in the **Additional Gradle Arguments** input.
-1. If you have custom output directories configured for the test results of the tests in your project, configure the Step to look for the test results in the correct location when exporting them:
+     ![android-unit-test.png](/img/_paligo/uuid-6affd72d-61b9-8755-539a-5b26f62516a5.png)
+  1. In the **Options** input group, you can [pass additional Gradle arguments](https://docs.gradle.org/current/userguide/custom_tasks.html#sec:declaring_and_using_command_line_options) to the build task in the **Additional Gradle Arguments** input.
+  1. If you have custom output directories configured for the test results of the tests in your project, configure the Step to look for the test results in the correct location when exporting them:
 
-   The **Local unit test HTML result directory pattern** input sets the directory for HTML test results.
+     The **Local unit test HTML result directory pattern** input sets the directory for HTML test results.
 
-   The **Local unit test XML result directory pattern** input sets the directory for XML test results.
+     The **Local unit test XML result directory pattern** input sets the directory for XML test results.
 
-   ![local-result-pattern.png](/img/_paligo/uuid-2e0224cb-0d48-8c50-3bb4-c5a126fff586.png)
+     ![local-result-pattern.png](/img/_paligo/uuid-2e0224cb-0d48-8c50-3bb4-c5a126fff586.png)
 
-   Both directories are zipped and exported to BITRISE_DEPLOY_DIR. This ensures that your test results can be viewed, for example, in the **Tests** tab.
+     Both directories are zipped and exported to BITRISE_DEPLOY_DIR. This ensures that your test results can be viewed, for example, in the **Tests** tab.
 
-   If you don't have custom output directories configured, you do not need to change these inputs: the default values will work.
-1. Add the [**Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files**](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) Step to your Workflow to be able to view your test results: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
+     If you don't have custom output directories configured, you do not need to change these inputs: the default values will work.
+  1. Add the [**Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files**](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) Step to your Workflow to be able to view your test results: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
 
-1. Make sure you included [unit tests](https://developer.android.com/training/testing/local-tests) in your Android project.
-1. Add the `android-unit-test` Step to your Workflow.
+  </TabItem>
+  <TabItem value="yaml" label="Configuration YAML">
 
-   ```yaml
-   my-workflow:
-     steps:
-       - git-clone: {}
-       - android-unit-test:
-           inputs:
-   ```
-1. Make sure the `project_location` input points to the root directory of your Android project.
+  1. Make sure you included [unit tests](https://developer.android.com/training/testing/local-tests) in your Android project.
+  1. Add the `android-unit-test` Step to your Workflow.
 
-   The root directory is the directory where your `build.gradle` file exists. If you configured your Android project automatically when [adding it as an app](/en/bitrise-ci/getting-started/adding-a-new-project) on Bitrise, you don't have to change the default value.
+     ```yaml
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-unit-test:
+             inputs:
+     ```
+  1. Make sure the `project_location` input points to the root directory of your Android project.
 
-   ```yaml
-   my-workflow:
-     steps:
-       - git-clone: {}
-       - android-unit-test:
-           inputs:
-           - project_location: $BITRISE_SOURCE_DIR
-   ```
-1. In the `module` and `variant` inputs, set the module and the variant you want to test. If you don't set these inputs, the Step will test all modules and/or variants.
+     The root directory is the directory where your `build.gradle` file exists. If you configured your Android project automatically when [adding it as an app](/en/bitrise-ci/getting-started/adding-a-new-project) on Bitrise, you don't have to change the default value.
 
-   You can check the available modules and variants of your project in [the Project window in Android Studio](https://developer.android.com/studio/projects).
+     ```yaml
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-unit-test:
+             inputs:
+             - project_location: $BITRISE_SOURCE_DIR
+     ```
+  1. In the `module` and `variant` inputs, set the module and the variant you want to test. If you don't set these inputs, the Step will test all modules and/or variants.
 
-   ```yaml
-   my-workflow:
-     steps:
-       - git-clone: {}
-       - android-unit-test:
-           inputs:
-           - module: app
-           - variant: debug
-           - project_location: $BITRISE_SOURCE_DIR
-   ```
-1. In the `arguments` input, you can [pass additional Gradle arguments](https://docs.gradle.org/current/userguide/custom_tasks.html#sec:declaring_and_using_command_line_options) to the build task.
+     You can check the available modules and variants of your project in [the Project window in Android Studio](https://developer.android.com/studio/projects).
 
-   ```yaml
-   my-workflow:
-     steps:
-       - git-clone: {}
-       - android-unit-test:
-           inputs:
-           - module: app
-           - variant: debug
-           - arguments: --task
-           - project_location: $BITRISE_SOURCE_DIR
-   ```
-1. If you have custom output directories configured for the test results of the tests in your project, configure the Step to look for the test results in the correct location when exporting them:
+     ```yaml
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-unit-test:
+             inputs:
+             - module: app
+             - variant: debug
+             - project_location: $BITRISE_SOURCE_DIR
+     ```
+  1. In the `arguments` input, you can [pass additional Gradle arguments](https://docs.gradle.org/current/userguide/custom_tasks.html#sec:declaring_and_using_command_line_options) to the build task.
 
-   The `report_path_pattern` input sets the directory for HTML test results.
+     ```yaml
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-unit-test:
+             inputs:
+             - module: app
+             - variant: debug
+             - arguments: --task
+             - project_location: $BITRISE_SOURCE_DIR
+     ```
+  1. If you have custom output directories configured for the test results of the tests in your project, configure the Step to look for the test results in the correct location when exporting them:
 
-   The `result_path_pattern` input sets the directory for XML test results.
+     The `report_path_pattern` input sets the directory for HTML test results.
 
-   ```yaml
-   my-workflow:
-     steps:
-       - git-clone: {}
-       - android-unit-test:
-           inputs:
-           - module: app
-           - variant: debug
-           - arguments: --task
-           - report_path_pattern: '*build/reports/tests'
-           - result_path_pattern: '*build/test-results'
-           - project_location: $BITRISE_SOURCE_DIR
-   ```
+     The `result_path_pattern` input sets the directory for XML test results.
 
-   Both directories are zipped and exported to BITRISE_DEPLOY_DIR. This ensures that your test results can be viewed, for example, in the **Tests** tab.
+     ```yaml
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-unit-test:
+             inputs:
+             - module: app
+             - variant: debug
+             - arguments: --task
+             - report_path_pattern: '*build/reports/tests'
+             - result_path_pattern: '*build/test-results'
+             - project_location: $BITRISE_SOURCE_DIR
+     ```
 
-   If you don't have custom output directories configured, you do not need to change these inputs: the default values will work.
-1. Add the `deploy-to-bitrise-io` Step to your Workflow to be able to view your test results: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
+     Both directories are zipped and exported to BITRISE_DEPLOY_DIR. This ensures that your test results can be viewed, for example, in the **Tests** tab.
 
-   ```yaml
-   my-workflow:
-     steps:
-       - git-clone: {}
-       - android-unit-test:
-           inputs:
-           - module: app
-           - variant: debug
-           - arguments: --task
-           - report_path_pattern: '*build/reports/tests'
-           - result_path_pattern: '*build/test-results'
-           - project_location: $BITRISE_SOURCE_DIR
-       - deploy-to-bitrise-io: {}
-   ```
+     If you don't have custom output directories configured, you do not need to change these inputs: the default values will work.
+  1. Add the `deploy-to-bitrise-io` Step to your Workflow to be able to view your test results: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
+
+     ```yaml
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-unit-test:
+             inputs:
+             - module: app
+             - variant: debug
+             - arguments: --task
+             - report_path_pattern: '*build/reports/tests'
+             - result_path_pattern: '*build/test-results'
+             - project_location: $BITRISE_SOURCE_DIR
+         - deploy-to-bitrise-io: {}
+     ```
+
+  </TabItem>
+</Tabs>

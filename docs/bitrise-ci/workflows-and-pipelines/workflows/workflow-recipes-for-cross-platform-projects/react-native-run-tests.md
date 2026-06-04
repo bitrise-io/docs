@@ -16,7 +16,7 @@ Run tests, for example, in Jest.
 
 Using `yarn`:
 
-```
+```yaml
 - yarn@0:
     inputs:
     - command: test
@@ -24,7 +24,7 @@ Using `yarn`:
 
 Using `npm`:
 
-```
+```yaml
 - npm@1:
     inputs:
     - command: test

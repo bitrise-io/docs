@@ -32,7 +32,7 @@ Check out other options in the Step documentation or in the Workflow Editor.
 
 ## bitrise.yml
 
-```
+```yaml
 - android-build@1:
         inputs:
         - variant: release

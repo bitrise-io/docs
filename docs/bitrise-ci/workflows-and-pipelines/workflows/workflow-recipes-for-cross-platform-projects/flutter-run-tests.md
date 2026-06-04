@@ -17,7 +17,7 @@ Runs any test in a Flutter project.
 
 ## bitrise.yml
 
-```
+```yaml
 - flutter-test@1:
     inputs:
     - project_location: "$BITRISE_FLUTTER_PROJECT_LOCATION"

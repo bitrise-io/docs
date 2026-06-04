@@ -31,7 +31,7 @@ You might encounter some unexpected issues while running instrumentation tests o
 
 ## bitrise.yml
 
-```
+```yaml
 - android-build-for-ui-testing@0:
     inputs:
     - variant: $VARIANT

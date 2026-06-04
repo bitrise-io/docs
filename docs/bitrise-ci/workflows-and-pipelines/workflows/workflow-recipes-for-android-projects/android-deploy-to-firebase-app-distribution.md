@@ -33,7 +33,7 @@ Build and distribute your app to testers via Firebase App Distribution. This exa
 
 ## bitrise.yml
 
-```
+```yaml
 - android-build@1:
     inputs:
     - variant: release

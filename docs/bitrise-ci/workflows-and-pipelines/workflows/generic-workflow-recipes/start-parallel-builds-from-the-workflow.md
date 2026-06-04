@@ -29,7 +29,7 @@ Using this method, you can only start builds for the same app. If you would like
 
 ## bitrise.yml
 
-```
+```yaml
 parent-workflow:
   steps:
   - build-router-start@0:

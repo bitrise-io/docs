@@ -18,7 +18,7 @@ Install dependencies using either yarn or npm.
 
 Using `yarn`:
 
-```
+```yaml
 - yarn@0:
     inputs:
     - command: install
@@ -26,7 +26,7 @@ Using `yarn`:
 
 Using `npm`:
 
-```
+```yaml
 - npm@1:
     inputs:
     - command: install

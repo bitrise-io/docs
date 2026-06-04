@@ -21,7 +21,7 @@ If you have both, the Env Var is resolved first and takes priority.
 1. [Generate a personal access token](urn:resource:component:54560) and copy it.
 1. Run the following command:
 
-   ```
+   ```bash
    bitrise :codepush auth login --token <TOKEN>
    ```
 
@@ -36,6 +36,6 @@ If you want to revoke an API token that you stored locally for CodePush, you can
 
 To revoke the token, run the following command:
 
-```
+```bash
 bitrise :codepush auth revoke
 ```

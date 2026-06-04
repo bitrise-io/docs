@@ -58,7 +58,7 @@ bitrise.yml
    - `context`: The path to the files that constitute your build context. It should be relative to your Bitrise working directory.
    - `file`: The path to the Dockerfile you wish to use. It should be relative to your Bitrise working directory.
 
-   ```
+   ```yaml
    workflow:
      steps:
        - docker-build-push:
@@ -69,7 +69,7 @@ bitrise.yml
    ```
 1. If you want to push the built image to a container registry, set the `push` input to **true**.
 
-   ```
+   ```yaml
    workflow:
      steps:
        - docker-build-push:
@@ -95,7 +95,7 @@ bitrise.yml
 
    :::
 
-   ```
+   ```yaml
    workflow:
      steps:
        - docker-build-push:
@@ -117,7 +117,7 @@ bitrise.yml
 
      :::
 
-   ```
+   ```yaml
    workflow:
      steps:
        - docker-build-push:

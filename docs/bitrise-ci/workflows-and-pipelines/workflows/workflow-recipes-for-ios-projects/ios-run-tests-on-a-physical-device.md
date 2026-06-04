@@ -20,7 +20,7 @@ Run unit or UI tests on a physical device. Our [device testing solution](/en/bit
 
 ## bitrise.yml
 
-```
+```yaml
 - xcode-build-for-test@1:
     inputs:
     - automatic_code_signing: api_key

@@ -9,7 +9,7 @@ When you call an endpoint that returns a list of items, you might not get the wh
 
 The response of such endpoints include a `paging` object, with `total_item_count` and `page_item_limit` properties. If there is a “next” page available, it’ll also include a `next` “anchor” item. For example, the response will show the app slug of the first app on the next page.
 
-```
+```json
 {
   "data": [ ... ],
   "paging": {

@@ -14,84 +14,90 @@ Android Studio provides [a code scanning tool called lint](https://developer.an
 
 On Bitrise, you can run lint checks with our dedicated <GlossTerm baseform="Step">Step</GlossTerm> called [**Android Lint**](https://github.com/bitrise-steplib/bitrise-step-android-lint). To do so:
 
-Workflow Editor
 
-Configuration YAML
+<Tabs>
+  <TabItem value="workflow-editor" label="Workflow Editor">
 
-1. Add the [**Android Lint**](https://github.com/bitrise-steplib/bitrise-step-android-lint) Step to your Android <GlossTerm baseform="App">app's</GlossTerm> <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
+  1. Add the [**Android Lint**](https://github.com/bitrise-steplib/bitrise-step-android-lint) Step to your Android <GlossTerm baseform="App">app's</GlossTerm> <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
 
-   It should come before any Step that builds your app (for example, [**Android Build**](https://github.com/bitrise-steplib/bitrise-step-android-build)), if you have such a Step in your Workflow.
-1. Make sure the **Project Location** input points to the root directory of your Android project, where the top level `build.gradle` file is located.
-1. In the **Module** and **Variant** inputs, specify the module and variant of the app you want to check.
+     It should come before any Step that builds your app (for example, [**Android Build**](https://github.com/bitrise-steplib/bitrise-step-android-build)), if you have such a Step in your Workflow.
+  1. Make sure the **Project Location** input points to the root directory of your Android project, where the top level `build.gradle` file is located.
+  1. In the **Module** and **Variant** inputs, specify the module and variant of the app you want to check.
 
-   ![android-lint.png](/img/_paligo/uuid-624b318c-ddc6-58e7-4c58-e426c2f3db50.png)
+     ![android-lint.png](/img/_paligo/uuid-624b318c-ddc6-58e7-4c58-e426c2f3db50.png)
 
-   If you are unsure about the exact names of modules and variants in your project, you can check them [in the Project view in Android Studio](https://developer.android.com/studio/projects).
-1. In the **Options** input group, the **Report location pattern** input allows you to specify where the lint report should be found once the Step has run.
+     If you are unsure about the exact names of modules and variants in your project, you can check them [in the Project view in Android Studio](https://developer.android.com/studio/projects).
+  1. In the **Options** input group, the **Report location pattern** input allows you to specify where the lint report should be found once the Step has run.
 
-   The input accepts asterisks as a wildcard. You can set the input to return the results either as html or xml.
-1. In the **Options** input group, the **Additional Gradle Arguments** input allows you to pass arguments to the Gradle task.
+     The input accepts asterisks as a wildcard. You can set the input to return the results either as html or xml.
+  1. In the **Options** input group, the **Additional Gradle Arguments** input allows you to pass arguments to the Gradle task.
 
-1. In the Configuration YAML file, add the `android-lint` Step to your Android <GlossTerm baseform="App">app's</GlossTerm> <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
+  </TabItem>
+  <TabItem value="yaml" label="Configuration YAML">
 
-   It should come before any Step that builds your app (for example, [**Android Build**](https://github.com/bitrise-steplib/bitrise-step-android-build)), if you have such a Step in your Workflow.
+  1. In the Configuration YAML file, add the `android-lint` Step to your Android <GlossTerm baseform="App">app's</GlossTerm> <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
 
-   ```
-   my-workflow:
-     steps:
-       - git-clone: {}
-       - android-lint:
-   ```
-1. Make sure the `project_location` input points to the root directory of your Android project, where the top level `build.gradle` or `build.gradle.kts` file is located.
+     It should come before any Step that builds your app (for example, [**Android Build**](https://github.com/bitrise-steplib/bitrise-step-android-build)), if you have such a Step in your Workflow.
 
-   ```
-   my-workflow:
-     steps:
-       - git-clone: {}
-       - android-lint:
-           inputs:
-           - project_location: $BITRISE_SOURCE_DIR
-   ```
-1. In the `module` and `variant` inputs, specify the module and variant of the app you want to check.
+     ```
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-lint:
+     ```
+  1. Make sure the `project_location` input points to the root directory of your Android project, where the top level `build.gradle` or `build.gradle.kts` file is located.
 
-   If you are unsure about the exact names of modules and variants in your project, you can check them [in the Project view in Android Studio](https://developer.android.com/studio/projects).
+     ```
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-lint:
+             inputs:
+             - project_location: $BITRISE_SOURCE_DIR
+     ```
+  1. In the `module` and `variant` inputs, specify the module and variant of the app you want to check.
 
-   ```
-   my-workflow:
-     steps:
-       - git-clone: {}
-       - android-lint:
-           inputs:
-           - module: module
-           - variant: variant
-           - project_location: $BITRISE_SOURCE_DIR
-   ```
-1. The `report_path_pattern` input allows you to specify where the lint report should be found once the Step has run.
+     If you are unsure about the exact names of modules and variants in your project, you can check them [in the Project view in Android Studio](https://developer.android.com/studio/projects).
 
-   The input accepts asterisks as a wildcard. You can set the input to return the results either as html or xml.
+     ```
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-lint:
+             inputs:
+             - module: module
+             - variant: variant
+             - project_location: $BITRISE_SOURCE_DIR
+     ```
+  1. The `report_path_pattern` input allows you to specify where the lint report should be found once the Step has run.
 
-   ```
-   my-workflow:
-     steps:
-       - git-clone: {}
-       - android-lint:
-           inputs:
-           - module: module
-           - variant: variant
-           - report_path_pattern: '*/build/reports/lint-results*.xml'
-           - project_location: $BITRISE_SOURCE_DIR
-   ```
-1. The `argument` input allows you to pass arguments to the Gradle task.
+     The input accepts asterisks as a wildcard. You can set the input to return the results either as html or xml.
 
-   ```
-   my-workflow:
-     steps:
-       - git-clone: {}
-       - android-lint:
-           inputs:
-           - module: module
-           - variant: variant
-           - report_path_pattern: '*/build/reports/lint-results*.xml'
-           - argument: arg
-           - project_location: $BITRISE_SOURCE_DIR
-   ```
+     ```
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-lint:
+             inputs:
+             - module: module
+             - variant: variant
+             - report_path_pattern: '*/build/reports/lint-results*.xml'
+             - project_location: $BITRISE_SOURCE_DIR
+     ```
+  1. The `argument` input allows you to pass arguments to the Gradle task.
+
+     ```
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-lint:
+             inputs:
+             - module: module
+             - variant: variant
+             - report_path_pattern: '*/build/reports/lint-results*.xml'
+             - argument: arg
+             - project_location: $BITRISE_SOURCE_DIR
+     ```
+
+  </TabItem>
+</Tabs>

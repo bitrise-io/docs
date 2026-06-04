@@ -68,7 +68,7 @@ Configuration YAML
 
    This Step runs the initial setup of the Flutter SDK and installs any missing components.
 
-   ```
+   ```yaml
    primary:
      description: |
        Builds project and runs tests.
@@ -85,7 +85,7 @@ Configuration YAML
    - You can find the available version tags here: [Version tags](https://github.com/flutter/flutter/tags).
    - You can find the available branch labels here: [Branch labels](https://github.com/flutter/flutter/branches).
 
-   ```
+   ```yaml
    # Installing version 3.7.7 of the Flutter SDK
    - flutter-installer:
        inputs:
@@ -98,7 +98,7 @@ Configuration YAML
 
    The URL is expected to begin with `https://storage.googleapis.com/flutter_infra`. For example:
 
-   ```
+   ```yaml
    - flutter-installer:
        inputs:
        - installation_bundle_url: https://storage.googleapis.com/flutter_infra/releases/beta/macos/flutter_macos_v1.6.3-beta.zip
@@ -109,7 +109,7 @@ Configuration YAML
 
    The Step runs the `flutter test` command with optional flags. It can also check code coverage.
 
-   ```
+   ```yaml
    primary:
      description: |
        Builds project and runs tests.
@@ -126,7 +126,7 @@ Configuration YAML
    ```
 1. Make sure the `project_location` input points to the root directory of your Flutter project.
 
-   ```
+   ```yaml
    - flutter-test:
        inputs:
        - project_location: "$BITRISE_FLUTTER_PROJECT_LOCATION"
@@ -135,7 +135,7 @@ Configuration YAML
    - If the project scanner automatically detected it as a Flutter project when [adding it as an app](/en/bitrise-ci/getting-started/adding-a-new-project) on Bitrise, you don't have to change the default value, which is BITRISE_FLUTTER_PROJECT_LOCATION.
    - If you configured the app manually, check that the location is correct. You can check where BITRISE_FLUTTER_PROJECT_LOCATION points in the `envs` property of the `app`:
 
-     ```
+     ```yaml
      # Pointing to the root directory
      app:
        envs:
@@ -147,7 +147,7 @@ Configuration YAML
 
    The input accepts both * and ** glob formats. For example, `lib/**/*_test.dart` is a valid input.
 
-   ```
+   ```yaml
    - flutter-test:
        inputs:
        - tests_path_pattern: /lib/*_test.dart
@@ -156,7 +156,7 @@ Configuration YAML
 
    To see the available options, run the `flutter help test` command. You can do so on your own device or in a **Script** Step on Bitrise.
 
-   ```
+   ```yaml
    - flutter-test:
        inputs:
    # setting a test timeout of 60 seconds
@@ -166,7 +166,7 @@ Configuration YAML
 
    With this input turned on, the `--coverage` flag is appended to the `flutter test` command.
 
-   ```
+   ```yaml
    - flutter-test:
        inputs:
        - generate_code_coverage_files: 'yes'
@@ -174,7 +174,7 @@ Configuration YAML
 1. Optionally, you can access the generated json test report and the code coverage file (`lcov.info`) in subsequent Steps by using the BITRISE_FLUTTER_TESTRESULT_PATH and the BITRISE_FLUTTER_COVERAGE_PATH [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables#setting-and-managing-env-vars-during-a-build).
 1. Add the `deploy-to-bitrise-io` Step to view test results: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
 
-   ```
+   ```yaml
    primary:
      description: |
        Builds project and runs tests.

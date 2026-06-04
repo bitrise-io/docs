@@ -47,7 +47,7 @@ Build an Android app and upload to Google Play to internal, alpha, beta or produ
 
 ## bitrise.yml
 
-```
+```yaml
 - change-android-versioncode-and-versionname@1:
     inputs:
     - new_version_name: 1.0.1

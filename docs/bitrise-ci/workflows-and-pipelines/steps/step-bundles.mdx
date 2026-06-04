@@ -46,7 +46,7 @@ When running a build, each Step within the bundle will run at the position the b
 1. [Open the configuration YAML of your project](/en/bitrise-ci/configure-builds/configuration-yaml/editing-an-app-s-bitrise-yml-file).
 1. Add a `step_bundles` entity to the top level of the YAML file and give it a name. You will refer to the bundle by this name.
 
-   ```
+   ```yaml
    format_version: 11
    step_bundles:
      install_deps:
@@ -55,7 +55,7 @@ When running a build, each Step within the bundle will run at the position the b
 
    In this example, we add the *restore-cache* Step and an `npm` Step.
 
-   ```
+   ```yaml
    format_version: 11
    step_bundles:
      install_deps:
@@ -65,7 +65,7 @@ When running a build, each Step within the bundle will run at the position the b
    ```
 1. Add your Step bundle to an existing Workflow. The syntax works like this: `bundle::<bundle-name>`.
 
-   ```
+   ```yaml
    workflows:
      ci:
        steps:
@@ -110,7 +110,7 @@ A Step bundle instance can include:
 
 These fields show up in the Bitrise UI and build logs, making it immediately clear what each instance is doing.
 
-```
+```yaml
 - step-bundle-id:
     title: "A clear, human-readable title for this instance"
     summary: "A short summary of what this instance does."
@@ -123,7 +123,7 @@ These fields show up in the Bitrise UI and build logs, making it immediately cle
 
 Let's say you have a Step bundle defined with the ID `run-my-tests` that builds and tests a specific scheme. You want to use it twice in your primary Workflow: once for unit tests on an iPhone simulator, and again for UI tests on an iPad simulator.
 
-```
+```yaml
 workflows:
   primary:
     steps:
@@ -207,7 +207,7 @@ Step bundle inputs share the same model as Step inputs. You can read more about 
 
 1. In your configuration YAML file, add the `inputs` property to your Step bundle.
 
-   ```
+   ```yaml
    format_version: 11
    step_bundles:
      install_deps:
@@ -215,7 +215,7 @@ Step bundle inputs share the same model as Step inputs. You can read more about 
    ```
 1. Under `inputs`, add key-value pairs that will be used for Step inputs.
 
-   ```
+   ```yaml
    format_version: 11
    step_bundles:
      install_deps:
@@ -227,7 +227,7 @@ Step bundle inputs share the same model as Step inputs. You can read more about 
 
    In our example, we configured default inputs for the `key` input of the `restore-cache` Step and the `command` input of the `npm` Step.
 
-   ```
+   ```yaml
    format_version: 11
    step_bundles:
      install_deps:
@@ -254,7 +254,7 @@ You can set new values for Step bundle inputs defined in the Step bundle in the 
 
    In this example, we set a new value of the `cache_key` input instead of its default value defined in the Step bundle. When the Workflow runs, the `restore-cache` Step will use the `npm-cache` value instead of `npm-cache-{{ checksum "package-lock.json" }}`.
 
-   ```
+   ```yaml
    format_version: 11
    step_bundles:
      install_deps:
@@ -294,7 +294,7 @@ The `run_if` syntax works the same as it does for individual Steps. All the `run
 
 In this example, the `deploy-to-staging` bundle would run only if the PR is not a draft PR. Similarly, the `notify-slack` bundle would run only if it is a successful build.
 
-```
+```yaml
 workflows:
   deploy:
     steps:
@@ -326,7 +326,7 @@ If you currently have identical `run_if` conditions on multiple Steps within a b
 
 Before:
 
-```
+```yaml
 workflows:
   test:
     steps:
@@ -347,7 +347,7 @@ step_bundles:
 
 After:
 
-```
+```yaml
 workflows:
   test:
     steps:
