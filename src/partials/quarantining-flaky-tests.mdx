@@ -25,26 +25,32 @@ It’s recommended to quarantine tests if, for example:
 
 You can quarantine tests from the **Tests** tab or from **Insights** to prevent unexpected build failures:
 
-#### From the Tests tab
+<Tabs>
+  <TabItem value="tests-tab" label="Tests tab">
 
-1. Navigate to the **Flaky** tab on the **Tests** tab.
-1. Click **Add to quarantine** next to any flaky test.
-1. Define the quarantine scope (workflows, pipelines, or branches) by clicking **[Edit quarantine scope](/en/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#defining-the-scope-of-quarantine)**.
-1. Add an optional comment for future reference.
+  1. Navigate to the **Flaky** tab on the **Tests** tab.
 
-![pipelinebuild-quarantine.png](/img/_paligo/uuid-917bf276-d9f8-706a-9bb8-6b9e4d1bba39.png)
+     ![pipelinebuild-quarantine.png](/img/_paligo/uuid-917bf276-d9f8-706a-9bb8-6b9e4d1bba39.png)
 
-![editscope-quarantine.png](/img/_paligo/uuid-01568ffa-736b-b7a0-a692-03cf3784fd65.png)
+  1. Click **Add to quarantine** next to any flaky test.
+  1. Define the quarantine scope (workflows, pipelines, or branches) by clicking **[Edit quarantine scope](/en/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#defining-the-scope-of-quarantine)**.
+  1. Add an optional comment for future reference.
 
-#### From Insights
+  ![editscope-quarantine.png](/img/_paligo/uuid-01568ffa-736b-b7a0-a692-03cf3784fd65.png)
 
-1. Go to **Insights** → **Tests** → **Flaky tests** → **Test cases**.
-1. Apply the **Project filter**.
-1. Click **Add to quarantine** next to any test in the breakdown view.
-1. Configure the quarantine scope and conditions by clicking **[Edit quarantine scope](/en/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#defining-the-scope-of-quarantine)**.
-1. Submit to exclude the test from future runs.
+  </TabItem>
+  <TabItem value="insights" label="Insights">
 
-![insights-quarantine.png](/img/_paligo/uuid-722f22f9-7a85-48f3-69b6-78a16b9df4f0.png)
+  1. Go to **Insights** → **Tests** → **Flaky tests** → **Test cases**.
+  1. Apply the **Project filter**.
+  1. Click **Add to quarantine** next to any test in the breakdown view.
+  1. Configure the quarantine scope and conditions by clicking **[Edit quarantine scope](/en/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#defining-the-scope-of-quarantine)**.
+  1. Submit to exclude the test from future runs.
+
+  ![insights-quarantine.png](/img/_paligo/uuid-722f22f9-7a85-48f3-69b6-78a16b9df4f0.png)
+
+  </TabItem>
+</Tabs>
 
 ### Defining the scope of quarantine
 
@@ -133,62 +139,67 @@ In either scenario, you will first need to convert the JSON data to a comma-sepa
 
 You can convert the JSON data either in the configuration YAML file or in the fastlane config file (`Fastfile`).
 
-Configuration YAML
+<Tabs>
+  <TabItem value="yaml" label="Configuration YAML">
 
-Fastfile
+  1. In this example, a **Script** Step converts the quarantined test JSON data to a comma-separated list of `TestTarget/TestClass/TestMethod` items and exposes the list in the BITRISE_QUARANTINED_TESTS_LIST Environment Variable:
 
-1. In this example, a **Script** Step converts the quarantined test JSON data to a comma-separated list of `TestTarget/TestClass/TestMethod` items and exposes the list in the BITRISE_QUARANTINED_TESTS_LIST Environment Variable:
+     ```
+     workflows:
+       test:
+         steps:
+         ...
+         - script:
+             title: Convert BITRISE_QUARANTINED_TESTS_JSON
+             inputs:
+             - content: |-
+                 #!/usr/bin/env bash
+                 set -e
 
-   ```
-   workflows:
-     test:
-       steps:
+                 # Read JSON from environment variable
+                 json="$BITRISE_QUARANTINED_TESTS_JSON"
+
+                 # Convert to array of TestTarget/TestClass/TestMethod
+                 test_array=($(echo "$json" | jq -r '.[] | "\(.testSuiteName[0])/\(.className)/\(.testCaseName)"'))
+
+                 # Join the array elements with a comma
+                 skip_testing_list=$(IFS=, ; echo "${test_array[*]}")
+
+                 # Export the comma-separated string as an environment variable to be used by following Fastlane Steps
+                 envman add --key BITRISE_QUARANTINED_TESTS_LIST --value "$skip_testing_list"
+         - fastlane:
+             inputs:
+             - lane: test
+         ...
+     ```
+  1. The BITRISE_QUARANTINED_TESTS_LIST variable can then be used to set the `skip testing` option for the `scan` action in fastlane:
+
+     ```
+     lane :test do
        ...
-       - script:
-           title: Convert BITRISE_QUARANTINED_TESTS_JSON
-           inputs:
-           - content: |-
-               #!/usr/bin/env bash
-               set -e
-
-               # Read JSON from environment variable
-               json="$BITRISE_QUARANTINED_TESTS_JSON"
-
-               # Convert to array of TestTarget/TestClass/TestMethod
-               test_array=($(echo "$json" | jq -r '.[] | "\(.testSuiteName[0])/\(.className)/\(.testCaseName)"'))
-
-               # Join the array elements with a comma
-               skip_testing_list=$(IFS=, ; echo "${test_array[*]}")
-
-               # Export the comma-separated string as an environment variable to be used by following Fastlane Steps
-               envman add --key BITRISE_QUARANTINED_TESTS_LIST --value "$skip_testing_list"
-       - fastlane:
-           inputs:
-           - lane: test
+       scan(skip_testing: ENV['BITRISE_QUARANTINED_TESTS_LIST'].split(','))
        ...
-   ```
-1. The BITRISE_QUARANTINED_TESTS_LIST variable can then be used to set the `skip testing` option for the `scan` action in fastlane:
+     end
+     ```
 
-   ```
-   lane :test do
-     ...
-     scan(skip_testing: ENV['BITRISE_QUARANTINED_TESTS_LIST'].split(','))
-     ...
-   end
-   ```
+  </TabItem>
+  <TabItem value="fastfile" label="Fastfile">
 
-- Converting the data in the Fastfile also requires the BITRISE_QUARANTINED_TESTS_JSON variable. In the example below, the fastlane lane parses the list of quarantined tests into test identifiers and passes them to scan as `skip_testing`:
+  - Converting the data in the Fastfile also requires the BITRISE_QUARANTINED_TESTS_JSON variable. In the example below, the fastlane lane parses the list of quarantined tests into test identifiers and passes them to scan as `skip_testing`:
 
-  ```
-  lane :test do
-    ...
-    skip_testing = JSON.parse(ENV['BITRISE_QUARANTINED_TESTS_JSON']).map do |item|
-      "#{item['testSuiteName'][0]}/#{item['className']}/#{item['testCaseName']}"
-    end unless ENV['BITRISE_QUARANTINED_TESTS_JSON'].to_s.empty?
-    scan(skip_testing: skip_testing)
-    ...
-  end
-  ```
+    ```
+    lane :test do
+      ...
+      skip_testing = JSON.parse(ENV['BITRISE_QUARANTINED_TESTS_JSON']).map do |item|
+        "#{item['testSuiteName'][0]}/#{item['className']}/#{item['testCaseName']}"
+      end unless ENV['BITRISE_QUARANTINED_TESTS_JSON'].to_s.empty?
+      scan(skip_testing: skip_testing)
+      ...
+    end
+    ```
+
+  </TabItem>
+</Tabs>
 
 **Script Step - running xcodebuild test or test-without-building**
 

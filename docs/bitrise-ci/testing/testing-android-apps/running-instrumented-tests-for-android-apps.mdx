@@ -16,179 +16,185 @@ import GlossTerm from '@site/src/components/GlossTerm';
 
 To run instrumented tests for Android:
 
-Workflow Editor
 
-bitrise.yml
+<Tabs>
+  <TabItem value="workflow-editor" label="Workflow Editor">
 
-1. Add the [**Android Build for UI testing**](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing) Step to your Workflow.
-1. Make sure the **Project location** input points to the root directory of your Android app.
-1. Set the module and the variant you want to build in the **Module** and the **Variant** input.
+  1. Add the [**Android Build for UI testing**](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing) Step to your Workflow.
+  1. Make sure the **Project location** input points to the root directory of your Android app.
+  1. Set the module and the variant you want to build in the **Module** and the **Variant** input.
 
-   You can check the available modules and variants of your project in [the Project window in Android Studio](https://developer.android.com/studio/projects).
+     You can check the available modules and variants of your project in [the Project window in Android Studio](https://developer.android.com/studio/projects).
 
-   ![build-forui-tsting.png](/img/_paligo/uuid-9de8c3bc-abac-16bb-8a19-be18a97ac998.png)
-1. In the **Options** input group, you can set the location for the generated APK files in the **APK location pattern** input.
+     ![build-forui-tsting.png](/img/_paligo/uuid-9de8c3bc-abac-16bb-8a19-be18a97ac998.png)
+  1. In the **Options** input group, you can set the location for the generated APK files in the **APK location pattern** input.
 
-   The input takes a file pattern as a value. The default value is `*/build/outputs/apk/*.apk`.
-1. Optionally, you can [pass additional Gradle arguments](https://docs.gradle.org/current/userguide/custom_tasks.html#sec:declaring_and_using_command_line_options) to the build task in the **Additional Gradle Arguments** input.
-1. Add the [**Android Instrumented Test**](https://github.com/bitrise-steplib/bitrise-step-android-instrumented-test) Step to the Workflow, at some point after the [**Android Build for UI testing**](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing) Step.
-1. Make sure that the **Main APK path** and the **Test APK path** inputs point to the correct location.
+     The input takes a file pattern as a value. The default value is `*/build/outputs/apk/*.apk`.
+  1. Optionally, you can [pass additional Gradle arguments](https://docs.gradle.org/current/userguide/custom_tasks.html#sec:declaring_and_using_command_line_options) to the build task in the **Additional Gradle Arguments** input.
+  1. Add the [**Android Instrumented Test**](https://github.com/bitrise-steplib/bitrise-step-android-instrumented-test) Step to the Workflow, at some point after the [**Android Build for UI testing**](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing) Step.
+  1. Make sure that the **Main APK path** and the **Test APK path** inputs point to the correct location.
 
-   By default, the values of the two inputs are the BITRISE_APK_PATH and the BITRISE_TEST_APK_PATH Environment Variables, respectively. These variables are exported by the [**Android Build for UI testing**](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing) Step. As such, in the vast majority of cases, you don't have to modify the value of these inputs.
+     By default, the values of the two inputs are the BITRISE_APK_PATH and the BITRISE_TEST_APK_PATH Environment Variables, respectively. These variables are exported by the [**Android Build for UI testing**](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing) Step. As such, in the vast majority of cases, you don't have to modify the value of these inputs.
 
-   ![android-instrumented.png](/img/_paligo/uuid-ab9cf08d-eb9e-d46d-7bb2-740827ec96b9.png)
-1. In the **Test runner class** input, specify the test runner you wish to use.
+     ![android-instrumented.png](/img/_paligo/uuid-ab9cf08d-eb9e-d46d-7bb2-740827ec96b9.png)
+  1. In the **Test runner class** input, specify the test runner you wish to use.
 
-   The default runner is [the AndroidJUnitRunner class](https://developer.android.com/training/testing/instrumented-tests/androidx-test-libraries/runner).
-1. Optionally, you can pass additional options to the test runner with the **Additional testing options** input.
+     The default runner is [the AndroidJUnitRunner class](https://developer.android.com/training/testing/instrumented-tests/androidx-test-libraries/runner).
+  1. Optionally, you can pass additional options to the test runner with the **Additional testing options** input.
 
-   With this input, you issue commands to the activity manager tool of the `adb` shell. For more information about the commands you can issue, see [the official documentation for adb](https://developer.android.com/tools/adb#issuingcommands).
-1. Add the [**Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files**](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) Step to your Workflow to view test results: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
+     With this input, you issue commands to the activity manager tool of the `adb` shell. For more information about the commands you can issue, see [the official documentation for adb](https://developer.android.com/tools/adb#issuingcommands).
+  1. Add the [**Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files**](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) Step to your Workflow to view test results: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
 
-1. Add the `android-build-for-ui-testing` Step to your Workflow.
+  </TabItem>
+  <TabItem value="yaml" label="Configuration YAML">
 
-   ```yaml
-   steps:
-       - git-clone: {}
-       - android-build-for-ui-testing:
-           inputs:
-       - deploy-to-bitrise-io: {}
-   ```
-1. Make sure the `project_location` input points to the root directory of your Android app.
+  1. Add the `android-build-for-ui-testing` Step to your Workflow.
 
-   ```yaml
-   steps:
-       - git-clone: {}
-       - android-build-for-ui-testing:
-           inputs:
-           - project_location: $BITRISE_SOURCE_DIR
-       - deploy-to-bitrise-io: {}
-   ```
-1. Set the module and the variant you want to build in the `module` and the `variant` input.
+     ```yaml
+     steps:
+         - git-clone: {}
+         - android-build-for-ui-testing:
+             inputs:
+         - deploy-to-bitrise-io: {}
+     ```
+  1. Make sure the `project_location` input points to the root directory of your Android app.
 
-   You can check the available modules and variants of your project in [the Project window in Android Studio](https://developer.android.com/studio/projects).
+     ```yaml
+     steps:
+         - git-clone: {}
+         - android-build-for-ui-testing:
+             inputs:
+             - project_location: $BITRISE_SOURCE_DIR
+         - deploy-to-bitrise-io: {}
+     ```
+  1. Set the module and the variant you want to build in the `module` and the `variant` input.
 
-   ```yaml
-   steps:
-       - git-clone: {}
-       - android-build-for-ui-testing:
-           inputs:
-           - module: app
-           - variant: debug
-           - project_location: $BITRISE_SOURCE_DIR
-       - deploy-to-bitrise-io: {}
-   ```
-1. In the `apk_path_pattern` input, you can set the location for the generated APK files.
+     You can check the available modules and variants of your project in [the Project window in Android Studio](https://developer.android.com/studio/projects).
 
-   The input takes a file pattern as a value. The default value is `*/build/outputs/apk/*.apk`.
+     ```yaml
+     steps:
+         - git-clone: {}
+         - android-build-for-ui-testing:
+             inputs:
+             - module: app
+             - variant: debug
+             - project_location: $BITRISE_SOURCE_DIR
+         - deploy-to-bitrise-io: {}
+     ```
+  1. In the `apk_path_pattern` input, you can set the location for the generated APK files.
 
-   ```yaml
-   steps:
-       - git-clone: {}
-       - android-build-for-ui-testing:
-           inputs:
-           - arguments: flag
-           - module: app
-           - variant: debug
-           - apk_path_pattern: '*/build/outputs/apk/*.apk'
-           - project_location: $BITRISE_SOURCE_DIR
-       - deploy-to-bitrise-io: {}
-   ```
-1. Optionally, you can [pass additional Gradle arguments](https://docs.gradle.org/current/userguide/custom_tasks.html#sec:declaring_and_using_command_line_options) to the build task in the `arguments` input.
+     The input takes a file pattern as a value. The default value is `*/build/outputs/apk/*.apk`.
 
-   ```yaml
-   steps:
-       - git-clone: {}
-       - android-build-for-ui-testing:
-           inputs:
-           - arguments: --task
-           - module: app
-           - variant: debug
-           - apk_path_pattern: '*/build/outputs/apk/*.apk'
-           - project_location: $BITRISE_SOURCE_DIR
-       - deploy-to-bitrise-io: {}
-   ```
-1. Add the `android-instrumented-test` Step to the Workflow, at some point after the `android-build-for-ui-testing` Step.
+     ```yaml
+     steps:
+         - git-clone: {}
+         - android-build-for-ui-testing:
+             inputs:
+             - arguments: flag
+             - module: app
+             - variant: debug
+             - apk_path_pattern: '*/build/outputs/apk/*.apk'
+             - project_location: $BITRISE_SOURCE_DIR
+         - deploy-to-bitrise-io: {}
+     ```
+  1. Optionally, you can [pass additional Gradle arguments](https://docs.gradle.org/current/userguide/custom_tasks.html#sec:declaring_and_using_command_line_options) to the build task in the `arguments` input.
 
-   ```yaml
-   steps:
-       - git-clone: {}
-       - android-build-for-ui-testing:
-           inputs:
-           - arguments: flag
-           - module: app
-           - variant: debug
-           - apk_path_pattern: '*/build/outputs/apk/*.apk'
-           - cache_level: all
-           - project_location: $BITRISE_SOURCE_DIR
-       - android-instrumented-test:
-           inputs:
-       - deploy-to-bitrise-io: {}
-   ```
-1. Make sure that the `main_apk_path` and the `test_apk_path` inputs point to the correct location.
+     ```yaml
+     steps:
+         - git-clone: {}
+         - android-build-for-ui-testing:
+             inputs:
+             - arguments: --task
+             - module: app
+             - variant: debug
+             - apk_path_pattern: '*/build/outputs/apk/*.apk'
+             - project_location: $BITRISE_SOURCE_DIR
+         - deploy-to-bitrise-io: {}
+     ```
+  1. Add the `android-instrumented-test` Step to the Workflow, at some point after the `android-build-for-ui-testing` Step.
 
-   By default, the values of the two inputs are the BITRISE_APK_PATH and the BITRISE_TEST_APK_PATH Environment Variables, respectively. These variables are exported by the `android-build-for-ui-testing` Step. As such, in the vast majority of cases, you don't have to set the value of these inputs.
+     ```yaml
+     steps:
+         - git-clone: {}
+         - android-build-for-ui-testing:
+             inputs:
+             - arguments: flag
+             - module: app
+             - variant: debug
+             - apk_path_pattern: '*/build/outputs/apk/*.apk'
+             - cache_level: all
+             - project_location: $BITRISE_SOURCE_DIR
+         - android-instrumented-test:
+             inputs:
+         - deploy-to-bitrise-io: {}
+     ```
+  1. Make sure that the `main_apk_path` and the `test_apk_path` inputs point to the correct location.
 
-   ```yaml
-   steps:
-       - git-clone: {}
-       - android-build-for-ui-testing:
-           inputs:
-           - arguments: flag
-           - module: app
-           - variant: debug
-           - apk_path_pattern: '*/build/outputs/apk/*.apk'
-           - cache_level: all
-           - project_location: $BITRISE_SOURCE_DIR
-       - android-instrumented-test:
-           inputs:
-           - main_apk_path: $BITRISE_APK_PATH
-           - test_apk_path: $BITRISE_TEST_APK_PATH
-       - deploy-to-bitrise-io: {}
-   ```
-1. In the `test_runner_class` input, specify the test runner you wish to use.
+     By default, the values of the two inputs are the BITRISE_APK_PATH and the BITRISE_TEST_APK_PATH Environment Variables, respectively. These variables are exported by the `android-build-for-ui-testing` Step. As such, in the vast majority of cases, you don't have to set the value of these inputs.
 
-   The default runner is [the AndroidJUnitRunner class](https://developer.android.com/training/testing/instrumented-tests/androidx-test-libraries/runner).
+     ```yaml
+     steps:
+         - git-clone: {}
+         - android-build-for-ui-testing:
+             inputs:
+             - arguments: flag
+             - module: app
+             - variant: debug
+             - apk_path_pattern: '*/build/outputs/apk/*.apk'
+             - cache_level: all
+             - project_location: $BITRISE_SOURCE_DIR
+         - android-instrumented-test:
+             inputs:
+             - main_apk_path: $BITRISE_APK_PATH
+             - test_apk_path: $BITRISE_TEST_APK_PATH
+         - deploy-to-bitrise-io: {}
+     ```
+  1. In the `test_runner_class` input, specify the test runner you wish to use.
 
-   ```yaml
-   steps:
-       - git-clone: {}
-       - android-build-for-ui-testing:
-           inputs:
-           - arguments: flag
-           - module: app
-           - variant: debug
-           - apk_path_pattern: '*/build/outputs/apk/*.apk'
-           - cache_level: all
-           - project_location: $BITRISE_SOURCE_DIR
-       - android-instrumented-test:
-           inputs:
-           - test_runner_class: androidx.test.runner.AndroidJUnitRunner
-           - main_apk_path: $BITRISE_APK_PATH
-           - test_apk_path: $BITRISE_TEST_APK_PATH
-       - deploy-to-bitrise-io: {}
-   ```
-1. Optionally, you can pass additional options to the test runner with the `additional_testing_options` input.
+     The default runner is [the AndroidJUnitRunner class](https://developer.android.com/training/testing/instrumented-tests/androidx-test-libraries/runner).
 
-   With this input, you issue commands to the activity manager tool of the `adb` shell. For more information about the commands you can issue, see [the official documentation for adb](https://developer.android.com/tools/adb#issuingcommands). For example, the value `KEY1 true KEY2 false` will be passed to adb as `adb shell am instrument -e "KEY1" "true" "KEY2" "false" [...]`.
+     ```yaml
+     steps:
+         - git-clone: {}
+         - android-build-for-ui-testing:
+             inputs:
+             - arguments: flag
+             - module: app
+             - variant: debug
+             - apk_path_pattern: '*/build/outputs/apk/*.apk'
+             - cache_level: all
+             - project_location: $BITRISE_SOURCE_DIR
+         - android-instrumented-test:
+             inputs:
+             - test_runner_class: androidx.test.runner.AndroidJUnitRunner
+             - main_apk_path: $BITRISE_APK_PATH
+             - test_apk_path: $BITRISE_TEST_APK_PATH
+         - deploy-to-bitrise-io: {}
+     ```
+  1. Optionally, you can pass additional options to the test runner with the `additional_testing_options` input.
 
-   ```yaml
-   steps:
-       - git-clone: {}
-       - android-build-for-ui-testing:
-           inputs:
-           - arguments: flag
-           - module: app
-           - variant: debug
-           - apk_path_pattern: '*/build/outputs/apk/*.apk'
-           - cache_level: all
-           - project_location: $BITRISE_SOURCE_DIR
-       - android-instrumented-test:
-           inputs:
-           - test_runner_class: androidx.test.runner.AndroidJUnitRunner
-           - additional_testing_options: KEY1 true KEY2 false
-           - main_apk_path: $BITRISE_APK_PATH
-           - test_apk_path: $BITRISE_TEST_APK_PATH
-       - deploy-to-bitrise-io: {}
-   ```
-1. Add the [**Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files**](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) Step to your Workflow to view test results: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
+     With this input, you issue commands to the activity manager tool of the `adb` shell. For more information about the commands you can issue, see [the official documentation for adb](https://developer.android.com/tools/adb#issuingcommands). For example, the value `KEY1 true KEY2 false` will be passed to adb as `adb shell am instrument -e "KEY1" "true" "KEY2" "false" [...]`.
+
+     ```yaml
+     steps:
+         - git-clone: {}
+         - android-build-for-ui-testing:
+             inputs:
+             - arguments: flag
+             - module: app
+             - variant: debug
+             - apk_path_pattern: '*/build/outputs/apk/*.apk'
+             - cache_level: all
+             - project_location: $BITRISE_SOURCE_DIR
+         - android-instrumented-test:
+             inputs:
+             - test_runner_class: androidx.test.runner.AndroidJUnitRunner
+             - additional_testing_options: KEY1 true KEY2 false
+             - main_apk_path: $BITRISE_APK_PATH
+             - test_apk_path: $BITRISE_TEST_APK_PATH
+         - deploy-to-bitrise-io: {}
+     ```
+  1. Add the [**Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files**](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) Step to your Workflow to view test results: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
+
+  </TabItem>
+</Tabs>
