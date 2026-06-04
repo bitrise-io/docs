@@ -24,13 +24,13 @@ There are two ways to set up the Bitrise Build Cache for a Gradle project:
 1. Copy the keys and values of the two variables.
 1. Set the variables as Environment Variables in your local configuration.
 
-   ```
+   ```bash
    export BITRISE_BUILD_CACHE_WORKSPACE_ID=<workspace ID>
    export BITRISE_BUILD_CACHE_AUTH_TOKEN=<token>
    ```
 1. Download the CLI and install it in a temporary location. You will only need to use it to activate the build cache once, or if any of the settings change.
 
-   ```
+   ```bash
    curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
    ```
 1. Activate the Bitrise Build Cache.

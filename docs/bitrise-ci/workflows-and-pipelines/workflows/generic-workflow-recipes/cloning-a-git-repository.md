@@ -16,7 +16,7 @@ Check out other options in the Step documentation or in the Workflow Editor.
 
 ## bitrise.yml
 
-```
+```yaml
 - activate-ssh-key@4:
     run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
 - git-clone@6: {}
