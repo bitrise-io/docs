@@ -35,7 +35,7 @@ Archive the app and upload to App Store Connect to either release it to App Stor
 
 ## bitrise.yml
 
-```
+```yaml
 - set-xcode-build-number@1:
     inputs:
     - build_short_version_string: '1.0'

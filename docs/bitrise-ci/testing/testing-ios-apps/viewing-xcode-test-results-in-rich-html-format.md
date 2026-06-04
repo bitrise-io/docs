@@ -75,7 +75,7 @@ bitrise.yml
 
    We strongly recommend using the `xcode-test` Step for this.
 
-   ```
+   ```yaml
    my-workflow:
      steps:
      - xcode-test: {}
@@ -94,7 +94,7 @@ bitrise.yml
 
    It should, of course, come after the Step that runs your tests.
 
-   ```
+   ```yaml
    my-workflow:
      steps:
      - xcode-test: {}
@@ -104,7 +104,7 @@ bitrise.yml
 
    You can add multiple `.xcresult` files to this input, either by specifying one or more directories or by specifying filepaths, separated by a newline (/n). Each file will have its own report.
 
-   ```
+   ```yaml
    my-workflow:
      steps:
      - xcode-test: {}
@@ -129,7 +129,7 @@ bitrise.yml
 
    :::
 
-   ```
+   ```yaml
    my-workflow:
      steps:
      - xcode-test: {}

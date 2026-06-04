@@ -15,7 +15,7 @@ The Bitrise Build Cache CLI can be downloaded and run on any third-party CI prov
 
    It must run in the same environment (same shell, same container) as the build commands it's meant to accelerate.
 
-   ```
+   ```bash
    #!/usr/bin/env bash
    set -euxo pipefail
 
@@ -49,7 +49,7 @@ The Bitrise Build Cache CLI can be downloaded and run on any third-party CI prov
 
 **Example configuration: GitHub Actions**
 
-```
+```yaml
 jobs:
   build-rn:
     runs-on: macos-latest

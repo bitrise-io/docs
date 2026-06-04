@@ -53,7 +53,7 @@ bitrise.yml
 
    This Step runs the initial setup of the Flutter SDK and installs any missing components.
 
-   ```
+   ```yaml
    primary:
      description: |
        Builds project and runs tests.
@@ -70,7 +70,7 @@ bitrise.yml
    - You can find the available version tags here: [Version tags](https://github.com/flutter/flutter/tags).
    - You can find the available branch labels here: [Branch labels](https://github.com/flutter/flutter/branches).
 
-   ```
+   ```yaml
    # Installing version 3.7.7 of the Flutter SDK
    - flutter-installer:
        inputs:
@@ -83,7 +83,7 @@ bitrise.yml
 
    The URL is expected to begin with `https://storage.googleapis.com/flutter_infra`. For example:
 
-   ```
+   ```yaml
    - flutter-installer:
        inputs:
        - installation_bundle_url: https://storage.googleapis.com/flutter_infra/releases/beta/macos/flutter_macos_v1.6.3-beta.zip
@@ -92,7 +92,7 @@ bitrise.yml
    :::
 1. Add the `flutter-analyze` Step to your Workflow.
 
-   ```
+   ```yaml
    primary:
      description: |
        Builds project and runs tests.
@@ -107,7 +107,7 @@ bitrise.yml
    ```
 1. Make sure the `project-location` input points to the root directory of your Flutter project.
 
-   ```
+   ```yaml
    - flutter-analyze:
        inputs:
        - project_location: "$BITRISE_SOURCE_DIR"
@@ -123,7 +123,7 @@ bitrise.yml
    - `warning`: When this setting is selected, only warning- and error-level issues fail the Step.
    - `error`: This is the default value. Only error-level issues fail the Step.
 
-   ```
+   ```yaml
    - flutter-analyze:
        inputs:
        - project_location: "$BITRISE_SOURCE_DIR"
@@ -133,7 +133,7 @@ bitrise.yml
 
    For a list of available flags, run `flutter help analyze`. For example, you can use the `--no-congratulate` flag if you don't want to see any output if there are no errors, warnings, hints or lints.
 
-   ```
+   ```yaml
    - flutter-analyze:
        inputs:
        - project_location: "$BITRISE_SOURCE_DIR"

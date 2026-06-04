@@ -22,7 +22,7 @@ If you want to deploy a release build, don't forget to set up code signing on B
 
 ## bitrise.yml
 
-```
+```yaml
 - android-build@1:
     inputs:
     - variant: release

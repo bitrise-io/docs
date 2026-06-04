@@ -26,7 +26,7 @@ Installs the latest stable/beta or a specific version of Flutter.
 
 Specific version:
 
-```
+```yaml
 ---
 - flutter-installer@0:
     inputs:
@@ -41,7 +41,7 @@ Latest stable version:
 
 Latest beta version:
 
-```
+```yaml
 - flutter-installer@0:
     inputs:
     - version: beta

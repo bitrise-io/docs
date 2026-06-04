@@ -19,7 +19,7 @@ No matter what Android or Gradle Step you use in your Bitrise Workflow, there is
    - **Arguments**: `--profile2`.
 1. Add a **[Script](https://www.bitrise.io/integrations/steps/script)** Step to the end of the Workflow to compress the report files and copy the ZIP file to the deploy directory:
 
-   ```
+   ```bash
    #!/usr/bin/env bash
    # fail if any commands fails
    set -e

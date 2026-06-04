@@ -16,7 +16,7 @@ Example Workflow for commits on the main branch of an Android app. The Workflow 
 
 ## bitrise.yml
 
-```
+```yaml
 ---
 format_version: '11'
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git

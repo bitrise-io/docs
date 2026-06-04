@@ -21,7 +21,7 @@ slug: /bitrise-ci/testing/testing-android-apps/android-unit-tests
 
 ## bitrise.yml
 
-```
+```yaml
 - android-unit-test@1:
     inputs:
     - project_location: $PROJECT_LOCATION

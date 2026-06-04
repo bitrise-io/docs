@@ -15,14 +15,14 @@ Use the `runs-on` property in your workflow to specify the Bitrise machines. You
 
    - You can use a single label. This will allow the use of all runners that have the specified label:
 
-     ```
+     ```yaml
      jobs:
        build:
          runs-on: image:xcode-26
      ```
    - You can use an array of labels. A runner is only allowed if it has all the specified labels:
 
-     ```
+     ```yaml
      jobs:
        build:
          runs-on: [bitrise_pool_name:bitrise-runner, image:xcode-26]
@@ -40,7 +40,7 @@ To solve the problem:
 
 1. Add an `env` property to your container configuration in the GitHub Actions workflow. Set three Environment Variables to tell `asdf` where its core scripts and plugins, installed versions, and shims are, and to override the image's `BASH_ENV=/.bashrc`.
 
-   ```
+   ```yaml
    container:
      image: bitriseio/ubuntu-noble-24.04-bitrise-2025-android:latest
      env:
@@ -50,7 +50,7 @@ To solve the problem:
    ```
 1. Under the `defaults` property, set the default shell to `bash`.
 
-   ```
+   ```yaml
    container:
      image: bitriseio/ubuntu-noble-24.04-bitrise-2025-android:latest
      env:
@@ -63,7 +63,7 @@ To solve the problem:
    ```
 1. Under the `steps` property, add a step that copies the image's default tool versions to where `asdf` expects them.
 
-   ```
+   ```yaml
    steps:
      - name: Setup environment
        run: |
@@ -71,7 +71,7 @@ To solve the problem:
    ```
 1. Tell Git to treat all working directories as safe. Without this, some commands might fail because of directory ownership mismatch.
 
-   ```
+   ```yaml
    steps:
      - name: Setup environment
        run: |
