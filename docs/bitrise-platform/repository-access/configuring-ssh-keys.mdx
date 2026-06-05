@@ -8,8 +8,6 @@ slug: /bitrise-platform/repository-access/configuring-ssh-keys
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_ConfiguringSSHKeysForYourBitriseApp from '@site/src/partials/configuring-ssh-keys-for-your-bitrise-app.mdx';
-import Partial_GeneratingYourOwnSSHKeypair from '@site/src/partials/generating-your-own-ssh-keypair.mdx';
 
 SSH keys are the primary method of authentication. To access your <GlossTerm baseform="Project">project's</GlossTerm> repository, Bitrise needs a public-private SSH keypair, with the public key registered to your project's Git repository.
 
@@ -29,6 +27,45 @@ If your project needs to access multiple repositories during the build, the best
 
 :::
 
-<Partial_GeneratingYourOwnSSHKeypair />
 
-<Partial_ConfiguringSSHKeysForYourBitriseApp />
+## Generating your own SSH keypair
+
+You can always generate your own SSH keypair on your own device and use the generated public and private keys for your Bitrise project. This is completely optional as Bitrise can generate and automatically register SSH keys for you, either during the process of adding the project to Bitrise or later in the **Project settings** menu.
+
+Generate your own SSH keypair with a simple Command Line/Terminal command:
+
+```bash
+ssh-keygen -t rsa -b 4096 -P '' -f ./bitrise-ssh -m PEM
+```
+
+This generates two files in the current directory (the directory where you run the command):
+
+- `bitrise-ssh` (private key)
+- `bitrise-ssh.pub` (public key)
+
+Copy and paste the **public key** to your Git hosting service (for example, GitHub), and when you add your project on [bitrise.io](https://www.bitrise.io), you’ll have to provide the **private key**.
+
+
+## Configuring SSH keys for your Bitrise project
+
+To configure SSH keys on [bitrise.io](https://www.bitrise.io/):
+
+1. Open your project on Bitrise with a user that has the **Admin** [role on the project](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+1. On the main page of the project, click on the **Project settings** button.
+
+   ![project-settings-button.png](/img/_paligo/uuid-14defaa4-472c-2d09-84df-145dc3aef4f5.png)
+1. On the left, select **Repository**.
+1. Find the **Authorization** section and the **Authorization method** card.
+1. Next to the SSH key, click **Replace**.
+
+   If you haven't had an SSH key added before, the button will show **Add SSH keypair** instead.
+
+   ![SCR-20260401-pvvq.png](/img/_paligo/uuid-f021126a-47d0-41a9-56f7-79b9c8461a0e.png)
+1. Choose from one of three options:
+
+   **Auto-add a generated SSH key to your repository**: Bitrise automatically registers a public SSH key to your GitHub repository. Choose this if you have administrator rights to the repository.
+
+   **Copy a generated SSH key to your Git provider manually**: Bitrise generates an SSH keypair for you, and you have to manually register the public key to your Git repository.
+
+   **Add your own SSH key**: You provide your own SSH keypair for authentication, and you have to manually register the public key to your Git repository.
+1. Click **Save changes**.

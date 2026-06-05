@@ -7,11 +7,451 @@ slug: /bitrise-ci/testing/detecting-and-quarantining-flaky-tests
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_QuarantiningFlakyTests from '@site/src/partials/quarantining-flaky-tests.mdx';
-import Partial_DetectingFlakyTests from '@site/src/partials/detecting-flaky-tests.mdx';
 
 Flaky tests block PRs even when the code is fine. A single transient failure forces you to dig through logs, hit rerun, and wait, slowing merges and masking real regressions.
 
-<Partial_DetectingFlakyTests />
 
-<Partial_QuarantiningFlakyTests />
+## Detecting flaky tests
+
+Configure specific build Steps to automatically rerun any failed tests. If the tests pass on retry, the build can go green, and the tests are marked flaky, so you can fix it later. You can also [quarantine](/en/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#quarantining-flaky-tests) it if you have an [Enterprise](https://bitrise.io/solutions/enterprise) plan.
+
+### Steps allowing automatic reruns for failed tests
+
+The inputs in these testing Steps allow you to specify the number of retry attempts for failed tests. When a test fails during a run, the Step will automatically retry the tests.
+
+If the test passes on a subsequent attempt, it is marked as flaky; however, the Step itself will still succeed, allowing your build and PR check to turn green.
+
+This allows you to merge your changes without being blocked, while still providing the data you need to identify and fix unstable tests later.
+
+- [Xcode Test for iOS](https://bitrise.io/integrations/steps/xcode-test)
+- [Xcode Test without building](https://bitrise.io/integrations/steps/xcode-test-without-building)
+- [iOS Device Testing](https://bitrise.io/integrations/steps/virtual-device-testing-for-ios)
+- [Virtual Device Testing for Android](https://bitrise.io/integrations/steps/virtual-device-testing-for-android)
+- [Android unit test](https://bitrise.io/integrations/steps/android-unit-test) (via [Gradle plugin](https://github.com/gradle/test-retry-gradle-plugin))
+
+For example, a UI test might occasionally fail because a network request times out or an animation hasn't completed. Instead of failing the entire build, you can now configure it to retry failed tests up to 3 times. If it passes on the second try, your PR is unblocked, and you can see in the test report that this specific test was flaky.
+
+Note that if you use either the **iOS Device Testing** Step or the **Virtual Device Testing for Android** Step, then the entire test suite will be rerun, and not just the tests that failed.
+
+### Configuring flaky test detection
+
+Configure flaky test detection in the input fields of these testing Steps:
+
+1. **[Xcode Test for iOS](https://bitrise.io/integrations/steps/xcode-test)** and **[Xcode Test without building](https://bitrise.io/integrations/steps/xcode-test-without-building)**
+
+   Set below input fields under **Test repetition** in the Step:
+
+   - **Test Repetition Mode**: Defines the repetition mode. For example, `retry_on_failure` will only rerun the tests that failed.
+   - **Maximum Test Repetitions**: The maximum number of times to repeat a test.
+   - **Relaunch Tests For Each Repetition**: It controls whether the app is relaunched for each repetition.
+1. **[iOS device testing](https://bitrise.io/integrations/steps/virtual-device-testing-for-ios)** and **[Virtual device testing for Android](https://bitrise.io/integrations/steps/virtual-device-testing-for-android)**
+
+   Set below input field in the Step:
+
+   - **Number of times a test execution is reattempted**: Specifies the number of times to retry a failed test execution. An execution that fails initially but succeeds on a reattempt is reported as flaky. The maximum value is 10. The default is 0 (no reruns).
+
+     ![iosdevicetesting-flakytests.png](/img/_paligo/uuid-acd14919-6069-8806-9834-df5d53a539a5.png)
+
+     :::note[Running tests with **Virtual Device Testing for Android** and**iOS Device Testing** Steps]
+
+     Both Steps will always rerun all tests (successful and failed) as many times as is configured in the input.
+
+     :::
+1. **[Android Unit Test](https://bitrise.io/integrations/steps/android-unit-test)**
+
+   This functionality is configured directly through the [Gradle plugin](https://github.com/gradle/test-retry-gradle-plugin). You can enable retries for failed tests within your project's `build.gradle` file.
+
+   :::note[Quarantining flaky tests]
+
+   It is possible to [quarantine](/en/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#quarantining-flaky-tests) flaky tests that disrupt your builds to run until you can fix the issue. The above mentioned Steps will automatically skip the quarantined tests as you specify some quarantine details.
+
+   :::
+
+### Environment Variable for flaky test detection
+
+Testing Steps now automatically populate BITRISE_FLAKY_TEST_CASES when retries are enabled, identifying which specific tests are behaving inconsistently.
+
+When any of these Steps run with retries enabled, they automatically track individual test results:
+
+- Xcode Test for iOS (ID: xcode-test)
+- Android Unit Test (ID: android-unit-test)
+- iOS Device Testing (ID: virtual-device-testing-for-ios)
+- Virtual Device Testing for Android (ID: virtual-device-testing-for-android)
+
+These Steps populate the BITRISE_FLAKY_TEST_CASES Env Var with tests that failed at least once but also passed at least once during retry attempts.
+
+The  BITRISE_FLAKY_TEST_CASES Env Var contains a newline-separated list of flaky test identifiers:
+
+```yaml
+- TestTarget_1.TestClass_1.TestMethod_1
+- TestTarget_1.TestClass_1.TestMethod_2  
+- TestTarget_1.TestClass_2.TestMethod_1
+- TestTarget_2.TestClass_1.TestMethod_1
+```
+
+#### Examples of when to use the flaky test Env Var
+
+Here are a couple of use cases when using this Env Var comes handy:
+
+1. The test fails if flaky tests are detected:
+
+   ```yaml
+   steps:
+   ...
+   - script:    
+       run_if: '{{getenv "BITRISE_FLAKY_TEST_CASES" | ne ""}}'    
+       inputs:    
+        - content: |-        
+        #!/bin/env bash        
+        echo "Build failed due to flaky tests:"        
+        echo "$BITRISE_FLAKY_TEST_CASES"       
+        exit 1
+   ```
+1. To send Slack notification if flaky tests are detected:
+
+   ```yaml
+   steps:
+   ...
+   - slack:    
+       run_if: '{{getenv "BITRISE_FLAKY_TEST_CASES" | ne ""}}'    
+       inputs:    
+       - webhook_url: $SLACK_WEBHOOK_URL    
+       - text: |-        
+           ⚠️ Flaky tests detected in build $BITRISE_BUILD_NUMBER:       
+           $BITRISE_FLAKY_TEST_CASES
+   ```
+1. Creates a GitHub issue automatically:
+
+   ```yaml
+   steps:
+   ...
+   - script:    
+       run_if: '{{getenv "BITRISE_FLAKY_TEST_CASES" | ne ""}}'    
+       inputs:    
+       - content: |-       
+         #!/bin/env bash        
+         ISSUE_BODY="Flaky tests detected in build 
+   $BITRISE_BUILD_NUMBER:\n\n\`\`\`\n$BITRISE_FLAKY_TEST_CASES\n\`\`\`"        
+         curl -X POST \          
+          -H "Authorization: token $GITHUB_TOKEN" \          
+          -H "Accept: application/vnd.github.v3+json" \         
+          https://api.github.com/repos/owner/repo/issues \          
+          -d "{\"title\":\"Flaky tests - Build $BITRISE_BUILD_NUMBER\",\"body\":\"$ISSUE_BODY\"}"
+   ```
+
+You can also log to the analytics service, save to build artifacts, count and categorize by test target, and set the Environment Variable for downstream Steps.
+
+### Test results and outcomes after retries
+
+If a test fails, the Step reruns the tests up to the configured limit. If a previously failing test passes on retry, it’s marked flaky in the Bitrise **Tests** tab. If tests still fail after retries, the Step fails as usual.
+
+If all tests pass after retry, the build passes and flaky tests get highlighted in the new test report. If any test fails after retries, the Step fails and the build status says FAILED.
+
+:::note[Flaky test case with failed and successful runs]
+
+Even if a test case has successful and failed runs, it will be marked as flaky. The number and order of status do not matter. For example: 1 failed, 1 success, 1 failed is marked as flaky as well as 1 success and 2 failed runs (in this order).
+
+:::
+
+
+## Quarantining flaky tests
+
+This feature lets you temporarily isolate problematic tests without disrupting your entire test suite. You can mark [flaky tests](/en/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#detecting-flaky-tests) as quarantined so Bitrise will skip them in future builds.
+
+Quarantined tests are tracked in a separate **Test Quarantine** tab and will continue being skipped from your builds until you remove them from quarantine.
+
+:::note[Use of Test Quarantine is limited]
+
+Please note that this feature is only available with the [Enterprise plan](https://bitrise.io/solutions/enterprise). Additionally, only an Admin, Platform Engineer and a Developer can have full read, write and edit access to quarantined tests. Testers and QA people have read-only access.
+
+:::
+
+It’s recommended to quarantine tests if, for example:
+
+- A test passes locally but fails intermittently in CI.
+- You've identified a flaky test, but don't have time to fix it immediately.
+- You want to maintain green builds while investigating test stability issues.
+- You need to prevent automatic reruns from consuming build minutes on known problematic tests.
+
+### Adding tests to quarantine
+
+You can quarantine tests from the **Tests** tab or from **Insights** to prevent unexpected build failures:
+
+<Tabs>
+  <TabItem value="tests-tab" label="Tests tab">
+
+  1. Navigate to the **Flaky** tab on the **Tests** tab.
+
+     ![pipelinebuild-quarantine.png](/img/_paligo/uuid-917bf276-d9f8-706a-9bb8-6b9e4d1bba39.png)
+
+  1. Click **Add to quarantine** next to any flaky test.
+  1. Define the quarantine scope (workflows, pipelines, or branches) by clicking **[Edit quarantine scope](/en/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#defining-the-scope-of-quarantine)**.
+  1. Add an optional comment for future reference.
+
+  ![editscope-quarantine.png](/img/_paligo/uuid-01568ffa-736b-b7a0-a692-03cf3784fd65.png)
+
+  </TabItem>
+  <TabItem value="insights" label="Insights">
+
+  1. Go to **Insights** → **Tests** → **Flaky tests** → **Test cases**.
+  1. Apply the **Project filter**.
+  1. Click **Add to quarantine** next to any test in the breakdown view.
+  1. Configure the quarantine scope and conditions by clicking **[Edit quarantine scope](/en/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#defining-the-scope-of-quarantine)**.
+  1. Submit to exclude the test from future runs.
+
+  ![insights-quarantine.png](/img/_paligo/uuid-722f22f9-7a85-48f3-69b6-78a16b9df4f0.png)
+
+  </TabItem>
+</Tabs>
+
+### Defining the scope of quarantine
+
+By default, quarantine applies to all builds on your project, unless you specify otherwise. Leave fields empty to skip the test on all branches and all targets (workflows and pipelines).
+
+You can limit the scope by branches and targets:
+
+- Branch (optional): enter space-separated branch patterns with wildcard support (*). Examples: `main`, `release-*`, `feature/auth-*`
+- Targets (optional): enter space-separated workflow and pipeline names. Examples: `ci`, `nightly-tests`, `release-pipeline`
+
+:::note[Combining branches and target to narrow the scope]
+
+If you set both branches and targets, the test is quarantined only when both the branch AND the target match. Keep patterns tight to avoid silencing too much. Prefer `release-*` over `*` and target the specific workflow that runs the flaky test.
+
+:::
+
+You can use the **Comment** field to note the quarantine reason and include a ticket link so you remember why you quarantined the test.
+
+You can edit or remove the scope later from the quarantine dashboard.
+
+### Managing quarantined tests
+
+Access the quarantine dashboard from the **Test Quarantine** tab on your CI home page.
+
+:::note[Accessing Quarantined tests]
+
+Please note that only an Admin, Platform Engineer and a Developer can have full read, write and edit access to quarantined tests. Testers and QA people have read-only access.
+
+:::
+
+The dashboard shows:
+
+- Test name and module path.
+- The build where the test was quarantined.
+- Timestamp and user who quarantined it.
+- Direct links to insights for each test.
+
+![managingquarantinedtests.png](/img/_paligo/uuid-f06ef542-d72d-5bed-0c22-4d729b330691.png)
+
+Quarantined tests that were not executed in a build will not show up on your **Tests** tab. Quarantined tests remain in the dashboard until you remove them from the quarantine.
+
+We recommend that you scope narrowly; quarantine on the branches/workflows where the flakiness occurs. It is also helpful to leave a comment for future cleanup and set regular reviews for long-lived quarantines and fixed tests.
+
+### Environment Variable for quarantined tests
+
+During builds, Bitrise injects the scoped list of quarantined tests into the $BITRISE_QUARANTINED_TESTS_JSON Environment Variable. Supported Steps read this variable to skip those tests and exclude them from automatic reruns. If you use custom Steps or direct runner calls, parse $BITRISE_QUARANTINED_TESTS_JSON and filter your test runner arguments accordingly. Here is an example of the value in the Env Var:
+
+```yaml
+BITRISE_QUARANTINED_TESTS_JSON = "[
+  {
+     testCaseName: 'EnableQuarantiningDisabledByPlan',
+     testSuiteName: ['UITests', 'CI', 'Settings'],
+     className: 'BuildSettings'
+  },
+  {
+     testCaseName: 'EnableQuarantiningDisabledByLDFlag',
+     testSuiteName: ['UITests', 'CI', 'Settings'],
+     className: 'BuildSettings'
+  }
+  ...
+]"
+```
+
+:::note[Steps supporting quarantined tests]
+
+The following steps will automatically skip the quarantined tests within the specified scope. If you use custom steps or direct runner calls, parse $BITRISE_QUARANTINED_TESTS_JSON and filter your test runner arguments accordingly.
+
+- [Xcode Test for iOS](https://bitrise.io/integrations/steps/xcode-test)
+- [iOS Device Testing](https://bitrise.io/integrations/steps/virtual-device-testing-for-ios)
+- [Android Unit Test](https://bitrise.io/integrations/steps/android-unit-test)
+- [Virtual Device Testing for Android](https://bitrise.io/integrations/steps/virtual-device-testing-for-android)
+
+:::
+
+#### Quarantine support for custom Steps
+
+Other Steps can convert the BITRISE_QUARANTINED_TESTS_JSON data to a suitable format for your test runner to skip given tests. For example, you can configure the fastlane `scan` action or a Gradle Init script to skip the quarantined tests.
+
+Here are some examples:
+
+**Fastlane - running scan action**
+
+You can run a fastlane lane in a Bitrise Workflow either with the official Bitrise **Fastlane** Step or using a **Script** Step.
+
+In either scenario, you will first need to convert the JSON data to a comma-separated list of `TestTarget/TestClass/TestMethod` items.
+
+You can convert the JSON data either in the configuration YAML file or in the fastlane config file (`Fastfile`).
+
+<Tabs>
+  <TabItem value="yaml" label="Configuration YAML">
+
+  1. In this example, a **Script** Step converts the quarantined test JSON data to a comma-separated list of `TestTarget/TestClass/TestMethod` items and exposes the list in the BITRISE_QUARANTINED_TESTS_LIST Environment Variable:
+
+     ```yaml
+     workflows:
+       test:
+         steps:
+         ...
+         - script:
+             title: Convert BITRISE_QUARANTINED_TESTS_JSON
+             inputs:
+             - content: |-
+                 #!/usr/bin/env bash
+                 set -e
+
+                 # Read JSON from environment variable
+                 json="$BITRISE_QUARANTINED_TESTS_JSON"
+
+                 # Convert to array of TestTarget/TestClass/TestMethod
+                 test_array=($(echo "$json" | jq -r '.[] | "\(.testSuiteName[0])/\(.className)/\(.testCaseName)"'))
+
+                 # Join the array elements with a comma
+                 skip_testing_list=$(IFS=, ; echo "${test_array[*]}")
+
+                 # Export the comma-separated string as an environment variable to be used by following Fastlane Steps
+                 envman add --key BITRISE_QUARANTINED_TESTS_LIST --value "$skip_testing_list"
+         - fastlane:
+             inputs:
+             - lane: test
+         ...
+     ```
+  1. The BITRISE_QUARANTINED_TESTS_LIST variable can then be used to set the `skip testing` option for the `scan` action in fastlane:
+
+     ```ruby
+     lane :test do
+       ...
+       scan(skip_testing: ENV['BITRISE_QUARANTINED_TESTS_LIST'].split(','))
+       ...
+     end
+     ```
+
+  </TabItem>
+  <TabItem value="fastfile" label="Fastfile">
+
+  - Converting the data in the Fastfile also requires the BITRISE_QUARANTINED_TESTS_JSON variable. In the example below, the fastlane lane parses the list of quarantined tests into test identifiers and passes them to scan as `skip_testing`:
+
+    ```ruby
+    lane :test do
+      ...
+      skip_testing = JSON.parse(ENV['BITRISE_QUARANTINED_TESTS_JSON']).map do |item|
+        "#{item['testSuiteName'][0]}/#{item['className']}/#{item['testCaseName']}"
+      end unless ENV['BITRISE_QUARANTINED_TESTS_JSON'].to_s.empty?
+      scan(skip_testing: skip_testing)
+      ...
+    end
+    ```
+
+  </TabItem>
+</Tabs>
+
+**Script Step - running xcodebuild test or test-without-building**
+
+This example converts the BITRISE_QUARANTINED_TESTS_JSON variable's value to `skip-testing` options for xcodebuild `test` or `test-without-building` commands.
+
+```yaml
+workflows:
+  test:
+    steps:
+    - script:
+        title: Convert BITRISE_QUARANTINED_TESTS_JSON
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -e
+
+            # Read JSON from environment variable
+            json="$BITRISE_QUARANTINED_TESTS_JSON"
+
+            # Convert to array of -skip-testing:TestTarget/TestClass/TestMethod
+            test_array=($(echo "$json" | jq -r '.[] | "-skip-testing:\(.testSuiteName[0])/\(.className)/\(.testCaseName)"'))
+
+            # Join the array elements with a space
+            skip_testing_list="${test_array[*]}"
+            
+            # Export the space-separated string as an environment variable to be used by following Fastlane Steps
+            envman add --key XCODEBUILD_SKIP_TESTING_OPTION --value "$skip_testing_list"
+    - script:
+        inputs:
+        - content: xcodebuild test -scheme <SCHEME> -destination <DESTINATION> $XCODEBUILD_SKIP_TESTING_OPTION
+```
+
+**Script Step - running Gradle unit tests**
+
+When running Android local unit tests through Gradle (`/gradlew testUnitTest)`, a Gradle Init script can be used to skip quarantined test cases.
+
+```yaml
+workflows:
+  test:
+    steps:
+    - script:
+        title: Create skip testing init script
+        inputs:
+        - content: |-
+            #!/bin/bash
+
+            # Script to generate Gradle init script for quarantined tests
+            # Reads BITRISE_QUARANTINED_TESTS_JSON environment variable and generates
+            # a Gradle init script that excludes the specified tests
+
+            set -ex
+
+            # Check if BITRISE_QUARANTINED_TESTS_JSON is set
+            if [[ -z "${BITRISE_QUARANTINED_TESTS_JSON:-}" ]]; then
+                echo "Error: BITRISE_QUARANTINED_TESTS_JSON environment variable is not set" >&2
+                exit 1
+            fi
+
+            # Parse JSON and extract test patterns
+            # Each test will be excluded using the pattern: className.testCaseName
+            excluded_tests=$(echo "$BITRISE_QUARANTINED_TESTS_JSON" | jq -r '.[] | .className + "." + .testCaseName')
+
+            # Generate the Gradle init script
+            init_script_file=./gradle_quarantine_init.gradle.kts
+            cat << 'EOF' > "$init_script_file"
+            allprojects {
+                tasks.withType<Test>().configureEach {
+            EOF
+
+            # Add filter.excludeTestsMatching lines for each excluded test
+            while IFS= read -r test_pattern; do
+                if [[ -n "$test_pattern" ]]; then
+                    echo "        filter.excludeTestsMatching(\"$test_pattern\")" >> "$init_script_file"
+                fi
+            done <<< "$excluded_tests"
+
+            cat << 'EOF' >> "$init_script_file"
+                }
+            }
+            EOF
+
+            # Output the path to the generated init script file
+            envman add --key GRADLE_INIT_SCRIPT_FILE --value "$init_script_file"
+    - script:
+        title: Run tests
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+            ./gradlew :app:testDebugUnitTest "--init-script" "$GRADLE_INIT_SCRIPT_FILE"
+```
+
+The `Create skip testing init script` Step creates the following Gradle init script:
+
+```groovy
+allprojects {
+    tasks.withType<Test>().configureEach {
+        filter.excludeTestsMatching("<package_name>.<test_class>.<test_method_1>")
+        filter.excludeTestsMatching("<package_name>.<test_class>.<test_method_2>")
+        ...
+    }
+}
+```

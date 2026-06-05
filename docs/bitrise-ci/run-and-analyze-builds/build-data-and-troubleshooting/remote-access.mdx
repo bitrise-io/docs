@@ -8,11 +8,6 @@ slug: /bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/remote-a
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_RemoteAccessWithVisualStudioCode from '@site/src/partials/remote-access-with-visual-studio-code.mdx';
-import Partial_ExtendingTheAvailabilityOfRemoteAccess from '@site/src/partials/extending-the-availability-of-remote-access.mdx';
-import Partial_FindingYourFilesOnTheVM from '@site/src/partials/finding-your-files-on-the-vm.mdx';
-import Partial_RemoteAccessWithSSH from '@site/src/partials/remote-access-with-ssh.mdx';
-import Partial_RemoteAccessWithScreenshare from '@site/src/partials/remote-access-with-screenshare.mdx';
 
 Remote access allows users to connect to a running build machine for easier debugging. A failed build can be rebuilt with remote access enabled to make troubleshooting a lot easier - for example, if the build logs don’t provide enough information about the error.
 
@@ -38,12 +33,89 @@ When using remote access, 10 minutes will be added to your overall build time.
 
 :::
 
-<Partial_RemoteAccessWithVisualStudioCode />
 
-<Partial_RemoteAccessWithSSH />
+## Remote access with Visual Studio Code
 
-<Partial_RemoteAccessWithScreenshare />
+This remote access mechanism allows your local Visual Studio Code app to connect to the Bitrise build machine as a [remote repository](https://code.visualstudio.com/docs/remote/ssh).
 
-<Partial_FindingYourFilesOnTheVM />
+You can browse and edit files in real time, use the built-in terminal to execute commands, and even install a subset of VSCode extensions.
 
-<Partial_ExtendingTheAvailabilityOfRemoteAccess />
+1. Open the app on Bitrise.
+1. On the main page of the app, find the build you want to re-run with remote access and click it.
+1. On the **Rebuild** button, click the downward arrow to open the dropdown menu.
+1. Select **Rebuild with remote access**. This starts a new build that you can access remotely.
+1. Follow the on-screen instructions to install the Bitrise CLI, its remote access extension and the connection command.
+
+   ![vscode.png](/img/_paligo/uuid-f0d69f0f-dab5-e9e9-b142-a9a5d584d1a6.png)
+
+
+## Remote access with SSH
+
+To access a Bitrise build machine with SSH, you will need a command line interface and the correct command and password:
+
+1. Open the app on Bitrise.
+1. On the main page of the app, find the build you want to re-run with remote access and click it.
+1. On the **Rebuild** button, click the downward arrow to open the dropdown menu.
+1. Select **Rebuild with remote access**. This starts a new build that you can access remotely.
+
+   ![builds-remote-access.png](/img/_paligo/uuid-bc4b9514-6399-0d7d-1f0f-0308aa637c5c.png)
+1. In the SSH section, find the **Command** and run it in a command line interface.
+
+   ![builds-ssh-remote-access-instructions.png](/img/_paligo/uuid-bf8f3c0e-81c1-d175-92da-bcbabe18bb3a.png)
+
+And done! You should be able to access the virtual machine where your build is running.
+
+
+## Remote access with screenshare
+
+To access a Bitrise build machine with a screenshare app, you will need the correct username, password, and address, as well as a VNC screenshare app:
+
+:::note[macOS only]
+
+Remote access with screenshare is only available for Workflows that run on a macOS-based <GlossTerm baseform="stack">stack</GlossTerm>. If the Workflow's stack (or in absence of Workflow-specific stacks, the app's default stack) is a Linux-based one, you won't see the screenshare instructions at all.
+
+:::
+
+1. Open the app on Bitrise.
+1. On the main page of the app, find the build you want to re-run with remote access and click it.
+1. On the **Rebuild** button, click the downward arrow to open the dropdown menu.
+1. Select **Rebuild with remote access**. This starts a new build that you can access remotely.
+
+   ![builds-remote-access.png](/img/_paligo/uuid-bc4b9514-6399-0d7d-1f0f-0308aa637c5c.png)
+1. Under the **Screenshare** option, find the required information:
+
+   - Address
+   - Username
+   - Password
+
+   ![builds-ssh-remote-access-instructions.png](/img/_paligo/uuid-bf8f3c0e-81c1-d175-92da-bcbabe18bb3a.png)
+1. Open a VNC screenshare application.
+
+   The simplest option is using the default **Screen Sharing** application on macOS.
+1. Fill out the required fields with the information from under the **Screenshare** option.
+
+And done! You should now be able to access the virtual machine where your build is running.
+
+
+## Finding your files on the VM
+
+Once you successfully logged in to the Bitrise virtual machine that ran your build, you can dive into the files themselves to see what’s happening in real time. After Bitrise finished cloning your app on to the VM, you can always access it at the following location:
+
+```text
+/Users/Vagrant/git
+```
+
+
+## Extending the availability of remote access
+
+Remote access is available while the build is running and for 10 minutes after the build is finished. If this is not enough, there’s a simple workaround to make sure remote access is available for a longer time.
+
+1. Add a **Script** Step after the Step that causes the build to fail.
+1. Toggle the **Run if previous Step failed** option on to ensure the **Script** Step always runs.
+1. Add a command to let the build “sleep” for a time specified in seconds:
+
+   `sleep 5400`
+
+   This example lets the build run for 90 minutes. It should be no more than your build time limit, of course.
+
+That’s it. While the build is still running, you can look around on the virtual machine for the possible issues that caused it to fail.

@@ -8,7 +8,6 @@ slug: /bitrise-ci/workflows-and-pipelines/steps/step-bundles
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_NestedStepBundles from '@site/src/partials/nested-step-bundles.mdx';
 
 <GlossTerm baseform="Step">Step</GlossTerm> bundles allow you to group multiple Steps into a single unit. With Step bundles, you can reuse Steps and sequences of Steps without manually copying and pasting from a YAML configuration file.
 
@@ -146,7 +145,57 @@ workflows:
 
 The build log and Workflow editor now displays `"Run unit tests on iPhone"` and `"Run UI tests on iPad"` as the Step titles. If the UI tests fail, you'll know immediately without having to inspect the logs.
 
-<Partial_NestedStepBundles />
+
+## Nested Step bundles
+
+Step bundles allow nesting: you can add a Step bundle within another Step bundle. This allows you to create large, complex configurations with easily replaceable parts. You can add as many Step bundles within another Step bundles as you want.
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Open the Workflow Editor.
+1. On the left, select **Step bundles**.
+1. Select a Step bundle from the dropdown menu in the middle.
+1. If it's an empty bundle, click **Add Step or Step bundle**.
+
+   If the bundle already has Steps in it, hover between Steps and click the plus sign.
+
+   ![add-bundle-to-bundle.png](/img/_paligo/uuid-e4db471e-3219-872f-8c6f-7aa194b7f156.png)
+1. In the dialog, go to the **Step bundle** tab.
+
+   ![bundle-tab.png](/img/_paligo/uuid-68c17140-7ed7-eae8-4101-12d403bee8e4.png)
+1. Select a bundle to add it to the original bundle.
+1. Use drag-and-drop to move it within the bundle.
+1. When done, click **Save changes**
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. In the configuration YAML file, define the Step bundle you want to nest within a `step_bundles` property.
+
+   ```yaml
+   step_bundles:
+     initialize:
+       steps:
+         - activate-ssh-key: {}
+         - git-clone: {}
+   ```
+1. Nest this bundle within another one by using the `bundles` property.
+
+   ```yaml
+   step_bundles:
+     initialize:
+       steps:
+         - activate-ssh-key: {}
+         - git-clone: {}
+     deploy_bundle:
+       steps:
+         - bundle::initialize: {}
+         - deploy-to-bitrise-io: {}
+   ```
+
+</TabItem>
+</Tabs>
 
 ## Step bundle inputs
 

@@ -9,9 +9,6 @@ sidebar_label: Using key-based caching in your builds
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_KeyMatchingForCacheArchives from '@site/src/partials/key-matching-for-cache-archives.mdx';
-import Partial_KeyBasedCachingTemplatesAndFunctions from '@site/src/partials/key-based-caching-templates-and-functions.mdx';
-import Partial_ConditionalCaching from '@site/src/partials/conditional-caching.mdx';
 
 Key-based caching requires two <GlossTerm baseform="Step">Steps</GlossTerm> that must be used together:
 
@@ -111,8 +108,127 @@ Once a cache archive has been created, you can access it on the **App Settings**
            npm-cache-{{ .Branch }}
    ```
 
-<Partial_KeyBasedCachingTemplatesAndFunctions />
 
-<Partial_KeyMatchingForCacheArchives />
+## Key-based caching templates and functions
 
-<Partial_ConditionalCaching />
+Both key-based caching Steps support using template elements in their Step inputs. The Steps evaluate the key template at runtime and the final cache key to be used can change depending on the build environment or on certain files in the repository.
+
+### Available caching templates
+
+| Template expression | Definition | Possible values |
+| --- | --- | --- |
+| `cache-key-{{ .Branch }}` | Current git branch the build runs on. | The exact name of any existing branch of the app. |
+| `cache-key-{{ .CommitHash }}` | SHA-256 hash of the git commit the build runs on. | Any existing commit hash. |
+| `cache-key-{{ .Workflow }}` | Current Bitrise workflow name (for example, `primary`). | The exact name of any existing Workflow of the app. |
+| `{{ .OS }}-cache-key` | Current operating system of the build stack (`linux` or `darwin`). | - `linux`: For Linux-based stacks. - `darwin`: For macOS-based stacks. |
+
+### Using functions in caching templates
+
+The key-based caching templates support the use of two different functions:
+
+- `checksum`: This function computes the SHA-256 checksum of the contents of one or more files. This is useful for creating unique cache keys based on files that describe content to cache. See the examples below.
+- `getenv`: This function returns the value of an [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables) (Env Var) or an empty string if the variable is not defined. See the examples below.
+
+**Using the checksum function**
+
+Use the `checksum` function to create a key that computes the checksum of the `package-lock.json` file:
+
+```yaml
+- save-cache@1:
+    inputs:
+    - key: npm-cache-{{ checksum "package-lock.json" }}
+    - paths: node_modules
+```
+
+Use the `checksum` function to create a key that computes a checksum for any `.gradle` file and the `gradle.properties` file:
+
+```yaml
+- save-cache@1:
+    inputs:
+    - key: gradle-cache-{{ checksum "**/*.gradle*" "gradle.properties" }}
+    - paths: AndroidApp
+```
+
+**Using the getenv function**
+
+Use the `getenv` function to create a key that contains the value of the BITRISE_BUILD_NUMBER Env Var.
+
+```yaml
+- save-cache@1:
+    inputs:
+    - key: npm-cache-{{ getenv "BITRISE_BUILD_NUMBER" }}
+    - paths: node_modules
+```
+
+
+## Key matching for cache archives
+
+It's possible to define more than one key in the **Cache keys** input of the key-based caching Steps. You can specify additional keys by listing one key per line. The list is in priority order, so the Step will first try to find a match for the first key you provided, and if there is no cache stored for the key, it will move on to find a match for the second key (and so on).
+
+```yaml
+inputs:
+  key: |
+    key-1
+    key-2
+    key-3
+```
+
+In addition to listing multiple keys, each key can be a prefix of a saved cache key and still get a matching cache archive. For example, the key `my-cache-` can match an existing archive saved with the key `my-cache-a6a102ff`. We recommend configuring the keys in a way that the first key is an exact match to a checksum key, and to use a more generic prefix key as a fallback:
+
+```yaml
+inputs:
+  key: |
+    npm-cache-{{ checksum "package-lock.json" }}
+    npm-cache-
+```
+
+
+## Using conditional caching with dynamic keys
+
+You might not want to update a cache archive every time you run a build. By skipping caching, you can:
+
+- Avoid saving potentially incorrect build data in the cache.
+- Make the PR validation workflow faster.
+- Limit the amount of data stored and transferred.
+
+If the cached content did not change during your build at all, the **Save cache** Step can automatically skip compressing and uploading the cache. To make this work, you need to make sure your cache archive has a unique cache key that changes whenever the contents of the cache change: in practice, this requires [a dynamic key with a checksum](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-based-caching-templates-and-functions) and a file that describes the cached content. The checksum will be calculated based on the contents of the file; if the file remains unchanged, so does the checksum.
+
+We strongly recommend configuring the Step in a way to take advantage of this feature. Follow the steps below, or skip ahead to the YAML example at the end of this section.
+
+:::tip[Skipping the Save cache Step entirely]
+
+If you don't wish to update the cache archive even if the content that would be cached has changed, you can either remove the **Save cache** Step from your Workflow or you can set conditions for the Step: [Enabling or disabling a Step conditionally](/en/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally).
+
+:::
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+
+   ![workflows-button.png](/img/_paligo/uuid-99bb894c-3e79-91c8-9e62-7e475573495d.png)
+1. Open your Workflow and select the **Save cache** Step.
+1. Set the **Unique cache key** input to `true`.
+
+   If the input is set to `false`, the Step can still skip uploading the cache but it will need to create the cache archive first to calculate its checksum. This takes time.
+1. In the **Cache key** input, create a key with a checksum for a file that describes the cached content.
+
+   For example, `npm-cache-{{ checksum "package-lock.json" }}` is a dynamic key that remains unchanged as long as the `package-lock.json` file does not change.
+1. Add the same dynamic key to the **Cache keys** input of the **Restore cache** Step.
+
+If everything is configured correctly, if the keys in the two caching Steps match, the cache archive will not be updated.
+
+**YAML example for using a dynamic key with checksum**
+
+In this example, the cache key calculates the sum for any `.gradle` file and the `gradle.properties` file. Both the **Restore cache** and the **Save cache** Step looks for the same cache key:
+
+```yaml
+workflows:    
+  caching:      
+    steps:      
+    - restore-cache@1:          
+        inputs:          
+        - key: gradle-cache-{{ checksum "**/*.gradle*" "gradle.properties" }}      
+    - save-cache@1:          
+        inputs:          
+        - key: gradle-cache-{{ checksum "**/*.gradle*" "gradle.properties" }}          
+        - is_key_unique: 'true'
+```

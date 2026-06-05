@@ -9,10 +9,6 @@ sidebar_label: GitHub app configuration
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_SettingAdditionalLinkedRepositoriesAPI from '@site/src/partials/setting-additional-linked-repositories-api.mdx';
-import Partial_RemovingTheOAuthConnectionAPI from '@site/src/partials/removing-the-oauth-connection-api.mdx';
-import Partial_ChangingTheConnectionTypeFromOAuthToTheGitHubAppAPI from '@site/src/partials/changing-the-connection-type-from-oauth-to-the-github-app-api.mdx';
-import Partial_ExtendingGitHubAppPermissionsToBuildsAPI from '@site/src/partials/extending-github-app-permissions-to-builds-api.mdx';
 
 After you successfully [installed a Bitrise GitHub app](/en/bitrise-platform/repository-access/github-app-integration#installing-the-github-app-integration), you can use it as your default Git connection method. Configure the [Bitrise GitHub app integration](/en/bitrise-platform/repository-access/github-app-integration) via the API:
 
@@ -21,10 +17,132 @@ After you successfully [installed a Bitrise GitHub app](/en/bitrise-platform/rep
 - Set additional [linked repositories](/en/bitrise-platform/repository-access/github-app-integration#additional-linked-repositories-via-a-github-app).
 - Remove the service credential user and other authorization methods as they aren't required for the GitHub app.
 
-<Partial_ChangingTheConnectionTypeFromOAuthToTheGitHubAppAPI />
 
-<Partial_ExtendingGitHubAppPermissionsToBuildsAPI />
+## Changing the connection type from OAuth to the GitHub app
 
-<Partial_SettingAdditionalLinkedRepositoriesAPI />
+:::important[Important considerations]
 
-<Partial_RemovingTheOAuthConnectionAPI />
+Reverting to OAuth via API is not fully supported. Reverting projects to OAuth requires manual intervention through the Bitrise UI. Customers should test the migration process with a subset of projects before executing bulk migrations.
+
+:::
+
+Change your GitHub connection from an OAuth application to the Bitrise Github app through the API via the `POST /apps/{app-slug}/change-connection-type` endpoint. The accepted values are:
+
+- `github`
+- `github-app`
+
+To change the connection type to the GitHub app:
+
+```bash
+curl -X 'POST' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/change-connection-type' \
+  -H 'accept: application/json' \
+  -H 'Authorization: ACCESS-TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "connection_type": "github-app"
+}'
+```
+
+Changing a connection is a non-destructive action: other authentication methods aren't removed. You can check if your builds still work. If there is an issue, you can change back to an OAuth connection.
+
+To revert the connection:
+
+```bash
+curl -X 'POST' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/change-connection-type' \
+  -H 'accept: application/json' \
+  -H 'Authorization: ACCESS-TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "connection_type": "github"
+}'
+```
+
+
+## Extending GitHub app permissions to builds
+
+The Bitrise GitHub App generates a short-term, temporary token for each build that is triggered via the app. This token has only one permission by default: content:read. This means the build can access the GitHub repository but can't do anything else.
+
+You can extend these permissions so that you can perform other operations during a build. For example, this can enable users to push Git tags from their builds, create custom status reports, put a label on a pull request, or push a new version number.
+
+Use the `use_full_permission` parameter of the `PUT /apps/APP-SLUG/github-app-connection-configuration` endpoint to extend permissions:
+
+```bash
+curl -X 'PUT' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/github-app-connection-configuration' \
+  -H 'accept: application/json' \
+  -H 'Authorization: ACCESS-TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "use_full_permission_set": true
+}'
+```
+
+:::tip[More information]
+
+Read more about extending permissions and how to do it on the GUI: [Extending GitHub App permissions to the builds](/en/bitrise-platform/repository-access/github-app-integration#extending-github-app-permissions-to-the-builds).
+
+:::
+
+
+## Setting additional linked repositories
+
+A linked repository is a repository that a Bitrise project can access using a GitHub app installation but it's not the project's primary repository. When an additional repository is linked to your Bitrise GitHub app installation, the tokens generated for the build can access the additional repository.
+
+Read more about additional linked repositories: [Additional linked repositories](/en/bitrise-platform/repository-access/github-app-integration#additional-linked-repositories-via-a-github-app).
+
+Use the `POST /apps/APP-SLUG/github-app-connection-configuration/update-linked-repositories` to link an additional repository. You have two choices:
+
+- Manually listing the full names of the repository.
+
+  ```bash
+  curl -X 'POST' \
+    'https://api.bitrise.io/v0.1/apps/APP-SLUG/github-app-connection-configuration/update-linked-repositories' \
+    -H 'accept: application/json' \
+    -H 'Authorization: ACCESS-TOKEN' \
+    -H 'Content-Type: application/json' \
+    -d '{
+    "repositories": ["org1/repo1", "org1/repo2"]
+  }'
+  ```
+- Set the `unlimited_repo_access` field to true to let the builds access all the current and future repositories.
+
+  ```bash
+  curl -X 'POST' \
+    'https://api.bitrise.io/v0.1/apps/APP-SLUG/github-app-connection-configuration/update-linked-repositories' \
+    -H 'accept: application/json' \
+    -H 'Authorization: ACCESS-TOKEN' \
+    -H 'Content-Type: application/json' \
+    -d '{
+    "unlimited_repo_access": true
+  }'
+  ```
+
+
+## Removing the OAuth connection
+
+If your GitHub app connection works, you can remove the components of the OAuth connection. This includes:
+
+- Removing the [service credential user](/en/bitrise-platform/integrations/the-service-credential-user).
+- Removing either the SSH key or the HTTP token.
+
+### Removing the service credential user
+
+To remove the service credential user:
+
+```bash
+curl -X 'DELETE' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/service-credential-user' \
+  -H 'Authorization: ACCESS-TOKEN'
+```
+
+### Removing SSH or HTTP authorization
+
+To remove previous authorization methods:
+
+```bash
+curl -X 'DELETE' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/repository-authorization ' \
+  -H 'Authorization: ACCESS-TOKEN'
+```

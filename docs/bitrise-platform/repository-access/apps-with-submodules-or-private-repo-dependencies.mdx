@@ -9,8 +9,6 @@ sidebar_label: Projects with submodules or private repo dependencies
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_UsingAMachineUserToAccessPrivateRepositories from '@site/src/partials/using-a-machine-user-to-access-private-repositories.mdx';
-import Partial_GitCloningSubmodulesAndRepositoryDependencies from '@site/src/partials/git-cloning-submodules-and-repository-dependencies.mdx';
 
 :::note[GitHub App integration]
 
@@ -47,6 +45,93 @@ Now, BitMan accesses the **Project settings** page of his Bitrise project, and c
 
 BitMan goes to Bitrise and opens the <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>. He has the **Activate SSH Key** Step in his repository so the SSH key will work. BitMan adds a [**Script**](https://github.com/bitrise-io/steps-script) Step to clone the private repositories - as the **Git Clone** <GlossTerm baseform="Step">Step</GlossTerm> only works with the main repository! Once all that is done, the build should work as expected.
 
-<Partial_UsingAMachineUserToAccessPrivateRepositories />
 
-<Partial_GitCloningSubmodulesAndRepositoryDependencies />
+## Using a machine user to access private repositories
+
+A [machine or bot user](https://docs.github.com/en/developers/overview/managing-deploy-keys#machine-users) is a GitHub user that is not used by humans, instead it is exclusively used for automation. This is the best way to access a private repository: you create a machine user, add a public SSH key to the user, and then provide the user read access to the repository.
+
+### Adding the machine user to your repository
+
+1. Create a new GitHub user account, one that will serve as the machine user.
+1. Go to your repository on GitHub and select the **Settings** tab.
+1. On the left side menu, select **Collaborators & teams**.
+
+   ![Can_I_add_projects_with_submodules_or_with_private_repo_dependencies_.png](/img/_paligo/uuid-987a7495-6bb7-2c5e-0a19-6871b2ca8f1f.png)
+1. Scroll down to the **Collaborators** window.
+1. In the search input field, search for the username of your newly created account.
+1. Click **Add Collaborator**.
+1. Change the user permission to **Read**.
+
+   By default, the invited collaborator’s permission is **Write**. You can keep it that way, of course, but a Read permission is enough for Bitrise.
+
+### Adding the SSH key to the machine user
+
+In order for Bitrise to be able to use the machine user to access your repository, you must add the same SSH key to the machine user and the project on Bitrise.
+
+#### When adding a new project
+
+1. Start the process of [adding your project on Bitrise](/en/bitrise-ci/getting-started/adding-a-new-project).
+1. When prompted to setup repository access, you can choose from three options:
+
+   **Auto-add a generated SSH key to your repository**: Bitrise automatically registers a public SSH key to your GitHub repository.
+
+   **Copy a generated SSH key to your Git provider manually**: Bitrise generates an SSH keypair for you, and you have to manually register the public key to your Git repository.
+
+   **Add your own SSH key**: You provide your own SSH keypair for authentication, and you have to manually register the public key to your Git repository.
+1. Finish the process.
+1. Add the same SSH key to your machine user that you added to the project.
+
+#### When your project already exists
+
+1. Open your project on Bitrise with a user that has the **Admin** [role on the project](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+1. On the main page of the project, click on the **Project settings** button.
+
+   ![project-settings-button.png](/img/_paligo/uuid-14defaa4-472c-2d09-84df-145dc3aef4f5.png)
+1. On the left, select **Repository**.
+1. In the **Authorization** section, find the **Authorization method** card, and click **Copy public key**.
+
+   ![SCR-20260401-pvvq.png](/img/_paligo/uuid-f021126a-47d0-41a9-56f7-79b9c8461a0e.png)
+1. [Add it to your GitHub machine user](https://help.github.com/en/articles/adding-a-new-ssh-key-to-your-github-account).
+
+
+## Git cloning submodules and repository dependencies
+
+You have three options when it comes to accessing multiple repositories during a Bitrise build:
+
+- Cloning all the repositories on the virtual machine, and accessing them as needed.
+- Adding the additional repositories as submodules to your main repository.
+- Using the [GitHub App integration](/en/bitrise-platform/repository-access/github-app-integration) and [linking additional repositories](/en/bitrise-platform/repository-access/github-app-integration#additional-linked-repositories-via-a-github-app).
+
+In the latter case, you do not need to worry about cloning them: if you set up [SSH access](/en/bitrise-platform/repository-access/configuring-ssh-keys) correctly, the **Git Clone** Step will take care of everything.
+
+If you don’t want to or can’t add your repository dependencies as submodules, read on: we’ll talk about how to clone them.
+
+:::note[The Git Clone Step]
+
+The **Git Clone** Step only works with the main repository. If you need to access multiple private repositories, do not add multiple **Git Clone** Steps. Use **Script** Steps to clone those repositories on the Bitrise virtual machine.
+
+:::
+
+To clone additional private repositories during the build:
+
+1. Make sure you added a user with the Bitrise public SSH key to all the repositories.
+1. Make sure you have the **Activate SSH Key** Step and the **Git Clone** Step at the start of your Workflow.
+1. Add one or more **Script** Steps to clone the additional private repositories to the build.
+1. Run a build.
+
+:::note[Cloning issues]
+
+If you encounter issues with git cloning - for example, not all submodules are cloned - try the following command after cloning:
+
+```bash
+git submodule update –recursive –remote –merge –force
+```
+
+:::
+
+### Public vs private projects
+
+There is one important detail to keep in mind when you want to give access to all submodules or private repository dependencies for a Bitrise project: the project’s privacy settings determine what [git URL should you use](/en/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch#changing-the-repository-url).
+
+- If you have a private project: use SSH URLs everywhere! Most services support SSH key based authentication only for SSH URLs (for example, `git@github.com:bitrise-io/bitrise.git`). Therefore every private repository you want to use have to be addressed with the SSH URL. If you have direct private git repo references in your CocoaPods Podfile, you’ll have to use the SSH URL there as well. The same applies for submodules and every other private git repository URL you want to use with [the SSH key you register](/en/bitrise-platform/repository-access/configuring-ssh-keys) on [bitrise.io](https://www.bitrise.io/).
+- If you have a public project: use HTTPS URLs everywhere! SSH URLs require SSH keys even if the repository is public. For security reasons, public projects CANNOT have SSH keys. As HTTPS git clone URLs do not require any authentication in the case of public repositories, they should be used for public Bitrise projects.

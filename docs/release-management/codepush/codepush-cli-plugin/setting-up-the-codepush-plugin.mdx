@@ -7,9 +7,50 @@ sidebar_position: 3
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_SettingUpACustomServer from '@site/src/partials/setting-up-a-custom-server.mdx';
-import Partial_InstallingTheCodePushCLIPlugin from '@site/src/partials/installing-the-codepush-cli-plugin.mdx';
 
-<Partial_InstallingTheCodePushCLIPlugin />
 
-<Partial_SettingUpACustomServer />
+## Installing the CodePush CLI plugin
+
+Install the CodePush CLI plugin so that you can use CodePush locally, on your own machines.
+
+1. [Install the Bitrise CLI](/en/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli).
+1. Run the following command:
+
+   ```bash
+   bitrise plugin install --source https://github.com/bitrise-io/bitrise-plugins-codepush-cli.git
+   ```
+1. Run the plugin:
+
+   ```bash
+   bitrise :codepush
+   ```
+
+
+## Setting a custom server URL
+
+Set a different target environment for CodePush instead of the main Bitrise server. For example, you can set a staging environment as the base server URL.
+
+There are three ways to do so:
+
+- Use the `push` command with the `--server-url` flag:
+
+  ```bash
+  bitrise :codepush push --server-url https://api.staging.bitrise.io
+  ```
+- Export the $CODEPUSH_SERVER_URL Environment Variable:
+
+  ```bash
+  export CODEPUSH_SERVER_URL=https://api.staging.bitrise.io
+  ```
+- Set the server URL during initializing with the `init` command. This writes the URL into the `.codepush.json` file:
+
+  ```bash
+  bitrise :codepush init --server-url https://api.staging.bitrise.io
+  ```
+
+The server URL is resolved in the following order:
+
+1. The `--server-url` flag (highest priority)
+1. The CODEPUSH_SERVER_URL environment variable
+1. The `server_url` field in the `.codepush.json` file.
+1. Default: https://api.bitrise.io

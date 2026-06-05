@@ -8,17 +8,56 @@ slug: /bitrise-ci/code-signing/ios-code-signing/troubleshooting-ios-code-signing
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_CodeSigningAndCleanVirtualMachines from '@site/src/partials/code-signing-and-clean-virtual-machines.mdx';
-import Partial_CouldNotInstallTheAppOnADevice from '@site/src/partials/could-not-install-the-app-on-a-device.mdx';
-import Partial_FileCountLimitOnProvisioningProfiles from '@site/src/partials/file-count-limit-on-provisioning-profiles.mdx';
-import Partial_IOSCodeSigningStepsFail from '@site/src/partials/ios-code-signing-steps-fail.mdx';
 
 iOS code signing can be complicated, with several potential issues. We've collected some of the most common issues and their potential solutions. Let’s look into what you can do to make sure code signing works!
 
-<Partial_CodeSigningAndCleanVirtualMachines />
 
-<Partial_IOSCodeSigningStepsFail />
+## Code signing and clean virtual machines
 
-<Partial_FileCountLimitOnProvisioningProfiles />
+Every Bitrise build uses a clean virtual machine with no leftover files and configuration from previous builds. While you most likely have all the necessary code signing files (certificates and provisioning profiles) available on your local machine this is not the case with our virtual machines. They do not contain any code signing files relevant to your project, that is why you have to make sure:
 
-<Partial_CouldNotInstallTheAppOnADevice />
+- You choose the right code signing asset management option to upload the provisioning profiles to Bitrise. From here our Steps will download the files to the virtual machine at runtime.
+- You upload the necessary signing certificates to the **Code Signing** tab.
+- You have connected your Bitrise account to the Apple Developer portal. (This step is not needed if you use the **Certificate and Profile Installer** Step.) to Apple Developer portal.
+
+  If you suspect an error is related to code signing, there is almost certainly a problem with one of these three. When trying to build an iOS app on Bitrise, we strongly recommend generating an .ipa file of the app locally, on your own machine first. If that fails, the build will certainly fail on Bitrise, too.
+
+  :::tip[Verbose logs]
+
+  If you are getting any issues, make sure you enable the Verbose log input in your code signing asset management or building Step to get more information on the nature of the issue.
+
+  :::
+
+
+## iOS code signing Steps fail
+
+Our [iOS code signing Steps](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects) manage your provisioning profiles for you: they download the profiles from the Apple Developer portal and install them for you. Here’s what you can do if these Steps fail:
+
+- Before trying to use this Step, generate an .ipa file locally - with the same export method you want to use on Bitrise - to ensure that the profiles are uploaded to the Apple Developer portal.
+- Make sure that your Bitrise account is connected to the Apple Developer portal and that you have at least an Admin role in your Apple Developer team.
+
+
+## File count limit on provisioning profiles
+
+The maximum number of provisioning profiles and .p12 certificates you can upload to the **Code Signing** tab on Bitrise is 30. If you’ve already reached this limit and wish to use even more, then here are a few tips on how to use even more provisioning profiles:
+
+- Use a Step with automatic provisioning, such as **Xcode Archive and Export for iOS**, **Export iOS and tvOS Xcode Archive**, **Xcode build for testing for iOS** , or **Manage iOS Code Signing**. These Steps only require the code signing identities (certificates with .p12 extension) to be uploaded to Bitrise. You can download the provisioning profiles from the Apple Developer portal on-the-fly during the build if you have [connected your Apple Developer account to Bitrise](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key).
+- You can create a .zip file containing the required certificates/profiles. In this case, you don’t need to upload any certificates/profiles on Bitrise. During the build you can download the .zip file and update the certificate/profile related inputs of the **Certificate and Profile Installer** Step to match the path to the certificate/profile on the build machine. Note that the **Certificate and Profile Installer** Step supports local paths and URLs for certificates and profiles.
+- You can host the profiles and certificates yourself, and only add an URL that is pointing to a given certificate/profile to the workflow.
+
+Also note that multiple URLs can be specified for both the certificate and profile inputs. Make sure you separate them with a pipe (`|`) character.
+
+
+## Could not install the app on a device
+
+To install iOS apps on a given device, you have to either:
+
+- Export an IPA file with the `development` export method, with the device’s UDID registered in the provisioning profile used for the export.
+- Export an IPA file with the `ad-hoc` export method and install the app via the public install page generated by the **Deploy to Bitrise.io** Step.
+
+If you can't install an app on a given device:
+
+1. Check that the device UDID is included in the app’s provisioning profile.
+
+   If you use manual provisioning, check the provisioning profile you uploaded to Bitrise.
+1. Check the logs to see if the **Xcode Archive & Export for iOS** Step used the provisioning profile with the device’s UDID in it.

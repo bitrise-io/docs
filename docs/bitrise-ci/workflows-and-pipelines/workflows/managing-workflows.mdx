@@ -8,10 +8,6 @@ slug: /bitrise-ci/workflows-and-pipelines/workflows/managing-workflows
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_UtilityWorkflows from '@site/src/partials/utility-workflows.mdx';
-import Partial_ChainingWorkflowsTogether from '@site/src/partials/chaining-workflows-together.mdx';
-import Partial_RearrangingChainedWorkflows from '@site/src/partials/rearranging-chained-workflows.mdx';
-import Partial_WorkflowPriority from '@site/src/partials/workflow-priority.mdx';
 
 You can chain multiple Workflows and rearrange the order of Workflows in a chain in the Bitrise Workflow Editor. Take advantage of utility Workflows to reuse components in multiple different contexts.
 
@@ -21,10 +17,119 @@ Everything described here is also available in the [offline Workflow Editor](/en
 
 :::
 
-<Partial_ChainingWorkflowsTogether />
 
-<Partial_RearrangingChainedWorkflows />
+## Chaining Workflows together
 
-<Partial_WorkflowPriority />
+You can set up multiple Workflows to run in succession. The order of these Workflows can be rearranged, new Workflows can be added to the chain and existing Workflows can be removed from it at any time.
 
-<Partial_UtilityWorkflows />
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+1. Click the ellipsis button to the right of the name of the Workflow.
+
+   ![chaining-workflows-menu.png](/img/_paligo/uuid-69aa514f-9623-9dde-f80f-340c81d06044.png)
+1. From the dropdown menu, select **Chain Workflow**.
+1. Select a Workflow from the list and click either **Add before** or **Add after**.
+
+   ![workflow-chain-options.png](/img/_paligo/uuid-eebfeceb-3b6a-7e5d-3f3e-4431b4c200ba.png)
+1. Click **Save** in the top right corner.
+
+**Chaining Workflows in YAML**
+
+In this example, we're chaining together three Workflows: `test`, `deploy`, and `ci`, using the before_run and after_run parameters.
+
+```yaml
+workflows:
+  test:
+    envs:
+    - IS_TEST: "true"
+    steps:
+    # test Steps to run
+
+  deploy:
+    before_run:
+    - test
+    steps:
+    # steps to deploy
+
+  ci:
+    before_run:
+    - test
+    after_run:
+    - deploy
+```
+
+For more information on how to manage Workflows directly in the `bitrise.yml` file, check [Workflow level properties](/en/bitrise-ci/references/configuration-yaml-reference#workflow-level-properties).
+
+
+## Rearranging chained Workflows
+
+Once you have a chain, you can easily rearrange the order of Workflows in a drag-and-drop menu.
+
+1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
+1. Click the **Workflows** button on the main page.
+1. Click the ellipsis labelled **Manage Workflows**.
+
+   ![chaining-workflows-menu.png](/img/_paligo/uuid-69aa514f-9623-9dde-f80f-340c81d06044.png)
+1. From the dropdown menu, select **Reorder Workflow chain** to bring up a drag-and-drop menu where you can rearrange the Workflows of the chain.
+
+   ![reorder-workflow-chain.png](/img/_paligo/uuid-71e4b862-efd1-ece7-3627-d970b41f2d43.png)
+1. Click **Save** in the top right corner.
+
+
+## Workflow priority
+
+You can set a priority for each individual Workflow. The priority setting determines the position of a standalone build of the Workflow in the build queue: the higher the priority, the sooner the Workflow's build will run.
+
+You can assign a priority either in the Workflow Editor or in the configuration YAML file of your project. The priority is always an integer between -100 and 100: the higher the number, the higher the priority. The default priority is 0.
+
+For more information about build priority, and the order of precedence between different types of priorities, check out [Build priority](/en/bitrise-ci/configure-builds/configuring-build-settings/build-priority).
+
+
+## Utility Workflows
+
+:::important[Step bundles]
+
+Instead of utility Workflows, we strongly recommend using [Step bundles](/en/bitrise-ci/workflows-and-pipelines/steps/step-bundles). They allow you to group multiple Steps into a single unit and reuse them at any point of a Workflow.
+
+:::
+
+Bitrise supports a special type of Workflow called a utility Workflow. A utility Workflow's ID always starts with an underscore character: for example, `_setup`. They are usually used to perform tasks that are required either at the start or at the end of several different Workflows: for example, you can separate git cloning and activating your SSH key into a utility Workflow instead of adding those Steps to every Workflow of an app.
+
+You can create a utility Workflow [the exact same way](/en/bitrise-ci/workflows-and-pipelines/workflows/creating-a-workflow) as you create a regular one. To denote it as a utility Workflow, you just need to prefix the name with an underscore.
+
+:::important[Utility Workflows cannot run alone]
+
+Utility Workflows cannot be run as standalone Workflows. They need to be chained together with a normal Workflow, either before or after the Workflow: [Chaining Workflows together](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together).
+
+:::
+
+**Utility Workflow in YAML**
+
+In this example, we have two utility Workflows, called `_setup` and `_send-notifications`. They are chained together with two Workflows called `test` and `ci` using the before_run and after_run parameters.
+
+```yaml
+workflows:
+  _send-notifications:
+    steps:
+    # send notifications
+
+  _setup:
+    steps:
+    # setup Steps to run
+
+  test:
+    before_run:
+    - _setup
+    envs:
+    - IS_TEST: "true"
+    steps:
+    # test Steps to run
+
+  ci:
+    before_run:
+    - test
+    after_run:
+    - _send-notifications
+```
+
+For more information on how to manage Workflows directly in the `bitrise.yml` file, check [Workflow level properties](/en/bitrise-ci/references/configuration-yaml-reference#workflow-level-properties).

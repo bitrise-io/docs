@@ -8,9 +8,6 @@ sidebar_label: Launching an EC2 Mac or Linux instance for the Bitrise AMI
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_ConfiguringTheInstance from '@site/src/partials/configuring-the-instance.mdx';
-import Partial_PreparingYourEC2Instance from '@site/src/partials/preparing-your-ec2-instance.mdx';
-import Partial_ConnectingTheInstanceToYourBitriseWorkspace from '@site/src/partials/connecting-the-instance-to-your-bitrise-workspace.mdx';
 
 We offer a dedicated Bitrise Amazon Machine Image (AMI) to run the Bitrise agent on your own Amazon EC2 Mac or Linux instance.
 
@@ -20,8 +17,246 @@ This document guides you through launching an instance on the Amazon EC2 console
 1. [Configuring the instance on AWS.](#configuring-the-instance)
 1. [Connecting the instance to your Bitrise workspace.](#connecting-the-ec2-mac-or-linux-instance-to-your-bitrise-workspace)
 
-<Partial_PreparingYourEC2Instance />
 
-<Partial_ConfiguringTheInstance />
+## Preparing your EC2 Mac and Linux instance
 
-<Partial_ConnectingTheInstanceToYourBitriseWorkspace />
+<Tabs>
+<TabItem value="mac-instance" label="Mac instance" default>
+
+1. [Configure a runner pool](/en/bitrise-platform/infrastructure/configuring-runner-pools) and copy the token required for authentication.
+1. Get the token from the process of adding the runner pool on Bitrise.
+1. [Create an AWS Secrets Manager secret](https://docs.aws.amazon.com/secretsmanager/latest/userguide/create_secret.html) and store the token in the secret.
+1. [Create an IAM role](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html) with permission to read the secret. You will need to attach it to the EC2 instance.
+1. [Allocate a dedicated host](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/allocating-a-dedicated-host-for-mac-instances) on AWS. You will need the automatically generated host ID.
+
+</TabItem>
+<TabItem value="linux-instance" label="Linux instance">
+
+1. [Configure a runner pool](/en/bitrise-platform/infrastructure/configuring-runner-pools) and copy the token required for authentication.
+1. Get the token from the process of adding the runner pool on Bitrise.
+1. [Create an AWS Secrets Manager secret](https://docs.aws.amazon.com/secretsmanager/latest/userguide/create_secret.html) and store the token in the secret.
+1. [Create an IAM role](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html) with permission to read the secret. You will need to attach it to the EC2 instance.
+
+</TabItem>
+</Tabs>
+
+
+## Configuring the instance
+
+<Tabs>
+<TabItem value="mac-instance" label="Mac instance" default>
+
+1. Go to the AWS Marketplace page, and on the left, select **Manage subscriptions**.
+1. Choose the AMI you need, and select **Launch new instance**.
+
+   ![aws-markplace-amis.png](/img/_paligo/uuid-81bb90b8-85ea-ae9e-7349-3783f7af230e.png)
+1. Make sure the software version and the region are correct, then click **Continue to launch through EC2**.
+1. Fill out the required fields on the **Launch an instance** page:
+
+   **Name and tags** section:
+
+   - **Name**: The name of your instance.
+
+   **Instance type** section:
+
+   - **Instance type**: The supported types are: `mac2.metal`, `mac2-m2.metal`, `mac2-m2pro.metal`.
+
+     :::important[Dedicated host type]
+
+     The selected instance type must match the type of the dedicated host!
+
+     :::
+
+   **Key pair (login)** section:
+
+   - **Key pair name - *required***:
+
+   **Network settings** section - click **Edit** to modify the settings:
+
+   - **VPC - *required***: Select a virtual private cloud from the dropdown menu.
+   - **Subnet**: Select your preferred subnet from the dropdown menu, or leave it on **No preference**.
+   - **Firewall (security groups)**: Create a new security group or select an existing one.
+
+   **Configure storage** section:
+
+   - Set the size of the storage volume in gigabytes:
+
+     For the bare metal macOS AMI, the minimum number is 400 GB but we recommend at least 450 GB.
+
+     For the virtualized macOS AMI, we recommend 700GB with 1 VM per host and 1000GB with 2 VM per host.
+
+     :::note[Increasing the disk size]
+
+     If you need to increase the disk size from the default 400 GB, re-partition the disk so macOS can use all the allocated storage. You can do this when setting up the instance by adding a script to **User data** in the **Advanced details** section: [Increasing disk size on a Mac instance](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#increasing-disk-size-on-an-ec2-mac-instance).
+
+     :::
+   - Select a root volume type from the dropdown menu.
+
+     :::note[Storage type]
+
+     We recommend using at least the **gp3** root volume, the higher the IOPS the better.
+
+     :::
+
+   **Advanced details** section:
+
+   - **Tenancy**: Select the **Dedicated host - launch this instance on a dedicated Host** option from the dropdown menu.
+   - **Target host**: Select the **Host ID** option from the dropdown menu.
+   - **Tenancy host ID**: Select the host ID of the previously created dedicated host.
+
+</TabItem>
+<TabItem value="linux-instance" label="Linux instance">
+
+1. [Configure a runner pool](/en/bitrise-platform/infrastructure/configuring-runner-pools) and copy the token required for authentication.
+1. Navigate to the EC2 Dashboard.
+1. Go to the AWS Marketplace page, and on the left, select **Manage subscriptions**.
+1. Choose the AMI you need, and select **Launch new instance**.
+
+   ![aws-markplace-amis.png](/img/_paligo/uuid-81bb90b8-85ea-ae9e-7349-3783f7af230e.png)
+1. Make sure the software version and the region are correct, then click **Continue to launch through EC2**.
+
+   :::important[Service quotas]
+
+   Make sure you have enough service quotas in your selected region to be able to launch as many instances as you need.
+
+   - [Viewing current quotas](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-resource-limits.html#view-limits).
+   - [Request an increase](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-resource-limits.html#request-increase).
+
+   :::
+1. Fill out the required fields on the **Launch an instance** page:
+
+   **Name and tags** section:
+
+   - **Name**: The name of your instance.
+
+   **Instance type** section:
+
+   - **Instance type**: Select an x86_64 Linux metal instance.
+
+   **Key pair (login)** section:
+
+   - **Key pair name - *required***:
+
+   **Network settings** section - click **Edit** to modify the settings:
+
+   - **VPC - *required***: Select a virtual private cloud from the dropdown menu.
+   - **Subnet**: Select your preferred subnet from the dropdown menu, or leave it on **No preference**. The subnet must be able to access the internet either via a NAT Gateway or an Internet Gateway.
+   - **Firewall (security groups)**: Create a new security group or select an existing one.
+
+   **Configure storage** section:
+
+   - Set the size of the storage volume in gigabytes. The minimum value is 450 GB.
+   - Select a root volume type from the dropdown menu.
+
+</TabItem>
+</Tabs>
+
+
+## Connecting the EC2 Mac or Linux instance to your Bitrise Workspace
+
+<Tabs>
+<TabItem value="mac-bare-metal-instance" label="Mac bare metal instance" default>
+
+1. Make sure that your instance can access the following endpoints:
+
+   - https://den.services.bitrise.io
+   - https://build-log.services.bitrise.io
+1. [Modify the User data of the instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-cloud-init): add the command to launch the Bitrise runner, using the Secret you created in the AWS Secrets Manager:
+
+   :::important
+
+   When modifying the user data scripts for an EC2 Mac instance, make sure that there is no empty space before the start of the script. The first line should always be `#!/bin/bash`. If there is empty space before this line, the instance won't work.
+
+   :::
+
+   ```bash
+   TOKEN=$(aws secretsmanager get-secret-value --secret-id MY_SECRET | jq -r '.SecretString | fromjson | .["MY_SECRET"]')
+
+   sudo sed -i '' "s/BITRISE_AGENT_TOKEN/$TOKEN/" /Users/ec2-user/Library/LaunchDaemons/io.bitrise.self-hosted-agent.plist
+   sudo launchctl load -w /Users/ec2-user/Library/LaunchDaemons/io.bitrise.self-hosted-agent.plist
+   ```
+1. You can also set shell scripts or other custom data in the **User data** section.
+
+   In the [Advanced options for EC2 Mac and Linux instances](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances) section, you can find recommendations for optimizing your instance with user data:
+
+   - [Instance passwords](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#connectivity-and-security-of-your-ec2-mac-and-linux-instance)
+   - [Pre-warming the disk after booting](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#pre-warming-the-disk-after-booting)
+   - [Increasing disk size on a Mac instance](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#increasing-disk-size-on-an-ec2-mac-instance)
+
+</TabItem>
+<TabItem value="mac-virtualized-instance" label="Mac virtualized instance">
+
+1. Make sure that your instance can access the following endpoints:
+
+   - https://den.services.bitrise.io
+   - https://build-log.services.bitrise.io
+1. [Modify the User data of the instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-cloud-init): add the command to launch the Bitrise runner, using the Secret you created in the AWS Secrets Manager. You also need to provide the number of concurrencies and the stack you wish to run.
+
+   :::important
+
+   When modifying the user data scripts for a macOS instance, make sure that there is no empty space before the start of the script. The first line should always be `#!/bin/bash`. If there is empty space before this line, the instance won't work.
+
+   :::
+
+   You can get the list of available stacks with the following command:
+
+   ```bash
+   /opt/virtualization-cli/bin/virtualization-cli list
+   ```
+
+   The allowed values for your concurrency preference are 1 or 2.
+
+   - With 1 CC, the runner will schedule 1 VM with 8 vCPU and 12 GB RAM.
+   - With 2 CC, the runner will schedule 2 VMs with 4 vCPU and 6 GB RAM each.
+
+   ```bash
+   TOKEN=$(aws secretsmanager get-secret-value --secret-id MY_SECRET | jq -r '.SecretString | fromjson | .["MY_SECRET"]')
+   sudo sed -i '' 's/BITRISE_AGENT_CC/<YOUR_CONCURRENCY_PREFERENCE>/' /Users/ec2-user/Library/LaunchDaemons/io.bitrise.self-hosted-agent.plist
+   sudo sed -i '' 's/BITRISE_AGENT_STACK/<YOUR_DESIRED_STACK>/' /Users/ec2-user/Library/LaunchDaemons/io.bitrise.self-hosted-agent.plist
+   sudo sed -i '' "s/BITRISE_AGENT_TOKEN/$TOKEN/" /Users/ec2-user/Library/LaunchDaemons/io.bitrise.self-hosted-agent.plist
+   sudo launchctl load -w /Users/ec2-user/Library/LaunchDaemons/io.bitrise.self-hosted-agent.plist
+   ```
+1. You can also set shell scripts or other custom data in the **User data** section.
+
+   In the [Advanced options for EC2 instances](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances) section, you can find recommendations for optimizing your instance with user data:
+
+   - [Instance passwords](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#connectivity-and-security-of-your-ec2-mac-and-linux-instance)
+   - [Pre-warming the disk after booting](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#pre-warming-the-disk-after-booting)
+   - [Increasing disk size on a Mac instance](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#increasing-disk-size-on-an-ec2-mac-instance)
+
+</TabItem>
+<TabItem value="linux-instance" label="Linux instance">
+
+1. Make sure that your instance can access the following endpoints:
+
+   - https://den.services.bitrise.io
+   - https://build-log.services.bitrise.io
+1. [Modify the User data of the instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-cloud-init): add the command to launch the Bitrise runner, using the Secret you created in the AWS Secrets Manager:
+
+   ```bash
+   TOKEN=$(aws secretsmanager get-secret-value --secret-id MY_SECRET | jq -r '.SecretString | fromjson | .["MY_SECRET"]')
+   /opt/bitrise/releases/bitrise-den-agent-configure.sh $TOKEN
+   ```
+
+   :::caution[Linux image version]
+
+   If your Linux image version is EARLIER than `v2025W10`, the required command is slightly different:
+
+   ```bash
+   TOKEN=$(aws secretsmanager get-secret-value --secret-id MY_SECRET | jq -r '.SecretString | fromjson | .["MY_SECRET"]')
+
+   sudo sed -i “s/BITRISE_AGENT_TOKEN/$TOKEN/” /etc/systemd/system/bitrise-den-agent.service
+   sudo systemctl start bitrise-den-agent.service
+   ```
+
+   :::
+1. You can also set shell scripts or other custom data in the **User data** section.
+
+   In the [Advanced options for EC2 instances](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances) section, you can find recommendations for optimizing your instance with user data:
+
+   - [Instance passwords](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#connectivity-and-security-of-your-ec2-mac-and-linux-instance)
+   - [Pre-warming the disk after booting](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#pre-warming-the-disk-after-booting)
+   - [Increasing disk size on a Mac instance](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#increasing-disk-size-on-an-ec2-mac-instance)
+
+</TabItem>
+</Tabs>

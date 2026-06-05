@@ -9,31 +9,434 @@ sidebar_label: Adding and managing projects
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_ManagingAppAccessForWorkspaceGroups from '@site/src/partials/managing-app-access-for-workspace-groups.mdx';
-import Partial_ManagingAnExistingApp from '@site/src/partials/managing-an-existing-app.mdx';
-import Partial_ChangingMachineTypesInAllAppsAtTheSameTime from '@site/src/partials/changing-machine-types-in-all-apps-at-the-same-time.mdx';
-import Partial_AddingANewAppWithTheAPI from '@site/src/partials/adding-a-new-app-with-the-api.mdx';
-import Partial_DeletingAnAppUsingTheAPI from '@site/src/partials/deleting-an-app-using-the-api.mdx';
-import Partial_ChangingTheLocationOfTheAppSBitriseYmlFile from '@site/src/partials/changing-the-location-of-the-apps-bitriseyml-file.mdx';
-import Partial_ManagingAppNotifications from '@site/src/partials/managing-app-notifications.mdx';
-import Partial_UploadingANewBitriseYmlFile from '@site/src/partials/uploading-a-new-bitriseyml-file.mdx';
 
 You can add new projects on Bitrise with the API: add the <GlossTerm baseform="Project">project</GlossTerm>, generate SSH keys, and set up the project’s initial configuration.
 
 In addition, you can list all projects belonging, for example, to a single user or to a specific <GlossTerm baseform="Workspace">Workspace</GlossTerm>.
 
-<Partial_AddingANewAppWithTheAPI />
 
-<Partial_ManagingAnExistingApp />
+## Adding a new app with the API
 
-<Partial_ManagingAppAccessForWorkspaceGroups />
+| Endpoints | Function | Required role on the app's team |
+| --- | --- | --- |
+| POST /apps/register | Add a new app. | N/A |
+| POST /apps/\{app-slug\}/register-ssh-key | Add an SSH key to a specific app. | Owner or Admin |
+| POST /apps/\{app-slug\}/finish | Save the application at the end of the application add process. | N/A |
+| POST /apps/\{app-slug\}/bitrise.yml | Upload a new bitrise.yml for your application. | Owner or Admin |
 
-<Partial_DeletingAnAppUsingTheAPI />
+:::note[Apps with HTTPS Git URLs]
 
-<Partial_UploadingANewBitriseYmlFile />
+The procedure and the examples are aimed at adding a private app with an SSH git URL. If you want to add an app with an HTTPS git URL, you can skip adding an SSH key.
 
-<Partial_ChangingTheLocationOfTheAppSBitriseYmlFile />
+:::
 
-<Partial_ChangingMachineTypesInAllAppsAtTheSameTime />
+1. Register the app by calling the `register` endpoint and setting all required parameters.
 
-<Partial_ManagingAppNotifications />
+   You need to set your git provider, the repository URL, the slug of the repository as it appears at the provider, and the slug of the owner of the repository. You also need to add the slug of the Workspace that will own the app: due to legacy naming conventions, you need the `organization_slug` parameter.
+
+   ```yaml
+   curl -X POST -H 'Authorization: ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/register' -d \
+   '{
+         "provider": "github",
+         "is_public": false,
+         "organization_slug": "$ORG_SLUG"
+         "repo_url": "git@github.com:api_demo/example-repository.git",
+         "type": "git",
+         "git_repo_slug": "example-repository",
+         "git_owner": "api_demo"
+    }'
+   ```
+
+   :::tip[Changing the name of your app]
+
+   By default, when you register an app, it will inherit the name of your git repository.
+
+   If you would like to add the app with a different name, you can append the "title" parameter to your POST request using the following syntax:
+
+   ```yaml
+   curl -X POST -H 'Authorization: ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/register' -d \
+   '{
+       ...
+       ...
+       "title": "string"
+    }'
+   ```
+
+   You can also change the name of your app after creating it, by sending a PATCH request and calling the `apps` endpoint. For more information, see [Managing an existing app](/en/bitrise-ci/api/adding-and-managing-apps#managing-an-existing-app).
+
+   :::
+1. Once done, call the `register-ssh-key` endpoint to set up the SSH keys you created so that Bitrise can clone your repository when running a build.
+
+   You need to provide both your private and public SSH key. Please note that if you wish to copy the private key manually, you need to escape all the line breaks with `\n`.
+
+   You can also set whether you want to automatically register the public key at your git provider: set the `is_register_key_into_provider_service` parameter to either true or false.
+
+   ```yaml
+   curl -X POST -H 'Authorization: ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/APP-SLUG/register-ssh-key' -d \
+   '{
+       "auth_ssh_private_key": "your-private-ssh-key",
+       "auth_ssh_public_key": "your-public-ssh-key",
+       "is_register_key_into_provider_service": false
+    }'
+   ```
+1. Finish the app registration process by calling the `finish` endpoint.
+
+   This endpoint allows you to configure your apps: set the project type, the stack on which the build will run (this may vary based on your app), and the initial configuration settings.
+
+   You can also set Environment Variables, as well as immediately specify a Workspace that will be the owner of the application. Please note that the `mode` parameter must be set to the value of `manual`.
+
+   ```yaml
+   curl -X POST -H 'Authorization: ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/APP-SLUG/finish' -d \
+   '{
+        "project_type": "ios",
+        "stack_id": "osx-xcode-13.2.x",
+        "config": "default-ios-config",
+        "mode": "manual",
+        "envs": {
+              "env1": "val1",
+              "env2": "val2"
+        },
+        "organization_slug": "e1ec3dea540bcf21"
+    }'
+   ```
+
+
+## Managing an existing app
+
+| Endpoints | Function | Required role on the app's team |
+| --- | --- | --- |
+| GET /apps | Get list of your apps. | Any |
+| GET /apps/\{app-slug\} | Get a specific app. | Any |
+| GET /apps/\{app-slug\}/bitrise.yml | Get the bitrise.yml of a specific app. | Owner or Admin |
+| GET /apps/\{app-slug\}/branches | List the branches of an app’s repository. | Any |
+| GET /organizations/\{org-slug\}/apps | Get list of the apps for a Workspace. | Any |
+| GET /users/\{user-slug\}/apps | Get list of the apps for a user. | Any |
+| PATCH /apps/\{app-slug\} | Update an existing app's parameters | Owner or Admin |
+
+The response to any GET request regarding one or more apps will contain the app slug, its project type, the git provider, the repository’s owner and URL:
+
+```json
+{
+  "data": [
+    {
+      "slug": "eeeeefffff00000",
+      "title": "sample-app",
+      "project_type": "android",
+      "provider": "github",
+      "repo_owner": "example-user",
+      "repo_url": "git@github.com:example-user/sample-app.git",
+      "repo_slug": "android-gradle-kotlin-dsl",
+      "is_disabled": false,
+      "status": -1,
+      "is_public": false,
+      "owner": {
+        "account_type": "organization",
+        "name": "Test Org",
+        "slug": "fffffeeeee00000"
+      },
+      "avatar_url": null
+    },
+    {
+```
+
+You can also download the existing <GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm> file of any app: the response will contain the full YAML configuration.
+
+Would you like to change the title or the default git branch of an existing app? You can update an existing app's parameters by calling the PATCH method of the `apps` endpoint.
+
+:::important[Required role]
+
+You must have an admin or owner role on the app's team to update an existing app's parameters using the Bitrise API.
+
+For a complete list of user roles and role cheatsheets, check [User roles on app teams](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+
+:::
+
+The required parameter is:
+
+- slug
+
+The optional parameters are:
+
+- apple_credential_user_id: The new apple credential user ID (recommendation: use the UI to set this)
+- apple_credential_user_slug: The new apple credential user slug (recommendation: use the UI to set this)
+- default_branch: The new default branch for the application.
+- is_public: The new the value if the application should be publicly visible.
+- repository_url: The new repository URL for the application.
+- services_credential_user_id: The new service credential user ID (recommendation: use the UI to set this).
+- title: The new title of the application.
+
+**Changing the name and the default branch of an existing app**
+
+Request:
+
+```bash
+curl -X 'PATCH' 'https://api.bitrise.io/v0.1/apps/THE-APP-SLUG' -H 'accept: application/json' -H 'Authorization: ACCESS-TOKEN' -H 'Content-Type: application/json' -d '{"default_branch": "main", "title": "Example_app_title_3"}'
+```
+
+
+## Managing app access roles for Workspace groups
+
+You can grant [Workspace groups](/en/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/workspace-groups#creating-groups-for-workspaces) access to application teams on Bitrise. It means that all members of the group will be able to work on the app in [the role assigned to the group](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+
+List all groups that have been granted a given role on an app's team by using the `GET /apps/{app-slug}/roles/{role-name}` endpoint. The role-name parameter takes three possible values:
+
+- `admin`
+- `manager`: this is the equivalent of the **Developer** role on bitrise.io.
+- `member`: this is the equivalent of **Tester/QA** on bitrise.io.
+
+In this example, we're querying a list of Workspace groups that have been granted Admin role to a specific app:
+
+```bash
+curl -X 'GET' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/roles/admin' \
+  -H 'accept: application/json' \
+  -H 'Authorization: ACCESS-TOKEN'
+```
+
+Grant access to existing Workspace groups by using the `PUT /apps/{app-slug}/roles/{role-name}` endpoint. This endpoint requires a `groups` object that contains the slugs of all the groups that are granted access with the specified role.
+
+:::important[Specify all groups]
+
+This endpoint replaces all previous groups that had the specified role on the app's team. If, for example, you call the endpoint to grant the groups Alpha and Beta the Admin role on the app's team, only Alpha and Beta will have Admin access to the app afterwards. If another group - let's call it Delta - previously had Admin role on the team, it will be removed.
+
+:::
+
+:::tip[Getting the group slugs]
+
+To get the group slugs of your Workspace, use the `[GET /organizations/{org-slug}/groups](https://api-docs.bitrise.io/#/organizations/organzation-groups-list)` endpoint.
+
+:::
+
+In the following example, we'll be granting several groups Admin access:
+
+```bash
+curl -X 'PUT' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/roles/admin' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "groups": [
+    "GROUP-SLUG-1", "GROUP-SLUG-2"
+  ]
+}'
+```
+
+
+## Deleting an app using the API
+
+:::warning[Deletion is final]
+
+Be aware that you cannot undo deleting an app. Once you delete it, there is no way to recover the app.
+
+:::
+
+You can delete apps with the Bitrise API. The only required parameter is the app slug of the app you want to delete:
+
+```bash
+curl -X DELETE -H 'Authorization: ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/THE-APP-SLUG'
+```
+
+
+## Uploading a new bitrise.yml file
+
+:::note[Required role]
+
+You must have an admin or owner role on the app's team to upload a new `bitrise.yml` file.
+
+For a complete list of user roles and role cheatsheets, check [Roles and permissions for Bitrise CI](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+
+:::
+
+The <GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm> file contains the configuration of your builds. You can modify the current one via the API by posting a full YAML configuration. In the below example, we are:
+
+- Creating a `bitrise.yml` with format version 11.
+- Setting the Bitrise Step Library as the default Step source.
+- Setting the stack to Xcode 14.
+- Setting the BITRISE_PROJECT_PATH Environment Variable to point to the `build.gradle` file.
+- Adding a **Script** Step.
+- Creating a trigger map that triggers the primary Workflow if code is pushed to any branch of the app's repository.
+
+```bash
+curl --fail -X POST -H "Authorization: $ACCESS_TOKEN" "https://api.bitrise.io/v0.1/apps/$APP_SLUG/bitrise.yml" -d \
+'{
+  "app_config_datastore_yaml": {
+    "format_version": 11,
+    "default_step_lib_source": "https://github.com/bitrise-io/bitrise-steplib.git",
+    "meta": {
+      "bitrise.io": {
+        "stack": "osx-xcode-14.0.x"
+      }
+    },
+    "app": {
+      "envs": [
+        {
+          "BITRISE_PROJECT_PATH": "build.gradle",
+          "opts": {
+            "is_expand": false
+          }
+        }
+      ]
+    },
+    "workflows": {
+      "primary": {
+        "steps": [
+          {
+          "script@1": {}
+          }
+        ]
+      }
+    },
+    "trigger_map": [
+      {
+        "push_branch": "*",
+        "workflow": "primary"
+      }
+    ]
+  }
+}'
+```
+
+By calling this endpoint, you replace the app’s current `bitrise.yml` file. You can, of course, modify this uploaded `bitrise.yml` either via the API or on the website itself.
+
+
+## Changing the location of the app's bitrise.yml file
+
+The app's `bitrise.yml` configuration file can be stored in two places:
+
+- On bitrise.io. This is the default setting for all apps.
+- [In your app's repository.](/en/bitrise-ci/configure-builds/configuration-yaml/managing-a-project-s-configuration-yaml-file#storing-the-bitriseyml-file-in-your-repository) This way you have full control over the versioning and maintenance of the config file. You can still use the graphical Workflow Editor on bitrise.io to modify your configuration but you will need to commit your changes to the repository.
+
+You can get and change the location of the file using the API.
+
+:::important[Admin access required]
+
+Both endpoints related to the location of the `bitrise.yml` file require admin level access to the app.
+
+:::
+
+With the `GET/apps/{app-slug}/bitrise.yml/config` endpoint, you can get the location of the file. Location here means that calling the endpoint tells you whether the file is stored on bitrise.io or in the repository. The endpoint takes no parameters and it returns one of two values in the response:
+
+- `"location": "bitrise.io"`
+- `"location": "repository"`
+
+```bash
+curl -X 'GET' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/bitrise.yml/config' \
+  -H 'accept: application/json' \
+  -H 'Authorization: ACCESS-TOKEN'
+```
+
+With the `PUT/apps/{app-slug}/bitrise.yml/config` endpoint, you can change the location of the file: that is, you can tell Bitrise whether to look for the config file on bitrise.io or in your repository. This endpoint takes one of two values in a JSON object:
+
+- `"location": "bitrise.io"` to store the config file on bitrise.io.
+- `"location": "repository"` to store the config file in your repository.
+
+:::important[Commit the config file into your repository]
+
+Please note that changing the location to `repository` merely tells Bitrise to look for the `bitrise.yml` file in the app's repository. If the file does not exist in the repository, the endpoint won't return an error but you won't be able to run builds because Bitrise won't find the config file.
+
+:::
+
+```bash
+curl -X 'PUT' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/bitrise.yml/config' \
+  -H 'accept: application/json' \
+  -H 'Authorization: ACCESS-TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "location": "bitrise.io"
+}'
+```
+
+
+## Changing machine types in all apps at the same time
+
+| Endpoints | Function | Required role |
+| --- | --- | --- |
+| PATCH /user/\{user-slug\}/apps/machine_types | Migrate a specified machine type to another in all apps owned by the same user. | N/A |
+| PATCH /organizations/\{org-slug\}/apps/machine_types | Migrate a specified machine type to another in all apps owned by the same Workspace. | Workspace owner |
+
+The Bitrise API provides two endpoints that allow you to switch between one [machine type](/en/bitrise-platform/infrastructure/build-machines/about-build-machines) and another for all apps owned by either a user or a [Workspace](urn:resource:component:42180). The endpoints parse the `bitrise.yml` file of each app, look for all occurrences of a specified machine type, and replace them with another type. For example, you can switch from M1 Medium to M1 Large on all your apps with this endpoint.
+
+Both endpoints take two parameters:
+
+- from_machine: The machine type you want to switch from.
+
+  to_machine: The machine type you want to switch to.
+
+You can find the list of available machine types here: [Build machine types](/en/bitrise-build-hub/infrastructure/build-machine-types).
+
+If the endpoints don't find the machine type specified in the from_machine parameter, they will still return a 200 response, with an empty `migrated_apps` object.
+
+:::note[Default and Workflow-specific stacks]
+
+The endpoints can change the machine types for both default stacks and Workflow-specific stacks.
+
+:::
+
+**Migrating all apps owned by a user from M1 Medium machines to M1 Large machines:**
+
+```bash
+curl -X 'PATCH' \
+  'https://api.bitrise.io/v0.1/user/USER-SLUG/apps/machine_types' \
+  -H 'accept: application/json' \
+  -H 'Authorization: PERSONAL-ACCESS-TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "from_machine": "g2-m1.4core",
+  "to_machine": "g2-m1.8core"
+}'
+```
+
+**Migrating all apps owned by a Workspace from M4 Pro Large machines to M4 Pro X Large machines:**
+
+```bash
+curl -X 'PATCH' \
+  'https://api.bitrise.io/v0.1/organizations/WORKSPACE-SLUG/apps/machine_types' \
+  -H 'accept: application/json' \
+  -H 'Authorization: PERSONAL-ACCESS-TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "from_machine": "g2.mac.4large",
+  "to_machine": "g2.mac.4x-large"
+}'
+```
+
+**Successful respose**
+
+```json
+{
+  "message": "The migration was successful.",
+  "migrated_apps": [
+    "android-sample (8f41200-e5a5eee17)",
+    "sample-swift-project (c291b04-784ca8773)",
+  ]
+}
+```
+
+
+## Managing app notifications
+
+You can change [the email notification settings](/en/bitrise-ci/configure-builds/configuring-build-settings/configuring-email-notifications#changing-your-email-notification-settings) of your apps via an API call at any time with the `PATCH/apps/{app-slug}/update-email-notifications` endpoint. The endpoint takes two parameters:
+
+- on_failure: Email notification settings for failed builds.
+- on_success: Email notification settings for successful builds.
+
+Both parameters take three possible values:
+
+- `always`: Always send notification. The default value for failed builds.
+- `never`: Never send notification.
+- `change`: Send notification only when the [build status](/en/bitrise-ci/run-and-analyze-builds/build-statuses) changes compared to the previous build on the same branch. The default value for successful builds.
+
+For example, if you wish to receive a notification for a failed build only when the previous build was successful, you need to set the value of the on_failure parameter to `change` (replace the APP-SLUG in the example with your app's slug and ACCESS-TOKEN with your [personal access token](/en/bitrise-platform/accounts/personal-access-tokens)):
+
+```bash
+curl -X 'PATCH' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/update-email-notifications' \
+  -H 'accept: application/json' \
+  -H 'Authorization: ACCESS-TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "on_failure": "change",
+}'
+```
