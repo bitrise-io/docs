@@ -5,13 +5,13 @@ sidebar_position: 2
 
 ## Description
 
-Publish an app to Expo's servers and build an iOS App Store `.ipa` and an Android `.aab` file from your Expo project using [Turtle CLI](https://docs.expo.dev/classic/turtle-cli/).
+Publish an app to Expo's servers and build an iOS App Store `.ipa` and an Android `.aab` file from your Expo project using [Turtle CLI](https://docs.expo.dev/eas/cli/).
 
 ## Prerequisites
 
 1. Generate an iOS Distribution Certificate and an App Store Provisioning Profile based on the [Generating iOS code signing files guide](/en/bitrise-ci/code-signing/ios-code-signing/generating-ios-code-signing-files).
 1. Generate an Android Keystore by following the [Android code signing with Android Studio guide](/en/bitrise-ci/code-signing/android-code-signing/android-code-signing-with-android-studio).
-1. Make sure you can [Publish your Expo project](https://docs.expo.dev/classic/turtle-cli/#publish-your-project) locally.
+1. Make sure you can [Publish your Expo project](https://docs.expo.dev/eas/cli/#publish-your-project) locally.
 
 ## Instructions
 
