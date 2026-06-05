@@ -168,7 +168,17 @@ def process_content(content: str) -> tuple[str, list[str]]:
     excluded = get_exclude_ranges(content)
     replacements: list[tuple[int, int, str, str]] = []  # (start, end, new_text, term)
 
+    # Terms that already have a <GlossTerm> anywhere in the file are considered
+    # "already wrapped" — skip them entirely so we don't wrap a later occurrence
+    # just because the first one happened to be inside an excluded region.
+    already_wrapped = {
+        m.group(1).lower()
+        for m in re.finditer(r'<GlossTerm\s+baseform="([^"]+)"', content)
+    }
+
     for term in TERMS:
+        if term in already_wrapped:
+            continue
         rx = TERM_REGEXES[term]
         for m in rx.finditer(content):
             s, e = m.start(), m.end()
