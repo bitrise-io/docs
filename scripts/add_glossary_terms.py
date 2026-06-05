@@ -49,7 +49,7 @@ TERM_REGEXES = {t: make_regex(t) for t in TERMS}
 
 # Terms where only capitalised occurrences should be wrapped.
 # e.g. "Workflow" and "Workflows" → yes; "workflow" and "workflows" → no.
-REQUIRE_CAPITALIZED = {"workflow", "step"}
+REQUIRE_CAPITALIZED = {"workflow", "step", "pipeline", "secret"}
 
 
 # ---------------------------------------------------------------------------
