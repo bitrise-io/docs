@@ -89,9 +89,15 @@ def get_exclude_ranges(content: str) -> list[tuple[int, int]]:
     for m in re.finditer(r"<GlossTerm\b[^>]*>.*?</GlossTerm>", content, re.DOTALL):
         raw.append((m.start(), m.end()))
 
-    # 5. Markdown link text  [text]( or [text][  — exclude the [text] portion
-    for m in re.finditer(r"\[([^\]\n]*)\]\s*[\(\[]", content):
-        # Exclude from '[' up to and including ']'
+    # 5. Markdown links — exclude both the [text] portion and the (url) portion
+    for m in re.finditer(r"\[([^\]\n]*)\]\(([^)]*)\)", content):
+        # Exclude [text]
+        raw.append((m.start(), m.start() + 1 + len(m.group(1)) + 1))
+        # Exclude (url)
+        url_start = m.start() + 1 + len(m.group(1)) + 1 + 1  # position of '('
+        raw.append((url_start, m.end()))
+    # Also exclude reference-style link labels [text][
+    for m in re.finditer(r"\[([^\]\n]*)\]\[", content):
         raw.append((m.start(), m.start() + 1 + len(m.group(1)) + 1))
 
     # 6. import / export lines
