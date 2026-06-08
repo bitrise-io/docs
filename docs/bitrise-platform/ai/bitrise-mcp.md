@@ -11,7 +11,7 @@ The Bitrise Model Context Protocol (MCP) Server lets you talk to Bitrise via an 
 - Optimize configurations by instructing the AI to suggest improvements. You will receive instant insights and practical suggestions.
 - Automate manual tasks such as handling permissions, inviting members to a project, or looking for old builds. Tell the AI agent about your requirements: it will send you the proposed steps for review and ask for permission before executing each action. You can review the results at each step of the process.
 
-The remote MCP server is hosted at mcp.bitrise.io. Most MCP clients (Claude Code, Cursor, VS Code, and others) authenticate via OAuth — point them at the URL and they'll prompt you to sign in to Bitrise on first use. Clients that don't yet support MCP OAuth can still authenticate by passing a Personal Access Token in the Authorization: Bearer <YOUR_BITRISE_PAT> header.
+The remote MCP server is hosted at mcp.bitrise.io. Most MCP clients (Claude Code, Cursor, VS Code, and others) authenticate via OAuth — point them at the URL and they'll prompt you to sign in to Bitrise on first use. Clients that don't yet support MCP OAuth can still authenticate by passing a Personal Access Token in HTTP header `Authorization: Bearer <YOUR_BITRISE_PAT>`.
 
 You can find [the Bitrise MCP repository on GitHub](https://github.com/bitrise-io/bitrise-mcp). Among other things, it includes:
 
