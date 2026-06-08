@@ -13,7 +13,8 @@ Rules:
   - Multi-word terms are matched before their single-word sub-terms (longest-first).
   - The following regions are never touched:
       frontmatter, fenced code blocks, inline code, existing <GlossTerm> elements,
-      markdown link text [...](url), import/export lines, JSX tag attributes.
+      markdown headings, admonition titles, markdown link text [...](url), bare URLs,
+      import/export lines, JSX tag attributes.
 """
 
 import re
@@ -50,6 +51,12 @@ TERM_REGEXES = {t: make_regex(t) for t in TERMS}
 # Terms where only capitalised occurrences should be wrapped.
 # e.g. "Workflow" and "Workflows" → yes; "workflow" and "workflows" → no.
 REQUIRE_CAPITALIZED = {"workflow", "step", "pipeline", "secret"}
+
+# Terms that only match in a specific context (lookbehind pattern → term key).
+# "project" is only wrapped when preceded by "Bitrise " (case-insensitive).
+REQUIRE_CONTEXT: dict[str, re.Pattern] = {
+    "project": re.compile(r"(?i)(?<=bitrise\s)project(?:s|'s|s')?\b"),
+}
 
 
 # ---------------------------------------------------------------------------
@@ -102,6 +109,18 @@ def get_exclude_ranges(content: str) -> list[tuple[int, int]]:
 
     # 6. import / export lines
     for m in re.finditer(r"^(?:import|export)\b.*$", content, re.MULTILINE):
+        raw.append((m.start(), m.end()))
+
+    # 8. Markdown headings — entire line starting with #
+    for m in re.finditer(r"^#{1,6}\s.*$", content, re.MULTILINE):
+        raw.append((m.start(), m.end()))
+
+    # 9. Admonition titles — the [Title] part of :::type[Title]
+    for m in re.finditer(r"^:::\w+\[.*?\]", content, re.MULTILINE):
+        raw.append((m.start(), m.end()))
+
+    # 10. Bare URLs not already covered by markdown link exclusion
+    for m in re.finditer(r"https?://\S+", content):
         raw.append((m.start(), m.end()))
 
     # 7. JSX / HTML tags — exclude the tag itself (not its children).
@@ -179,7 +198,7 @@ def process_content(content: str) -> tuple[str, list[str]]:
     for term in TERMS:
         if term in already_wrapped:
             continue
-        rx = TERM_REGEXES[term]
+        rx = REQUIRE_CONTEXT.get(term) or TERM_REGEXES[term]
         for m in rx.finditer(content):
             s, e = m.start(), m.end()
             # Skip lowercase matches for terms that require capitalisation
@@ -226,7 +245,7 @@ def main() -> None:
     args = [a for a in args if not a.startswith("--")]
 
     if args:
-        targets = [Path(a) for a in args]
+        targets = [Path(a) if Path(a).is_absolute() else ROOT / a for a in args]
     else:
         targets = sorted(ROOT.glob("docs/**/*.mdx")) + sorted(
             ROOT.glob("src/partials/**/*.mdx")
