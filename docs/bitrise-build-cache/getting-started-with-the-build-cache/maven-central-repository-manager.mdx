@@ -1,0 +1,136 @@
+---
+title: "Maven Central repository manager"
+sidebar_position: 5
+slug: /bitrise-build-cache/getting-started-with-the-build-cache/maven-central-repository-manager
+---
+
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Hosted CI/CD platforms, including Bitrise, generate significant aggregate traffic to Maven Central across all customer builds.
+
+To protect our users from rate limiting (HTTP 429 errors) and to improve build performance, Bitrise deploys a repository manager (a proxy cache) in each of our datacenters. This repository manager stores Gradle artifacts so builds resolve dependencies from within our datacenter rather than over the public internet. This results in a fraction of the typical number of upstream requests to Maven Central and faster dependency resolution for your builds.
+
+:::note[Repository manager vs Build Cache vs Key-based caching]
+
+The repository manager stores third-party dependencies from Maven Central so they don't need to be re-downloaded from the internet on every build.
+
+Build Cache stores your project's own build outputs (compiled classes, task results) so Gradle doesn't need to re-execute work that hasn't changed.
+
+The [key-value cache](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching) stores whole files and directories you designate (like `~/.gradle/caches`) so they persist between builds on ephemeral CI runners. All three are complementary and can be used together.
+
+:::
+
+## How the repository manager works
+
+All Bitrise-hosted builds are opted in to the repository manager by default. Usually, no action is required on your part.
+
+The repository manager works via a Gradle `init` script embedded into the build runner. The `init` script adds the Bitrise repository manager to the top of your list of repositories in your Gradle configuration, so dependencies are resolved from the co-located repository manager first.
+
+If the repository manager doesn't have an artifact, it fetches it from Maven Central once and stores it for all subsequent builds across the platform.
+
+Because the repository manager is co-located with the CI runner in the same datacenter, downloads are faster than pulling from a remote CDN.
+
+:::note
+
+Early iterations of the system required adding a Step to your Workflow. Most users that added a Workflow Step (such as [Activate Gradle Mirrors](https://github.com/bitrise-steplib/bitrise-step-activate-gradle-mirrors)) solely for repository manager functionality can safely remove it.
+
+:::
+
+## Special cases still requiring a Step
+
+The repository manager is enabled by default for all Bitrise-hosted builds, but there are some special cases where you still need to add the [Activate Gradle Mirrors](https://github.com/bitrise-steplib/bitrise-step-activate-gradle-mirrors) <GlossTerm baseform="step">Step</GlossTerm> to your <GlossTerm baseform="workflow">Workflow</GlossTerm>:
+
+### Dependency verification
+
+If your project uses dependency verification, you must follow additional steps. Bitrise uses an `init` script to add the repository manager to the repositories list of Gradle projects. When enabled, dependency verification will reject this modification, because it requires every plugin and dependency to be listed in the project's verification metadata XML file (`$PROJECT_ROOT/gradle/verification-metadata.xml`).
+
+To pass dependency verification:
+
+1. Add the [Activate Gradle Mirrors](https://github.com/bitrise-steplib/bitrise-step-activate-gradle-mirrors) Step to your Workflow.
+
+2. Make sure that the Step version is locked to the latest patch version (in the example it's `0.1.2`). Currently, this is done in the `bitrise.yml` configuration file:
+
+:::note
+
+You will need to update your `verification-metadata.xml` each time you update the Step's version.
+
+:::
+
+```yaml
+activate-gradle-mirrors@0.1.2:
+  inputs:
+  - verbose: 'true'
+```
+
+3. Find the CLI version used by the Step in the dependency matrix. Open the corresponding CLI release page (`https://github.com/bitrise-io/bitrise-build-cache-cli/releases/tag/<VERSION>`) and download the `verification-metadata-mirror.xml`.
+
+`verification-metadata-mirror.xml` contains SHA-256 checksums to match what the Bitrise repository manager serves, while the plain `verification-metadata.xml` records origin Maven Central checksums and will fail verification when the mirror is active.
+
+4. Add the components content to your `$PROJECT_ROOT/gradle/verification-metadata.xml` file from the downloaded metadata.
+
+5. Review and commit the changes.
+
+:::note
+
+We've collected the plugins' dependencies using a simple Gradle project and a specific platform runtime version. You might experience that in your setup Gradle pulls slightly different dependencies. In this case, you need to generate the dependency metadata yourself.
+
+:::
+
+### Updating the verification metadata
+
+These steps are required each time you update the activating Step, or if you find that the collected metadata still differs from the one Gradle expects in your environment.
+
+The Bitrise Build Cache CLI has a command that adds the plugin dependencies in a way that is meant for collecting the dependencies.
+
+With this, updating the build cache & analytics dependencies is done by the following steps:
+
+1. Update the [Activate Gradle Mirrors](https://github.com/bitrise-steplib/bitrise-step-activate-gradle-mirrors) Step to the latest version — updating & locking the version to the latest exact (patch) Step version in the `bitrise.yml`.
+
+2. If your Workflows include any build cache Steps (for example [Build Cache for Gradle](https://github.com/bitrise-steplib/bitrise-step-activate-gradle-remote-cache) Step or [Build Cache for React Native](https://github.com/bitrise-steplib/bitrise-step-activate-react-native-features) Step), pin to the Step version whose associated CLI version matches the [Activate Gradle Mirrors](https://github.com/bitrise-steplib/bitrise-step-activate-gradle-mirrors) Step's associated CLI version. This information is available for each Step in the associated dependency matrix.
+
+3. On your development machine or on Bitrise in a separate workflow, install the associated version of the CLI for the activate gradle mirror as listed by its dependency matrix.
+
+```bash
+# Replace CLIVERSION with the CLI version you want to install, for example: v2.4.6
+curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d "CLIVERSION"
+```
+
+4. If you already have the Bitrise Build Cache enabled, make sure to back up `$HOME/.gradle/init.d/bitrise-build-cache.init.gradle.kts` as the next step will overwrite it.
+
+5. If your production workflow has the Bitrise Maven Central mirror active (the default), activate the mirror locally so the regenerated metadata records mirror-served checksums instead of the origin ones:
+
+```bash
+BITRISE_MAVENCENTRAL_PROXY_ENABLED=true /tmp/bin/bitrise-build-cache activate gradle-mirrors -d
+```
+
+6. Run the Bitrise Build Cache CLI's `gradle-verification add-reference-deps` command on your development machine or your CI configuration. 
+
+This will generate an init script with the latest plugins in dry-run mode.
+
+7. In your project folder, run your usual Workflow to write the verification metadata:
+
+```bash
+./gradlew tasks --write-verification-metadata sha256
+```
+
+8. Review the metadata differences and commit and migrate your changes to your production Workflow to finish the update and use the updated Step in your Workflows.
+
+9. If you have backed up `$HOME/.gradle/init.d/bitrise-build-cache.init.gradle.kts` on your local machine, you can now revert the changes.
+
+This way you can keep your dependencies locked while using the latest version of the Bitrise Build Cache.
+
+## Opting out of the repository manager
+
+If you need direct access to Maven Central you can disable the repository manager, set `BITRISE_MAVENCENTRAL_PROXY_ENABLED` to `false` in your build configuration:
+
+- **Workflow level:** Add the environment variable in your <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm> under **Env Vars** for the relevant Workflow.
+- **Project level:** Add it as an  project level environment variable in the Workflow Editor to disable the proxy for all Workflows in that project.
+- **<GlossTerm baseform="secret">Secret</GlossTerm>:** Add it as a secret environment variable if you prefer to keep it out of your `bitrise.yml`.
+
+This environment variable takes precedence over all other settings, including the [Activate Gradle Mirrors](https://github.com/bitrise-steplib/bitrise-step-activate-gradle-mirrors) Step. No additional script Steps or code changes are needed.
+
+:::note
+
+If you opt out, your builds will resolve dependencies directly from Maven Central and may be subject to rate limiting (HTTP 429 errors) during peak traffic periods.
+
+:::
