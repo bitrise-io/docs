@@ -142,6 +142,7 @@ const config: Config = {
       fileContent = expandListPartials(fileContent);
       const ALLOWED = new Set([
         'Tabs', 'TabItem', 'GlossTerm',
+        'SwaggerUIEmbed',
         'br', 'hr', 'sup', 'sub', 'strong', 'em', 'code', 'pre', 'p',
         'div', 'span', 'a', 'img', 'ul', 'ol', 'li',
         'table', 'thead', 'tbody', 'tr', 'th', 'td',
@@ -252,6 +253,35 @@ const config: Config = {
     genSearchWidgetConfigId: process.env.GEN_SEARCH_WIDGET_ID || '',
     intercomAppId: 'e2rdidtm',
   },
+
+  plugins: [
+    function webpackFallbacks() {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const webpack = require('webpack');
+      return {
+        name: 'webpack-fallbacks',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        configureWebpack(): any {
+          return {
+            resolve: {
+              fallback: {
+                // swagger-ui-react depends on Node.js core modules.
+                // Webpack 5 no longer polyfills them automatically.
+                buffer: require.resolve('buffer/'),
+              },
+            },
+            plugins: [
+              // Provide Buffer globally so packages that reference it at
+              // runtime (e.g. swagger-ui-react → deep-extend) don't crash.
+              new webpack.ProvidePlugin({
+                Buffer: ['buffer', 'Buffer'],
+              }),
+            ],
+          };
+        },
+      };
+    },
+  ],
 
   presets: [
     [
