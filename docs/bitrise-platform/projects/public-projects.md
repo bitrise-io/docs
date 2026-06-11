@@ -23,7 +23,7 @@ Of course, this does not mean anyone can do anything with your public project on
 
 - View the [build logs](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/build-logs).
 - Download the build logs.
-- View [the build’s `bitrise.yml` file](/en/bitrise-ci/configure-builds/configuration-yaml/managing-a-project-s-configuration-yaml-file).
+- View [the build’s `bitrise.yml` file](/en/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml).
 
 :::caution[Public project’s build logs are available for anyone]
 
