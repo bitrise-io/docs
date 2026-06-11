@@ -6,7 +6,7 @@ sidebar_position: 3
 The Bitrise Build Cache CLI can be downloaded and run on any third-party CI provider (GitHub Actions, GitLab CI, CircleCI, Jenkins, etc.).
 
 1. Create a [Personal Access Token](urn:resource:component:54560).
-1. [Get your Workspace slug](/en/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs).
+1. [Get your Workspace slug](/en/bitrise-api/identifying-workspaces-and-apps-with-their-slugs).
 1. Set two variables in your CI provider's secret/environment settings:
 
    - BITRISE_BUILD_CACHE_AUTH_TOKEN: your Personal Access Token.

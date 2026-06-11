@@ -22,7 +22,7 @@ On the **Builds** page of a project, you can track the current status of all you
 
   There is a specific status called Aborted with success: this means the build has been aborted by the API but it is reported as a success to your git hosting provider.
 
-  Use the abort_with_success parameter with [a Bitrise API call to abort a build](/en/bitrise-ci/api/triggering-and-aborting-builds#aborting-a-build) but still count it as a successful one.
+  Use the abort_with_success parameter with [a Bitrise API call to abort a build](/en/bitrise-api/triggering-and-aborting-builds#aborting-a-build) but still count it as a successful one.
 
   :::
 - **Failed**: In most cases, a build fails if any of the Steps fails. There are exceptions, such as the [caching Steps](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching), and you can [mark Steps as skippable](https://support.bitrise.io/hc/en-us/articles/4405252562577) which means even if they fail, the build will keep running.

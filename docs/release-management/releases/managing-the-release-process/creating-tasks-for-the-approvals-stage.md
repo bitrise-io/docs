@@ -40,7 +40,7 @@ You can assign an approval task to a team member with the help of our [Release M
 
 :::note[Limited access]
 
-Note that you need a Personal Access Token or a Workspace token to [authenticate your API calls](/en/bitrise-ci/api/authenticating-with-the-bitrise-api).
+Note that you need a Personal Access Token or a Workspace token to [authenticate your API calls](/en/bitrise-api/authenticating-with-the-bitrise-api).
 
 Only a [Workspace owner, a Project Admin and a Release Manager](/en/release-management/configuring-connected-apps/release-management-roles-and-permissions) has the right to assign approval tasks to team members.
 

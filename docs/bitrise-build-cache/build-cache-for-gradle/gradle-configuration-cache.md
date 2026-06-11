@@ -30,7 +30,7 @@ To set up the configuration cache:
 1. Save the key as a [Secret](/en/bitrise-ci/configure-builds/secrets) named GRADLE_ENCRYPTION_KEY in your Bitrise project.
 
    This ensures that the encrypted value of the configuration cache remains the same across different builds. Using a fixed encryption key is supported from Gradle version 8.6 or later. Bitrise doesn't support Gradle configuration cache for earlier Gradle versions.
-1. Set your Bitrise [workspace slug](/en/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs) as an Environment Variable named BITRISE_BUILD_CACHE_WORKSPACE_ID.
+1. Set your Bitrise [workspace slug](/en/bitrise-api/identifying-workspaces-and-apps-with-their-slugs) as an Environment Variable named BITRISE_BUILD_CACHE_WORKSPACE_ID.
 1. Add the **Build Cache for Gradle** Step to your Workflow.
 
    The Step must be of version 2.7.7 or later. Any subsequent updates to the Step will cause a one-off invalidation of the configuration cache. If this happens, do a rebuild to fix the issue.
