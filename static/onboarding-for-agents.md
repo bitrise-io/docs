@@ -62,12 +62,17 @@ cannot infer:
 3. Choose the goal:
    - **CI/CD path:** let Bitrise detect the project type and propose a `bitrise.yml`; relay
      the few required inputs (e.g. which scheme/variant to build); validate with
-     `validate_bitrise_yml`; trigger the first build with `trigger_bitrise_build`; return
-     the build's public install-page link. Later commits refresh it via triggers.
+     `validate_bitrise_yml`; trigger the first build with `trigger_bitrise_build`. The public
+     install page comes from the build's deploy step (Deploy to Bitrise.io); once the build
+     finishes, read the artifact with `list_artifacts` and enable its public page via
+     `update_artifact` (`is_public_page_enabled`) to get the install-page link. Later commits
+     refresh it via triggers.
    - **No-CI / one-off path:** if the user already has a signed `.ipa`/`.apk` locally, use
      Release Management — `create_connected_app` → `generate_installable_artifact_upload_url`
-     (set `with_public_page`) → `set_installable_artifact_public_install_page` — to upload it
-     and return the public/private install-page link + QR code. No CI build needed.
+     (set `with_public_page`) → upload the file to the returned signed URL → poll
+     `get_installable_artifact_upload_and_processing_status` until processing finishes →
+     `set_installable_artifact_public_install_page` — to publish it and return the
+     public/private install-page link + QR code. No CI build needed.
 
 ## Tell the user up front (don't let them hit these blind)
 
