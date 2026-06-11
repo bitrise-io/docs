@@ -27,7 +27,7 @@ Publish an app to Expo's servers and build an iOS App Store `.ipa` and an Andr
 1. Go to the **Secrets** tab.
 1. Create a Secret (IOS_DEVELOPMENT_TEAM) with the ID of the iOS Development Team issued in the project's Certificate and Provisioning Profile.
 1. Store the Expo account's username and password used for publishing in EXPO_USERNAME and EXPO_PASSWORD [Secrets](/en/bitrise-ci/configure-builds/secrets).
-1. On the left, select **Configuration YAML** from the navigation menu.
+1. Switch to **YAML** at the top of the Workflow Editor.
 1. Copy paste `envs` from `bitrise.yml` below to your Workflow.
 1. Copy paste `steps` from `bitrise.yml` below to your Workflow.
 

@@ -134,3 +134,13 @@ This environment variable takes precedence over all other settings, including th
 If you opt out, your builds will resolve dependencies directly from Maven Central and may be subject to rate limiting (HTTP 429 errors) during peak traffic periods.
 
 :::
+
+## Using the proxy cache with Build Hub
+
+For developers using Bitrise Build Hub, add the following script to your job definition prior to dependency resolution:
+
+```
+curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d \
+  && BITRISE_MAVENCENTRAL_PROXY_ENABLED=true /tmp/bin/bitrise-build-cache activate gradle-mirrors -d \
+  || true
+```
