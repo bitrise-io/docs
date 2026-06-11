@@ -15,6 +15,7 @@ const sidebars: SidebarsConfig = {
   releaseManagementSidebar: productSidebar('release-management', 'Release Management'),
   insightsSidebar: productSidebar('insights', 'Insights'),
   buildHubSidebar: productSidebar('bitrise-build-hub', 'Build Hub'),
+  bitriseAPISidebar: productSidebar('bitrise-api', 'Bitrise API'),
 };
 
 export default sidebars;

@@ -3,8 +3,7 @@ import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import releaseManagementApiSidebar from './docs/release-management/release-management-api/api-reference/sidebar';
-import bitriseCIApiSidebar from './docs/bitrise-ci/api/api-reference/sidebar';
+import bitriseAPIApiSidebar from './docs/bitrise-api/api-reference/sidebar';
 
 // Build-time expansion for list-context partial references.
 //
@@ -123,16 +122,25 @@ function expandListPartials(content: string): string {
 // Map of isApiEndpoints marker → generated sidebar items
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const API_SIDEBARS: Record<string, any[]> = {
-  releaseManagement: releaseManagementApiSidebar,
-  bitriseCI: bitriseCIApiSidebar,
+  bitriseAPI: bitriseAPIApiSidebar,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function injectApiSidebar(items: any[]): any[] {
   return items.map(item => {
+    // Replace API endpoint categories with the generated tag-grouped sidebar
     if (item.type === 'category' && item.customProps?.isApiEndpoints) {
       const sidebar = API_SIDEBARS[item.customProps.isApiEndpoints];
       if (sidebar) return {...item, items: sidebar};
+    }
+    // Replace hub-link markers with a link item that opens in a new tab
+    if (item.type === 'category' && item.customProps?.isApiHubLink) {
+      return {
+        type: 'link',
+        label: item.label,
+        href: item.customProps.isApiHubLink,
+        customProps: {...item.customProps, newTab: true},
+      };
     }
     if (item.type === 'category' && Array.isArray(item.items)) {
       return {...item, items: injectApiSidebar(item.items)};
@@ -294,19 +302,12 @@ const config: Config = {
     [
       'docusaurus-plugin-openapi-docs',
       {
-        id: 'release-management-api',
+        id: 'bitrise-api',
         docsPluginId: 'classic',
         config: {
-          releaseManagement: {
-            specPath: 'api/release-management-v2.json',
-            outputDir: 'docs/release-management/release-management-api/api-reference',
-            sidebarOptions: {
-              groupPathsBy: 'tag',
-            },
-          },
-          bitriseCI: {
+          bitriseAPI: {
             specPath: 'api/bitrise-ci.json',
-            outputDir: 'docs/bitrise-ci/api/api-reference',
+            outputDir: 'docs/bitrise-api/api-reference',
             sidebarOptions: {
               groupPathsBy: 'tag',
             },
