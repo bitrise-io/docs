@@ -267,6 +267,7 @@ const config: Config = {
               fallback: {
                 // swagger-ui-react depends on Node.js core modules.
                 // Webpack 5 no longer polyfills them automatically.
+                stream: false,
                 buffer: require.resolve('buffer/'),
               },
             },
