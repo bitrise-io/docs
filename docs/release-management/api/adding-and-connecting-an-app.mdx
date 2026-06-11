@@ -1,0 +1,142 @@
+---
+title: "Adding and connecting an app"
+description: "Add an app to Release Management via the API and connect it to the App Store or Google Play."
+sidebar_position: 2
+slug: /release-management/api/adding-and-connecting-an-app
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Before you can manage releases through the API, you need to add the app to Release Management and connect it to a store.
+
+The Apps sub-API base URL: `https://api.bitrise.io/release-management/v2/apps/v1`
+
+## Adding a new app
+
+| Method | Path | Function | Required role |
+| --- | --- | --- | --- |
+| POST / | Add a new app. | Release manager |
+| GET / | List all apps in a workspace. | Any |
+| GET /\{id\} | Get details of a specific app. | Any |
+| DELETE /\{id\} | Remove an app from Release Management. | Release manager |
+
+To add an app:
+
+1. Call `POST /` with the required fields:
+
+   - `platform`: The app platform: `ios` or `android`.
+   - `store_app_id`: The app's store identifier. For iOS: the App Store Connect numeric app ID. For Android: the package name (e.g. `com.example.myapp`).
+   - `workspace_slug`: The slug of the Bitrise workspace that will own the app.
+
+<Tabs groupId="platform">
+<TabItem value="ios" label="iOS">
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "platform": "ios",
+    "store_app_id": "1234567890",
+    "workspace_slug": "YOUR_WORKSPACE_SLUG",
+    "store_app_name": "My iOS App",
+    "store_credential_id": "YOUR_APPLE_CREDENTIAL_ID",
+    "framework": "native_ios"
+  }'
+```
+
+</TabItem>
+<TabItem value="android" label="Android">
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "platform": "android",
+    "store_app_id": "com.example.myapp",
+    "workspace_slug": "YOUR_WORKSPACE_SLUG",
+    "store_app_name": "My Android App",
+    "store_credential_id": "YOUR_GOOGLE_CREDENTIAL_ID",
+    "framework": "native_android"
+  }'
+```
+
+</TabItem>
+</Tabs>
+
+   The response includes the new app's `id`. Save this value — you'll need it in all subsequent API calls for this app.
+
+:::note[Store credentials]
+
+The `store_credential_id` refers to an Apple or Google service credential configured in your workspace. You can manage credentials in Bitrise from **Workspace settings > Integrations**.
+
+:::
+
+2. (Optional) To register an app without connecting it to the store immediately, set `manual_connection: true`.
+
+   ```bash
+   curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/" \
+     -H "Authorization: YOUR_ACCESS_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "platform": "ios",
+       "store_app_id": "1234567890",
+       "workspace_slug": "YOUR_WORKSPACE_SLUG",
+       "manual_connection": true
+     }'
+   ```
+
+   You can connect the app to the store later using `PATCH /{id}`.
+
+## Connecting an app to the store
+
+| Method | Path | Function | Required role |
+| --- | --- | --- | --- |
+| PATCH /\{id\} | Update app settings, including store connection. | Release manager |
+
+If you added an app with `manual_connection: true` or need to update the store credentials, use `PATCH /{id}`:
+
+```bash
+curl -X PATCH "https://api.bitrise.io/release-management/v2/apps/v1/APP_ID" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "connect_to_store": true,
+    "store_credential_id": "YOUR_CREDENTIAL_ID"
+  }'
+```
+
+You can also update the `store_app_id` via `PATCH /{id}` if the app was initially registered with an incorrect identifier.
+
+## Listing apps
+
+To list all apps in a workspace:
+
+```bash
+curl -X GET "https://api.bitrise.io/release-management/v2/apps/v1/?workspace_slug=YOUR_WORKSPACE_SLUG" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+
+Optional query parameters:
+
+- `platform`: Filter by `ios` or `android`.
+- `project_id`: Filter by an associated Bitrise CI project ID.
+- `search`: Search by app name.
+- `items_per_page`: Results per page (default: 10, max: 50).
+- `page`: Page number (default: 1).
+
+## Removing an app
+
+:::warning[Deletion is permanent]
+
+Removing an app from Release Management deletes all associated releases, artifacts, and configuration. This cannot be undone.
+
+:::
+
+```bash
+curl -X DELETE "https://api.bitrise.io/release-management/v2/apps/v1/APP_ID" \
+  -H "Authorization: YOUR_ACCESS_TOKEN"
+```

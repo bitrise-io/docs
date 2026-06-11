@@ -1,0 +1,136 @@
+---
+title: "Creating and managing presets"
+description: "Create reusable release configuration templates (presets) via the Release Management API."
+sidebar_position: 4
+slug: /release-management/api/creating-presets
+---
+
+Presets are reusable release configuration templates. They let you define automation rules, approval tasks, notifications, and CI build settings once and apply them consistently across multiple releases.
+
+The Apps sub-API base URL: `https://api.bitrise.io/release-management/v2/apps/v1`
+
+## Creating a preset
+
+| Method | Path | Function | Required role |
+| --- | --- | --- | --- |
+| POST /presets | Create a new preset. | Release manager |
+| GET /presets | List presets for an app. | Any |
+| GET /presets/\{id\} | Get a specific preset. | Any |
+| PUT /presets/\{id\} | Update a preset. | Release manager |
+| DELETE /presets/\{id\} | Delete a preset. | Release manager |
+
+To create a preset:
+
+1. Call `POST /presets` with at least a name and the app it belongs to.
+
+   Required fields:
+   - `app_id`: The ID of the app in Release Management.
+   - `template_name`: A descriptive name for the preset.
+
+   ```bash
+   curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
+     -H "Authorization: YOUR_ACCESS_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "app_id": "APP_ID",
+       "template_name": "Standard release"
+     }'
+   ```
+
+## Creating a preset with full configuration
+
+A preset can include automation rules, approval tasks, notifications, and CI build settings. The following example creates a preset that:
+
+- Triggers a `run-tests` workflow when the release candidate is set.
+- Triggers an `upload-to-store` workflow when approvals are complete.
+- Creates a QA approval task for each release.
+- Sends Slack notifications via a configured integration.
+- Enables automatic store upload after the build succeeds.
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "APP_ID",
+    "template_name": "Standard release",
+    "default": true,
+    "auto_upload": true,
+    "automation": [
+      {
+        "event_name": "release_candidate_set",
+        "workflow_name": "run-tests"
+      },
+      {
+        "event_name": "approvals_completed",
+        "workflow_name": "upload-to-store"
+      }
+    ],
+    "approvals": [
+      {
+        "summary": "QA sign-off",
+        "description": "Verify all test cases pass on the release build"
+      }
+    ],
+    "notifications": {
+      "slack_notification_integration_id": "YOUR_SLACK_INTEGRATION_ID"
+    }
+  }'
+```
+
+Save the `id` from the response — you'll use it when [creating releases](/en/release-management/api/creating-a-release#applying-a-preset-to-a-release).
+
+:::note[Default preset]
+
+Setting `default: true` marks this preset as the one automatically applied to new releases. Only one preset per app can be the default.
+
+:::
+
+## Listing presets for an app
+
+```bash
+curl -X GET "https://api.bitrise.io/release-management/v2/apps/v1/presets?app_id=APP_ID" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+
+## Updating a preset
+
+Use `PUT /presets/{id}` to replace the preset's configuration. All fields except `template_name` and `app_id` are optional.
+
+```bash
+curl -X PUT "https://api.bitrise.io/release-management/v2/apps/v1/presets/PRESET_ID" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "default": true,
+    "auto_upload": false,
+    "automation": [
+      {
+        "event_name": "release_candidate_set",
+        "workflow_name": "run-extended-tests"
+      }
+    ],
+    "approvals": [
+      {
+        "summary": "QA sign-off"
+      },
+      {
+        "summary": "Security review"
+      }
+    ]
+  }'
+```
+
+## Deleting a preset
+
+```bash
+curl -X DELETE "https://api.bitrise.io/release-management/v2/apps/v1/presets/PRESET_ID" \
+  -H "Authorization: YOUR_ACCESS_TOKEN"
+```
+
+:::important[Existing releases not affected]
+
+Deleting a preset does not affect releases that were created using it. The settings are copied to the release at creation time.
+
+:::
