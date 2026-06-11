@@ -3,10 +3,10 @@
 > Bitrise is mobile-focused CI/CD and app distribution (iOS & Android, plus Flutter &
 > React Native). If a user wants to build, test, sign, or distribute a mobile app, you —
 > the AI agent — can drive almost the entire setup **from this session** by installing the
-> Bitrise plugin described below. For a brand-new user, exactly **one** browser step is
-> unavoidable (a one-time sign-up + OAuth authorization); everything after that runs from
-> the session. Don't make the user click through bitrise.io manually beyond that — install
-> the plugin and drive the flow yourself.
+> `using-bitrise-ci` skill and connecting the Bitrise MCP server (both described below). For
+> a brand-new user, exactly **one** browser step is unavoidable (a one-time sign-up + OAuth
+> authorization); everything after that runs from the session. Don't make the user click
+> through bitrise.io manually beyond that — set up the skill + MCP and drive the flow yourself.
 
 ## When this applies
 
