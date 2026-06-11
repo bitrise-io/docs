@@ -4,7 +4,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import releaseManagementApiSidebar from './docs/release-management/release-management-api/api-reference/sidebar';
-import bitriseCIApiSidebar from './docs/bitrise-ci/api/api-reference/sidebar';
+import bitriseAPIApiSidebar from './docs/bitrise-api/api-reference/sidebar';
 
 // Build-time expansion for list-context partial references.
 //
@@ -124,7 +124,6 @@ function expandListPartials(content: string): string {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const API_SIDEBARS: Record<string, any[]> = {
   releaseManagement: releaseManagementApiSidebar,
-  bitriseCI: bitriseCIApiSidebar,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -134,8 +133,27 @@ function injectApiSidebar(items: any[]): any[] {
       const sidebar = API_SIDEBARS[item.customProps.isApiEndpoints];
       if (sidebar) return {...item, items: sidebar};
     }
+    // Replace hub-link markers with a link item that opens in a new tab
+    if (item.type === 'category' && item.customProps?.isApiHubLink) {
+      return {
+        type: 'link',
+        label: item.label,
+        href: item.customProps.isApiHubLink,
+        customProps: {...item.customProps, newTab: true},
+      };
+    }
     if (item.type === 'category' && Array.isArray(item.items)) {
-      return {...item, items: injectApiSidebar(item.items)};
+      const children = injectApiSidebar(item.items);
+      // Append an "API reference" hub link as the last child of this category
+      if (item.customProps?.appendApiHubLink) {
+        children.push({
+          type: 'link',
+          label: 'API reference',
+          href: item.customProps.appendApiHubLink,
+          customProps: {newTab: true},
+        });
+      }
+      return {...item, items: children};
     }
     return item;
   });
@@ -306,7 +324,7 @@ const config: Config = {
           },
           bitriseCI: {
             specPath: 'api/bitrise-ci.json',
-            outputDir: 'docs/bitrise-ci/api/api-reference',
+            outputDir: 'docs/bitrise-api/api-reference',
             sidebarOptions: {
               groupPathsBy: 'tag',
             },
