@@ -337,6 +337,28 @@ Some sidebar categories are intentionally non-clickable — they only toggle exp
 
 All images go under `static/img/`. References in pages start with `/img/...` (Docusaurus serves `static/` from root). Don't reference `static/img/...` directly — that path doesn't exist at runtime.
 
+### Don't break numbered lists with unindented content
+
+Code blocks, admonitions, and plain text that belong to a numbered list item must be indented to the item's content column (3 spaces for `1. `, 4 for `10. `, etc.). Unindented content terminates the list, causing every subsequent item to restart numbering from 1.
+
+````mdx
+✗  1. Do the thing
+   ```bash
+   code
+   ```
+   2. Do the next thing   ← renders as step 1
+
+✓  1. Do the thing
+
+      ```bash
+      code
+      ```
+
+   2. Do the next thing   ← renders as step 2
+````
+
+The same rule applies to admonitions and continuation paragraphs mid-procedure.
+
 ### Don't introduce `Title Case` titles
 
 Sentence case only. ✓ `Adding a new project` ✗ `Adding a New Project`.
