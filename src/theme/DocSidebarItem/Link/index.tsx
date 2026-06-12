@@ -30,6 +30,7 @@ export default function DocSidebarItemLink({
   const {href, label, className, autoAddBaseUrl} = item;
   const isActive = isActiveSidebarItem(item, activePath);
   const isInternalLink = isInternalUrl(href);
+  const isNewTab = !!item.customProps?.newTab;
   return (
     <li
       className={clsx(
@@ -42,7 +43,7 @@ export default function DocSidebarItemLink({
       <Link
         className={clsx(
           'menu__link',
-          !isInternalLink && styles.menuExternalLink,
+          (!isInternalLink || isNewTab) && styles.menuExternalLink,
           {
             'menu__link--active': isActive,
           },
@@ -50,7 +51,9 @@ export default function DocSidebarItemLink({
         autoAddBaseUrl={autoAddBaseUrl}
         aria-current={isActive ? 'page' : undefined}
         to={href}
-        {...(isInternalLink && {
+        target={isNewTab ? '_blank' : undefined}
+        rel={isNewTab ? 'noopener noreferrer' : undefined}
+        {...(isInternalLink && !isNewTab && {
           onClick: onItemClick ? () => onItemClick(item) : undefined,
         })}
         {...props}>
@@ -58,7 +61,8 @@ export default function DocSidebarItemLink({
           label={label}
           icon={item.customProps?.icon as string}
         />
-        {!isInternalLink && <IconExternalLink />}
+        {isNewTab && <span aria-hidden="true" style={{marginLeft: '4px'}}>↗</span>}
+        {!isInternalLink && !isNewTab && <IconExternalLink />}
       </Link>
     </li>
   );
