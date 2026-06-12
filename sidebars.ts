@@ -1,4 +1,5 @@
 import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
+import bitriseAPIApiSidebar from './docs/bitrise-api/api-reference/sidebar';
 
 function productSidebar(dirName: string, title: string) {
   return [
@@ -8,6 +9,31 @@ function productSidebar(dirName: string, title: string) {
   ];
 }
 
+// Capitalize standalone "api" → "API" in generated tag labels.
+function normalizeLabel(label: string): string {
+  return label.replace(/\bapi\b/gi, 'API');
+}
+
+// Hyphens that were part of compound words get lost when the plugin converts
+// kebab-case tags to space-separated labels. Declare the corrections explicitly.
+const TAG_LABEL_OVERRIDES: Record<string, string> = {
+  'Key value cache': 'Key-value cache',
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const hubItems = (bitriseAPIApiSidebar as any[]).map(item => {
+  const originalLabel = item.label as string;
+  const correctedLabel = normalizeLabel(TAG_LABEL_OVERRIDES[originalLabel] ?? originalLabel);
+  return {
+    ...item,
+    label: correctedLabel,
+    customProps: {
+      ...(item.customProps ?? {}),
+      icon: 'Code',
+    },
+  };
+});
+
 const sidebars: SidebarsConfig = {
   platformSidebar: productSidebar('bitrise-platform', 'Bitrise as a Platform'),
   ciSidebar: productSidebar('bitrise-ci', 'Bitrise CI'),
@@ -15,6 +41,12 @@ const sidebars: SidebarsConfig = {
   releaseManagementSidebar: productSidebar('release-management', 'Release Management'),
   insightsSidebar: productSidebar('insights', 'Insights'),
   buildHubSidebar: productSidebar('bitrise-build-hub', 'Build Hub'),
+  bitriseAPISidebar: [
+    {type: 'link', label: '← Home', href: '/'},
+    {type: 'html', value: '<div class="sidebar-product-title">Bitrise API</div>'},
+    {type: 'doc', id: 'bitrise-api/api-reference/bitrise-api', label: 'Introduction', customProps: {icon: 'Book'}},
+    ...hubItems,
+  ],
 };
 
 export default sidebars;
