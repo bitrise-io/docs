@@ -1,0 +1,53 @@
+---
+title: "Maven Central proxy cache"
+description: "Bitrise runs an in-datacenter proxy cache for Maven Central so your builds resolve third-party dependencies through Bitrise, protecting Android builds from rate limiting and speeding up downloads."
+sidebar_position: 6
+slug: /bitrise-ci/dependencies-and-caching/maven-central-proxy-cache
+---
+
+# Maven Central proxy cache
+
+Bitrise runs an in-datacenter proxy cache for Maven Central so your builds resolve third-party dependencies through Bitrise instead of pulling them directly from the public registry. It is enabled automatically on supported stacks, protects your Android builds from Maven Central rate limiting (HTTP 429 Too Many Requests), and makes dependency downloads faster.
+
+## How it works
+
+Maven Central now applies rate limits to high-volume consumers such as CI platforms. Without protection, builds that resolve dependencies from hosts like repo1.maven.org and repo.maven.apache.org can fail with an HTTP 429 Too Many Requests error during dependency resolution.
+
+To absorb this, Bitrise runs a repository manager inside the same datacenter as the build machines. Your builds request dependencies from the proxy rather than from Maven Central directly. When the proxy already holds an artifact, it serves it from the cache. When it does not, it fetches the artifact from Maven Central once and caches it for every subsequent build.
+
+The proxy is activated at the virtual machine level, so every build on a supported stack uses it without any change to your bitrise.yml or Workflow. Because the cache is co-located with the build machine, artifacts download faster than they would from a remote registry.
+
+:::note
+
+Because the proxy is on by default, you can remove earlier manual workarounds for Maven Central rate limiting (such as retry settings in gradle.properties) from your Workflows.
+
+:::
+
+## Maven Central proxy cache compared to other caches
+
+Bitrise has three independent caching layers that solve different problems and can be used together:
+
+| Cache | What it stores |
+|---|---|
+| Maven Central proxy cache | Third-party dependencies from Maven Central, so they are not re-downloaded from the public registry on every build |
+| Build Cache | Your project's own build outputs, such as compiled classes and task results, so unchanged work is not re-executed |
+| Key-value cache | Whole files and directories you designate, so they persist between builds on ephemeral machines |
+
+## Disabling the proxy cache
+
+Most builds should keep the proxy enabled. If you need a build to resolve dependencies directly from Maven Central, set the following environment variable when you start the build:
+
+```bash
+BITRISE_MAVENCENTRAL_PROXY_ENABLED=false
+```
+
+## Limitations
+
+If your project uses Gradle dependency verification, artifacts served through the proxy can be reported under a different host or repository name than you expect, which may cause verification to fail. Review your dependency verification configuration, or disable the proxy for the affected build using the environment variable above.
+
+## Related
+
+- [About dependencies and caching](https://docs.bitrise.io/en/bitrise-ci/dependencies-and-caching/dependencies-and-caching-overview.html)
+- [Android dependencies](https://docs.bitrise.io/en/bitrise-ci/dependencies-and-caching/android-dependencies.html)
+- [Configuring the Build Cache for Gradle](https://docs.bitrise.io/en/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-the-bitrise-ci-environment.html)
+- [Environment variables](https://docs.bitrise.io/en/bitrise-ci/configure-builds/environment-variables.html)
