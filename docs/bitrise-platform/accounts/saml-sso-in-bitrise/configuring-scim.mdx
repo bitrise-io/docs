@@ -1,6 +1,6 @@
 ---
 title: "Configuring SCIM"
-description: "The System for Cross-domain Identity Management (SCIM) specification is designed to make managing user identities in cloud-based applications and services easier. On Bitrise, SCIM provisioning is supported for [Okta](https://www.okta.com/) and [Microsoft Entra ID](https://learn.microsoft.com/en-us/entra/identity/)."
+description: "The System for Cross-domain Identity Management (SCIM) specification is designed to make managing user identities in cloud-based applications and services easier. On Bitrise, SCIM provisioning is supported for Okta and Microsoft Entra ID."
 sidebar_position: 3
 slug: /bitrise-platform/accounts/saml-sso-in-bitrise/configuring-scim
 ---
@@ -29,3 +29,82 @@ SCIM provisioning requires a verified domain, and SCIM credentials: a SCIM base 
    Copy and save both. You need them for SCIM provisioning.
 
    For Okta, check out our [SCIM provisioning guide](/en/bitrise-platform/accounts/saml-sso-in-bitrise/setting-up-okta-sso-for-bitrise#setting-up-scim-provisioning-in-okta).
+
+## Managing workspace roles via SCIM
+
+By default, all SCIM-provisioned users receive the Viewer role. If your IdP supports the SCIM `roles` attribute, you can automate <GlossTerm baseform="workspace">Workspace</GlossTerm> role assignment so that users are provisioned with the correct role from the start.
+
+### Available workspace roles
+
+| SCIM value | Workspace role | Description |
+|---|---|---|
+| `workspace:workspace_viewer` | Viewer | Can view Workspace resources. This is the default role for new members. |
+| `workspace:workspace_contributor` | Contributor | Can trigger builds and manage apps they have access to. |
+| `workspace:workspace_manager` | Manager | Can access and modify Workspace settings and manage members. |
+
+For a detailed breakdown of permissions, see [Roles and permissions in Workspaces](/en/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces).
+
+### How role assignment works
+
+Each role entry's `value` field uses the format `workspace:<role_name>`. Configure your IdP to include the `roles` attribute in SCIM requests using one of the following formats.
+
+**User creation and full update (POST and PUT):**
+
+Include `roles` as a top-level attribute in the request body:
+
+```json
+{
+  "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+  "userName": "user@example.com",
+  "roles": [
+    { "value": "workspace:workspace_manager" }
+  ]
+}
+```
+
+**Partial update (PATCH, roles in value object):**
+
+Some IdPs, such as Okta, send roles nested inside the `value` object without an explicit `path`:
+
+```json
+{
+  "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+  "Operations": [
+    {
+      "op": "replace",
+      "value": {
+        "roles": [
+          { "value": "workspace:workspace_contributor" }
+        ]
+      }
+    }
+  ]
+}
+```
+
+**Partial update (PATCH, explicit path):**
+
+Other IdPs, such as Microsoft Entra ID, use an explicit `path` field. The `type` field is optional and ignored by Bitrise:
+
+```json
+{
+  "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+  "Operations": [
+    {
+      "op": "replace",
+      "path": "roles",
+      "value": [
+        { "value": "workspace:workspace_manager" }
+      ]
+    }
+  ]
+}
+```
+
+Bitrise handles all three formats automatically.
+
+:::important
+
+If the `roles` attribute is present in a SCIM request, Bitrise treats it as the complete role assignment and replaces the user's current workspace role. If `roles` is absent from the request entirely, existing role assignments are left untouched. An empty `roles` array reverts the user to the default Viewer role.
+
+:::
