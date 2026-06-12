@@ -343,6 +343,20 @@ Sentence case only. ✓ `Adding a new project` ✗ `Adding a New Project`.
 
 ---
 
+## Syncing MCP docs
+
+When asked to sync, pull, or update the Bitrise MCP docs, run:
+
+```bash
+python3 scripts/sync_mcp_docs.py
+```
+
+This fetches `.md` files from `bitrise-io/bitrise-mcp/docs/` on GitHub and writes them (with injected frontmatter, link rewriting, and list rendering fixes) to `docs/bitrise-platform/ai/bitrise-mcp/`. Set `GITHUB_TOKEN` in the environment for authenticated requests (5,000 req/hr vs 60 req/hr unauthenticated).
+
+The script is idempotent. After running, review the diff and commit if the changes look correct. Never manually edit the synced files — edits belong in the source repo.
+
+---
+
 ## Updating this file
 
 If you discover a new convention or pitfall while editing, **add it here** so the next contributor (human or AI) doesn't relearn it. Keep the file < 400 lines; if a section grows long, link to a deeper page on Confluence instead.
