@@ -1,7 +1,7 @@
 ---
 title: "Bitrise MCP"
 description: "The Bitrise Model Context Protocol (MCP) Server lets you talk to Bitrise via an AI client of your choice. It enables seamless interaction with your existing CI setup, including troubleshooting and automation."
-sidebar_position: 4
+sidebar_position: 1
 slug: /bitrise-platform/ai/bitrise-mcp
 ---
 
