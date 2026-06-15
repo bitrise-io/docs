@@ -16,22 +16,31 @@ devices) but:
 
 ## Create an account via the MCP
 
+> **Whenever you tell the user how to connect or re-authenticate the MCP server, always give
+> them both forms — a CLI command and a copy-pastable JSON snippet — and let them use
+> whichever matches their client. Never offer only one.** This applies to Step 1 and Step 4.
+
 **Step 1 — Connect the MCP server, unauthenticated.** A brand-new user has no Bitrise MCP
 entry in their client config yet, and the account-creation tools (`register`,
 `verify_registration`) are the one thing you can't call until the server is connected — so
-this is your real first action, not a tool call. Add an entry pointing at the remote server
-**with no token** (the account-creation tools need none). Add it to the user's client config
-and have them restart/reconnect their MCP client:
+this is your real first action, not a tool call. Point the client at the remote server
+**with no token** (the account-creation tools need none), then have the user reconnect so
+the change takes effect (explain *how* — see "Reconnecting the MCP client" below; don't just
+say "reconnect"). Offer both:
 
-- Most clients (Cursor, etc.) — `mcpServers` with a bare URL:
+- CLI (Claude Code):
+  ```bash
+  claude mcp add --transport http bitrise https://mcp.bitrise.io
+  ```
+- JSON — most clients (Cursor, etc.), `mcpServers` with a bare URL:
   ```json
   { "mcpServers": { "bitrise": { "url": "https://mcp.bitrise.io" } } }
   ```
-- VS Code — `servers` with an explicit type: `{ "servers": { "bitrise": { "type": "http", "url": "https://mcp.bitrise.io" } } }`
-- Claude Desktop — via `mcp-remote`: `{ "mcpServers": { "bitrise": { "command": "npx", "args": ["mcp-remote", "https://mcp.bitrise.io"] } } }`
+- JSON — VS Code uses `servers` with an explicit type: `{ "servers": { "bitrise": { "type": "http", "url": "https://mcp.bitrise.io" } } }`
+- JSON — Claude Desktop connects via `mcp-remote`: `{ "mcpServers": { "bitrise": { "command": "npx", "args": ["mcp-remote", "https://mcp.bitrise.io"] } } }`
 
-If you can't edit the config yourself, give the user the snippet to paste. If you don't know
-which client they use, ask. Per-client details:
+If you can't edit the config yourself, hand the user the matching command/snippet to run. If
+you don't know which client they use, ask. Per-client details:
 https://github.com/bitrise-io/bitrise-mcp#installation
 
 > This is the **first of two reconnects**: you connect unauthenticated now, and reconnect
@@ -46,15 +55,43 @@ https://github.com/bitrise-io/bitrise-mcp#installation
 `api_token` (a Bitrise Personal Access Token) and a `workspace_slug` (a Workspace is created
 automatically).
 
-**Step 4 — Authenticate the connection** (the second reconnect). Add the token to the same
-entry from Step 1: set the `Authorization` header to `Bearer <api_token>`, then reconnect.
-(`verify_registration` returns client-specific instructions for this.) Confirm with `me` /
-`list_workspaces`.
+**Step 4 — Authenticate the connection** (the second reconnect). Add the token to the entry
+from Step 1 and reconnect. As in Step 1, give the user **both** forms:
+
+- CLI (Claude Code) — re-add with the header (remove first so it overwrites):
+  ```bash
+  claude mcp remove bitrise && claude mcp add --transport http bitrise https://mcp.bitrise.io -H "Authorization: Bearer <api_token>"
+  ```
+- JSON — add an `Authorization` header to the existing `bitrise` entry:
+  `"headers": { "Authorization": "Bearer <api_token>" }` (for Claude Desktop / `mcp-remote`,
+  add `"--header", "Authorization: Bearer <api_token>"` to its `args` instead).
+
+Then have the user reconnect again (see "Reconnecting the MCP client" below).
+(`verify_registration` also returns client-specific instructions for this.) Confirm with
+`me` / `list_workspaces`.
 
 > The token from `verify_registration` is valid for **24 hours** — enough to finish
 > onboarding. For long-term use, the user can create a durable PAT at
 > https://app.bitrise.io/me/account/security and swap it into the same `Authorization`
 > header.
+
+## Reconnecting the MCP client
+
+Editing the config (Step 1 and Step 4) doesn't take effect until the client reloads the
+Bitrise MCP server. **Don't just tell the user to "reconnect" — walk them through it for
+their client**, and ask which client they use if you don't know. The common ways:
+
+- **Claude Code (CLI):** run `/mcp` to view and reconnect the server, or exit and relaunch
+  `claude`.
+- **VS Code (GitHub Copilot):** open the Command Palette (`Cmd/Ctrl+Shift+P`), run **MCP:
+  List Servers**, select **bitrise**, and choose **Restart** — or run **Developer: Reload
+  Window**.
+- **Cursor:** open **Settings → MCP (Tools)**, then toggle the **bitrise** server off and on
+  (or click its refresh icon); restarting Cursor also works.
+- **Claude Desktop:** fully **quit** the app (`Cmd+Q` on macOS, or quit from the system tray
+  on Windows) and reopen it — closing the window alone doesn't reload it.
+- **Other clients (Windsurf, Gemini CLI, AWS Kiro):** restart the client, or its MCP
+  connection if it exposes one.
 
 ## If something goes wrong
 
