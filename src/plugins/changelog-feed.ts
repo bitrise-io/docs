@@ -22,8 +22,9 @@ function parseEntries(): Entry[] {
   const lines = text.split('\n');
   const entries: Entry[] = [];
 
-  // Match H2 headings: ## YYYY-MM-DD — Title
-  const headingRe = /^## (\d{4}-\d{2}-\d{2}) — (.+)$/;
+  // Match H2 headings: ## <time dateTime="YYYY-MM-DD">YYYY-MM-DD</time> — Title
+  // Also matches plain: ## YYYY-MM-DD — Title
+  const headingRe = /^## (?:<time[^>]*>)?(\d{4}-\d{2}-\d{2})(?:<\/time>)? — (.+)$/;
   let current: Entry | null = null;
   const contentLines: string[] = [];
 
