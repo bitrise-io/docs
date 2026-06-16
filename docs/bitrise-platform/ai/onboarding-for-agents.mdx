@@ -1,5 +1,5 @@
 ---
-title: "Onboarding for Agents"
+title: "Onboarding for agents"
 description: "Create your Bitrise account and connect to the platform straight from an AI agent through the Bitrise MCP server, with no website sign-up and no browser detour."
 sidebar_position: 5
 slug: /bitrise-platform/ai/onboarding-for-agents
@@ -20,17 +20,17 @@ You want to use Bitrise for CI/CD, app distribution, or getting a local build on
 
 If you'd rather not use an agent, you can also [sign up for Bitrise](/en/bitrise-platform/getting-started/signing-up-for-bitrise) in the browser.
 
-## Before you start
+## Creating an account through the MCP
+
+The flow has five steps: get an MCP-capable client, connect the server, register your email, verify the code, then re-authenticate with the token you receive. You supply the email and the verification code, and your agent does the rest.
+
+### Step 1: Get an AI client that supports MCP
 
 You need an AI client that supports MCP and an email address to register. Each step below gives the configuration for the most common clients: Claude Code, Cursor, VS Code, and Claude Desktop. Bitrise MCP also supports [Windsurf](/en/bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-windsurf), the [Google Gemini CLI](/en/bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-gemini-cli), [AWS Kiro](/en/bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-kiro), and [other Copilot IDEs](/en/bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-other-copilot-ides). See each install guide for client-specific details.
 
-## Creating an account through the MCP
+### Step 2: Connect the MCP server
 
-The flow has four steps: connect the server, register your email, verify the code, then re-authenticate with the token you receive. You supply the email and the verification code, and your agent does the rest.
-
-### Step 1: Connect the MCP server
-
-Point your client at the remote server with no token, since the account-creation tools (`register` and `verify_registration`) don't need one. After editing the config, reconnect the client so the change takes effect (see [Reconnecting the MCP client](#reconnecting-the-mcp-client)). For the full setup, follow the install guide linked in each tab.
+Point your client at the remote server with no token — the account-creation tools (`register` and `verify_registration`) don't need one. After editing the config, reconnect the client so the change takes effect (see [Reconnecting the MCP client](#reconnecting-the-mcp-client)). For the full setup, follow the install guide linked in each tab.
 
 <Tabs>
 <TabItem value="claude-code" label="Claude Code" default>
@@ -73,21 +73,21 @@ Full setup: [Claude Applications](/en/bitrise-platform/ai/bitrise-mcp/installing
 
 :::note[Expect two reconnects]
 
-You reconnect the client twice: once now while unauthenticated, and once again in Step 4 after you have the token.
+You reconnect the client twice: once now while unauthenticated, and once again in Step 5 after you have the token.
 
 :::
 
-### Step 2: Register your email
+### Step 3: Register your email
 
 Give your agent the email address to register. It calls `register`, and Bitrise emails you a one-time verification code (OTP) and returns a `pending_signup_id`. The code lives only in your inbox, so your agent can't guess it.
 
-### Step 3: Verify the code
+### Step 4: Verify the code
 
 Read the code back to your agent. It calls `verify_registration` with the `pending_signup_id` and your code. On success, Bitrise returns an `api_token` (a personal access token) and a `workspace_slug`: a <GlossTerm baseform="workspace">Workspace</GlossTerm> is created for you automatically. To see how Workspaces organize your apps and team, read the [Workspaces overview](/en/bitrise-platform/workspaces/workspaces-overview).
 
-### Step 4: Authenticate the connection
+### Step 5: Authenticate the connection
 
-Your agent adds the token to the entry from Step 1 and reconnects (the second reconnect), then confirms the connection with the `me` or `list_workspaces` tools.
+Your agent adds the token to the entry from Step 2 and reconnects (the second reconnect), then confirms the connection with the `me` or `list_workspaces` tools.
 
 <Tabs>
 <TabItem value="claude-code" label="Claude Code" default>
@@ -128,7 +128,7 @@ The token from `verify_registration` is valid for 24 hours, which is enough to f
 
 ## Reconnecting the MCP client
 
-Editing the config in Step 1 and Step 4 takes effect only after the client reloads the Bitrise MCP server. How you do that depends on the client:
+Editing the config in Step 2 and Step 5 takes effect only after the client reloads the Bitrise MCP server. How you do that depends on the client:
 
 - **Claude Code (CLI):** Run `/mcp` to view and reconnect the server, or quit and relaunch `claude`.
 - **VS Code (GitHub Copilot):** Open the Command Palette (`Cmd/Ctrl+Shift+P`), run **MCP: List Servers**, select **bitrise**, and choose **Restart**, or run **Developer: Reload Window**.
