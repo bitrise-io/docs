@@ -3,6 +3,7 @@ import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import changelogFeedPlugin from './src/plugins/changelog-feed';
 
 // Build-time expansion for list-context partial references.
 //
@@ -255,6 +256,7 @@ const config: Config = {
   },
 
   plugins: [
+    changelogFeedPlugin,
     function webpackFallbacks() {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const webpack = require('webpack');
