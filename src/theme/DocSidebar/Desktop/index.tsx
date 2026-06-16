@@ -53,7 +53,7 @@ function SidebarBottomLinks({path}: {path: string}) {
         aria-current={isChangelog ? 'page' : undefined}
       >
         <IconBook />
-        Changelog
+        Docs changelog
       </a>
       <a
         href="https://bitrise.io/integrations"
