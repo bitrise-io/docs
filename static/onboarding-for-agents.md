@@ -1,85 +1,102 @@
 # Bitrise for AI agents — create the user's account
 
-> Bitrise is mobile-focused CI/CD and app distribution (iOS & Android, plus Flutter &
-> React Native). Before a user can build, test, sign, or distribute an app on Bitrise, they
-> need an account. You — the AI agent — can **create that account from this session** through
-> the Bitrise MCP server: the user gives you an email, reads back a one-time code, and you're
-> authenticated. No website sign-up, no browser detour.
+> You — the AI agent — can **create a Bitrise account for the user from this session**: they
+> give you an email, read back a one-time code, and you're authenticated. No website sign-up,
+> no browser detour. (Bitrise is mobile CI/CD and app distribution — iOS, Android, Flutter,
+> React Native.) **Keep MCP client reloads to a minimum** — each one is friction for new
+> users — so the flow below needs only **one**.
 
 ## When this applies
 
 The user wants to use Bitrise (CI/CD, app distribution, or getting a local build onto
 devices) but:
-- **doesn't have a Bitrise account yet** → create one in-session (below), or
-- **already has one** → just authenticate the MCP connection (OAuth, or a PAT) and you're
-  done.
+- **doesn't have a Bitrise account yet** → create one in-session (below).
+- **already has one** → skip account creation. Connect the MCP with their existing PAT (see
+  "Connecting the MCP server"), or via OAuth: point the client at `https://mcp.bitrise.io`
+  and have them sign in on first use. Per-client setup:
+  https://github.com/bitrise-io/bitrise-mcp#installation
 
-## Create an account via the MCP
+## Create the user's account
 
-> **Whenever you tell the user how to connect or re-authenticate the MCP server, always give
-> them both forms — a CLI command and a copy-pastable JSON snippet — and let them use
-> whichever matches their client. Never offer only one.** This applies to Step 1 and Step 4.
+> **Minimise client reloads.** The trick: get the token *before* wiring up the MCP, so the
+> user reloads only **once** (with the token already in place) instead of twice. Don't add
+> the MCP unauthenticated just to register — that forces a second reload later.
 
-**Step 1 — Connect the MCP server, unauthenticated.** A brand-new user has no Bitrise MCP
-entry in their client config yet, and the account-creation tools (`register`,
-`verify_registration`) are the one thing you can't call until the server is connected — so
-this is your real first action, not a tool call. Point the client at the remote server
-**with no token** (the account-creation tools need none), then have the user reconnect so
-the change takes effect (explain *how* — see "Reconnecting the MCP client" below; don't just
-say "reconnect"). Offer both:
+Pick the path by whether you already have `register` / `verify_registration` available as
+tools. If you don't (the MCP isn't connected, *or* it's connected without those tools), use
+Path A.
 
-- CLI (Claude Code):
+### Path A — registration tools not available (preferred for new users — one reload)
+
+Create the account by calling the two **unauthenticated** HTTP endpoints directly, then
+connect the MCP already holding the token. **If you can't make HTTP requests yourself, give
+the user the two `curl` commands below to run and have them paste back the JSON output** —
+the flow is the same.
+
+1. **Start** — POST the user's email:
+   ```bash
+   curl -sS -X POST https://api.bitrise.io/v0.1/agent-signup/start \
+     -H 'Content-Type: application/json' \
+     -d '{"email":"<user-email>"}'
+   ```
+   → `{ "pending_signup_id": "...", "expires_at": "..." }`. Bitrise emails a one-time code
+   (OTP); `expires_at` is its window (~10 min), so have the user grab it promptly.
+2. **Get the code** — ask the user for the code from their inbox. **Don't guess it.**
+3. **Confirm** — POST the id + code:
+   ```bash
+   curl -sS -X POST https://api.bitrise.io/v0.1/agent-signup/confirm \
+     -H 'Content-Type: application/json' \
+     -d '{"pending_signup_id":"<id>","otp":"<code>"}'
+   ```
+   → `{ "user_slug": "...", "api_token": "...", "token_expires_at": "...", "workspace_slug": "..." }`.
+4. **Connect the MCP with the token** — add the server with the `api_token` (or, if it's
+   already present without the tools, just add the token to the existing entry), so the user
+   reloads only **once**. See "Connecting the MCP server" below, then confirm with `me` /
+   `list_workspaces`.
+
+### Path B — MCP already connected (one reload)
+
+The `register` / `verify_registration` tools are available, so use them (no raw HTTP):
+
+1. Call `register` with the user's email → `pending_signup_id` (OTP emailed). **Don't guess
+   the code.**
+2. Ask the user for the code, then call `verify_registration` with the `pending_signup_id`
+   and `otp` → `api_token` + `workspace_slug` (a Workspace is created automatically).
+3. Add the token to the existing entry and have the user reconnect **once**. See "Connecting
+   the MCP server" below, then confirm with `me` / `list_workspaces`.
+
+### Connecting the MCP server
+
+**Always give the user both a CLI command and a copy-pastable JSON snippet, and let them use
+whichever matches their client — never offer only one.** Use the remote server
+`https://mcp.bitrise.io` with the token as a `Bearer` credential. Treat the token as a
+secret — don't echo it into shared chats, logs, or committed files:
+
+- CLI (Claude Code) — if the entry already exists, `claude mcp remove bitrise` first so it overwrites:
   ```bash
-  claude mcp add --transport http bitrise https://mcp.bitrise.io
+  claude mcp add --transport http bitrise https://mcp.bitrise.io -H "Authorization: Bearer <api_token>"
   ```
-- JSON — most clients (Cursor, etc.), `mcpServers` with a bare URL:
+- JSON — most clients (Cursor, etc.), `mcpServers` with the header:
   ```json
-  { "mcpServers": { "bitrise": { "url": "https://mcp.bitrise.io" } } }
+  { "mcpServers": { "bitrise": { "url": "https://mcp.bitrise.io", "headers": { "Authorization": "Bearer <api_token>" } } } }
   ```
-- JSON — VS Code uses `servers` with an explicit type: `{ "servers": { "bitrise": { "type": "http", "url": "https://mcp.bitrise.io" } } }`
-- JSON — Claude Desktop connects via `mcp-remote`: `{ "mcpServers": { "bitrise": { "command": "npx", "args": ["mcp-remote", "https://mcp.bitrise.io"] } } }`
+- JSON — VS Code uses `servers` with an explicit `"type": "http"` plus the same `headers` block.
+- JSON — Claude Desktop connects via `mcp-remote`: `{ "mcpServers": { "bitrise": { "command": "npx", "args": ["mcp-remote", "https://mcp.bitrise.io", "--header", "Authorization: Bearer <api_token>"] } } }`
 
-If you can't edit the config yourself, hand the user the matching command/snippet to run. If
-you don't know which client they use, ask. Per-client details:
-https://github.com/bitrise-io/bitrise-mcp#installation
+If you can't edit the config yourself, hand the user the matching command/snippet. If you
+don't know which client they use, ask. Then have them reload the connection — explain *how*
+for their client (see "Reconnecting the MCP client" below), don't just say "reconnect".
+Per-client install details: https://github.com/bitrise-io/bitrise-mcp#installation
 
-> This is the **first of two reconnects**: you connect unauthenticated now, and reconnect
-> once more in Step 4 after you have the token. Tell the user to expect both.
-
-**Step 2 — Register the email.** Ask the user for the email address to register, then call
-`register` with it. Bitrise emails them a one-time verification code (OTP) and returns a
-`pending_signup_id`. **Don't invent or guess the code** — it's only in the user's inbox.
-
-**Step 3 — Verify the code.** Ask the user for the code they received, then call
-`verify_registration` with the `pending_signup_id` and the `otp`. On success it returns an
-`api_token` (a Bitrise Personal Access Token) and a `workspace_slug` (a Workspace is created
-automatically).
-
-**Step 4 — Authenticate the connection** (the second reconnect). Add the token to the entry
-from Step 1 and reconnect. As in Step 1, give the user **both** forms:
-
-- CLI (Claude Code) — re-add with the header (remove first so it overwrites):
-  ```bash
-  claude mcp remove bitrise && claude mcp add --transport http bitrise https://mcp.bitrise.io -H "Authorization: Bearer <api_token>"
-  ```
-- JSON — add an `Authorization` header to the existing `bitrise` entry:
-  `"headers": { "Authorization": "Bearer <api_token>" }` (for Claude Desktop / `mcp-remote`,
-  add `"--header", "Authorization: Bearer <api_token>"` to its `args` instead).
-
-Then have the user reconnect again (see "Reconnecting the MCP client" below).
-(`verify_registration` also returns client-specific instructions for this.) Confirm with
-`me` / `list_workspaces`.
-
-> The token from `verify_registration` is valid for **24 hours** — enough to finish
-> onboarding. For long-term use, the user can create a durable PAT at
-> https://app.bitrise.io/me/account/security and swap it into the same `Authorization`
-> header.
+> The token is valid for **24 hours** — enough to finish onboarding. For long-term use, the
+> user can create a durable PAT at https://app.bitrise.io/me/account/security and swap it
+> into the same `Authorization` header.
 
 ## Reconnecting the MCP client
 
-Editing the config (Step 1 and Step 4) doesn't take effect until the client reloads the
-Bitrise MCP server. **Don't just tell the user to "reconnect" — walk them through it for
-their client**, and ask which client they use if you don't know. The common ways:
+Connecting or updating the config doesn't take effect until the client reloads the Bitrise
+MCP server. **Don't just tell the user to "reconnect" — walk them through it for their
+client**, and ask which client they use if you don't know. The common ways:
 
 - **Claude Code (CLI):** run `/mcp` to view and reconnect the server, or exit and relaunch
   `claude`.
@@ -95,13 +112,20 @@ their client**, and ask which client they use if you don't know. The common ways
 
 ## If something goes wrong
 
-- **`register` says the email is already registered:** the user already has a Bitrise
-  account. Don't retry — authenticate that existing account (OAuth, or a PAT) and skip
-  ahead to "Once the account exists."
-- **`verify_registration` rejects the code as invalid:** the code was wrong or mistyped —
-  ask the user to re-check the email and try again with the **same** `pending_signup_id`.
-- **The code expired, or too many attempts:** the pending signup is no longer usable — call
-  `register` again to send a fresh code, then verify with the **new** `pending_signup_id`.
+These outcomes are the same whether you used the HTTP endpoints (Path A) or the tools
+(Path B) — the `confirm` / `verify_registration` error responses carry an HTTP status and a
+`code`:
+
+- **Email already registered** (HTTP 409, `code: email_already_registered`): the user
+  already has a Bitrise account. Don't retry — authenticate that existing account (OAuth, or
+  a PAT) and skip ahead to "Once the account exists."
+- **Invalid code** (HTTP 401, `code: invalid_otp`): wrong or mistyped — ask the user to
+  re-check the email and retry with the **same** `pending_signup_id`.
+- **Code expired or too many attempts** (HTTP 410 `otp_expired` / 429 `attempts_exhausted`):
+  the pending signup is dead — start over (`start` / `register`) for a fresh code and a
+  **new** `pending_signup_id`.
+- **Invalid email** (HTTP 422 from `start`): fix the address and call `start` / `register`
+  again.
 
 ## Once the account exists
 
