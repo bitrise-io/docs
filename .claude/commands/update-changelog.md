@@ -18,6 +18,25 @@ Run in **retroactive mode** when:
 
 ---
 
+## Entry format
+
+The changelog uses monthly H2 sections with H3 entries:
+
+```
+## YYYY Month
+
+### <time dateTime="YYYY-MM-DD">YYYY-MM-DD</time> Title {#YYYY-MM-DD-slug-of-title}
+
+Summary paragraph.
+
+```
+
+The `{#anchor}` ID uses the same slug formula as the feed plugin: lowercase the title, replace every run of non-alphanumeric characters with a single hyphen, strip leading/trailing hyphens, then prepend the date: `YYYY-MM-DD-slug`.
+
+Month headers use the format `## YYYY Month` (e.g. `## 2026 June`).
+
+---
+
 ## Current-branch mode
 
 Generate a changelog entry from the current branch's changes, commit it, then create a PR.
@@ -51,14 +70,12 @@ Generate a changelog entry from the current branch's changes, commit it, then cr
    - **Linking**: if the changes are concentrated in one page, end the summary with a link to that page using its `slug` (e.g. `See [Running Xcode tests](/en/bitrise-ci/testing/running-xcode-tests).`). If changes span multiple pages, include a link to the most relevant one at your discretion — or omit if no single page stands out.
    - One entry per PR even if multiple files changed.
 
-4. **Write and commit** once approved. Prepend the entry after the `<!-- changelog-entries -->` marker in `src/partials/changelog-content.mdx` using this format:
-   ```
-   ## <time dateTime="YYYY-MM-DD">YYYY-MM-DD</time> — Title {#YYYY-MM-DD-slug-of-title}
+4. **Write and commit** once approved. Insert the entry into `src/partials/changelog-content.mdx`:
+   - Find the H2 for the current month (e.g. `## 2026 June`).
+   - Insert the new H3 entry at the top of that section, immediately after the H2 line.
+   - If no H2 exists for the current month yet, create it at the top of the entries (immediately after `<!-- changelog-entries -->`), then add the H3 entry beneath it.
 
-   Summary paragraph.
-
-   ```
-   The `{#anchor}` ID uses the same slug formula as the feed plugin: lowercase the title, replace every run of non-alphanumeric characters with a single hyphen, strip leading/trailing hyphens, then prepend the date: `YYYY-MM-DD-slug`. Then commit:
+   Then commit:
    ```
    git add src/partials/changelog-content.mdx
    git commit -m "Update changelog"
@@ -74,7 +91,7 @@ Generate entries for all merged PRs not yet covered by the changelog.
 
 ### Steps
 
-1. **Find the cutoff date.** Read `src/partials/changelog-content.mdx` and extract the date from the first line matching `## YYYY-MM-DD`. That date is the cutoff; generate entries for PRs merged *after* it. If the changelog has no entries, use `2026-06-03` (the Docusaurus migration date).
+1. **Find the cutoff date.** Read `src/partials/changelog-content.mdx` and extract the date from the first H3 line matching `### ...YYYY-MM-DD...`. That date is the cutoff; generate entries for PRs merged *after* it. If the changelog has no entries, use `2026-06-03` (the Docusaurus migration date).
 
 2. **Find uncovered PRs.**
    ```
@@ -84,7 +101,7 @@ Generate entries for all merged PRs not yet covered by the changelog.
    - `mergedAt` is strictly after the cutoff date
    - at least one file path starts with `docs/` and ends with `.md` or `.mdx`
 
-   Sort ascending by `mergedAt` (oldest first — you'll prepend in reverse so newest ends up on top).
+   Sort ascending by `mergedAt` (oldest first — you'll insert in reverse so newest ends up on top within each month).
 
 3. **For each uncovered PR**, ascending order:
    a. Fetch the diff:
@@ -112,14 +129,12 @@ Generate entries for all merged PRs not yet covered by the changelog.
       - **Summary**: 1–2 sentences. Reader's perspective, not the author's.
       - **Linking**: if the changes are concentrated in one page, end the summary with a link to that page using its `slug`. If changes span multiple pages, link to the most relevant one at your discretion — or omit if no single page stands out.
 
-4. **Prepend new entries** immediately after `<!-- changelog-entries -->`, newest first. Format:
-   ```
-   ## <time dateTime="YYYY-MM-DD">YYYY-MM-DD</time> — Title {#YYYY-MM-DD-slug-of-title}
+4. **Insert new entries** into their respective month sections, newest first within each section. For each entry:
+   - Find the H2 for its month (e.g. `## 2026 June`).
+   - Insert the H3 entry at the top of that section.
+   - If no H2 exists for that month, create it in the correct chronological position.
 
-   Summary paragraph.
-
-   ```
-   The `{#anchor}` ID must use the same slug formula as the feed plugin: lowercase the title, replace every run of non-alphanumeric characters with a single hyphen, strip leading/trailing hyphens, then prepend the date with a single hyphen: `YYYY-MM-DD-slug`.
+   The `{#anchor}` ID must use the same slug formula as the feed plugin: lowercase the title, replace every run of non-alphanumeric characters with a single hyphen, strip leading/trailing hyphens, then prepend the date: `YYYY-MM-DD-slug`.
 
 5. **Report** how many entries were added and list any skipped PRs with reasons.
 
