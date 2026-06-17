@@ -30,6 +30,27 @@ The GitHub App requires an HTTPS URL for your repository instead of an SSH one. 
 :::
 
 
+## Event subscriptions
+
+When you install the Bitrise GitHub App on a repository or organization, GitHub automatically registers event subscriptions for that installation. These are separate from the repo-level webhooks you can configure manually in GitHub's repository settings.
+
+The Bitrise GitHub App subscribes to the following events:
+
+- `push`: triggers builds on branch pushes and tag pushes.
+- `pull_request`: triggers builds when a pull request is opened, updated, or synchronized.
+- `issue_comment`: enables comment-based build triggers on pull requests.
+
+These subscriptions are managed by GitHub at the app installation level. They do not appear as webhooks under **Settings → Webhooks** in your GitHub repository.
+
+:::warning[Remove manual webhooks after switching to the GitHub App]
+
+If your repository also has manually configured webhooks pointing to `hooks.bitrise.io` — for example, from a previous OAuth-based Bitrise connection — each qualifying event will trigger two builds: one from the GitHub App subscription and one from the manual webhook.
+
+After switching to the GitHub App, remove any manual Bitrise webhooks from your repository's **Settings → Webhooks** page on GitHub to avoid duplicate builds.
+
+:::
+
+
 ## Installing the GitHub app integration
 
 This guide is intended for GitHub Cloud users, including GitHub Enterprise Cloud users, who wish to install the Bitrise GitHub app and connect their Bitrise Workspace to a GitHub account or organization with the app.
@@ -276,7 +297,7 @@ workflows:
     - https://github.com/bitrise-io/bitrise-steplib.git::authenticate-host-with-netrc@0:
 ```
 
-Note that the **[Authenticate host with netrc](https://bitrise.io/integrations/steps/authenticate-host-with-netrc)**Step has [a full source identifier](/en/bitrise-ci/references/steps-reference/step-reference-id-format) to ensure it is pulled from the official Bitrise Step library, not your private library.
+Note that the **[Authenticate host with netrc](https://bitrise.io/integrations/steps/authenticate-host-with-netrc)** Step has [a full source identifier](/en/bitrise-ci/references/steps-reference/step-reference-id-format) to ensure it is pulled from the official Bitrise Step library, not your private library.
 
 Using the Step requires specifying three inputs: the host, the Git username, and the Git password. The Bitrise GitHub App integration uses token-based authentication: each build receives a one time token under the GIT_HTTP_PASSWORD Environment Variable. This Env Var can be used as the password. The username can't be empty because the Step will fail but it is not used so it doesn't matter what you put there.
 
