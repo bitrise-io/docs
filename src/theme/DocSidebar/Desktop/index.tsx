@@ -44,17 +44,22 @@ function SidebarBottomLinks({path}: {path: string}) {
   // path is like /en/bitrise-ci/... — segment[2] is the hub dirName
   const dirName = path.split('/')[2] ?? '';
   const isChangelog = path.endsWith('/changelog');
+  // Only render the changelog link when we can resolve a hub slug.
+  // On /en/ or other non-hub paths dirName is empty, which would produce /en//changelog.
+  const changelogHref = dirName ? `/en/${dirName}/changelog` : null;
 
   return (
     <div className="sidebar-bottom-links">
+      {changelogHref && (
       <a
-        href={`/en/${dirName}/changelog`}
+        href={changelogHref}
         className={`sidebar-bottom-link${isChangelog ? ' sidebar-bottom-link--active' : ''}`}
         aria-current={isChangelog ? 'page' : undefined}
       >
         <IconBook />
         Docs changelog
       </a>
+      )}
       <a
         href="https://bitrise.io/integrations"
         className="sidebar-bottom-link"

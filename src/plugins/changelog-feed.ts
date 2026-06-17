@@ -16,6 +16,7 @@ const CHANGELOG_PATH = '/en/bitrise-ci/changelog';
 interface Entry {
   date: string;   // ISO 8601, e.g. "2026-06-16"
   title: string;
+  anchor: string; // explicit {#id} from heading, used as the URL fragment
   content: string;
 }
 
@@ -24,9 +25,9 @@ function parseEntries(): Entry[] {
   const lines = text.split('\n');
   const entries: Entry[] = [];
 
-  // Match H2 headings: ## <time dateTime="YYYY-MM-DD">YYYY-MM-DD</time> — Title
-  // Also matches plain: ## YYYY-MM-DD — Title
-  const headingRe = /^## (?:<time[^>]*>)?(\d{4}-\d{2}-\d{2})(?:<\/time>)? — (.+)$/;
+  // Match H3 headings: ### <time dateTime="YYYY-MM-DD">YYYY-MM-DD</time> — Title {#anchor}
+  // Also matches plain: ### YYYY-MM-DD — Title {#anchor}
+  const headingRe = /^### (?:<time[^>]*>)?(\d{4}-\d{2}-\d{2})(?:<\/time>)?\s+(.+?)(?:\s*\{#([^}]+)\})?$/;
   let current: Entry | null = null;
   const contentLines: string[] = [];
 
@@ -37,9 +38,9 @@ function parseEntries(): Entry[] {
         current.content = contentLines.join('\n').trim();
         entries.push(current);
       }
-      current = { date: m[1], title: m[2], content: '' };
+      current = { date: m[1], title: m[2], anchor: m[3] ?? toSlug(`${m[1]}-${m[2]}`), content: '' };
       contentLines.length = 0;
-    } else if (current) {
+    } else if (current && !line.startsWith('## ')) {
       contentLines.push(line);
     }
   }
@@ -71,7 +72,7 @@ function buildRss(entries: Entry[]): string {
   const items = entries
     .map((e) => {
       const pubDate = new Date(`${e.date}T00:00:00Z`).toUTCString();
-      const link = `${SITE_URL}${CHANGELOG_PATH}#${e.date}-${toSlug(e.title)}`;
+      const link = `${SITE_URL}${CHANGELOG_PATH}#${e.anchor}`;
       return `  <item>
     <title>${escapeXml(e.title)}</title>
     <link>${escapeXml(link)}</link>
@@ -108,8 +109,8 @@ function buildJson(entries: Entry[]): string {
     home_page_url: `${SITE_URL}${CHANGELOG_PATH}`,
     feed_url: `${SITE_URL}/changelog.json`,
     items: entries.map((e) => ({
-      id: `${SITE_URL}${CHANGELOG_PATH}#${e.date}-${toSlug(e.title)}`,
-      url: `${SITE_URL}${CHANGELOG_PATH}#${e.date}-${toSlug(e.title)}`,
+      id: `${SITE_URL}${CHANGELOG_PATH}#${e.anchor}`,
+      url: `${SITE_URL}${CHANGELOG_PATH}#${e.anchor}`,
       title: e.title,
       date_published: `${e.date}T00:00:00Z`,
       content_text: e.content,
