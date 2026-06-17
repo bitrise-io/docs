@@ -3,7 +3,7 @@
 Audit hyperlinks in MDX documentation files.
 
 Checks:
-  - Internal links (/en/...) resolve to a real page (slug match).
+  - Internal links (/en/...) resolve to a real page (slug match) and a valid anchor (if present).
   - External links return a 2xx/3xx response.
 
 Skips:
@@ -83,27 +83,64 @@ def _mdx_paths(names):
 
 # ── Internal link validation ──────────────────────────────────────────────────
 
-def build_slug_set() -> set[str]:
-    slugs = set()
+HEADING_RE = re.compile(r'^#{1,6}\s+(.+)', re.MULTILINE)
+EXPLICIT_ID_RE = re.compile(r'\{#([\w-]+)\}')
+PARTIAL_IMPORT_RE = re.compile(r"from\s+'@site/(src/partials/[^']+)'")
+PARTIALS_DIR = REPO_ROOT / 'src' / 'partials'
+
+
+def heading_to_anchor(text: str) -> str:
+    """Convert a heading to its Docusaurus-generated anchor id."""
+    text = EXPLICIT_ID_RE.sub('', text).strip()
+    text = re.sub(r'[^\w\s-]', '', text.lower())
+    text = re.sub(r'\s+', '-', text).strip('-')
+    return text
+
+
+def extract_anchors(content: str) -> set[str]:
+    anchors: set[str] = set()
+    for heading_text in HEADING_RE.findall(content):
+        explicit = EXPLICIT_ID_RE.search(heading_text)
+        if explicit:
+            anchors.add(explicit.group(1))
+        anchors.add(heading_to_anchor(heading_text))
+    return anchors
+
+
+def build_slug_index() -> dict[str, set[str]]:
+    """Return a dict mapping slug -> set of anchor ids for that page (including partials)."""
+    index: dict[str, set[str]] = {}
     for mdx in [*DOCS_DIR.rglob('*.mdx'), *DOCS_DIR.rglob('*.md')]:
         content = mdx.read_text('utf-8')
         m = re.search(r'^slug:\s*["\']?([^"\'$\n]+)["\']?', content, re.MULTILINE)
         if m:
-            slugs.add(m.group(1).strip())
+            slug = m.group(1).strip()
         else:
             rel = mdx.relative_to(DOCS_DIR).with_suffix('')
             slug = '/' + str(rel).replace('\\', '/')
             if slug.endswith('/index'):
                 slug = slug[:-6] or '/'
-            slugs.add(slug)
-    return slugs
+
+        anchors = extract_anchors(content)
+
+        for partial_path in PARTIAL_IMPORT_RE.findall(content):
+            partial_file = REPO_ROOT / partial_path
+            if partial_file.exists():
+                anchors |= extract_anchors(partial_file.read_text('utf-8'))
+
+        index[slug] = anchors
+    return index
 
 
-def normalise_internal(url: str) -> str:
+def normalise_internal(url: str) -> tuple:
+    """Return (slug, anchor) with /en prefix and .html stripped."""
     path = url.removeprefix('/en').rstrip('/')
     if path.endswith('.html'):
         path = path[:-5]
-    return path or '/'
+    if '#' in path:
+        slug, anchor = path.split('#', 1)
+        return (slug or '/'), anchor
+    return (path or '/'), None
 
 
 # ── External link validation ──────────────────────────────────────────────────
@@ -201,8 +238,8 @@ def main() -> None:
     # ── Internal links ────────────────────────────────────────────────────────
     if not EXTERNAL_ONLY:
         print('Building slug index …', flush=True)
-        slugs = build_slug_set()
-        print(f'  {len(slugs)} pages indexed.\n', flush=True)
+        slug_index = build_slug_index()
+        print(f'  {len(slug_index)} pages indexed.\n', flush=True)
 
         print('Checking internal links …', flush=True)
         internal_checked = 0
@@ -210,10 +247,12 @@ def main() -> None:
             for lineno, url in extract_links(filepath):
                 if not url.startswith('/en/'):
                     continue
-                slug = normalise_internal(url)
+                slug, anchor = normalise_internal(url)
                 internal_checked += 1
-                if slug not in slugs:
+                if slug not in slug_index:
                     broken.append((filepath, lineno, url, 'no matching page'))
+                elif anchor and anchor not in slug_index[slug]:
+                    broken.append((filepath, lineno, url, 'anchor not found'))
         print(f'  {internal_checked} internal links checked.\n', flush=True)
 
     # ── External links ────────────────────────────────────────────────────────
