@@ -6,9 +6,11 @@ const CHANGELOG_PARTIAL = path.resolve(
   '../../src/partials/changelog-content.mdx',
 );
 
+// Duplicates url in docusaurus.config.ts — update both if the domain changes.
 const SITE_URL = 'https://docs.bitrise.io';
 const FEED_TITLE = 'Bitrise Docs changelog';
 const FEED_DESCRIPTION = 'A record of documentation updates on the Bitrise docs site.';
+// Pins feed item links to the Bitrise CI hub changelog. Update if the slug changes.
 const CHANGELOG_PATH = '/en/bitrise-ci/changelog';
 
 interface Entry {

@@ -51,7 +51,14 @@ Generate a changelog entry from the current branch's changes, commit it, then cr
    - **Linking**: if the changes are concentrated in one page, end the summary with a link to that page using its `slug` (e.g. `See [Running Xcode tests](/en/bitrise-ci/testing/running-xcode-tests).`). If changes span multiple pages, include a link to the most relevant one at your discretion — or omit if no single page stands out.
    - One entry per PR even if multiple files changed.
 
-4. **Write and commit** once approved. Prepend the entry after the `<!-- changelog-entries -->` marker in `src/partials/changelog-content.mdx`, then commit:
+4. **Write and commit** once approved. Prepend the entry after the `<!-- changelog-entries -->` marker in `src/partials/changelog-content.mdx` using this format:
+   ```
+   ## <time dateTime="YYYY-MM-DD">YYYY-MM-DD</time> — Title {#YYYY-MM-DD-slug-of-title}
+
+   Summary paragraph.
+
+   ```
+   The `{#anchor}` ID uses the same slug formula as the feed plugin: lowercase the title, replace every run of non-alphanumeric characters with a single hyphen, strip leading/trailing hyphens, then prepend the date: `YYYY-MM-DD-slug`. Then commit:
    ```
    git add src/partials/changelog-content.mdx
    git commit -m "Update changelog"
@@ -107,11 +114,12 @@ Generate entries for all merged PRs not yet covered by the changelog.
 
 4. **Prepend new entries** immediately after `<!-- changelog-entries -->`, newest first. Format:
    ```
-   ## YYYY-MM-DD — Title
+   ## <time dateTime="YYYY-MM-DD">YYYY-MM-DD</time> — Title {#YYYY-MM-DD-slug-of-title}
 
    Summary paragraph.
 
    ```
+   The `{#anchor}` ID must use the same slug formula as the feed plugin: lowercase the title, replace every run of non-alphanumeric characters with a single hyphen, strip leading/trailing hyphens, then prepend the date with a single hyphen: `YYYY-MM-DD-slug`.
 
 5. **Report** how many entries were added and list any skipped PRs with reasons.
 
