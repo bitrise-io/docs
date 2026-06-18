@@ -6,6 +6,9 @@ slug: /bitrise-platform/infrastructure/docker-containers-on-bitrise/building-you
 sidebar_label: Building your own Docker image on Bitrise
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 You can create your own Docker image and push it to a container registry during a Bitrise build with the [Docker Build & Push Step](https://github.com/bitrise-steplib/bitrise-step-docker-build-push/blob/main/step.yml).
 
 The Step uses the `docker build` [command](https://docs.docker.com/engine/reference/commandline/image_build/): it requires a [Dockerfile](https://docs.docker.com/engine/reference/builder/) that contains the build instructions and a build context. Build context means the set of files located at the specified path. The Step allows you to pass [options](https://docs.docker.com/engine/reference/commandline/image_build/#options) and [build arguments](https://docs.docker.com/build/guide/build-args/) to the build.
@@ -14,9 +17,8 @@ To speed up your builds, the Step also supports [key-based caching](/en/bitrise-
 
 To build the image with build options, build arguments and caching used:
 
-Workflow Editor
-
-bitrise.yml
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
 
 1. Add the **Docker Build & Push** Step to your Workflow.
 1. Configure the required inputs for the Step:
@@ -43,13 +45,16 @@ bitrise.yml
 1. Optionally, customize the build command with build arguments and options.
 
    - Add [build arguments](https://docs.docker.com/build/guide/build-args/) in the **Build arguments** input: one argument per line in a `MY_ARG=my_value` format.
-   - Add [options](https://docs.docker.com/engine/reference/commandline/image_build/#options) in the **Extra options** input: one extra option per line in the format of `--option value` or `--option=value`.
+   - Add [options](https://docs.docker.com/engine/reference/commandline/image_build/#options) in the **Extra options** input: one extra option per line in the format of `--option value` or `--option=value`.
 
      :::caution[Values with quotes]
 
      When using values with quotes in them (for example, when the value contains spaces) do not use the equal sign. Separate it with spaces instead: `--option "value with spaces"`.
 
      :::
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
 
 1. Add the `docker-build-push` Step to your Workflow.
 1. Configure the required inputs for the Step:
@@ -109,7 +114,7 @@ bitrise.yml
 1. Optionally, customize the build command with build arguments and options.
 
    - Add [build arguments](https://docs.docker.com/build/guide/build-args/) in the `build_arg` input: one argument per line in a `MY_ARG=my_value` format.
-   - Add [options](https://docs.docker.com/engine/reference/commandline/image_build/#options) in the `extra_options` input: one extra option per line in the format of `--option value` or `--option=value`.
+   - Add [options](https://docs.docker.com/engine/reference/commandline/image_build/#options) in the `extra_options` input: one extra option per line in the format of `--option value` or `--option=value`.
 
      :::caution[Values with quotes]
 
@@ -130,3 +135,6 @@ bitrise.yml
            - build_arg: BUILD_ARG=my_value
            - extra_options: "--option value"
    ```
+
+</TabItem>
+</Tabs>

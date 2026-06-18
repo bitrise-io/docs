@@ -41,9 +41,8 @@ In this Pipeline, we have four Workflows:
 
 ## Creating a Pipeline
 
-<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>
-
-Configuration YAML
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
 
 Open the Workflow Editor and select **Pipelines** on the left. Click **Create Pipeline** and set a name, then click **Create Pipeline** again.
 
@@ -66,6 +65,9 @@ You can add multiple dependent Workflows to the same Workflow this way:
 The same Workflow can depend on two or more different Workflows: you can create a path by dragging from the plus sign to another Workflow already in the Pipeline:
 
 ![drag-and-drop-dep.png](/img/_paligo/uuid-636d0224-45fb-307d-a1d5-69a7d8e84d9f.png)
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
 
 A bare minimum Pipeline configuration consists of a single Workflow:
 
@@ -119,6 +121,9 @@ D:
   depends_on: [A, B]
 ```
 
+</TabItem>
+</Tabs>
+
 ## Configuration restrictions
 
 - A Pipeline can have a maximum of 200 Workflows. Each must be an existing Workflow under the root level `workflows` element.
@@ -147,7 +152,7 @@ Use `run_if` expressions to control Workflow execution: you can set conditions u
 1. Close the Edit Workflow dialog, and click **Save changes**.
 
 </TabItem>
-</Tabs>
+<TabItem value="configuration-yaml" label="Configuration YAML">
 
 In Pipelines, the `run_if` property needs an `expression` field that contains a [Go template](https://pkg.go.dev/text/template):
 
@@ -171,6 +176,9 @@ The `expression` field accepts three helper functions:
 The Bitrise CLI evaluates the expression during runtime: a Workflow only runs if its `run_if` expression evaluates to `true`. A Workflow that is skipped because of a `run_if` expression is counted as a successful Workflow so its dependent Workflows will run.
 
 In this example, B will only run if the EXAMPLE_KEY Environment Variable has the value `example value`.
+
+</TabItem>
+</Tabs>
 
 ## Always executing a Workflow in a Pipeline
 
@@ -196,7 +204,7 @@ For example, let's say we have Workflow C that depends on Workflow B. Workflow B
    This setting means the Workflow will run even if one or more of its parent Workflows fail. However, its dependent Workflows might not run!
 
 </TabItem>
-</Tabs>
+<TabItem value="configuration-yaml" label="Configuration YAML">
 
 Use the `should_always_run` property. It requires a string to specify the scope of the configuration. It has two available values:
 
@@ -224,6 +232,9 @@ In this example:
 - If either A or B fails, C won't run.
 - If C won't run or runs but fails, D will still run.
 
+</TabItem>
+</Tabs>
+
 ## Aborting the Pipeline on Workflow failure
 
 You can configure the Pipeline to immediately terminate when any given Workflow fails. By default, the Pipeline won't terminate
@@ -237,7 +248,7 @@ You can configure the Pipeline to immediately terminate when any given Workflow 
    If the Workflow in question fails, the Pipeline will immediately stop running.
 
 </TabItem>
-</Tabs>
+<TabItem value="configuration-yaml" label="Configuration YAML">
 
 Add the `abort_on_fail` field set to `true` to the selected Workflows:
 
@@ -251,6 +262,9 @@ pipelines:
 ```
 
 In this example, the Pipeline stops running if Workflow B fails: Workflow A will be aborted and no subsequent Workflows will run.
+
+</TabItem>
+</Tabs>
 
 
 ## Pipeline priority
