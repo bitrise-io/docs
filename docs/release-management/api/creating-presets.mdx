@@ -11,41 +11,37 @@ The Apps sub-API base URL: `https://api.bitrise.io/release-management/v2/apps/v1
 
 ## Creating a preset
 
-| Method | Path | Function | Required role |
-| --- | --- | --- | --- |
+| Endpoint | Function | Required role |
+| --- | --- | --- |
 | POST /presets | Create a new preset. | Release manager |
 | GET /presets | List presets for an app. | Any |
 | GET /presets/\{id\} | Get a specific preset. | Any |
 | PUT /presets/\{id\} | Update a preset. | Release manager |
 | DELETE /presets/\{id\} | Delete a preset. | Release manager |
 
-To create a preset:
+To create a preset, call `POST /presets` with at least a name and the app it belongs to.
 
-1. Call `POST /presets` with at least a name and the app it belongs to.
+Required fields:
+- `app_id`: The ID of the app in Release Management.
+- `template_name`: A descriptive name for the preset.
 
-   Required fields:
-   - `app_id`: The ID of the app in Release Management.
-   - `template_name`: A descriptive name for the preset.
-
-   ```bash
-   curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
-     -H "Authorization: YOUR_ACCESS_TOKEN" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "app_id": "APP_ID",
-       "template_name": "Standard release"
-     }'
-   ```
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "APP_ID",
+    "template_name": "Standard release"
+  }'
+```
 
 ## Creating a preset with full configuration
 
-A preset can include automation rules, approval tasks, notifications, and CI build settings. The following example creates a preset that:
+A preset can bundle automation rules, approval tasks, Slack notifications, and upload settings into a single reusable template.
 
-- Triggers a `run-tests` workflow when the release candidate is set.
-- Triggers an `upload-to-store` workflow when approvals are complete.
-- Creates a QA approval task for each release.
-- Sends Slack notifications via a configured integration.
-- Enables automatic store upload after the build succeeds.
+### Automation
+
+Automation rules trigger a CI workflow when a release reaches a specific stage. Set the `automation` field to an array of event/workflow pairs:
 
 ```bash
 curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
@@ -54,8 +50,6 @@ curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
   -d '{
     "app_id": "APP_ID",
     "template_name": "Standard release",
-    "default": true,
-    "auto_upload": true,
     "automation": [
       {
         "event_name": "release_candidate_set",
@@ -65,20 +59,63 @@ curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
         "event_name": "approvals_completed",
         "workflow_name": "upload-to-store"
       }
-    ],
+    ]
+  }'
+```
+
+### Approval tasks
+
+Approval tasks are created automatically for every release that uses this preset. Set the `approvals` field to define the tasks:
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "APP_ID",
+    "template_name": "Standard release",
     "approvals": [
       {
         "summary": "QA sign-off",
         "description": "Verify all test cases pass on the release build"
       }
-    ],
+    ]
+  }'
+```
+
+### Slack notifications
+
+To send Slack notifications at key release stages, pass the ID of a configured Slack integration in the `notifications` field. For more information, see [Slack integration](/en/bitrise-platform/workspaces/workspace-slack-integration).
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "APP_ID",
+    "template_name": "Standard release",
     "notifications": {
       "slack_notification_integration_id": "YOUR_SLACK_INTEGRATION_ID"
     }
   }'
 ```
 
-Save the `id` from the response — you'll use it when [creating releases](/en/release-management/api/creating-a-release#applying-a-preset-to-a-release).
+### Automatic store upload
+
+Set `auto_upload: true` to automatically upload the build to the store once it's ready, without a manual trigger:
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "APP_ID",
+    "template_name": "Standard release",
+    "auto_upload": true
+  }'
+```
+
+You can combine any of these settings in a single request. Save the `id` from the response — you'll use it when [creating releases](/en/release-management/api/creating-a-release#applying-a-preset-to-a-release).
 
 :::note[Default preset]
 
@@ -96,7 +133,7 @@ curl -X GET "https://api.bitrise.io/release-management/v2/apps/v1/presets?app_id
 
 ## Updating a preset
 
-Use `PUT /presets/{id}` to replace the preset's configuration. All fields except `template_name` and `app_id` are optional.
+Use `PUT /presets/{id}` to replace the preset's configuration. All fields are optional.
 
 ```bash
 curl -X PUT "https://api.bitrise.io/release-management/v2/apps/v1/presets/PRESET_ID" \

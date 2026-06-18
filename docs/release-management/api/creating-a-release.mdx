@@ -14,8 +14,8 @@ The Store Releases sub-API base URL: `https://api.bitrise.io/release-management/
 
 ## Creating a release
 
-| Method | Path | Function | Required role |
-| --- | --- | --- | --- |
+| Endpoint | Function | Required role |
+| --- | --- | --- |
 | POST /app-versions | Create a new release. | Release manager |
 | GET /app-versions | List releases for an app. | Any |
 | GET /app-versions/\{id\} | Get details of a release. | Any |
@@ -35,44 +35,47 @@ To create a release:
 
    :::
 
-<Tabs groupId="platform">
-<TabItem value="ios" label="iOS">
-
-```bash
-curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions" \
-  -H "Authorization: YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "1.5.0",
-    "app_id": "APP_ID",
-    "description": "Spring feature release",
-    "artifact_source": "ci"
-  }'
-```
-
-</TabItem>
-<TabItem value="android" label="Android">
-
-```bash
-curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions" \
-  -H "Authorization: YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "1.5.0",
-    "app_id": "APP_ID",
-    "description": "Spring feature release",
-    "artifact_source": "ci"
-  }'
-```
-
-</TabItem>
-</Tabs>
+   ```bash
+   curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions" \
+     -H "Authorization: YOUR_ACCESS_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "name": "1.5.0",
+       "app_id": "APP_ID",
+       "description": "Spring feature release",
+       "artifact_source": "ci"
+     }'
+   ```
 
    The response includes the release's `id`, which you'll use in subsequent calls.
 
+   ```json
+   {
+     "id": "YOUR_RELEASE_ID",
+     "name": "1.5.0",
+     "status": "scheduled",
+     "description": "Spring feature release",
+     "connected_app_id": "YOUR_APP_ID",
+     "artifact_source": "ci",
+     "platform": "android",
+     "store_app_id": "com.example.myapp",
+     "created_at": "2026-01-01T00:00:00.000Z",
+     "released_at": null,
+     "release_candidate_id": null,
+     "stages": [
+       { "name": "release-candidate", "status": "pending" },
+       { "name": "approvals", "status": "pending" },
+       { "name": "app-store-review", "status": "pending" },
+       { "name": "release", "status": "pending" }
+     ]
+   }
+   ```
+
 ## Configuring release automation
 
-You can define automation rules that trigger CI builds automatically when a release reaches a certain stage. Set the `automation` field when creating or updating a release:
+You can define automation rules that trigger CI builds automatically when a release reaches a certain stage. For a full overview of how automation works, see [Release automation](/en/release-management/releases/configuring-a-release/release-automation).
+
+Set the `automation` field when creating or updating a release:
 
 ```bash
 curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions" \
@@ -129,13 +132,13 @@ Available `stage` values: `release-candidate`, `approvals`, `testflight-upload`,
 
 ## Adding approval tasks to a release
 
-You can create approval tasks that team members must complete before the release proceeds.
-
-| Method | Path | Function | Required role |
-| --- | --- | --- | --- |
+| Endpoint | Function | Required role |
+| --- | --- | --- |
 | POST /app-versions/\{id\}/approvals | Create an approval task. | Release manager |
 | GET /app-versions/\{id\}/approvals | List approval tasks. | Any |
 | PATCH /app-versions/\{id\}/approvals/\{task\_id\} | Update or complete an approval task. | Assigned user |
+
+You can create approval tasks that team members must complete before the release proceeds.
 
 ```bash
 curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/approvals" \
@@ -174,3 +177,18 @@ curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app
     "presets_id": "PRESET_ID"
   }'
 ```
+
+## Deleting a release
+
+:::warning[Deletion is permanent]
+
+Deleting a release removes it and all associated data. This cannot be undone.
+
+:::
+
+```bash
+curl -X DELETE "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID" \
+  -H "Authorization: YOUR_ACCESS_TOKEN"
+```
+
+A successful response returns `204 No Content` with an empty body.
