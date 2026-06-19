@@ -46,7 +46,13 @@ CodePush code signing is done in three stages:
    -----END PUBLIC KEY-----</string>
    ```
 1. Rebuild your iOS app with the updated `react-native-code-push` SDK (>= 5.1.0) that supports code signing.
-1. Bundle and sign your updates with the Bitrise CodePush CLI. The output directory must be named CodePush.
+1. Bundle and sign your updates with the Bitrise CodePush CLI.
+
+   :::warning
+
+   The output directory must be named exactly `CodePush`. The SDK uses the directory name as a path prefix when verifying the package hash — any other name causes a hash mismatch and the update is silently rejected on-device.
+
+   :::
 
    ```bash
    bitrise :codepush bundle --platform ios --private-key-path ./private_key.pem
@@ -115,8 +121,17 @@ CodePush code signing is done in three stages:
        .setPublicKeyResourceDescriptor(R.string.CodePushPublicKey)
        .build();
    ```
+
+   For React Native >= 0.61, follow the [Android setup guide](https://github.com/bitrise-io/react-native-code-push/blob/main/docs/setup-android.md) in the CodePush SDK repository.
+
 1. Rebuild your Android app with the updated `react-native-code-push` SDK (>= 5.1.0) that supports code signing.
-1. Bundle and sign your updates with the Bitrise CodePush CLI. The output directory must be named CodePush.
+1. Bundle and sign your updates with the Bitrise CodePush CLI.
+
+   :::warning
+
+   The output directory must be named exactly `CodePush`. The SDK uses the directory name as a path prefix when verifying the package hash — any other name causes a hash mismatch and the update is silently rejected on-device.
+
+   :::
 
    ```bash
    bitrise :codepush bundle --platform android --private-key-path ./private_key.pem

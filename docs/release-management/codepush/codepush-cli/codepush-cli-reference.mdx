@@ -1,0 +1,109 @@
+---
+title: "CodePush CLI reference"
+description: "Command, flag, environment variable, and exit code reference for the CodePush CLI."
+sidebar_position: 5
+---
+
+import Partial_CodepushCliCommandSyntax from '@site/src/partials/codepush-cli-command-syntax.mdx';
+
+<Partial_CodepushCliCommandSyntax />
+
+Run `bitrise :codepush <command> --help` for detailed flags and usage of any command.
+
+## Global flags
+
+| Flag | Description |
+|---|---|
+| `--app-id` | Release management app UUID (env: `CODEPUSH_APP_ID`) |
+| `--json`, `-j` | Output results as JSON to stdout |
+| `--server-url` | API server base URL (env: `CODEPUSH_SERVER_URL`) |
+| `--progress-style` | Progress indicator style: `bar` (default), `spinner`, `counter` |
+
+## Commands
+
+### Release management
+
+| Command | Description |
+|---|---|
+| `bundle` | Bundle JavaScript for an OTA update |
+| `push [bundle-path]` | Push an OTA update |
+| `rollback` | Rollback to a previous release |
+| `promote` | Promote a release from one deployment to another |
+| `patch` | Update metadata on an existing release |
+
+### Deployment management
+
+| Command | Description |
+|---|---|
+| `deployment list` | List all deployments (`--display-keys` / `-k` to include key column) |
+| `deployment add <name>` | Create a new deployment (`--key` / `-k` for a custom deployment key) |
+| `deployment info <deployment>` | Show deployment details and latest release |
+| `deployment rename <deployment>` | Rename a deployment (`--name`, `-n`) |
+| `deployment remove <deployment>` | Delete a deployment (`--yes` / `-y` to confirm) |
+| `deployment history <deployment>` | Show release history (`--limit` / `-n`, default 10; `--display-author` / `-a` to include author column) |
+| `deployment clear <deployment>` | Delete all updates from a deployment (`--yes` / `-y` to confirm) |
+
+### Update management
+
+| Command | Description |
+|---|---|
+| `update info <deployment>` | Show update details (`--label` / `-l` for specific version) |
+| `update status <deployment>` | Show update processing status (`--label` / `-l`) |
+| `update remove <deployment>` | Delete an update (`--label` / `-l` required, `--yes` / `-y` to confirm) |
+
+### Setup
+
+| Command | Description |
+|---|---|
+| `init` | Initialize project config (`.codepush.json`) with app ID |
+| `auth login` | Store a Bitrise API token locally |
+| `auth revoke` | Remove the stored API token |
+
+### Developer tools
+
+| Command | Description |
+|---|---|
+| `debug <platform>` | Stream CodePush log output from a connected device or simulator (`android` or `ios`) |
+
+### Other
+
+| Command | Description |
+|---|---|
+| `version` | Print version information |
+
+## Environment variables
+
+| Variable | Description |
+|---|---|
+| `BITRISE_API_TOKEN` | API token for authentication |
+| `CODEPUSH_APP_ID` | Default release management app UUID (used when `--app-id` is not set) |
+| `CODEPUSH_DEPLOYMENT` | Default deployment name or UUID (used when `--deployment` is not set) |
+| `CODEPUSH_SERVER_URL` | API server base URL (used when `--server-url` is not set) |
+| `NO_COLOR` | Disable colored terminal output |
+
+### Bitrise CI variables (read automatically)
+
+| Variable | Description |
+|---|---|
+| `BITRISE_BUILD_NUMBER` | Attached to push metadata |
+| `BITRISE_DEPLOY_DIR` | Directory for summary file export |
+| `GIT_CLONE_COMMIT_HASH` | Attached to push metadata |
+
+### Exported variables (Bitrise CI)
+
+After a successful `push`, `rollback`, `promote`, or `patch`, the CLI exports these via `envman` for downstream Bitrise steps:
+
+| Variable | Description |
+|---|---|
+| `CODEPUSH_UPDATE_ID` | ID of the created or modified update |
+| `CODEPUSH_APP_VERSION` | App version of the release |
+| `CODEPUSH_LABEL` | Release label (patch command only) |
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Success |
+| `1` | Error (authentication failure, API error, validation error, etc.) |
+
+A non-zero exit code means the operation failed. Check stderr for the error message.
