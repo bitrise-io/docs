@@ -12,13 +12,13 @@ If you have both, the Env Var is resolved first and takes priority.
 
 ## Authenticating with an Env Var
 
-1. [Generate a personal access token](urn:resource:component:54560) and copy it.
+1. [Generate a personal access token](/en/bitrise-platform/accounts/personal-access-tokens) and copy it.
 1. Add the value of the token to the BITRISE_API_TOKEN Environment Variable.
 1. When running a command with the plugin, the CLI resolves the Env Var automatically.
 
 ## Storing the token locally
 
-1. [Generate a personal access token](urn:resource:component:54560) and copy it.
+1. [Generate a personal access token](/en/bitrise-platform/accounts/personal-access-tokens) and copy it.
 1. Run the following command:
 
    ```bash
