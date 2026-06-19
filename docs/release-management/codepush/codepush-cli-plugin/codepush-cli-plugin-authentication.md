@@ -6,7 +6,7 @@ sidebar_position: 2
 To interact with the Bitrise API, which is required for CodePush commands, you need an API token. The token can be accessed in two ways:
 
 - By creating an Environment Variable (Env Var) and referring to it in your configuration. We recommend this for CI builds.
-- Storing the access token locally.
+- Storing the access token locally. We recommend this for local development.
 
 If you have both, the Env Var is resolved first and takes priority.
 
@@ -19,10 +19,14 @@ If you have both, the Env Var is resolved first and takes priority.
 ## Storing the token locally
 
 1. [Generate a personal access token](/en/bitrise-platform/accounts/personal-access-tokens) and copy it.
-1. Run the following command:
+1. Run one of the following commands:
 
    ```bash
-   bitrise :codepush auth login --token <TOKEN>
+   # Interactive — prompts for your token
+   bitrise :codepush auth login
+
+   # Non-interactive
+   bitrise :codepush auth login --token <TOKEN>    # or: -t <TOKEN>
    ```
 
    The token is stored in the user configuration directory with restricted permissions (0600):
