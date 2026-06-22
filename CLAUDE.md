@@ -379,6 +379,46 @@ The script is idempotent. After running, review the diff and commit if the chang
 
 ---
 
+## Generating API reference docs
+
+The Bitrise CI API reference (`docs/bitrise-api/api-reference/`) is generated from `api/bitrise-ci.json` using `docusaurus-plugin-openapi-docs`. Never edit the generated files by hand — they are overwritten on every run.
+
+### Regenerating after a spec update
+
+```bash
+npm run gen-api-docs
+```
+
+This runs two things in sequence:
+
+1. `docusaurus gen-api-docs bitrise-api` — generates 120+ `.api.mdx` files and a `sidebar.js` from the OpenSpec spec.
+2. `node scripts/patch-api-info.js` — applies two fixes the plugin doesn't handle:
+   - Adds `displayed_sidebar: bitriseAPISidebar` to `bitrise-api.info.mdx` so the page renders inside the correct sidebar.
+   - Fills in the empty License section with the name from the spec (`MIT`).
+
+Always use the npm script, not the bare `docusaurus` command, so the patch is always applied.
+
+### Preprocessor skip rule
+
+`docusaurus.config.ts` has a `markdown.preprocessor` that escapes JSX-looking text across all `.mdx` files. The generated API files contain multi-line JSX components (`<StatusCodes>`, `<RequestSchema>`, etc.) that the line-by-line escaper would mangle. They are skipped entirely via an early return:
+
+```ts
+if (filePath.includes('/bitrise-api/api-reference/')) return fileContent;
+```
+
+Do not remove this rule — it prevents the preprocessor from breaking the generated files.
+
+### Cache gotcha after merging
+
+If `docusaurus.config.ts` changes (including merge commits that touch it), the webpack cache in `.docusaurus/` can become partially stale, producing confusing MDX parse errors like `Expected a closing tag for <StatusCodes>` even though the generated files are correct. Fix: clear the cache before starting the dev server.
+
+```bash
+npm run clear   # or: rm -rf .docusaurus
+npm start
+```
+
+---
+
 ## Updating this file
 
 If you discover a new convention or pitfall while editing, **add it here** so the next contributor (human or AI) doesn't relearn it. Keep the file < 400 lines; if a section grows long, link to a deeper page on Confluence instead.
