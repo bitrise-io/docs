@@ -49,6 +49,7 @@ const sidebars: SidebarsConfig = {
   bitriseAPISidebar: [
     {type: 'link', label: '← Home', href: '/'},
     {type: 'html', value: '<div class="sidebar-product-title">Bitrise API</div>'},
+    {type: 'doc', id: 'bitrise-api/index', label: 'Bitrise API', customProps: {icon: 'Book'}},
     {type: 'doc', id: 'bitrise-api/api-reference/bitrise-api', label: 'Introduction', customProps: {icon: 'Book'}},
     ...hubItems,
   ],
