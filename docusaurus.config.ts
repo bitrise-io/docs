@@ -4,6 +4,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import bitriseAPIApiSidebar from './docs/bitrise-api/api-reference/sidebar';
+import changelogFeedPlugin from './src/plugins/changelog-feed';
 
 // Build-time expansion for list-context partial references.
 //
@@ -306,6 +307,7 @@ const config: Config = {
         },
       },
     ],
+    changelogFeedPlugin,
     function webpackFallbacks() {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const webpack = require('webpack');

@@ -59,4 +59,4 @@ Anything else — including your `ccache.conf` — is yours to customize. Note t
 
 ## I'm using an official Bitrise step to build my app. Do I still need the wrapper?
 
-No. If you are using the latest versions of **Gradle Runner**, **Android Build**, or **Xcode Archive**, the wrapping is handled by the step itself — just make sure those steps are up to date. If you use a different official Bitrise step that triggers a native build, [let us know](https://github.com/bitrise-io/bitrise-build-cache-cli/issues) so we can add support.
+No. If you are using the latest versions of **Gradle Runner**, **Android Build**, or **Xcode Archive**, the wrapping is handled by the step itself — just make sure those steps are up to date. If you use a different official Bitrise step that runs a build, [let us know](https://github.com/bitrise-io/bitrise-build-cache-cli/issues) so we can add support.

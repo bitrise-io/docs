@@ -337,9 +337,45 @@ Some sidebar categories are intentionally non-clickable — they only toggle exp
 
 All images go under `static/img/`. References in pages start with `/img/...` (Docusaurus serves `static/` from root). Don't reference `static/img/...` directly — that path doesn't exist at runtime.
 
+### Don't break numbered lists with unindented content
+
+Code blocks, admonitions, and plain text that belong to a numbered list item must be indented to the item's content column (3 spaces for `1. `, 4 for `10. `, etc.). Unindented content terminates the list, causing every subsequent item to restart numbering from 1.
+
+````mdx
+✗  1. Do the thing
+   ```bash
+   code
+   ```
+   2. Do the next thing   ← renders as step 1
+
+✓  1. Do the thing
+
+      ```bash
+      code
+      ```
+
+   2. Do the next thing   ← renders as step 2
+````
+
+The same rule applies to admonitions and continuation paragraphs mid-procedure.
+
 ### Don't introduce `Title Case` titles
 
 Sentence case only. ✓ `Adding a new project` ✗ `Adding a New Project`.
+
+---
+
+## Syncing MCP docs
+
+When asked to sync, pull, or update the Bitrise MCP docs, run:
+
+```bash
+python3 scripts/sync_mcp_docs.py
+```
+
+This fetches `.md` files from `bitrise-io/bitrise-mcp/docs/` on GitHub and writes them (with injected frontmatter, link rewriting, and list rendering fixes) to `docs/bitrise-platform/ai/bitrise-mcp/`. Set `GITHUB_TOKEN` in the environment for authenticated requests (5,000 req/hr vs 60 req/hr unauthenticated).
+
+The script is idempotent. After running, review the diff and commit if the changes look correct. Never manually edit the synced files — edits belong in the source repo.
 
 ---
 

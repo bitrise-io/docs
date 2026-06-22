@@ -1,0 +1,706 @@
+---
+title: "Tools"
+sidebar_label: "Tools"
+sidebar_position: 3
+slug: /bitrise-platform/ai/bitrise-mcp/tools
+---
+## Advanced configuration
+
+You can limit the number of tools exposed to the MCP client. This is useful if you want to optimize token usage or your MCP client has a limit on the number of tools.
+
+Tools are grouped by their "API group", and you can pass the groups you want to expose as tools. Possible values: `apps, builds, workspaces, outgoing-webhooks, artifacts, group-roles, cache-items, pipelines, account, read-only, release-management, configuration, release-management-code-push, registration`.
+
+We recommend using the `release-management` API group separately to avoid any confusion with the `apps` API group.
+
+By default, all API groups are enabled. You can specify which groups to enable using the `ENABLED_API_GROUPS` environment variable for local (stdio) servers or the `x-bitrise-enabled-api-groups` HTTP header for remote (Streamable HTTP) servers with a comma-separated list of group names.
+
+## Tools
+
+### Apps
+
+1. `list_apps`
+   - List all the apps available for the authenticated account
+   - Arguments:
+     - `sort_by` (optional): Order of the apps: last_build_at (default) or created_at
+     - `next` (optional): Slug of the first app in the response
+     - `limit` (optional): Max number of elements per page (default: 50)
+
+2. `register_app`
+   - Add a new app to Bitrise
+   - Arguments:
+     - `repo_url`: Repository URL
+     - `is_public`: Whether the app's builds visibility is "public"
+     - `organization_slug`: The organization (aka workspace) the app to add to
+     - `project_type` (optional): Type of project (ios, android, etc.)
+     - `provider` (optional): github
+
+3. `finish_bitrise_app`
+   - Finish the setup of a Bitrise app
+   - Arguments:
+     - `app_slug`: The slug of the Bitrise app to finish setup for
+     - `project_type` (optional): The type of project (e.g., android, ios, flutter, etc.)
+     - `stack_id` (optional): The stack ID to use for the app
+     - `mode` (optional): The mode of setup
+     - `config` (optional): The configuration to use for the app
+
+4. `get_app`
+   - Get the details of a specific app
+   - Arguments:
+     - `app_slug`: Identifier of the Bitrise app
+
+5. `delete_app`
+   - Delete an app from Bitrise
+   - Arguments:
+     - `app_slug`: Identifier of the Bitrise app
+
+6. `update_app`
+   - Update an app
+   - Arguments:
+     - `app_slug`: Identifier of the Bitrise app
+     - `is_public`: Whether the app's builds visibility is "public"
+     - `project_type`: Type of project
+     - `provider`: Repository provider
+     - `repo_url`: Repository URL
+
+7. `get_bitrise_yml`
+   - Get the current Bitrise YML config file of a specified Bitrise app
+   - Arguments:
+     - `app_slug`: Identifier of the Bitrise app
+
+8. `update_bitrise_yml`
+   - Update the Bitrise YML config file of a specified Bitrise app
+   - Arguments:
+     - `app_slug`: Identifier of the Bitrise app
+     - `bitrise_yml_as_json`: The new Bitrise YML config file content
+
+9. `list_branches`
+   - List the branches with existing builds of an app's repository
+   - Arguments:
+     - `app_slug`: Identifier of the Bitrise app
+
+10. `register_ssh_key`
+    - Add an SSH-key to a specific app
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `auth_ssh_private_key`: Private SSH key
+      - `auth_ssh_public_key`: Public SSH key
+      - `is_register_key_into_provider_service`: Register the key in the provider service
+
+11. `register_webhook`
+    - Register an incoming webhook for a specific application
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+
+### Builds
+
+12. `list_builds`
+    - List all the builds of a specified Bitrise app or all accessible builds
+    - Arguments:
+      - `app_slug` (optional): Identifier of the Bitrise app
+      - `sort_by` (optional): Order of builds: created_at (default), running_first
+      - `branch` (optional): Filter builds by branch
+      - `workflow` (optional): Filter builds by workflow
+      - `status` (optional): Filter builds by status (0: not finished, 1: successful, 2: failed, 3: aborted, 4: in-progress)
+      - `next` (optional): Slug of the first build in the response
+      - `limit` (optional): Max number of elements per page (default: 50)
+
+13. `trigger_bitrise_build`
+    - Trigger a new build/pipeline for a specified Bitrise app
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `branch` (optional): The branch to build (default: main)
+      - `pipeline_id` (optional): The pipeline to build
+      - `workflow_id` (optional): The workflow to build
+      - `pipeline_id` (optional): The pipeline to build
+      - `commit_message` (optional): The commit message for the build
+      - `commit_hash` (optional): The commit hash for the build
+      - `environments` (optional): Custom environment variables for the build (array of objects with `mapped_to`, `value`, and optional `is_expand` properties)
+
+14. `get_build`
+    - Get a specific build of a given app
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `build_slug`: Identifier of the build
+
+15. `abort_build`
+    - Abort a specific build
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `build_slug`: Identifier of the build
+      - `reason` (optional): Reason for aborting the build
+
+16. `get_build_log`
+    - Get the build log of a specified build of a Bitrise app
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `build_slug`: Identifier of the Bitrise build
+
+17. `get_build_bitrise_yml`
+    - Get the bitrise.yml of a build
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `build_slug`: Identifier of the build
+
+18. `list_build_workflows`
+    - List the workflows of an app
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+
+19. `get_build_steps`
+    - Get step statuses of a specific build of a given app
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `build_slug`: Identifier of the build
+
+### Artifacts
+
+20. `list_artifacts`
+    - Get a list of all build artifacts
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `build_slug`: Identifier of the build
+      - `next` (optional): Slug of the first artifact in the response
+      - `limit` (optional): Max number of elements per page (default: 50)
+
+20. `get_artifact`
+    - Get a specific build artifact
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `build_slug`: Identifier of the build
+      - `artifact_slug`: Identifier of the artifact
+
+21. `delete_artifact`
+    - Delete a build artifact
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `build_slug`: Identifier of the build
+      - `artifact_slug`: Identifier of the artifact
+
+22. `update_artifact`
+    - Update a build artifact
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `build_slug`: Identifier of the build
+      - `artifact_slug`: Identifier of the artifact
+      - `is_public_page_enabled`: Enable public page for the artifact
+
+### Outgoing Webhooks
+
+24. `list_outgoing_webhooks`
+    - List the outgoing webhooks of an app
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+
+25. `delete_outgoing_webhook`
+    - Delete the outgoing webhook of an app
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `webhook_slug`: Identifier of the webhook
+
+26. `update_outgoing_webhook`
+    - Update an outgoing webhook for an app
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `webhook_slug`: Identifier of the webhook
+      - `events`: List of events to trigger the webhook
+      - `url`: URL of the webhook
+      - `headers` (optional): Headers to be sent with the webhook
+
+27. `create_outgoing_webhook`
+    - Create an outgoing webhook for an app
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `events`: List of events to trigger the webhook
+      - `url`: URL of the webhook
+      - `headers` (optional): Headers to be sent with the webhook
+
+### Cache Items
+
+28. `list_cache_items`
+    - List the key-value cache items belonging to an app
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+
+29. `delete_all_cache_items`
+    - Delete all key-value cache items belonging to an app
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+
+30. `delete_cache_item`
+    - Delete a key-value cache item
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `cache_item_id`: Identifier of the cache item
+
+31. `get_cache_item_download_url`
+    - Get the download URL of a key-value cache item
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `cache_item_id`: Identifier of the cache item
+
+### Pipelines
+
+32. `list_pipelines`
+    - List all pipelines and standalone builds of an app
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+
+33. `get_pipeline`
+    - Get a pipeline of a given app
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `pipeline_id`: Identifier of the pipeline
+
+34. `abort_pipeline`
+    - Abort a pipeline
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `pipeline_id`: Identifier of the pipeline
+      - `reason` (optional): Reason for aborting the pipeline
+
+35. `rebuild_pipeline`
+    - Rebuild a pipeline
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `pipeline_id`: Identifier of the pipeline
+
+### Group Roles
+
+36. `list_group_roles`
+    - List group roles for an app
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `role_name`: Name of the role
+
+37. `replace_group_roles`
+    - Replace group roles for an app
+    - Arguments:
+      - `app_slug`: Identifier of the Bitrise app
+      - `role_name`: Name of the role
+      - `group_slugs`: List of group slugs
+
+### Workspaces
+
+38. `list_workspaces`
+    - List the workspaces the user has access to
+
+39. `get_workspace`
+    - Get details for one workspace
+    - Arguments:
+      - `workspace_slug`: Slug of the Bitrise workspace
+
+40. `get_workspace_groups`
+    - Get the groups in a workspace
+    - Arguments:
+      - `workspace_slug`: Slug of the Bitrise workspace
+
+41. `create_workspace_group`
+    - Create a group in a workspace
+    - Arguments:
+      - `workspace_slug`: Slug of the Bitrise workspace
+      - `group_name`: Name of the group
+
+42. `get_workspace_members`
+    - Get the members in a workspace
+    - Arguments:
+      - `workspace_slug`: Slug of the Bitrise workspace
+
+43. `invite_member_to_workspace`
+    - Invite a member to a workspace
+    - Arguments:
+      - `workspace_slug`: Slug of the Bitrise workspace
+      - `email`: Email address of the user
+
+44. `add_member_to_group`
+    - Add a member to a group
+    - Arguments:
+      - `group_slug`: Slug of the group
+      - `user_slug`: Slug of the user
+
+### Account
+
+45. `me`
+    - Get info from the currently authenticated user account
+
+### Release Management
+
+46. `create_connected_app`
+   - Add a new Release Management connected app to Bitrise.
+   - Arguments:
+     - `platform`: The mobile platform for the connected app (ios/android).
+     - `store_app_id`: The app store identifier for the connected app.
+     - `workspace_slug`: Identifier of the Bitrise workspace.
+     - `id`: (Optional) An uuidV4 identifier for your new connected app.
+     - `manual_connection`: (Optional) Indicates a manual connection.
+     - `project_id`: (Optional) Specifies which Bitrise Project to associate with.
+     - `store_app_name`: (Optional) App name for manual connections.
+     - `store_credential_id`: (Optional) Selection of credentials added on Bitrise.
+
+47. `list_connected_apps`
+   - List Release Management connected apps available for the authenticated account within a workspace.
+   - Arguments:
+     - `workspace_slug`: Identifier of the Bitrise workspace.
+     - `items_per_page`: (Optional) Maximum number of connected apps per page.
+     - `page`: (Optional) Page number to return.
+     - `platform`: (Optional) Filter for a specific mobile platform.
+     - `project_id`: (Optional) Filter for a specific Bitrise Project.
+     - `search`: (Optional) Search by bundle ID, package name, or app title.
+
+48. `get_connected_app`
+   - Gives back a Release Management connected app for the authenticated account.
+   - Arguments:
+     - `id`: Identifier of the Release Management connected app.
+
+49. `update_connected_app`
+   - Updates a connected app.
+   - Arguments:
+     - `connected_app_id`: The uuidV4 identifier for your connected app.
+     - `store_app_id`: The store identifier for your app.
+     - `connect_to_store`: (Optional) Check validity against the App Store or Google Play.
+     - `store_credential_id`: (Optional) Selection of credentials added on Bitrise.
+
+50. `list_installable_artifacts`
+   - List Release Management installable artifacts of a connected app.
+   - Arguments:
+     - `connected_app_id`: Identifier of the Release Management connected app.
+     - `after_date`: (Optional) Start of the interval for artifact creation/upload.
+     - `artifact_type`: (Optional) Filter for a specific artifact type.
+     - `before_date`: (Optional) End of the interval for artifact creation/upload.
+     - `branch`: (Optional) Filter for the Bitrise CI branch.
+     - `distribution_ready`: (Optional) Filter for distribution ready artifacts.
+     - `items_per_page`: (Optional) Maximum number of artifacts per page.
+     - `page`: (Optional) Page number to return.
+     - `platform`: (Optional) Filter for a specific mobile platform.
+     - `search`: (Optional) Search by version, filename or build number.
+     - `source`: (Optional) Filter for the source of installable artifacts.
+     - `store_signed`: (Optional) Filter for store ready installable artifacts.
+     - `version`: (Optional) Filter for a specific version.
+     - `workflow`: (Optional) Filter for a specific Bitrise CI workflow.
+
+51. `generate_installable_artifact_upload_url`
+   - Generates a signed upload URL for an installable artifact to be uploaded to Bitrise.
+   - Arguments:
+     - `connected_app_id`: Identifier of the Release Management connected app.
+     - `installable_artifact_id`: An uuidv4 identifier for the installable artifact.
+     - `file_name`: The name of the installable artifact file.
+     - `file_size_bytes`: The byte size of the installable artifact file.
+     - `branch`: (Optional) Name of the CI branch.
+     - `with_public_page`: (Optional) Enable public install page.
+     - `workflow`: (Optional) Name of the CI workflow.
+
+52. `get_installable_artifact_upload_and_processing_status`
+   - Gets the processing and upload status of an installable artifact.
+   - Arguments:
+     - `connected_app_id`: Identifier of the Release Management connected app.
+     - `installable_artifact_id`: The uuidv4 identifier for the installable artifact.
+
+53. `set_installable_artifact_public_install_page`
+   - Changes whether public install page should be available for the installable artifact.
+   - Arguments:
+     - `connected_app_id`: Identifier of the Release Management connected app.
+     - `installable_artifact_id`: The uuidv4 identifier for the installable artifact.
+     - `with_public_page`: Boolean flag for enabling/disabling public install page.
+
+54. `list_build_distribution_versions`
+   - Lists Build Distribution versions available for testers.
+   - Arguments:
+     - `connected_app_id`: The uuidV4 identifier of the connected app.
+     - `items_per_page`: (Optional) Maximum number of versions per page.
+     - `page`: (Optional) Page number to return.
+
+55. `list_build_distribution_version_test_builds`
+   - Gives back a list of test builds for the given build distribution version.
+   - Arguments:
+     - `connected_app_id`: The uuidV4 identifier of the connected app.
+     - `version`: The version of the build distribution.
+     - `items_per_page`: (Optional) Maximum number of test builds per page.
+     - `page`: (Optional) Page number to return.
+
+56. `create_tester_group`
+   - Creates a tester group for a Release Management connected app.
+   - Arguments:
+     - `connected_app_id`: The uuidV4 identifier of the connected app.
+     - `name`: The name for the new tester group.
+     - `auto_notify`: (Optional) Indicates automatic notifications for the group.
+
+57. `notify_tester_group`
+   - Notifies a tester group about a new test build.
+   - Arguments:
+     - `connected_app_id`: The uuidV4 identifier of the connected app.
+     - `id`: The uuidV4 identifier of the tester group.
+     - `test_build_id`: The unique identifier of the test build.
+
+58. `add_testers_to_tester_group`
+   - Adds testers to a tester group of a connected app.
+   - Arguments:
+     - `connected_app_id`: The uuidV4 identifier of the connected app.
+     - `id`: The uuidV4 identifier of the tester group.
+     - `user_slugs`: The list of users identified by slugs to be added.
+
+59. `update_tester_group`
+   - Updates the given tester group settings.
+   - Arguments:
+     - `connected_app_id`: The uuidV4 identifier of the connected app.
+     - `id`: The uuidV4 identifier of the tester group.
+     - `auto_notify`: (Optional) Setting for automatic email notifications.
+     - `name`: (Optional) The new name for the tester group.
+
+60. `list_tester_groups`
+   - Gives back a list of tester groups related to a specific connected app.
+   - Arguments:
+     - `connected_app_id`: The uuidV4 identifier of the connected app.
+     - `items_per_page`: (Optional) Maximum number of tester groups per page.
+     - `page`: (Optional) Page number to return.
+
+61. `get_tester_group`
+   - Gives back the details of the selected tester group.
+   - Arguments:
+     - `connected_app_id`: The uuidV4 identifier of the connected app.
+     - `id`: The uuidV4 identifier of the tester group.
+
+62. `get_potential_testers`
+   - Gets a list of potential testers who can be added to a specific tester group.
+   - Arguments:
+     - `connected_app_id`: The uuidV4 identifier of the connected app.
+     - `id`: The uuidV4 identifier of the tester group.
+     - `items_per_page`: (Optional) Maximum number of potential testers per page.
+     - `page`: (Optional) Page number to return.
+     - `search`: (Optional) Search for testers by email or username.
+
+63. `get_testers`
+   - Gets a list of testers that have been associated with a tester group related to a specific connected app.
+   - Arguments:
+     - `connected_app_id`: The uuidV4 identifier of the connected app.
+     - `tester_group_id`: (Optional) The uuidV4 identifier of a tester group. If given, only testers within this specific tester group will be returned.
+     - `items_per_page`: (Optional) Maximum number of testers per page (default: 10).
+     - `page`: (Optional) Page number to return (default: 1).
+
+### Configuration
+
+64. `validate_bitrise_yml`
+    - Validate a Bitrise YML config file. This endpoint checks if the provided bitrise.yml is valid.
+    - Arguments:
+      - `bitrise_yml`: The Bitrise YML config file content to be validated. It must be a string.
+      - `app_slug` (optional): Slug of a Bitrise app. Specifying this value allows for validating the YML against workspace-specific settings like available stacks, machine types, license pools etc.
+
+65. `step_search`
+    - Find steps for building workflows or step bundles in a Bitrise YML config file. Finds steps based on name, description, tags or maintainers.
+    - Arguments:
+      - `query`: The phrase to search steps for like `clone`, `npm`, `deploy` etc.
+      - `categories` (optional): Categories to filter steps. Available values: `build`, `code-sign`, `test`, `deploy`, `notification`, `access-control`, `artifact-info`, `installer`, `dependency`, `utility`
+      - `maintainers` (optional): Filter steps by maintainers. Available values: `bitrise`, `verified`, `community`
+
+66. `step_inputs`
+    - List inputs of a step with their defaults, allowed values etc.
+    - Arguments:
+      - `step_ref`: Step reference formatted as `step_lib_source::step_id@version`. `step_id` and an exact `version` are required, `step_lib_source` is only necessary for custom step sources.
+
+67. `list_available_stacks`
+    - List available stacks with their machine configurations and version information. When a workspace_slug is provided, returns stacks available for that workspace including any custom stacks. When omitted, returns globally available stacks.
+    - Arguments:
+      - `workspace_slug` (optional): Slug of the Bitrise workspace. When provided, lists stacks available for that workspace (including custom stacks). When omitted, lists globally available stacks.
+
+### CodePush
+
+68. `codepush_list_deployments`
+   - List CodePush deployments for a Bitrise app.
+   - Arguments:
+     - `app_id`: Identifier of the Bitrise app.
+     - `search`: (Optional) Search deployments by name. The filter is case-sensitive.
+     - `items_per_page`: (Optional) Maximum number of deployments per page (default: 10).
+     - `page`: (Optional) Page number to return (default: 1).
+
+69. `codepush_get_deployment`
+   - Get a specific CodePush deployment by its ID.
+   - Arguments:
+     - `id`: Identifier (UUID) of the CodePush deployment.
+
+70. `codepush_create_deployment`
+   - Create a new CodePush deployment for a Bitrise app.
+   - Arguments:
+     - `name`: Name for the new deployment.
+     - `app_id`: Identifier of the Bitrise app.
+     - `key`: (Optional) Deployment key. Auto-generated if not provided.
+
+71. `codepush_update_deployment`
+   - Update the name of an existing CodePush deployment.
+   - Arguments:
+     - `id`: Identifier (UUID) of the CodePush deployment.
+     - `name`: New name for the deployment.
+
+72. `codepush_delete_deployment`
+   - Delete a CodePush deployment. This action is irreversible.
+   - Arguments:
+     - `id`: Identifier (UUID) of the CodePush deployment to delete.
+
+73. `codepush_promote_deployment`
+   - Promote a package from a source deployment to a target deployment. The most recent package in the source deployment is promoted unless package_id is specified.
+   - Arguments:
+     - `id`: Identifier (UUID) of the source deployment.
+     - `target_deployment_id`: Identifier (UUID) of the target deployment.
+     - `package_id`: (Optional) UUID of a specific package to promote. Defaults to most recent.
+     - `app_version`: (Optional) Semver app version constraint for the promoted package.
+     - `description`: (Optional) Description for the promoted package.
+     - `disabled`: (Optional) If true, clients will not download this update.
+     - `mandatory`: (Optional) If true, clients must install immediately.
+     - `rollout`: (Optional) Percentage (0-100) of users who receive this update.
+
+74. `codepush_rollback_deployment`
+   - Rollback a CodePush deployment to its previous version.
+   - Arguments:
+     - `id`: Identifier (UUID) of the CodePush deployment to rollback.
+     - `package_id`: (Optional) UUID of a specific package to rollback to. Defaults to the previous package.
+
+75. `codepush_list_updates`
+   - List CodePush updates for a specific deployment.
+   - Arguments:
+     - `deployment_id`: Identifier (UUID) of the CodePush deployment.
+     - `search`: (Optional) Search updates by label or description. The filter is case-sensitive.
+     - `items_per_page`: (Optional) Maximum number of updates per page (default: 10).
+     - `page`: (Optional) Page number to return (default: 1).
+
+76. `codepush_get_update`
+   - Get a specific CodePush update by its ID.
+   - Arguments:
+     - `id`: Identifier (UUID) of the CodePush update.
+
+77. `codepush_patch_update`
+   - Patch a CodePush update to change its disabled state, mandatory flag, or rollout percentage. Only include fields you want to change — omitted fields are left unchanged.
+   - Arguments:
+     - `id`: Identifier (UUID) of the CodePush update.
+     - `disabled`: (Optional) Set to 'true' to disable or 'false' to re-enable.
+     - `mandatory`: (Optional) Set to 'true' to make mandatory or 'false' to make optional.
+     - `rollout`: (Optional) Percentage (0-100) of users who receive this update.
+
+78. `codepush_delete_update`
+   - Delete a CodePush update. This action is irreversible.
+   - Arguments:
+     - `id`: Identifier (UUID) of the CodePush update to delete.
+
+79. `codepush_get_update_status`
+   - Get the processing status of a CodePush update (e.g. pending, ready, failed).
+   - Arguments:
+     - `id`: Identifier (UUID) of the CodePush update.
+
+80. `codepush_generate_update_upload_url`
+   - Generate a signed upload URL (valid 1 hour) for uploading a CodePush update bundle. The response contains the URL, HTTP method, and headers needed for a direct upload. After uploading, check status with `codepush_get_update_status`.
+   - Arguments:
+     - `id`: Client-generated UUID for the new update.
+     - `deployment_id`: Identifier (UUID) of the deployment this update belongs to.
+     - `app_version`: Semver version of the app this update targets (e.g. '1.2.3').
+     - `file_name`: File name of the update bundle to be uploaded (with extension).
+     - `file_size_bytes`: Byte size of the update bundle file as a string.
+     - `description`: (Optional) Description for this update.
+     - `disabled`: (Optional) If true, clients will not download this update after upload.
+     - `mandatory`: (Optional) If true, clients must install this update immediately.
+     - `rollout`: (Optional) Percentage (0-100) of users who receive this update. Defaults to 100.
+
+81. `codepush_get_metrics`
+   - Get workspace-level CodePush usage metrics including data transfer, storage, and monthly active users, along with their limits and billing cycle information.
+   - Arguments:
+     - `workspace_slug`: Slug of the Bitrise workspace.
+
+### Registration
+
+These tools are unauthenticated (no Bitrise token required) and let an agent onboard a brand-new user. They are most useful with the remote (HTTP) MCP server, since the local (stdio) server requires `BITRISE_TOKEN` to start.
+
+82. `register`
+    - Start registration for a new Bitrise user. Sends a one-time password (OTP) to the provided email address and returns a `pending_signup_id`. Ask the user for the OTP they received, then call `verify_registration`.
+    - Arguments:
+      - `email`: Email address of the user to register.
+
+83. `verify_registration`
+    - Verify a pending registration using the OTP. Returns an `api_token` (a Bitrise personal access token) and, when a workspace was auto-created, a `workspace_slug`. Use the returned token to authenticate subsequent tool calls.
+    - Arguments:
+      - `pending_signup_id`: The `pending_signup_id` returned by `register`.
+      - `otp`: One-time password sent to the email address.
+
+## API Groups
+
+The Bitrise MCP server organizes tools into API groups that can be enabled or disabled via command-line arguments. The table below shows which API groups each tool belongs to:
+
+| Tool | apps | builds | workspaces | outgoing-webhooks | artifacts | group-roles | cache-items | pipelines | account | read-only | release-management | configuration | release-management-code-push | registration |
+|------|------|--------|------------|-------------------|-----------|-------------|-------------|-----------|---------|-----------|--------------------|--------------|------------------------------|--------------|
+| list_apps | ✅ | | | | | | | | | ✅ | | | |
+| register_app | ✅ | | | | | | | | | | | | |
+| finish_bitrise_app | ✅ | | | | | | | | | | | | |
+| get_app | ✅ | | | | | | | | | ✅ | | | |
+| delete_app | ✅ | | | | | | | | | | | | |
+| update_app | ✅ | | | | | | | | | | | | |
+| get_bitrise_yml | ✅ | | | | | | | | | ✅ | | | |
+| update_bitrise_yml | ✅ | | | | | | | | | | | | |
+| list_branches | ✅ | | | | | | | | | ✅ | | | |
+| register_ssh_key | ✅ | | | | | | | | | | | | |
+| register_webhook | ✅ | | | | | | | | | | | | |
+| list_builds | | ✅ | | | | | | | | ✅ | | | |
+| trigger_bitrise_build | | ✅ | | | | | | | | | | | |
+| get_build | | ✅ | | | | | | | | ✅ | | | |
+| abort_build | | ✅ | | | | | | | | | | | |
+| get_build_log | | ✅ | | | | | | | | ✅ | | | |
+| get_build_bitrise_yml | | ✅ | | | | | | | | ✅ | | | |
+| list_build_workflows | | ✅ | | | | | | | | ✅ | | | |
+| get_build_steps | | ✅ | | | | | | | | ✅ | | | |
+| list_artifacts | | | | | ✅ | | | | | ✅ | | | |
+| get_artifact | | | | | ✅ | | | | | ✅ | | | |
+| delete_artifact | | | | | ✅ | | | | | | | | |
+| update_artifact | | | | | ✅ | | | | | | | | |
+| list_outgoing_webhooks | | | | ✅ | | | | | | ✅ | | | |
+| delete_outgoing_webhook | | | | ✅ | | | | | | | | | |
+| update_outgoing_webhook | | | | ✅ | | | | | | | | | |
+| create_outgoing_webhook | | | | ✅ | | | | | | | | | |
+| list_cache_items | | | | | | | ✅ | | | ✅ | | | |
+| delete_all_cache_items | | | | | | | ✅ | | | | | | |
+| delete_cache_item | | | | | | | ✅ | | | | | | |
+| get_cache_item_download_url | | | | | | | ✅ | | | ✅ | | | |
+| list_pipelines | | | | | | | | ✅ | | ✅ | | | |
+| get_pipeline | | | | | | | | ✅ | | ✅ | | | |
+| abort_pipeline | | | | | | | | ✅ | | | | | |
+| rebuild_pipeline | | | | | | | | ✅ | | | | | |
+| list_group_roles | | | | | | ✅ | | | | ✅ | | | |
+| replace_group_roles | | | | | | ✅ | | | | | | | |
+| list_workspaces | | | ✅ | | | | | | | ✅ | | | |
+| get_workspace | | | ✅ | | | | | | | ✅ | | | |
+| get_workspace_groups | | | ✅ | | | | | | | ✅ | | | |
+| create_workspace_group | | | ✅ | | | | | | | | | | |
+| get_workspace_members | | | ✅ | | | | | | | ✅ | | | |
+| invite_member_to_workspace | | | ✅ | | | | | | | | | | |
+| add_member_to_group | | | ✅ | | | | | | | | | | |
+| me | | | | | | | | | ✅ | ✅ | | | |
+| create_connected_app | | | | | | | | | | | ✅ | | |
+| list_connected_apps | | | | | | | | | | ✅ | ✅ | | |
+| get_connected_app | | | | | | | | | | ✅ | ✅ | | |
+| update_connected_app | | | | | | | | | | | ✅ | | |
+| list_installable_artifacts | | | | | | | | | | ✅ | ✅ | | |
+| generate_installable_artifact_upload_url | | | | | | | | | | | ✅ | | |
+| get_installable_artifact_upload_and_processing_status | | | | | | | | | | ✅ | ✅ | | |
+| set_installable_artifact_public_install_page | | | | | | | | | | | ✅ | | |
+| list_build_distribution_versions | | | | | | | | | | ✅ | ✅ | | |
+| list_build_distribution_version_test_builds | | | | | | | | | | ✅ | ✅ | | |
+| create_tester_group | | | | | | | | | | | ✅ | | |
+| notify_tester_group | | | | | | | | | | | ✅ | | |
+| add_testers_to_tester_group | | | | | | | | | | | ✅ | | |
+| update_tester_group | | | | | | | | | | | ✅ | | |
+| list_tester_groups | | | | | | | | | | ✅ | ✅ | | |
+| get_tester_group | | | | | | | | | | ✅ | ✅ | | |
+| get_potential_testers | | | | | | | | | | ✅ | ✅ | | |
+| get_testers | | | | | | | | | | ✅ | ✅ | | |
+| validate_bitrise_yml | | | | | | | | | | ✅ | | ✅ | |
+| step_search | | | | | | | | | | ✅ | | ✅ | |
+| step_inputs | | | | | | | | | | ✅ | | ✅ | |
+| list_available_stacks | | | | | | | | | | ✅ | | ✅ | |
+| codepush_list_deployments | | | | | | | | | | ✅ | ✅ | | ✅ |
+| codepush_get_deployment | | | | | | | | | | ✅ | ✅ | | ✅ |
+| codepush_create_deployment | | | | | | | | | | | ✅ | | ✅ |
+| codepush_update_deployment | | | | | | | | | | | ✅ | | ✅ |
+| codepush_delete_deployment | | | | | | | | | | | ✅ | | ✅ |
+| codepush_promote_deployment | | | | | | | | | | | ✅ | | ✅ |
+| codepush_rollback_deployment | | | | | | | | | | | ✅ | | ✅ |
+| codepush_list_updates | | | | | | | | | | ✅ | ✅ | | ✅ |
+| codepush_get_update | | | | | | | | | | ✅ | ✅ | | ✅ |
+| codepush_patch_update | | | | | | | | | | | ✅ | | ✅ |
+| codepush_delete_update | | | | | | | | | | | ✅ | | ✅ |
+| codepush_get_update_status | | | | | | | | | | ✅ | ✅ | | ✅ |
+| codepush_generate_update_upload_url | | | | | | | | | | | ✅ | | ✅ |
+| codepush_get_metrics | | | | | | | | | | ✅ | ✅ | | ✅ |
+| register | | | | | | | | | | | | | | ✅ |
+| verify_registration | | | | | | | | | | | | | | ✅ |

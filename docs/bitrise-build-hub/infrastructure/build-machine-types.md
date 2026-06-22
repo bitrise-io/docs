@@ -23,11 +23,14 @@ Use the machine type ID to set the machine type in your [configuration YAML](/en
 
 :::
 
-| OS and resource class | Hardware types | Specs | Machine type ID |
+| OS and resource class | Hardware type | Specs | Machine type ID |
 | --- | --- | --- | --- |
-| macOS Medium | M2 Pro Medium<br/>M4 Medium | 4 CPU @3.49GHz and 6 GB RAM<br/>5 CPU @4.4 GHz and 6 GB RAM | `g2.mac.medium` |
-| macOS Large | M2 Pro Large<br/>M4 Large | 6 CPU @3.49GHz and 14 GB RAM<br/>5 CPU @4.4 GHz and 14 GB RAM | `g2.mac.large` |
-| macOS X Large | M2 Pro X Large<br/>M4 X Large | 12 CPU @3.49GHz and 28 GB RAM<br/>10 CPU @4.4 GHz and 28 GB RAM | `g2.mac.x-large` |
+| macOS Medium | M2 Pro Medium | 4 CPU @3.49GHz and 6 GB RAM | `g2.mac.medium` |
+| macOS Medium | M4 Medium | 5 CPU @4.4 GHz and 6 GB RAM | `g2.mac.medium` |
+| macOS Large | M2 Pro Large | 6 CPU @3.49GHz and 14 GB RAM | `g2.mac.large` |
+| macOS Large | M4 Large | 5 CPU @4.4 GHz and 14 GB RAM | `g2.mac.large` |
+| macOS X Large | M2 Pro X Large | 12 CPU @3.49GHz and 28 GB RAM | `g2.mac.x-large` |
+| macOS X Large | M4 X Large | 10 CPU @4.4 GHz and 28 GB RAM | `g2.mac.x-large` |
 | macOS 4Large | M4 Pro Large | 7 CPU @4.52GHz and 27 GB RAM | `g2.mac.4large` |
 | macOS 4X Large | M4 Pro X Large | 14 CPU @4.52GHz and 54 GB RAM | `g2.mac.4x-large` |
 | Linux Medium | | 4 vCPU @3.1 GHz and 16 GB RAM | `standard` |
@@ -41,3 +44,9 @@ Use the machine type ID to set the machine type in your [configuration YAML](/en
 | Linux 3XL | AMD EPYC Zen 4 and Zen 5 | 24 vCPU @3.7 GHz and 96 GB RAM | `g2.linux.3x-large` |
 | Linux 5XL | AMD EPYC Zen 4 and Zen 5 | 32 vCPU @3.7 GHz and 128 GB RAM | `g2.linux.5x-large` |
 | Linux 7XL | AMD EPYC Zen 4 and Zen 5 | 48 vCPU @3.7 GHz and 192 GB RAM | `g2.linux.7x-large` |
+
+:::note
+
+Some macOS resource classes list two hardware types with the same machine type ID. Both generations use the same ID — Bitrise automatically selects the available hardware for each build.
+
+:::
