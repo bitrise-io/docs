@@ -9,6 +9,7 @@ const sidebarConfig: Record<string, {label: string; href: string}> = {
   releaseManagementSidebar: {label: 'Release Management',    href: '/en/release-management'},
   insightsSidebar:          {label: 'Insights',              href: '/en/insights'},
   buildHubSidebar:          {label: 'Build Hub',             href: '/en/bitrise-build-hub'},
+  bitriseAPISidebar:        {label: 'Bitrise API',           href: '/en/bitrise-api'},
 };
 
 export default function HomeBreadcrumbItem(): ReactNode {
