@@ -22,11 +22,13 @@ const TAG_LABEL_OVERRIDES: Record<string, string> = {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const hubItems = (bitriseAPIApiSidebar as any[]).map(item => {
-  const originalLabel = item.label as string;
-  const correctedLabel = normalizeLabel(TAG_LABEL_OVERRIDES[originalLabel] ?? originalLabel);
+  const originalLabel = item.label as string | undefined;
+  const correctedLabel = originalLabel
+    ? normalizeLabel(TAG_LABEL_OVERRIDES[originalLabel] ?? originalLabel)
+    : originalLabel;
   return {
     ...item,
-    label: correctedLabel,
+    ...(correctedLabel !== undefined ? {label: correctedLabel} : {}),
     customProps: {
       ...(item.customProps ?? {}),
       icon: 'Code',
