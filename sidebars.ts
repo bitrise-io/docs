@@ -9,22 +9,25 @@ function productSidebar(dirName: string, title: string) {
   ];
 }
 
-// Capitalize standalone "api" → "API" in generated tag labels.
+// Convert kebab-case tag labels to sentence case and fix known quirks.
 function normalizeLabel(label: string): string {
-  return label.replace(/\bapi\b/gi, 'API');
+  // kebab-case → sentence case
+  const spaced = label.replace(/-/g, ' ');
+  const capitalized = spaced.charAt(0).toUpperCase() + spaced.slice(1);
+  // Capitalize standalone "api" → "API"
+  return capitalized.replace(/\bapi\b/gi, 'API');
 }
 
-// Hyphens that were part of compound words get lost when the plugin converts
-// kebab-case tags to space-separated labels. Declare the corrections explicitly.
+// Corrections applied after normalization for compound words that need a hyphen.
 const TAG_LABEL_OVERRIDES: Record<string, string> = {
   'Key value cache': 'Key-value cache',
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const hubItems = (bitriseAPIApiSidebar as any[]).map(item => {
+const hubItems = (bitriseAPIApiSidebar as any[]).filter((item: any) => item.label).map(item => {
   const originalLabel = item.label as string | undefined;
   const correctedLabel = originalLabel
-    ? normalizeLabel(TAG_LABEL_OVERRIDES[originalLabel] ?? originalLabel)
+    ? (() => { const n = normalizeLabel(originalLabel); return TAG_LABEL_OVERRIDES[n] ?? n; })()
     : originalLabel;
   return {
     ...item,
