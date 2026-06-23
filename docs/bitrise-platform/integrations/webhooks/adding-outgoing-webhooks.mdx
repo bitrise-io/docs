@@ -88,6 +88,66 @@ To add the header:
 1. Click **Update webhook**.
 
 
+## Build event payload
+
+When a build event occurs, Bitrise sends a `POST` request to your webhook URL. The `Bitrise-Event-Type` header identifies the event (for example, `build/triggered` or `build/finished`), and the request body is a JSON object describing the build.
+
+```json
+{
+  "build_slug": "abc123def456",
+  "build_number": 42,
+  "app_slug": "0123456789abcdef",
+  "repository_name": "my-org/my-app",
+  "build_status": 0,
+  "build_triggered_workflow": "primary",
+  "build_stack": "osx-xcode-15.0.x",
+  "url": "https://app.bitrise.io/build/abc123def456",
+  "git": {
+    "provider": "github",
+    "src_branch": "feature/new-thing",
+    "dst_branch": "main",
+    "pull_request_id": 17,
+    "pull_request_title": "Add the new thing",
+    "pull_request_description": "This pull request adds the new thing.",
+    "tag": null,
+    "commit_hash": "9fceb02d0ae598e95dc970b74767f19372d61af8",
+    "commit_message": "Add the new thing",
+    "commit_messages": ["Add the new thing", "Fix a typo"]
+  }
+}
+```
+
+The top-level fields describe the build:
+
+| Field | Description |
+| --- | --- |
+| `build_slug` | The unique identifier of the build. |
+| `build_number` | The build number within the project. |
+| `app_slug` | The unique identifier of the project. |
+| `repository_name` | The full name of the connected repository. |
+| `build_status` | The status of the build. |
+| `build_triggered_workflow` | The Workflow the build ran. |
+| `build_stack` | The stack the build ran on. |
+| `url` | The URL of the build on Bitrise. |
+
+The `git` object describes the version control context:
+
+| Field | Description |
+| --- | --- |
+| `provider` | The Git provider of the repository. |
+| `src_branch` | The source branch of the build. |
+| `dst_branch` | The target branch, for pull request builds. |
+| `pull_request_id` | The pull request number, for pull request builds. |
+| `pull_request_title` | The title of the pull request. |
+| `pull_request_description` | The description of the pull request. |
+| `tag` | The Git tag, for tag builds. |
+| `commit_hash` | The hash of the commit the build ran on. |
+| `commit_message` | The message of the triggering commit. |
+| `commit_messages` | The messages of the commits included in the build. |
+
+A build triggered by Release Management also includes a `triggered_by_release_management` field set to `true`. A build triggered by a scheduled trigger includes a `triggered_by_scheduler` field set to `true`.
+
+
 ## Checking outgoing webhook deliveries
 
 You can check the recent deliveries of your outgoing webhooks at any time, and resend them if necessary. The deliveries are marked with appropriate status code, depending on whether the delivery was successful.
