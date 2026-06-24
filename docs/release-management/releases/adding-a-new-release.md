@@ -5,14 +5,13 @@ sidebar_position: 2
 slug: /release-management/releases/adding-a-new-release
 ---
 
+import Partial_OpeningAnAppInReleaseManagement from '@site/src/partials/opening-an-app-in-release-management.mdx';
+
 To release a connected app to the App Store or Google Play, you need to add a new release. Each app can have multiple releases.
 
 To add a new release to [a connected app](/en/release-management/getting-started-with-release-management/connecting-an-app):
 
-1. Log in to Bitrise, and on the left sidebar, select **Releases**.
-1. Select your app from the list.
-
-   ![2025-08-07-rm-your-apps-list.png](/img/_paligo/uuid-c446a6a9-f922-2641-53ad-49099a7921fe.png)
+1. <Partial_OpeningAnAppInReleaseManagement />
 1. Go to **Releases** and click **+ New app version**. This opens the **New app version** page.
 1. Enter a version number for iOS apps or a release name for Android apps. Optionally, you can also add a description.
 
