@@ -1,0 +1,189 @@
+---
+title: "Distributing builds to testers"
+description: "Upload build artifacts and distribute them to tester groups via the Release Management API."
+sidebar_position: 5
+slug: /release-management/api/build-distribution
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+You can upload build artifacts to Release Management and distribute them to internal tester groups directly via the API. This covers both the artifact upload flow (Apps sub-API) and tester group management (Build Distributions sub-API).
+
+- **Apps sub-API base URL:** `https://api.bitrise.io/release-management/v2/apps/v1`
+- **Build Distributions sub-API base URL:** `https://api.bitrise.io/release-management/v2/build-distributions/v1`
+
+## Uploading a build artifact
+
+| Endpoint | Sub-API | Function |
+| --- | --- | --- |
+| GET /installable-artifacts/\{id\}/upload-url | Apps | Generate a presigned upload URL. |
+| GET /installable-artifacts/\{id\}/status | Apps | Check upload and processing status. |
+| GET /installable-artifacts | Apps | List uploaded artifacts for an app. |
+| GET /installable-artifacts/\{id\} | Apps | Get details of an artifact. |
+| DELETE /installable-artifacts/\{id\} | Apps | Delete an artifact. |
+
+### Step 1: Generate an upload URL
+
+Generate a presigned S3 upload URL for your build artifact. The response includes both the upload URL and confirms the artifact ID.
+
+```bash
+ARTIFACT_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
+
+curl -X GET "https://api.bitrise.io/release-management/v2/apps/v1/installable-artifacts/${ARTIFACT_ID}/upload-url?app_id=APP_ID&file_name=MyApp.ipa&file_size_bytes=52428800" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+
+Required query parameters:
+- `app_id`: The RM app ID.
+- `file_name`: The filename of the artifact (e.g., `MyApp.ipa` or `MyApp.apk`).
+- `file_size_bytes`: The file size in bytes.
+
+Optional query parameters:
+- `with_public_page`: Set to `true` to enable a public install page immediately.
+- `branch`: The source branch this build came from.
+- `workflow`: The CI workflow that produced this build.
+
+### Step 2: Upload the binary
+
+Use the presigned URL from the previous response to upload the file directly to storage:
+
+```bash
+curl -X PUT "PRESIGNED_UPLOAD_URL" \
+  -H "Content-Type: application/octet-stream" \
+  --data-binary "@/path/to/MyApp.ipa"
+```
+
+### Step 3: Check processing status
+
+After upload, wait for Bitrise to finish processing the artifact:
+
+```bash
+curl -X GET "https://api.bitrise.io/release-management/v2/apps/v1/installable-artifacts/${ARTIFACT_ID}/status" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+
+The response returns the current `status`. Poll this endpoint until the status indicates the artifact is ready for distribution.
+
+## Enabling a public install page
+
+You can make a build available via a public URL that testers can open directly without a Bitrise account.
+
+```bash
+curl -X PATCH "https://api.bitrise.io/release-management/v2/apps/v1/installable-artifacts/ARTIFACT_ID/public-install-page" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "with_public_page": true
+  }'
+```
+
+## Adding what-to-test notes
+
+Attach test instructions to a build that testers can see when they receive the notification.
+
+```bash
+curl -X PATCH "https://api.bitrise.io/release-management/v2/apps/v1/installable-artifacts/ARTIFACT_ID/what-to-test" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "what_to_test": "Focus on the new onboarding flow. Check that the splash screen animation completes before login."
+  }'
+```
+
+The `what_to_test` field accepts up to 4,000 characters.
+
+## Creating custom access links
+
+Custom access links let you share a build with restricted access: optionally protected by a code and with an expiry date. For more information, see [Custom access links](/en/release-management/build-distribution/distributing-builds-to-testers#custom-access-link).
+
+:::note
+
+A custom access link is different from the [public install page](/en/bitrise-ci/deploying/ios-deployment/installing-an-ipa-file-from-the-public-install-page) link: the public install page is permanent and has no access controls.
+
+:::
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/installable-artifacts/ARTIFACT_ID/custom-access-links" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "External QA team",
+    "expires_at": "2026-07-31T23:59:59Z",
+    "access_code": "qa-team-2026"
+  }'
+```
+
+The `access_code` must be 8–64 characters. Omit `expires_at` to create a link that does not expire.
+
+## Managing tester groups
+
+Tester groups let you notify groups of internal testers when a new build is ready. For more information, see [Tester groups](/en/release-management/build-distribution/tester-groups).
+
+| Endpoint | Function |
+| --- | --- |
+| POST /tester-groups | Create a tester group. |
+| GET /tester-groups | List tester groups for an app. |
+| PUT /tester-groups/\{id\} | Update a tester group. |
+| POST /tester-groups/\{id\}/add-testers | Add testers to a group. |
+| POST /tester-groups/\{id\}/notify | Notify a group about a new build. |
+| DELETE /tester-groups/\{id\} | Delete a tester group. |
+
+### Creating a tester group
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v1/tester-groups" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "APP_ID",
+    "name": "iOS Beta Testers",
+    "auto_notify": true
+  }'
+```
+
+Setting `auto_notify: true` means testers are automatically emailed when a new build is uploaded.
+
+### Adding testers to a group
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v1/tester-groups/GROUP_ID/add-testers" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_slugs": ["USER_SLUG_1", "USER_SLUG_2"]
+  }'
+```
+
+:::tip[Finding user slugs]
+
+To find the user slugs of workspace members, use `GET /tester-groups/{id}/potential-testers?search=name-or-email` to search for eligible testers. The response includes each user's `slug`.
+
+:::
+
+### Notifying a tester group
+
+Send a notification to a tester group about a specific build:
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v1/tester-groups/GROUP_ID/notify" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "test_build_id": "ARTIFACT_ID"
+  }'
+```
+
+The build must be distribution-ready before you can notify testers. A successful call returns `204 No Content`.
+
+## Listing uploaded builds
+
+To list all builds available for distribution for a specific version:
+
+```bash
+curl -X GET "https://api.bitrise.io/release-management/v2/build-distributions/v1/test-builds?app_id=APP_ID&version=1.5.0" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```

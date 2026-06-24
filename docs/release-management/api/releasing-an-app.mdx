@@ -1,0 +1,253 @@
+---
+title: "Releasing an app to the store"
+description: "Submit your app for review and release it to the App Store or Google Play via the Release Management API."
+sidebar_position: 6
+slug: /release-management/api/releasing-an-app
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Once your release has a release candidate and all approvals are completed, you can submit the app for store review and then release it to users.
+
+The Store Releases sub-API base URL: `https://api.bitrise.io/release-management/v2/store-releases/v1`
+
+## Configuring beta distribution (iOS)
+
+Before submitting for full release, you can distribute the build to beta testers through TestFlight (iOS only).
+
+### Listing TestFlight testing groups
+
+Returns the TestFlight testing groups associated with the release. Use the `id` values from the response to start distribution to a specific group.
+
+```bash
+curl -X GET "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/beta-distribution/testing-groups" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+
+### Starting beta distribution to a TestFlight group
+
+Makes the release build available to testers in a specific TestFlight group. Testers receive a notification and can install the build directly from the TestFlight app.
+
+```bash
+curl -X PATCH "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/beta-distribution/testing-groups/GROUP_ID" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+### Adding what-to-test notes for TestFlight
+
+Attaches testing instructions to the release build. Testers see these notes in the TestFlight app when they receive the build notification.
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/beta-distribution/what-to-test" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "locale": "en-US",
+    "whats_new": "Fixed login issue and improved onboarding flow."
+  }'
+```
+
+## Adding release notes (Android)
+
+Release notes appear on the app's Google Play Store listing under **What's new**, and are shown to users before and after they update the app. You can provide notes in multiple languages — Google Play displays the version that matches the user's device language, falling back to `en-US` if no match is found.
+
+Pass an array of language/text pairs to the `release_notes` field, using [BCP 47 language tags](https://www.rfc-editor.org/rfc/bcp/bcp47.txt) (e.g. `en-US`, `de-DE`, `fr-FR`):
+
+```bash
+curl -X PUT "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/google-play-store/localized-release-notes" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "release_notes": [
+      {
+        "language": "en-US",
+        "text": "Fixed login issue and improved onboarding flow."
+      },
+      {
+        "language": "de-DE",
+        "text": "Login-Problem behoben und Onboarding-Flow verbessert."
+      }
+    ]
+  }'
+```
+
+Each release note text can be up to 500 characters.
+
+## Submitting for store review (iOS)
+
+:::note[Android]
+
+Android releases submitted via the API go directly to the configured Google Play track and do not require a separate review submission step. Proceed to the release step below.
+
+:::
+
+| Endpoint | Function | Required role |
+| --- | --- | --- |
+| POST /app-versions/\{id\}/apple-app-store/review/submit | Submit the release for App Store review. | Release manager |
+| GET /app-versions/\{id\}/apple-app-store/review/status | Get the current App Store review status. | Any |
+| POST /app-versions/\{id\}/apple-app-store/review/cancel | Cancel a pending review submission. | Release manager |
+
+Submit the release for App Store review:
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/apple-app-store/review/submit" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "copy_primary_whats_new": true,
+    "localizations": [
+      {
+        "locale": "en-US",
+        "whats_new": "Bug fixes and performance improvements.",
+        "description": "Updated description for this version.",
+        "keywords": "productivity, task manager"
+      }
+    ]
+  }'
+```
+
+Setting `copy_primary_whats_new: true` copies the primary locale's "What's new" text to all other localizations that have no text set.
+
+To check the review status:
+
+```bash
+curl -X GET "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/apple-app-store/review/status" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+
+## Configuring release settings
+
+<Tabs groupId="platform">
+<TabItem value="ios" label="iOS">
+
+Before releasing, configure how the update rolls out to users:
+
+```bash
+curl -X PATCH "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/apple-app-store/release/settings" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "release_type": "AFTER_APPROVAL",
+    "phased_release": true
+  }'
+```
+
+`release_type` options:
+- `AFTER_APPROVAL`: Release automatically once approved by Apple.
+- `MANUAL`: Hold the release until you manually trigger it.
+- `SCHEDULED`: Release at a specific date and time (requires `earliest_release_date` in ISO 8601 format).
+
+`phased_release: true` rolls the update out to users over 7 days rather than all at once.
+
+</TabItem>
+<TabItem value="android" label="Android">
+
+For Android you can schedule the rollout to a fraction of users (staged rollout):
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/google-play-store/staged-rollout-schedule" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "location": "America/New_York",
+    "schedule": [
+      { "percentage": 10, "when": "2026-07-20T09:00:00-04:00" },
+      { "percentage": 50, "when": "2026-07-22T09:00:00-04:00" },
+      { "percentage": 100, "when": "2026-07-25T09:00:00-04:00" }
+    ]
+  }'
+```
+
+</TabItem>
+</Tabs>
+
+## Releasing to users
+
+<Tabs groupId="platform">
+<TabItem value="ios" label="iOS">
+
+| Endpoint | Function | Required role |
+| --- | --- | --- |
+| POST /app-versions/\{id\}/apple-app-store/release | Release the app to the App Store. | Release manager |
+| GET /app-versions/\{id\}/apple-app-store/release/status | Get the release status. | Any |
+| POST /app-versions/\{id\}/apple-app-store/release/pause | Pause a phased release. | Release manager |
+| POST /app-versions/\{id\}/apple-app-store/release/continue | Continue a paused phased release. | Release manager |
+| POST /app-versions/\{id\}/apple-app-store/release/complete | Complete a phased release immediately. | Release manager |
+
+Trigger the release:
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/apple-app-store/release" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+Check the release status:
+
+```bash
+curl -X GET "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/apple-app-store/release/status" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+
+To complete a phased release immediately (rolling out to 100% of users right away):
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/apple-app-store/release/complete" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+</TabItem>
+<TabItem value="android" label="Android">
+
+| Endpoint | Function | Required role |
+| --- | --- | --- |
+| POST /app-versions/\{id\}/google-play-store/release | Release to all or a fraction of users. | Release manager |
+
+Release to all users:
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/google-play-store/release" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_fraction": 1.0
+  }'
+```
+
+For a staged rollout starting at 10%:
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/google-play-store/release" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_fraction": 0.1
+  }'
+```
+
+The `user_fraction` value ranges from `0` to `1`, where `1` equals 100% of users.
+
+</TabItem>
+</Tabs>
+
+## Setting up release webhooks
+
+You can configure outgoing webhooks to receive notifications when a release reaches key stages.
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/outgoing-webhooks" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "events": ["release_started", "submitted_for_review"],
+    "webhook_configuration_id": "WEBHOOK_CONFIG_ID"
+  }'
+```
+
+Set `all_events: true` instead of listing individual events to receive notifications for all release lifecycle events.
