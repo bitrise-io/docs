@@ -11,6 +11,7 @@ import {
   IconRelease,
   IconInsights,
   IconCpu,
+  IconRemoteAccess,
 } from '@bitrise/bitkit-v2';
 import styles from './index.module.css';
 
@@ -134,6 +135,22 @@ const sections: Section[] = [
       ],
     ],
   },
+  {
+    id: 'bitrise-rde',
+    title: 'Remote Dev Environments',
+    description: 'Spin up on-demand macOS and Linux cloud dev machines, and connect from your terminal, IDE, or AI agent.',
+    href: '/en/bitrise-rde',
+    icon: IconRemoteAccess,
+    iconBg: '#e6e9ff',
+    iconColor: '#3f51d4',
+    columns: [
+      [
+        {label: 'Remote Dev Environments overview', href: '/en/bitrise-rde/getting-started/remote-dev-environments-overview'},
+        {label: 'Quickstart', href: '/en/bitrise-rde/getting-started/quickstart'},
+        {label: 'Bitrise RDE CLI', href: '/en/bitrise-rde/ways-to-use-rde/bitrise-rde-cli'},
+      ],
+    ],
+  },
 ];
 
 function ProductCard({section}: {section: Section}) {
@@ -239,6 +256,10 @@ export default function Home(): React.JSX.Element {
               <div className={styles.cardsRow}>
                 <ProductCard section={sections[4]} />
                 <ProductCard section={sections[5]} />
+              </div>
+              <div className={styles.cardsRow}>
+                <ProductCard section={sections[6]} />
+                <div style={{flex: '1 1 0%'}} aria-hidden="true" />
               </div>
             </div>
           </div>

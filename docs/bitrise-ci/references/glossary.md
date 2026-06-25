@@ -59,3 +59,19 @@ The Bitrise Workflow Editor allows you to edit your Workflows, configure Steps, 
 ## Workspace {#workspace}
 
 A Workspace is an environment that allows you to manage your Bitrise apps and the team members working on the apps. You can create multiple Workspaces, and you can be invited to Workspaces by other Bitrise users. To be able to add apps and run builds, you either need to be part of a Workspace, or you have to be an outside contributor on an app's team.
+
+## Remote Dev Environment {#remote-dev-environment}
+
+A Remote Dev Environment (RDE) is an on-demand cloud development machine — macOS or Linux — that runs on Bitrise infrastructure, using the same stacks and caches as Bitrise CI. You create a session, connect to it from a terminal, IDE, or AI agent, and archive or restore it later.
+
+## Session {#session}
+
+A session is a single Remote Dev Environment instance: a running (or restorable) cloud machine created from a template or directly from a stack and machine type. Terminating a session preserves its persistent disk so you can restore it later.
+
+## Template {#template}
+
+A template is a reusable Remote Dev Environment configuration — stack, machine type, warmup and startup scripts, inputs, and IDE folder links — that you create sessions from.
+
+## Saved input {#saved-input}
+
+A saved input is a reusable, user-scoped value or credential (such as an SSH public key or an API token) that you can map into Remote Dev Environment sessions. Secret values are encrypted at rest.

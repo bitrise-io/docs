@@ -46,6 +46,7 @@ const sidebars: SidebarsConfig = {
   releaseManagementSidebar: productSidebar('release-management', 'Release Management'),
   insightsSidebar: productSidebar('insights', 'Insights'),
   buildHubSidebar: productSidebar('bitrise-build-hub', 'Build Hub'),
+  rdeSidebar: productSidebar('bitrise-rde', 'Remote Dev Environments'),
   bitriseAPISidebar: [
     {type: 'link', label: '← Home', href: '/'},
     {type: 'html', value: '<div class="sidebar-product-title">Bitrise API</div>'},

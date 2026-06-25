@@ -1,0 +1,45 @@
+---
+title: "Templates"
+description: "Define reusable Remote Dev Environment configurations with a stack, machine type, setup scripts, inputs, and IDE folder links, then create sessions from them."
+sidebar_position: 1
+slug: /bitrise-rde/configuration/templates
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+A <GlossTerm baseform="rde template">template</GlossTerm> is a reusable Remote Dev Environment configuration. Define the machine and its setup once, then create consistent <GlossTerm baseform="rde session">sessions</GlossTerm> from it without repeating the same choices each time.
+
+## What a template defines
+
+A template can include:
+
+- A **stack**, a **machine type**, and a **working directory** that terminals start in.
+- A **warmup script** and a **startup script** for installing tools and preparing the environment.
+- **Template variables** and **session inputs** for the values your environment needs.
+- **Workspace links** — shortcut buttons that open a specific folder in your IDE.
+
+## Warmup and startup scripts
+
+Both scripts are Bash and run as the session user, but at different times:
+
+- The **warmup script** runs once, when the session is first created. Use it for slow, one-time setup such as installing dependencies.
+- The **startup script** runs every time the session starts, including after a restore. Keep it idempotent, since it runs more than once.
+
+## Variables and inputs
+
+Templates carry two kinds of values, both of which can be exposed to the session as environment variables:
+
+- **Template variables** are baked into the template with a fixed value. Mark a variable as secret to encrypt it at rest and keep it out of logs.
+- **Session inputs** are filled in when a session is created. You can mark an input as required and give it a default value. A session input can also pull its value from a [saved input](/en/bitrise-rde/configuration/saved-inputs), so secrets are resolved on the server and never shown in the UI.
+
+## Workspace links
+
+Workspace links are buttons on the session that open a given folder path in your IDE. They're handy for jumping straight into the right directory in a multi-folder project.
+
+## Managing templates
+
+Create, edit, clone, and delete templates from the [Bitrise RDE UI](/en/bitrise-rde/ways-to-use-rde/bitrise-rde-ui), or from the CLI with `bitrise-cli rde template`.
+
+When you create a session, its template configuration is captured as a snapshot. Editing or deleting a template afterwards doesn't change or break sessions that were already created from it.

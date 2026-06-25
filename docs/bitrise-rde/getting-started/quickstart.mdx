@@ -1,0 +1,83 @@
+---
+title: "Quickstart"
+description: "Install the Bitrise CLI and start a Claude Code session in a Remote Dev Environment in three commands, then have the agent open VNC or move files to and from your machine."
+sidebar_position: 2
+slug: /bitrise-rde/getting-started/quickstart
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_RDEBetaNotice from '@site/src/partials/rde-beta-notice.mdx';
+
+The fastest way to try Remote Dev Environments is the Bitrise RDE CLI. In three commands you install the CLI, sign in, and drop into [Claude Code](https://www.anthropic.com/claude-code) running on a cloud machine, working on a clone of your repository.
+
+<Partial_RDEBetaNotice />
+
+## Before you start
+
+You need:
+
+- A Bitrise <GlossTerm baseform="workspace">workspace</GlossTerm> with RDE access.
+- A local Git repository with the branch you want to work on already pushed to its remote.
+- A Claude Code subscription or an Anthropic API key, so the agent can run in your session.
+
+## Start a Claude Code session
+
+Run these commands in your terminal.
+
+1. Install the Bitrise CLI.
+
+   ```bash
+   curl -fsSL https://app.bitrise.io/cli/install.sh | bash
+   ```
+1. Sign in to your Bitrise account. This opens your browser to authenticate.
+
+   ```bash
+   bitrise-cli auth login
+   ```
+1. From your repository folder, start a session with Claude Code.
+
+   ```bash
+   bitrise-cli rde claude
+   ```
+
+The first time you run it, the CLI asks you to pick a stack and a machine type, then remembers your choice for that repository. It creates a <GlossTerm baseform="rde session">session</GlossTerm>, clones your current branch into it, and starts Claude Code in the cloud machine. You land directly in the agent, ready to work.
+
+:::important[Only pushed commits are cloned]
+
+`bitrise-cli rde claude` clones the pushed state of your current branch. Local commits and uncommitted changes that you haven't pushed are not transferred to the session.
+
+:::
+
+## Let the agent reach your machine
+
+While you work in Claude Code on the cloud machine, the CLI keeps a secure connection open so the agent can run a few actions on your **local** computer. Just ask Claude Code in plain language:
+
+- **Open a VNC viewer** — the agent opens a remote desktop viewer on your machine, pointed at the session's macOS desktop, so you can watch a simulator or a GUI app. The VNC password stays local and is never sent to the session.
+- **Download files** — the agent pulls a file or folder from the session down to your machine and tells you where it landed.
+- **Upload files** — the agent pushes a local file or folder, such as a signing certificate, into the session.
+
+For example, after the agent builds your app you can say *"open VNC so I can see the simulator"* or *"download the build output to my Downloads folder"*, and it happens on your machine.
+
+:::note[VNC is macOS only]
+
+Opening a VNC viewer works for macOS sessions, which have a graphical desktop. Linux sessions don't have a desktop, so the agent can still transfer files but can't open VNC.
+
+:::
+
+## Resume your session later
+
+When you exit Claude Code, the session is automatically terminated to free the machine, but it's preserved so you can come back to it. From the same repository folder, resume your most recent session and conversation:
+
+```bash
+bitrise-cli rde claude --continue
+```
+
+To choose from your earlier sessions for the repository instead, use `bitrise-cli rde claude --resume`.
+
+## Next steps
+
+- Do more from the terminal: [Bitrise RDE CLI](/en/bitrise-rde/ways-to-use-rde/bitrise-rde-cli).
+- Understand what you just created: [Key concepts](/en/bitrise-rde/getting-started/key-concepts).
+- Prefer a browser or another IDE? See the other [ways to use RDE](/en/bitrise-rde/getting-started/remote-dev-environments-overview#ways-to-use-rde).

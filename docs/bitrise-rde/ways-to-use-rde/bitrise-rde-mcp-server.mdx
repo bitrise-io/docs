@@ -1,0 +1,85 @@
+---
+title: "MCP server for AI agents"
+description: "Connect the open-source Bitrise Dev Environments MCP server to your AI assistant so it can create and drive Remote Dev Environment sessions on your behalf."
+sidebar_position: 5
+slug: /bitrise-rde/ways-to-use-rde/bitrise-rde-mcp-server
+sidebar_label: "MCP server"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+The Bitrise Dev Environments MCP server lets any AI assistant that supports the [Model Context Protocol](https://modelcontextprotocol.io) — such as Claude Code, Claude Desktop, Cursor, or VS Code — create and drive Remote Dev Environment <GlossTerm baseform="rde session">sessions</GlossTerm> for you. The server is open source.
+
+## Two ways to connect
+
+- **Hosted** — connect your assistant to `https://mcp-rde.bitrise.io` and sign in with your browser the first time. There's nothing to install, and it's the recommended option.
+- **Local** — run the server as a binary on your machine using a personal access token. This exposes the full tool set, including uploading and downloading files between the session and your computer.
+
+## Adding it to your AI assistant
+
+Use the hosted server to get started. Set it up in the client you use:
+
+<Tabs>
+<TabItem value="claude-code" label="Claude Code" default>
+
+```bash
+claude mcp add --transport http bitrise-dev-environments https://mcp-rde.bitrise.io
+```
+
+Then run `/mcp` and authenticate in your browser.
+
+</TabItem>
+<TabItem value="cursor" label="Cursor">
+
+Add the server to your `mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "bitrise-dev-environments": {
+      "url": "https://mcp-rde.bitrise.io"
+    }
+  }
+}
+```
+
+</TabItem>
+<TabItem value="vs-code" label="VS Code">
+
+Add the server to your MCP configuration:
+
+```json
+{
+  "servers": {
+    "bitrise-dev-environments": {
+      "type": "http",
+      "url": "https://mcp-rde.bitrise.io"
+    }
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+## What your assistant can do
+
+Once connected, you can ask your assistant in plain language to:
+
+- Create, list, restore, terminate, and delete sessions.
+- Run shell commands in a session over SSH.
+- Take screenshots of, and control, the macOS desktop.
+- Open SSH or VNC remote access.
+- Upload and download files (local server only).
+
+For example: *"Spin up a macOS Xcode session, clone my repo, and run the unit tests."*
+
+## Authentication
+
+The hosted server uses browser-based sign-in, so there's no token to manage. The local server authenticates with a Bitrise [personal access token](https://app.bitrise.io/me/account/security) set as the `BITRISE_TOKEN` environment variable. If you belong to more than one <GlossTerm baseform="workspace">workspace</GlossTerm>, set `BITRISE_WORKSPACE_ID`.
+
+## Learn more
+
+For the local setup, the full list of tools, and per-client install guides, see the open-source repository: [bitrise-io/bitrise-mcp-dev-environments](https://github.com/bitrise-io/bitrise-mcp-dev-environments).
