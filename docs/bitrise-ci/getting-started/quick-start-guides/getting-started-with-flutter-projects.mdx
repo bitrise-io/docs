@@ -2,6 +2,7 @@
 title: "Getting started with Flutter projects"
 description: "Get started on Bitrise by signing up via email or a Git provider, connecting a repository, and running the first build for your Flutter app."
 sidebar_position: 4
+draft: true
 slug: /bitrise-ci/getting-started/quick-start-guides/getting-started-with-flutter-projects
 ---
 
@@ -9,97 +10,14 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
+import Partial_AddingANewProjectToBitrise from '@site/src/partials/adding-a-new-project-to-bitrise.mdx';
 
 Flutter is a mobile app SDK that allows developers to create native apps for both iOS and Android. [Bitrise](https://app.bitrise.io/users/sign_in) supports Flutter apps: we have dedicated <GlossTerm baseform="Step">Steps</GlossTerm> to help you with all your Flutter needs. This guide walks you through setting up, testing, building and deploying a simple Flutter <GlossTerm baseform="Project">project</GlossTerm> on Bitrise.
 
 
 ## Adding a Flutter project to Bitrise
 
-1. Log in to Bitrise and go to the **Dashboard**.
-1. Click the **New project** button.
-1. Select **Configure Bitrise CI**.
-1. Under **Project access**, select the <GlossTerm baseform="workspace">workspace</GlossTerm> that will own the project.
-
-   ![20251219-adding-project-workspace-select.png](/img/_paligo/uuid-d1d45e63-f66b-fd5d-f4af-4d893ff388fb.png)
-1. Set who has access to the project's CI builds:
-
-   :::caution[Privacy is final]
-
-   You cannot change this setting later! If you realize you've accidentally added your project as a public project even though you need it to be private, you'll have to delete the project and add it again.
-
-   :::
-
-   Private projects are only accessible to you, your workspace members and those who are invited to work on a project. They require authentication to access the repository of the project.
-
-   [Public projects](/en/bitrise-platform/projects/public-projects) expose their <GlossTerm baseform="configuration yaml">configuration YAML</GlossTerm> and their build logs to everyone. If you have a public project’s build URL, you can view its build log, to help with troubleshooting, for example. Public projects do not require authentication and they cannot have SSH keys.
-1. Open the **Provider** dropdown menu and select the [repository access](/en/bitrise-platform/repository-access/about-repository-access) type.
-
-   You can select from:
-
-   - Connected Git provider accounts: Either via [OAuth connection](/en/bitrise-platform/repository-access/repository-access-with-oauth) or the [GitHub app integration](/en/bitrise-platform/repository-access/github-app-integration).
-   - Not connected Git provider accounts: you will be prompted to connect one.
-   - **Other**: A Git provider other than GitHub/GitLab/Bitbucket.
-
-   ![20251219-repo-access.png](/img/_paligo/uuid-2970ac6b-3d97-8318-0863-aff6e1f106da.png)
-1. Select a repository.
-
-   - If you selected a connected Git account, you can click **Select a repository** to select from the available repositories on that account.
-   - In any case, you can type the URL manually in the **Git repository (clone) URL**. We strongly recommend using an SSH URL, unless you are setting up a [public project](/en/bitrise-platform/projects/public-projects).
-
-   :::note[Repository URL]
-
-   You will be able to [change your project's repository URL](/en/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch) later. You can also connect or disconnect your account to Git provider services at any time.
-
-   :::
-1. If you use an OAuth connection, you need to [add an SSH key](/en/bitrise-platform/repository-access/configuring-ssh-keys) in the **Authorize Bitrise** section.
-
-   You don't need SSH keys if:
-
-   - Your project is a public project.
-   - You connect to your Git repository via a [GitHub app installation](/en/bitrise-platform/repository-access/github-app-integration).
-
-   ![20251219-authorize-bitrise.png](/img/_paligo/uuid-cd752575-c17c-0ccd-25b3-a2c97daadd57.png)
-
-   **Auto-add a generated SSH key to your repository**: We recommend using this option. We automatically generate an SSH key pair and register the public key to your repository. Requires your connected Git provider account to have admin rights to the repository.
-
-   **Copy a generated SSH key to your Git provider manually**: We generate an SSH key pair for you and you can copy the public key and register it manually to your Git provider. It is useful if, for example, you need to access multiple repositories with the same SSH key.
-
-   **Add your own SSH key to Bitrise**: You can generate your own SSH key and paste the private key here after choosing this option. You also need to add the public key to the repository manually. To generate your SSH key pair: [Generating your own SSH keypair](/en/bitrise-platform/repository-access/configuring-ssh-keys#generating-your-own-ssh-keypair).
-
-   :::note[Configure SSH keys at any time]
-
-   If you can't set up a valid, working SSH key connection at this time, don't worry: proceed with adding your project. You can set up the SSH connection afterwards: [Configuring SSH keys](/en/bitrise-platform/repository-access/configuring-ssh-keys).
-
-   :::
-1. Select the default branch of your repository. This branch should contain the configuration of your project.
-
-   - If you successfully configured SSH access in the previous step or if you're adding a public project, Bitrise will parse your repository and allow you to select a branch from a dropdown menu.
-   - If you didn't configure repository access, you need to type the branch name manually.
-
-   [You can change the default branch of the project later](/en/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch).
-
-   ![20251219-choose-branch.png](/img/_paligo/uuid-95a678d3-4251-c9b6-555a-6a1a0b48ae24.png)
-1. Select **Yes, auto-detect configuration**. Bitrise will scan your repository and attempt to set up a <GlossTerm baseform="stack">stack</GlossTerm> and default <GlossTerm baseform="workflow">Workflows</GlossTerm> based on the results of the scan. In most cases, we recommend choosing this option.
-
-   :::note[Project type]
-
-   Detecting a project type serves to assist in the initial configuration of your project. But don't worry, you can change every setting, including the project type, at any time after you added the project.
-
-   :::
-1. Wait while Bitrise is validating your project.
-
-   We look for your configuration files and set up your app based on them. In the case of Flutter apps, you definitely need a `pubspec.yaml` file in your project.
-
-   :::note
-
-   If you have a `/web` directory in your Flutter project, the scanner detects a Flutter web project. This guide is about a Flutter mobile project: for web projects, see [Getting started with web CI](/en/bitrise-ci/getting-started/quick-start-guides/getting-started-with-web-ci). Note that there is no native build Step for web targets.
-
-   :::
-1. Type the name of the branch that includes your project’s configuration - master, for example - then click **Next**.
-1. If you have an iOS project in your Flutter project, you will have to select an .ipa export method.
-1. Register a webhook when prompted so that Bitrise can start a build automatically when code is pushed to your repository, or a pull request is created.
-1. Once you are done, click **View Project Page** to go to the newly added project's home page. From there, you can start [editing your Workflows](/en/bitrise-ci/workflows-and-pipelines/workflows/workflows-overview) and [run builds](/en/bitrise-ci/run-and-analyze-builds/starting-builds/approving-pull-request-builds).
-
+<Partial_AddingANewProjectToBitrise />
 
 ## Testing a Flutter app
 
