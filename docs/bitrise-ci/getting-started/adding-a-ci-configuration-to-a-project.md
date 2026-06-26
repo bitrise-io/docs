@@ -16,9 +16,9 @@ To add CI configuration to a project:
 
    ![extending-ci-config.png](/img/_paligo/uuid-d6541f5d-351c-81f9-7a8b-41cfa8c1a21d.png)
 
-   :::note[Start new project]
+   :::note[Start a new project]
 
-   The **Start new project** option starts a new project with a CI configuration. If you want a Release Management project without a CI configuration, select **Releases** from navigation menu on the left and [add an app](/en/release-management/getting-started-with-release-management/adding-a-new-app-to-release-management).
+   The **Start a new project** option starts a new project with a CI configuration. If you want a Release Management project without a CI configuration, select **Releases** from navigation menu on the left and [add an app](/en/release-management/getting-started-with-release-management/adding-a-new-app-to-release-management).
 
    :::
 1. Select a project from the dropdown menu, then click **Continue**.
