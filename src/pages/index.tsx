@@ -148,6 +148,7 @@ const sections: Section[] = [
         {label: 'Remote Dev Environments overview', href: '/en/bitrise-rde/getting-started/remote-dev-environments-overview'},
         {label: 'Quickstart', href: '/en/bitrise-rde/getting-started/quickstart'},
         {label: 'Bitrise RDE CLI', href: '/en/bitrise-rde/ways-to-use-rde/bitrise-rde-cli'},
+        {label: 'RDE API', href: '/en/bitrise-rde/configuration/rde-api'},
       ],
     ],
   },

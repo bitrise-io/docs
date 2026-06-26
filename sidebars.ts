@@ -1,5 +1,6 @@
 import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
 import bitriseAPIApiSidebar from './docs/bitrise-api/api-reference/sidebar';
+import rdeAPIApiSidebar from './docs/bitrise-rde-api/api-reference/sidebar';
 
 function productSidebar(dirName: string, title: string) {
   return [
@@ -23,21 +24,30 @@ const TAG_LABEL_OVERRIDES: Record<string, string> = {
   'Key value cache': 'Key-value cache',
 };
 
+// Normalize a generated openapi sidebar (tag categories) into hub items:
+// sentence-case the tag labels and tag every entry with the "Code" icon. The
+// generated info doc has no label and is filtered out (added explicitly below).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const hubItems = (bitriseAPIApiSidebar as any[]).filter((item: any) => item.label).map(item => {
-  const originalLabel = item.label as string | undefined;
-  const correctedLabel = originalLabel
-    ? (() => { const n = normalizeLabel(originalLabel); return TAG_LABEL_OVERRIDES[n] ?? n; })()
-    : originalLabel;
-  return {
-    ...item,
-    ...(correctedLabel !== undefined ? {label: correctedLabel} : {}),
-    customProps: {
-      ...(item.customProps ?? {}),
-      icon: 'Code',
-    },
-  };
-});
+function toHubItems(generated: any) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (generated as any[]).filter((item: any) => item.label).map(item => {
+    const originalLabel = item.label as string | undefined;
+    const correctedLabel = originalLabel
+      ? (() => { const n = normalizeLabel(originalLabel); return TAG_LABEL_OVERRIDES[n] ?? n; })()
+      : originalLabel;
+    return {
+      ...item,
+      ...(correctedLabel !== undefined ? {label: correctedLabel} : {}),
+      customProps: {
+        ...(item.customProps ?? {}),
+        icon: 'Code',
+      },
+    };
+  });
+}
+
+const hubItems = toHubItems(bitriseAPIApiSidebar);
+const rdeHubItems = toHubItems(rdeAPIApiSidebar);
 
 const sidebars: SidebarsConfig = {
   platformSidebar: productSidebar('bitrise-platform', 'Bitrise as a Platform'),
@@ -46,7 +56,23 @@ const sidebars: SidebarsConfig = {
   releaseManagementSidebar: productSidebar('release-management', 'Release Management'),
   insightsSidebar: productSidebar('insights', 'Insights'),
   buildHubSidebar: productSidebar('bitrise-build-hub', 'Build Hub'),
-  rdeSidebar: productSidebar('bitrise-rde', 'Remote Dev Environments'),
+  rdeSidebar: [
+    ...productSidebar('bitrise-rde', 'Remote Dev Environments'),
+    {
+      type: 'category',
+      label: 'API reference',
+      collapsed: true,
+      customProps: {icon: 'Code'},
+      items: [
+        {
+          type: 'doc',
+          id: 'bitrise-rde-api/api-reference/bitrise-remote-dev-environments-api',
+          label: 'Introduction',
+        },
+        ...rdeHubItems,
+      ],
+    },
+  ],
   bitriseAPISidebar: [
     {type: 'link', label: '← Home', href: '/'},
     {type: 'html', value: '<div class="sidebar-product-title">Bitrise API</div>'},
