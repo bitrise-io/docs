@@ -47,7 +47,7 @@ All Android apps must be digitally signed with a certificate before they can be 
 
    ![keystore-alias.png](/img/_paligo/uuid-0b79fc48-3861-0744-0f53-53a6c65ffc2c.png)
 1. Open the <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>.
-1. Add the **Android Sign****Generate cordova build configuration** Step to your Workflow.
+1. Add the **Android Sign** Step to your Workflow.
 
    If you uploaded your keystore file and filled out the metadata, the required inputs of the Step are already filled and require no more configuration from you.
 
@@ -69,7 +69,7 @@ You can easily create a signed IPA file for your Xcode project with Bitrise.
 
 - You have set up [Apple service connection](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services) on Bitrise.
 - Your [code signing files are managed correctly](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects).
-- You set the relevant inputs of our **Xcode Archive and Export for iOS** Step.
+- You set the relevant inputs of our **Xcode Archive & Export for iOS** Step.
 
 :::important[Upload the distribution AND the development signing certificates]
 
@@ -233,25 +233,12 @@ If all goes well, your app will be submitted to App Store and you can distribute
 
 You can use the **Deploy to Google Play** Step in your Workflow to upload your digitally signed AAB/APK to the Google Play Store.
 
-1. Add the **Cordova archive** or the **Ionic archive** Step to your Workflow.
-
-   Note that if you’re building for both iOS and Android in one project, and either of your apps fails, the whole **Cordova archive/Ionic archive** Step will fail.
-1. Fill in the required inputs.
-
-   - The **Platform** input needs to be set to **device**.
-   - The **Build command configuration** input must match the **Build configuration** input of the **Generate cordova build configuration** Step.
-
-   The archive Step must come after the **Generate cordova build configuration** Step in the Workflow.
+1. Make sure your Workflow includes the **Android Build** Step and that it runs before the **Android Sign** Step.
 1. [Configure code signing](/en/bitrise-ci/getting-started/quick-start-guides/getting-started-with-react-native-projects#signing-your-android-project) for your app.
 1. [Configure Google Play access.](/en/bitrise-ci/deploying/android-deployment/generating-and-deploying-android-app-bundles#setting-up-google-play-deployment-for-the-first-time)
 
    You only need to do this for your very first Google Play deployment of the app.
-1. In the **Flutter Build** Step, find the **Android Platform Configs** input group and make sure the **Additional parameters** input has the value `--release`.
-1. In the **Android output artifact type** input field, select either **APK** or **appbundle** depending on your deployment requirements.
-1. In the **Output (.apk, .aab) pattern** input, set the path where the **Deploy to Google Play** Step will be able to access the generated binary.
-
-   The path should be relative to the project source directory, stored in the BITRISE_SOURCE_DIR Environment Variable.
-1. Make sure you have the **Deploy to Google Play** Step after the **Android Sign****Cordova Archive** or **Ionic Archive** Step in your Workflow.
+1. Make sure you have the **Deploy to Google Play** Step after the **Android Sign** Step in your Workflow.
 1. Fill out the required input fields as follows:
 
    - **Service Account JSON key file path**: This field can accept a remote URL so you have to provide the Env Var which contains your uploaded service account JSON key. For example: `$BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL`.
