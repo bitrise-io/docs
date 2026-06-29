@@ -170,8 +170,9 @@ const config: Config = {
       // Generated API reference files use openapi-docs JSX components that span
       // multiple lines. The line-by-line tag escaper would mangle their closing
       // tags (e.g. `</StatusCodes>`) while leaving multi-line opening tags intact,
-      // causing MDX to report unclosed-tag errors. Skip them entirely.
-      if (filePath.includes('/bitrise-api/api-reference/')) return fileContent;
+      // causing MDX to report unclosed-tag errors. Skip them entirely. Matches
+      // every generated reference (bitrise-api, bitrise-rde-api, …).
+      if (filePath.includes('/api-reference/')) return fileContent;
       // Step 1: expand `1. <Partial_X />` placeholders (list-context partials)
       // BEFORE we do tag escaping below, so the inlined items are subject to
       // the same escape rules as inline content.
@@ -300,6 +301,14 @@ const config: Config = {
           bitriseCI: {
             specPath: 'api/bitrise-ci.json',
             outputDir: 'docs/bitrise-api/api-reference',
+            sidebarOptions: {
+              groupPathsBy: 'tag',
+            },
+          },
+          bitriseRDE: {
+            // Remote Dev Environments API — sourced live from the hosted spec.
+            specPath: 'https://api.bitrise.io/rde/api-docs/swagger.json',
+            outputDir: 'docs/bitrise-rde-api/api-reference',
             sidebarOptions: {
               groupPathsBy: 'tag',
             },

@@ -381,7 +381,7 @@ The script is idempotent. After running, review the diff and commit if the chang
 
 ## Generating API reference docs
 
-The Bitrise CI API reference (`docs/bitrise-api/api-reference/`) is generated from `api/bitrise-ci.json` using `docusaurus-plugin-openapi-docs`. Never edit the generated files by hand — they are overwritten on every run.
+The Bitrise CI API reference (`docs/bitrise-api/api-reference/`) and the RDE API reference (`docs/bitrise-rde-api/api-reference/`) are generated from their OpenAPI specs using `docusaurus-plugin-openapi-docs` (specs configured in `docusaurus.config.ts`). Never edit the generated files by hand — they are overwritten on every run.
 
 ### Regenerating after a spec update
 
@@ -391,19 +391,19 @@ npm run gen-api-docs
 
 This runs two things in sequence:
 
-1. `docusaurus gen-api-docs bitrise-api` — generates 120+ `.api.mdx` files and a `sidebar.js` from the OpenSpec spec.
-2. `node scripts/patch-api-info.js` — applies two fixes the plugin doesn't handle:
-   - Adds `displayed_sidebar: bitriseAPISidebar` to `bitrise-api.info.mdx` so the page renders inside the correct sidebar.
-   - Fills in the empty License section with the name from the spec (`MIT`).
+1. `docusaurus gen-api-docs all` — generates the `.api.mdx` files and `sidebar.ts` for every configured spec (the CI API and the RDE API).
+2. `node scripts/patch-api-info.js` — applies fixes the plugin doesn't handle, to each generated `*.info.mdx`:
+   - Adds `displayed_sidebar` so the page renders inside the correct sidebar (`bitriseAPISidebar` for the CI API, `rdeSidebar` for the RDE API).
+   - Fills in the empty License section with the name from the spec — CI API only (`MIT`).
 
 Always use the npm script, not the bare `docusaurus` command, so the patch is always applied.
 
 ### Preprocessor skip rule
 
-`docusaurus.config.ts` has a `markdown.preprocessor` that escapes JSX-looking text across all `.mdx` files. The generated API files contain multi-line JSX components (`<StatusCodes>`, `<RequestSchema>`, etc.) that the line-by-line escaper would mangle. They are skipped entirely via an early return:
+`docusaurus.config.ts` has a `markdown.preprocessor` that escapes JSX-looking text across all `.mdx` files. The generated API files contain multi-line JSX components (`<StatusCodes>`, `<RequestSchema>`, etc.) that the line-by-line escaper would mangle. They are skipped entirely via an early return that matches every generated reference (`bitrise-api`, `bitrise-rde-api`, …):
 
 ```ts
-if (filePath.includes('/bitrise-api/api-reference/')) return fileContent;
+if (filePath.includes('/api-reference/')) return fileContent;
 ```
 
 Do not remove this rule — it prevents the preprocessor from breaking the generated files.
