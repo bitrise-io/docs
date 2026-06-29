@@ -1,0 +1,3429 @@
+{
+  "basePath": "/rde",
+  "consumes": [
+    "application/json"
+  ],
+  "definitions": {
+    "protobufAny": {
+      "additionalProperties": {},
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "rpcStatus": {
+      "properties": {
+        "code": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "details": {
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          },
+          "type": "array"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1AgentSessionStatus": {
+      "default": "AGENT_SESSION_STATUS_UNSPECIFIED",
+      "description": "AgentSessionStatus represents the abstract state of the AI agent running in a session.\nProvider-agnostic: works for any AI agent (Claude, etc.), not tied to a specific provider.\n\n - AGENT_SESSION_STATUS_UNSPECIFIED: No agent activity or agent not configured.\n - AGENT_SESSION_STATUS_WORKING: Agent is actively processing.\n - AGENT_SESSION_STATUS_WAITING_FOR_INPUT: Agent is waiting for user input (permission prompt, elicitation, etc.).\n - AGENT_SESSION_STATUS_IDLE: Agent finished processing and is idle (waiting at the prompt).",
+      "enum": [
+        "AGENT_SESSION_STATUS_UNSPECIFIED",
+        "AGENT_SESSION_STATUS_WORKING",
+        "AGENT_SESSION_STATUS_WAITING_FOR_INPUT",
+        "AGENT_SESSION_STATUS_IDLE"
+      ],
+      "type": "string"
+    },
+    "v1AutoMappedInput": {
+      "description": "AutoMappedInput records a template session input that was auto-filled from\nthe caller's saved inputs because map_saved_to_session_inputs was set.",
+      "properties": {
+        "savedInputId": {
+          "description": "ID of the saved input used to populate the value.",
+          "type": "string"
+        },
+        "sessionInputKey": {
+          "description": "Key of the template session input that was auto-filled.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1ClusterOption": {
+      "description": "ClusterOption represents a single cluster that can serve a given image + machine type.",
+      "properties": {
+        "clusterName": {
+          "description": "Name of the cluster.",
+          "type": "string"
+        },
+        "imageId": {
+          "description": "Cluster-specific image ID.",
+          "type": "string"
+        },
+        "machineTypeId": {
+          "description": "Cluster-specific machine type ID.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1CompareSessionTemplateResponse": {
+      "description": "CompareSessionTemplateResponse contains both the snapshot and current template configurations.",
+      "properties": {
+        "changedVariableKeys": {
+          "description": "Keys of template variables whose values differ between snapshot and current.\nOnly the keys are returned; actual values are never exposed.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "current": {
+          "$ref": "#/definitions/v1TemplateConfig",
+          "description": "Current template configuration (null if the template is deleted)."
+        },
+        "snapshot": {
+          "$ref": "#/definitions/v1TemplateConfig",
+          "description": "Template configuration from the session's snapshot (at creation time)."
+        }
+      },
+      "type": "object"
+    },
+    "v1CreateSavedInputRequest": {
+      "description": "CreateSavedInputRequest is the request for creating a saved input.",
+      "properties": {
+        "isSecret": {
+          "description": "Whether this is a secret value.",
+          "type": "boolean"
+        },
+        "key": {
+          "description": "Key/name of the input.",
+          "type": "string"
+        },
+        "value": {
+          "description": "Value of the input.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1CreateSavedInputResponse": {
+      "description": "CreateSavedInputResponse is the response for creating a saved input.",
+      "properties": {
+        "savedInput": {
+          "$ref": "#/definitions/v1SavedInput",
+          "description": "The created saved input."
+        }
+      },
+      "type": "object"
+    },
+    "v1CreateSessionResponse": {
+      "description": "CreateSessionResponse is the response for creating a session.",
+      "properties": {
+        "autoMappedInputs": {
+          "description": "Session inputs that were auto-filled from the user's saved inputs.\nEmpty unless the request set map_saved_to_session_inputs=true.",
+          "items": {
+            "$ref": "#/definitions/v1AutoMappedInput",
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "session": {
+          "$ref": "#/definitions/v1Session",
+          "description": "The created session."
+        }
+      },
+      "type": "object"
+    },
+    "v1CreateTemplateResponse": {
+      "description": "CreateTemplateResponse is the response for creating a template.",
+      "properties": {
+        "template": {
+          "$ref": "#/definitions/v1Template",
+          "description": "The created template."
+        }
+      },
+      "type": "object"
+    },
+    "v1DeleteSavedInputResponse": {
+      "description": "DeleteSavedInputResponse is the response for deleting a saved input.",
+      "type": "object"
+    },
+    "v1DeleteSessionResponse": {
+      "description": "DeleteSessionResponse is the response for deleting a session.",
+      "type": "object"
+    },
+    "v1DeleteTemplateResponse": {
+      "description": "DeleteTemplateResponse is the response for deleting a template.",
+      "type": "object"
+    },
+    "v1DeleteTerminatedSessionsResponse": {
+      "description": "DeleteTerminatedSessionsResponse is the response for deleting all terminated sessions.",
+      "properties": {
+        "deletedCount": {
+          "description": "Number of sessions that were deleted.",
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "v1FeatureFlag": {
+      "description": "FeatureFlag represents a toggleable feature for a template.",
+      "properties": {
+        "description": {
+          "description": "Description explaining what this feature flag enables.",
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier (UUID).",
+          "type": "string"
+        },
+        "name": {
+          "description": "Name of the feature flag.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1FeatureFlagCreate": {
+      "description": "FeatureFlagCreate is used when creating a feature flag.",
+      "properties": {
+        "description": {
+          "description": "Description explaining what this feature flag enables.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Name of the feature flag.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1GetMeResponse": {
+      "description": "GetMeResponse is the response containing the current authenticated user.",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/v1User",
+          "description": "The authenticated user."
+        }
+      },
+      "type": "object"
+    },
+    "v1GetSavedInputResponse": {
+      "description": "GetSavedInputResponse is the response for getting a saved input.",
+      "properties": {
+        "savedInput": {
+          "$ref": "#/definitions/v1SavedInput",
+          "description": "The saved input."
+        }
+      },
+      "type": "object"
+    },
+    "v1GetSessionLogsResponse": {
+      "description": "GetSessionLogsResponse is a single log chunk in the stream.",
+      "properties": {
+        "heartbeatMessage": {
+          "description": "Whether this is a heartbeat message (empty content, just keeping connection alive).",
+          "type": "boolean"
+        },
+        "logContent": {
+          "description": "Content of this log chunk.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1GetSessionResponse": {
+      "description": "GetSessionResponse is the response for getting a session.",
+      "properties": {
+        "session": {
+          "$ref": "#/definitions/v1Session",
+          "description": "The session."
+        }
+      },
+      "type": "object"
+    },
+    "v1GetTemplateResponse": {
+      "description": "GetTemplateResponse is the response for getting a template.",
+      "properties": {
+        "template": {
+          "$ref": "#/definitions/v1Template",
+          "description": "The template."
+        }
+      },
+      "type": "object"
+    },
+    "v1GetWorkspaceInfoResponse": {
+      "description": "GetWorkspaceInfoResponse carries workspace-level capabilities the UI uses to\ntailor what it shows.",
+      "properties": {
+        "isFreeTrial": {
+          "description": "Whether the workspace is on a free trial. Free-trial sessions are pinned to\nan 8-hour auto-terminate window that cannot be changed.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "v1Image": {
+      "description": "Image represents a machine image available for sessions.\n\nDeprecated: use Stack. Images expose opaque merged-stack ids (e.g. \"osx-26-edge\")\nthat bundle many Xcode versions and can be recomposed at any time. Stack exposes\nthe stable, specific stack id with friendly metadata.",
+      "properties": {
+        "clusterName": {
+          "description": "The cluster where this image is available.",
+          "type": "string"
+        },
+        "id": {
+          "description": "Image identifier (used in template.image).",
+          "type": "string"
+        },
+        "isDefault": {
+          "description": "Whether this is the deployment's default image. Clients preselect it when\nthe user has made no prior choice. At most one image name is marked.",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "Human-readable name.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1ListImagesResponse": {
+      "description": "ListImagesResponse is the response for listing images.",
+      "properties": {
+        "images": {
+          "description": "List of available images.",
+          "items": {
+            "$ref": "#/definitions/v1Image",
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "v1ListMachineTypesResponse": {
+      "description": "ListMachineTypesResponse is the response for listing machine types.",
+      "properties": {
+        "machineTypes": {
+          "description": "List of available machine types.",
+          "items": {
+            "$ref": "#/definitions/v1MachineType",
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "v1ListSavedInputsResponse": {
+      "description": "ListSavedInputsResponse is the response for listing saved inputs.",
+      "properties": {
+        "savedInputs": {
+          "description": "List of saved inputs.",
+          "items": {
+            "$ref": "#/definitions/v1SavedInput",
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "v1ListSessionNotificationsResponse": {
+      "description": "ListSessionNotificationsResponse is the response for listing session notifications.",
+      "properties": {
+        "notifications": {
+          "description": "The notifications for the session.",
+          "items": {
+            "$ref": "#/definitions/v1SessionNotification",
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "v1ListSessionsResponse": {
+      "description": "ListSessionsResponse is the response for listing sessions.",
+      "properties": {
+        "sessions": {
+          "description": "List of sessions.",
+          "items": {
+            "$ref": "#/definitions/v1Session",
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "v1ListStacksResponse": {
+      "description": "ListStacksResponse is the response for listing stacks.",
+      "properties": {
+        "stacks": {
+          "description": "List of available, provisionable stacks.",
+          "items": {
+            "$ref": "#/definitions/v1Stack",
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "v1ListTemplatesResponse": {
+      "description": "ListTemplatesResponse is the response for listing templates.",
+      "properties": {
+        "templates": {
+          "description": "List of templates.",
+          "items": {
+            "$ref": "#/definitions/v1Template",
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "v1MachineType": {
+      "description": "MachineType represents a machine type available for sessions.",
+      "properties": {
+        "clusterName": {
+          "description": "The cluster where this machine type is available.",
+          "type": "string"
+        },
+        "cpu": {
+          "description": "Display CPU string, e.g. \"4 vCPU\".",
+          "type": "string"
+        },
+        "id": {
+          "description": "Machine type identifier (used in template.machine_type).",
+          "type": "string"
+        },
+        "isDefault": {
+          "description": "Whether this is the deployment's default machine type. Clients preselect it\nwhen the user has made no prior choice. At most one machine type name is\nmarked.",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "Human-readable name.",
+          "type": "string"
+        },
+        "os": {
+          "description": "Operating system: \"macos\" or \"linux\".",
+          "type": "string"
+        },
+        "ram": {
+          "description": "Display RAM string, e.g. \"6 GB\".",
+          "type": "string"
+        },
+        "title": {
+          "description": "Human-friendly title, e.g. \"M2 Pro Large\". Empty when no friendly metadata\nis available.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1OpenRemoteAccessResponse": {
+      "description": "OpenRemoteAccessResponse is the response for opening remote access.",
+      "properties": {
+        "session": {
+          "$ref": "#/definitions/v1Session",
+          "description": "The updated session with remote access details."
+        }
+      },
+      "type": "object"
+    },
+    "v1PersistentDiskStatus": {
+      "default": "PERSISTENT_DISK_STATUS_UNSPECIFIED",
+      "description": "PersistentDiskStatus represents the status of a machine's persistent disk.\n\n - PERSISTENT_DISK_STATUS_UNSPECIFIED: Unspecified or not applicable (non-terminated sessions).\n - PERSISTENT_DISK_STATUS_AVAILABLE: The disk is available and the session can be restored.\n - PERSISTENT_DISK_STATUS_UNAVAILABLE_SOON: The disk will become unavailable soon (within 1 week).\nThe session can still be restored but user should be warned.\n - PERSISTENT_DISK_STATUS_UNAVAILABLE: The disk is no longer available. The session cannot be restored.",
+      "enum": [
+        "PERSISTENT_DISK_STATUS_UNSPECIFIED",
+        "PERSISTENT_DISK_STATUS_AVAILABLE",
+        "PERSISTENT_DISK_STATUS_UNAVAILABLE_SOON",
+        "PERSISTENT_DISK_STATUS_UNAVAILABLE"
+      ],
+      "type": "string"
+    },
+    "v1ResolveClustersResponse": {
+      "description": "ResolveClustersResponse contains the list of clusters that offer both the\nrequested image and machine type.",
+      "properties": {
+        "clusters": {
+          "description": "Matching clusters (one entry per cluster that has both image and machine type).",
+          "items": {
+            "$ref": "#/definitions/v1ClusterOption",
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "v1RestoreSessionResponse": {
+      "description": "RestoreSessionResponse is the response for restoring a session.",
+      "properties": {
+        "session": {
+          "$ref": "#/definitions/v1Session",
+          "description": "The updated session."
+        }
+      },
+      "type": "object"
+    },
+    "v1SavedInput": {
+      "description": "SavedInput represents a saved credential/value for a user.\nUsers can reuse these across sessions (e.g., GitHub PAT, SSH keys).",
+      "properties": {
+        "createdAt": {
+          "description": "When created.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier (UUID).",
+          "type": "string"
+        },
+        "isSecret": {
+          "description": "Whether this is a secret value.",
+          "type": "boolean"
+        },
+        "key": {
+          "description": "Key/name of the input.",
+          "type": "string"
+        },
+        "updatedAt": {
+          "description": "When updated.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "value": {
+          "description": "Value of the input. For secret inputs this is empty unless the request explicitly\nset include_secrets=true (see GetSavedInputRequest/ListSavedInputsRequest).",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1Session": {
+      "description": "Session represents a remote development environment instance.",
+      "properties": {
+        "agentSessionStatus": {
+          "$ref": "#/definitions/v1AgentSessionStatus",
+          "description": "Current abstract status of the AI agent running in this session.\nProvider-agnostic (works for any AI agent). Updated via webhook notifications."
+        },
+        "agentSessionStatusUpdatedAt": {
+          "description": "When the agent session status was last updated.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "aiConfigured": {
+          "description": "Whether this session's VM was set up with Claude Code AI tooling.\nIf ai_enabled is true but ai_configured is false, the session needs a\nrestart to install Claude Code.",
+          "type": "boolean"
+        },
+        "aiEnabled": {
+          "description": "Whether Claude Code AI is available (user has ANTHROPIC_API_KEY configured).",
+          "type": "boolean"
+        },
+        "aiPrompt": {
+          "description": "AI prompt passed to Claude Code when the session was created.",
+          "type": "string"
+        },
+        "autoTerminateAt": {
+          "description": "When the session will auto-terminate. Empty if disabled or already processed by the worker.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "autoTerminateMinutes": {
+          "description": "The user's chosen auto-terminate duration in minutes. 0 if disabled.",
+          "format": "int32",
+          "type": "integer"
+        },
+        "createdAt": {
+          "description": "When the session was created.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "description": {
+          "description": "Description of the session.",
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier (UUID) of the session.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Human-readable name of the session.",
+          "type": "string"
+        },
+        "persistentDiskStatus": {
+          "$ref": "#/definitions/v1PersistentDiskStatus",
+          "description": "Status of the persistent disk for terminated sessions.\nUsed to determine if a session can be restored."
+        },
+        "sshAddress": {
+          "description": "SSH connection address (when running).",
+          "type": "string"
+        },
+        "sshConnectionOpen": {
+          "description": "Whether the SSH connection is fully established and ready.",
+          "type": "boolean"
+        },
+        "sshPassword": {
+          "description": "SSH password (when running).",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/v1SessionStatus",
+          "description": "Current status of the session."
+        },
+        "templateDeleted": {
+          "description": "Whether the template this session was created from has been deleted.",
+          "type": "boolean"
+        },
+        "templateId": {
+          "description": "ID of the template this session was created from (historical reference).",
+          "type": "string"
+        },
+        "templateOutdated": {
+          "description": "Whether the template has been updated since this session was created.\nComputed by comparing the snapshot's updated_at with the current template's updated_at.\nFalse when the template is deleted or the snapshot predates this feature.",
+          "type": "boolean"
+        },
+        "templateSnapshot": {
+          "$ref": "#/definitions/v1SessionTemplateSnapshot",
+          "description": "Snapshot of the template configuration at session creation time.\nContains all template variables, session input values, feature flags, and workspace links."
+        },
+        "updatedAt": {
+          "description": "When the session was last updated.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "vncAddress": {
+          "description": "VNC connection address (when running).",
+          "type": "string"
+        },
+        "vncPassword": {
+          "description": "VNC password (when running).",
+          "type": "string"
+        },
+        "vncUsername": {
+          "description": "VNC username (when running).",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1SessionClickResponse": {
+      "description": "SessionClickResponse is the response for clicking.",
+      "type": "object"
+    },
+    "v1SessionCompleteFileUploadResponse": {
+      "description": "SessionCompleteFileUploadResponse is the response for completing an upload.",
+      "type": "object"
+    },
+    "v1SessionCompleteUploadResponse": {
+      "description": "SessionCompleteUploadResponse is the response for completing an upload.\n\nDeprecated: use SessionCompleteFileUploadResponse.",
+      "type": "object"
+    },
+    "v1SessionDownloadFileResponse": {
+      "description": "SessionDownloadFileResponse is the response for downloading files.",
+      "properties": {
+        "signedUrl": {
+          "description": "GCS signed GET URL for the tar.gz archive.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1SessionDownloadResponse": {
+      "description": "SessionDownloadResponse is the response for downloading files.\n\nDeprecated: use SessionDownloadFileResponse.",
+      "properties": {
+        "signedUrl": {
+          "description": "GCS signed GET URL for the tar.gz archive.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1SessionExecuteResponse": {
+      "description": "SessionExecuteResponse is the response for executing a command.",
+      "properties": {
+        "output": {
+          "description": "Combined stdout/stderr output of the command.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1SessionInput": {
+      "description": "SessionInput defines an input that users must or may provide when creating a session.\nConfigured by the template author. Filled by the session starter.",
+      "properties": {
+        "defaultValue": {
+          "description": "Default value used in boot scripts when the session starter leaves the field blank.\nOnly applicable when required is false.",
+          "type": "string"
+        },
+        "description": {
+          "description": "Description explaining what this input is for.",
+          "type": "string"
+        },
+        "exposeAsEnvVar": {
+          "description": "Whether to expose this input as an ENV VAR in interactive terminal sessions.",
+          "type": "boolean"
+        },
+        "id": {
+          "description": "Unique identifier (UUID).",
+          "type": "string"
+        },
+        "key": {
+          "description": "Key/name of the input (matches saved_inputs.key for auto-prefill).",
+          "type": "string"
+        },
+        "required": {
+          "description": "Whether this input is required. If false, the input is optional and default_value is used when not provided.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "v1SessionInputCreate": {
+      "description": "SessionInputCreate is used when creating a session input definition on a template.",
+      "properties": {
+        "defaultValue": {
+          "description": "Default value when not provided by the session starter. Only used when required is false.",
+          "type": "string"
+        },
+        "description": {
+          "description": "Description explaining what this input is for.",
+          "type": "string"
+        },
+        "exposeAsEnvVar": {
+          "description": "Whether to expose as an ENV VAR in interactive terminal sessions.",
+          "type": "boolean"
+        },
+        "key": {
+          "description": "Key/name of the input.",
+          "type": "string"
+        },
+        "required": {
+          "description": "Whether this input is required. Defaults to false (optional).",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "v1SessionInputValue": {
+      "description": "SessionInputValue provides a value for a session input when creating a session.\nEither provide a direct value or reference a saved input by ID (for secrets).",
+      "properties": {
+        "isSecret": {
+          "description": "Whether the value is secret (encrypt at rest). Ignored if saved_input_id is set.",
+          "type": "boolean"
+        },
+        "key": {
+          "description": "Key name matching a session input on the template.",
+          "type": "string"
+        },
+        "savedInputId": {
+          "description": "Optional: ID of a Saved Input to use. Backend fetches and decrypts the value server-side.\nThis avoids exposing secret values to the frontend.",
+          "type": "string"
+        },
+        "value": {
+          "description": "Direct value (used when user typed in a value). Ignored if saved_input_id is set.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1SessionMouseDragResponse": {
+      "description": "SessionMouseDragResponse is the response for dragging the mouse.",
+      "type": "object"
+    },
+    "v1SessionNotification": {
+      "description": "SessionNotification represents a persisted notification from a VM.",
+      "properties": {
+        "body": {
+          "description": "Detailed description of the event.",
+          "type": "string"
+        },
+        "createdAt": {
+          "description": "When the notification was created.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier.",
+          "type": "string"
+        },
+        "sessionId": {
+          "description": "Session this notification belongs to.",
+          "type": "string"
+        },
+        "title": {
+          "description": "Short summary of the event.",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/v1SessionNotificationType",
+          "description": "Notification type."
+        }
+      },
+      "type": "object"
+    },
+    "v1SessionNotificationType": {
+      "default": "SESSION_NOTIFICATION_TYPE_UNSPECIFIED",
+      "description": "SessionNotificationType defines the type of notification from the VM.\n\n - SESSION_NOTIFICATION_TYPE_UNSPECIFIED: Unspecified notification type.\n - SESSION_NOTIFICATION_TYPE_AGENT_STOP: The AI agent has stopped and is waiting for user input.\n - SESSION_NOTIFICATION_TYPE_AGENT_PERMISSION_PROMPT: The AI agent is requesting permission to proceed.\n - SESSION_NOTIFICATION_TYPE_AGENT_IDLE_PROMPT: The AI agent is idle and waiting for a prompt.\n - SESSION_NOTIFICATION_TYPE_AGENT_AUTH_SUCCESS: The AI agent has successfully authenticated.\n - SESSION_NOTIFICATION_TYPE_AGENT_ELICITATION_DIALOG: The AI agent is showing an elicitation dialog.\n - SESSION_NOTIFICATION_TYPE_AGENT_WORKING: The AI agent is actively working (status-only signal, no notification record created).",
+      "enum": [
+        "SESSION_NOTIFICATION_TYPE_UNSPECIFIED",
+        "SESSION_NOTIFICATION_TYPE_AGENT_STOP",
+        "SESSION_NOTIFICATION_TYPE_AGENT_PERMISSION_PROMPT",
+        "SESSION_NOTIFICATION_TYPE_AGENT_IDLE_PROMPT",
+        "SESSION_NOTIFICATION_TYPE_AGENT_AUTH_SUCCESS",
+        "SESSION_NOTIFICATION_TYPE_AGENT_ELICITATION_DIALOG",
+        "SESSION_NOTIFICATION_TYPE_AGENT_WORKING"
+      ],
+      "type": "string"
+    },
+    "v1SessionScreenshotResponse": {
+      "description": "SessionScreenshotResponse is the response for taking a screenshot.",
+      "properties": {
+        "signedUrl": {
+          "description": "GCS signed GET URL for the JPEG screenshot image.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1SessionScrollResponse": {
+      "description": "SessionScrollResponse is the response for scrolling.",
+      "type": "object"
+    },
+    "v1SessionStartFileUploadResponse": {
+      "description": "SessionStartFileUploadResponse is the response for initiating an upload.",
+      "properties": {
+        "signedUrl": {
+          "description": "GCS signed PUT URL for uploading the tar.gz archive.",
+          "type": "string"
+        },
+        "uploadId": {
+          "description": "Upload identifier to use when completing the upload.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1SessionStartUploadResponse": {
+      "description": "SessionStartUploadResponse is the response for initiating an upload.\n\nDeprecated: use SessionStartFileUploadResponse.",
+      "properties": {
+        "signedUrl": {
+          "description": "GCS signed PUT URL for uploading the tar.gz archive.",
+          "type": "string"
+        },
+        "uploadId": {
+          "description": "Upload identifier to use when completing the upload.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1SessionStatus": {
+      "default": "SESSION_STATUS_UNSPECIFIED",
+      "description": "SessionStatus represents the current state of a session.\n\n - SESSION_STATUS_UNSPECIFIED: Unspecified status.\n - SESSION_STATUS_PENDING: Session is being created/provisioned.\n - SESSION_STATUS_STARTING: Session is starting up.\n - SESSION_STATUS_RUNNING: Session is running and accessible.\n - SESSION_STATUS_TERMINATING: Session is terminating.\n - SESSION_STATUS_FAILED: Session creation or operation failed.\n - SESSION_STATUS_TERMINATED: Session is terminated (machine no longer running).\n - SESSION_STATUS_DRAINING: Session VM is being drained off its node (drain in progress, VM still consuming resources).\n - SESSION_STATUS_DRAINED: Session VM was drained and is gone; the session may be restarted to recreate it.",
+      "enum": [
+        "SESSION_STATUS_UNSPECIFIED",
+        "SESSION_STATUS_PENDING",
+        "SESSION_STATUS_STARTING",
+        "SESSION_STATUS_RUNNING",
+        "SESSION_STATUS_TERMINATING",
+        "SESSION_STATUS_FAILED",
+        "SESSION_STATUS_TERMINATED",
+        "SESSION_STATUS_DRAINING",
+        "SESSION_STATUS_DRAINED"
+      ],
+      "type": "string"
+    },
+    "v1SessionTemplateSnapshot": {
+      "description": "SessionTemplateSnapshot contains the template configuration snapshotted at session creation time.\nThis makes sessions self-contained and resilient to template changes or deletions.",
+      "properties": {
+        "featureFlags": {
+          "description": "Feature flag states for this session.",
+          "items": {
+            "$ref": "#/definitions/v1SnapshotFlag",
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "hasStartupScript": {
+          "description": "Whether the template had a startup script configured.",
+          "type": "boolean"
+        },
+        "hasWarmupScript": {
+          "description": "Whether the template had a warmup script configured.",
+          "type": "boolean"
+        },
+        "image": {
+          "description": "Machine image name from the template.\n\nSuperseded by stack_id (prefer it). The image is the resolved merged-stack\nid; stack_id is the stable, specific stack the session runs.",
+          "type": "string"
+        },
+        "machineType": {
+          "description": "Machine type name from the template.",
+          "type": "string"
+        },
+        "sessionInputs": {
+          "description": "Session input values provided by the session starter (or defaults).",
+          "items": {
+            "$ref": "#/definitions/v1SnapshotInput",
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "stackId": {
+          "description": "Stack id this session runs (e.g. \"osx-xcode-16.0.x-edge\"). Empty for legacy\nsessions snapshotted before stacks existed (they carry image only).",
+          "type": "string"
+        },
+        "templateName": {
+          "description": "Name of the template at creation time.",
+          "type": "string"
+        },
+        "updatedAt": {
+          "description": "When the template was last updated (captured at session creation time).\nUsed to detect if the template has been modified since this session was created.\nAbsent for sessions created before this feature was added.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "workingDirectory": {
+          "description": "Working directory from the template.",
+          "type": "string"
+        },
+        "workspaceLinks": {
+          "description": "Workspace links applicable to this session (filtered by enabled feature flags at creation time).",
+          "items": {
+            "$ref": "#/definitions/v1SnapshotLink",
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "v1SessionTypeResponse": {
+      "description": "SessionTypeResponse is the response for typing.",
+      "type": "object"
+    },
+    "v1SnapshotFlag": {
+      "description": "SnapshotFlag represents a feature flag state captured at session creation time.",
+      "properties": {
+        "enabled": {
+          "description": "Whether this flag was enabled.",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "Name of the feature flag.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1SnapshotInput": {
+      "description": "SnapshotInput represents a session input value captured at session creation time.",
+      "properties": {
+        "exposeAsEnvVar": {
+          "description": "Whether this value is exposed as an ENV VAR in interactive terminal sessions.",
+          "type": "boolean"
+        },
+        "isSecret": {
+          "description": "Whether this is a secret value.",
+          "type": "boolean"
+        },
+        "key": {
+          "description": "Key/name of the input.",
+          "type": "string"
+        },
+        "value": {
+          "description": "Value of the input. For secret inputs this is empty unless the request explicitly\nset include_secrets=true (see GetSessionRequest).",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1SnapshotLink": {
+      "description": "SnapshotLink represents a workspace link captured at session creation time.",
+      "properties": {
+        "folderPath": {
+          "description": "Remote folder path to open.",
+          "type": "string"
+        },
+        "label": {
+          "description": "Display label for the button.",
+          "type": "string"
+        },
+        "sortOrder": {
+          "description": "Sort order for display.",
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "v1Stack": {
+      "description": "Stack is a provisionable development environment stack with human-friendly\nmetadata (title, OS, status, Xcode version). The id is the stable identifier\nstored on a template/session.",
+      "properties": {
+        "clusterNames": {
+          "description": "The clusters where this stack can be provisioned.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "description": {
+          "description": "Human-readable description of the stack.",
+          "type": "string"
+        },
+        "descriptionLink": {
+          "description": "Link to the stack's pre-installed tools / system report.",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stack id, e.g. \"osx-xcode-16.0.x-edge\". Stored on the template/session.",
+          "type": "string"
+        },
+        "isDefault": {
+          "description": "Whether this is the deployment's default stack. Clients preselect it when\nthe user has made no prior choice. At most one stack id is marked.",
+          "type": "boolean"
+        },
+        "os": {
+          "description": "Operating system: \"macos\" or \"linux\".",
+          "type": "string"
+        },
+        "osVersion": {
+          "description": "Numeric OS version (e.g. 26 for macOS, 24 for Ubuntu 24.04).",
+          "format": "int32",
+          "type": "integer"
+        },
+        "status": {
+          "description": "Status: \"edge\", \"stable\" or \"frozen\".",
+          "type": "string"
+        },
+        "title": {
+          "description": "Human-friendly title, e.g. \"Xcode 16.0\".",
+          "type": "string"
+        },
+        "xcodeVersion": {
+          "description": "Xcode version (e.g. \"16.0\"); empty for non-Xcode stacks. Informational.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1StartSessionResponse": {
+      "description": "StartSessionResponse is the response for starting a session.\n\nDeprecated: use RestoreSessionResponse.",
+      "properties": {
+        "session": {
+          "$ref": "#/definitions/v1Session",
+          "description": "The updated session."
+        }
+      },
+      "type": "object"
+    },
+    "v1StopSessionResponse": {
+      "description": "StopSessionResponse is the response for stopping a session.\n\nDeprecated: use TerminateSessionResponse.",
+      "properties": {
+        "session": {
+          "$ref": "#/definitions/v1Session",
+          "description": "The updated session."
+        }
+      },
+      "type": "object"
+    },
+    "v1Template": {
+      "description": "Template defines a reusable configuration for creating sessions.",
+      "properties": {
+        "createdAt": {
+          "description": "When the template was created.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "createdByEmail": {
+          "description": "Email of the user who created this template (owner).",
+          "type": "string"
+        },
+        "description": {
+          "description": "Description explaining what this template is for.",
+          "type": "string"
+        },
+        "featureFlags": {
+          "description": "Feature flags available for this template.",
+          "items": {
+            "$ref": "#/definitions/v1FeatureFlag",
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "id": {
+          "description": "Unique identifier (UUID) of the template.",
+          "type": "string"
+        },
+        "image": {
+          "description": "Machine image name (e.g., \"osx-xcode-edge\"). Consistent across clusters.\n\nSuperseded by stack_id (prefer it). The image is a merged-stack id that\nbundles many Xcode versions; stack_id is the stable, specific contract.",
+          "type": "string"
+        },
+        "machineType": {
+          "description": "Machine type name (e.g., \"g2.mac.m2pro.4c\"). Consistent across clusters.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Human-readable name of the template.",
+          "type": "string"
+        },
+        "sessionInputs": {
+          "description": "Session inputs that users must or may provide when creating a session.",
+          "items": {
+            "$ref": "#/definitions/v1SessionInput",
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "stackId": {
+          "description": "Stack id (e.g. \"osx-xcode-16.0.x-edge\"). The stable contract stored on the\ntemplate; resolved to a provisionable image at session-start time.",
+          "type": "string"
+        },
+        "startupScript": {
+          "description": "Startup script (bash) that runs every time the session starts or restarts.",
+          "type": "string"
+        },
+        "templateVariables": {
+          "description": "Template variables baked into this template (available in boot scripts).",
+          "items": {
+            "$ref": "#/definitions/v1TemplateVariable",
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "updatedAt": {
+          "description": "When the template was last updated.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "warmupScript": {
+          "description": "Warmup script (bash) that runs only once during initial session creation.\nUse for setup tasks like dependency installation.",
+          "type": "string"
+        },
+        "workingDirectory": {
+          "description": "Working directory for terminal sessions. If set, terminals start in this directory\ninstead of the home directory. Must be an absolute path.",
+          "type": "string"
+        },
+        "workspaceId": {
+          "description": "Workspace ID that this template is associated with.",
+          "type": "string"
+        },
+        "workspaceLinks": {
+          "description": "Workspace links configured for this template.",
+          "items": {
+            "$ref": "#/definitions/v1WorkspaceLink",
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "v1TemplateConfig": {
+      "description": "TemplateConfig contains the full template configuration for comparison.\nUsed by CompareSessionTemplate to show what changed between snapshot and current template.",
+      "properties": {
+        "featureFlags": {
+          "description": "Feature flags.",
+          "items": {
+            "$ref": "#/definitions/v1TemplateConfigFlag",
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "image": {
+          "description": "Machine image name.",
+          "type": "string"
+        },
+        "machineType": {
+          "description": "Machine type name.",
+          "type": "string"
+        },
+        "sessionInputs": {
+          "description": "Session input definitions (keys and metadata, not actual values).",
+          "items": {
+            "$ref": "#/definitions/v1TemplateConfigInput",
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "stackId": {
+          "description": "Stack id (e.g. \"osx-xcode-16.0.x-edge\"). The stable contract; distinguishes\nstack-only changes that resolve to the same provisionable image.",
+          "type": "string"
+        },
+        "startupScript": {
+          "description": "Startup script (runs every start).",
+          "type": "string"
+        },
+        "templateName": {
+          "description": "Template name.",
+          "type": "string"
+        },
+        "templateVariables": {
+          "description": "Template variable keys and metadata (secret values stripped).",
+          "items": {
+            "$ref": "#/definitions/v1TemplateConfigVariable",
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "updatedAt": {
+          "description": "When the template was last updated.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "warmupScript": {
+          "description": "Warmup script (runs once on creation).",
+          "type": "string"
+        },
+        "workingDirectory": {
+          "description": "Working directory.",
+          "type": "string"
+        },
+        "workspaceLinks": {
+          "description": "Workspace links.",
+          "items": {
+            "$ref": "#/definitions/v1SnapshotLink",
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "v1TemplateConfigFlag": {
+      "description": "TemplateConfigFlag represents a feature flag for comparison.",
+      "properties": {
+        "description": {
+          "description": "Description of the feature flag.",
+          "type": "string"
+        },
+        "enabled": {
+          "description": "Whether this flag is enabled by default.",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "Name of the feature flag.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1TemplateConfigInput": {
+      "description": "TemplateConfigInput represents a session input definition for comparison.",
+      "properties": {
+        "defaultValue": {
+          "description": "Default value for this input.",
+          "type": "string"
+        },
+        "description": {
+          "description": "Description of this input.",
+          "type": "string"
+        },
+        "exposeAsEnvVar": {
+          "description": "Whether this input is exposed as an environment variable.",
+          "type": "boolean"
+        },
+        "isSecret": {
+          "description": "Whether this input is a secret.",
+          "type": "boolean"
+        },
+        "key": {
+          "description": "Key/name of the input.",
+          "type": "string"
+        },
+        "required": {
+          "description": "Whether this input is required.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "v1TemplateConfigVariable": {
+      "description": "TemplateConfigVariable represents a template variable for comparison.\nSecret values are never exposed — only key and metadata.",
+      "properties": {
+        "exposeAsEnvVar": {
+          "description": "Whether this variable is exposed as an environment variable.",
+          "type": "boolean"
+        },
+        "isSecret": {
+          "description": "Whether this variable is a secret.",
+          "type": "boolean"
+        },
+        "key": {
+          "description": "Key/name of the variable.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1TemplateVariable": {
+      "description": "TemplateVariable represents a baked-in variable for a template.\nAvailable in boot scripts. Optionally exposed as an ENV VAR in terminal sessions.",
+      "properties": {
+        "exposeAsEnvVar": {
+          "description": "Whether to expose this variable as an ENV VAR in interactive terminal sessions.",
+          "type": "boolean"
+        },
+        "id": {
+          "description": "Unique identifier (UUID).",
+          "type": "string"
+        },
+        "isSecret": {
+          "description": "Whether this is a secret value.",
+          "type": "boolean"
+        },
+        "key": {
+          "description": "Key/name of the variable.",
+          "type": "string"
+        },
+        "value": {
+          "description": "Value of the variable. For secret variables this is empty unless the request\nexplicitly set include_secrets=true (see GetTemplateRequest/ListTemplatesRequest).",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1TemplateVariableCreate": {
+      "description": "TemplateVariableCreate is used when creating a template variable.",
+      "properties": {
+        "exposeAsEnvVar": {
+          "description": "Whether to expose as an ENV VAR in interactive terminal sessions.",
+          "type": "boolean"
+        },
+        "isSecret": {
+          "description": "Whether this is a secret value.",
+          "type": "boolean"
+        },
+        "key": {
+          "description": "Key/name of the variable.",
+          "type": "string"
+        },
+        "value": {
+          "description": "Value of the variable.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1TerminateSessionResponse": {
+      "description": "TerminateSessionResponse is the response for terminating a session.",
+      "properties": {
+        "session": {
+          "$ref": "#/definitions/v1Session",
+          "description": "The updated session."
+        }
+      },
+      "type": "object"
+    },
+    "v1UpdateSavedInputResponse": {
+      "description": "UpdateSavedInputResponse is the response for updating a saved input.",
+      "properties": {
+        "savedInput": {
+          "$ref": "#/definitions/v1SavedInput",
+          "description": "The updated saved input."
+        }
+      },
+      "type": "object"
+    },
+    "v1UpdateSessionResponse": {
+      "description": "UpdateSessionResponse is the response for updating a session.",
+      "properties": {
+        "session": {
+          "$ref": "#/definitions/v1Session",
+          "description": "The updated session."
+        }
+      },
+      "type": "object"
+    },
+    "v1UpdateTemplateResponse": {
+      "description": "UpdateTemplateResponse is the response for updating a template.",
+      "properties": {
+        "template": {
+          "$ref": "#/definitions/v1Template",
+          "description": "The updated template."
+        }
+      },
+      "type": "object"
+    },
+    "v1User": {
+      "description": "User represents an authenticated user in the system.",
+      "properties": {
+        "createdAt": {
+          "description": "When the user was first seen.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "email": {
+          "description": "Email address of the user.",
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier (UUID) of the user.",
+          "type": "string"
+        },
+        "updatedAt": {
+          "description": "When the user record was last updated.",
+          "format": "date-time",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1WorkspaceLink": {
+      "description": "WorkspaceLink represents a configured IDE workspace folder link for a template.",
+      "properties": {
+        "featureFlagId": {
+          "description": "Optional feature flag ID that controls visibility.",
+          "type": "string"
+        },
+        "featureFlagName": {
+          "description": "Optional feature flag name (for display).",
+          "type": "string"
+        },
+        "folderPath": {
+          "description": "Remote folder path to open (e.g., \"/Users/vagrant/ios-app\").",
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier (UUID).",
+          "type": "string"
+        },
+        "label": {
+          "description": "Display label for the button (e.g., \"iOS App\").",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1WorkspaceLinkCreate": {
+      "description": "WorkspaceLinkCreate is used when creating a workspace link.",
+      "properties": {
+        "featureFlagName": {
+          "description": "Optional: name of the feature flag that controls visibility.",
+          "type": "string"
+        },
+        "folderPath": {
+          "description": "Remote folder path to open.",
+          "type": "string"
+        },
+        "label": {
+          "description": "Display label for the button.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "host": "api.bitrise.io",
+  "info": {
+    "description": "API for managing Bitrise Remote Dev Environments (RDE).\n\n\u003e **⚠️ Experimental API.** **Breaking changes may be introduced at any time without notice or a deprecation period.**\n\n## Authentication\n\nAll endpoints require a Bitrise Personal Access Token (PAT) sent as a bearer token in the `Authorization` header:\n\n```\nAuthorization: token \u003cYOUR_PAT\u003e\n```\n\nGenerate a PAT from your Bitrise account settings.\n\n## Base URL\n\nProduction: `https://api.bitrise.io/rde`\n\n## Errors\n\nNon-2xx responses share a single JSON envelope:\n\n```\n{\n  \"code\": 5,\n  \"message\": \"template not found\",\n  \"details\": []\n}\n```\n\nThe `code` field is a numeric status code (not the HTTP status code). Clients should switch on `code` for programmatic handling and surface `message` to humans. Common values:\n\n| HTTP | `code` | Name               | When                                                          |\n| ---: | -----: | ------------------ | ------------------------------------------------------------- |\n|  400 |      3 | InvalidArgument    | Request validation failed; per-field violations may appear in `details`. |\n|  401 |     16 | Unauthenticated    | Missing or invalid `Authorization` header / PAT.              |\n|  403 |      7 | PermissionDenied   | The PAT does not have access to the requested workspace or resource. |\n|  404 |      5 | NotFound           | The resource does not exist (or is not visible to this PAT). |\n|  409 |     10 | Aborted            | Request conflicts with the current resource state (e.g. session already running). |\n|  412 |      9 | FailedPrecondition | A precondition for the action was not met (e.g. session not running yet). |\n|  500 |     13 | Internal           | Unexpected server-side failure. Safe to retry with backoff.   |\n|  503 |     14 | Unavailable        | A downstream dependency was temporarily unreachable. Safe to retry with backoff. |\n",
+    "title": "Bitrise Remote Dev Environments API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/v1/me": {
+      "get": {
+        "description": "Returns the currently authenticated user.",
+        "operationId": "CodespacesService_GetMe",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetMeResponse"
+            }
+          }
+        },
+        "summary": "Get current user",
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/v1/saved-inputs": {
+      "get": {
+        "description": "Retrieves all saved inputs for the current user.",
+        "operationId": "CodespacesService_ListSavedInputs",
+        "parameters": [
+          {
+            "description": "Whether to include secret values (e.g. secret saved-input values) in the response.\nDefaults to false: secret values are redacted so they cannot accidentally leak.\nSet to true only when the caller actually needs the plaintext secrets.",
+            "in": "query",
+            "name": "includeSecrets",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListSavedInputsResponse"
+            }
+          }
+        },
+        "summary": "List saved inputs",
+        "tags": [
+          "Saved inputs"
+        ]
+      },
+      "post": {
+        "description": "Creates a new saved input (credential).",
+        "operationId": "CodespacesService_CreateSavedInput",
+        "parameters": [
+          {
+            "description": "CreateSavedInputRequest is the request for creating a saved input.",
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateSavedInputRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateSavedInputResponse"
+            }
+          }
+        },
+        "summary": "Create saved input",
+        "tags": [
+          "Saved inputs"
+        ]
+      }
+    },
+    "/v1/saved-inputs/{savedInputId}": {
+      "delete": {
+        "description": "Deletes a saved input.",
+        "operationId": "CodespacesService_DeleteSavedInput",
+        "parameters": [
+          {
+            "description": "Unique identifier of the saved input to delete.",
+            "in": "path",
+            "name": "savedInputId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteSavedInputResponse"
+            }
+          }
+        },
+        "summary": "Delete saved input",
+        "tags": [
+          "Saved inputs"
+        ]
+      },
+      "get": {
+        "description": "Retrieves a saved input by its ID.",
+        "operationId": "CodespacesService_GetSavedInput",
+        "parameters": [
+          {
+            "description": "Unique identifier of the saved input.",
+            "in": "path",
+            "name": "savedInputId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Whether to include secret values (e.g. a secret saved-input value) in the response.\nDefaults to false: secret values are redacted so they cannot accidentally leak.\nSet to true only when the caller actually needs the plaintext secrets.",
+            "in": "query",
+            "name": "includeSecrets",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetSavedInputResponse"
+            }
+          }
+        },
+        "summary": "Get saved input",
+        "tags": [
+          "Saved inputs"
+        ]
+      },
+      "patch": {
+        "description": "Updates an existing saved input.",
+        "operationId": "CodespacesService_UpdateSavedInput",
+        "parameters": [
+          {
+            "description": "Unique identifier of the saved input to update.",
+            "in": "path",
+            "name": "savedInputId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "UpdateSavedInputRequest is the request for updating a saved input.",
+              "properties": {
+                "isSecret": {
+                  "description": "Updated is_secret flag (optional).",
+                  "type": "boolean"
+                },
+                "value": {
+                  "description": "Updated value.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateSavedInputResponse"
+            }
+          }
+        },
+        "summary": "Update saved input",
+        "tags": [
+          "Saved inputs"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/images": {
+      "get": {
+        "description": "Retrieves available machine images. Deprecated: use ListStacks.",
+        "operationId": "CodespacesService_ListImages",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListImagesResponse"
+            }
+          }
+        },
+        "summary": "List images",
+        "tags": [
+          "Machine catalog"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/info": {
+      "get": {
+        "description": "Returns workspace-level capabilities for the UI (e.g. whether the workspace is on a free trial).",
+        "operationId": "CodespacesService_GetWorkspaceInfo",
+        "parameters": [
+          {
+            "description": "Workspace (organization) slug. Supplied via the URL path.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetWorkspaceInfoResponse"
+            }
+          }
+        },
+        "summary": "Get workspace info",
+        "tags": [
+          "Workspace"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/machine-types": {
+      "get": {
+        "description": "Retrieves available machine types.",
+        "operationId": "CodespacesService_ListMachineTypes",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListMachineTypesResponse"
+            }
+          }
+        },
+        "summary": "List machine types",
+        "tags": [
+          "Machine catalog"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/resolve-clusters": {
+      "post": {
+        "description": "Finds clusters that offer both the given image and machine type names.",
+        "operationId": "CodespacesService_ResolveClusters",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "ResolveClustersRequest is the request for resolving which clusters can serve\na given image + machine type combination.",
+              "properties": {
+                "image": {
+                  "description": "Image name (e.g., \"osx-xcode-edge\").",
+                  "type": "string"
+                },
+                "machineType": {
+                  "description": "Machine type name (e.g., \"g2.mac.m2pro.4c\").",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ResolveClustersResponse"
+            }
+          }
+        },
+        "summary": "Resolve clusters",
+        "tags": [
+          "Machine catalog"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions": {
+      "get": {
+        "description": "Retrieves all sessions for the current user.",
+        "operationId": "CodespacesService_ListSessions",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListSessionsResponse"
+            }
+          }
+        },
+        "summary": "List sessions",
+        "tags": [
+          "Sessions"
+        ]
+      },
+      "post": {
+        "description": "Creates a new session (remote development environment).",
+        "operationId": "CodespacesService_CreateSession",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "CreateSessionRequest is the request for creating a new session.",
+              "properties": {
+                "aiPrompt": {
+                  "description": "Optional AI prompt to pass to Claude Code when the session starts.",
+                  "type": "string"
+                },
+                "autoTerminateMinutes": {
+                  "description": "Minutes before auto-termination. Defaults to 7200 (5 days).\nSet to 0 to disable auto-termination (\"Never\").",
+                  "format": "int32",
+                  "type": "integer"
+                },
+                "cluster": {
+                  "description": "Target cluster name. Required when the template's image + machine type are available\nin multiple clusters. If only one cluster matches, this can be omitted.",
+                  "type": "string"
+                },
+                "description": {
+                  "description": "Description of the session.",
+                  "type": "string"
+                },
+                "enabledFeatureFlagNames": {
+                  "description": "Names of feature flags to enable.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "image": {
+                  "description": "Machine image name. When a template is given, optionally overrides the\ntemplate's image for this session.\n\nSuperseded by stack_id (prefer it). Accepted for now and resolved to a stack id on the fly.",
+                  "type": "string"
+                },
+                "machineType": {
+                  "description": "Machine type name. Required when template_id is empty. When a template is\ngiven, optionally overrides the template's machine type for this session.",
+                  "type": "string"
+                },
+                "mapSavedToSessionInputs": {
+                  "description": "When true, the backend fetches the current user's saved inputs and\nauto-fills any template session inputs (matched by key) that the request\ndid not already supply, before required-input validation runs. The keys\nthat were auto-filled are reported in CreateSessionResponse.auto_mapped_inputs.",
+                  "type": "boolean"
+                },
+                "name": {
+                  "description": "Human-readable name of the session.",
+                  "type": "string"
+                },
+                "sessionInputs": {
+                  "description": "Session input values (key/value pairs or saved input references).",
+                  "items": {
+                    "$ref": "#/definitions/v1SessionInputValue",
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "stackId": {
+                  "description": "Stack id (e.g. \"osx-xcode-16.0.x-edge\"). Required when template_id is empty\n(unless the deprecated image is supplied). When a template is given,\noptionally overrides the template's stack for this session. Preferred over image.",
+                  "type": "string"
+                },
+                "templateId": {
+                  "description": "ID of the template to use. Optional: omit to create a session without a\ntemplate. When empty, image and machine_type are required and no\nwarmup/startup scripts run.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateSessionResponse"
+            }
+          }
+        },
+        "summary": "Create session",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}": {
+      "delete": {
+        "description": "Deletes a session.",
+        "operationId": "CodespacesService_DeleteSession",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session to delete.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteSessionResponse"
+            }
+          }
+        },
+        "summary": "Delete session",
+        "tags": [
+          "Sessions"
+        ]
+      },
+      "get": {
+        "description": "Retrieves a session by its ID.",
+        "operationId": "CodespacesService_GetSession",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Whether to include secret values (e.g. secret session-input snapshot values) in the response.\nDefaults to false: secret values are redacted so they cannot accidentally leak.\nSet to true only when the caller actually needs the plaintext secrets.",
+            "in": "query",
+            "name": "includeSecrets",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetSessionResponse"
+            }
+          }
+        },
+        "summary": "Get session",
+        "tags": [
+          "Sessions"
+        ]
+      },
+      "patch": {
+        "description": "Updates a session's name or description.",
+        "operationId": "CodespacesService_UpdateSession",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session to update.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "UpdateSessionRequest is the request for updating a session.",
+              "properties": {
+                "autoTerminateMinutes": {
+                  "description": "Updated auto-terminate duration in minutes. Resets the deadline to NOW()+minutes.\nSet to 0 to disable auto-termination.",
+                  "format": "int32",
+                  "type": "integer"
+                },
+                "description": {
+                  "description": "Updated description (optional).",
+                  "type": "string"
+                },
+                "name": {
+                  "description": "Updated name (optional).",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateSessionResponse"
+            }
+          }
+        },
+        "summary": "Update session",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/click": {
+      "post": {
+        "description": "Clicks at the specified coordinates on the session's screen.",
+        "operationId": "CodespacesService_SessionClick",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "SessionClickRequest is the request for clicking at coordinates on a session's screen.",
+              "properties": {
+                "button": {
+                  "description": "Mouse button: \"left\", \"right\", or \"middle\".",
+                  "type": "string"
+                },
+                "doubleClick": {
+                  "description": "Whether to perform a double-click.",
+                  "type": "boolean"
+                },
+                "x": {
+                  "description": "X coordinate of the click.",
+                  "format": "int32",
+                  "type": "integer"
+                },
+                "y": {
+                  "description": "Y coordinate of the click.",
+                  "format": "int32",
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SessionClickResponse"
+            }
+          }
+        },
+        "summary": "Click",
+        "tags": [
+          "Session interaction"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/complete-file-upload": {
+      "post": {
+        "description": "Finalizes a file upload, extracting the uploaded archive on the machine.",
+        "operationId": "CodespacesService_SessionCompleteFileUpload",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "SessionCompleteFileUploadRequest is the request for completing a file upload to a session.",
+              "properties": {
+                "destinationFolder": {
+                  "description": "Destination folder on the remote machine where files will be extracted.",
+                  "type": "string"
+                },
+                "uploadId": {
+                  "description": "Upload identifier from the start upload response.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SessionCompleteFileUploadResponse"
+            }
+          }
+        },
+        "summary": "Complete file upload",
+        "tags": [
+          "Session interaction"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/download": {
+      "post": {
+        "description": "Downloads files from a session's machine as a tar.gz archive. Deprecated: use SessionDownloadFile.",
+        "operationId": "CodespacesService_SessionDownload",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "SessionDownloadRequest is the request for downloading files from a session.\n\nDeprecated: use SessionDownloadFileRequest.",
+              "properties": {
+                "onlyContentsOfFolder": {
+                  "description": "If true and source_path is a directory, archive only the directory contents (not the directory itself).",
+                  "type": "boolean"
+                },
+                "sourcePath": {
+                  "description": "Absolute path on the remote machine to download (file or directory).",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SessionDownloadResponse"
+            }
+          }
+        },
+        "summary": "Download files",
+        "tags": [
+          "Session interaction"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/download-file": {
+      "post": {
+        "description": "Downloads files from a session's machine as a tar.gz archive.",
+        "operationId": "CodespacesService_SessionDownloadFile",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "SessionDownloadFileRequest is the request for downloading files from a session.",
+              "properties": {
+                "onlyContentsOfFolder": {
+                  "description": "If true and source_path is a directory, archive only the directory contents (not the directory itself).",
+                  "type": "boolean"
+                },
+                "sourcePath": {
+                  "description": "Absolute path on the remote machine to download (file or directory).",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SessionDownloadFileResponse"
+            }
+          }
+        },
+        "summary": "Download files",
+        "tags": [
+          "Session interaction"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/execute": {
+      "post": {
+        "description": "Executes a bash command on the session's machine.",
+        "operationId": "CodespacesService_SessionExecute",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "SessionExecuteRequest is the request for executing a command on a session.",
+              "properties": {
+                "bashCCommand": {
+                  "description": "Bash command to execute (passed to bash -c).",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SessionExecuteResponse"
+            }
+          }
+        },
+        "summary": "Execute command",
+        "tags": [
+          "Session interaction"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/logs/{stage}": {
+      "get": {
+        "description": "Streams logs from a session's machine. The response is a server-side stream of log chunks.",
+        "operationId": "CodespacesService_GetSessionLogs",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Stage to get logs for.",
+            "enum": [
+              "LOG_STAGE_UNSPECIFIED",
+              "LOG_STAGE_WARMUP",
+              "LOG_STAGE_MAIN"
+            ],
+            "in": "path",
+            "name": "stage",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "properties": {
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                },
+                "result": {
+                  "$ref": "#/definitions/v1GetSessionLogsResponse"
+                }
+              },
+              "title": "Stream result of v1GetSessionLogsResponse",
+              "type": "object"
+            }
+          }
+        },
+        "summary": "Stream session logs",
+        "tags": [
+          "Session interaction"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/mouse-drag": {
+      "post": {
+        "description": "Drags the mouse between two points on the session's screen.",
+        "operationId": "CodespacesService_SessionMouseDrag",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "SessionMouseDragRequest is the request for dragging the mouse on a session's screen.",
+              "properties": {
+                "endX": {
+                  "description": "Ending X coordinate.",
+                  "format": "int32",
+                  "type": "integer"
+                },
+                "endY": {
+                  "description": "Ending Y coordinate.",
+                  "format": "int32",
+                  "type": "integer"
+                },
+                "startX": {
+                  "description": "Starting X coordinate.",
+                  "format": "int32",
+                  "type": "integer"
+                },
+                "startY": {
+                  "description": "Starting Y coordinate.",
+                  "format": "int32",
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SessionMouseDragResponse"
+            }
+          }
+        },
+        "summary": "Drag mouse",
+        "tags": [
+          "Session interaction"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/notifications": {
+      "get": {
+        "description": "Retrieves notifications for a session.",
+        "operationId": "CodespacesService_ListSessionNotifications",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Session ID to list notifications for.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Only return notifications created before this timestamp (exclusive).\nUsed for backward pagination through history.",
+            "format": "date-time",
+            "in": "query",
+            "name": "createdBefore",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "description": "Only return notifications created after this timestamp (exclusive).\nUse for incremental polling after an initial fetch.",
+            "format": "date-time",
+            "in": "query",
+            "name": "createdAfter",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "description": "Maximum number of notifications to return. Default: 50, max: 100.",
+            "format": "int32",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "default": "SORT_ORDER_UNSPECIFIED",
+            "description": "Sort order by created_at. Default: DESC (newest first).\n\n - SORT_ORDER_UNSPECIFIED: Default: descending (newest first).\n - SORT_ORDER_ASC: Ascending (oldest first).\n - SORT_ORDER_DESC: Descending (newest first).",
+            "enum": [
+              "SORT_ORDER_UNSPECIFIED",
+              "SORT_ORDER_ASC",
+              "SORT_ORDER_DESC"
+            ],
+            "in": "query",
+            "name": "order",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListSessionNotificationsResponse"
+            }
+          }
+        },
+        "summary": "List session notifications",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/open-remote-access": {
+      "post": {
+        "description": "Establishes remote access (SSH/VNC) for a running session. Call this when the session status is \"running\" (main stage running).",
+        "operationId": "CodespacesService_OpenRemoteAccess",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "OpenRemoteAccessRequest is the request for opening remote access to a session.",
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1OpenRemoteAccessResponse"
+            }
+          }
+        },
+        "summary": "Open remote access",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/restore": {
+      "post": {
+        "description": "Restores a terminated session (or restarts a failed one) by creating/starting its VM.",
+        "operationId": "CodespacesService_RestoreSession",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session to restore.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "RestoreSessionRequest is the request for restoring a terminated session\n(also used to restart a failed session).",
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RestoreSessionResponse"
+            }
+          }
+        },
+        "summary": "Restore session",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/screenshot": {
+      "post": {
+        "description": "Takes a screenshot of the session's screen.",
+        "operationId": "CodespacesService_SessionScreenshot",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "SessionScreenshotRequest is the request for taking a screenshot of a session's screen.",
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SessionScreenshotResponse"
+            }
+          }
+        },
+        "summary": "Take screenshot",
+        "tags": [
+          "Session interaction"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/scroll": {
+      "post": {
+        "description": "Scrolls at the current mouse position on the session's screen.",
+        "operationId": "CodespacesService_SessionScroll",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "SessionScrollRequest is the request for scrolling on a session's screen.",
+              "properties": {
+                "amount": {
+                  "description": "Number of lines to scroll.",
+                  "format": "int32",
+                  "type": "integer"
+                },
+                "direction": {
+                  "description": "Scroll direction: \"up\" or \"down\".",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SessionScrollResponse"
+            }
+          }
+        },
+        "summary": "Scroll",
+        "tags": [
+          "Session interaction"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/start": {
+      "post": {
+        "description": "Starts a stopped session. Deprecated: use RestoreSession.",
+        "operationId": "CodespacesService_StartSession",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session to start.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "StartSessionRequest is the request for starting a stopped session.\n\nDeprecated: use RestoreSessionRequest.",
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StartSessionResponse"
+            }
+          }
+        },
+        "summary": "Start session",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/start-file-upload": {
+      "post": {
+        "description": "Initiates a file upload to a session by returning a signed PUT URL.",
+        "operationId": "CodespacesService_SessionStartFileUpload",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "SessionStartFileUploadRequest is the request for initiating a file upload to a session.",
+              "properties": {
+                "destinationFolder": {
+                  "description": "Destination folder on the remote machine where files will be extracted.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SessionStartFileUploadResponse"
+            }
+          }
+        },
+        "summary": "Start file upload",
+        "tags": [
+          "Session interaction"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/start-upload": {
+      "post": {
+        "description": "Initiates a file upload to a session by returning a signed PUT URL. Deprecated: use SessionStartFileUpload.",
+        "operationId": "CodespacesService_SessionStartUpload",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "SessionStartUploadRequest is the request for initiating a file upload to a session.\n\nDeprecated: use SessionStartFileUploadRequest.",
+              "properties": {
+                "destinationFolder": {
+                  "description": "Destination folder on the remote machine where files will be extracted.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SessionStartUploadResponse"
+            }
+          }
+        },
+        "summary": "Start upload",
+        "tags": [
+          "Session interaction"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/complete-upload": {
+      "post": {
+        "description": "Finalizes a file upload, extracting the uploaded archive on the machine. Deprecated: use SessionCompleteFileUpload.",
+        "operationId": "CodespacesService_SessionCompleteUpload",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "SessionCompleteUploadRequest is the request for completing a file upload to a session.\n\nDeprecated: use SessionCompleteFileUploadRequest.",
+              "properties": {
+                "destinationFolder": {
+                  "description": "Destination folder on the remote machine where files will be extracted.",
+                  "type": "string"
+                },
+                "uploadId": {
+                  "description": "Upload identifier from the start upload response.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SessionCompleteUploadResponse"
+            }
+          }
+        },
+        "summary": "Complete upload",
+        "tags": [
+          "Session interaction"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/stop": {
+      "post": {
+        "description": "Stops a running session. Deprecated: use TerminateSession.",
+        "operationId": "CodespacesService_StopSession",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session to stop.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "StopSessionRequest is the request for stopping a running session.\n\nDeprecated: use TerminateSessionRequest.",
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1StopSessionResponse"
+            }
+          }
+        },
+        "summary": "Stop session",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/template-diff": {
+      "get": {
+        "description": "Returns both the session's template snapshot and the current template configuration for comparison. Used to show what changed when a template is outdated.",
+        "operationId": "CodespacesService_CompareSessionTemplate",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Session ID to compare.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CompareSessionTemplateResponse"
+            }
+          }
+        },
+        "summary": "Compare session template",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/terminate": {
+      "post": {
+        "description": "Terminates a running session (stops the VM, preserving the session for later restore).",
+        "operationId": "CodespacesService_TerminateSession",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session to terminate.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "TerminateSessionRequest is the request for terminating a running session.",
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1TerminateSessionResponse"
+            }
+          }
+        },
+        "summary": "Terminate session",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/type": {
+      "post": {
+        "description": "Types text on the session's machine.",
+        "operationId": "CodespacesService_SessionType",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "SessionTypeRequest is the request for typing text on a session.",
+              "properties": {
+                "text": {
+                  "description": "Text to type.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SessionTypeResponse"
+            }
+          }
+        },
+        "summary": "Type text",
+        "tags": [
+          "Session interaction"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions:delete-terminated": {
+      "post": {
+        "description": "Deletes all terminated sessions for the current user.",
+        "operationId": "CodespacesService_DeleteTerminatedSessions",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "DeleteTerminatedSessionsRequest is the request for deleting all terminated sessions.",
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteTerminatedSessionsResponse"
+            }
+          }
+        },
+        "summary": "Delete terminated sessions",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/stacks": {
+      "get": {
+        "description": "Retrieves available, provisionable stacks with friendly metadata.",
+        "operationId": "CodespacesService_ListStacks",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListStacksResponse"
+            }
+          }
+        },
+        "summary": "List stacks",
+        "tags": [
+          "Machine catalog"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/templates": {
+      "get": {
+        "description": "Retrieves all available templates.",
+        "operationId": "CodespacesService_ListTemplates",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Whether to include secret values (e.g. secret template variables) in the response.\nDefaults to false: secret values are redacted so they cannot accidentally leak.\nSet to true only when the caller actually needs the plaintext secrets.",
+            "in": "query",
+            "name": "includeSecrets",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListTemplatesResponse"
+            }
+          }
+        },
+        "summary": "List templates",
+        "tags": [
+          "Templates"
+        ]
+      },
+      "post": {
+        "description": "Creates a new template configuration.",
+        "operationId": "CodespacesService_CreateTemplate",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "CreateTemplateRequest is the request for creating a new template.",
+              "properties": {
+                "description": {
+                  "description": "Description explaining what this template is for.",
+                  "type": "string"
+                },
+                "featureFlags": {
+                  "description": "Feature flags for this template.",
+                  "items": {
+                    "$ref": "#/definitions/v1FeatureFlagCreate",
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "image": {
+                  "description": "Machine image name (e.g., \"osx-xcode-edge\"). Consistent across clusters.\n\nSuperseded by stack_id (prefer it). Accepted for now and resolved to a stack id on the\nfly so un-migrated clients keep working.",
+                  "type": "string"
+                },
+                "machineType": {
+                  "description": "Machine type name (e.g., \"g2.mac.m2pro.4c\"). Consistent across clusters.",
+                  "type": "string"
+                },
+                "name": {
+                  "description": "Human-readable name of the template.",
+                  "type": "string"
+                },
+                "sessionInputs": {
+                  "description": "Session inputs for this template.",
+                  "items": {
+                    "$ref": "#/definitions/v1SessionInputCreate",
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "stackId": {
+                  "description": "Stack id (e.g. \"osx-xcode-16.0.x-edge\") to store on the template. Preferred\nover image. Exactly one of stack_id or image must be supplied.",
+                  "type": "string"
+                },
+                "startupScript": {
+                  "description": "Startup script (bash) that runs every time the session starts or restarts.",
+                  "type": "string"
+                },
+                "templateVariables": {
+                  "description": "Template variables to bake into this template.",
+                  "items": {
+                    "$ref": "#/definitions/v1TemplateVariableCreate",
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "warmupScript": {
+                  "description": "Warmup script (bash) that runs only once during initial session creation.",
+                  "type": "string"
+                },
+                "workingDirectory": {
+                  "description": "Working directory for terminal sessions (absolute path, optional).",
+                  "type": "string"
+                },
+                "workspaceLinks": {
+                  "description": "Workspace links for this template.",
+                  "items": {
+                    "$ref": "#/definitions/v1WorkspaceLinkCreate",
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateTemplateResponse"
+            }
+          }
+        },
+        "summary": "Create template",
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/templates/{templateId}": {
+      "delete": {
+        "description": "Deletes a template.",
+        "operationId": "CodespacesService_DeleteTemplate",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the template to delete.",
+            "in": "path",
+            "name": "templateId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeleteTemplateResponse"
+            }
+          }
+        },
+        "summary": "Delete template",
+        "tags": [
+          "Templates"
+        ]
+      },
+      "get": {
+        "description": "Retrieves a template by its ID.",
+        "operationId": "CodespacesService_GetTemplate",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the template.",
+            "in": "path",
+            "name": "templateId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Whether to include secret values (e.g. secret template variables) in the response.\nDefaults to false: secret values are redacted so they cannot accidentally leak.\nSet to true only when the caller actually needs the plaintext secrets.",
+            "in": "query",
+            "name": "includeSecrets",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetTemplateResponse"
+            }
+          }
+        },
+        "summary": "Get template",
+        "tags": [
+          "Templates"
+        ]
+      },
+      "patch": {
+        "description": "Updates an existing template.",
+        "operationId": "CodespacesService_UpdateTemplate",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the template to update.",
+            "in": "path",
+            "name": "templateId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "UpdateTemplateRequest is the request for updating a template.",
+              "properties": {
+                "description": {
+                  "description": "Updated description (optional).",
+                  "type": "string"
+                },
+                "featureFlags": {
+                  "description": "Updated feature flags (replaces all existing when update_feature_flags is true).",
+                  "items": {
+                    "$ref": "#/definitions/v1FeatureFlagCreate",
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "image": {
+                  "description": "Updated image name (optional).\n\nSuperseded by stack_id (prefer it). Accepted for now and resolved to a stack id on the fly.",
+                  "type": "string"
+                },
+                "machineType": {
+                  "description": "Updated machine type name (optional).",
+                  "type": "string"
+                },
+                "name": {
+                  "description": "Updated name (optional).",
+                  "type": "string"
+                },
+                "sessionInputs": {
+                  "description": "Updated session inputs (replaces all existing when update_session_inputs is true).",
+                  "items": {
+                    "$ref": "#/definitions/v1SessionInputCreate",
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "stackId": {
+                  "description": "Updated stack id (optional, e.g. \"osx-xcode-16.0.x-edge\"). Preferred over image.",
+                  "type": "string"
+                },
+                "startupScript": {
+                  "description": "Updated startup script (optional).",
+                  "type": "string"
+                },
+                "templateVariables": {
+                  "description": "Updated template variables (replaces all existing when update_template_variables is true).",
+                  "items": {
+                    "$ref": "#/definitions/v1TemplateVariableCreate",
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "updateFeatureFlags": {
+                  "description": "Whether to update feature_flags (false = don't touch, true = replace with provided list).",
+                  "type": "boolean"
+                },
+                "updateSessionInputs": {
+                  "description": "Whether to update session_inputs (false = don't touch, true = replace with provided list).",
+                  "type": "boolean"
+                },
+                "updateTemplateVariables": {
+                  "description": "Whether to update template_variables (false = don't touch, true = replace with provided list).",
+                  "type": "boolean"
+                },
+                "updateWorkspaceLinks": {
+                  "description": "Whether to update workspace_links (false = don't touch, true = replace with provided list).",
+                  "type": "boolean"
+                },
+                "warmupScript": {
+                  "description": "Updated warmup script (optional).",
+                  "type": "string"
+                },
+                "workingDirectory": {
+                  "description": "Updated working directory (optional).",
+                  "type": "string"
+                },
+                "workspaceLinks": {
+                  "description": "Updated workspace links (replaces all existing when update_workspace_links is true).",
+                  "items": {
+                    "$ref": "#/definitions/v1WorkspaceLinkCreate",
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateTemplateResponse"
+            }
+          }
+        },
+        "summary": "Update template",
+        "tags": [
+          "Templates"
+        ]
+      }
+    }
+  },
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "https"
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "securityDefinitions": {
+    "BearerAuth": {
+      "description": "Bitrise Personal Access Token, sent as `token \u003cPAT\u003e`.",
+      "in": "header",
+      "name": "Authorization",
+      "type": "apiKey"
+    }
+  },
+  "swagger": "2.0",
+  "tags": [
+    {
+      "description": "Operations on the currently authenticated user.",
+      "name": "User"
+    },
+    {
+      "description": "Workspace-level capabilities and metadata used by the UI (e.g. free-trial status).",
+      "name": "Workspace"
+    },
+    {
+      "description": "User-scoped saved credentials (e.g. GitHub PATs, SSH keys) that can be referenced from session inputs across multiple sessions.",
+      "name": "Saved inputs"
+    },
+    {
+      "description": "Reusable configurations used to create sessions. A template defines the machine image, machine type, startup/warmup scripts, template variables, session inputs, feature flags, and workspace links.",
+      "name": "Templates"
+    },
+    {
+      "description": "Lifecycle operations on remote dev environments: create, restore, terminate, list, update, delete.",
+      "name": "Sessions"
+    },
+    {
+      "description": "Operations performed against a running session's VM: shell execution, file transfer, screenshots, mouse/keyboard input, log streaming.",
+      "name": "Session interaction"
+    },
+    {
+      "description": "Lookups of available machine images, machine types, and clusters that can be used as template configuration.",
+      "name": "Machine catalog"
+    }
+  ]
+}
