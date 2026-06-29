@@ -19,6 +19,56 @@ Some saved inputs have a dedicated purpose:
 - **Claude Code credential**: a `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY` value so sessions start with Claude Code already authenticated.
 - **Custom values**: any key-value pair your environment needs, such as an API token or a registry login. Mark it as secret to encrypt it.
 
+### Configuring passwordless SSH access
+
+To connect to your sessions over SSH without a password, add your SSH public key:
+
+1. Select **Saved Inputs** on the left, under **User settings**.
+1. Under **Passwordless SSH access**, click **+ Add public key**.
+
+   ![Add SSH public key dialog](/img/rde/2026-06-29-rde-saved-inputs-add-ssh-key.png)
+
+1. Paste your public key (for example, the contents of `~/.ssh/id_ed25519.pub`) into the `SSH_PUBLIC_KEY` field.
+1. Click **Save**.
+
+Bitrise adds the key to the `authorized_keys` of every new session, so you can connect with `ssh` directly.
+
+### Configuring Claude Code credentials
+
+To start Claude Code automatically in new sessions, add a Claude Code credential:
+
+<Tabs>
+<TabItem value="subscription-token" label="Subscription token" default>
+
+Use this option to bill usage against your Claude Pro or Max plan.
+
+1. Under **Claude Code**, open the **Subscription token** tab.
+1. Click **+ Add subscription token**.
+
+   ![Add Claude subscription token dialog](/img/rde/2026-06-29-rde-saved-inputs-add-subscription-token.png)
+
+1. In your terminal, run `claude login` then `claude setup-token`. Copy the generated token (it starts with `sk-ant-oat01-`).
+1. Paste the token into the `CLAUDE_CODE_OAUTH_TOKEN` field.
+1. Click **Save**.
+
+</TabItem>
+<TabItem value="api-key" label="API key">
+
+Use this option for pay-per-token billing with an Anthropic API key.
+
+1. Under **Claude Code**, open the **API key** tab.
+1. Click **+ Add API key**.
+
+   ![Add Anthropic API key dialog](/img/rde/2026-06-29-rde-saved-inputs-api-key.png)
+
+1. Paste your Anthropic API key (starts with `sk-ant-`) into the `ANTHROPIC_API_KEY` field.
+1. Click **Save**.
+
+</TabItem>
+</Tabs>
+
+Once saved, new sessions that include a Claude Code credential in their template will start with Claude Code already authenticated.
+
 ## Using saved inputs in a session
 
 When you create a session, a [template](/en/bitrise-rde/configuration/templates) input can pull its value from a saved input. You can select the saved input explicitly, or let Bitrise map saved inputs to session inputs that share the same key.
