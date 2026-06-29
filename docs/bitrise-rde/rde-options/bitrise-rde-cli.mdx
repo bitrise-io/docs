@@ -1,0 +1,84 @@
+---
+title: "Bitrise RDE CLI"
+description: "Install and use the Bitrise RDE CLI to create and connect to Remote Dev Environment sessions, transfer files, and run AI coding agents from your terminal."
+sidebar_position: 1
+slug: /bitrise-rde/rde-options/bitrise-rde-cli
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+The Bitrise RDE CLI lets you manage Remote Dev Environments from your terminal: create and connect to <GlossTerm baseform="rde session">sessions</GlossTerm>, transfer files, and start AI coding agents. The CLI is open source, and all RDE commands live under `bitrise-cli rde`.
+
+If you just want to get started fast, follow the [Quickstart](/en/bitrise-rde/getting-started/quickstart). This page is the broader reference for what the CLI can do.
+
+## Installing the CLI
+
+Install the latest version with the install script:
+
+```bash
+curl -fsSL https://app.bitrise.io/cli/install.sh | bash
+```
+
+This installs the `bitrise-cli` binary to `~/.local/bin`. Make sure that directory is on your `PATH`. You can also download a build from the [GitHub releases](https://github.com/bitrise-io/bitrise-cli/releases) or install from source with `go install github.com/bitrise-io/bitrise-cli@latest`.
+
+## Signing in
+
+Sign in to your Bitrise account. This opens your browser to authenticate:
+
+```bash
+bitrise-cli auth login
+```
+
+Check your status with `bitrise-cli auth status`, and sign out with `bitrise-cli auth logout`. For non-interactive use, such as CI, set the `BITRISE_TOKEN` environment variable to a personal access token, or pipe a token into `bitrise-cli auth login --with-token`.
+
+If you belong to more than one <GlossTerm baseform="workspace">workspace</GlossTerm>, set the one to use with the `--workspace` flag or the `BITRISE_WORKSPACE_ID` environment variable.
+
+## Managing sessions
+
+The `bitrise-cli rde session` commands cover the full session lifecycle:
+
+| Command | What it does |
+| --- | --- |
+| `bitrise-cli rde session create NAME` | Create a session from a `--template`, or directly with `--image` and `--machine-type`. |
+| `bitrise-cli rde session list` | List your sessions and their status. |
+| `bitrise-cli rde session view SESSION_ID` | Show a session's details, including connection credentials. |
+| `bitrise-cli rde session exec SESSION_ID -- COMMAND` | Run a command in the session over SSH. |
+| `bitrise-cli rde session open-vnc SESSION_ID` | Open a VNC viewer to the session's desktop (macOS only). |
+| `bitrise-cli rde session upload SESSION_ID LOCAL_PATH REMOTE_FOLDER` | Upload a file or folder into the session. |
+| `bitrise-cli rde session download SESSION_ID REMOTE_PATH LOCAL_PATH` | Download a file or folder from the session. |
+| `bitrise-cli rde session terminate SESSION_ID` | Stop the machine but keep the session for later. |
+| `bitrise-cli rde session restore SESSION_ID` | Restart a terminated session from its persistent disk. |
+| `bitrise-cli rde session delete SESSION_ID` | Permanently delete a terminated session. |
+
+## Running AI coding agents
+
+The `bitrise-cli rde claude` command creates a session, clones your current repository branch into it, and drops you into Claude Code running on the cloud machine. While the agent works, the CLI keeps a secure connection open so it can open a VNC viewer or transfer files to and from your local machine.
+
+:::note
+
+If you belong to more than one workspace, set the one to use with the `--workspace` flag or the `BITRISE_WORKSPACE_ID` environment variable.
+
+:::
+
+This is the recommended way to start. For the full walkthrough, see the [Quickstart](/en/bitrise-rde/getting-started/quickstart). To return to a session later, use `bitrise-cli rde claude --continue` or `bitrise-cli rde claude --resume`.
+
+:::tip
+
+To avoid authenticating Claude Code every time, save your credential once in the [Bitrise RDE UI](/en/bitrise-rde/rde-options/bitrise-rde-ui#authentication). Sessions that include it will start with Claude Code already authenticated.
+
+:::
+
+## Templates, saved inputs, and machine options
+
+The CLI also manages the configuration objects behind your sessions:
+
+- `bitrise-cli rde template`: list, create, view, update, and delete [templates](/en/bitrise-rde/configuration/templates).
+- `bitrise-cli rde saved-input`: list, create, view, update, and delete [saved inputs](/en/bitrise-rde/configuration/saved-inputs).
+- `bitrise-cli rde image list`: list the stacks available to you.
+- `bitrise-cli rde machine-type list --image NAME`: list the machine types that work with a given stack.
+
+## Full command reference
+
+For every command, flag, and argument, see the open-source repository and its generated reference: [bitrise-io/bitrise-cli](https://github.com/bitrise-io/bitrise-cli).
