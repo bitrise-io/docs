@@ -28,7 +28,7 @@ const TAG_LABEL_OVERRIDES: Record<string, string> = {
 // sentence-case the tag labels and tag every entry with the "Code" icon. The
 // generated info doc has no label and is filtered out (added explicitly below).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function toHubItems(generated: any) {
+function toHubItems(generated: any, addIcon = true) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (generated as any[]).filter((item: any) => item.label).map(item => {
     const originalLabel = item.label as string | undefined;
@@ -38,16 +38,13 @@ function toHubItems(generated: any) {
     return {
       ...item,
       ...(correctedLabel !== undefined ? {label: correctedLabel} : {}),
-      customProps: {
-        ...(item.customProps ?? {}),
-        icon: 'Code',
-      },
+      ...(addIcon ? {customProps: {...(item.customProps ?? {}), icon: 'Code'}} : {}),
     };
   });
 }
 
 const hubItems = toHubItems(bitriseAPIApiSidebar);
-const rdeHubItems = toHubItems(rdeAPIApiSidebar);
+const rdeHubItems = toHubItems(rdeAPIApiSidebar, false);
 
 const sidebars: SidebarsConfig = {
   platformSidebar: productSidebar('bitrise-platform', 'Bitrise as a Platform'),
