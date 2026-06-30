@@ -66,6 +66,15 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Cache node_modules
+        if: steps.sync.outputs.status != 'unchanged'
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            !node_modules/.cache
+          key: node-modules-${{ runner.os }}-node20-${{ hashFiles('package-lock.json') }}
+
       - name: Regenerate the ${{ matrix.name }} reference
         if: steps.sync.outputs.status != 'unchanged'
         run: |
