@@ -306,8 +306,10 @@ const config: Config = {
             },
           },
           bitriseRDE: {
-            // Remote Dev Environments API — sourced live from the hosted spec.
-            specPath: 'https://api.bitrise.io/rde/api-docs/swagger.json',
+            // Remote Dev Environments API. The committed snapshot is refreshed
+            // from the live spec by scripts/sync_rde_spec.py (run nightly /
+            // on-demand by .github/workflows/sync-api-references.yml).
+            specPath: 'api/bitrise-rde.json',
             outputDir: 'docs/bitrise-rde-api/api-reference',
             sidebarOptions: {
               groupPathsBy: 'tag',
