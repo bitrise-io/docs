@@ -1,6 +1,6 @@
 ---
 title: "Enabling or disabling a Step conditionally"
-description: "You can enable or disable a Step in any given Workflow, and you can also set conditions for Steps. You can do so, either on your own computer, with the Bitrise CLI or by using the **bitrise.yml** tab of the Workflow Editor."
+description: "You can enable or disable a Step in any given Workflow, and you can also set conditions for Steps. You can do so either on your own computer with the Bitrise CLI, or by using the YAML editor in the Workflow Editor."
 sidebar_position: 6
 slug: /bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally
 ---
@@ -10,7 +10,7 @@ import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
 
-You can enable or disable a <GlossTerm baseform="Step">Step</GlossTerm> in any given <GlossTerm baseform="Workflow">Workflow</GlossTerm>, and you can also set conditions for Steps. You can do it either on your own computer, with the Bitrise CLI or by using the **<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>** tab of the <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>.
+You can enable or disable a <GlossTerm baseform="Step">Step</GlossTerm> in any given <GlossTerm baseform="Workflow">Workflow</GlossTerm>, and you can also set conditions for Steps. You can do it either on your own computer with the Bitrise CLI, or by using the YAML editor in the <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>.
 
 We mostly use `run_if` expressions to do these things. Check out the examples for possible template expressions: [Examples of run_if expressions](#examples-of-run_if-expressions).
 
@@ -58,7 +58,7 @@ To experiment with different configurations for a Workflow, without removing or 
 </TabItem>
 <TabItem value="bitriseyml" label="Configuration YAML">
 
-1. Open your app’s `bitrise.yml` file.
+1. Open your project’s configuration YAML file.
 1. Find the Step that you want to disable.
 1. Add `run_if: false` to it.
 
@@ -101,7 +101,7 @@ CI mode can be enabled on your own Mac/PC by setting the `CI` environment to `tr
 </TabItem>
 <TabItem value="bitriseyml" label="Configuration YAML">
 
-1. Open your app’s `bitrise.yml` file.
+1. Open your project’s configuration YAML file.
 1. Find the Step you need.
 1. Add `run_if: .IsCI` to its properties:
 
@@ -133,7 +133,7 @@ It is possible to run a Step ONLY if the build failed before it got to that part
 </TabItem>
 <TabItem value="bitriseyml" label="Configuration YAML">
 
-1. Open your app’s `bitrise.yml` file.
+1. Open your project’s configuration YAML file.
 1. Find the Step that you want to disable.
 1. Add `run_if: .IsBuildFailed` to it.
 1. Add `is_always_run: true` to it.
@@ -156,13 +156,17 @@ It is possible to run a Step ONLY if the build failed before it got to that part
 
 ## Ignoring a failed Step without failing the build
 
-Usually, when a Step fails during a build, the built itself fails, too. This isn't the case with every Step, of course: both the **Bitrise.io Cache:Pull** and the **Bitrise.io Cache:Push** Steps can fail without failing the build. You can also configure any other Step to ensure their failure doesn't fail the build.
+Usually, when a Step fails during a build, the build itself fails, too. Cache, notification, and status reporting Steps (for example, **Save Cache** and **Slack**) are often configured by default to allow the build to continue even if they fail. You can also configure any other Step to ensure their failure doesn't fail the build.
 
-:::note[YAML mode only]
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
 
-You can't do this on the graphical UI of the Workflow Editor: you have to edit your app's `bitrise.yml` file.
+1. <Partial_OpeningTheWorkflowEditor />
+1. Click the Step you want to configure.
+1. Under **When to run**, enable the **Continue build even if this Step fails** toggle.
 
-:::
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
 
 1. <Partial_OpeningTheWorkflowEditor />
 1. Switch to **YAML** at the top of the Workflow Editor.
@@ -170,16 +174,19 @@ You can't do this on the graphical UI of the Workflow Editor: you have to edit y
 1. Add the `is_skippable` flag to it and set it to `true`:
 
    ```yaml
-   - script: 
-       is_skippable: true 
-       inputs: 
-       - content: |- 
-           # !/bin/bash 
-           echo "Failing Step." 
-           exit 1 
-           # exit 1 would mark this step as Failed, but it won't break the Build 
+   - script:
+       is_skippable: true
+       inputs:
+       - content: |-
+           #!/bin/bash
+           echo "Failing Step."
+           exit 1
+           # exit 1 would mark this step as Failed, but it won't break the Build
            # because of the is_skippable: true flag / property
    ```
+
+</TabItem>
+</Tabs>
 
 
 ## Setting up run_if conditions with Script Steps

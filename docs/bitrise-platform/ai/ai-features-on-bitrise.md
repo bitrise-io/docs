@@ -43,6 +43,17 @@ The [AI build summary](/en/bitrise-ci/run-and-analyze-builds/build-data-and-trou
 
 If you have a failed build, the [AI build fixer](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/ai-build-fixer) corrects it right on the build’s details page without you having to switch to other tools and processes. The AI build fixer executes the suggested code changes and pushes a PR to your GitHub repository. You can check the changes through a link to the repo. Based on your configured build triggers, Bitrise kicks off a new CI build to validate the AI changes. This means less fragmented work and quicker debugging.
 
+## AI configuration assistant
+
+The [AI configuration assistant](/en/bitrise-ci/workflows-and-pipelines/ai-configuration-assistant) is a chat-based assistant built into the Workflow Editor. You describe what you want in plain language and the assistant produces a working Workflow or Pipeline in validated YAML, which you can refine further, either with the assistant or manually.
+
+The assistant can also:
+
+- Explain any existing Workflow or Pipeline in plain language, including what each Step does.
+- Suggest improvements to an existing configuration.
+
+The AI configuration assistant requires the **Configuration generator** feature to be enabled for each project in **Project settings > Bitrise AI**.
+
 ## Bitrise MCP
 
 The [Bitrise Model Context Protocol (MCP) Server](/en/bitrise-platform/ai/bitrise-mcp) lets you talk to Bitrise via an AI client of your choice. It enables seamless interaction with your existing CI setup.

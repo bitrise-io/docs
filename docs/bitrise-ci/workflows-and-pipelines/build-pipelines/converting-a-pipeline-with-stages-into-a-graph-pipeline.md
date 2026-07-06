@@ -22,7 +22,7 @@ To convert a Pipeline
 1. Click **Create Pipeline**.
 1. Name your new Pipeline.
 1. In the **Based on** dropdown menu, select a Pipeline that contains stages.
-1. Click **Save changes**.
+1. Click **Create Pipeline**.
 
    :::important[No cycles allowed]
 
