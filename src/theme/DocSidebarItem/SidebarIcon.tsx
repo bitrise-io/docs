@@ -32,6 +32,7 @@ import IconSiren from '@site/src/images/icon-siren-16px.svg';
 import IconInsights from '@site/src/images/icon-insights-16px.svg';
 import IconInstall from '@site/src/images/icon-install-16px.svg';
 import IconGit from '@site/src/images/icon-git-16px.svg';
+import IconReact from '@site/src/images/icon-react-16px.svg';
 
 const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
   Power: IconPower,
@@ -66,6 +67,7 @@ const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>
   Insights: IconInsights,
   Install: IconInstall,
   Git: IconGit,
+  React: IconReact,
 };
 
 export default function SidebarIcon({name}: {name?: string}): ReactNode {
