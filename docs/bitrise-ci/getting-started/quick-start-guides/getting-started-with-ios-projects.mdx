@@ -2,7 +2,6 @@
 title: "Getting started with iOS projects"
 description: "Get started on Bitrise by signing up via email or a Git provider, connecting a repository, and running the first build for your iOS app."
 sidebar_position: 1
-draft: true
 slug: /bitrise-ci/getting-started/quick-start-guides/getting-started-with-ios-projects
 ---
 
@@ -10,7 +9,6 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 import Partial_DeployingTheAppToAppStoreConnect from '@site/src/partials/deploying-the-app-to-app-store-connect.mdx';
-import Partial_AddingANewProjectToBitrise from '@site/src/partials/adding-a-new-project-to-bitrise.mdx';
 
 Developing for iOS is complex - our aim is to make it as easy as possible for you! In this guide, we’ll walk you through how to add an iOS project to Bitrise, how to run Xcode tests, manage your code signing files, and deploy the finished app to [bitrise.io](https://www.bitrise.io/) and to the App Store.
 
@@ -23,7 +21,21 @@ You can run your fastlane lane on Bitrise with the same commands you would use
 
 ## Adding an iOS project to Bitrise
 
-<Partial_AddingANewProjectToBitrise />
+Add your project the same way as any other: see [Adding a new project](/en/bitrise-ci/getting-started/adding-a-new-project) for the full walkthrough of the wizard. This section covers what's specific to iOS.
+
+### How the scanner detects an iOS project
+
+The <GlossTerm baseform="project scanner">project scanner</GlossTerm> looks for `.xcodeproj` files and `.xcworkspace` directories, then checks each one's build settings: if `SDKROOT` is set to `iphoneos` (or `SUPPORTED_PLATFORMS` includes it), the scanner registers the project as iOS. A project that's already a member of a workspace isn't listed separately, since the workspace covers it.
+
+If your repository has no Xcode project or workspace, the scanner falls back to a `Package.swift` file and treats it as a Swift package. It also detects a `Podfile` for CocoaPods and a `Cartfile` for Carthage, and adjusts the generated Workflow to install those dependencies.
+
+### What you can configure
+
+During the **CI configuration** stage, the wizard shows:
+
+- **Project or workspace path**: the `.xcodeproj`, `.xcworkspace`, or `Package.swift` file to build.
+- **Scheme name**: any shared scheme found in your project or workspace. The scanner can only detect shared schemes, not user-specific ones.
+- **Distribution method**: how Bitrise exports your app, for example App Store, Ad Hoc, Enterprise, or Development. This option isn't shown for Swift packages, since those aren't archived.
 
 ## Testing your iOS app
 

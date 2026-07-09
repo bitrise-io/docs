@@ -2,7 +2,6 @@
 title: "Getting started with Flutter projects"
 description: "Get started on Bitrise by signing up via email or a Git provider, connecting a repository, and running the first build for your Flutter app."
 sidebar_position: 4
-draft: true
 slug: /bitrise-ci/getting-started/quick-start-guides/getting-started-with-flutter-projects
 ---
 
@@ -10,14 +9,30 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
-import Partial_AddingANewProjectToBitrise from '@site/src/partials/adding-a-new-project-to-bitrise.mdx';
 
 Flutter is a mobile app SDK that allows developers to create native apps for both iOS and Android. [Bitrise](https://app.bitrise.io/users/sign_in) supports Flutter apps: we have dedicated <GlossTerm baseform="Step">Steps</GlossTerm> to help you with all your Flutter needs. This guide walks you through setting up, testing, building and deploying a simple Flutter <GlossTerm baseform="Project">project</GlossTerm> on Bitrise.
 
 
 ## Adding a Flutter project to Bitrise
 
-<Partial_AddingANewProjectToBitrise />
+Add your project the same way as any other: see [Adding a new project](/en/bitrise-ci/getting-started/adding-a-new-project) for the full walkthrough of the wizard. This section covers what's specific to Flutter.
+
+### How the scanner detects a Flutter project
+
+The <GlossTerm baseform="project scanner">project scanner</GlossTerm> looks for a `pubspec.yaml` file anywhere in your repository, excluding `node_modules`. Every directory that has one is a candidate Flutter project.
+
+For each candidate, the scanner also checks for:
+
+- A `test/` directory with at least one `*_test.dart` file, to enable testing.
+- An `ios/Runner.xcworkspace` directory, to enable iOS builds.
+- An `android/build.gradle` or `android/build.gradle.kts` file, to enable Android builds.
+- A `web/` directory, to enable web builds.
+
+It suppresses the standalone iOS, macOS, and Android scanners for the same project, since the generated Flutter Workflow already handles those platforms.
+
+### What you can configure
+
+During the **CI configuration** stage, the wizard shows a single option: **Project location**, the directory that contains your `pubspec.yaml` file. Everything else, including which platforms to build, is detected automatically and baked into the generated Workflow.
 
 ## Testing a Flutter app
 
