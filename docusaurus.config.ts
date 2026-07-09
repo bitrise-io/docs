@@ -319,6 +319,7 @@ const config: Config = {
       },
     ],
     changelogFeedPlugin,
+    'docusaurus-plugin-image-zoom',
     function webpackFallbacks() {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const webpack = require('webpack');
@@ -419,6 +420,16 @@ const config: Config = {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
       additionalLanguages: ['yaml', 'bash', 'json', 'ruby', 'swift', 'kotlin', 'groovy', 'dart'],
+    },
+    zoom: {
+      selector: '.markdown img',
+      background: {
+        light: 'var(--sys-bg-surface)',
+        dark: '#1a1a2e',
+      },
+      config: {
+        margin: 24,
+      },
     },
   } satisfies Preset.ThemeConfig,
 };
