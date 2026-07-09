@@ -2,17 +2,15 @@
 title: "Getting started with Ionic/Cordova projects"
 description: "Get started on Bitrise by signing up via email or a Git provider, connecting a repository, and running the first build for your Ionic/Cordova app."
 sidebar_position: 5
-draft: true
 slug: /bitrise-ci/getting-started/quick-start-guides/getting-started-with-ionic-cordova-projects
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_InstallingDependenciesForIonicCordovaReactApps from '@site/src/partials/installing-dependencies-for-ioniccordovareact-apps.mdx';
+import Partial_InstallingJavaScriptDependenciesForReactNativeIonicCordovaAndExpo from '@site/src/partials/installing-javascript-dependencies-for-react-native-ionic-cordova-and-expo.mdx';
 import Partial_NOTEDoYouHaveABitriseAccount from '@site/src/partials/note-do-you-have-a-bitrise-account.mdx';
 import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
-import Partial_AddingANewProjectToBitrise from '@site/src/partials/adding-a-new-project-to-bitrise.mdx';
 
 You can use Cordova and Ionic frameworks to develop cross-platform apps. Bitrise can help you with its automated testing, code signing and deployment procedures so that you can ship your iOS and/or Android app/s to the respective marketplace in no time! If your <GlossTerm baseform="workspace">Workspace</GlossTerm> has more than one concurrency, you can have Android and iOS builds run simultaneously. Now let us guide you through the process!
 
@@ -21,7 +19,22 @@ You can use Cordova and Ionic frameworks to develop cross-platform apps. Bitrise
 
 ## Adding an Ionic/Cordova project to Bitrise
 
-<Partial_AddingANewProjectToBitrise />
+Add your project the same way as any other: see [Adding a new project](/en/bitrise-ci/getting-started/adding-a-new-project) for the full walkthrough of the wizard. This section covers what's specific to Ionic and Cordova.
+
+### How the scanner tells Ionic and Cordova apart
+
+The <GlossTerm baseform="project scanner">project scanner</GlossTerm> checks for an `ionic.config.json` file first, or the legacy `ionic.project` file. If it finds one, it registers the project as Ionic and doesn't check for `config.xml` at all.
+
+If neither Ionic file is present, the scanner looks for a `config.xml` file with a `cordova.apache.org` namespace and registers the project as Cordova. If it also finds an Ionic config file alongside that `config.xml`, it defers to Ionic instead.
+
+### What you can configure
+
+During the **CI configuration** stage, the wizard shows:
+
+- **Directory of the config.xml file**: shown only if your config file isn't at the root of your repository.
+- **Platform**: which platform to build for, Android, iOS, or both.
+
+<Partial_InstallingJavaScriptDependenciesForReactNativeIonicCordovaAndExpo />
 
 ## Testing Ionic/Cordova apps
 
@@ -34,7 +47,7 @@ If your Cordova/Ionic project has a Karma Jasmine dependency in its **package.js
 
    :::important[Installing dependencies]
 
-   [You must install dependencies](/en/bitrise-ci/getting-started/quick-start-guides/getting-started-with-expo-projects#installing-dependencies-for-expoioniccordovareact-native-apps) before you can run tests.
+   Make sure you've completed [Installing JavaScript dependencies](#installing-javascript-dependencies) before you run tests.
 
    :::
 

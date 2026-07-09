@@ -2,7 +2,6 @@
 title: "Getting started with MacOS projects"
 description: "Get started on Bitrise by signing up via email or a Git provider, connecting a repository, and running the first build for your macOS project."
 sidebar_position: 7
-draft: true
 slug: /bitrise-ci/getting-started/quick-start-guides/getting-started-with-macos-projects
 sidebar_label: Getting started with macOS projects
 ---
@@ -10,14 +9,27 @@ sidebar_label: Getting started with macOS projects
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_AddingANewProjectToBitrise from '@site/src/partials/adding-a-new-project-to-bitrise.mdx';
 
 In this guide, we’ll walk you through how to add a macOS project to Bitrise, how to run Xcode tests, manage your code signing files and deploy the finished app to bitrise.io and to the App Store.
 
 
 ## Adding a macOS project to Bitrise
 
-<Partial_AddingANewProjectToBitrise />
+Add your project the same way as any other: see [Adding a new project](/en/bitrise-ci/getting-started/adding-a-new-project) for the full walkthrough of the wizard. This section covers what's specific to macOS.
+
+### How the scanner detects a macOS project
+
+The <GlossTerm baseform="project scanner">project scanner</GlossTerm> looks for `.xcodeproj` files and `.xcworkspace` directories, the same way it does for iOS. To tell the two apart, it checks each build configuration's `SDKROOT`: a `macosx` value (or a `SUPPORTED_PLATFORMS` list that includes it) registers the project as macOS, while `iphoneos` registers it as iOS.
+
+As with iOS, a `Package.swift` file without an Xcode project or workspace is treated as a Swift package, and matched to macOS if its declared platforms include `macos`.
+
+### What you can configure
+
+During the **CI configuration** stage, the wizard shows:
+
+- **Project or workspace path**: the `.xcodeproj`, `.xcworkspace`, or `Package.swift` file to build.
+- **Scheme name**: any shared scheme found in your project or workspace.
+- **Export method**: how Bitrise exports your app, for example App Store, Developer ID, Development, or none, which exports a copy of the `.app` file without re-signing it. This option isn't shown for Swift packages.
 
 ## Testing your macOS app
 

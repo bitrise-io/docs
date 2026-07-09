@@ -1,7 +1,6 @@
 ---
 title: "Getting started with web CI"
 sidebar_position: 8
-draft: true
 slug: /bitrise-ci/getting-started/quick-start-guides/getting-started-with-web-ci
 sidebar_label: Getting started with web CI projects
 ---
@@ -9,7 +8,6 @@ sidebar_label: Getting started with web CI projects
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_AddingANewProjectToBitrise from '@site/src/partials/adding-a-new-project-to-bitrise.mdx';
 
 Bitrise is a mobile-focused DevOps platform. However, that doesn't mean you can't build non-mobile projects on Bitrise. We support non-mobile project types with integrations, default <GlossTerm baseform="workflow">Workflows</GlossTerm> and <GlossTerm baseform="pipeline">Pipelines</GlossTerm>, and dedicated caching solutions.
 
@@ -18,7 +16,22 @@ Using Bitrise for web CI allow you to consolidate all projects, mobile and other
 
 ## Adding a web CI project
 
-<Partial_AddingANewProjectToBitrise />
+Add your project the same way as any other: see [Adding a new project](/en/bitrise-ci/getting-started/adding-a-new-project) for the full walkthrough of the wizard. This section covers what's specific to non-mobile projects.
+
+### How the scanner detects your project type
+
+The <GlossTerm baseform="project scanner">project scanner</GlossTerm> checks your repository for the file that identifies each supported language:
+
+- Node.js: a `package.json` file.
+- Ruby: a `Gemfile`.
+- Python: a `requirements.txt`, `pyproject.toml`, `Pipfile`, or `setup.py` file.
+- Java or Kotlin: a `gradlew` file for Gradle, or a `pom.xml` file for Maven.
+
+For Node.js, Ruby, and Python, it also reads version files such as `.nvmrc`, `.ruby-version`, or `.python-version` (or the `engines`/`requires-python` field in your project's manifest) to pick the right language version for your Workflow. See [Database configuration for Ruby projects](#database-configuration-for-ruby-projects) and [Package manager detection for Python](#package-manager-detection-for-python) for more detail on those two scanners.
+
+### What you can configure
+
+During the **CI configuration** stage, the wizard shows a **Project directory** option for each detected project, plus a package manager selector where one applies. If the scanner can't detect your package manager from a lockfile, choose it manually and Bitrise generates a matching configuration.
 
 ## Database configuration for Ruby projects
 

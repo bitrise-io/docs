@@ -2,7 +2,6 @@
 title: "Getting started with Android projects"
 description: "Get started on Bitrise by signing up via email or a Git provider, connecting a repository, and running the first build for your Android app."
 sidebar_position: 2
-draft: true
 slug: /bitrise-ci/getting-started/quick-start-guides/getting-started-with-android-projects
 ---
 
@@ -15,7 +14,6 @@ import Partial_DeployingToGooglePlay from '@site/src/partials/deploying-to-googl
 import Partial_SettingUpGooglePlayDeploymentForTheFirstTime from '@site/src/partials/setting-up-google-play-deployment-for-the-first-time.mdx';
 import Partial_GettingToTheProjectSettingsPage from '@site/src/partials/getting-to-the-project-settings-page.mdx';
 import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
-import Partial_AddingANewProjectToBitrise from '@site/src/partials/adding-a-new-project-to-bitrise.mdx';
 
 In this guide, we’ll walk you through how to add an Android app to Bitrise, what the default <GlossTerm baseform="Workflow">Workflows</GlossTerm> can do, and finally how to test and deploy your app to [bitrise.io](https://www.bitrise.io/) and to Google Play Store.
 
@@ -24,7 +22,21 @@ In this guide, we’ll walk you through how to add an Android app to Bitrise, wh
 
 ## Adding an Android project to Bitrise
 
-<Partial_AddingANewProjectToBitrise />
+Add your project the same way as any other: see [Adding a new project](/en/bitrise-ci/getting-started/adding-a-new-project) for the full walkthrough of the wizard. This section covers what's specific to Android.
+
+### How the scanner detects an Android project
+
+The <GlossTerm baseform="project scanner">project scanner</GlossTerm> looks for a Gradle wrapper script (`gradlew`) in your repository, then checks the Gradle build scripts next to it for the `com.android.application` plugin. If it finds this plugin in at least one `build.gradle` or `build.gradle.kts` file, it registers your project as Android.
+
+The scanner skips common non-source directories, such as `.git`, `.gradle`, `.idea`, `build`, and `node_modules`. It also steps aside if your repository is already detected as Flutter, React Native, Cordova, Ionic, or Kotlin Multiplatform, since those scanners handle their own Android configuration.
+
+### What you can configure
+
+During the **CI configuration** stage, the wizard shows:
+
+- **Project location**: the directory that contains your `gradlew` file. If the scanner finds more than one, you can pick which one to use.
+- **Module**: the Gradle module to build, for example `app`.
+- **Variant**: the build variant to use, for example `Debug`. You can leave this blank and add variants later.
 
 ## Managing dependencies for Android projects
 
@@ -40,7 +52,7 @@ You can read more about adding dependencies to your Android project: [https://de
 1. <Partial_OpeningTheWorkflowEditor />
 1. Make sure your Workflow includes the **Android Build** <GlossTerm baseform="step">Step</GlossTerm>.
 
-   If the <GlossTerm baseform="project scanner">project scanner</GlossTerm> generated a Workflow called **build_apk** when first adding your app, that Workflow includes the Step. It installs all dependencies listed in the `build.gradle` file without any additional configuration.
+   If the project scanner generated a Workflow called **build_apk** when first adding your app, that Workflow includes the Step. It installs all dependencies listed in the `build.gradle` file without any additional configuration.
 1. Make sure your Workflow includes the **Install missing Android SDK components** Step.
 
    The Step must be BEFORE the **Android Build** Step in the Workflow. It will install all Android SDK tool that your project might need.
