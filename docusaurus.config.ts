@@ -422,10 +422,10 @@ const config: Config = {
       additionalLanguages: ['yaml', 'bash', 'json', 'ruby', 'swift', 'kotlin', 'groovy', 'dart'],
     },
     zoom: {
-      selector: '.markdown img',
+      selector: '.markdown img:not(a > img)',
       background: {
-        light: 'var(--sys-bg-surface)',
-        dark: '#1a1a2e',
+        light: 'var(--ifm-background-color)',
+        dark: 'var(--ifm-background-color)',
       },
       config: {
         margin: 24,
