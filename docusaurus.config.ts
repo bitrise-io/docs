@@ -320,6 +320,29 @@ const config: Config = {
     ],
     changelogFeedPlugin,
     'docusaurus-plugin-image-zoom',
+    [
+      'docusaurus-plugin-llms',
+      {
+        // Auto-generate llms.txt, llms-full.txt and per-page markdown mirrors
+        // of the docs so AI coding agents can consume the documentation
+        // directly. Title and description fall back to the site config.
+        generateLLMsTxt: true,
+        generateLLMsFullTxt: true,
+        generateMarkdownFiles: true,
+        // The docs live under docs/ but are served under the `en/` route base.
+        // Dropping the source directory prefix keeps every generated markdown
+        // URL uniform (e.g. /bitrise-ci/… .md) instead of leaking a `docs/`
+        // segment for the pages that lack an explicit slug.
+        preserveDirectoryStructure: false,
+        // Pages are MDX-heavy; drop the component import lines from the output.
+        excludeImports: true,
+        // Skip the OpenAPI-generated API reference: those pages are almost
+        // entirely theme components fed by the embedded specs, so text
+        // extraction yields near-empty pages. The specs under api/ stay the
+        // machine-readable source for those endpoints.
+        ignoreFiles: ['**/api-reference/**'],
+      },
+    ],
     function webpackFallbacks() {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const webpack = require('webpack');
