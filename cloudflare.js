@@ -273,12 +273,29 @@ const main = async () => {
       }
     });
 
-    process.stdout.write(`Updating items in list ${devCenterList.id}...\n`);
+    // Cloudflare list items must have a unique source_url. redirects.json often
+    // holds both `/x` and `/x.html` keys for the same page, and the .html/ja/jp
+    // expansion above turns those into identical source_urls — which the bulk
+    // API rejects with `duplicate_item_value`. Dedupe by source_url (last wins,
+    // matching object-key semantics), warning if a dropped duplicate pointed
+    // somewhere different so genuine conflicts surface instead of hiding.
+    const bySource = new Map();
+    for (const item of redirectsToUpload) {
+      const existing = bySource.get(item.redirect.source_url);
+      if (existing && existing.redirect.target_url !== item.redirect.target_url) {
+        process.stderr.write(`Warning: duplicate source "${item.redirect.source_url}" with differing targets ("${existing.redirect.target_url}" vs "${item.redirect.target_url}"); keeping the latter.\n`);
+      }
+      bySource.set(item.redirect.source_url, item);
+    }
+    const dedupedRedirects = [...bySource.values()];
+    const duplicatesRemoved = redirectsToUpload.length - dedupedRedirects.length;
+
+    process.stdout.write(`Updating items in list ${devCenterList.id}... (${dedupedRedirects.length} items, ${duplicatesRemoved} duplicate source URLs removed)\n`);
 
     /** @type {ItemUpdateResponse} */
     const item = await client.rules.lists.items.update(devCenterList.id, {
       account_id: accountId,
-      body: redirectsToUpload
+      body: dedupedRedirects
     });
 
     await pollBulkOperation(item.operation_id);
