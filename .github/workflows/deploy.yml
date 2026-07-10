@@ -55,6 +55,17 @@ jobs:
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
           command: pages deploy ./build --project-name=bitrise-docs --branch=${{ github.head_ref || github.ref_name }}
 
+      # Redirects are served by a Cloudflare Bulk Redirects list, not by the
+      # Pages deploy above. Editing redirects.json has no effect until this
+      # syncs it, so run it on every push to main. Gated off PRs so preview
+      # builds never mutate the production redirect list.
+      - name: Upload redirects to Cloudflare
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: npm run cloudflare:upload_redirects
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+
       - name: Comment preview URL
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
