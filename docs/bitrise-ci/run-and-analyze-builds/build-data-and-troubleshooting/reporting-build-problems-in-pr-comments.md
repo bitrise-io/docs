@@ -18,19 +18,18 @@ Configure PR comments with just a few clicks:
 
 1. Open your project on Bitrise with a user who has either the **Admin** role or the **Owner** role on the project.
 1. On the main page of the project, click on the **Project settings** button.
-1. Click **Integrations** on the left.
-1. On the **Git provider** tab, scroll down to **Build reporting** and enable the toggle for **PR comments**.
-1. If you wish to further edit the settings, click **Change settings**.
+1. Click **Repository** on the left.
+1. Scroll down to **Build reporting** and enable the toggle for **PR comments**.
 
-   ![project_settings_debugginginfoinPRs.png](/img/_paligo/uuid-5be9939f-1e31-2a9d-6c18-016f86734943.png)
-1. In the **Configure PR comments**window, all information blocks are selected by default, but you can uncheck any that you do not want to include in PR comments. The information blocks are the following:
+   ![Build reporting section with the PR Comments toggle](/img/run-and-analyze-builds/2026-07-14-build-reporting-pr-comments-toggle.png)
+1. In the **Configure PR comments** window, all information blocks are unchecked by default. Select any that you want to include in PR comments. The information blocks are the following:
 
-   - **Build summary**: Provides an overview of your build.
-   - **Step failures**: Provides details on which build Steps failed and why.
-   - **Test failures**: Provides information on failed tests.
-   - **Flaky tests**: Provides insights into tests that are inconsistent.
+   - **Build summary**: Build overview at the top of the comment. With AI on, also shows why the build failed and what to check first.
+   - **Step failures**: Shows failed Steps and error details. Hidden when all Steps succeed.
+   - **Test failures**: Shows failed tests and error details. Hidden when all tests succeed.
+   - **Flaky tests**: Shows flaky tests and rerun information. Hidden when there are no flaky tests.
 
-     ![configurePRcomments_debugginginfoinPRcomments.png](/img/_paligo/uuid-5f7b1066-7b97-56e9-54c2-cd2094b7e2d5.png)
+     ![Configure PR comments dialog with information blocks and Comment mode options](/img/run-and-analyze-builds/2026-07-14-configure-pr-comments-dialog.png)
 1. Under **Comment mode**, you can choose a comment mode to receive either a single comment or multiple comments.
 
    - **Single comment**: Each build on the PR replaces any existing comments from a previous build, so the PR displays only the comment from the most recent build.
@@ -41,6 +40,7 @@ Configure PR comments with just a few clicks:
      One PR build means one comment. However, multiple different Workflows on the same PR means multiple comments regardless of the **Comment mode** you choose. If the same Workflow is re-triggered, it adds new comments or updates the existing ones on the PR based on the chosen **Comment mode**.
 
      :::
+1. When ready, click **Save changes**.
 
 ## Receiving comments only for failed builds
 
