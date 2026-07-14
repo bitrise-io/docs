@@ -37,7 +37,7 @@ If you need more projects or AI credits, go to **Workspace settings** →**Plan 
 
 The [AI build summary](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/ai-build-summary) gives you a summary of why a CI build failed and suggests the fix right there on the build page. You can turn off the feature at any time.
 
-![2025-09-30-ai-summary.png](/img/_paligo/uuid-09bb51b3-e156-8f2e-4141-e71b46951f5c.png)
+![Bitrise AI panel with Failure details, Reason, and Suggested solution](/img/run-and-analyze-builds/2026-07-14-bitrise-ai-failure-details-panel.png)
 
 ## AI build fixer
 
