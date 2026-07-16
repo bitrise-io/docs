@@ -1,0 +1,43 @@
+diff --git a/node_modules/docusaurus-plugin-llms/lib/utils.js b/node_modules/docusaurus-plugin-llms/lib/utils.js
+index ed9850c..d082d08 100644
+--- a/node_modules/docusaurus-plugin-llms/lib/utils.js
++++ b/node_modules/docusaurus-plugin-llms/lib/utils.js
+@@ -466,7 +466,7 @@ async function resolvePartialImports(content, filePath, importChain = new Set())
+     // Pattern 1: import PartialName from './_partial.mdx'
+     // Pattern 2: import { PartialName } from './_partial.mdx'
+     // Create a fresh regex for each invocation to avoid lastIndex state leakage
+-    const createImportRegex = () => /^\s*import\s+(?:(\w+)|{\s*(\w+)\s*})\s+from\s+['"]([^'"]+_[^'"]+\.mdx?)['"];?\s*$/gm;
++    const createImportRegex = () => /^\s*import\s+(?:(\w+)|{\s*(\w+)\s*})\s+from\s+['"]([^'"]+\.mdx?)['"];?\s*$/gm;
+     const imports = new Map();
+     // First pass: collect all imports
+     let match;
+@@ -475,7 +475,7 @@ async function resolvePartialImports(content, filePath, importChain = new Set())
+         const componentName = match[1] || match[2];
+         const importPath = match[3];
+         // Only process imports for partial files (containing underscore)
+-        if (importPath.includes('_')) {
++        if (importPath.includes('_') || importPath.includes('/partials/')) {
+             imports.set(componentName, importPath);
+         }
+     }
+@@ -484,7 +484,9 @@ async function resolvePartialImports(content, filePath, importChain = new Set())
+         try {
+             // Resolve the partial file path relative to the current file
+             const dir = path.dirname(filePath);
+-            const partialPath = path.resolve(dir, importPath);
++            const partialPath = importPath.startsWith('@site/')
++                ? path.resolve(process.cwd(), importPath.slice('@site/'.length))
++                : path.resolve(dir, importPath);
+             // Check for circular import
+             if (importChain.has(partialPath)) {
+                 const chain = Array.from(importChain).join(' -> ');
+@@ -516,7 +518,8 @@ async function resolvePartialImports(content, filePath, importChain = new Set())
+             // Handle both self-closing tags and tags with content
+             // <PartialName /> or <PartialName></PartialName> or <PartialName>...</PartialName>
+             const jsxRegex = new RegExp(`<${escapedComponentName}\\s*(?:[^>]*?)(?:/>|>[^<]*</${escapedComponentName}>)`, 'g');
+-            resolved = resolved.replace(jsxRegex, resolvedPartial.trim());
++            const partialInlined = resolvedPartial.replace(/^\s*import\s+.*$/gm, '').replace(/\n{3,}/g, '\n\n').trim();
++            resolved = resolved.replace(jsxRegex, partialInlined);
+         }
+         catch (error) {
+             exports.logger.warn(`Failed to resolve partial import from ${importPath}: ${getErrorMessage(error)}`);
