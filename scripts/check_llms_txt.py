@@ -21,6 +21,11 @@ import urllib.error
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+# Domains scripts/audit_links.py also skips: the bot-protected marketing site
+# rejects automated requests and would false-alarm. docs.bitrise.io and
+# support.bitrise.io stay checked.
+SKIP_DOMAINS = {'bitrise.io', 'app.bitrise.io', 'www.bitrise.io', 'api.bitrise.io'}
+
 LLMS_TXT = Path(__file__).parent.parent / 'static' / 'llms.txt'
 LINK_RE = re.compile(r'\[[^\]]*\]\((https?://[^)\s]+)\)')
 
@@ -59,7 +64,11 @@ def main() -> None:
     url_lines: dict[str, list[int]] = {}
     for lineno, line in enumerate(LLMS_TXT.read_text('utf-8').splitlines(), 1):
         for m in LINK_RE.finditer(line):
-            url_lines.setdefault(m.group(1), []).append(lineno)
+            url = m.group(1)
+            dom = re.match(r'https?://([^/]+)', url)
+            if dom and dom.group(1) in SKIP_DOMAINS:
+                continue
+            url_lines.setdefault(url, []).append(lineno)
 
     print(f'Checking {len(url_lines)} links from static/llms.txt …\n', flush=True)
 
