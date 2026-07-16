@@ -26,18 +26,18 @@ To run tests using **Flutter Test**:
 1. Add the **Flutter Install** Step to your Workflow.
 
    This Step runs the initial setup of the Flutter SDK and installs any missing components.
-1. Make sure that the **Flutter Install** Step installs the correct version of the Flutter SDK for your app: check the **Flutter SDK Git repository version** input.
+1. Make sure that the **Flutter Install** Step installs the correct version of the Flutter SDK for your app: check the **Flutter SDK version or bundle URL** input.
 
-   ![flutter-install-step.png](/img/_paligo/uuid-da8e56db-115d-1bff-d80e-d69e8fa5c1b6.png)
+   ![flutter-install-step.png](/img/2026-07-16-flutter-install-step.png)
 
-   The input's default value is **stable**, which installs the latest stable version of the SDK. You can, however, set the value to either a specific version tag or a branch label:
+   The input's default value is **stable**, which installs the latest stable version of the SDK. You can, however, set the value to a specific version tag, a branch label, or a Flutter SDK bundle URL:
 
    - You can find the available version tags here: [Version tags](https://github.com/flutter/flutter/tags).
    - You can find the available branch labels here: [Branch labels](https://github.com/flutter/flutter/branches).
 
    :::tip[Installation bundle URL]
 
-   You can also install the Flutter SDK from an installation bundle URL: you just need to specify the URL in the **Flutter SDK installation bundle URL** input. Please note that if you do so, the **Flutter SDK Git repository version** input will be ignored entirely!
+   You can also install the Flutter SDK from an installation bundle URL: set the URL as the value of the same **Flutter SDK version or bundle URL** input, for example `https://storage.googleapis.com/flutter_infra/releases/beta/macos/flutter_macos_v1.6.3-beta.zip`.
 
    :::
 1. Add the **Flutter Test** Step to your Workflow. It should be after the **Flutter Install** Step.
@@ -45,7 +45,7 @@ To run tests using **Flutter Test**:
    The Step runs the `flutter test` command with optional flags. It can also check code coverage.
 1. Make sure the **Project Location** input points to the root directory of your Flutter project.
 
-   ![flutter-test-step.png](/img/_paligo/uuid-58597c24-04b0-d59c-c007-abd9c802360a.png)
+   ![flutter-test-step.png](/img/2026-07-16-flutter-test-step.png)
 
    - If the project scanner automatically detected it as a Flutter project when [adding it as an app](/en/bitrise-ci/getting-started/adding-a-new-project) on Bitrise, you don't have to change the default value.
    - If you configured the app manually, check that the location is correct. You can do so by going to the **Env Vars** tab on the Workflow Editor, and checking the BITRISE_FLUTTER_PROJECT_LOCATION [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables).
@@ -53,7 +53,7 @@ To run tests using **Flutter Test**:
 
    The input accepts both * and ** glob formats. For example, `lib/**/*_test.dart` is a valid input.
 
-   ![flutter-test-files-pattern.png](/img/_paligo/uuid-64d8fb90-4d9e-e19e-6a2c-754caca6b060.png)
+   ![flutter-test-files-pattern.png](/img/2026-07-16-flutter-test-files-pattern.png)
 1. Optionally, use the **Additional parameters** input to append flags to the `flutter test` command.
 
    To see the available options, run the `flutter help test` command. You can do so on your own device or in a **Script** Step on Bitrise.
@@ -85,7 +85,7 @@ To run tests using **Flutter Test**:
    ```
 1. Make sure that the Step installs the correct version of the Flutter SDK for your app: you can specify the version using the `version` input.
 
-   The input's default value is `stable`, which installs the latest stable version of the SDK. If you do not see the `version` input in your Configuration YAML file, it is set to the default value. You can, however, set the value to either a specific version tag or a branch label:
+   The input's default value is `stable`, which installs the latest stable version of the SDK. If you do not see the `version` input in your Configuration YAML file, it is set to the default value. You can, however, set the value to a specific version tag, a branch label, or a Flutter SDK bundle URL:
 
    - You can find the available version tags here: [Version tags](https://github.com/flutter/flutter/tags).
    - You can find the available branch labels here: [Branch labels](https://github.com/flutter/flutter/branches).
@@ -99,14 +99,12 @@ To run tests using **Flutter Test**:
 
    :::tip[Installation bundle URL]
 
-   You can also install the Flutter SDK from an installation bundle URL: you just need to specify the URL in the `installation-bundle-url` input. Please note that if you do so, the `version` input will be ignored entirely!
-
-   The URL is expected to begin with `https://storage.googleapis.com/flutter_infra`. For example:
+   You can also install the Flutter SDK from an installation bundle URL: set the URL as the value of the same `version` input. The URL is expected to begin with `https://storage.googleapis.com/flutter_infra`. For example:
 
    ```yaml
    - flutter-installer:
        inputs:
-       - installation_bundle_url: https://storage.googleapis.com/flutter_infra/releases/beta/macos/flutter_macos_v1.6.3-beta.zip
+       - version: https://storage.googleapis.com/flutter_infra/releases/beta/macos/flutter_macos_v1.6.3-beta.zip
    ```
 
    :::
@@ -124,7 +122,6 @@ To run tests using **Flutter Test**:
        - flutter-installer:
            inputs:
            - version: stable
-           - is_update: false
        - restore-dart-cache: {}
        - flutter-test:
            inputs:
@@ -189,7 +186,6 @@ To run tests using **Flutter Test**:
        - flutter-installer:
            inputs:
            - version: stable
-           - is_update: false
        - restore-dart-cache: {}
        - flutter-test:
            inputs:
