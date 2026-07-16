@@ -1,0 +1,24 @@
+name: Check llms.txt links
+
+# The root llms.txt is hand-curated (PR #114), so its links can go stale when
+# pages move. This workflow checks its links against the live site (see the
+# script for the skipped domains): weekly to catch drift, and on any PR that
+# touches the file or the checker.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'static/llms.txt'
+      - 'scripts/check_llms_txt.py'
+      - '.github/workflows/check-llms-txt.yml'
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check links in static/llms.txt
+        run: python3 scripts/check_llms_txt.py
