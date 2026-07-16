@@ -326,7 +326,7 @@ const config: Config = {
         // Auto-generate llms.txt, llms-full.txt and per-page markdown mirrors
         // of the docs so AI coding agents can consume the documentation
         // directly. Title and description fall back to the site config.
-        generateLLMsTxt: true,
+        generateLLMsTxt: false,
         generateLLMsFullTxt: true,
         generateMarkdownFiles: true,
         // The docs live under docs/ but are served under the `en/` route base.
