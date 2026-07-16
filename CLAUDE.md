@@ -21,6 +21,7 @@ See [README.md](./README.md#run-the-docs-locally) — it has the full step-by-st
 | `docs/<section>/<sub>/_category_.json` | Sidebar category metadata (label, position, optional link). `link: null` means "non-clickable toggle". | Renaming/reordering sidebar entries; never delete by hand. |
 | `src/partials/<slug>.mdx` | Reusable content fragment imported by `<Partial_X />`. **Edit here once, every consumer updates.** | Editing shared content; adding new reusable chunks. |
 | `static/img/<topic>/<file>.png` | Static images served at `/img/<topic>/<file>.png`. UUID-prefixed files in `_paligo/` are migration-managed — don't rename. | Adding new screenshots; replacing existing ones. |
+| `static/llms.txt` | Hand-curated index of the docs for AI agents (#114). `docusaurus-plugin-llms` generates `llms-full.txt` and per-page `.md` mirrors, but not the root `llms.txt` — that file is maintained by hand. | Adding a product area or major section; renaming or moving a page listed in it. |
 | `src/pages/index.tsx` | The portal landing page (`/`). | Changing the homepage cards/links. |
 | `src/components/GlossTerm/` | Tooltip glossary component. | Almost never. |
 | `migration/` | Paligo→Markdown converter + supporting JSON (URL map, partial index, glossary, nav labels). | Re-running the full migration only. |
@@ -327,7 +328,7 @@ MDX reads `{...}` as a JSX expression. Hyphens make it invalid (kebab-case isn't
 
 ### Don't change a slug without a redirect
 
-If you rename a page or change its `slug`, add a rule in `redirects.json` so the old URL still resolves. Cloudflare serves the redirects; the 444 live URLs are part of our SEO contract.
+If you rename a page or change its `slug`, add a rule in `redirects.json` so the old URL still resolves. Cloudflare serves the redirects; the 444 live URLs are part of our SEO contract. If the page is listed in `static/llms.txt` (the hand-curated AI-agent index), update its link there too — the weekly `check-llms-txt.yml` job fails on dead llms.txt links.
 
 ### Don't add an `index.md` to a topichead category
 
