@@ -37,35 +37,37 @@ Note that if you use either the **iOS Device Testing** Step or the **Virtual Dev
 
 Configure flaky test detection in the input fields of these testing Steps:
 
-1. **[Xcode Test for iOS](https://bitrise.io/integrations/steps/xcode-test)** and **[Xcode Test without building](https://bitrise.io/integrations/steps/xcode-test-without-building)**
+#### Xcode Test for iOS and Xcode Test without building
 
-   Set below input fields under **Test repetition** in the Step:
+Set below input fields under **Test repetition** in the Step:
 
-   - **Test Repetition Mode**: Defines the repetition mode. For example, `retry_on_failure` will only rerun the tests that failed.
-   - **Maximum Test Repetitions**: The maximum number of times to repeat a test.
-   - **Relaunch Tests For Each Repetition**: It controls whether the app is relaunched for each repetition.
-1. **[iOS device testing](https://bitrise.io/integrations/steps/virtual-device-testing-for-ios)** and **[Virtual device testing for Android](https://bitrise.io/integrations/steps/virtual-device-testing-for-android)**
+- **Test Repetition Mode**: Defines the repetition mode. For example, `retry_on_failure` will only rerun the tests that failed.
+- **Maximum Test Repetitions**: The maximum number of times to repeat a test.
+- **Relaunch Tests For Each Repetition**: It controls whether the app is relaunched for each repetition.
 
-   Set below input field in the Step:
+#### iOS device testing and Virtual device testing for Android
 
-   - **Number of times a test execution is reattempted**: Specifies the number of times to retry a failed test execution. An execution that fails initially but succeeds on a reattempt is reported as flaky. The maximum value is 10. The default is 0 (no reruns).
+Set below input field in the Step:
 
-     ![iosdevicetesting-flakytests.png](/img/_paligo/uuid-acd14919-6069-8806-9834-df5d53a539a5.png)
+- **Number of times a test execution is reattempted**: Specifies the number of times to retry a failed test execution. An execution that fails initially but succeeds on a reattempt is reported as flaky. The maximum value is 10. The default is 0 (no reruns).
 
-     :::note[Running tests with **Virtual Device Testing for Android** and**iOS Device Testing** Steps]
+  ![iosdevicetesting-flakytests.png](/img/_paligo/uuid-acd14919-6069-8806-9834-df5d53a539a5.png)
 
-     Both Steps will always rerun all tests (successful and failed) as many times as is configured in the input.
+  :::note[Running tests with **Virtual Device Testing for Android** and**iOS Device Testing** Steps]
 
-     :::
-1. **[Android Unit Test](https://bitrise.io/integrations/steps/android-unit-test)**
+  Both Steps will always rerun all tests (successful and failed) as many times as is configured in the input.
 
-   This functionality is configured directly through the [Gradle plugin](https://github.com/gradle/test-retry-gradle-plugin). You can enable retries for failed tests within your project's `build.gradle` file.
+  :::
 
-   :::note[Quarantining flaky tests]
+#### Android Unit Test
 
-   It is possible to [quarantine](/en/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#quarantining-flaky-tests) flaky tests that disrupt your builds to run until you can fix the issue. The above mentioned Steps will automatically skip the quarantined tests as you specify some quarantine details.
+This functionality is configured directly through the [Gradle plugin](https://github.com/gradle/test-retry-gradle-plugin). You can enable retries for failed tests within your project's `build.gradle` file.
 
-   :::
+:::note[Quarantining flaky tests]
+
+It is possible to [quarantine](/en/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#quarantining-flaky-tests) flaky tests that disrupt your builds to run until you can fix the issue. The above mentioned Steps will automatically skip the quarantined tests as you specify some quarantine details.
+
+:::
 
 ### Environment Variable for flaky test detection
 
@@ -77,6 +79,12 @@ When any of these Steps run with retries enabled, they automatically track indiv
 - Android Unit Test (ID: android-unit-test)
 - iOS Device Testing (ID: virtual-device-testing-for-ios)
 - Virtual Device Testing for Android (ID: virtual-device-testing-for-android)
+
+:::note[Extra precondition for the device-testing Steps]
+
+For **iOS Device Testing** and **Virtual Device Testing for Android**, enabling retries isn't enough on its own: you also need to set the **Download files** input to `true`. This input is `false` by default, and without it these two Steps won't populate BITRISE_FLAKY_TEST_CASES.
+
+:::
 
 These Steps populate the BITRISE_FLAKY_TEST_CASES Env Var with tests that failed at least once but also passed at least once during retry attempts.
 
@@ -271,6 +279,7 @@ BITRISE_QUARANTINED_TESTS_JSON = "[
 The following steps will automatically skip the quarantined tests within the specified scope. If you use custom steps or direct runner calls, parse $BITRISE_QUARANTINED_TESTS_JSON and filter your test runner arguments accordingly.
 
 - [Xcode Test for iOS](https://bitrise.io/integrations/steps/xcode-test)
+- [Xcode Test Without Building](https://bitrise.io/integrations/steps/xcode-test-without-building)
 - [iOS Device Testing](https://bitrise.io/integrations/steps/virtual-device-testing-for-ios)
 - [Android Unit Test](https://bitrise.io/integrations/steps/android-unit-test)
 - [Virtual Device Testing for Android](https://bitrise.io/integrations/steps/virtual-device-testing-for-android)

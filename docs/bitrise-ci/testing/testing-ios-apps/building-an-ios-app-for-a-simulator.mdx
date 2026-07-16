@@ -123,21 +123,19 @@ To build the app for a simulator:
 1. To access your app as a build artifact, add the `deploy-to-bitrise-io` Step to the end of your Workflow. By default, you don't have to modify anything in the Step's configuration.
 
    ```yaml
-   primary:
-     steps:
-       - generate-cordova-build-configuration@0: {}
-       - xcode-build-for-test@2: {}
-       - xcode-test@4: {}
-       - xcode-build-for-simulator@0.12:
-           inputs:
-             - scheme: $BITRISE_SCHEME
-             - destination: generic/platform=iOS Simulator
-             - configuration: debug
-             - xcconfig_content: |-
-                 CODE_SIGNING_ALLOWED=YES            
-                 COMPILER_INDEX_STORE_ENABLE = NO
-             - project_path: $BITRISE_PROJECT_PATH
-       - deploy-to-bitrise-io
+   workflows:
+     primary:
+       steps:
+         - cocoapods-install: {}
+         - xcode-build-for-simulator:
+             inputs:
+               - scheme: $BITRISE_SCHEME
+               - destination: generic/platform=iOS Simulator
+               - xcconfig_content: |-
+                   CODE_SIGNING_ALLOWED=YES
+                   COMPILER_INDEX_STORE_ENABLE = NO
+               - project_path: $BITRISE_PROJECT_PATH
+         - deploy-to-bitrise-io: {}
    ```
 
 </TabItem>
