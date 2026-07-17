@@ -1,0 +1,72 @@
+# =====================================================================
+# Translate changed English docs to Japanese on PRs
+# =====================================================================
+# When a PR changes English docs, translate ONLY the changed files to Japanese
+# (applying the do-not-translate glossary) and commit the JA versions back to the
+# PR branch. This keeps JA in lock-step with EN — it can never silently go stale.
+#
+# Commit translate_docs.py to .github/scripts/ and this file to .github/workflows/.
+#
+# REQUIRED SECRET
+#   ANTHROPIC_API_KEY — for the translation calls.
+#
+# ADJUST for your Docusaurus i18n layout:
+#   --src-root / --dest-root and the `paths:` filter below.
+# =====================================================================
+name: Translate docs to Japanese
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'docs/**/*.md'          # <-- adjust to your English docs location
+      - 'docs/**/*.mdx'
+
+permissions:
+  contents: write
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+
+      - run: pip install anthropic pyyaml
+
+      - name: Detect changed English docs
+        id: changed
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          git diff --name-only --diff-filter=AM "$BASE" HEAD \
+            | grep -E '^docs/.*\.(md|mdx)$' > changed.txt || true
+          echo "count=$(wc -l < changed.txt)" >> "$GITHUB_OUTPUT"
+          cat changed.txt
+
+      - name: Translate changed files
+        if: steps.changed.outputs.count != '0'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          cat changed.txt | python3 .github/scripts/translate_docs.py \
+            --glossary localization/ja-do-not-translate-glossary.yaml \
+            --src-root docs \
+            --dest-root i18n/ja/docusaurus-plugin-content-docs/current
+
+      - name: Commit Japanese translations
+        if: steps.changed.outputs.count != '0'
+        run: |
+          git config user.name  "bitrise-docs-bot"
+          git config user.email "docs-bot@bitrise.io"
+          git add i18n/ja/ || true
+          if ! git diff --cached --quiet; then
+            git commit -m "docs(ja): auto-translate changed pages [skip ci]"
+            git push
+          else
+            echo "No JA changes to commit."
+          fi

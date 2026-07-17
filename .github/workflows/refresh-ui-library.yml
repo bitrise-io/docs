@@ -1,0 +1,73 @@
+# =====================================================================
+# Refresh the UI copy library + do-not-translate glossary
+# =====================================================================
+# Keeps the library/glossary in sync with the product instead of going stale.
+# Runs weekly (and on demand). Re-scans the frontend repos + steplib + docs,
+# regenerates the artifacts, and opens a PR if anything changed.
+#
+# Lives in the docs repo (bitrise-io/docs). Commit build_ui_library.py to
+#   .github/scripts/build_ui_library.py  and this file to .github/workflows/.
+#
+# REQUIRED SECRET
+#   CI_REPO_TOKEN — a token (PAT or GitHub App) with READ access to the private
+#   frontend repos below. The default GITHUB_TOKEN can't read other repos.
+# =====================================================================
+name: Refresh UI copy library
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'      # every Monday 06:00 UTC
+  workflow_dispatch: {}       # manual "Run workflow" button
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout docs (this repo)
+        uses: actions/checkout@v4
+
+      - name: Checkout product frontends + steplib
+        run: |
+          set -e
+          for R in bitrise-website bitrise-workflow-editor bitrise-codespaces bitkit bitrise-steplib; do
+            git clone --depth 1 "https://x-access-token:${{ secrets.CI_REPO_TOKEN }}@github.com/bitrise-io/$R.git" "_src/$R"
+          done
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+
+      - run: pip install pyyaml
+
+      - name: Rebuild library + glossary
+        run: |
+          python3 .github/scripts/build_ui_library.py \
+            --repo _src/bitrise-website \
+            --repo _src/bitrise-workflow-editor \
+            --repo _src/bitrise-codespaces \
+            --repo _src/bitkit \
+            --steplib _src/bitrise-steplib \
+            --docs . \
+            --out-dir localization
+
+      - name: Clean up sources
+        run: rm -rf _src
+
+      - name: Open PR if changed
+        uses: peter-evans/create-pull-request@v6
+        with:
+          add-paths: |
+            localization/ui_copy_library.json
+            localization/ja-do-not-translate-glossary.yaml
+          branch: chore/refresh-ui-copy-library
+          title: "chore: refresh UI copy library + JA glossary"
+          commit-message: "chore: refresh UI copy library + JA glossary (automated)"
+          body: |
+            Automated refresh of the UI copy library and Japanese do-not-translate glossary
+            from the current product frontends + steplib + docs.
+
+            Review the diff: new/removed UI strings reflect real product UI changes.
