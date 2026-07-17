@@ -1,5 +1,5 @@
 diff --git a/node_modules/docusaurus-plugin-llms/lib/utils.js b/node_modules/docusaurus-plugin-llms/lib/utils.js
-index ed9850c..d082d08 100644
+index ed9850c..a0d33a3 100644
 --- a/node_modules/docusaurus-plugin-llms/lib/utils.js
 +++ b/node_modules/docusaurus-plugin-llms/lib/utils.js
 @@ -466,7 +466,7 @@ async function resolvePartialImports(content, filePath, importChain = new Set())
@@ -36,7 +36,7 @@ index ed9850c..d082d08 100644
              // <PartialName /> or <PartialName></PartialName> or <PartialName>...</PartialName>
              const jsxRegex = new RegExp(`<${escapedComponentName}\\s*(?:[^>]*?)(?:/>|>[^<]*</${escapedComponentName}>)`, 'g');
 -            resolved = resolved.replace(jsxRegex, resolvedPartial.trim());
-+            const partialInlined = resolvedPartial.replace(/^\s*import\s+.*$/gm, '').replace(/\n{3,}/g, '\n\n').trim();
++            const partialInlined = resolvedPartial.replace(/^\s*import\s+(?:\w+|{[^}]*})\s+from\s+['"][^'"]+['"];?\s*$/gm, '').replace(/\n{3,}/g, '\n\n').trim();
 +            resolved = resolved.replace(jsxRegex, partialInlined);
          }
          catch (error) {
