@@ -29,15 +29,9 @@ A Step contains the code that performs the build task. You can configure the inp
 
 First-party Bitrise Steps are written in [Go](https://golang.org/), but you can use any language and framework as long as you wrap it in a Bash step and set up its entrypoint. Each step has its own git repo that includes code and the `step.yml` metadata file. If you wish to make the Step available to other users, the `<GlossTerm baseform="step.yml">step.yml</GlossTerm>` file needs to be submitted to Bitrise Step Library (`bitrise-steplib` repository) so that it can be discovered and re-used in the <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>.
 
-
-## Before you start developing a new Step
-
-Make sure to [install the Bitrise CLI](/en/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli).
-
-
 ## Creating the Step
 
-First, we scaffold the basic structure of the Step. Certain properties and inputs will be generated and assigned automatically. You can change these later. At the end of this process, you will have a `step.yml` file, a `README.md` file and either a `main.go` or a `step.sh` file in the repository.
+We start with scaffolding the basic structure of the Step. Certain properties and inputs will be generated and assigned automatically. You can change these later. At the end of this process, you will have a `step.yml` file, a `README.md` file and either a `main.go` or a `step.sh` file in the repository.
 
 :::important[Before you start]
 
@@ -45,6 +39,7 @@ During the Step creation process, you will be prompted to set a number of option
 
 :::
 
+1. Make sure to [install the Bitrise CLI](/en/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli).
 1. Create a new directory and run `bitrise :step create` inside it.
 1. Follow the prompts to set up your Step.
 
@@ -53,7 +48,9 @@ You are all done! You should now have a `step.yml`, a `README.md` file, and eith
 
 ## The step.yml file
 
-The `step.yml` file contains all metadata that Bitrise systems need to know about a Step.
+The `step.yml` file contains all metadata that Bitrise systems need to know about a Step. It's where you define the inputs and outputs of your Step, as well as the dependencies required for the Step to function.
+
+For a complete reference of the `step.yml` file, see [About step code](/en/bitrise-ci/references/steps-reference/about-step-code).
 
 
 ## Naming and describing a Step
@@ -68,7 +65,9 @@ All text properties are rendered as Markdown, you are encouraged to use external
 
 ### Title
 
-It should be short and descriptive. Include the name of the service and the function it fulfils, such as **Git Clone**. The title is not the same as the unique Step ID (used in `bitrise.yml` definitions, e.g. `git-clone@8`).
+It should be short and descriptive. Include the name of the service and the function it fulfils, such as **Git Clone Repository**. 
+
+The title is not the same as the unique Step ID: the ID is used in the configuration YAML files to reference the Step. For example, `git-clone` is the ID of the **Git Clone Repository** Step.
 
 A few other guidelines to follow:
 
@@ -166,7 +165,7 @@ The above input is defined as `install_defaults`, and its default value is `yes`
 
 Use lower case [snake case](https://en.wikipedia.org/wiki/Snake_case) style input keys (e.g. `project_path`, not `ProjectPath` or `PROJECT_PATH`).
 
-There is no need to add domain-specific prefixes to the input keys, as inputs are only exposed at runtime for that single Step process. This means project_path input will not overlap with subsequent Steps’ project_path inputs.
+There is no need to add domain-specific prefixes to the input keys, as inputs are only exposed at runtime for that single Step process. This means the `project_path` input will not overlap with subsequent Steps’ `project_path` inputs.
 
 Step input values are strings, but you can define additional validation rules for the values (see below).
 
@@ -175,7 +174,7 @@ Provide default values for Step inputs if possible (and if it makes sense). That
 Environment Variables must not be used as default values, unless:
 
 - They are exposed by the [Bitrise CLI or by bitrise.io](/en/bitrise-ci/configure-builds/environment-variables).
-- They are generated as an output by another Step (for example, $BITRISE_IPA_PATH, $BITRISE_AAB_PATH).
+- They are generated as an output by another Step (for example, `$BITRISE_IPA_PATH`, `$BITRISE_AAB_PATH`).
 
 This is because the Workflow Editor highlights required inputs without values to express the Step will not work without setting a valid value for the given input. If you set an Env Var, which does not have an automatically assigned value, as the default value for an input, the Workflow Editor will think the required input in question has a valid value set (even if the default Env Var has no value yet).
 
@@ -188,7 +187,7 @@ In addition to a key and a value, Step inputs are required to have an `opts` pro
 A Step input can have a name, a summary, and a description, just like the Step itself. To define these:
 
 1. Include an `opts` property with the Step input.
-1. Under opts, provide a title, a summary, and a description option.
+1. Under `opts`, provide a `title`, a `summary`, and a `description` option.
 
 :::tip[Description and summary]
 
@@ -231,7 +230,7 @@ To mark a Step input as required, use the is_required option of the `opts` prope
 
 ### Using Env Vars as input values (is_expand)
 
-As noted earlier, it is possible to use Environment Variables as the value of any given input. By default, Env Vars in step inputs are expanded to the value behind that Env Var. This is controlled by the `is_expand` option of the `opts` property.
+As noted earlier, it is possible to use Environment Variables as the value of any given input. By default, Env Vars in Step inputs are expanded to the value behind that Env Var. This is controlled by the `is_expand` option of the `opts` property.
 
 ```yaml
 - project_path: $BITRISE_PROJECT_PATH
@@ -243,7 +242,7 @@ If set to `true`, the value of `$BITRISE_PROJECT_PATH` is expanded and used as t
 
 :::warning[Reading Env Vars in Step Code]
 
-If possible, avoid reading Environment Variables without exposing them as Step Inputs via `step.yml`. This helps users configure and understand Step behavior, and you don't need to write input validation by hand (required inputs, default values, value options, etc.)
+If possible, avoid reading Environment Variables without exposing them as Step inputs via `step.yml`. This helps users configure and understand Step behavior, and you don't need to write input validation by hand (required inputs, default values, value options, and so on).
 
 :::
 
@@ -269,7 +268,7 @@ inputs:
 
 ### Input grouping
 
-The category property is used to group related inputs. Inputs with a category are collapsed by default in the Workflow Editor, only displaying the category name.
+The `category` property is used to group related inputs. Inputs with a category are collapsed by default in the Workflow Editor, only displaying the category name.
 
 ```yaml
 - default_certificate_passphrase: $BITRISE_DEFAULT_CERTIFICATE_PASSPHRASE
@@ -299,7 +298,7 @@ At the moment, a string list is not a supported Step input type. The following c
 
 ## Step outputs
 
-Steps can generate outputs which can then be used in other Steps as inputs. That means that if a Step generates an artifact, the path to that artifact can be the input of another Step in the build. For example, the **Xcode Archive & Export for iOS** Step exposes the $BITRISE_IPA_PATH output which can then be used as an input value for the **Deploy to Bitrise.io** Step.
+Steps can generate outputs which can then be used in other Steps as inputs. That means that if a Step generates an artifact, the path to that artifact can be the input of another Step in the build. For example, the **Xcode Archive & Export for iOS** Step exposes the `$BITRISE_IPA_PATH` output which can then be used as an input value for the **Deploy to Bitrise.io** Step.
 
 Outputs are defined in the `step.yml` file, under the `outputs` property. They have the same structure as Step inputs and the guidelines above also apply to them.
 
@@ -317,16 +316,16 @@ These properties can be set in the `step.yml` file to govern the default behavio
 
 `is_always_run`: By default, Steps do not run if a previous Step in the Workflow failed. However, if the `is_always_run` property is set to `true`, the Step runs regardless of the status of previous Steps in the Workflow. This can be useful for sending notifications or cleaning up resources after a failed step.
 
-`is_skippable`: As mentioned above, Steps do not run if a previous Step in the Workflow failed. However, if a Step’s `is_skippable` property is set to `true`, the build will not fail and subsequent Steps will run even if this particular Step fails. Useful for optional tasks, which should not block the build if they fail.
+`is_skippable`: If a Step’s `is_skippable` property is set to `true`, the build will not fail and subsequent Steps will run even if this particular Step fails. Useful for optional tasks, which should not block the build if they fail.
 
-`run_if`: If you want to make Step execution dependent on a certain condition, use the `run_if` property to define the run condition. For example, you can configure a Step so that it only runs in PR-triggered builds. Read more in our [Enabling or disabling a Step conditionally](/en/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally) guide about the possible use cases.
+`run_if`: Use the `run_if` property to make Step execution dependent on a certain condition. For example, you can configure a Step to only run in PR-triggered builds. Read more in our [Enabling or disabling a Step conditionally](/en/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally) guide about the possible use cases.
 
 
 ## Step dependencies
 
 Step code often relies on local CLI tools or interacts with external APIs. Steps are run in various environments (macOS and Linux, different OS versions with different pre-installed tools), so it's important to make sure that your Step works in all of them.
 
-You can declare dependencies from an OS dependency managers (APT and Homebrew). A Step dependency is installed by the Bitrise CLI before the Step runs. List every dependency, even if you know that they are pre-installed on the Bitrise <GlossTerm baseform="stack">stacks</GlossTerm> as this might not be true for future Stacks.
+You can declare dependencies from OS dependency managers (APT and Homebrew). A Step dependency is installed by the Bitrise CLI before the Step runs. List every dependency, even if you know that they are pre-installed on the Bitrise <GlossTerm baseform="stack">stacks</GlossTerm> as this might not be true for future stacks.
 
 ```yaml
 deps:
@@ -341,7 +340,7 @@ If a Step dependency is not packaged in OS dependency managers, the next best op
 - Add network retries for reliable downloads, such as `curl`'s `--retry --connect-timeout 10 --max-time 30` flags.
 - Use checksum and signature verification wherever possible.
 - Make sure to only download from domains that you trust and control (or listed as the official source of the dependency).
-- Do not use git submodules as a dependency management solution, they are not cloned when the Step is run.
+- Do not use git submodules as a dependency management solution: they are not cloned when the Step is run. 
 
 ### Accessing files in the Step repo with an Env Var
 
