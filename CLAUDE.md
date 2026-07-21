@@ -423,3 +423,9 @@ npm start
 ## Updating this file
 
 If you discover a new convention or pitfall while editing, **add it here** so the next contributor (human or AI) doesn't relearn it. Keep the file < 400 lines; if a section grows long, link to a deeper page on Confluence instead.
+
+## Validating links before a change
+
+Before proposing any docs edit (new page, moved page, changed slug, or reworded heading), run the source-level checker on the files you touched and fix anything it flags. This catches broken internal `/en/...` links and missing `#anchor` targets at authoring time — before the PR — rather than relying on the build-time `onBrokenLinks` warning or the post-build `link_analyzer.js`.
+
+Run `node scripts/check-links-source.js docs/path/to/edited-page.mdx` to check specific files, or `node scripts/check-links-source.js` with no arguments to scan the whole `docs/` tree. Exit code is non-zero if any internal link points to a missing page or any `#anchor` points to a heading that doesn't exist on the target page. It follows `@site/src/partials/*.mdx` imports and understands OpenAPI-generated `.api.mdx` / `.info.mdx` routes, so those aren't false positives. Don't hand over a page with unresolved cross-references.
