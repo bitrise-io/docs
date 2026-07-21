@@ -154,8 +154,9 @@ const config: Config = {
   organizationName: 'bitrise-io',
   projectName: 'docs',
 
-  onBrokenLinks: 'warn',
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenLinks: 'throw',
+  onBrokenMarkdownLinks: 'throw',
+  onBrokenAnchors: 'throw',
 
   markdown: {
     format: 'detect',
