@@ -1,0 +1,26 @@
+name: Check links
+
+# Fast, build-free guard against broken internal links and anchors across the
+# docs, including reused partials in src/partials/. Same script you can run
+# locally or pre-commit; this is the CI backstop that can't be skipped. No
+# dependencies (Node built-ins), so no npm install and it runs in a few seconds.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20' # matches the build in deploy.yml
+
+      # Exits non-zero if any internal link or anchor is broken, which fails
+      # this check (and blocks the merge once it is marked required).
+      - name: Check internal links and anchors
+        run: node scripts/check-links-source.js
