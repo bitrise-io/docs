@@ -245,6 +245,7 @@ workflows:
   ```
 - Don't add the `.html` suffix; Docusaurus handles it.
 - For glossary terms, prefer `<GlossTerm baseform="Workflow">Workflow</GlossTerm>` on first mention so readers get the inline tooltip.
+- Before opening a PR, run `node scripts/check-links-source.js`; it flags broken internal links and anchors across docs and partials (no build needed). CI runs the same check on every PR.
 
 ---
 
