@@ -552,6 +552,13 @@
           "description": "Unique identifier (UUID) of the session.",
           "type": "string"
         },
+        "labels": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Arbitrary key/value metadata attached to the session (e.g. team,\nbranch, ticket id). Returned verbatim; filterable via\nListSessionsRequest.label_selectors.",
+          "type": "object"
+        },
         "name": {
           "description": "Human-readable name of the session.",
           "type": "string"
@@ -1738,6 +1745,17 @@
             "name": "workspaceId",
             "required": true,
             "type": "string"
+          },
+          {
+            "collectionFormat": "multi",
+            "description": "Label selector expressions of the form \"key=value\". Multiple selectors\nare ANDed; each is an exact-match equality on one label. At most 8\nselectors; duplicate keys are rejected (they can never match under AND).\nBare keys without \"=\" are invalid (reserved for a future existence\noperator).",
+            "in": "query",
+            "items": {
+              "type": "string"
+            },
+            "name": "labelSelectors",
+            "required": false,
+            "type": "array"
           }
         ],
         "responses": {
@@ -1798,6 +1816,13 @@
                 "image": {
                   "description": "Machine image name. When a template is given, optionally overrides the\ntemplate's image for this session.\n\nSuperseded by stack_id (prefer it). Accepted for now and resolved to a stack id on the fly.",
                   "type": "string"
+                },
+                "labels": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "description": "Arbitrary key/value metadata to attach to the session (e.g. team,\nbranch, ticket id). At most 32 entries (also enforced on the post-merge\nresult of updates); keys are 1-63 chars of [a-zA-Z0-9._/-] starting and\nending alphanumeric; values are 1-255 bytes of [a-zA-Z0-9._/:+-] (fits\ntimestamps, branches, paths). The \"bitrise.io/\" key prefix is reserved\nfor system-owned labels and rejected on user writes.",
+                  "type": "object"
                 },
                 "machineType": {
                   "description": "Machine type name. Required when template_id is empty. When a template is\ngiven, optionally overrides the template's machine type for this session.",
@@ -1952,9 +1977,23 @@
                   "description": "Updated description (optional).",
                   "type": "string"
                 },
+                "labels": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "description": "Labels to upsert (merged into the session's existing labels; existing keys\nare overwritten, other keys are left untouched). Same constraints as\nCreateSessionRequest.labels. Removals are requested via remove_labels;\nwhen a key appears in both, the removal wins. Concurrent label updates are\nlast-write-wins.",
+                  "type": "object"
+                },
                 "name": {
                   "description": "Updated name (optional).",
                   "type": "string"
+                },
+                "removeLabels": {
+                  "description": "Label keys to remove from the session. Unknown keys are ignored.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
                 }
               },
               "type": "object"
