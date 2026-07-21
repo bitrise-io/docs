@@ -75,10 +75,15 @@ jobs:
             !node_modules/.cache
           key: node-modules-${{ runner.os }}-node20-${{ hashFiles('package-lock.json', 'patches/**') }}
 
+      # gen-api-docs only writes files that don't already exist (see the
+      # plugin's CLI source) — it never overwrites content for operations
+      # that were already generated in a prior run. clean-api-docs must run
+      # first so a changed spec is actually reflected, not just skipped.
       - name: Regenerate the ${{ matrix.name }} reference
         if: steps.sync.outputs.status != 'unchanged'
         run: |
           npm install
+          npm run docusaurus -- clean-api-docs ${{ matrix.spec }}
           npm run docusaurus -- gen-api-docs ${{ matrix.spec }}
           node scripts/patch-api-info.js
 
