@@ -16,7 +16,7 @@
  * Exit code: 0 if clean, 1 if any broken link/anchor is found (so it can gate).
  *
  * Known limits (reported as warnings, never hard failures):
- *   - Headings that come from an imported partial/component are invisible to a
+ *   - Headings that come from a non-partial component are invisible to a
  *     source-level scan, so an anchor into one may be flagged. Add it to
  *     KNOWN_ANCHOR_EXCEPTIONS if that happens.
  *   - Generated API-reference pages get their anchors at build time; anchors
@@ -207,9 +207,13 @@ for (const abs of allFiles) {
 /* check the target files                                             */
 /* ------------------------------------------------------------------ */
 
+// Partials live outside docs/ but their bodies can contain internal links; a
+// broken link in a reused partial would otherwise go unnoticed. Scan them too.
+const partialFiles = fs.existsSync(PARTIALS_DIR) ? walk(PARTIALS_DIR) : [];
+
 const filesToCheck = fileArgs.length
   ? fileArgs.map((f) => path.resolve(f))
-  : allFiles;
+  : [...allFiles, ...partialFiles];
 
 const results = []; // { file, brokenLinks:[], brokenAnchors:[] }
 let brokenLinkCount = 0;
