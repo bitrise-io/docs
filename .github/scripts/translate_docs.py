@@ -110,6 +110,35 @@ def unmask(text, store):
     return text
 
 
+BOLD_SPAN_RE = re.compile(r"\*\*(.*?)\*\*")
+
+
+def promote_nt_bold_to_strong(text):
+    """Rewrite **...<NT>...</NT>...** to <strong>...<NT>...</NT>...</strong>,
+    leaving ordinary **bold** (no <NT> inside) untouched.
+
+    Markdown's ** emphasis is CommonMark-delimiter-based: it depends on
+    whitespace/punctuation adjacent to the ** run to disambiguate which pair
+    of ** matches which. Japanese (and other languages with no inter-word
+    spaces) routinely chains multiple bold <NT> terms back-to-back with
+    nothing but a particle between them, e.g.
+    **<NT>X</NT>**で**<NT>Y</NT>**を... — this reliably breaks remark/MDX's
+    delimiter matching (verified against a real build: bold gets attached to
+    the wrong span and a literal ** leaks into the rendered page). Swapping
+    to a literal <strong> JSX element sidesteps delimiter matching entirely,
+    the same way <NT> itself sidesteps prompt-based do-not-translate rules —
+    deterministic, not dependent on the model or on surrounding whitespace.
+
+    Matches one non-greedy **...** pair at a time (rather than jumping
+    straight to the nearest <NT>) so an ordinary bold span that happens to
+    precede an <NT>-bold span on the same line can't get swallowed into it."""
+    def repl(m):
+        inner = m.group(1)
+        return f"<strong>{inner}</strong>" if "<NT" in inner else m.group(0)
+
+    return BOLD_SPAN_RE.sub(repl, text)
+
+
 def system_prompt(preferred):
     parts = [
         "You are a professional technical translator localizing Bitrise developer "
@@ -207,6 +236,7 @@ def main():
         masked, store = mask(body, patterns)
         translated = translate_text(client, model, sysp, masked)
         translated = unmask(translated, store)
+        translated = promote_nt_bold_to_strong(translated)
         dst = dest_path(src, a.src_root, a.dest_root)
         os.makedirs(os.path.dirname(dst) or ".", exist_ok=True)
         open(dst, "w", encoding="utf-8").write(frontmatter + translated)
