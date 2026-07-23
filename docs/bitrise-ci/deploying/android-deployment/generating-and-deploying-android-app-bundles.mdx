@@ -8,6 +8,7 @@ slug: /bitrise-ci/deploying/android-deployment/generating-and-deploying-android-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
 
 Creating an Android App Bundle with Bitrise is almost the same as generating an APK. All you have to do is tweaking a few <GlossTerm baseform="Step">Step</GlossTerm> inputs to compile an Android App Bundle (.aab) file from your code, then get the bundle signed and deployed to Google Play Store.
 
@@ -32,8 +33,7 @@ You can create an Android App Bundle with either the **Gradle Runner** Step or w
 <Tabs>
 <TabItem value="workflow-editor" label="Workflow Editor" default>
 
-1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
-1. Click the **<GlossTerm baseform="workflow">Workflows</GlossTerm>** button on the main page.
+1. <Partial_OpeningTheWorkflowEditor />
 1. Insert the **Gradle Runner** Step after the **Android Unit Test** and **Android Lint** Steps in your Workflow.
 1. Click the **Config** section of **Gradle Runner**.
 1. In the **Gradle task to run** input field, set, for example, `bundleRelease` or `bundleDebug` to create a bundle of your project.
@@ -97,8 +97,7 @@ You can generate an Android App Bundle for your Android app with our **Android B
 <Tabs>
 <TabItem value="workflow-editor" label="Workflow Editor" default>
 
-1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
-1. Click the **Workflows** button on the main page.
+1. <Partial_OpeningTheWorkflowEditor />
 1. Add the **Android Build** Step after the **Android Unit Test** and **Android Lint** Steps in your Workflow.
 1. Provide the root directory of your Android project in the **Project Location** input field.
 1. Go to **Build type** and select `aab` as build type.
@@ -129,7 +128,7 @@ You can generate an Android App Bundle for your Android app with our **Android B
        - android-build:
    ```
 1. Provide the root directory of your Android project in the `project_location` input field.
-1. Set the value of the `build-type` input to `aab`.
+1. Set the value of the `build_type` input to `aab`.
 
    ```yaml
    my-workflow:
@@ -142,7 +141,7 @@ You can generate an Android App Bundle for your Android app with our **Android B
        - android-unit-test: {}
        - android-build:
            inputs:
-             - build-type: aab
+             - build_type: aab
    ```
 
    :::tip[APK and AAB in the same Workflow]
@@ -182,7 +181,7 @@ Signing an Android App Bundle file works the same way as signing an APK: the mos
    Check out all the available configuration options of the **Android Sign** Step in the Workflow Editor. You can:
 
    - Enable or disable memory page alignment with the **Page alignment** input.
-   - Use `apksigner` instead of the default `jarsigner` with the **Enables apksigner** input.
+   - Choose which tool signs the app with the **Signer tool** input: `automatic` (default, uses `apksigner` for APKs and `jarsigner` for AABs), `apksigner`, or `jarsigner`.
    - Enforce a specific [Signature Scheme](https://source.android.com/docs/security/features/apksigning#schemes) with the **APK Signature Scheme** input.
 
    :::
@@ -241,7 +240,7 @@ Signing an Android App Bundle file works the same way as signing an APK: the mos
    Check out all the available configuration options of the `android-sign` Step in [its step.yml file](https://github.com/bitrise-steplib/steps-sign-apk/blob/master/step.yml). You can:
 
    - Enable or disable memory page alignment with the `page_align` input.
-   - Use `apksigner` instead of the default `jarsigner` with the `use_apk_signer` input.
+   - Choose which tool signs the app with the `signer_tool` input: `automatic` (default, uses `apksigner` for APKs and `jarsigner` for AABs), `apksigner`, or `jarsigner`.
    - Enforce a specific [Signature Scheme](https://source.android.com/docs/security/features/apksigning#schemes) with the `signer_scheme` input.
 
    :::

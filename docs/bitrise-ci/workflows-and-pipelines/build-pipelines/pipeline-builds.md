@@ -9,7 +9,7 @@ You can run Pipeline builds the same way you would run builds of standalone Work
 
 - [You can start Pipeline builds manually](/en/bitrise-ci/run-and-analyze-builds/starting-builds/starting-builds-manually).
 - [Schedule Pipeline builds](/en/bitrise-ci/run-and-analyze-builds/starting-builds/scheduling-builds).
-- [Trigger Pipeline builds automatically](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers). For now, Pipeline triggers must be configured in YAML, however: [YAML syntax for build triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/yaml-syntax-for-build-triggers).
+- [Trigger Pipeline builds automatically](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers). You can configure Pipeline triggers in the Workflow Editor or in YAML: [YAML syntax for build triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/yaml-syntax-for-build-triggers).
 
 Pipeline builds are capable of sending build status reports: a Pipeline build will send a status report of the Pipeline itself and of any Steps that export test results: [Reporting the build status to your Git hosting provider](/en/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider).
 

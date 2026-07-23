@@ -16,48 +16,22 @@ Using Bitrise for web CI allow you to consolidate all projects, mobile and other
 
 ## Adding a web CI project
 
-A web CI project has no specific requirements. Add your web CI project as described in the guide: [Adding a new project](/en/bitrise-ci/getting-started/adding-a-new-project).
+Add your project the same way as any other: see [Adding a new project](/en/bitrise-ci/getting-started/adding-a-new-project) for the full walkthrough of the wizard. This section covers what's specific to non-mobile projects.
 
-The <GlossTerm baseform="project scanner">project scanner</GlossTerm> can detect web CI project types and create a default configuration: after selecting a repository branch, select **Yes, auto-detect configuration**.
+### How the scanner detects your project type
 
-The project scanner will scan your project files. Just like with mobile projects, it identifies projects based on key files in the repository. For now, Bitrise can automatically detect the following types:
+The <GlossTerm baseform="project scanner">project scanner</GlossTerm> checks your repository for the file that identifies each supported language:
 
-- **Node.js**: The scanner looks for your `package.json` file, excluding `node_modules` and `.next` directories. Bitrise creates your default Workflows and Pipelines based on the contents:
+- Node.js: a `package.json` file.
+- Ruby: a `Gemfile`.
+- Python: a `requirements.txt`, `pyproject.toml`, `Pipfile`, or `setup.py` file.
+- Java or Kotlin: a `gradlew` file for Gradle, or a `pom.xml` file for Maven.
 
-  - Package manager: presence of `package-lock.json` (npm) or `yarn.lock` (Yarn).
-  - Scripts: detects `lint` and `test` entries in `package.json` scripts.
-  - Framework: checks `dependencies` and `devDependencies` for `next` (→ `nextjs`) or `@nestjs/core` (→ `nestjs`).
-  - Node version: reads from version files or `package.json` engines field.
-- **Kotlin Multiplatform**: The scanner looks for a `gradlew` file and checks it to determine if it's a Kotlin project.
-- **Java**: The scanner can recognize a Java project based on the build tool. Two build tools are supported:
+For Node.js, Ruby, and Python, it also reads version files such as `.nvmrc`, `.ruby-version`, or `.python-version` (or the `engines`/`requires-python` field in your project's manifest) to pick the right language version for your Workflow. See [Database configuration for Ruby projects](#database-configuration-for-ruby-projects) and [Package manager detection for Python](#package-manager-detection-for-python) for more detail on those two scanners.
 
-  - Gradle: the scanner looks for the `gradlew` file.
-  - Maven: the scanner looks for the `pom.xml` file.
-- **Ruby**: The scanner identifies Ruby projects by searching for `Gemfile` files in the repository. Each directory containing a Gemfile is treated as a separate Ruby project, enabling monorepo support.
+### What you can configure
 
-  For Ruby, the scanner inspects:
-
-  - Bundler: the scanner looks for `Gemfile.lock`
-  - Rakefile: looks for a `Rakefile`
-  - Ruby version: reads `.ruby-version` or `.tool-versions` (`asdf` format)
-  - Rails: checks if `rails` gem is declared in the `Gemfile`
-  - Test framework: detects RSpec (via `spec/spec_helper.rb` or `.rspec)`, Minitest (via `test/test_helper.rb`), or falls back to rake test if a `Rakefile` is present
-
-  :::note[Manual configuration]
-
-  If you don't want to use the scanner, the default manual configuration for Ruby assumes Bundler and RSpec with no database, giving you a clean starting point to customize.
-
-  :::
-- **Python**: The scanner identifies Python projects by searching for any of these marker files in the repository:
-
-  - `requirements.txt`
-  - `pyproject.toml`
-  - `Pipfile`
-  - `setup.py`
-
-  Each directory containing one of these markers is treated as a separate Python project, enabling monorepo support.
-- **Flutter web**: The scanner looks for a `web/` directory under the Flutter project.
-
+During the **CI configuration** stage, the wizard shows a **Project directory** option for each detected project, plus a package manager selector where one applies. If the scanner can't detect your package manager from a lockfile, choose it manually and Bitrise generates a matching configuration.
 
 ## Database configuration for Ruby projects
 
@@ -142,9 +116,9 @@ For Java projects built with Maven, your tests are run using a Script Step which
 
 Script Steps are fully customizable: you can create whatever Maven configuration you need. You can freely modify the default configuration at any time to suit your purposes. For more information about running tests with Maven, check out [Surefire](https://maven.apache.org/surefire/index.html).
 
-### Testing Node.js projects
+### Linting and testing Node.js projects
 
-For Node.js projects, a Bitrise default Workflow does two things:
+For Node.js projects, the default `run_tests` Workflow does two things by default — it installs Node.js and runs lint, not a test suite:
 
 - Installs Node.js via a **Script** Step: As it's a Script Step, you can fully modify and customize the configuration to suit your own needs. The default solution simply installs Node.js with `asdf`:
 

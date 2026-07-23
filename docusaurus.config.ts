@@ -3,6 +3,8 @@ import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import bitriseAPIApiSidebar from './docs/bitrise-api/api-reference/sidebar';
+import changelogFeedPlugin from './src/plugins/changelog-feed';
 
 // Build-time expansion for list-context partial references.
 //
@@ -111,6 +113,35 @@ function expandListPartials(content: string): string {
   });
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function injectApiSidebar(items: any[]): any[] {
+  return items.map(item => {
+    // Replace hub-link markers with a link item that opens in a new tab
+    if (item.type === 'category' && item.customProps?.isApiHubLink) {
+      return {
+        type: 'link',
+        label: item.label,
+        href: item.customProps.isApiHubLink,
+        customProps: {...item.customProps, newTab: true},
+      };
+    }
+    if (item.type === 'category' && Array.isArray(item.items)) {
+      const children = injectApiSidebar(item.items);
+      // Append an "API reference" hub link as the last child of this category
+      if (item.customProps?.appendApiHubLink) {
+        children.push({
+          type: 'link',
+          label: 'API reference',
+          href: item.customProps.appendApiHubLink,
+          customProps: {newTab: true},
+        });
+      }
+      return {...item, items: children};
+    }
+    return item;
+  });
+}
+
 const config: Config = {
   title: 'Bitrise Docs',
   tagline: 'Find product documentation, code samples, API & CLI references, and more.',
@@ -136,6 +167,12 @@ const config: Config = {
     // Real components we use (Tabs/TabItem/GlossTerm) are left alone.
     preprocessor: ({filePath, fileContent}) => {
       if (!filePath.endsWith('.mdx')) return fileContent;
+      // Generated API reference files use openapi-docs JSX components that span
+      // multiple lines. The line-by-line tag escaper would mangle their closing
+      // tags (e.g. `</StatusCodes>`) while leaving multi-line opening tags intact,
+      // causing MDX to report unclosed-tag errors. Skip them entirely. Matches
+      // every generated reference (bitrise-api, bitrise-rde-api, …).
+      if (filePath.includes('/api-reference/')) return fileContent;
       // Step 1: expand `1. <Partial_X />` placeholders (list-context partials)
       // BEFORE we do tag escaping below, so the inlined items are subject to
       // the same escape rules as inline content.
@@ -255,6 +292,57 @@ const config: Config = {
   },
 
   plugins: [
+    [
+      'docusaurus-plugin-openapi-docs',
+      {
+        id: 'bitrise-api',
+        docsPluginId: 'classic',
+        config: {
+          bitriseCI: {
+            specPath: 'api/bitrise-ci.json',
+            outputDir: 'docs/bitrise-api/api-reference',
+            sidebarOptions: {
+              groupPathsBy: 'tag',
+            },
+          },
+          bitriseRDE: {
+            // Remote Dev Environments API. The committed snapshot is refreshed
+            // from the live spec by scripts/sync_rde_spec.py (run nightly /
+            // on-demand by .github/workflows/sync-api-references.yml).
+            specPath: 'api/bitrise-rde.json',
+            outputDir: 'docs/bitrise-rde-api/api-reference',
+            sidebarOptions: {
+              groupPathsBy: 'tag',
+            },
+          },
+        },
+      },
+    ],
+    changelogFeedPlugin,
+    'docusaurus-plugin-image-zoom',
+    [
+      'docusaurus-plugin-llms',
+      {
+        // Auto-generate llms.txt, llms-full.txt and per-page markdown mirrors
+        // of the docs so AI coding agents can consume the documentation
+        // directly. Title and description fall back to the site config.
+        generateLLMsTxt: false,
+        generateLLMsFullTxt: true,
+        generateMarkdownFiles: true,
+        // The docs live under docs/ but are served under the `en/` route base.
+        // Dropping the source directory prefix keeps every generated markdown
+        // URL uniform (e.g. /bitrise-ci/… .md) instead of leaking a `docs/`
+        // segment for the pages that lack an explicit slug.
+        preserveDirectoryStructure: false,
+        // Pages are MDX-heavy; drop the component import lines from the output.
+        excludeImports: true,
+        // Skip the OpenAPI-generated API reference: those pages are almost
+        // entirely theme components fed by the embedded specs, so text
+        // extraction yields near-empty pages. The specs under api/ stay the
+        // machine-readable source for those endpoints.
+        ignoreFiles: ['**/api-reference/**'],
+      },
+    ],
     function webpackFallbacks() {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const webpack = require('webpack');
@@ -284,6 +372,8 @@ const config: Config = {
     },
   ],
 
+  themes: ['docusaurus-theme-openapi-docs'],
+
   presets: [
     [
       'classic',
@@ -292,6 +382,11 @@ const config: Config = {
           routeBasePath: 'en',
           path: 'docs',
           sidebarPath: './sidebars.ts',
+          // Transform sidebar items: resolve hub-link markers and append API reference links.
+          sidebarItemsGenerator: async ({defaultSidebarItemsGenerator, ...args}) => {
+            const items = await defaultSidebarItemsGenerator(args);
+            return injectApiSidebar(items);
+          },
         },
         blog: false,
         theme: {
@@ -348,6 +443,16 @@ const config: Config = {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
       additionalLanguages: ['yaml', 'bash', 'json', 'ruby', 'swift', 'kotlin', 'groovy', 'dart'],
+    },
+    zoom: {
+      selector: '.markdown img:not(a > img)',
+      background: {
+        light: 'var(--ifm-background-color)',
+        dark: 'var(--ifm-background-color)',
+      },
+      config: {
+        margin: 24,
+      },
     },
   } satisfies Preset.ThemeConfig,
 };

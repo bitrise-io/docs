@@ -1,0 +1,71 @@
+name: Sync MCP docs
+
+# Keeps the Bitrise MCP server docs (docs/bitrise-platform/ai/bitrise-mcp/) in
+# sync with the docs/ folder of bitrise-io/bitrise-mcp. Runs nightly and on
+# demand ("Run workflow"). When new commits on bitrise-mcp's main branch touch
+# docs/, it re-syncs the affected content and opens a PR for review — it
+# never commits to main directly.
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # 06:00 UTC daily
+  workflow_dispatch:
+
+concurrency:
+  group: sync-mcp-docs
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Refreshes the tracked HEAD SHA only when new commits on bitrise-mcp's
+      # main branch touched docs/ since the last sync; see
+      # scripts/check_bitrise_mcp_commits.py.
+      - name: Check bitrise-mcp for new docs commits
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.DOCS_SYNC_TOKEN || github.token }}
+        run: |
+          python3 scripts/check_bitrise_mcp_commits.py | tee check-result.json
+          status=$(python3 -c "import json; print(json.load(open('check-result.json'))['status'])")
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          rm -f check-result.json
+
+      - name: Sync the changed docs
+        if: steps.check.outputs.status != 'unchanged'
+        env:
+          GITHUB_TOKEN: ${{ secrets.DOCS_SYNC_TOKEN || github.token }}
+        run: python3 scripts/sync_mcp_docs.py
+
+      # Opens (or updates) a PR with the synced content. Uses a PAT/App token
+      # when available so the PR triggers the deploy preview + checks; falls
+      # back to GITHUB_TOKEN (PR opens, but no downstream checks run).
+      - name: Open PR
+        if: steps.check.outputs.status != 'unchanged'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.DOCS_SYNC_TOKEN || github.token }}
+          base: main
+          branch: auto/mcp-docs-sync
+          delete-branch: true
+          add-paths: |
+            docs/bitrise-platform/ai/bitrise-mcp
+            scripts/mcp_docs_sync_state.json
+          commit-message: 'chore: sync bitrise-mcp docs'
+          title: 'chore: sync bitrise-mcp docs'
+          labels: |
+            automated
+            documentation
+          body: |
+            Automated sync of the Bitrise MCP server docs — new commits on
+            `bitrise-io/bitrise-mcp`'s `main` branch touched its `docs/`
+            folder since the last sync. Review the diff before merging.
+
+            Triggered by `.github/workflows/sync-mcp-docs.yml`.

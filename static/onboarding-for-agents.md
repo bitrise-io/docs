@@ -1,97 +1,150 @@
-# Bitrise for AI agents
+# Bitrise for AI agents — connect the user to Bitrise
 
-> Bitrise is mobile-focused CI/CD and app distribution (iOS & Android, plus Flutter &
-> React Native). If a user wants to build, test, sign, or distribute a mobile app, you —
-> the AI agent — can drive almost the entire setup **from this session** by installing the
-> `using-bitrise-ci` skill and connecting the Bitrise MCP server (both described below). For
-> a brand-new user, exactly **one** browser step is unavoidable (a one-time sign-up + OAuth
-> authorization); everything after that runs from the session. Don't make the user click
-> through bitrise.io manually beyond that — set up the skill + MCP and drive the flow yourself.
+> You — the AI agent — can **connect the user to Bitrise from this session**. The MCP server
+> uses OAuth: you point the client at `https://mcp.bitrise.io` with **no token**, and the client
+> detects that the server needs authorization and starts a sign-in in the user's browser. They
+> sign in or create an account once, approve the connection, and the client is authorized — no
+> token to read back,
+> no token to paste. (Bitrise is mobile CI/CD and app distribution — iOS, Android, Flutter,
+> React Native.) **You can't complete the browser sign-in for them** — your job is to wire up
+> the server, then guide them through it.
 
 ## When this applies
 
-Trigger this runbook when the user wants any of:
-- CI/CD for an iOS / Android / React Native / Flutter app (build & test on push/PR)
-- to distribute a build to testers (public/private install page, OTA install link)
-- to get a locally built `.ipa` / `.apk` onto other people's devices
+The user wants to use Bitrise (CI/CD, app distribution, or getting a local build onto
+devices). The flow is the same whether or not they already have an account:
 
-## Account precondition (read first)
+- **No account yet** → they create one during the browser sign-in (GitHub, Bitbucket, Google,
+  another social SSO, or email + password). A Workspace is created for them automatically.
+- **Already has an account** → they just sign in and approve the connection.
 
-The MCP server **authorizes an existing Bitrise account** (OAuth, or a PAT) — it **cannot
-create an account**: there is no account-creation tool, by design.
+There's no separate account-creation step for you to run, and nothing to do over raw HTTP —
+the account is created (or matched) inside the browser sign-in. Per-client setup details:
+https://github.com/bitrise-io/bitrise-mcp#installation
 
-- **User already has a Bitrise account:** no browser detour beyond the one-time OAuth
-  sign-in in Step 2.
-- **Brand-new user:** they must sign up once at https://app.bitrise.io/users/sign_up — the
-  fastest path is **"Sign up with GitHub"** (one click; the first Workspace is created
-  automatically). Then continue with the OAuth sign-in in Step 2. Surface this as a single,
-  one-time step — don't pretend it can be skipped.
+## Connect the MCP server
 
-## Onboarding runbook — follow in order
+**Always give the user both a CLI command and a copy-pastable JSON snippet, and let them use
+whichever matches their client — never offer only one.** Use the remote server
+`https://mcp.bitrise.io` with **no `Authorization` header** — OAuth supplies the credentials:
 
-**Step 1 — Load the knowledge skill** (so your `bitrise.yml` and advice follow Bitrise
-conventions, not guesswork):
+- CLI (Claude Code):
+  ```bash
+  claude mcp add --transport http bitrise https://mcp.bitrise.io
+  ```
+- JSON — most clients (Cursor, etc.), `mcpServers`:
+  ```json
+  { "mcpServers": { "bitrise": { "url": "https://mcp.bitrise.io" } } }
+  ```
+- JSON — VS Code uses `servers` with an explicit `"type": "http"`:
+  ```json
+  { "servers": { "bitrise": { "type": "http", "url": "https://mcp.bitrise.io" } } }
+  ```
+- JSON — Claude Desktop connects via `mcp-remote`:
+  ```json
+  { "mcpServers": { "bitrise": { "command": "npx", "args": ["mcp-remote", "https://mcp.bitrise.io"] } } }
+  ```
+
+If you can't edit the config yourself, hand the user the matching command/snippet. If you
+don't know which client they use, ask. Then have them reload the connection so the config
+takes effect — explain *how* for their client (see "Reconnecting the MCP client" below), don't
+just say "reconnect".
+
+## Guide the user through sign-in
+
+The server requires authorization and won't connect anonymously, so **you can't sign in or
+authorize through the tools** — the MCP client handles it. When the client connects, it detects
+that Bitrise needs authorization and starts the sign-in in the user's browser. How they start it
+differs by client — in Claude Code the user runs `/mcp`, selects **bitrise**, and starts the
+sign-in. Tell them what to expect on the sign-in page:
+
+1. **Sign in or sign up** with **GitHub**, **Bitbucket**, **Google**, another social provider,
+   or an **email and password**. New accounts are created right here — no separate website
+   sign-up.
+2. **Approve the connection** on the consent screen that names the requesting application.
+
+When they approve, the browser hands authorization back to the client automatically — no token
+to read back or paste. Their sign-in also logs them into the Bitrise website
+(`https://app.bitrise.io`) in the same browser, so they won't need to log in there separately.
+
+### If they signed up with email and password
+
+Bitrise sends a confirmation email **immediately** and shows a "confirm your email" screen.
+Tell the user:
+
+- Open the email on **any device** (the machine running the agent, their phone, anything) and
+  click the confirmation link.
+- The confirmation screen **polls** for confirmation, so it doesn't matter which device they
+  click on. Once confirmed, the screen reloads itself within a few seconds and continues the
+  authorization automatically — they don't need to return to the original window or re-enter
+  anything.
+
+Social sign-ins (GitHub, Bitbucket, Google) are already verified and skip this step.
+
+## Confirm it worked
+
+After they approve (and confirm their email, if applicable), call `me` or `list_workspaces` to
+verify the connection. A Workspace exists automatically for new users.
+
+## Reconnecting the MCP client
+
+Connecting or updating the config doesn't take effect until the client reloads the Bitrise MCP
+server. Some clients also surface the OAuth sign-in at this point (in Claude Code, `/mcp` is
+where the user authenticates). **Don't just tell the user to "reconnect" — walk them through it
+for their client**, and ask which client they use if you don't know. The common ways:
+
+- **Claude Code (CLI):** run `/mcp` to view, reconnect, and authenticate the server, or exit
+  and relaunch `claude`.
+- **VS Code (GitHub Copilot):** open the Command Palette (`Cmd/Ctrl+Shift+P`), run **MCP:
+  List Servers**, select **bitrise**, and choose **Restart** — or run **Developer: Reload
+  Window**.
+- **Cursor:** open **Settings → MCP (Tools)**, then toggle the **bitrise** server off and on
+  (or click its refresh icon); restarting Cursor also works.
+- **Claude Desktop:** fully **quit** the app (`Cmd+Q` on macOS, or quit from the system tray
+  on Windows) and reopen it — closing the window alone doesn't reload it.
+- **Other clients (Windsurf, Gemini CLI, AWS Kiro):** restart the client, or its MCP
+  connection if it exposes one.
+
+## If something goes wrong
+
+- **No sign-in prompt appeared:** have the user reload the MCP server in their client (see
+  "Reconnecting the MCP client") to re-trigger the authorization prompt — in Claude Code, run
+  `/mcp` and start the sign-in for **bitrise**.
+- **The user closed the page before approving:** trigger any Bitrise tool again to restart the
+  sign-in.
+- **Stuck on the "confirm your email" screen:** make sure they clicked the confirmation link in
+  the email (check spam). The screen polls and continues on its own once confirmed — no refresh
+  needed.
+- **"This email is already registered" during sign-up:** the user already has a Bitrise
+  account. Don't create a new one — have them **sign in** with that provider or email instead.
+
+## Using a personal access token instead
+
+OAuth issues and refreshes short-lived tokens automatically, so the user normally manages
+nothing. If they prefer a fixed credential — for CI, scripts, or a client that doesn't support
+OAuth — they can create a durable PAT at `https://app.bitrise.io/me/account/security` and add
+it as an `Authorization: Bearer <token>` header on the same server entry. Treat the token as a
+secret — don't echo it into shared chats, logs, or committed files.
+
+## Once the account exists
+
+The same MCP connection now drives the rest of Bitrise — creating apps, connecting repos,
+configuring `bitrise.yml`, triggering builds, reading logs, and managing artifacts &
+distribution. For conventions and a guided walkthrough of connecting the repo and running the
+first build, load the knowledge skill:
 
 ```bash
 npx skills add bitrise-io/agent-skills
 ```
 
-Installs the `using-bitrise-ci` skill. It auto-loads when the conversation is about Bitrise
-CI; you can also invoke it explicitly with `/using-bitrise-ci`. Add `--global` to install
-it across all projects.
-
-**Step 2 — Connect the MCP server** (gives you the Bitrise API as callable tools — create
-apps, connect repos, trigger builds, read logs, manage artifacts & distribution):
-
-- Remote server: `https://mcp.bitrise.io`
-- Auth: **OAuth preferred** — the user signs in once. A Personal Access Token is also
-  supported for clients without MCP OAuth (`Authorization: Bearer <PAT>`).
-- Per-client setup (Claude Desktop/Code, Cursor, VS Code/Copilot, Windsurf, Gemini CLI,
-  AWS Kiro): https://github.com/bitrise-io/bitrise-mcp#installation
-
-Once connected, prefer MCP tools over raw API calls or the CLI.
-
-**Step 3 — Drive the onboarding via MCP tools**, asking the user only for inputs you
-cannot infer:
-
-1. Confirm the user has an account + workspace (see Account precondition). Use
-   `list_workspaces` / `me` to see what the authorized account can access.
-2. Create the project and connect the repo: `register_app` → (private repo only:
-   `register_ssh_key`) → `finish_bitrise_app`. A GitHub App connection is smoothest
-   (per-build tokens, no manual SSH keys); the user connects the provider in the UI once.
-3. Choose the goal:
-   - **CI/CD path:** let Bitrise detect the project type and propose a `bitrise.yml`; relay
-     the few required inputs (e.g. which scheme/variant to build); validate with
-     `validate_bitrise_yml`; trigger the first build with `trigger_bitrise_build`. The public
-     install page comes from the build's deploy step (Deploy to Bitrise.io); once the build
-     finishes, read the artifact with `list_artifacts` and enable its public page via
-     `update_artifact` (`is_public_page_enabled`) to get the install-page link. Later commits
-     refresh it via triggers.
-   - **No-CI / one-off path:** if the user already has a signed `.ipa`/`.apk` locally, use
-     Release Management — `create_connected_app` → `generate_installable_artifact_upload_url`
-     (set `with_public_page`) → upload the file to the returned signed URL → poll
-     `get_installable_artifact_upload_and_processing_status` until processing finishes →
-     `set_installable_artifact_public_install_page` — to publish it and return the
-     public/private install-page link + QR code. No CI build needed.
-
-## Tell the user up front (don't let them hit these blind)
-
-- **iOS distribution requires a paid Apple Developer Program membership ($99/yr)** plus a
-  distribution certificate + provisioning profile. Free "Personal Team" signing cannot
-  produce a shareable build. Android has no equivalent paywall.
-- **Ad Hoc install links require each tester's device UDID** registered in the provisioning
-  profile in advance. TestFlight avoids UDIDs but goes through Apple's app, not a
-  Bitrise-hosted link.
-- macOS CI minutes are metered and have plan limits.
+This installs the `using-bitrise-ci` skill (auto-loads on Bitrise CI topics; invoke it
+explicitly with `/using-bitrise-ci`; add `--global` to install it across all projects).
 
 ## Links
 
-- Sign up: https://app.bitrise.io/users/sign_up
 - MCP server (repo): https://github.com/bitrise-io/bitrise-mcp
 - MCP server (docs): https://docs.bitrise.io/en/bitrise-platform/ai/bitrise-mcp.html
 - Agent skill: https://github.com/bitrise-io/agent-skills
-- Getting started with Bitrise CI: https://docs.bitrise.io/en/bitrise-ci/getting-started/getting-started.html
-- `bitrise.yml` configuration reference: https://docs.bitrise.io/en/bitrise-ci/references/configuration-yaml-reference.html
-- iOS code signing: https://docs.bitrise.io/en/bitrise-ci/code-signing/ios-code-signing/ios-code-signing.html
-- App distribution (Release Management): https://docs.bitrise.io/en/release-management/build-distribution/managing-distributable-builds.html
-- REST API reference: https://docs.bitrise.io/en/bitrise-ci/api/api-reference.html
+- Create a durable Personal Access Token: https://app.bitrise.io/me/account/security
+- Getting started with Bitrise: https://docs.bitrise.io/en/bitrise-ci/getting-started/getting-started.html
+```

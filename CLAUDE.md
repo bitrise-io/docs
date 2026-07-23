@@ -21,6 +21,7 @@ See [README.md](./README.md#run-the-docs-locally) — it has the full step-by-st
 | `docs/<section>/<sub>/_category_.json` | Sidebar category metadata (label, position, optional link). `link: null` means "non-clickable toggle". | Renaming/reordering sidebar entries; never delete by hand. |
 | `src/partials/<slug>.mdx` | Reusable content fragment imported by `<Partial_X />`. **Edit here once, every consumer updates.** | Editing shared content; adding new reusable chunks. |
 | `static/img/<topic>/<file>.png` | Static images served at `/img/<topic>/<file>.png`. UUID-prefixed files in `_paligo/` are migration-managed — don't rename. | Adding new screenshots; replacing existing ones. |
+| `static/llms.txt` | Hand-curated index of the docs for AI agents (#114). `docusaurus-plugin-llms` generates `llms-full.txt` and per-page `.md` mirrors, but not the root `llms.txt` — that file is maintained by hand. | Adding a product area or major section; renaming or moving a page listed in it. |
 | `src/pages/index.tsx` | The portal landing page (`/`). | Changing the homepage cards/links. |
 | `src/components/GlossTerm/` | Tooltip glossary component. | Almost never. |
 | `migration/` | Paligo→Markdown converter + supporting JSON (URL map, partial index, glossary, nav labels). | Re-running the full migration only. |
@@ -327,7 +328,7 @@ MDX reads `{...}` as a JSX expression. Hyphens make it invalid (kebab-case isn't
 
 ### Don't change a slug without a redirect
 
-If you rename a page or change its `slug`, add a rule in `redirects.json` so the old URL still resolves. Cloudflare serves the redirects; the 444 live URLs are part of our SEO contract.
+If you rename a page or change its `slug`, add a rule in `redirects.json` so the old URL still resolves. Cloudflare serves the redirects; the 444 live URLs are part of our SEO contract. If the page is listed in `static/llms.txt` (the hand-curated AI-agent index), update its link there too — the weekly `check-llms-txt.yml` job fails on dead llms.txt links.
 
 ### Don't add an `index.md` to a topichead category
 
@@ -337,12 +338,94 @@ Some sidebar categories are intentionally non-clickable — they only toggle exp
 
 All images go under `static/img/`. References in pages start with `/img/...` (Docusaurus serves `static/` from root). Don't reference `static/img/...` directly — that path doesn't exist at runtime.
 
+### Don't break numbered lists with unindented content
+
+Code blocks, admonitions, and plain text that belong to a numbered list item must be indented to the item's content column (3 spaces for `1. `, 4 for `10. `, etc.). Unindented content terminates the list, causing every subsequent item to restart numbering from 1.
+
+````mdx
+✗  1. Do the thing
+   ```bash
+   code
+   ```
+   2. Do the next thing   ← renders as step 1
+
+✓  1. Do the thing
+
+      ```bash
+      code
+      ```
+
+   2. Do the next thing   ← renders as step 2
+````
+
+The same rule applies to admonitions and continuation paragraphs mid-procedure.
+
 ### Don't introduce `Title Case` titles
 
 Sentence case only. ✓ `Adding a new project` ✗ `Adding a New Project`.
 
 ---
 
+## Syncing MCP docs
+
+When asked to sync, pull, or update the Bitrise MCP docs, run:
+
+```bash
+python3 scripts/sync_mcp_docs.py
+```
+
+This fetches `.md` files from `bitrise-io/bitrise-mcp/docs/` on GitHub and writes them (with injected frontmatter, link rewriting, and list rendering fixes) to `docs/bitrise-platform/ai/bitrise-mcp/`. Set `GITHUB_TOKEN` in the environment for authenticated requests (5,000 req/hr vs 60 req/hr unauthenticated).
+
+The script is idempotent. After running, review the diff and commit if the changes look correct. Never manually edit the synced files — edits belong in the source repo.
+
+---
+
+## Generating API reference docs
+
+The Bitrise CI API reference (`docs/bitrise-api/api-reference/`) and the RDE API reference (`docs/bitrise-rde-api/api-reference/`) are generated from their OpenAPI specs using `docusaurus-plugin-openapi-docs` (specs configured in `docusaurus.config.ts`). Never edit the generated files by hand — they are overwritten on every run.
+
+### Regenerating after a spec update
+
+```bash
+npm run gen-api-docs
+```
+
+This runs two things in sequence:
+
+1. `docusaurus gen-api-docs all` — generates the `.api.mdx` files and `sidebar.ts` for every configured spec (the CI API and the RDE API).
+2. `node scripts/patch-api-info.js` — applies fixes the plugin doesn't handle, to each generated `*.info.mdx`:
+   - Adds `displayed_sidebar` so the page renders inside the correct sidebar (`bitriseAPISidebar` for the CI API, `rdeSidebar` for the RDE API).
+   - Fills in the empty License section with the name from the spec — CI API only (`MIT`).
+
+Always use the npm script, not the bare `docusaurus` command, so the patch is always applied.
+
+### Preprocessor skip rule
+
+`docusaurus.config.ts` has a `markdown.preprocessor` that escapes JSX-looking text across all `.mdx` files. The generated API files contain multi-line JSX components (`<StatusCodes>`, `<RequestSchema>`, etc.) that the line-by-line escaper would mangle. They are skipped entirely via an early return that matches every generated reference (`bitrise-api`, `bitrise-rde-api`, …):
+
+```ts
+if (filePath.includes('/api-reference/')) return fileContent;
+```
+
+Do not remove this rule — it prevents the preprocessor from breaking the generated files.
+
+### Cache gotcha after merging
+
+If `docusaurus.config.ts` changes (including merge commits that touch it), the webpack cache in `.docusaurus/` can become partially stale, producing confusing MDX parse errors like `Expected a closing tag for <StatusCodes>` even though the generated files are correct. Fix: clear the cache before starting the dev server.
+
+```bash
+npm run clear   # or: rm -rf .docusaurus
+npm start
+```
+
+---
+
 ## Updating this file
 
 If you discover a new convention or pitfall while editing, **add it here** so the next contributor (human or AI) doesn't relearn it. Keep the file < 400 lines; if a section grows long, link to a deeper page on Confluence instead.
+
+## Validating links before a change
+
+Before proposing any docs edit (new page, moved page, changed slug, or reworded heading), run the source-level checker on the files you touched and fix anything it flags. This catches broken internal `/en/...` links and missing `#anchor` targets at authoring time — before the PR — rather than relying on the build-time `onBrokenLinks` warning or the post-build `link_analyzer.js`.
+
+Run `node scripts/check-links-source.js docs/path/to/edited-page.mdx` to check specific files, or `node scripts/check-links-source.js` with no arguments to scan the whole `docs/` tree. Exit code is non-zero if any internal link points to a missing page or any `#anchor` points to a heading that doesn't exist on the target page. It follows `@site/src/partials/*.mdx` imports and understands OpenAPI-generated `.api.mdx` / `.info.mdx` routes, so those aren't false positives. Don't hand over a page with unresolved cross-references.

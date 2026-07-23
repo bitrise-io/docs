@@ -26,6 +26,24 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            !node_modules/.cache
+          key: node-modules-${{ runner.os }}-node20-${{ hashFiles('package-lock.json', 'patches/**') }}
+
+      - name: Cache Docusaurus build
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules/.cache
+            .docusaurus
+          key: docusaurus-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            docusaurus-${{ runner.os }}-
+
       - run: npm install
 
       - run: npm run build
@@ -36,6 +54,17 @@ jobs:
           apiToken: ${{ secrets.CF_API_TOKEN_PAGES }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
           command: pages deploy ./build --project-name=bitrise-docs --branch=${{ github.head_ref || github.ref_name }}
+
+      # Redirects are served by a Cloudflare Bulk Redirects list, not by the
+      # Pages deploy above. Editing redirects.json has no effect until this
+      # syncs it, so run it on every push to main. Gated off PRs so preview
+      # builds never mutate the production redirect list.
+      - name: Upload redirects to Cloudflare
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: npm run cloudflare:upload_redirects
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
 
       - name: Comment preview URL
         if: github.event_name == 'pull_request'

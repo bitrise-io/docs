@@ -20,7 +20,7 @@ You can keep using project-level and Workflow-level [Environment Variables](/en/
 
 **Can I rerun a failed Pipeline?**
 
-Yes. Go to the **Pipeline details** page, and click the **Rerun** button. From there you have the option to rerun failed and subsequent Workflows or to rerun the entire Pipeline.
+Yes. Go to the **Pipeline details** page, and click the **Rebuild** button. From there you have the option to rebuild unsuccessful Workflows or to rebuild the entire Pipeline. Both options are also available with remote access.
 
 **Does the Rolling Builds feature work on Pipelines?**
 

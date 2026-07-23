@@ -33,6 +33,8 @@ For more information, check out the official Flutter documentation: [Handling pa
 
 1. [Add dependencies](https://docs.flutter.dev/development/packages-and-plugins/using-packages#adding-a-package-dependency-to-an-app) to your Flutter project's `pubspec.yaml` file.
 1. On Bitrise, add the [**Flutter Install**](https://github.com/bitrise-steplib/bitrise-step-flutter-installer) Step to your <GlossTerm baseform="Workflow">Workflow</GlossTerm> to install the Flutter SDK.
+
+   In the **Flutter SDK version or bundle URL** input, set a channel name (such as `stable`) to always install the latest release in that channel, or set an exact version tag to pin the installed version.
 1. Add the [**Flutter Build**](https://github.com/bitrise-steplib/bitrise-step-flutter-build) Step to your Workflow.
 
    ![flutter-build-step.png](/img/_paligo/uuid-98bd1fcb-463a-c828-a627-5d3adaf78d32.png)
@@ -43,7 +45,9 @@ For more information, check out the official Flutter documentation: [Handling pa
 <TabItem value="bitriseyml" label="Configuration YAML">
 
 1. [Add dependencies](https://docs.flutter.dev/development/packages-and-plugins/using-packages#adding-a-package-dependency-to-an-app) to your Flutter project's `pubspec.yaml` file.
-1. On Bitrise, add the `flutter-install` Step to your Workflow to install the Flutter SDK.
+1. On Bitrise, add the `flutter-installer` Step to your Workflow to install the Flutter SDK.
+
+   In the **Flutter SDK version or bundle URL** (`version`) input, set a channel name (such as `stable`) to always install the latest release in that channel:
 
    ```yaml
    your-workflow:
@@ -51,7 +55,18 @@ For more information, check out the official Flutter documentation: [Handling pa
        - git-clone: {}
        - flutter-installer:
            inputs:
-             - is_update: false
+             - version: stable
+   ```
+
+   Or set an exact version tag to pin the installed version:
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - flutter-installer:
+           inputs:
+             - version: 3.32.5
    ```
 1. Add the `flutter-build` Step to your Workflow.
 
@@ -61,7 +76,7 @@ For more information, check out the official Flutter documentation: [Handling pa
        - git-clone: {}
        - flutter-installer:
            inputs:
-             - is_update: false
+             - version: stable
        - flutter-build: {}
    ```
 

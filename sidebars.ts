@@ -1,4 +1,6 @@
 import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
+import bitriseAPIApiSidebar from './docs/bitrise-api/api-reference/sidebar';
+import rdeAPIApiSidebar from './docs/bitrise-rde-api/api-reference/sidebar';
 
 function productSidebar(dirName: string, title: string) {
   return [
@@ -8,6 +10,42 @@ function productSidebar(dirName: string, title: string) {
   ];
 }
 
+// Convert kebab-case tag labels to sentence case and fix known quirks.
+function normalizeLabel(label: string): string {
+  // kebab-case → sentence case
+  const spaced = label.replace(/-/g, ' ');
+  const capitalized = spaced.charAt(0).toUpperCase() + spaced.slice(1);
+  // Capitalize standalone "api" → "API"
+  return capitalized.replace(/\bapi\b/gi, 'API');
+}
+
+// Corrections applied after normalization for compound words that need a hyphen.
+const TAG_LABEL_OVERRIDES: Record<string, string> = {
+  'Key value cache': 'Key-value cache',
+};
+
+// Normalize a generated openapi sidebar (tag categories) into hub items:
+// sentence-case the tag labels and tag every entry with the "Code" icon. The
+// generated info doc has no label and is filtered out (added explicitly below).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toHubItems(generated: any, addIcon = true) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (generated as any[]).filter((item: any) => item.label).map(item => {
+    const originalLabel = item.label as string | undefined;
+    const correctedLabel = originalLabel
+      ? (() => { const n = normalizeLabel(originalLabel); return TAG_LABEL_OVERRIDES[n] ?? n; })()
+      : originalLabel;
+    return {
+      ...item,
+      ...(correctedLabel !== undefined ? {label: correctedLabel} : {}),
+      ...(addIcon ? {customProps: {...(item.customProps ?? {}), icon: 'Code'}} : {}),
+    };
+  });
+}
+
+const hubItems = toHubItems(bitriseAPIApiSidebar);
+const rdeHubItems = toHubItems(rdeAPIApiSidebar, false);
+
 const sidebars: SidebarsConfig = {
   platformSidebar: productSidebar('bitrise-platform', 'Bitrise as a Platform'),
   ciSidebar: productSidebar('bitrise-ci', 'Bitrise CI'),
@@ -15,6 +53,30 @@ const sidebars: SidebarsConfig = {
   releaseManagementSidebar: productSidebar('release-management', 'Release Management'),
   insightsSidebar: productSidebar('insights', 'Insights'),
   buildHubSidebar: productSidebar('bitrise-build-hub', 'Build Hub'),
+  rdeSidebar: [
+    ...productSidebar('bitrise-rde', 'Remote Dev Environments'),
+    {
+      type: 'category',
+      label: 'API reference',
+      collapsed: true,
+      customProps: {icon: 'Code'},
+      items: [
+        {
+          type: 'doc',
+          id: 'bitrise-rde-api/api-reference/bitrise-remote-dev-environments-api',
+          label: 'Introduction',
+        },
+        ...rdeHubItems,
+      ],
+    },
+  ],
+  bitriseAPISidebar: [
+    {type: 'link', label: '← Home', href: '/'},
+    {type: 'html', value: '<div class="sidebar-product-title">Bitrise API</div>'},
+    {type: 'doc', id: 'bitrise-api/index', label: 'Bitrise API', customProps: {icon: 'Book'}},
+    {type: 'doc', id: 'bitrise-api/api-reference/bitrise-api', label: 'Introduction', customProps: {icon: 'Book'}},
+    ...hubItems,
+  ],
 };
 
 export default sidebars;

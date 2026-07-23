@@ -1,0 +1,60 @@
+---
+title: "Key concepts"
+description: "Understand the building blocks of Remote Dev Environments: sessions, the session lifecycle, stacks and machine types, templates, and saved inputs."
+sidebar_position: 3
+slug: /bitrise-rde/getting-started/key-concepts
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Remote Dev Environments share the same building blocks across every client — the CLI, the web UI, the MCP server, and the API. Understanding these concepts helps you move between them.
+
+## Sessions
+
+A <GlossTerm baseform="rde session">session</GlossTerm> is a single Remote Dev Environment instance: one cloud machine that you connect to and work on. You create a session either from a [template](#templates) or directly by choosing a [stack and a machine type](#stacks-and-machine-types).
+
+Each session belongs to the <GlossTerm baseform="workspace">workspace</GlossTerm> it was created in and is owned by the user who created it. You can connect to it in several ways — see [Connecting to a session](/en/bitrise-rde/rde-options/connecting-to-a-session).
+
+## Session lifecycle
+
+A session moves through a few states during its life:
+
+- **Running**: the machine is provisioned and ready to connect to. When you create or restore a session, it becomes running after a short startup.
+- **Terminated**: the machine is stopped, but the session and its persistent disk are kept. Terminating is reversible.
+- **Deleted**: the session is permanently removed. You can only delete a session that's already terminated.
+
+Terminating a session preserves its **persistent disk**, so when you restore the session your files and changes are still there. The disk is kept for a limited time after termination and is eventually cleaned up, after which the session can no longer be restored.
+
+To avoid leaving machines running, every session has an **auto-terminate** timer:
+
+- The default is 5 days of inactivity.
+- You can set it to anything up to 30 days, or turn it off so the session never auto-terminates.
+- Sessions in free-trial workspaces are capped at 8 hours and can't change this.
+
+## Stacks and machine types
+
+When you create a session you choose two things:
+
+- A **<GlossTerm baseform="stack">stack</GlossTerm>**: the operating system image and the tools preinstalled on it, such as a specific Xcode version on macOS. These are the same stacks used by Bitrise CI.
+- A **machine type**: the size of the machine, defined by its CPU and RAM. macOS uses Apple silicon machine types; Linux machine types range from small shared instances to large dedicated ones.
+
+A template can set these for you, or you can pick them directly when creating a session. The available stacks and machine types depend on your workspace.
+
+## Templates
+
+A <GlossTerm baseform="rde template">template</GlossTerm> is a reusable session configuration. Instead of choosing a stack, machine type, and setup steps every time, you define them once in a template and create sessions from it. A template can include:
+
+- A stack, a machine type, and a working directory.
+- A **warmup script** that runs once when the session is first created, and a **startup script** that runs on every start.
+- **Template variables** and **session inputs**: values the session needs, which can be exposed as environment variables and marked as secret.
+- **Workspace links**: shortcut buttons that open a specific folder in your IDE.
+
+For details, see [Templates](/en/bitrise-rde/configuration/templates).
+
+## Saved inputs
+
+A <GlossTerm baseform="saved input">saved input</GlossTerm> is a reusable value or credential — such as an SSH public key, an API token, or a Claude Code credential — that you store once and map into sessions as needed. Saved inputs are scoped to your user account, not to a single workspace, and secret values are encrypted at rest.
+
+For details, see [Saved inputs](/en/bitrise-rde/configuration/saved-inputs).

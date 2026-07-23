@@ -1,0 +1,123 @@
+---
+title: "Entra ID SCIM"
+description: "Provision and deprovision Bitrise workspace members automatically using Microsoft Entra ID SCIM."
+sidebar_position: 7
+slug: /bitrise-platform/accounts/saml-sso-in-bitrise/setting-up-entra-id-scim-for-bitrise
+sidebar_label: Entra ID SCIM
+---
+
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkspaceSettingsPage from '@site/src/partials/opening-the-workspace-settings-page.mdx';
+
+Bitrise supports automatic user and group provisioning via [SCIM 2.0](https://scim.cloud/) with Microsoft Entra ID. Once configured, Entra ID becomes the authoritative source for <GlossTerm baseform="workspace">workspace</GlossTerm> membership: users and group assignments are pushed to Bitrise automatically, and removing a user in Entra deactivates their access on Bitrise.
+
+## SCIM requirements
+
+- SCIM provisioning requires an **Enterprise plan**.
+- You must have [SAML SSO configured](/en/bitrise-platform/accounts/saml-sso-in-bitrise/setting-up-azure-ad-sso-for-bitrise) between Bitrise and Entra ID before enabling SCIM.
+- You must have a [verified domain](/en/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-saml-sso-on-bitrise#verifying-your-domain). Domain verification can take up to 72 hours. SCIM credentials cannot be generated until at least one domain is verified.
+- You will need both the [Bitrise workspace owner](/en/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces) and an Entra ID administrator available during setup.
+
+## Setting up SCIM 
+
+The setup consists of three steps:
+
+1. [Generating SCIM credentials on Bitrise.](#generating-scim-credentials-on-bitrise)
+1. [Configuring SCIM provisioning in Entra ID.](#configuring-scim-provisioning-in-entra-id)
+1. [Verifying the connection.](#verifying-the-connection)
+
+### Generating SCIM credentials on Bitrise
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. Select **Single sign-on** from the left menu.
+1. Select the **SCIM** tab.
+1. Click **Generate SCIM credentials**.
+1. Copy and save both values shown in the dialog:
+   - **SCIM base URL**
+   - **SCIM authentication token**
+
+   The token is not displayed again after you close the dialog. If you lose it, you can regenerate it, but doing so immediately invalidates the previous token.
+
+### Configuring SCIM provisioning in Entra ID
+
+Bitrise is not a gallery app in Entra ID. Use Microsoft's [tutorial for configuring SCIM with non-gallery applications](https://learn.microsoft.com/en-us/entra/identity/app-provisioning/use-scim-to-provision-users-and-groups) and apply the following Bitrise-specific values:
+
+- **Tenant URL:** [your SCIM base URL](#generating-scim-credentials-on-bitrise).
+- **Secret token:** [your SCIM authentication token](#generating-scim-credentials-on-bitrise).
+- **Unique identifier field:** `userName` (mapped to the user's email address).
+
+When configuring **Provisioning Mode**, select **Automatic**. Use **Sync only assigned users and groups** to control which users and groups are pushed to Bitrise.
+
+:::important[Enable Push Groups]
+
+Workspace membership on Bitrise is managed through groups. You must enable group provisioning (Push Groups) so that Entra ID can manage group membership in Bitrise. Without it, users will be provisioned but not added to any group.
+
+:::
+
+### Verifying the connection
+
+Click **Test Connection** in the Entra ID provisioning configuration. This queries the Bitrise `/ServiceProviderConfig` endpoint and confirms that the credentials are valid. A successful test means Entra ID can reach Bitrise and authenticate correctly.
+
+## Attribute mapping
+
+Bitrise implements the SCIM 2.0 Core User Schema and Core Group Schema (RFC 7643/7644). Entra ID's default attribute mapping works without custom transforms.
+
+Supported user attributes:
+
+- `userName`: unique identifier for the user; Entra ID maps this to the user's User Principal Name (UPN), which typically matches their email address
+- `emails`: the user's email address(es)
+- `name.givenName`: first name
+- `name.familyName`: last name
+- `active`: whether the user is active; set to `false` to deprovision
+- `externalId`: the user's stable, opaque ID assigned by Entra ID; remains constant even if the user's UPN changes
+
+Supported group attributes:
+
+- `displayName`: the group's name in Entra ID
+- `members`: the list of users in the group
+
+For workspace role assignment via the `roles` attribute, see [Managing workspace roles via SCIM](/en/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-scim#managing-workspace-roles-via-scim).
+
+## Group behavior
+
+**Name matching:** When Entra ID pushes a group, Bitrise links it to an existing group with the same name, or creates a new one. Matching is case-sensitive and exact. `ios_dev` and `iOS Dev` are treated as different groups. Make sure group names in Entra ID match your existing Bitrise group names exactly before enabling sync.
+
+**Entra ID becomes authoritative for membership:** Once Entra ID is syncing a group, it controls that group's membership. Any members added manually in Bitrise who are not in the corresponding Entra ID group will be removed on the next sync.
+
+**Protected groups:** Global Access groups and SAML default groups cannot be deleted via SCIM. Keep these groups out of Entra ID's sync scope to avoid unintended membership changes.
+
+## User provisioning behavior
+
+**No email activation step:** Users provisioned via SCIM on a verified domain are created in a confirmed, active state immediately. They do not receive an email activation link from Bitrise. On first login they are redirected directly to the Entra ID SSO flow.
+
+**Default workspace role:** All SCIM-provisioned users receive the Workspace Viewer role by default, which does not include Bitrise CI product access. To assign a different role at provisioning time, configure the `roles` attribute in Entra ID. See [Managing workspace roles via SCIM](/en/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-scim#managing-workspace-roles-via-scim).
+
+## Deprovisioning behavior
+
+When you remove a user's assignment in Entra ID, or Entra ID sends a `PATCH active:false` or `DELETE` request:
+
+- The user is removed from the workspace and from all their groups within it simultaneously.
+- Their personal access tokens remain active but lose access to all resources in the workspace.
+- Their workflows and secrets are preserved and not reassigned automatically.
+- The seat is freed immediately.
+
+**Re-provisioning a deprovisioned user:** A deprovisioned user's account is not deleted; they are removed from the workspace. Re-provisioning them via SCIM with the same email is supported, once they are assigned again in Entra ID, it can manage their group membership via SCIM as normal.
+
+## Migrating existing workspace members
+
+SCIM is push-based. Bitrise only acts on requests Entra ID sends. Existing workspace members who are not assigned in Entra ID are not touched and remain in the workspace.
+
+To migrate an existing workspace with members and groups:
+
+1. Verify all relevant email domains before enabling SCIM.
+1. Align Entra ID group names to match your existing Bitrise group names exactly.
+1. Enable SCIM with **Sync only assigned users and groups** in Entra ID.
+1. Assign a small pilot group first to validate end-to-end, then expand incrementally.
+
+There is no dry-run or preview mode. The incremental pilot approach is the practical equivalent.
+
+## Users on unverified domains
+
+Users whose email is on a domain that has not been verified in Bitrise cannot be managed via SCIM. Any attempt to provision or modify them will be rejected. Exclude those users from Entra ID's assignment scope until their domain is verified.
+
+To verify additional domains, go to Workspace Settings and add each domain under **Domain verification**. Each domain must be verified separately.

@@ -9,6 +9,7 @@ sidebar_label: iOS code signing with automatic provisioning
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/src/partials/getting-to-the-project-settings-page.mdx';
 
 On Bitrise, we're aiming to make iOS code signing as simple as possible for you. As such, we've done our best to automate a lot of the process. Several of our <GlossTerm baseform="Step">Steps</GlossTerm> have a built-in option for automatic code signing management to make configuration a lot more streamlined.
 
@@ -45,15 +46,12 @@ We strongly recommend uploading BOTH the development and distribution signing ce
 To export your certificates and upload them to Bitrise in the <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>:
 
 1. Make sure you have your .p12 certificates exported and ready.
-1. Open your project on Bitrise with a user that has the **Admin** [role on the project](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
-1. On the main page of the project, click on the **Project settings** button.
-
-   ![project-settings-button.png](/img/_paligo/uuid-14defaa4-472c-2d09-84df-145dc3aef4f5.png)
+1. <Partial_GettingToTheProjectSettingsPage />
 1. On the left, select the **Code signing** menu option.
 1. Click **Add .p12 file** to add a certificate.
-1. In the dialog box, either drag and drop the file into the **Select a code signing certificate** section, or click the same section and select the file you want to upload.
+1. In the dialog box, drag and drop the certificate file onto the field, or click the field to browse your files.
 
-   ![ios-certificate-dialog.png](/img/_paligo/uuid-ff9689fa-fa0b-d8d1-afef-4649ccfcccc8.png)
+   ![Add .p12 file dialog](/img/code-signing/ios-code-signing/2026-07-14-add-p12-file.png)
 
    :::important[Certificate password]
 
@@ -94,7 +92,7 @@ If you use automatic provisioning, you never need to use the **Certificate and p
 
 | Steps | How they work | When to use |
 | --- | --- | --- |
-| Xcode Steps:  - **Xcode Archive and Export for iOS** - **Export iOS and tvOS Xcode Archive** - **Xcode build for testing for iOS** | These Steps set up code signing in your Xcode project automatically with nearly zero configuration. | We recommend using these Steps in most scenarios. |
+| Xcode Steps:  - **Xcode Archive & Export for iOS** - **Export iOS and tvOS Xcode Archive** - **Xcode build for testing for iOS** | These Steps set up code signing in your Xcode project automatically with nearly zero configuration. | We recommend using these Steps in most scenarios. |
 | **Manage iOS Code Signing** Step | This Step will set up code signing in your Xcode project before running a build. | You can use this dedicated Step if:  - You are building the app from script or fastlane. - You have a cross-platform project. For example, React Native, Flutter, Ionic or Cordova. - You are building a macOS app. |
 
 ### Using the Xcode Steps
@@ -106,7 +104,7 @@ You can use any of the Xcode Steps with built-in automatic management of code si
    You can choose between [API key authentication](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key) or [Apple ID authentication](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id). We generally recommend API key authentication.
 1. Add any of the following Steps to your <GlossTerm baseform="workflow">Workflow</GlossTerm>, depending on what you need:
 
-   - **Xcode Archive and Export for iOS**: Builds your Xcode app and exports an IPA of the type you choose.
+   - **Xcode Archive & Export for iOS**: Builds your Xcode app and exports an IPA of the type you choose.
    - **Export iOS and tvOS Xcode Archive**: Exports an IPA from an already existing archive.
    - **Xcode build for testing for iOS**: Builds your Xcode app with the `build-for-testing` action.
 1. Set the **Automatic code signing method** input to the Apple service authentication type you set up.
@@ -115,7 +113,7 @@ You can use any of the Xcode Steps with built-in automatic management of code si
 
 **YAML example for setting code signing method**
 
-In this example, the **Xcode Archive and Export for iOS** Step is set to use API key authentication.
+In this example, the **Xcode Archive & Export for iOS** Step is set to use API key authentication.
 
 ```yaml
 - xcode-archive@4:        
@@ -144,13 +142,13 @@ Use our dedicated Step for automatically managing code signing assets if you do 
 
 ## Generating export options plists
 
-The `ExportOptions.plist` file is automatically generated based on the [Xcode Archive for iOS](https://bitrise.io/integrations/steps/xcode-archive) Step inputs. You can, however, override these inputs and use it in the **Xcode Archive and Export for iOS** Step.
+The `ExportOptions.plist` file is automatically generated based on the [Xcode Archive for iOS](https://bitrise.io/integrations/steps/xcode-archive) Step inputs. You can, however, override these inputs and use it in the **Xcode Archive & Export for iOS** Step.
 
 1. Open your project on a local development machine Xcode.
 1. Archive the project.
 1. In the Organizer, select the newly created `.xcarchive` file. Click **Distribute App** to export it into an IPA file. Xcode will copy the used `ExportOptions.plist` file next to the generated IPA file.
 1. Open this `ExportOptions.plist` file in your favorite text editor and copy its content.
-1. Paste its content to the **Xcode Archive and Export for iOS** Step's **Export options plist** content input.
+1. Paste its content to the **Xcode Archive & Export for iOS** Step's **Export options plist** content input.
 
 **An example plist file:**
 

@@ -50,21 +50,21 @@ To pass dependency verification:
 
 2. Make sure that the Step version is locked to the latest patch version (in the example it's `0.1.2`). Currently, this is done in the `bitrise.yml` configuration file:
 
-:::note
+   :::note
 
-You will need to update your `verification-metadata.xml` each time you update the Step's version.
+   You will need to update your `verification-metadata.xml` each time you update the Step's version.
 
-:::
+   :::
 
-```yaml
-activate-gradle-mirrors@0.1.2:
-  inputs:
-  - verbose: 'true'
-```
+   ```yaml
+   activate-gradle-mirrors@0.1.2:
+     inputs:
+     - verbose: 'true'
+   ```
 
 3. Find the CLI version used by the Step in the dependency matrix. Open the corresponding CLI release page (`https://github.com/bitrise-io/bitrise-build-cache-cli/releases/tag/<VERSION>`) and download the `verification-metadata-mirror.xml`.
 
-`verification-metadata-mirror.xml` contains SHA-256 checksums to match what the Bitrise repository manager serves, while the plain `verification-metadata.xml` records origin Maven Central checksums and will fail verification when the mirror is active.
+   `verification-metadata-mirror.xml` contains SHA-256 checksums to match what the Bitrise repository manager serves, while the plain `verification-metadata.xml` records origin Maven Central checksums and will fail verification when the mirror is active.
 
 4. Add the components content to your `$PROJECT_ROOT/gradle/verification-metadata.xml` file from the downloaded metadata.
 
@@ -90,28 +90,28 @@ With this, updating the build cache & analytics dependencies is done by the foll
 
 3. On your development machine or on Bitrise in a separate workflow, install the associated version of the CLI for the activate gradle mirror as listed by its dependency matrix.
 
-```bash
-# Replace CLIVERSION with the CLI version you want to install, for example: v2.4.6
-curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d "CLIVERSION"
-```
+   ```bash
+   # Replace CLIVERSION with the CLI version you want to install, for example: v2.4.6
+   curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d "CLIVERSION"
+   ```
 
 4. If you already have the Bitrise Build Cache enabled, make sure to back up `$HOME/.gradle/init.d/bitrise-build-cache.init.gradle.kts` as the next step will overwrite it.
 
 5. If your production workflow has the Bitrise Maven Central mirror active (the default), activate the mirror locally so the regenerated metadata records mirror-served checksums instead of the origin ones:
 
-```bash
-BITRISE_MAVENCENTRAL_PROXY_ENABLED=true /tmp/bin/bitrise-build-cache activate gradle-mirrors -d
-```
+   ```bash
+   BITRISE_MAVENCENTRAL_PROXY_ENABLED=true /tmp/bin/bitrise-build-cache activate gradle-mirrors -d
+   ```
 
-6. Run the Bitrise Build Cache CLI's `gradle-verification add-reference-deps` command on your development machine or your CI configuration. 
+6. Run the Bitrise Build Cache CLI's `gradle-verification add-reference-deps` command on your development machine or your CI configuration.
 
-This will generate an init script with the latest plugins in dry-run mode.
+   This will generate an init script with the latest plugins in dry-run mode.
 
 7. In your project folder, run your usual Workflow to write the verification metadata:
 
-```bash
-./gradlew tasks --write-verification-metadata sha256
-```
+   ```bash
+   ./gradlew tasks --write-verification-metadata sha256
+   ```
 
 8. Review the metadata differences and commit and migrate your changes to your production Workflow to finish the update and use the updated Step in your Workflows.
 

@@ -1,0 +1,178 @@
+---
+title: "Onboarding for agents"
+description: "Connect to Bitrise straight from an AI agent through the Bitrise MCP server. Sign in or create an account once in your browser, your agent is authorized, and your website session comes with it."
+sidebar_position: 5
+slug: /bitrise-platform/ai/onboarding-for-agents
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitrise is mobile-focused CI/CD and app distribution for iOS and Android, including Flutter and React Native. If you work through an AI agent such as Claude Code, Cursor, or VS Code with GitHub Copilot, it can connect you to Bitrise without leaving the chat, using the [Bitrise MCP server](/en/bitrise-platform/ai/bitrise-mcp). The first time your agent needs access, your client prompts you to authorize it and starts a Bitrise sign-in in your browser. You sign in — or create an account — once, approve the connection, and your agent is authorized. The same sign-in also logs you into the Bitrise website, so there's nothing to set up twice.
+
+## When to use this
+
+You want to use Bitrise for CI/CD, app distribution, or getting a local build onto devices, and one of the following is true:
+
+- You don't have a Bitrise account yet, so you create one during the browser sign-in — with GitHub, Bitbucket, Google, another social SSO, or an email and password.
+- You already have an account, so you just sign in and approve the connection.
+
+Either way it's the same flow: your agent points you at a browser page, and you finish there.
+
+If you'd rather not use an agent, you can also [sign up for Bitrise](/en/bitrise-platform/getting-started/signing-up-for-bitrise) in the browser.
+
+## Connecting through the MCP
+
+The MCP server uses OAuth: it tells your client that it needs authorization, and your client runs the browser sign-in for you. You never copy or paste a token.
+
+### Step 1: Get an AI client that supports MCP
+
+You need an AI client that supports MCP. Each step below gives the configuration for the most common clients: Claude Code, Cursor, VS Code, and Claude Desktop. Bitrise MCP also supports [Windsurf](/en/bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-windsurf), the [Google Gemini CLI](/en/bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-gemini-cli), [AWS Kiro](/en/bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-kiro), and [other Copilot IDEs](/en/bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-other-copilot-ides). See each install guide for client-specific details.
+
+### Step 2: Connect the MCP server
+
+Point your client at the remote server with **no token**. The server tells your client it's OAuth-protected, and your client handles authorization from there. After editing the config, reload the client so the change takes effect (see [Reconnecting the MCP client](#reconnecting-the-mcp-client)).
+
+<Tabs>
+<TabItem value="claude-code" label="Claude Code" default>
+
+```bash
+claude mcp add --transport http bitrise https://mcp.bitrise.io
+```
+
+Full setup: [Claude Applications](/en/bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-claude).
+
+</TabItem>
+<TabItem value="cursor" label="Cursor">
+
+```json
+{ "mcpServers": { "bitrise": { "url": "https://mcp.bitrise.io" } } }
+```
+
+Full setup: [Cursor](/en/bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-cursor).
+
+</TabItem>
+<TabItem value="vs-code" label="VS Code">
+
+```json
+{ "servers": { "bitrise": { "type": "http", "url": "https://mcp.bitrise.io" } } }
+```
+
+Full setup: [VS Code](/en/bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-vscode).
+
+</TabItem>
+<TabItem value="claude-desktop" label="Claude Desktop">
+
+```json
+{ "mcpServers": { "bitrise": { "command": "npx", "args": ["mcp-remote", "https://mcp.bitrise.io"] } } }
+```
+
+Full setup: [Claude Applications](/en/bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-claude).
+
+</TabItem>
+</Tabs>
+
+### Step 3: Sign in or create your account
+
+The server requires authorization, so it won't connect anonymously — your agent can't sign you in on its own. When your client connects (after the reload in Step 2), it detects that Bitrise needs authorization and starts the sign-in in your browser. How you start it differs by client — in Claude Code, run `/mcp`, select **bitrise**, and start the sign-in.
+
+On the Bitrise sign-in page:
+
+1. **Sign in or sign up.** Choose **GitHub**, **Bitbucket**, **Google**, or another social provider, or use an **email and password**. You can create a brand-new account right here — there's no separate website sign-up.
+2. **Approve the connection.** Bitrise shows a consent screen naming the application that's asking for access. Approve it to continue.
+
+When you approve, your browser hands the authorization back to your agent automatically. There's nothing to copy or paste.
+
+:::tip[Your website session comes with it]
+
+Signing in here also signs you in on [app.bitrise.io](https://app.bitrise.io) in the same browser, so you won't be asked to log in again when you open the dashboard.
+
+:::
+
+### Step 4: Confirm your email (email and password only)
+
+If you created your account with an email and password, Bitrise sends a confirmation email **immediately** and shows a "confirm your email" screen. Social sign-ins (GitHub, Bitbucket, Google) skip this step — they're already verified by the provider.
+
+- Open the email on **any device** — the computer running your agent, your phone, whatever's handy — and click the confirmation link.
+- The confirmation screen **polls for you**, so it doesn't matter where you click the link. Once your email is confirmed, the screen detects it within a few seconds, reloads itself, and continues the authorization automatically.
+- You don't need to return to the original window or re-enter anything. When confirmation lands, the flow picks up where it left off.
+
+### Step 5: Confirm the connection
+
+Once you're authorized, your agent can call any enabled Bitrise tool. Confirm the connection by asking it to run the `me` or `list_workspaces` tools. If you're new, a <GlossTerm baseform="workspace">Workspace</GlossTerm> is created for you automatically. To see how Workspaces organize your apps and team, read the [Workspaces overview](/en/bitrise-platform/workspaces/workspaces-overview).
+
+## Using a personal access token instead
+
+The OAuth flow issues and refreshes short-lived tokens behind the scenes, so you stay connected without managing credentials. If your client ever loses authorization (for example after a long idle period), it simply reopens the browser sign-in.
+
+If you prefer a fixed credential — for CI, scripts, or a client that doesn't support OAuth — create a durable [personal access token](/en/bitrise-platform/accounts/personal-access-tokens) at [Account settings → Security](https://app.bitrise.io/me/account/security) and add it as an `Authorization` header instead of relying on OAuth:
+
+<Tabs>
+<TabItem value="claude-code" label="Claude Code" default>
+
+```bash
+claude mcp remove bitrise && claude mcp add --transport http bitrise https://mcp.bitrise.io -H "Authorization: Bearer <token>"
+```
+
+</TabItem>
+<TabItem value="cursor" label="Cursor">
+
+```json
+{ "mcpServers": { "bitrise": { "url": "https://mcp.bitrise.io", "headers": { "Authorization": "Bearer <token>" } } } }
+```
+
+</TabItem>
+<TabItem value="vs-code" label="VS Code">
+
+```json
+{ "servers": { "bitrise": { "type": "http", "url": "https://mcp.bitrise.io", "headers": { "Authorization": "Bearer <token>" } } } }
+```
+
+</TabItem>
+<TabItem value="claude-desktop" label="Claude Desktop">
+
+```json
+{ "mcpServers": { "bitrise": { "command": "npx", "args": ["mcp-remote", "https://mcp.bitrise.io", "--header", "Authorization: Bearer <token>"] } } }
+```
+
+</TabItem>
+</Tabs>
+
+## Reconnecting the MCP client
+
+Editing the config in Step 2 takes effect only after the client reloads the Bitrise MCP server. Some clients also surface the OAuth sign-in here (for example, Claude Code's `/mcp` is where you authenticate). How you reload depends on the client:
+
+- **Claude Code (CLI):** Run `/mcp` to view, reconnect, and authenticate the server, or quit and relaunch `claude`.
+- **VS Code (GitHub Copilot):** Open the Command Palette (`Cmd/Ctrl+Shift+P`), run **MCP: List Servers**, select **bitrise**, and choose **Restart**, or run **Developer: Reload Window**.
+- **Cursor:** Open **Settings → MCP (Tools)** and toggle the **bitrise** server off and on, or click its refresh icon. Restarting Cursor also works.
+- **Claude Desktop:** Quit the app fully (`Cmd+Q` on macOS, or quit from the system tray on Windows) and reopen it. Closing the window alone doesn't reload it.
+- **Other clients (Windsurf, Gemini CLI, AWS Kiro):** Restart the client, or its MCP connection if it exposes one.
+
+## If something goes wrong
+
+- **No sign-in prompt appeared:** Reload the MCP server in your client (see [Reconnecting the MCP client](#reconnecting-the-mcp-client)) to re-trigger the authorization prompt — in Claude Code, run `/mcp` and start the sign-in for **bitrise**.
+- **You closed the page before approving:** Trigger any Bitrise tool again and your client restarts the sign-in.
+- **You're stuck on the "confirm your email" screen:** Click the confirmation link in the email Bitrise sent (check your spam folder). The screen polls every few seconds and continues on its own once your email is confirmed — there's no need to refresh.
+- **"This email is already registered" during sign-up:** You already have a Bitrise account. Go back and **sign in** with that provider or email instead of creating a new one.
+
+## After your account is created
+
+The same MCP connection now drives the rest of Bitrise: [creating apps and connecting repositories](/en/bitrise-ci/getting-started/adding-a-new-project), [configuring `bitrise.yml`](/en/bitrise-ci/configure-builds/configuration-yaml/configuration-yaml-overview), triggering builds, reading logs, and managing artifacts and distribution. You can also limit which tool groups the server exposes, as described in [Tools](/en/bitrise-platform/ai/bitrise-mcp/tools).
+
+For conventions and a guided walkthrough of connecting your repository and running your first build, install the Bitrise agent skill:
+
+```bash
+npx skills add bitrise-io/agent-skills
+```
+
+This installs the `using-bitrise-ci` skill, which loads automatically on Bitrise CI topics. Invoke it explicitly with `/using-bitrise-ci`, or add `--global` to install it across all your projects.
+
+New to Bitrise? Start with [Getting started](/en/bitrise-ci/getting-started/getting-started) and the [key Bitrise concepts](/en/bitrise-ci/getting-started/key-bitrise-concepts). To see what else Bitrise can do with AI, see [AI features on Bitrise](/en/bitrise-platform/ai/ai-features-on-bitrise).
+
+## Related links
+
+- [Bitrise MCP](/en/bitrise-platform/ai/bitrise-mcp): what the MCP server is and how to authenticate.
+- [Tools](/en/bitrise-platform/ai/bitrise-mcp/tools): enable or disable specific tool groups.
+- [Bitrise MCP repository](https://github.com/bitrise-io/bitrise-mcp): source, install guides, and the tool reference.
+- [Bitrise agent skills](https://github.com/bitrise-io/agent-skills): the `using-bitrise-ci` knowledge skill.

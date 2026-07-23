@@ -1,0 +1,112 @@
+name: Sync API references
+
+# Keeps the generated API references (Bitrise CI + RDE) in sync with their
+# hosted OpenAPI specs. Runs nightly and on demand ("Run workflow"). For each
+# spec, when the hosted spec has actually changed, it regenerates that one
+# reference and opens a PR for review — it never commits to main directly.
+#
+# Each spec runs as its own matrix job → its own PR, so the two products stay
+# independent (separate review, separate branches, one host being down doesn't
+# block the other).
+on:
+  schedule:
+    - cron: '0 6 * * *' # 06:00 UTC daily
+  workflow_dispatch:
+
+concurrency:
+  group: sync-api-references
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # one spec's host being down shouldn't block the other
+      matrix:
+        include:
+          - name: Bitrise CI
+            spec: bitriseCI
+            sync_script: scripts/sync_api_spec.py
+            branch: auto/ci-api-sync
+            title: 'docs: sync Bitrise CI API reference from updated spec'
+            paths: |
+              api/bitrise-ci.json
+              scripts/api_spec_sync_state.json
+              docs/bitrise-api/api-reference
+          - name: RDE
+            spec: bitriseRDE
+            sync_script: scripts/sync_rde_spec.py
+            branch: auto/rde-api-sync
+            title: 'docs: sync RDE API reference from updated spec'
+            paths: |
+              api/bitrise-rde.json
+              scripts/rde_spec_sync_state.json
+              docs/bitrise-rde-api/api-reference
+    steps:
+      - uses: actions/checkout@v4
+
+      # Refreshes the committed snapshot only when the hosted spec's content
+      # changed (ETag conditional GET + SHA gate; see scripts/spec_sync.py).
+      - name: Check for ${{ matrix.name }} spec changes
+        id: sync
+        run: |
+          python3 ${{ matrix.sync_script }} | tee sync-result.json
+          status=$(python3 -c "import json; print(json.load(open('sync-result.json'))['status'])")
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          rm -f sync-result.json
+
+      - name: Set up Node
+        if: steps.sync.outputs.status != 'unchanged'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Cache node_modules
+        if: steps.sync.outputs.status != 'unchanged'
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            !node_modules/.cache
+          key: node-modules-${{ runner.os }}-node20-${{ hashFiles('package-lock.json', 'patches/**') }}
+
+      # gen-api-docs only writes files that don't already exist (see the
+      # plugin's CLI source) — it never overwrites content for operations
+      # that were already generated in a prior run. clean-api-docs must run
+      # first so a changed spec is actually reflected, not just skipped.
+      - name: Regenerate the ${{ matrix.name }} reference
+        if: steps.sync.outputs.status != 'unchanged'
+        run: |
+          npm install
+          npm run docusaurus -- clean-api-docs ${{ matrix.spec }}
+          npm run docusaurus -- gen-api-docs ${{ matrix.spec }}
+          node scripts/patch-api-info.js
+
+      # Opens (or updates) a PR with the regenerated reference. Uses a PAT/App
+      # token when available so the PR triggers the deploy preview + checks;
+      # falls back to GITHUB_TOKEN (PR opens, but no downstream checks run).
+      - name: Open PR
+        if: steps.sync.outputs.status != 'unchanged'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.DOCS_SYNC_TOKEN || github.token }}
+          base: main
+          branch: ${{ matrix.branch }}
+          delete-branch: true
+          add-paths: ${{ matrix.paths }}
+          commit-message: ${{ matrix.title }}
+          title: ${{ matrix.title }}
+          labels: |
+            automated
+            documentation
+          body: |
+            Automated regeneration of the ${{ matrix.name }} API reference — the
+            hosted spec changed since the last sync. The spec change is reviewable
+            in the committed snapshot diff; merge to publish.
+
+            Triggered by `.github/workflows/sync-api-references.yml`.

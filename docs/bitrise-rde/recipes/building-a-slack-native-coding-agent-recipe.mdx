@@ -1,0 +1,117 @@
+---
+title: "Building a Slack-native coding agent"
+description: "A reference architecture for a Slack-native coding agent that turns tickets and threads into reviewed pull requests, using a locked-down orchestrator and disposable Remote Dev Environments for the actual coding work."
+sidebar_position: 2
+slug: /bitrise-rde/recipes/building-a-slack-native-coding-agent-recipe
+---
+
+import GlossTerm from '@site/src/components/GlossTerm';
+
+This recipe describes an architecture for a Slack-native coding agent: assign it a ticket or @mention it in a thread, and it reads the requirements, posts a plan, spins up a disposable dev machine, writes and tests the code, opens a pull request, reacts to review comments and CI results as they arrive, and cleans up after itself once the pull request merges.
+
+The core idea is a separation of concerns: a small, locked-down orchestrator lives in Slack and never touches code directly. It delegates all actual coding to disposable <GlossTerm baseform="remote dev environment">Remote Dev Environments</GlossTerm> (RDEs). An open source reference implementation of this architecture, **bitclaw**, is available at [github.com/bitrise-io/bitclaw-public](https://github.com/bitrise-io/bitclaw-public). For details, see [Reference implementation](#reference-implementation) below.
+
+## What the agent does
+
+Typical requests sent to the agent in Slack:
+
+- Clean up a feature flag that's already fully rolled out.
+- Push a stalled pull request until CI turns green.
+- Upgrade a dependency, using a previous pull request as a reference for the pattern.
+- Investigate a support ticket.
+- Add more context to an error message surfaced in a monitoring tool.
+
+Assigning a ticket to the agent's user is enough to start work. It posts a short acknowledgment in a shared channel, then updates the thread only at milestones: plan, dev session created, code pushed, pull request opened, CI result, review feedback addressed, merged, cleanup done. It doesn't narrate every intermediate step.
+
+Both the pull request and the ticket are anchored to the thread that owns them, so review comments, CI results, and ticket transitions flow back into the session as they happen. The agent reacts to these events on its own: it addresses reviewer feedback, answers follow-up questions on the ticket, and once the merge lands, tears down its dev environment and transitions the ticket.
+
+The same loop scales to larger, longer-running work — a multi-file refactor that spans several days and multiple rounds of merge conflicts, for example — without requiring more from a human than periodic review.
+
+## Why build a custom orchestrator
+
+An agent like this touches everything sensitive at once: source code, credentials, the ticket tracker, and — on public repositories — the open internet. A generic, off-the-shelf agent can't encode the things that make an agent trustworthy for a specific team: which authors it may listen to, which actions need a human's approval, what "done" means in your workflow.
+
+Owning the orchestrator keeps all of that as code you control: which tools the agent holds, trust rules written as executable checks rather than system-prompt instructions, and a workflow tuned to how your team actually works.
+
+The orchestrator itself doesn't need to be large. It can be a single small service, and — since it only relays, plans, and calls tools rather than executing code — it's a reasonable target to bootstrap using a coding agent in the same delegate-review-merge loop it will later run for others.
+
+## Core principle: the orchestrator can't code
+
+The design has one load-bearing rule: **the orchestrator is not a coder.**
+
+- One Slack thread is one session, backed by one persistent conversation, so context isn't lost between messages, webhooks, and follow-ups that arrive days later.
+- Every capability is a narrowly scoped tool: post to Slack, read and manage pull requests, read the ticket tracker, query observability tooling for logs and metrics, and create and drive RDE sessions.
+- Pull requests and tickets are anchored to the thread that owns them, so a review comment, a CI result, or a ticket transition arrives as a message in the right conversation. The agent reacts to events instead of polling for them.
+- The orchestrator has no shell and no file access. It can't run code, and it can't read source code through the ticket tracker or source control APIs: deny those tools in code, not in the prompt.
+
+```
+ Ticket assignment ────┐
+ Slack @mention ───────┼──► one Slack thread = one session (the orchestrator)
+ Webhooks (PR, CI) ────┘        │                          ▲
+                                │ creates and drives        │ review, CI, and ticket
+                                ▼                           │ events route back
+                        RDE session ───── git push ──► pull request
+                        (coding agent + full toolchain)
+```
+
+## Where Remote Dev Environments fit
+
+Everything a coding agent needs — cloning repositories, installing packages, running build tools and test suites, executing whatever a `Makefile` says — is exactly what shouldn't run on the machine holding the orchestrator's credentials. Give every task its own disposable machine instead:
+
+- **One template, one tool call.** Create every coding machine from a single pinned <GlossTerm baseform="rde template">template</GlossTerm>: the stack, the machine type, and a warmup script that installs the coding agent, sets up a git-only SSH identity, and starts the agent in a persistent terminal session. Pass credentials through <GlossTerm baseform="saved input">saved inputs</GlossTerm> and session inputs: encrypted, never baked into an image.
+- **A brief, not a babysitter.** Create each session with a self-contained task brief: the repository, the ticket, the acceptance criteria, the branch rules — plus one behavioral instruction: never block on input; pick the most defensible default, document the assumption in the commit message and pull request description, and continue. Pull request review is where a wrong assumption gets corrected.
+- **Isolation as the security model.** Give the coding agent a push-scoped SSH key and no API access to the ticket tracker or source control platform: git is its only interface to the outside world. Even if injected text in a codebase manipulates it, the blast radius is a pushed branch that still has to survive human review. The orchestrator's credentials never touch the machine, and the machine is deleted when the work is done.
+- **A dev environment that matches CI.** Run RDE sessions on the same infrastructure and <GlossTerm baseform="stack">stacks</GlossTerm> as your CI, so "the tests pass in the session" and "the tests pass in CI" are the same claim. When CI fails, relay the failing check into the session so the coding agent can reproduce it in a matching environment.
+- **One machine per task.** Running several tickets in parallel means several isolated environments with no contention.
+- **A standard tool interface.** Creating, driving, and deleting sessions are ordinary tool calls on the [RDE MCP server](/en/bitrise-rde/rde-options/bitrise-rde-mcp-server). Any AI assistant that speaks the Model Context Protocol can drive sessions the same way, so there's no bespoke integration to build.
+
+## Best practices
+
+A few rules worth treating as non-negotiable when running an agent like this against real repositories:
+
+- **Put guardrails in code, not prompts.** A system prompt steers behavior; it doesn't enforce it. Which tools exist, whose text the agent may read, and what needs approval should be hard checks that a prompt injection can't talk its way past.
+- **Treat every near-miss as a guardrail gap.** If the agent ever merges its own pull request the moment it sees an approval, require an explicit human instruction to merge from then on. On public repositories, redact untrusted authors' text before it reaches the model, and gate every write visible to the outside world behind an approve/reject step.
+- **Keep humans on the two decisions that matter.** Merging, and anything the outside world can see. Planning, coding, testing, and replying to reviewers work better without a human in the loop.
+- **Make "stop" always work.** Handle a stop command outside the normal message queue so it interrupts a running turn instead of waiting behind it.
+- **Fail closed.** When the agent can't confirm an author is trusted, a repository is private, or a check succeeded, assume the unsafe answer and hold.
+- **Delegate the thinking, not just the typing.** Don't have the orchestrator read source code, even to plan. The coding agent, sitting in front of the full working tree inside the RDE, should plan its own work. The moment a task requires understanding code, it belongs in the RDE.
+
+## Reference implementation
+
+**bitclaw** is an open source reference implementation of this architecture: [github.com/bitrise-io/bitclaw-public](https://github.com/bitrise-io/bitclaw-public). It's MIT-licensed and intended to be studied and adapted rather than run as-is in production: SQLite instead of a managed database, polling instead of a push channel, plain logs. Its README documents each guardrail together with the failure mode that motivated it.
+
+Setup is tiered, so you can see it respond in minutes and grow it into a coding agent from there:
+
+| Tier | You configure | The agent can |
+|---|---|---|
+| 1.&nbsp;Chat | A Slack app and an Anthropic API key | Answer when @mentioned in Slack |
+| 2.&nbsp;Code | A Bitrise token, workspace, and an RDE template | Clone repositories, write code, push branches |
+| 3.&nbsp;Ship | A GitHub token, a trusted org, and a webhook | Open pull requests, react to reviews and CI, merge on your go-ahead |
+
+Tier 1 is a single `docker run` with three environment variables:
+
+```bash
+docker run -it --rm \
+  -v bitclaw-data:/data -v bitclaw-claude:/home/app/.claude \
+  -p 8080:8080 \
+  -e SLACK_BOT_TOKEN=xoxb-your-bot-token \
+  -e SLACK_APP_TOKEN=xapp-your-app-token \
+  -e ANTHROPIC_API_KEY=sk-ant-your-api-key \
+  bitriseio/bitclaw-public:latest
+```
+
+Tier 2 is the reason the repository exists: its `docs/rde-template.md` guide walks through building the coding-agent template — a warmup script and a handful of saved inputs — after which the bot delegates real coding work to RDE sessions.
+
+:::caution[Do your own threat modeling]
+
+bitclaw's guardrails were built against real incidents, but they're a reference, not a guarantee. Review the security model and adapt it to your own trust boundaries before pointing an autonomous agent at your repositories.
+
+:::
+
+## Next steps
+
+- [Quickstart](/en/bitrise-rde/getting-started/quickstart): create your first RDE session in three commands.
+- [Key concepts](/en/bitrise-rde/getting-started/key-concepts): sessions, templates, saved inputs, and the session lifecycle.
+- [Templates](/en/bitrise-rde/configuration/templates): define the reusable environment your coding agent runs in.
+- [Saved inputs](/en/bitrise-rde/configuration/saved-inputs): store the credentials your sessions need, once.
+- [MCP server for AI agents](/en/bitrise-rde/rde-options/bitrise-rde-mcp-server): the tool surface any agent can use to drive RDE.

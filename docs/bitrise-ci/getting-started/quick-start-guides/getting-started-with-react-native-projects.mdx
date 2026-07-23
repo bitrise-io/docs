@@ -8,9 +8,11 @@ slug: /bitrise-ci/getting-started/quick-start-guides/getting-started-with-react-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
-import Partial_InstallingDependenciesForIonicCordovaReactApps from '@site/src/partials/installing-dependencies-for-ioniccordovareact-apps.mdx';
+import Partial_InstallingJavaScriptDependenciesForReactNativeIonicCordovaAndExpo from '@site/src/partials/installing-javascript-dependencies-for-react-native-ionic-cordova-and-expo.mdx';
 import Partial_TestingYourReactNativeApp from '@site/src/partials/testing-your-react-native-app.mdx';
 import Partial_NOTEDoYouHaveABitriseAccount from '@site/src/partials/note-do-you-have-a-bitrise-account.mdx';
+import Partial_GettingToTheProjectSettingsPage from '@site/src/partials/getting-to-the-project-settings-page.mdx';
+import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
 
 :::tip[Expo projects]
 
@@ -25,93 +27,23 @@ You can easily set up and configure your React Native project on [Bitrise](https
 
 ## Adding a React Native project to Bitrise
 
-This procedure will guide you through the process of adding your React Native project to Bitrise, connecting your repository, setting up your repository access, selecting a branch and validating your project. Below we highlight some React Native-specific configuration as well.
+Add your project the same way as any other: see [Adding a new project](/en/bitrise-ci/getting-started/adding-a-new-project) for the full walkthrough of the wizard. This section covers what's specific to React Native.
 
-1. Log in to Bitrise and go to the **Dashboard**.
-1. Click the **New project** button.
-1. Select **Configure Bitrise CI**.
-1. Under **Project access**, select the <GlossTerm baseform="workspace">workspace</GlossTerm> that will own the project.
+### How the scanner detects a React Native project
 
-   ![20251219-adding-project-workspace-select.png](/img/_paligo/uuid-d1d45e63-f66b-fd5d-f4af-4d893ff388fb.png)
-1. Set who has access to the project's CI builds:
+The <GlossTerm baseform="project scanner">project scanner</GlossTerm> looks for a `package.json` file that lists `react-native` as a dependency, skipping anything under `node_modules`. It then checks for an `ios/` and an `android/` directory next to it, and only registers the project as React Native if at least one of them exists.
 
-   :::caution[Privacy is final]
+The scanner also checks whether your project uses Expo: if `package.json` lists `expo` as a dependency and there's an `app.json`, `app.config.js`, or `app.config.ts` file alongside it, Bitrise treats the project as Expo-based instead, and skips the native `ios/`/`android/` check. See [Getting started with Expo projects](/en/bitrise-ci/getting-started/quick-start-guides/getting-started-with-expo-projects) for that flow.
 
-   You cannot change this setting later! If you realize you've accidentally added your project as a public project even though you need it to be private, you'll have to delete the project and add it again.
+### What you can configure
 
-   :::
+During the **CI configuration** stage, the wizard shows:
 
-   Private projects are only accessible to you, your workspace members and those who are invited to work on a project. They require authentication to access the repository of the project.
+- **React Native project directory**: the directory containing your `package.json` file.
+- For the Android part of your project: **Project root directory**, **Module** (defaults to `app`), and **Variant** (defaults to `Debug`).
+- For the iOS part of your project: **Project or workspace path**, **Scheme name**, and **Distribution method**.
 
-   [Public projects](/en/bitrise-platform/projects/public-projects) expose their <GlossTerm baseform="configuration yaml">configuration YAML</GlossTerm> and their build logs to everyone. If you have a public project’s build URL, you can view its build log, to help with troubleshooting, for example. Public projects do not require authentication and they cannot have SSH keys.
-1. Open the **Provider** dropdown menu and select the [repository access](/en/bitrise-platform/repository-access/about-repository-access) type.
-
-   You can select from:
-
-   - Connected Git provider accounts: Either via [OAuth connection](/en/bitrise-platform/repository-access/repository-access-with-oauth) or the [GitHub app integration](/en/bitrise-platform/repository-access/github-app-integration).
-   - Not connected Git provider accounts: you will be prompted to connect one.
-   - **Other**: A Git provider other than GitHub/GitLab/Bitbucket.
-
-   ![20251219-repo-access.png](/img/_paligo/uuid-2970ac6b-3d97-8318-0863-aff6e1f106da.png)
-1. Select a repository.
-
-   - If you selected a connected Git account, you can click **Select a repository** to select from the available repositories on that account.
-   - In any case, you can type the URL manually in the **Git repository (clone) URL**. We strongly recommend using an SSH URL, unless you are setting up a [public project](/en/bitrise-platform/projects/public-projects).
-
-   :::note[Repository URL]
-
-   You will be able to [change your project's repository URL](/en/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch) later. You can also connect or disconnect your account to Git provider services at any time.
-
-   :::
-1. If you use an OAuth connection, you need to [add an SSH key](/en/bitrise-platform/repository-access/configuring-ssh-keys) in the **Authorize Bitrise** section.
-
-   You don't need SSH keys if:
-
-   - Your project is a public project.
-   - You connect to your Git repository via a [GitHub app installation](/en/bitrise-platform/repository-access/github-app-integration).
-
-   ![20251219-authorize-bitrise.png](/img/_paligo/uuid-cd752575-c17c-0ccd-25b3-a2c97daadd57.png)
-
-   **Auto-add a generated SSH key to your repository**: We recommend using this option. We automatically generate an SSH key pair and register the public key to your repository. Requires your connected Git provider account to have admin rights to the repository.
-
-   **Copy a generated SSH key to your Git provider manually**: We generate an SSH key pair for you and you can copy the public key and register it manually to your Git provider. It is useful if, for example, you need to access multiple repositories with the same SSH key.
-
-   **Add your own SSH key to Bitrise**: You can generate your own SSH key and paste the private key here after choosing this option. You also need to add the public key to the repository manually. To generate your SSH key pair: [Generating your own SSH keypair](/en/bitrise-platform/repository-access/configuring-ssh-keys#generating-your-own-ssh-keypair).
-
-   :::note[Configure SSH keys at any time]
-
-   If you can't set up a valid, working SSH key connection at this time, don't worry: proceed with adding your project. You can set up the SSH connection afterwards: [Configuring SSH keys](/en/bitrise-platform/repository-access/configuring-ssh-keys).
-
-   :::
-1. Select the default branch of your repository. This branch should contain the configuration of your project.
-
-   - If you successfully configured SSH access in the previous step or if you're adding a public project, Bitrise will parse your repository and allow you to select a branch from a dropdown menu.
-   - If you didn't configure repository access, you need to type the branch name manually.
-
-   [You can change the default branch of the project later](/en/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch).
-
-   ![20251219-choose-branch.png](/img/_paligo/uuid-95a678d3-4251-c9b6-555a-6a1a0b48ae24.png)
-1. Select **Yes, auto-detect configuration**. Bitrise will scan your repository and attempt to set up a <GlossTerm baseform="stack">stack</GlossTerm> and default <GlossTerm baseform="workflow">Workflows</GlossTerm> based on the results of the scan. In most cases, we recommend choosing this option.
-
-   :::note[Project type]
-
-   Detecting a project type serves to assist in the initial configuration of your project. But don't worry, you can change every setting, including the project type, at any time after you added the project.
-
-   :::
-1. Wait while Bitrise is validating your project. If your configuration files are available on the selected branch, the scanner will detect your app as a React Native app.
-
-   If your project consists of only one module, that module will be automatically selected for **Module**. If your project contains more than one module, you can pick a module, but we recommend the main one!
-1. In the **Variant** field, select a variant that suits your project. Pick **Select All Variants** to build all variants. Pick **debug** or **release** if you wish to generate an APK or an IPA file.
-1. In the **Project (or Workspace)** field, select your Xcode project or Xcode Workspace path.
-1. In the **Select Scheme name**, pick a scheme name. The scanner validation will fail if you do not have a SHARED scheme in your project. You can still point Bitrise manually to your Xcode scheme but if it’s shared, we automatically detect it for you.
-1. In **Select ipa export method**, select the export method of your .ipa file: ad-hoc, app-store, development or enterprise method. Don't worry, you can change this later.
-1. Register a webhook when prompted so that Bitrise can start a build automatically when code is pushed to your repository, or a pull request is created.
-1. Once you are done, click **View Project Page** to go to the newly added project's home page. From there, you can start [editing your Workflows](/en/bitrise-ci/workflows-and-pipelines/workflows/workflows-overview) and [run builds](/en/bitrise-ci/run-and-analyze-builds/starting-builds/approving-pull-request-builds).
-
-You have successfully set up your React Native project on [bitrise.io](https://www.bitrise.io)!
-
-<Partial_InstallingDependenciesForIonicCordovaReactApps />
-
+<Partial_InstallingJavaScriptDependenciesForReactNativeIonicCordovaAndExpo />
 
 ## Code signing for React Native projects
 
@@ -121,18 +53,15 @@ A React Native project can consist of an Android and an iOS project. Both have d
 
 All Android apps must be digitally signed with a certificate before they can be installed on Android devices. On Bitrise, you can use our dedicated <GlossTerm baseform="step">Step</GlossTerm> for this purpose but first you'll need a keystore file.
 
-1. [Generate a keystore file](https://developer.android.com/studio/publish/app-signing#generate-key)[Generate a keystore file](https://reactnative.dev/docs/signed-apk-android#generating-an-upload-key).
-1. Open your project on Bitrise with a user that has the **Admin** [role on the project](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
-1. On the main page of the project, click on the **Project settings** button.
-
-   ![project-settings-button.png](/img/_paligo/uuid-14defaa4-472c-2d09-84df-145dc3aef4f5.png)
+1. [Generate a keystore file](https://reactnative.dev/docs/signed-apk-android#generating-an-upload-key).
+1. <Partial_GettingToTheProjectSettingsPage />
 1. On the left, select **Code signing** from the menu.
 1. On the **Android** tab, click **Add keystore file**.
 1. In the dialog, drag-and-drop the file and fill out the required fields then click **Continue**
 
    ![keystore-alias.png](/img/_paligo/uuid-0b79fc48-3861-0744-0f53-53a6c65ffc2c.png)
 1. Open the <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>.
-1. Add the **Android Sign****Generate cordova build configuration** Step to your Workflow.
+1. Add the **Android Sign** Step to your Workflow.
 
    If you uploaded your keystore file and filled out the metadata, the required inputs of the Step are already filled and require no more configuration from you.
 
@@ -154,7 +83,7 @@ You can easily create a signed IPA file for your Xcode project with Bitrise.
 
 - You have set up [Apple service connection](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services) on Bitrise.
 - Your [code signing files are managed correctly](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects).
-- You set the relevant inputs of our **Xcode Archive and Export for iOS** Step.
+- You set the relevant inputs of our **Xcode Archive & Export for iOS** Step.
 
 :::important[Upload the distribution AND the development signing certificates]
 
@@ -274,12 +203,11 @@ You can share the generated binary file (APK for Android or an IPA file for iOS)
 
 The **Deploy to Bitrise.io** Step does not use Expo commands and doesn’t publish to [expo.io](https://docs.expo.dev/workflow/publishing/). This Step publishes artifacts to Bitrise and is not specific to a particular platform.
 
-If you need to publish to [expo.io](https://docs.expo.dev/workflow/publishing/), set the **Run expo publish after eject?** input of the **Eject Expo** Step to `yes`. Be aware that in that case you have to provide your username and password for your Expo account to publish to [expo.io.](http://expo.io/)
+If you need to publish to [expo.io](https://docs.expo.dev/workflow/publishing/), set the **Run expo publish after eject?** input of the **Expo Eject** Step to `yes`. Be aware that in that case you have to provide your username and password for your Expo account to publish to [expo.io.](http://expo.io/)
 
 :::
 
-1. Log in to Bitrise and select **Bitrise CI** on the left, then select your project.
-1. Click the **Workflows** button on the main page.
+1. <Partial_OpeningTheWorkflowEditor />
 1. Make sure you have the **Deploy to bitrise.io** Step in your Workflow.
 1. In the **Notify: User Roles**, add the role so that only those get notified who have been granted with this role. Or fill out the **Notify: Emails** field with email addresses of the users you want to notify.
 
@@ -319,25 +247,12 @@ If all goes well, your app will be submitted to App Store and you can distribute
 
 You can use the **Deploy to Google Play** Step in your Workflow to upload your digitally signed AAB/APK to the Google Play Store.
 
-1. Add the **Cordova archive** or the **Ionic archive** Step to your Workflow.
-
-   Note that if you’re building for both iOS and Android in one project, and either of your apps fails, the whole **Cordova archive/Ionic archive** Step will fail.
-1. Fill in the required inputs.
-
-   - The **Platform** input needs to be set to **device**.
-   - The **Build command configuration** input must match the **Build configuration** input of the **Generate cordova build configuration** Step.
-
-   The archive Step must come after the **Generate cordova build configuration** Step in the Workflow.
+1. Make sure your Workflow includes the **Android Build** Step and that it runs before the **Android Sign** Step.
 1. [Configure code signing](/en/bitrise-ci/getting-started/quick-start-guides/getting-started-with-react-native-projects#signing-your-android-project) for your app.
 1. [Configure Google Play access.](/en/bitrise-ci/deploying/android-deployment/generating-and-deploying-android-app-bundles#setting-up-google-play-deployment-for-the-first-time)
 
    You only need to do this for your very first Google Play deployment of the app.
-1. In the **Flutter Build** Step, find the **Android Platform Configs** input group and make sure the **Additional parameters** input has the value `--release`.
-1. In the **Android output artifact type** input field, select either **APK** or **appbundle** depending on your deployment requirements.
-1. In the **Output (.apk, .aab) pattern** input, set the path where the **Deploy to Google Play** Step will be able to access the generated binary.
-
-   The path should be relative to the project source directory, stored in the BITRISE_SOURCE_DIR Environment Variable.
-1. Make sure you have the **Deploy to Google Play** Step after the **Android Sign****Cordova Archive** or **Ionic Archive** Step in your Workflow.
+1. Make sure you have the **Deploy to Google Play** Step after the **Android Sign** Step in your Workflow.
 1. Fill out the required input fields as follows:
 
    - **Service Account JSON key file path**: This field can accept a remote URL so you have to provide the Env Var which contains your uploaded service account JSON key. For example: `$BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL`.
