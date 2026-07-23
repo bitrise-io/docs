@@ -178,7 +178,7 @@ const config: Config = {
       // the same escape rules as inline content.
       fileContent = expandListPartials(fileContent);
       const ALLOWED = new Set([
-        'Tabs', 'TabItem', 'GlossTerm',
+        'Tabs', 'TabItem', 'GlossTerm', 'NT',
         'SwaggerUIEmbed',
         'br', 'hr', 'sup', 'sub', 'strong', 'em', 'code', 'pre', 'p',
         'div', 'span', 'a', 'img', 'ul', 'ol', 'li',

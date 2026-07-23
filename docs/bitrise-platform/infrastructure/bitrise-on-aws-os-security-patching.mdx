@@ -8,53 +8,54 @@ slug: /bitrise-platform/infrastructure/bitrise-on-aws--os-security-patching
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-On AWS, security patching and maintenance are governed by the [Shared Responsibility Model](https://aws.amazon.com/compliance/shared-responsibility-model/). For Bitrise, the most important issues are the following:
+On <NT>AWS</NT>, security patching and maintenance are governed by the [Shared Responsibility Model](https://aws.amazon.com/compliance/shared-responsibility-model/). For <NT>Bitrise</NT>, the most important issues are the following:
 
 - Host AMI updates
-- Bitrise VM image updates (if applicable)
+- <NT>Bitrise</NT> VM image updates (if applicable)
 
-The responsibilities regarding these tasks are shared between Bitrise and the customer. The exact responsibilities differ based on the AWS environment: different policies apply to macOS and Linux environments.
+The responsibilities regarding these tasks are shared between <NT>Bitrise</NT> and the customer. The exact responsibilities differ based on the <NT>AWS</NT> environment: different policies apply to macOS and <NT>Linux</NT> environments.
 
 
 ## macOS virtualized environment
 
-Bitrise on AWS offers AMIs with VM images of our [stable stacks](https://bitrise.io/stacks/) (not edge stacks) for the macOS virtualized environment.
+<NT>Bitrise</NT> on <NT>AWS</NT> offers AMIs with VM images of our [stable stacks](https://bitrise.io/stacks/) (not edge stacks) for the macOS virtualized environment.
 
 :::note[Regular tooling updates]
 
-Bitrise performs regular VM updates for tooling changes. When a new VM image is built due to a tooling update, the latest AWS macOS version is used for the host instance (AMI). The OS of the VM image will not change.
+<NT>Bitrise</NT> performs regular VM updates for tooling changes. When a new VM image is built due to a tooling update, the latest <NT>AWS</NT> macOS version is used for the host instance (AMI). The OS of the VM image will not change.
 
 :::
 
-| Component | Bitrise Update Frequency | Customer Responsibility |
+| Component | <NT>Bitrise</NT> Update Frequency | Customer Responsibility |
 | --- | --- | --- |
-| **Host OS** | Bitrise does not perform general OS updates. OS security patches occur only if required by our internal information security assessment (as defined in our trust center). | It is the customer’s responsibility to use the newest AMIs. |
-| **VM OS** | Bitrise does not perform general OS updates. OS security patches occur only if required by our internal information security assessment (as defined in our trust center). | It is the customer’s responsibility to use the newest AMIs. |
+| **<NT>Host</NT> OS** | <NT>Bitrise</NT> does not perform general OS updates. OS security patches occur only if required by our internal information security assessment (as defined in our trust center). | It is the customer’s responsibility to use the newest AMIs. |
+| **VM OS** | <NT>Bitrise</NT> does not perform general OS updates. OS security patches occur only if required by our internal information security assessment (as defined in our trust center). | It is the customer’s responsibility to use the newest AMIs. |
 
 
 ## macOS bare metal environment
 
-In the macOS Bare Metal environment, Bitrise on AWS offers AMIs only for [stable stacks](https://bitrise.io/stacks/) only (not edge stacks).
+In the macOS Bare Metal environment, <NT>Bitrise</NT> on <NT>AWS</NT> offers AMIs only for [stable stacks](https://bitrise.io/stacks/) only (not edge stacks).
 
-| Component | Bitrise Update Frequency | Customer Responsibility |
+| Component | <NT>Bitrise</NT> Update Frequency | Customer Responsibility |
 | --- | --- | --- |
-| **Bitrise AMI** | Bitrise uses AWS's latest macOS version as the base when building a new host AMI. We monitor macOS vulnerabilities and rebuild and publish new AMI versions when internal information security assessments dictate. | It is the customer’s responsibility to use the newest AMIs. |
+| **<NT>Bitrise</NT> AMI** | <NT>Bitrise</NT> uses <NT>AWS</NT>'s latest macOS version as the base when building a new host AMI. We monitor macOS vulnerabilities and rebuild and publish new AMI versions when internal information security assessments dictate. | It is the customer’s responsibility to use the newest AMIs. |
 
 :::note[Trust Center]
 
-Additional information on how Bitrise monitors and assesses vulnerabilities can be found in the [Trust Center](http://security.bitrise.io).
+Additional information on how <NT>Bitrise</NT> monitors and assesses vulnerabilities can be found in the [Trust Center](http://security.bitrise.io).
 
 :::
 
 
-## Linux environment
+## <NT>Linux</NT> environment
 
-Linux instances on Bitrise on AWS operate on Bare Metal only, with no virtualization or Docker. All required tooling is baked directly into the Amazon Machine Image (AMI).
+<NT>Linux</NT> instances on <NT>Bitrise</NT> on <NT>AWS</NT> operate on Bare Metal only, with no virtualization or <NT>Docker</NT>. All required tooling is baked directly into the Amazon Machine Image (AMI).
 
-| Component | Bitrise Update Frequency | Customer Responsibility |
+| Component | <NT>Bitrise</NT> Update Frequency | Customer Responsibility |
 | --- | --- | --- |
-| **Bitrise AMI** | Bitrise updates the core Linux AMI for tooling changes (for example, Android tools) only. | The customer is responsible for applying OS security patches. |
+| **<NT>Bitrise</NT> AMI** | <NT>Bitrise</NT> updates the core <NT>Linux</NT> AMI for tooling changes (for example, <NT>Android</NT> tools) only. | The customer is responsible for applying OS security patches. |
 
 
 ## Patching scenarios
@@ -63,9 +64,9 @@ The method for applying security patches differs based on whether or not you are
 
 ### Patching without the controller
 
-If you are using a manual setup, you have more flexibility for applying patches or updates in general to the instance. You can:
+If you are using a <NT>manual setup</NT>, you have more flexibility for applying patches or updates in general to the instance. You can:
 
-- Create a custom AMI: start a Bitrise AMI, make a change (like an OS patch), take a new AMI snapshot, and then configure your environment to run with the ID of this new, custom AMI.
+- Create a custom AMI: start a <NT>Bitrise</NT> AMI, make a change (like an OS patch), take a new AMI snapshot, and then configure your environment to run with the ID of this new, custom AMI.
 - Use a [user data script](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html): define your own script to execute commands upon instance startup.
 - Use SSH updates: connect to your instances via SSH to perform updates manually with a guarantee that the updates will persist.
 
@@ -77,21 +78,21 @@ You have multiple options to apply patches when using the controller:
 
   :::caution[Availability]
 
-  Be mindful of Mac EC2 availability when performing this operation.
+  Be mindful of Mac <NT>EC2</NT> availability when performing this operation.
 
   :::
-- Controller with virtualization: the VM OS on stable stacks does not receive general updates, however, Bitrise monitors for OS vulnerabilities and publishes new AMIs based on internal information security assessments. The VM warmup script runs in the fresh VM for every new build that is started. This may not be a good option for VM OS patches due to the time they consume.
+- Controller with virtualization: the VM OS on stable stacks does not receive general updates, however, <NT>Bitrise</NT> monitors for OS vulnerabilities and publishes new AMIs based on internal information security assessments. The VM warmup script runs in the fresh VM for every new build that is started. This may not be a good option for VM OS patches due to the time they consume.
 
 :::important[Custom AMIs]
 
-You cannot use a custom AMI with the Bitrise Controller, which means you cannot take a snapshot of an updated AMI and use it with the Controller. The Controller only permits specific Bitrise AMIs. If you think this may be a requirement, please [contact us](https://bitrise.io/contact) to discuss.
+You cannot use a custom AMI with the <NT>Bitrise</NT> Controller, which means you cannot take a snapshot of an updated AMI and use it with the Controller. The Controller only permits specific <NT>Bitrise</NT> AMIs. If you think this may be a requirement, please [contact us](https://bitrise.io/contact) to discuss.
 
 :::
 
 
 ## Security patching reference
 
-|  | macOS Virtualized - Controller | macOS Bare Metal - Controller | macOS Virtualized - Manual | macOS Bare Metal - Manual | Linux Bare Metal - Manual |
+|  | macOS Virtualized - Controller | macOS Bare Metal - Controller | macOS Virtualized - Manual | macOS Bare Metal - Manual | <NT>Linux</NT> Bare Metal - Manual |
 | --- | --- | --- | --- | --- | --- |
-| **Host OS Update** | Can use host warm up script to perform updates. | Can use host warm up script to perform updates. | Can use custom AMI  Can directly modify instance | Can use custom AMI  Can directly modify instance | Can use custom AMI  Can directly modify instance |
-| **VM OS Update** | Bitrise is responsible for critical security updates. | N/A | Bitrise is responsible for critical security updates. | N/A | N/A |
+| **<NT>Host</NT> OS <NT>Update</NT>** | Can use host warm up script to perform updates. | Can use host warm up script to perform updates. | Can use custom AMI  Can directly modify instance | Can use custom AMI  Can directly modify instance | Can use custom AMI  Can directly modify instance |
+| **VM OS <NT>Update</NT>** | <NT>Bitrise</NT> is responsible for critical security updates. | N/A | <NT>Bitrise</NT> is responsible for critical security updates. | N/A | N/A |

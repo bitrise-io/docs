@@ -7,32 +7,33 @@ slug: /bitrise-build-cache/build-cache-for-xcode/xcode-compilation-cache-faq
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-## What are the requirements to use Xcode Compilation Cache?
+## What are the requirements to use <NT>Xcode</NT> Compilation Cache?
 
-You need Xcode 26 and **Explicitly Built Modules enabled** (default in Xcode 26 for Swift targets)
+You need <NT>Xcode</NT> 26 and **Explicitly Built Modules enabled** (default in <NT>Xcode</NT> 26 for <NT>Swift</NT> targets)
 
-## Will this work with Swift Package Manager dependencies?
+## Will this work with <NT>Swift</NT> Package Manager dependencies?
 
-As of September 2025, SPM dependencies are not cacheable in Xcode 26 Beta. Apple is working on it and it should be available in the future.
+As of September 2025, SPM dependencies are not cacheable in <NT>Xcode</NT> 26 Beta. <NT>Apple</NT> is working on it and it should be available in the future.
 
 ## What build tasks are not cacheable?
 
 `CompileStoryboard`, `CompileXIB`, `CompileAssetCatalogVariant`, `PhaseScriptExecution`, `DataModelCompile`, `CopyPNGFile`, `GenerateDSYMFile`, and `Ld` tasks are currently not cacheable.
 
-## Will it speed up my Xcode Tests?
+## Will it speed up my <NT>Xcode</NT> Tests?
 
-Xcode Compilation Cache helps reducing compilation times. This means build and archive actions benefit the most.
+<NT>Xcode</NT> Compilation Cache helps reducing compilation times. This means build and archive actions benefit the most.
 
-In case of Xcode Test, the compilation of the tests will be faster, but running the tests won’t be quicker.
+In case of <NT>Xcode</NT> Test, the compilation of the tests will be faster, but running the tests won’t be quicker.
 
-For testing the performance benefits of Xcode compilation cache, we recommend to test with a <GlossTerm baseform="Workflow">Workflow</GlossTerm> which runs [Xcode Archive](https://bitrise.io/integrations/steps/xcode-archive) or [Xcode Build For Testing](https://bitrise.io/integrations/steps/xcode-build-for-test) (or any other build command).
+For testing the performance benefits of <NT>Xcode</NT> compilation cache, we recommend to test with a <NT><GlossTerm baseform="Workflow">Workflow</GlossTerm></NT> which runs [Xcode Archive](https://bitrise.io/integrations/steps/xcode-archive) or [Xcode Build For Testing](https://bitrise.io/integrations/steps/xcode-build-for-test) (or any other build command).
 
-## How can I disable Xcode compilation cache temporarily?
+## How can I disable <NT>Xcode</NT> compilation cache temporarily?
 
-The simplest method is to specify a custom Xcode flag: `--no-bitrise-build-cache`.
+The simplest method is to specify a custom <NT>Xcode</NT> flag: `--no-bitrise-build-cache`.
 
-This is recognized by the Bitrise wrapper and disables caching without disabling analytics. This means the invocation will show up on the UI but it will not use caching and therefore won't count towards the caching quota.
+This is recognized by the <NT>Bitrise</NT> wrapper and disables caching without disabling analytics. This means the invocation will show up on the UI but it will not use caching and therefore won't count towards the caching quota.
 
 There is another option: you can override the PATH to remove the wrapping we set up by issuing:
 
@@ -40,9 +41,9 @@ There is another option: you can override the PATH to remove the wrapping we set
 export PATH="${PATH#"$HOME/.bitrise-xcelerate/bin:"}"
 ```
 
-Note that this will be reverted in the next terminal session as the Bitrise Build Cache CLI persists, the PATH overrides in `~/.zshrc` and `~/.bashrc`.
+Note that this will be reverted in the next terminal session as the <NT>Bitrise</NT> <NT>Build Cache</NT> CLI persists, the PATH overrides in `~/.zshrc` and `~/.bashrc`.
 
-To make this persist among Bitrise <GlossTerm baseform="step">Steps</GlossTerm>, set the PATH again with envman:
+To make this persist among <NT>Bitrise</NT> <NT><GlossTerm baseform="step">Step</GlossTerm></NT>s, set the PATH again with envman:
 
 ```bash
 envman add --key PATH --value "$PATH"
@@ -50,9 +51,9 @@ envman add --key PATH --value "$PATH"
 
 ## How to pass compilation cache build flags manually?
 
-To enable compilation caching manually per-project, you can disable passing the necessary flags in the [Build Cache for Xcode](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-xcode) Step (on Bitrise CI) with the **Skip passing cache flags to xcodebuild** Step input. If you are using the Bitrise Build Cache CLI locally, you can pass the `--cache-skip-flag` to your `activate xcode` command.
+To enable compilation caching manually per-project, you can disable passing the necessary flags in the [Build Cache for Xcode](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-xcode) <NT>Step</NT> (on <NT>Bitrise CI</NT>) with the **<NT>Skip</NT> passing cache flags to xcodebuild** <NT>Step</NT> input. If you are using the <NT>Bitrise</NT> <NT>Build Cache</NT> CLI locally, you can pass the `--cache-skip-flag` to your `activate xcode` command.
 
-In this case, you either need to manually set some flags per-build, or in your project's build settings. Some might already have a named version in Xcode IDE, for example, "Enable Compilation Caching", or "Explicitly Built Modules". These are the flags we pass by default:
+In this case, you either need to manually set some flags per-build, or in your project's build settings. Some might already have a named version in <NT>Xcode</NT> IDE, for example, "Enable Compilation Caching", or "Explicitly Built Modules". These are the flags we pass by default:
 
 ```yaml
 - "COMPILATION_CACHE_ENABLE_PLUGIN":               "YES"
@@ -65,14 +66,14 @@ In this case, you either need to manually set some flags per-build, or in your p
 - "CLANG_ENABLE_MODULES":                          "YES"
 ```
 
-Learn more on how we pass these flags on Bitrise in this [blog post](https://bitrise.io/blog/post/lifting-the-hood-on-build-cache-for-xcode).
+Learn more on how we pass these flags on <NT>Bitrise</NT> in this [blog post](https://bitrise.io/blog/post/lifting-the-hood-on-build-cache-for-xcode).
 
-## What about tools that depend on Xcode Index Data Store?
+## What about tools that depend on <NT>Xcode</NT> Index Data Store?
 
-Xcode does not generate an `Index.noindex/DataStore` in DerivedData when remote compilation cache is enabled. This can cause an error if your tasks depend on the Index Data Store.
+<NT>Xcode</NT> does not generate an `Index.noindex/DataStore` in DerivedData when remote compilation cache is enabled. This can cause an error if your tasks depend on the Index Data Store.
 
 Here's an example error, generated by [Periphery](https://github.com/peripheryapp/periphery) when the Index data store isn’t found:
 
 `error: Internal Error: index store path does not exist: /Users/vagrant/Library/Developer/Xcode/DerivedData/.../Index.noindex/DataStore`
 
-Currently, there’s no solution for this. A workaround can be to use Bitrise [Build Cache for Xcode](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-xcode) with all the steps and workflows which don’t depend on the Index data store, and run the steps which do depend on the Index data store in a separate workflow where you don’t configure Bitrise Build Cache for Xcode.
+Currently, there’s no solution for this. A workaround can be to use <NT>Bitrise</NT> [Build Cache for Xcode](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-xcode) with all the steps and workflows which don’t depend on the Index data store, and run the steps which do depend on the Index data store in a separate workflow where you don’t configure <NT>Bitrise</NT> <NT>Build Cache for Xcode</NT>.

@@ -8,22 +8,23 @@ slug: /bitrise-ci/testing/test-sharding
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
 Test sharding is the process of dividing a large suite of automated tests into smaller pieces (shards), which can be executed in parallel on different runners. This significantly reduces the time it takes to provide developers with feedback on their changes, allowing them to maintain focus and iterate fast.
 
-Bitrise offers easy to use test sharding optimization features out of the box, depending on your project type and whether you want Bitrise to provide the sharding optimization calculation.
+<NT>Bitrise</NT> offers easy to use test sharding optimization features out of the box, depending on your project type and whether you want <NT>Bitrise</NT> to provide the sharding optimization calculation.
 
-| Project type | Sharding with your own shard optimization calculation | Sharding with shard optimization calculation provided by Bitrise |
+| Project type | Sharding with your own shard optimization calculation | Sharding with shard optimization calculation provided by <NT>Bitrise</NT> |
 | --- | --- | --- |
-| iOS | [Parallelism](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow) | Parallelism + Xcode Test Shard Calculation <GlossTerm baseform="step">Step</GlossTerm> |
-| Android | [Parallelism](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow) | Parallelism + [Gradle Runner](https://github.com/bitrise-io/steps-gradle-runner) Step |
+| iOS | [Parallelism](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow) | Parallelism + <NT>Xcode</NT> Test Shard Calculation <NT><GlossTerm baseform="step">Step</GlossTerm></NT> |
+| <NT>Android</NT> | [Parallelism](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow) | Parallelism + [Gradle Runner](https://github.com/bitrise-io/steps-gradle-runner) <NT>Step</NT> |
 
 
 ## Sharding with your own test split calculation
 
-If you already have a means to calculate the optimal test split for sharding, you can set up test sharding by using the [parallelism](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow) feature in your <GlossTerm baseform="Pipeline">Pipelines</GlossTerm>.
+If you already have a means to calculate the optimal test split for sharding, you can set up test sharding by using the [parallelism](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow) feature in your <NT><GlossTerm baseform="Pipeline">Pipeline</GlossTerm></NT>s.
 
-Parellelism executes the same <GlossTerm baseform="Workflow">Workflow</GlossTerm> in parallel on separate virtual machines. You manually set the number of copies you need by setting the `parallel` property of a Workflow:
+Parellelism executes the same <NT><GlossTerm baseform="Workflow">Workflow</GlossTerm></NT> in parallel on separate virtual machines. You manually set the number of copies you need by setting the `parallel` property of a <NT>Workflow</NT>:
 
 ```yaml
 ...
@@ -34,12 +35,12 @@ workflows:
 ...
 ```
 
-Each copy receives two new Environment Variables:
+Each copy receives two new <NT>Environment Variables</NT>:
 
-- $BITRISE_IO_PARALLEL_INDEX: a zero based index for each copy of the Workflow.
+- $BITRISE_IO_PARALLEL_INDEX: a zero based index for each copy of the <NT>Workflow</NT>.
 - $BITRISE_IO_PARALLEL_TOTAL: the total number of copies.
 
-You can leverage these Environment Variables to run test sharding. For example, with Jest:
+You can leverage these <NT>Environment Variables</NT> to run test sharding. For example, with Jest:
 
 ```bash
 jest --shard=$((BITRISE_IO_PARALLEL_INDEX + 1))/$BITRISE_IO_PARALLEL_TOTAL
@@ -54,28 +55,28 @@ yarn test --ci --silent --shard=$((BITRISE_IO_PARALLEL_INDEX + 1))/$BITRISE_IO_P
 To read more about how to configure parallelism, check our guide: [Parallelism in Pipelines](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow).
 
 
-## Sharding with a Bitrise Step calculating the test split
+## Sharding with a <NT>Bitrise Step</NT> calculating the test split
 
-You can have a Pipeline that automatically shards your tests based on an optimization algorithm provided by Bitrise Steps. This is supported for both iOS and Android projects.
+You can have a <NT>Pipeline</NT> that automatically shards your tests based on an optimization algorithm provided by <NT>Bitrise Steps</NT>. This is supported for both iOS and <NT>Android</NT> projects.
 
 You need to:
 
-- Create a Pipeline that both builds and tests your app.
-- Add the Steps performing the shard calculation to the Workflow that builds your app: the **[Xcode test shard calculation](https://bitrise.io/integrations/steps/xcode-test-shard-calculation)** Step for iOS projects and the **Gradle Runner** Step for Android projects.
-- Configure parallelism so that multiple copies of the testing Workflow run in parallel.
+- Create a <NT>Pipeline</NT> that both builds and tests your app.
+- Add the <NT>Steps</NT> performing the shard calculation to the <NT>Workflow</NT> that builds your app: the **[Xcode test shard calculation](https://bitrise.io/integrations/steps/xcode-test-shard-calculation)** <NT>Step</NT> for iOS projects and the **<NT>Gradle Runner</NT>** <NT>Step</NT> for <NT>Android</NT> projects.
+- Configure parallelism so that multiple copies of the testing <NT>Workflow</NT> run in parallel.
 
 <Tabs>
 <TabItem value="ios" label="iOS" default>
 
 1. Create [an Env Var](/en/bitrise-ci/configure-builds/environment-variables) that will contain the number of shards you need. For example, NUMBER_OF_SHARDS.
-1. Add the [**Xcode test shard calculation**](https://bitrise.io/integrations/steps/xcode-test-shard-calculation) Step to your Workflow that builds your Xcode app.
-1. Click the Step to open its options menu and go to the **Configuration** tab.
+1. Add the [**Xcode test shard calculation**](https://bitrise.io/integrations/steps/xcode-test-shard-calculation) <NT>Step</NT> to your <NT>Workflow</NT> that builds your <NT>Xcode</NT> app.
+1. Click the <NT>Step</NT> to open its options menu and go to the **<NT>Configuration</NT>** tab.
 1. In the **Product path** input, add your new Env Var.
 
    ![shard-calculate-product-path.png](/img/_paligo/uuid-3474472d-9f45-e08c-37a0-82dcc3516481.png)
-1. Add the **Deploy to Bitrise.io** Step to the same Workflow.
-1. Find the **Pipeline Intermediate File Sharing** input group.
-1. In the **Files to share between Pipeline Workflows** input, add two Env Vars:
+1. Add the **<NT>Deploy to Bitrise.io</NT>** <NT>Step</NT> to the same <NT>Workflow</NT>.
+1. Find the **<NT>Pipeline</NT> Intermediate File Sharing** input group.
+1. In the **Files to share between <NT>Pipeline</NT> <NT>Workflows</NT>** input, add two Env Vars:
 
    - BITRISE_TEST_SHARDS_PATH
    - BITRISE_TEST_BUNDLE_PATH
@@ -83,9 +84,9 @@ You need to:
    These are output variables automatically generated.
 
    ![shards-deploy-to-bitrise.png](/img/_paligo/uuid-2b040c7d-cbee-1050-4c6e-731d228fb547.png)
-1. Open **Pipelines** and in your Pipeline, find the Workflow that runs your tests and click the gear icon to open the edit menu for the Workflow.
-1. On the **Configuration** tab, open the **Pipeline Conditions** section.
-1. Add the NUMBER_OF_SHARDS Environment Variable to the **Parallel copies** input.
+1. Open **<NT>Pipelines</NT>** and in your <NT>Pipeline</NT>, find the <NT>Workflow</NT> that runs your tests and click the gear icon to open the edit menu for the <NT>Workflow</NT>.
+1. On the **<NT>Configuration</NT>** tab, open the **<NT>Pipeline Conditions</NT>** section.
+1. Add the NUMBER_OF_SHARDS Environment Variable to the **<NT>Parallel copies</NT>** input.
 
    ![shards-pipeline.png](/img/_paligo/uuid-abd6b335-ae55-f91a-4cea-4a9df270ce2b.png)
 
@@ -94,12 +95,12 @@ You need to:
 </TabItem>
 <TabItem value="android" label="Android">
 
-1. Open your Pipeline and in the **Pipeline conditions** section, add the number of shards you need to the **Parallel copies** input.
+1. Open your <NT>Pipeline</NT> and in the **<NT>Pipeline conditions</NT>** section, add the number of shards you need to the **<NT>Parallel copies</NT>** input.
 
    For more information about how to configure parallelism: [Parallelism in Pipelines](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow).
-1. Add the **Gradle Runner** Step to your Workflow.
-1. Open the Step options and go to the **Configuration** tab.
-1. In the **Config** input group, find the **Gradle task to run** input and add the following task to it:
+1. Add the **<NT>Gradle Runner</NT>** <NT>Step</NT> to your <NT>Workflow</NT>.
+1. Open the <NT>Step</NT> options and go to the **<NT>Configuration</NT>** tab.
+1. In the **Config** input group, find the **<NT>Gradle task to run</NT>** input and add the following task to it:
 
    ```bash
    connectedAndroidTest \
@@ -107,7 +108,7 @@ You need to:
      -Pandroid.testInstrumentationRunnerArguments.shardIndex=$BITRISE_IO_PARALLEL_INDEX
    ```
 
-   The $BITRISE_IO_PARALLEL_TOTAL and $BITRISE_IO_PARALLEL_INDEX environment variables will tell Gradle which tests to apply to each shard.
+   The $BITRISE_IO_PARALLEL_TOTAL and $BITRISE_IO_PARALLEL_INDEX <NT>environment variables</NT> will tell <NT>Gradle</NT> which tests to apply to each shard.
 
    ![gradle-runner.png](/img/_paligo/uuid-b3349767-289a-0a77-f7d6-0ae2c4752ef2.png)
 

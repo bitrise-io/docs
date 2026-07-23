@@ -8,22 +8,23 @@ slug: /bitrise-platform/infrastructure/code-security
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-To guarantee the security of your code, every Bitrise build runs in its own, clean virtual machine and we discard the whole virtual machine after the build finishes, erasing every file your build uses and every change you make during your build.
+To guarantee the security of your code, every <NT>Bitrise</NT> build runs in its own, clean virtual machine and we discard the whole virtual machine after the build finishes, erasing every file your build uses and every change you make during your build.
 
-This is also true for the Android & Docker <GlossTerm baseform="Stack">stacks</GlossTerm>, which use Docker containers to run the build. The build itself still gets a full virtual machine where no other Docker container is started, only the one used as the environment of the build. In short, we only use Docker containers to manage the environment, not for build environment isolation - that’s ensured by using full virtual machines for every build.
+This is also true for the <NT>Android</NT> & <NT>Docker</NT> <NT><GlossTerm baseform="Stack">stack</GlossTerm></NT>s, which use <NT>Docker</NT> containers to run the build. The build itself still gets a full virtual machine where no other <NT>Docker</NT> container is started, only the one used as the environment of the build. In short, we only use <NT>Docker</NT> containers to manage the environment, not for build environment isolation - that’s ensured by using full virtual machines for every build.
 
-This way your builds are always protected from changes made by others and from your previous builds, no one else can access your code and you can use a stable environment to define your build <GlossTerm baseform="Workflow">Workflow</GlossTerm>. Every build is completed in an isolated environment, unrelated to any previous or parallelly running builds.
+This way your builds are always protected from changes made by others and from your previous builds, no one else can access your code and you can use a stable environment to define your build <NT><GlossTerm baseform="Workflow">Workflow</GlossTerm></NT>. Every build is completed in an isolated environment, unrelated to any previous or parallelly running builds.
 
 
 ## Source code
 
-We don’t store your source code. The source code is only accessed on the build machines (virtual machines) the way you define it in your [Bitrise configuration](/en/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml). If you don’t have a **Git Clone** <GlossTerm baseform="Step">Step</GlossTerm> or some other Step that accesses your Git repository in your configuration, then the source code won’t be touched at all. At the end of the build the whole virtual machine is destroyed. As such, any change you made to your source code on the virtual machine will be lost unless you commit your changes and push them to a remote repository.
+We don’t store your source code. The source code is only accessed on the <NT>build machines</NT> (virtual machines) the way you define it in your [Bitrise configuration](/en/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml). If you don’t have a **<NT>Git Clone</NT>** <NT><GlossTerm baseform="Step">Step</GlossTerm></NT> or some other <NT>Step</NT> that accesses your Git repository in your configuration, then the source code won’t be touched at all. At the end of the build the whole virtual machine is destroyed. As such, any change you made to your source code on the virtual machine will be lost unless you commit your changes and push them to a remote repository.
 
 
-## Code signing and other files
+## <NT>Code signing</NT> and other files
 
-The files you upload in the **Code Signing** tab of the <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm> are stored on `Amazon S3` in a way that it’s only accessible for the web servers.
+The files you upload in the **<NT>Code Signing</NT>** tab of the <NT><GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm></NT> are stored on `Amazon S3` in a way that it’s only accessible for the web servers.
 
 The required credentials are not stored in any database, it is only available in the web servers’ environment. Build servers can’t access the files directly either. When a build starts, the web server generates a read-only, time limited access URL for these files, using [Amazon S3 pre-signed URLs](https://docs.aws.amazon.com/aws-sdk-php/v3/guide/service/s3-presigned-url.html).
 

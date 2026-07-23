@@ -8,36 +8,37 @@ sidebar_label: Advanced options for Amazon EC2 Mac and Linux instances
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-For optimal use of the EC2 Mac and Linux instances, we recommend additional configuration that is not strictly required for the instances to run Bitrise builds. Some of these configuration options are best set during instance creation.
+For optimal use of the <NT>EC2</NT> Mac and <NT>Linux</NT> instances, we recommend additional configuration that is not strictly required for the instances to run <NT>Bitrise</NT> builds. Some of these configuration options are best set during instance creation.
 
 
-## Connectivity and security of your EC2 Mac and Linux instance
+## Connectivity and security of your <NT>EC2</NT> Mac and <NT>Linux</NT> instance
 
-Once your EC2 Mac or Linux instance is ready, make sure you can connect to the instance and that it can connect to the relevant Bitrise services. You can connect to the instance using SSH or in the case of EC2 Mac instances, VNC.
+Once your <NT>EC2</NT> Mac or <NT>Linux</NT> instance is ready, make sure you can connect to the instance and that it can connect to the relevant <NT>Bitrise</NT> services. You can connect to the instance using SSH or in the case of <NT>EC2</NT> Mac instances, VNC.
 
 You can also set a password for your instance.
 
 ### Instance passwords
 
-:::note[User data]
+:::note[<NT>User data</NT>]
 
 To make sure instance behavior is consistent across all instances, we recommend configuring this as part of [user data](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-console) during [instance creation](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/launching-an-ec2-instance-for-the-bitrise-ami).
 
-User data is provided either in plain text or in base64 encoded format.
+<NT>User data</NT> is provided either in plain text or in base64 encoded format.
 
 :::
 
-By default, the Bitrise AMI doesn't have user passwords. It is the subscriber's responsibility to set the desired password.
+By default, the <NT>Bitrise</NT> AMI doesn't have user passwords. It is the subscriber's responsibility to set the desired password.
 
-For an EC2 Mac instance, you need to set a user password and the default `login.keychain` password:
+For an <NT>EC2</NT> Mac instance, you need to set a user password and the default `login.keychain` password:
 
 ```bash
 sudo /usr/bin/dscl . -passwd /Users/ec2-user
 security set-keychain-password  -o "" -p "<new password>" ~/Library/Keychains/login.keychain-db
 ```
 
-For a Linux instance:
+For a <NT>Linux</NT> instance:
 
 ```bash
 sudo passwd
@@ -79,11 +80,11 @@ Make sure to enable the use of both ports in your [security group configuration]
 
 ## Pre-warming the disk after booting
 
-:::note[User data]
+:::note[<NT>User data</NT>]
 
 To make sure instance behavior is consistent across all instances, we recommend configuring this as part of [user data](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-console) during [instance creation](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/launching-an-ec2-instance-for-the-bitrise-ami).
 
-User data is provided either in plain text or in base64 encoded format.
+<NT>User data</NT> is provided either in plain text or in base64 encoded format.
 
 :::
 
@@ -120,17 +121,17 @@ We highly recommend pre-warming the disk if you use our virtualized offering.
 </Tabs>
 
 
-## Increasing disk size on an EC2 Mac instance
+## Increasing disk size on an <NT>EC2</NT> Mac instance
 
-:::note[User data]
+:::note[<NT>User data</NT>]
 
 To make sure instance behavior is consistent across all instances, we recommend configuring this as part of [user data](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-console) during [instance creation](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/launching-an-ec2-instance-for-the-bitrise-ami).
 
-User data is provided either in plain text or in base64 encoded format.
+<NT>User data</NT> is provided either in plain text or in base64 encoded format.
 
 :::
 
-If you have configured a bigger Amazon EBS storage for your EC2 Mac instance than the default (400 GB), resize the partition so macOS can use all available disk space:
+If you have configured a bigger Amazon EBS storage for your <NT>EC2</NT> Mac instance than the default (400 GB), resize the partition so macOS can use all available disk space:
 
 ```bash
 PDISK=$(diskutil list physical external | head -n1 | cut -d" " -f1)
@@ -143,12 +144,12 @@ sudo diskutil apfs resizeContainer $APFSCONT 0
 For more information, please refer to the [AWS macOS EC2 documentation](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-mac-instances.html#mac-instance-increase-volume).
 
 
-## Cleaning up your AWS build environment
+## Cleaning up your <NT>AWS</NT> build environment
 
 When running a self-hosted agent, one agent executes multiple builds (one after the other). This allows sharing of data between builds on the local filesystem, but it also requires some care in order to avoid one build affecting another.
 
 To avoid this problem, you can clean up your build environment in between builds. To do so, you need to run the [Bitrise CLI](/en/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli) on the self-hosted machines in agent mode: [Cleaning up persistent build environments](/en/bitrise-platform/infrastructure/cleaning-up-persistent-build-environments)
 
-## Using secrets in your builds running on AWS
+## Using secrets in your builds running on <NT>AWS</NT>
 
-You can use secret Environment Variables even if your organization's security policy doesn't allow you to host them on bitrise.io: [Secrets in self-hosted environments](/en/bitrise-ci/configure-builds/secrets#secrets-in-self-hosted-environments).
+You can use secret <NT>Environment Variables</NT> even if your organization's security policy doesn't allow you to host them on bitrise.io: [Secrets in self-hosted environments](/en/bitrise-ci/configure-builds/secrets#secrets-in-self-hosted-environments).

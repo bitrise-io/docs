@@ -8,21 +8,22 @@ slug: /bitrise-build-cache/build-cache-for-gradle/gradle-execution-reason-diagno
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
 Cache hit ratio is a measurement of how many content requests a cache is able to fill successfully, compared to how many requests it receives. Getting a high amount of cache misses slows down your build as it doesn't take full advantage of caching.
 
-When running Gradle tasks, a change in task inputs usually lead to a cache miss. Gradle's execution reasons can help understand why the change in inputs happened, and to debug the problem.
+When running <NT>Gradle</NT> tasks, a change in task inputs usually lead to a cache miss. <NT>Gradle</NT>'s execution reasons can help understand why the change in inputs happened, and to debug the problem.
 
-You can keep on reading to understand the details of how Gradle tasks and their caching works.
+You can keep on reading to understand the details of how <NT>Gradle</NT> tasks and their caching works.
 
-To learn how to set up diagnostic builds on Bitrise, skip ahead to [Diagnostic builds](#diagnostic-builds).
+To learn how to set up diagnostic builds on <NT>Bitrise</NT>, skip ahead to [Diagnostic builds](#diagnostic-builds).
 
 
-## Gradle tasks and caching
+## <NT>Gradle</NT> tasks and caching
 
-In the Gradle build system, the basic unit of action is a task. A task could be compiling classes, running unit tests, or creating a JAR. Each task has its own inputs, such as files or environmental variables, and outputs.
+In the <NT>Gradle</NT> build system, the basic unit of action is a task. A task could be compiling classes, running unit tests, or creating a JAR. Each task has its own inputs, such as files or environmental variables, and outputs.
 
-Tasks usually generate their output in a specific build directory which is configurable for each module. The contents of this directory can be often reused between builds on the same machine. As such, Gradle saves time by executing only the tasks that can't be reused. For other tasks, the output from the build directory is reused and the task gets the `UP-TO-DATE` label. This process is what Gradle calls an [incremental build](https://docs.gradle.org/current/userguide/incremental_build.html).
+Tasks usually generate their output in a specific build directory which is configurable for each module. The contents of this directory can be often reused between builds on the same machine. As such, <NT>Gradle</NT> saves time by executing only the tasks that can't be reused. For other tasks, the output from the build directory is reused and the task gets the `UP-TO-DATE` label. This process is what <NT>Gradle</NT> calls an [incremental build](https://docs.gradle.org/current/userguide/incremental_build.html).
 
 :::note[Incremental build vs incremental task execution]
 
@@ -30,21 +31,21 @@ Incremental builds are not the same as incremental task execution! You can read 
 
 :::
 
-### Gradle tasks in a CI environment
+### <NT>Gradle</NT> tasks in a CI environment
 
-When running Gradle in a CI environment, all tasks are either executed or retrieved from cache because the build directory is empty. After execution, Gradle saves metadata about the task inputs in the [project cache directory](https://docs.gradle.org/current/userguide/directory_layout.html). Gradle uses this metadata to be able to perfom incremental builds.
+When running <NT>Gradle</NT> in a CI environment, all tasks are either executed or retrieved from cache because the build directory is empty. After execution, <NT>Gradle</NT> saves metadata about the task inputs in the [project cache directory](https://docs.gradle.org/current/userguide/directory_layout.html). <NT>Gradle</NT> uses this metadata to be able to perfom incremental builds.
 
-For example, in the case of a compile task, Gradle saves the checksum of the source files and only re-compiles files that have changed, based on the checksums. For more information on how Gradle checks task inputs, [read Gradle’s docs on task inputs and outputs.](https://docs.gradle.org/current/userguide/incremental_build.html#sec:task_inputs_outputs)
+For example, in the case of a compile task, <NT>Gradle</NT> saves the checksum of the source files and only re-compiles files that have changed, based on the checksums. For more information on how <NT>Gradle</NT> checks task inputs, [read Gradle’s docs on task inputs and outputs.](https://docs.gradle.org/current/userguide/incremental_build.html#sec:task_inputs_outputs)
 
-If metadata is not available, Gradle will execute all tasks.
+If metadata is not available, <NT>Gradle</NT> will execute all tasks.
 
 ### Caching tasks
 
-If the metadata indicates that a task has to be executed, and the Bitrise build cache is enabled, the task inputs and certain Gradle properties such as the version are hashed into the cache key. If either the remote or local cache has a match for the cache key, the task does not have to be fully executed: its execution result is loaded from the cache and gets the `FROM-CACHE` outcome label.
+If the metadata indicates that a task has to be executed, and the <NT>Bitrise</NT> <NT>build cache</NT> is enabled, the task inputs and certain <NT>Gradle</NT> properties such as the version are hashed into the <NT>cache key</NT>. If either the remote or local cache has a match for the <NT>cache key</NT>, the task does not have to be fully executed: its execution result is loaded from the cache and gets the `FROM-CACHE` outcome label.
 
-If there is no match for the cache key in the remote or local cache (a cache miss), the task is fully executed and its outputs are stored in the cache.
+If there is no match for the <NT>cache key</NT> in the remote or local cache (a cache miss), the task is fully executed and its outputs are stored in the cache.
 
-When a task doesn't have the `UP-TO-DATE` label, the reasons for this are recorded and displayed in the task's row in the invocation details on Bitrise. Some of the possible reasons are as follows:
+When a task doesn't have the `UP-TO-DATE` label, the reasons for this are recorded and displayed in the task's row in the <NT>invocation details</NT> on <NT>Bitrise</NT>. Some of the possible reasons are as follows:
 
 - If the metadata is missing, **No history available** is displayed.
 - If the outputs are missing, **Output... has been removed** is displayed.
@@ -53,79 +54,79 @@ When a task doesn't have the `UP-TO-DATE` label, the reasons for this are record
 
 ## Diagnostic builds
 
-To understand what changes contribute to a task’s execution, you’ll need the Gradle metadata and the build outputs from a previous build. Restoring them on a CI environment simulates a local incremental build, showing the changes between builds that contribute to cache misses.
+To understand what changes contribute to a task’s execution, you’ll need the <NT>Gradle</NT> metadata and the build outputs from a previous build. Restoring them on a CI environment simulates a local incremental build, showing the changes between builds that contribute to cache misses.
 
-These builds are called diagnostic builds on Bitrise.
+These builds are called diagnostic builds on <NT>Bitrise</NT>.
 
 :::important[Debugging purposes only]
 
 Diagnostic builds heavily use [key-based caching](/en/bitrise-ci/dependencies-and-caching/key-based-caching/accessing-key-based-cache-archives) and have increased build time. Their purpose is debugging and they shouldn't be a part of your daily workflows!
 
-The archive limit for key-based cache is 15 Gb. If your app’s outputs exceed that, you can run two separate builds with the same principle, using your own artifact storage solution.
+The archive limit for key-based cache is 15 Gb. If your app’s outputs exceed that, you can run two separate builds with the same principle, using your own <NT>artifact storage</NT> solution.
 
 :::
 
-To set up and run a Gradle diagnostic build:
+To set up and run a <NT>Gradle</NT> diagnostic build:
 
 1. Create a CI configuration that:
 
-   - Saves the build outputs and Gradle metadata with the Bitrise Build Cache CLI.
+   - Saves the build outputs and <NT>Gradle</NT> metadata with the <NT>Bitrise</NT> <NT>Build Cache</NT> CLI.
    - Restores the build outputs and metadata from cache.
 1. Run an initial build to save the necessary directories in the key-based cache.
-1. Run the diagnostic build to reveal Gradle execution reasons.
+1. Run the diagnostic build to reveal <NT>Gradle</NT> execution reasons.
 
 ### Creating the CI configuration for a diagnostic build
 
-To create a CI configuration for a Gradle diagnostic build, your Bitrise <GlossTerm baseform="workflow">Workflow</GlossTerm> will need two new <GlossTerm baseform="step">Steps</GlossTerm> to save and restore build outputs, using the Bitrise Build Cache CLI.
+To create a CI configuration for a <NT>Gradle</NT> diagnostic build, your <NT>Bitrise</NT> <NT><GlossTerm baseform="workflow">Workflow</GlossTerm></NT> will need two new <NT><GlossTerm baseform="step">Step</GlossTerm></NT>s to save and restore build outputs, using the <NT>Bitrise</NT> <NT>Build Cache</NT> CLI.
 
-:::note[Do not use key-based caching Steps]
+:::note[Do not use key-based caching <NT>Steps</NT>]
 
-Diagnostic builds use key-based caching but for this purpose, do not use our dedicated key-based caching Steps. Set up **Script** Steps as they are described in this guide.
+Diagnostic builds use key-based caching but for this purpose, do not use our dedicated key-based caching <NT>Steps</NT>. Set up **Script** <NT>Steps</NT> as they are described in this guide.
 
 :::
 
 <Tabs>
 <TabItem value="workflow-editor" label="Workflow Editor" default>
 
-1. Create a new Workflow for the diagnostic build.
+1. <NT>Create a new Workflow</NT> for the diagnostic build.
 
    If you store your `bitrise.yml` file [in your repository](/en/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml#storing-the-bitriseyml-file-in-your-repository), we recommend creating a new branch, too, and run the diagnostic build from that branch.
-1. Add the **Build Cache for Gradle** Step to the Workflow.
-1. After the Step that runs your Gradle tasks (for example, **Android Build**), add a **Script** Step.
+1. Add the **<NT>Build Cache for Gradle</NT>** <NT>Step</NT> to the <NT>Workflow</NT>.
+1. After the <NT>Step</NT> that runs your <NT>Gradle</NT> tasks (for example, **<NT>Android Build</NT>**), add a **Script** <NT>Step</NT>.
 
    :::important[Environment]
 
-   Make sure to run the script in the same environment as the Gradle command(s) you want to speed up. For example, if you use multiple Docker containers throughout the build, make sure that the Bitrise Build Cache CLI runs in the same Docker container as the Gradle command.
+   Make sure to run the script in the same environment as the <NT>Gradle</NT> command(s) you want to speed up. For example, if you use multiple <NT>Docker</NT> containers throughout the build, make sure that the <NT>Bitrise</NT> <NT>Build Cache</NT> CLI runs in the same <NT>Docker</NT> container as the <NT>Gradle</NT> command.
 
    :::
-1. To the **Script content** input, add the following:
+1. To the **<NT>Script content</NT>** input, add the following:
 
    ```bash
    /tmp/bin/bitrise-build-cache save-gradle-output-data
    ```
 
-   This saves the Gradle metadata directory and the build outputs to the key-based cache under a cache key unique for your <GlossTerm baseform="workspace">Workspace</GlossTerm>, app, and Workflow.
-1. Before the Step that runs your Gradle tasks, add another **Script** Step.
-1. To the **Script content** input, add the following:
+   This saves the <NT>Gradle</NT> metadata directory and the build outputs to the key-based cache under a <NT>cache key</NT> unique for your <NT><GlossTerm baseform="workspace">Workspace</GlossTerm></NT>, app, and <NT>Workflow</NT>.
+1. Before the <NT>Step</NT> that runs your <NT>Gradle</NT> tasks, add another **Script** <NT>Step</NT>.
+1. To the **<NT>Script content</NT>** input, add the following:
 
    ```bash
    /tmp/bin/bitrise-build-cache restore-gradle-output-data
    ```
 
-   This Step accesses the cache and restores your Gradle build data.
+   This <NT>Step</NT> accesses the cache and restores your <NT>Gradle</NT> build data.
 
 </TabItem>
 <TabItem value="bitriseyml" label="Configuration YAML">
 
-1. Create a new Workflow for the diagnostic build.
+1. <NT>Create a new Workflow</NT> for the diagnostic build.
 
    If you store your `bitrise.yml` file [in your repository](/en/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml#storing-the-bitriseyml-file-in-your-repository), we recommend creating a new branch, too, and run the diagnostic build from that branch.
-1. Add the `activate-build-cache-for-gradle` Step to your Workflow.
-1. After the Step that runs your Gradle tasks (for example, `android-build`), add a `script` Step.
+1. Add the `activate-build-cache-for-gradle` <NT>Step</NT> to your <NT>Workflow</NT>.
+1. After the <NT>Step</NT> that runs your <NT>Gradle</NT> tasks (for example, `android-build`), add a `script` <NT>Step</NT>.
 
    :::important[Environment]
 
-   Make sure to run the script in the same environment as the Gradle command(s) you want to speed up. For example, if you use multiple Docker containers throughout the build, make sure that the Bitrise Build Cache CLI runs in the same Docker container as the Gradle command.
+   Make sure to run the script in the same environment as the <NT>Gradle</NT> command(s) you want to speed up. For example, if you use multiple <NT>Docker</NT> containers throughout the build, make sure that the <NT>Bitrise</NT> <NT>Build Cache</NT> CLI runs in the same <NT>Docker</NT> container as the <NT>Gradle</NT> command.
 
    :::
 1. To the `content` input, add:
@@ -137,8 +138,8 @@ Diagnostic builds use key-based caching but for this purpose, do not use our ded
          /tmp/bin/bitrise-build-cache save-gradle-output-data
    ```
 
-   This saves the Gradle metadata directory and the build outputs to the key-based cache under a cache key unique for your Workspace, app, and Workflow.
-1. Before the Step that runs your Gradle tasks, add another `script` Step.
+   This saves the <NT>Gradle</NT> metadata directory and the build outputs to the key-based cache under a <NT>cache key</NT> unique for your <NT>Workspace</NT>, app, and <NT>Workflow</NT>.
+1. Before the <NT>Step</NT> that runs your <NT>Gradle</NT> tasks, add another `script` <NT>Step</NT>.
 1. To the `content` input, add `/tmp/bin/bitrise-build-cache restore-gradle-output-data`:
 
    ```yaml
@@ -148,14 +149,14 @@ Diagnostic builds use key-based caching but for this purpose, do not use our ded
          /tmp/bin/bitrise-build-cache restore-gradle-output-data
    ```
 
-   This Step accesses the cache and restores your Gradle build data.
+   This <NT>Step</NT> accesses the cache and restores your <NT>Gradle</NT> build data.
 
 </TabItem>
 </Tabs>
 
 ### Saving the directories in the key-based cache
 
-When setting up a Gradle diagnostic build for the first time, you need to run an initial build with the [created configuration](#creating-the-ci-configuration-for-a-diagnostic-build) to save the necessary directories in the key-based cache. This initial build will not show any execution reason in the invocation details.
+When setting up a <NT>Gradle</NT> diagnostic build for the first time, you need to run an initial build with the [created configuration](#creating-the-ci-configuration-for-a-diagnostic-build) to save the necessary directories in the key-based cache. This initial build will not show any execution reason in the <NT>invocation details</NT>.
 
 1. Once the CI configuration is complete, run a build.
 1. Check the logs to make sure the uploads have been successfully completed.
@@ -164,13 +165,13 @@ When setting up a Gradle diagnostic build for the first time, you need to run an
 
 ### Running and checking a diagnostic build
 
-After the [CI configuration is complete](#creating-the-ci-configuration-for-a-diagnostic-build) and [an initial build has successfully uploaded](#running-and-checking-a-diagnostic-build) the necessary directories to the key-based cache, you can run a diagnostic build to reveal execution reasons for Gradle tasks. Make sure you use the same Workflow and branch as the initial build
+After the [CI configuration is complete](#creating-the-ci-configuration-for-a-diagnostic-build) and [an initial build has successfully uploaded](#running-and-checking-a-diagnostic-build) the necessary directories to the key-based cache, you can run a diagnostic build to reveal execution reasons for <NT>Gradle</NT> tasks. Make sure you use the same <NT>Workflow</NT> and branch as the initial build
 
-With a diagnostic build, Gradle will behave as if it was an incremental local build.
+With a diagnostic build, <NT>Gradle</NT> will behave as if it was an incremental local build.
 
 1. Run the build.
 1. Open [the Build Cache page](https://app.bitrise.io/build-cache/).
-1. Among the **Latest invocations**, find the tasks you need. A blue icon will show you the tasks that contain task execution reasons:
+1. Among the **<NT>Latest</NT> invocations**, find the tasks you need. A blue icon will show you the tasks that contain task execution reasons:
 
    ![invocations-significant.png](/img/_paligo/uuid-f63b2a01-2f9d-fb91-dc1d-a94aa4d3e386.png)
 

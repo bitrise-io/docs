@@ -9,10 +9,11 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 import Partial_OpeningTheWorkspaceSettingsPage from '@site/src/partials/opening-the-workspace-settings-page.mdx';
+import NT from '@site/src/components/NT';
 
-Bitrise offers full support for using [Unity](https://unity.com/) software on our build machines: convenient license management, up to 40 GB of disk space, and a mobile-focused build environment that allows users to easily create both iOS- and Android versions of their Unity projects.
+<NT>Bitrise</NT> offers full support for using [Unity](https://unity.com/) software on our <NT>build machines</NT>: convenient license management, up to 40 GB of disk space, and a mobile-focused build environment that allows users to easily create both iOS- and <NT>Android</NT> versions of their <NT>Unity</NT> projects.
 
-To be able to build a Unity app on Bitrise, you need to:
+To be able to build a <NT>Unity</NT> app on <NT>Bitrise</NT>, you need to:
 
 - [Add your project as a Bitrise app](/en/bitrise-ci/getting-started/unity-on-bitrise#adding-a-unity-project-as-a-bitrise-app).
 - [Download and install Unity on the virtual machine running your build](/en/bitrise-ci/getting-started/unity-on-bitrise#downloading-and-installing-unity-software-on-bitrise).
@@ -20,30 +21,30 @@ To be able to build a Unity app on Bitrise, you need to:
 - [Build your project](/en/bitrise-ci/getting-started/unity-on-bitrise#running-a-build-using-unity-software).
 
 
-## Adding a Unity project as a Bitrise app
+## Adding a <NT>Unity</NT> project as a <NT>Bitrise</NT> app
 
-Add your Unity project [as a new app](/en/bitrise-ci/getting-started/adding-a-new-project). The <GlossTerm baseform="Project scanner">project scanner</GlossTerm> doesn't support Unity software so it won't detect your project as a Unity project so you can skip automatic configuration and register the project as **Other**.
+Add your <NT>Unity</NT> project [as a new app](/en/bitrise-ci/getting-started/adding-a-new-project). The <NT><GlossTerm baseform="Project scanner">project scanner</GlossTerm></NT> doesn't support <NT>Unity</NT> software so it won't detect your project as a <NT>Unity</NT> project so you can skip automatic configuration and register the project as **<NT>Other</NT>**.
 
-We recommend using an Xcode <GlossTerm baseform="Stack">stack</GlossTerm>: these contain the most important Android tools, too. You can build both iOS and Android versions of your Unity apps on our Xcode stacks.
+We recommend using an <NT>Xcode</NT> <NT><GlossTerm baseform="Stack">stack</GlossTerm></NT>: these contain the most important <NT>Android</NT> tools, too. You can build both iOS and <NT>Android</NT> versions of your <NT>Unity</NT> apps on our <NT>Xcode</NT> stacks.
 
 
-## Downloading and installing Unity software on Bitrise
+## Downloading and installing <NT>Unity</NT> software on <NT>Bitrise</NT>
 
-To be able to build a Unity project on Bitrise, you'll need to install Unity software on the virtual machine at the start of your build. This is the standard practice of running Unity software in the cloud and it only takes a few minutes.
+To be able to build a <NT>Unity</NT> project on <NT>Bitrise</NT>, you'll need to install <NT>Unity</NT> software on the virtual machine at the start of your build. This is the standard practice of running <NT>Unity</NT> software in the cloud and it only takes a few minutes.
 
-:::note[Xcode stacks]
+:::note[<NT>Xcode</NT> stacks]
 
-Make sure you use an Xcode stack to run Unity builds: the instructions on this page are valid for installing Unity on our Xcode stacks.
+Make sure you use an <NT>Xcode</NT> stack to run <NT>Unity</NT> builds: the instructions on this page are valid for installing <NT>Unity</NT> on our <NT>Xcode</NT> stacks.
 
 :::
 
-1. Look up the Unity software version you want to download on the [Unity download archive](https://unity.com/releases/editor/archive).
-1. Find the Unity Editor of the version you need, and copy its download link.
+1. Look up the <NT>Unity</NT> software version you want to download on the [Unity download archive](https://unity.com/releases/editor/archive).
+1. Find the <NT>Unity</NT> Editor of the version you need, and copy its download link.
 
    The link will look something like this: https://download.unity3d.com/download_unity/b16b3b16c7a0/MacEditorInstallerArm64/Unity.pkg.
-1. You will also need the download links for the two platform support packages (iOS and Android). You can find these on the [LTS Releases page](https://unity.com/releases/editor/qa/lts-releases).
-1. Add a **Script** <GlossTerm baseform="step">Step</GlossTerm> to the start of your <GlossTerm baseform="workflow">Workflow</GlossTerm>.
-1. In the **Content** input, add the curl commands to download the necessary Unity packages. For example:
+1. You will also need the download links for the two platform support packages (iOS and <NT>Android</NT>). You can find these on the [LTS Releases page](https://unity.com/releases/editor/qa/lts-releases).
+1. Add a **Script** <NT><GlossTerm baseform="step">Step</GlossTerm></NT> to the start of your <NT><GlossTerm baseform="workflow">Workflow</GlossTerm></NT>.
+1. In the **Content** input, add the curl commands to download the necessary <NT>Unity</NT> packages. For example:
 
    ```bash
    #workaround for .NET issue https://github.com/dotnet/runtime/issues/64103
@@ -61,54 +62,54 @@ Make sure you use an Xcode stack to run Unity builds: the instructions on this p
    ```
 
    Replace the download links with the links for the versions you need.
-1. Optionally, you can install a Unity software version for Apple silicon that supports [Rosetta](https://developer.apple.com/documentation/apple-silicon/about-the-rosetta-translation-environment):
+1. Optionally, you can install a <NT>Unity</NT> software version for <NT>Apple</NT> silicon that supports [Rosetta](https://developer.apple.com/documentation/apple-silicon/about-the-rosetta-translation-environment):
 
    ```bash
    #download unity pkg for Apple Silicon with Rosetta support
    curl -o ./unity.pkg http://download.unity3d.com/download_unity/8af3c3e441b1/MacEditorInstaller/Unity-2021.3.12f1.pkg
    ```
 
-If successful, you should be able to find Unity software at `/Applications/Unity/Unity.app/Contents/MacOS/Unity`.
+If successful, you should be able to find <NT>Unity</NT> software at `/Applications/Unity/Unity.app/Contents/MacOS/Unity`.
 
 
-## Setting up Unity licenses on Bitrise
+## Setting up <NT>Unity</NT> licenses on <NT>Bitrise</NT>
 
-In alignment with Unity's policy, only paid plans are supporting command line… which means you need to add Unity license pools on Bitrise to be able to build a Unity project. Our build machines will be able to find the licence for your Workflow but you need to activate it by providing your Unity email address and password.
+In alignment with <NT>Unity</NT>'s policy, only paid plans are supporting command line… which means you need to add <NT>Unity</NT> license pools on <NT>Bitrise</NT> to be able to build a <NT>Unity</NT> project. Our <NT>build machines</NT> will be able to find the licence for your <NT>Workflow</NT> but you need to activate it by providing your <NT>Unity</NT> email address and password.
 
 :::important[Multiple licenses required]
 
-To run multiple builds concurrently, you need separate license keys for each build. For example, if you want to run three builds of a Unity app at the same time, you need at least three separate Unity licenses.
+To run multiple builds concurrently, you need separate <NT>license keys</NT> for each build. For example, if you want to run three builds of a <NT>Unity</NT> app at the same time, you need at least three separate <NT>Unity</NT> licenses.
 
 :::
 
-### Adding Unity license pools
+### Adding <NT>Unity</NT> license pools
 
 1. <Partial_OpeningTheWorkspaceSettingsPage />
-1. On the left, select **Integrations**.
-1. Click the **License pools** card.
-1. Click **Add license pool**.
+1. On the left, select **<NT>Integrations</NT>**.
+1. Click the **<NT>License pool</NT>s** card.
+1. Click **<NT>Add license pool</NT>**.
 
    ![license_pools.png](/img/_paligo/uuid-260b6d8c-c6ae-d008-a72a-8b0552a1e348.png)
 1. Fill out the fields.
 
    You must set:
 
-   - A name: that's how you can find your pool in the <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>.
+   - A name: that's how you can find your pool in the <NT><GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm></NT>.
    - An [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables) key: this is how you can use the license in a build script.
-   - The license keys themselves. A license key can't have a space or any special character other than underscore in it.
-1. Click **Save**.
-1. Open the Workflow Editor for the app you need and go to the **Licenses** tab.
-1. Select a license pool for each Workflow where you need them.
+   - The <NT>license keys</NT> themselves. A license key can't have a space or any special character other than underscore in it.
+1. Click **<NT>Save</NT>**.
+1. Open the <NT>Workflow Editor</NT> for the app you need and go to the **<NT>Licenses</NT>** tab.
+1. Select a license pool for each <NT>Workflow</NT> where you need them.
 
    ![license-wfe.png](/img/_paligo/uuid-bfc830a8-c22d-2fc3-1dab-16fba07460fa.png)
 
-### Activating a Unity license
+### Activating a <NT>Unity</NT> license
 
-When trying to run a build, you need to activate your Unity license first. This requires providing your Unity email address and password. We recommend using [Secrets](/en/bitrise-ci/configure-builds/secrets) to store these.
+When trying to run a build, you need to activate your <NT>Unity</NT> license first. This requires providing your <NT>Unity</NT> email address and password. We recommend using [Secrets](/en/bitrise-ci/configure-builds/secrets) to store these.
 
 :::note[Deactivating a license]
 
-Once your build is finished, we strongly recommend deactivating the Unity license so you can reuse it:
+Once your build is finished, we strongly recommend deactivating the <NT>Unity</NT> license so you can reuse it:
 
 ```bash
 /Applications/Unity/Unity.app/Contents/MacOS/Unity -quit -batchmode -logFile -returnlicense
@@ -116,38 +117,38 @@ Once your build is finished, we strongly recommend deactivating the Unity licens
 
 :::
 
-1. Create two Secrets to store your email address and password. We recommend using the following keys:
+1. Create two <NT>Secrets</NT> to store your email address and password. We recommend using the following keys:
 
    - UNITY_EMAIL, with your email address as the value.
-   - UNITY_PW, with your Unity password as a value.
-1. Add the following code to a **Script** Step that comes after [the Step installing Unity software](/en/bitrise-ci/getting-started/unity-on-bitrise#downloading-and-installing-unity-software-on-bitrise) in the Workflow:
+   - UNITY_PW, with your <NT>Unity</NT> password as a value.
+1. Add the following code to a **Script** <NT>Step</NT> that comes after [the Step installing Unity software](/en/bitrise-ci/getting-started/unity-on-bitrise#downloading-and-installing-unity-software-on-bitrise) in the <NT>Workflow</NT>:
 
    ```bash
    /Applications/Unity/Unity.app/Contents/MacOS/Unity -quit -batchmode -serial "$UNITY_SERIAL" -username "$UNITY_EMAIL" -password "$UNITY_PW" -logfile
    ```
 
-   :::tip[Use a Utility Workflow]
+   :::tip[Use a Utility <NT>Workflow</NT>]
 
-   A best practice is to create a [utility Workflow](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#utility-workflows) that contains this Step, and [run it before each Workflow](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together) that requires Unity.
+   A best practice is to create a [utility Workflow](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#utility-workflows) that contains this <NT>Step</NT>, and [run it before each Workflow](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together) that requires <NT>Unity</NT>.
 
    :::
 
 
-## Running a build using Unity software
+## Running a build using <NT>Unity</NT> software
 
-Once everything is set up, you can run a build using Unity software on Bitrise. You can build both an Android and an iOS version of your app, even in the same Workflow.
+Once everything is set up, you can run a build using <NT>Unity</NT> software on <NT>Bitrise</NT>. You can build both an <NT>Android</NT> and an iOS version of your app, even in the same <NT>Workflow</NT>.
 
-To run a build using Unity software on Bitrise:
+To run a build using <NT>Unity</NT> software on <NT>Bitrise</NT>:
 
 1. [Add Unity license pools to Bitrise](/en/bitrise-ci/getting-started/unity-on-bitrise#setting-up-unity-licenses-on-bitrise).
 1. [Activate your Unity license in the build](/en/bitrise-ci/getting-started/unity-on-bitrise#setting-up-unity-licenses-on-bitrise).
 1. [Download and install Unity on the virtual machine](/en/bitrise-ci/getting-started/unity-on-bitrise#downloading-and-installing-unity-software-on-bitrise).
-1. To build the Android version of your app, add a **Script** Step and in the **Content** input, add the following:
+1. To build the <NT>Android</NT> version of your app, add a **Script** <NT>Step</NT> and in the **Content** input, add the following:
 
    ```bash
    /Applications/Unity/Unity.app/Contents/MacOS/Unity -nographics -quit -batchmode -logFile -projectPath "$BITRISE_SOURCE_DIR" -executeMethod BitriseUnity.Build -androidSdkPath "$ANDROID_HOME" -buildOutput "$BITRISE_DEPLOY_DIR/mygame.apk" -buildPlatform android
    ```
-1. To create an Xcode project for the iOS version of your app, add the following to the **Script** Step:
+1. To create an <NT>Xcode</NT> project for the iOS version of your app, add the following to the **Script** <NT>Step</NT>:
 
    ```bash
    /Applications/Unity/Unity.app/Contents/MacOS/Unity -nographics -quit -batchmode -logFile -projectPath "$BITRISE_SOURCE_DIR" -executeMethod BitriseUnity.Build -buildOutput "$BITRISE_SOURCE_DIR/xcodebuild" -buildPlatform ios

@@ -10,110 +10,111 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 import Partial_GettingToTheProjectSettingsPage from '@site/src/partials/getting-to-the-project-settings-page.mdx';
+import NT from '@site/src/components/NT';
 
-On Bitrise, we're aiming to make iOS code signing as simple as possible for you. As such, we've done our best to automate a lot of the process. Several of our <GlossTerm baseform="Step">Steps</GlossTerm> have a built-in option for automatic code signing management to make configuration a lot more streamlined.
+On <NT>Bitrise</NT>, we're aiming to make iOS <NT>code signing</NT> as simple as possible for you. As such, we've done our best to automate a lot of the process. Several of our <NT><GlossTerm baseform="Step">Step</GlossTerm></NT>s have a built-in option for <NT>automatic code signing</NT> management to make configuration a lot more streamlined.
 
-Automatic code signing in this context means automatically managing the provisioning profiles that are available on your Apple Developer Portal account. If you set up some form of authentication to your Apple account, Bitrise can download and install the provisioning profile for your app during the build process.
+<NT>Automatic code signing</NT> in this context means automatically managing the provisioning profiles that are available on your <NT>Apple Developer Portal</NT> account. If you set up some form of authentication to your <NT>Apple</NT> account, <NT>Bitrise</NT> can download and install the provisioning profile for your app during the build process.
 
 To use this feature, you need to:
 
 1. [Upload the code signing certificates to Bitrise.](#uploading-ios-code-signing-certificates-to-bitrise)
-1. Connect your Apple Developer Portal account to Bitrise either via [Apple ID](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id) or via the [App Store Connect API](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key).
+1. Connect your <NT>Apple Developer Portal</NT> account to <NT>Bitrise</NT> either via [Apple ID](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id) or via the [App Store Connect API](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key).
 1. [Use one of the Steps that support automatically managing code signing assets.](#configuring-the-steps-for-automatic-provisioning)
 
 
-## Uploading iOS code signing certificates to Bitrise
+## Uploading iOS code <NT>signing certificate</NT>s to <NT>Bitrise</NT>
 
-All iOS code signing methods require you to export and upload your iOS code signing certificates to Bitrise.
+All iOS <NT>code signing</NT> methods require you to export and upload your iOS code <NT>signing certificate</NT>s to <NT>Bitrise</NT>.
 
-:::tip[Generating code signing files]
+:::tip[Generating <NT>code signing</NT> files]
 
-If you don't have the necessary code signing files ready, you can generate new files: [Generating iOS code signing files](/en/bitrise-ci/code-signing/ios-code-signing/generating-ios-code-signing-files)
+If you don't have the necessary <NT>code signing</NT> files ready, you can generate new files: [Generating iOS code signing files](/en/bitrise-ci/code-signing/ios-code-signing/generating-ios-code-signing-files)
 
 :::
 
-To upload the certificates to Bitrise, first you need to export the files in the .p12 file format. Once you successfully exported the files, you need to upload them to Bitrise. You have two options:
+To upload the certificates to <NT>Bitrise</NT>, first you need to export the files in the .p12 file format. Once you successfully exported the files, you need to upload them to <NT>Bitrise</NT>. You have two options:
 
 - [Via an API call](/en/bitrise-ci/api/managing-ios-code-signing-files#uploading-an-ios-code-signing-file).
 - Uploading it manually. This guide focuses on this option.
 
-:::important[Upload the distribution AND the development signing certificates]
+:::important[Upload the distribution AND the development <NT>signing certificate</NT>s]
 
-We strongly recommend uploading BOTH the development and distribution signing certificates for your project. If you don't have an uploaded development signing certificate, Steps with automatic provisioning options will generate one on the fly every time you start a build. This can eventually lead to reaching the maximum number of certificates, blocking you from starting new builds.
+We strongly recommend uploading BOTH the development and distribution <NT>signing certificate</NT>s for your project. If you don't have an uploaded development <NT>signing certificate</NT>, <NT>Steps</NT> with automatic provisioning options will generate one on the fly every time you start a build. This can eventually lead to reaching the maximum number of certificates, blocking you from starting new builds.
 
 :::
 
-To export your certificates and upload them to Bitrise in the <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>:
+To export your certificates and upload them to <NT>Bitrise</NT> in the <NT><GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm></NT>:
 
 1. Make sure you have your .p12 certificates exported and ready.
 1. <Partial_GettingToTheProjectSettingsPage />
-1. On the left, select the **Code signing** menu option.
-1. Click **Add .p12 file** to add a certificate.
+1. On the left, select the **<NT>Code signing</NT>** menu option.
+1. Click **<NT>Add .p12 file</NT>** to add a certificate.
 1. In the dialog box, drag and drop the certificate file onto the field, or click the field to browse your files.
 
    ![Add .p12 file dialog](/img/code-signing/ios-code-signing/2026-07-14-add-p12-file.png)
 
-   :::important[Certificate password]
+   :::important[<NT>Certificate password</NT>]
 
    If your certificate is protected by a password, you need to set the password here, too.
 
    :::
-1. When done, click **Continue**.
-1. Check the summary and if everything is okay, click **Add certificate**.
+1. When done, click **<NT>Continue</NT>**.
+1. Check the summary and if everything is okay, click **<NT>Add</NT> certificate**.
 
 
-## Apple services authentication for automatic provisioning
+## <NT>Apple</NT> services authentication for automatic provisioning
 
-To take advantage of the Bitrise Steps that offer built-in, automated iOS code signing options, you need to set up [Apple service authentication](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services). For these Steps, you have two options.
+To take advantage of the <NT>Bitrise Steps</NT> that offer built-in, automated iOS <NT>code signing</NT> options, you need to set up [Apple service authentication](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services). For these <NT>Steps</NT>, you have two options.
 
 | Authentication method | How it works | When to use |
 | --- | --- | --- |
-| [API key authentication](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key) (recommended) | You connect your App Store Connect account to Bitrise using an API key. | We recommend using this option unless you are using an account with Apple Developer Enterprise Program.  If you do not receive the option to create an API key and the request access is greyed out, you need to contact your account holder to accept a license agreement with Apple to use API authentication. |
-| [Apple ID authentication](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id) | You connect your Apple ID to Bitrise. If two-factor authentication is enabled on your Apple account, you will have to provide the App-specific password during this process. Your authentication expires in 30 days and you will have to refresh the connection. | You should only use this solution if:  - You cannot access API key for any reason. - you are using an account with Apple Developer Enterprise Program.  You can also consider using [manual provisioning](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---manual-provisioning). |
+| [API key authentication](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key) (recommended) | You connect your <NT>App Store Connect</NT> account to <NT>Bitrise</NT> using an API key. | We recommend using this option unless you are using an account with <NT>Apple</NT> Developer Enterprise Program.  If you do not receive the option to create an API key and the request access is greyed out, you need to contact your account holder to accept a license agreement with <NT>Apple</NT> to use API authentication. |
+| [Apple ID authentication](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id) | You connect your <NT>Apple ID</NT> to <NT>Bitrise</NT>. If two-factor authentication is enabled on your <NT>Apple</NT> account, you will have to provide the <NT>App-specific password</NT> during this process. Your authentication expires in 30 days and you will have to refresh the connection. | You should only use this solution if:  - You cannot access API key for any reason. - you are using an account with <NT>Apple</NT> Developer Enterprise Program.  You can also consider using [manual provisioning](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---manual-provisioning). |
 
 
-## Configuring the Steps for automatic provisioning
+## Configuring the <NT>Steps</NT> for automatic provisioning
 
-There are two ways to handle automatic provisioning on Bitrise:
+There are two ways to handle automatic provisioning on <NT>Bitrise</NT>:
 
-- Using the official Xcode Steps that can both manage code signing files and build your app.
-- Using the **Manage iOS Code Signing** Step.
+- Using the official <NT>Xcode</NT> <NT>Steps</NT> that can both manage <NT>code signing</NT> files and build your app.
+- Using the **<NT>Manage iOS Code Signing</NT>** <NT>Step</NT>.
 
-The following table describes the use cases for the two methods. To be able to configure the necessary Steps, check out either:
+The following table describes the use cases for the two methods. To be able to configure the necessary <NT>Steps</NT>, check out either:
 
 - [Using the Xcode Steps](#using-the-xcode-steps)
 - [Using the Manage iOS Code Signing Step](#using-the-manage-ios-code-signing-step)
 
-:::important[Don't use the Certificate and profile installer Step]
+:::important[Don't use the <NT>Certificate and profile installer</NT> <NT>Step</NT>]
 
-If you use automatic provisioning, you never need to use the **Certificate and profile installer** Step.
+If you use automatic provisioning, you never need to use the **<NT>Certificate and profile installer</NT>** <NT>Step</NT>.
 
 :::
 
-| Steps | How they work | When to use |
+| <NT>Steps</NT> | How they work | When to use |
 | --- | --- | --- |
-| Xcode Steps:  - **Xcode Archive & Export for iOS** - **Export iOS and tvOS Xcode Archive** - **Xcode build for testing for iOS** | These Steps set up code signing in your Xcode project automatically with nearly zero configuration. | We recommend using these Steps in most scenarios. |
-| **Manage iOS Code Signing** Step | This Step will set up code signing in your Xcode project before running a build. | You can use this dedicated Step if:  - You are building the app from script or fastlane. - You have a cross-platform project. For example, React Native, Flutter, Ionic or Cordova. - You are building a macOS app. |
+| <NT>Xcode</NT> <NT>Steps</NT>:  - **<NT>Xcode Archive & Export for iOS</NT>** - **<NT>Export iOS and tvOS Xcode Archive</NT>** - **<NT>Xcode</NT> build for testing for iOS** | These <NT>Steps</NT> set up <NT>code signing</NT> in your <NT>Xcode</NT> project automatically with nearly zero configuration. | We recommend using these <NT>Steps</NT> in most scenarios. |
+| **<NT>Manage iOS Code Signing</NT>** <NT>Step</NT> | This <NT>Step</NT> will set up <NT>code signing</NT> in your <NT>Xcode</NT> project before running a build. | You can use this dedicated <NT>Step</NT> if:  - You are building the app from script or fastlane. - You have a cross-platform project. For example, <NT>React Native</NT>, Flutter, <NT>Ionic</NT> or <NT>Cordova</NT>. - You are building a macOS app. |
 
-### Using the Xcode Steps
+### Using the <NT>Xcode</NT> <NT>Steps</NT>
 
-You can use any of the Xcode Steps with built-in automatic management of code signing assets.
+You can use any of the <NT>Xcode</NT> <NT>Steps</NT> with built-in automatic management of <NT>code signing</NT> assets.
 
-1. Set up connection to Apple services.
+1. <NT>Set up</NT> connection to <NT>Apple</NT> services.
 
    You can choose between [API key authentication](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key) or [Apple ID authentication](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id). We generally recommend API key authentication.
-1. Add any of the following Steps to your <GlossTerm baseform="workflow">Workflow</GlossTerm>, depending on what you need:
+1. Add any of the following <NT>Steps</NT> to your <NT><GlossTerm baseform="workflow">Workflow</GlossTerm></NT>, depending on what you need:
 
-   - **Xcode Archive & Export for iOS**: Builds your Xcode app and exports an IPA of the type you choose.
-   - **Export iOS and tvOS Xcode Archive**: Exports an IPA from an already existing archive.
-   - **Xcode build for testing for iOS**: Builds your Xcode app with the `build-for-testing` action.
-1. Set the **Automatic code signing method** input to the Apple service authentication type you set up.
+   - **<NT>Xcode Archive & Export for iOS</NT>**: Builds your <NT>Xcode</NT> app and exports an IPA of the type you choose.
+   - **<NT>Export iOS and tvOS Xcode Archive</NT>**: Exports an IPA from an already existing archive.
+   - **<NT>Xcode</NT> build for testing for iOS**: Builds your <NT>Xcode</NT> app with the `build-for-testing` action.
+1. Set the **<NT>Automatic code signing method</NT>** input to the <NT>Apple</NT> service authentication type you set up.
 
    For example, if you chose API key authentication, choose the **api-key** option.
 
-**YAML example for setting code signing method**
+**YAML example for setting <NT>code signing</NT> method**
 
-In this example, the **Xcode Archive & Export for iOS** Step is set to use API key authentication.
+In this example, the **<NT>Xcode Archive & Export for iOS</NT>** <NT>Step</NT> is set to use API key authentication.
 
 ```yaml
 - xcode-archive@4:        
@@ -121,34 +122,34 @@ In this example, the **Xcode Archive & Export for iOS** Step is set to use API k
     - automatic_code_signing: api-key
 ```
 
-In most cases, the default values for all other inputs are sufficient if you set up your Apple connection correctly.
+In most cases, the <NT>default value</NT>s for all other inputs are sufficient if you set up your <NT>Apple</NT> connection correctly.
 
-### Using the Manage iOS Code Signing Step
+### Using the <NT>Manage iOS Code Signing</NT> <NT>Step</NT>
 
-Use our dedicated Step for automatically managing code signing assets if you do not use one of the Xcode Steps to build your iOS app, or if you have a cross-platform app.
+Use our dedicated <NT>Step</NT> for automatically managing <NT>code signing</NT> assets if you do not use one of the <NT>Xcode</NT> <NT>Steps</NT> to build your iOS app, or if you have a cross-platform app.
 
-1. Add the **Manage iOS Code Signing** Step after any dependency installer Step in your Workflow, such as **Run CocoaPods install** or **Carthage**.
+1. Add the **<NT>Manage iOS Code Signing</NT>** <NT>Step</NT> after any dependency installer <NT>Step</NT> in your <NT>Workflow</NT>, such as **<NT>Run CocoaPods install</NT>** or **Carthage**.
 
    ![manage-ios-code.png](/img/_paligo/uuid-1b7bc413-da80-4910-5b25-f2a057bbf4d0.png)
-1. Set the **Apple service connection method** input to the Apple service connection you want to use.
+1. Set the **<NT>Apple service connection method</NT>** input to the <NT>Apple service connection</NT> you want to use.
 
    You can choose between [API key authentication](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-step-inputs#authenticating-in-a-step-with-api-key) or [Apple ID authentication](/en/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-step-inputs#authenticating-in-a-step-with-apple-id-and-password).
-1. If you use Apple ID authentication, you should also enter your team ID to **The Developer Portal team ID** input.
-1. Make sure you do NOT modify your Xcode project after this Step.
+1. If you use <NT>Apple ID</NT> authentication, you should also enter your team ID to **The Developer Portal team ID** input.
+1. Make sure you do NOT modify your <NT>Xcode</NT> project after this <NT>Step</NT>.
 
    For example, don't change the bundle ID.
-1. Add a Step that builds and archives the app, such as the **fastlane** Step.
+1. Add a <NT>Step</NT> that builds and archives the app, such as the **fastlane** <NT>Step</NT>.
 
 
 ## Generating export options plists
 
-The `ExportOptions.plist` file is automatically generated based on the [Xcode Archive for iOS](https://bitrise.io/integrations/steps/xcode-archive) Step inputs. You can, however, override these inputs and use it in the **Xcode Archive & Export for iOS** Step.
+The `ExportOptions.plist` file is automatically generated based on the [Xcode Archive for iOS](https://bitrise.io/integrations/steps/xcode-archive) <NT>Step inputs</NT>. You can, however, override these inputs and use it in the **<NT>Xcode Archive & Export for iOS</NT>** <NT>Step</NT>.
 
-1. Open your project on a local development machine Xcode.
+1. Open your project on a local development machine <NT>Xcode</NT>.
 1. Archive the project.
-1. In the Organizer, select the newly created `.xcarchive` file. Click **Distribute App** to export it into an IPA file. Xcode will copy the used `ExportOptions.plist` file next to the generated IPA file.
+1. In the Organizer, select the newly created `.xcarchive` file. Click **Distribute <NT>App</NT>** to export it into an IPA file. <NT>Xcode</NT> will copy the used `ExportOptions.plist` file next to the generated IPA file.
 1. Open this `ExportOptions.plist` file in your favorite text editor and copy its content.
-1. Paste its content to the **Xcode Archive & Export for iOS** Step's **Export options plist** content input.
+1. Paste its content to the **<NT>Xcode Archive & Export for iOS</NT>** <NT>Step</NT>'s **Export options plist** content input.
 
 **An example plist file:**
 

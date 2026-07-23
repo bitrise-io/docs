@@ -1,12 +1,13 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-## Xcode stack updates
+## <NT>Xcode</NT> stack updates
 
-You can select macOS stacks based on the Xcode version you need. Under the hood, one VM image contains multiple Xcode versions installed and your requested Xcode version is activated at runtime before your <GlossTerm baseform="workflow">Workflow</GlossTerm> starts.
+You can select macOS stacks based on the <NT>Xcode</NT> version you need. Under the hood, one VM image contains multiple <NT>Xcode</NT> versions installed and your requested <NT>Xcode</NT> version is activated at runtime before your <NT><GlossTerm baseform="workflow">Workflow</GlossTerm></NT> starts.
 
-As a rule of thumb, Xcode minor versions of the same major version share the same VM image, but there might be exceptions based on compatibility issues and other considerations.
+As a rule of thumb, <NT>Xcode</NT> minor versions of the same major version share the same VM image, but there might be exceptions based on compatibility issues and other considerations.
 
 :::note[Versioning]
 
@@ -14,18 +15,18 @@ When talking about versions, we use [semver](https://semver.org/) terminology, r
 
 :::
 
-Stacks have a lifecycle and have four different states: Edge, Stable, Frozen and Removed.
+<NT>Stacks</NT> have a lifecycle and have four different states: Edge, Stable, Frozen and Removed.
 
 ![stack-lifecycle.png](/img/_paligo/uuid-faa7bf60-0cae-0042-f910-e8e6240fc647.png)
 
-- **Edge**: These stacks are for previewing upcoming versions and changes. They are updated in-place regularly, and they include the latest stable release of Xcode, the latest beta release of Xcode (if available) and the latest stable version of pre-installed tools. Regular weekly updates could add or remove tools, as well as upgrade the OS. Backwards compatibility for weekly updates is not guaranteed on an Edge stack. Run builds on Edge stacks to preview upcoming tool version changes (such as Ruby 3.2 becoming the default) and get access to the latest pre-release Xcode (such as Xcode 15 Beta).
-- **Stable**: These stacks are only updated with Xcode patch versions, and with critical security fixes. For maximum reliability and reproducible builds, we recommend pinning exact tool versions in Workflows instead of relying on the stack defaults (for example, pinning a Ruby version).
+- **Edge**: These stacks are for previewing upcoming versions and changes. They are updated in-place regularly, and they include the latest stable release of <NT>Xcode</NT>, the latest beta release of <NT>Xcode</NT> (if available) and the latest stable version of pre-installed tools. Regular weekly updates could add or remove tools, as well as upgrade the OS. Backwards compatibility for weekly updates is not guaranteed on an Edge stack. Run builds on Edge stacks to preview upcoming tool version changes (such as <NT>Ruby</NT> 3.2 becoming the default) and get access to the latest pre-release <NT>Xcode</NT> (such as <NT>Xcode</NT> 15 Beta).
+- **<NT>Stable</NT>**: These stacks are only updated with <NT>Xcode</NT> patch versions, and with critical security fixes. For maximum reliability and reproducible builds, we recommend pinning exact tool versions in <NT>Workflows</NT> instead of relying on the stack defaults (for example, pinning a <NT>Ruby</NT> version).
 - **Frozen**: These stacks are no longer updated and flagged for removal in accordance with the [Stack deprecation and removal policy](/en/bitrise-build-hub/infrastructure/build-stacks/stack-deprecation-and-removal-policy). The stack is still available for yourbuilds but you will see the final removal date on the UI. Preinstalled tools are not updated, so it’s your responsibility to keep up with bugfixes and security patches.
 - **Removed**: These stacks are no longer available to use.
 
-### State transitions for Xcode stacks
+### State transitions for <NT>Xcode</NT> stacks
 
-During the lifecycle of a stack it will transition between states when triggered by new Xcode and macOS releases. Stacks transition as follows:
+During the lifecycle of a stack it will transition between states when triggered by new <NT>Xcode</NT> and macOS releases. <NT>Stacks</NT> transition as follows:
 
 - Edge to Stable.
 - Stable to Frozen.
@@ -33,55 +34,55 @@ During the lifecycle of a stack it will transition between states when triggered
 
 #### Edge stack updates
 
-Edge stacks provide a way to preview and test upcoming changes. Xcode Beta versions become available as Edge stacks while final Xcode releases become available as new Stable stacks. Xcode Edge stacks change when:
+Edge stacks provide a way to preview and test upcoming changes. <NT>Xcode</NT> Beta versions become available as Edge stacks while final <NT>Xcode</NT> releases become available as new Stable stacks. <NT>Xcode</NT> Edge stacks change when:
 
-1. The first Beta version of a new major Xcode version is released.
-1. The first Beta version of a new minor Xcode version is released.
-1. A new version of an Xcode Beta version is released.
+1. The first Beta version of a new major <NT>Xcode</NT> version is released.
+1. The first Beta version of a new minor <NT>Xcode</NT> version is released.
+1. A new version of an <NT>Xcode</NT> Beta version is released.
 
-When an Xcode minor version is released as a beta, it becomes available as an Edge stack. Other Edge stacks do not transition to Stable until the beta version in question is released as a GA version.
+When an <NT>Xcode</NT> minor version is released as a beta, it becomes available as an Edge stack. Other Edge stacks do not transition to Stable until the beta version in question is released as a GA version.
 
-**First Beta version of a new major Xcode version**
+**First <NT>Beta</NT> version of a new major <NT>Xcode</NT> version**
 
 In this example:
 
-- The current latest Xcode version is 15.3.
-- A new Beta version of a new major Xcode version is released: Xcode 16.0 Beta 1.
+- The current latest <NT>Xcode</NT> version is 15.3.
+- A new Beta version of a new major <NT>Xcode</NT> version is released: <NT>Xcode</NT> 16.0 Beta 1.
 
 ![stack-updates-edge.png](/img/_paligo/uuid-1aecaab6-06d6-4a03-4d67-f6e4e5efaf7e.png)
 
 Once the new Beta version is released, we update our stacks:
 
-- The new Xcode release becomes available on Bitrise as an Edge stack. In our example, Xcode 16.0 Beta 1 becomes available as the Edge stack.
-- Current Edge stacks are phased out, and users are automatically migrated to the new Edge stack. This happens a few days after the new Xcode release. In this example, this means phasing out Xcode 15.x Edge stacks.
+- The new <NT>Xcode</NT> release becomes available on <NT>Bitrise</NT> as an Edge stack. In our example, <NT>Xcode</NT> 16.0 Beta 1 becomes available as the Edge stack.
+- Current Edge stacks are phased out, and users are automatically migrated to the new Edge stack. This happens a few days after the new <NT>Xcode</NT> release. In this example, this means phasing out <NT>Xcode</NT> 15.x Edge stacks.
 - Stable stacks are not affected at this point.
 
-**First Beta version of a new minor Xcode version**
+**First <NT>Beta</NT> version of a new minor <NT>Xcode</NT> version**
 
 In this example:
 
-- The current latest Xcode version is 15.2.
-- A new Beta version of a new minor Xcode version is released: Xcode 15.3 Beta 1.
+- The current latest <NT>Xcode</NT> version is 15.2.
+- A new Beta version of a new minor <NT>Xcode</NT> version is released: <NT>Xcode</NT> 15.3 Beta 1.
 
 ![stack-updates-edge-minor.png](/img/_paligo/uuid-1045ef58-753d-f496-2c8a-4e4c9542ad63.png)
 
 Once the new Beta version is released, we update our stacks:
 
-- The new Xcode release becomes available as an Edge stack. In this example, Xcode 15.3 Beta 1 becomes available as an Edge stack.
+- The new <NT>Xcode</NT> release becomes available as an Edge stack. In this example, <NT>Xcode</NT> 15.3 Beta 1 becomes available as an Edge stack.
 - Stable stacks are not affected at this point.
 
-**A new Beta version of an Xcode Beta version**
+**A new <NT>Beta</NT> version of an <NT>Xcode</NT> Beta version**
 
 In this example:
 
-- The current latest Xcode version is 16.0 Beta 1.
+- The current latest <NT>Xcode</NT> version is 16.0 Beta 1.
 - A new Beta version is released: 16.0 Beta 2.
 
 ![stack-updates-edge-beta.png](/img/_paligo/uuid-f91e8132-cff5-b5c3-142e-2184b4883382.png)
 
 Once the new Beta version is released, we update our stacks:
 
-- Xcode 16.0 Beta 2 replaces 16.0 Beta 1 on the Xcode 16.0 Edge stack.
+- <NT>Xcode</NT> 16.0 Beta 2 replaces 16.0 Beta 1 on the <NT>Xcode</NT> 16.0 Edge stack.
 - Stable stacks are not affected at this point.
 
 #### Stable stack updates
@@ -90,35 +91,35 @@ Stable stacks change less often than Edge stacks as we want to avoid unexpected 
 
 Existing Stable stacks change when:
 
-1. A new major Xcode version is released.
-1. A new minor Xcode version is released.
+1. A new major <NT>Xcode</NT> version is released.
+1. A new minor <NT>Xcode</NT> version is released.
 
-**A new major Xcode version**
+**A new major <NT>Xcode</NT> version**
 
 In this example:
 
-- The current latest Xcode version is 15.3.0.
-- A new major Xcode version is released: Xcode 16.0.
+- The current latest <NT>Xcode</NT> version is 15.3.0.
+- A new major <NT>Xcode</NT> version is released: <NT>Xcode</NT> 16.0.
 
 ![stable-stack.png](/img/_paligo/uuid-0d392a7d-4fcd-13cb-e67a-7326e954c87a.png)
 
 When the new major version is released, we update our stacks:
 
-- New Stable stack: Xcode 16.0 becomes available on Bitrise as a new Stable stack.
-- Oldest Stable stacks become Frozen. In this example, Xcode 14.x stacks become Frozen, but still available for building. Tool versions are not changing on these stacks: their latest state is frozen.
-- Old Frozen stacks are removed: in this example, Xcode 13.x stacks are removed. The remaining users are migrated to newer stacks.
+- New Stable stack: <NT>Xcode</NT> 16.0 becomes available on <NT>Bitrise</NT> as a new Stable stack.
+- Oldest Stable stacks become Frozen. In this example, <NT>Xcode</NT> 14.x stacks become Frozen, but still available for building. Tool versions are not changing on these stacks: their latest state is frozen.
+- Old Frozen stacks are removed: in this example, <NT>Xcode</NT> 13.x stacks are removed. The remaining users are migrated to newer stacks.
 
-**A new minor Xcode version**
+**A new minor <NT>Xcode</NT> version**
 
 In this example:
 
-- The current latest Xcode version is Xcode 15.2.
-- A new minor Xcode version is released: Xcode 15.3.
+- The current latest <NT>Xcode</NT> version is <NT>Xcode</NT> 15.2.
+- A new minor <NT>Xcode</NT> version is released: <NT>Xcode</NT> 15.3.
 
 When the new minor version is released, we update our stacks:
 
-- New Stable stack: Xcode 15.3 becomes available on Bitrise as a Stable stack.
-- Xcode 15.3 Edge stack is updated with the final Xcode version.
+- New Stable stack: <NT>Xcode</NT> 15.3 becomes available on <NT>Bitrise</NT> as a Stable stack.
+- <NT>Xcode</NT> 15.3 Edge stack is updated with the final <NT>Xcode</NT> version.
 
 ![stack-updates-stable-xcode-minor.png](/img/_paligo/uuid-166098b3-ad6e-d65e-fe83-e0819fcf52a3.png)
 
@@ -128,30 +129,30 @@ The exact macOS version is always highlighted on the [stack report pages](https:
 
 When a new major macOS version is released, we upgrade the Edge stacks to the new OS after an internal testing period.
 
-As a general rule, we don’t upgrade macOS on Stable stacks to avoid unexpected build failures. We wait until a future Xcode release starts requiring the new OS version (for example, Xcode 15.0, 15.1 and 15.2 are compatible with macOS Ventura, but 15.3 requires Sonoma). Once this happens, the Stable stack variant of this Xcode version is based on the new major OS version, while older Stable Xcode stacks remain on the older OS version.
+As a general rule, we don’t upgrade macOS on Stable stacks to avoid unexpected build failures. We wait until a future <NT>Xcode</NT> release starts requiring the new OS version (for example, <NT>Xcode</NT> 15.0, 15.1 and 15.2 are compatible with macOS Ventura, but 15.3 requires Sonoma). Once this happens, the Stable stack variant of this <NT>Xcode</NT> version is based on the new major OS version, while older Stable <NT>Xcode</NT> stacks remain on the older OS version.
 
-While the new major OS is not available as a Stable stack, we recommend testing it on one of the Edge stacks. We are looking for your feedback, including edge cases and performance regressions.
+While the new major OS is not available as a Stable stack, we recommend testing it on one of the Edge stacks. We are looking for <NT>your feedback</NT>, including edge cases and performance regressions.
 
 #### Events not triggering a state transition
 
-Not all Xcode releases <GlossTerm baseform="trigger">trigger</GlossTerm> a transition. For example, Xcode beta minor version releases do not trigger an Edge to Stable stack transition: the new beta version simply replaces the old one. Xcode patch releases do not trigger an Edge to Stable stack transition. Instead, the Stable stacks will be updated in place with the new patch version.
+Not all <NT>Xcode</NT> releases <NT><GlossTerm baseform="trigger">trigger</GlossTerm></NT> a transition. For example, <NT>Xcode</NT> beta minor <NT>version release</NT>s do not trigger an Edge to Stable stack transition: the new beta version simply replaces the old one. <NT>Xcode</NT> patch releases do not trigger an Edge to Stable stack transition. Instead, the Stable stacks will be updated in place with the new patch version.
 
-### Simulator runtimes on Xcode stacks
+### Simulator runtimes on <NT>Xcode</NT> stacks
 
 You can find the list of preinstalled tools, including simulator runtimes on our stacks on the [stack reports pages](https://stacks.bitrise.io/stack_reports/).
 
 You can expect the following simulator runtimes to be installed:
 
-- The matching runtime versions of a given Xcode version: these are the iOS, watchOS, tvOS and visionOS runtime versions that Xcode prompts you to download at first launch.
+- The matching runtime versions of a given <NT>Xcode</NT> version: these are the iOS, watchOS, tvOS and visionOS runtime versions that <NT>Xcode</NT> prompts you to download at first launch.
 - For iOS, we also install two additional versions: the two previous major versions, of which the latest minor version is installed.
 - For watchOS, we also install the previous major release’s latest minor version.
 
-For example, when selecting the Xcode 15.0 stack, you can expect:
+For example, when selecting the <NT>Xcode</NT> 15.0 stack, you can expect:
 
-- iOS 17.0: the matching runtime of this Xcode.
+- iOS 17.0: the matching runtime of this <NT>Xcode</NT>.
 - iOS 16.4: the latest minor release of the previous major iOS version.
 - iOS 15.5: the latest minor release of the second-previous major iOS version.
-- watchOS 10.0: the matching runtime of this Xcode.
+- watchOS 10.0: the matching runtime of this <NT>Xcode</NT>.
 - watchOS 9.4: the latest minor release of the previous major version.
-- tvOS 17.0: the matching runtime of this Xcode.
-- visionOS 1.0: the matching runtime of this Xcode
+- tvOS 17.0: the matching runtime of this <NT>Xcode</NT>.
+- visionOS 1.0: the matching runtime of this <NT>Xcode</NT>

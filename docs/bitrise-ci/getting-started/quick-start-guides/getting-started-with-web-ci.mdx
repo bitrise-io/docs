@@ -8,10 +8,11 @@ sidebar_label: Getting started with web CI projects
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-Bitrise is a mobile-focused DevOps platform. However, that doesn't mean you can't build non-mobile projects on Bitrise. We support non-mobile project types with integrations, default <GlossTerm baseform="workflow">Workflows</GlossTerm> and <GlossTerm baseform="pipeline">Pipelines</GlossTerm>, and dedicated caching solutions.
+<NT>Bitrise</NT> is a mobile-focused DevOps platform. However, that doesn't mean you can't build non-mobile projects on <NT>Bitrise</NT>. We support non-mobile project types with integrations, default <NT><GlossTerm baseform="workflow">Workflow</GlossTerm></NT>s and <NT><GlossTerm baseform="pipeline">Pipeline</GlossTerm></NT>s, and dedicated caching solutions.
 
-Using Bitrise for web CI allow you to consolidate all projects, mobile and others, on Bitrise. As Bitrise excels in mobile CI/CD, a complex area, consolidating simplifies operations as it's easier to adopt Bitrise for web than a generic CI for mobile.
+Using <NT>Bitrise</NT> for web CI allow you to consolidate all projects, mobile and others, on <NT>Bitrise</NT>. As <NT>Bitrise</NT> excels in mobile CI/CD, a complex area, consolidating simplifies operations as it's easier to adopt <NT>Bitrise</NT> for web than a generic CI for mobile.
 
 
 ## Adding a web CI project
@@ -20,42 +21,42 @@ Add your project the same way as any other: see [Adding a new project](/en/bitri
 
 ### How the scanner detects your project type
 
-The <GlossTerm baseform="project scanner">project scanner</GlossTerm> checks your repository for the file that identifies each supported language:
+The <NT><GlossTerm baseform="project scanner">project scanner</GlossTerm></NT> checks your repository for the file that identifies each supported language:
 
-- Node.js: a `package.json` file.
-- Ruby: a `Gemfile`.
+- <NT>Node.js</NT>: a `package.json` file.
+- <NT>Ruby</NT>: a `Gemfile`.
 - Python: a `requirements.txt`, `pyproject.toml`, `Pipfile`, or `setup.py` file.
-- Java or Kotlin: a `gradlew` file for Gradle, or a `pom.xml` file for Maven.
+- <NT>Java</NT> or <NT>Kotlin</NT>: a `gradlew` file for <NT>Gradle</NT>, or a `pom.xml` file for <NT>Maven</NT>.
 
-For Node.js, Ruby, and Python, it also reads version files such as `.nvmrc`, `.ruby-version`, or `.python-version` (or the `engines`/`requires-python` field in your project's manifest) to pick the right language version for your Workflow. See [Database configuration for Ruby projects](#database-configuration-for-ruby-projects) and [Package manager detection for Python](#package-manager-detection-for-python) for more detail on those two scanners.
+For <NT>Node.js</NT>, <NT>Ruby</NT>, and Python, it also reads version files such as `.nvmrc`, `.ruby-version`, or `.python-version` (or the `engines`/`requires-python` field in your project's manifest) to pick the right language version for your <NT>Workflow</NT>. See [Database configuration for Ruby projects](#database-configuration-for-ruby-projects) and [Package manager detection for Python](#package-manager-detection-for-python) for more detail on those two scanners.
 
 ### What you can configure
 
-During the **CI configuration** stage, the wizard shows a **Project directory** option for each detected project, plus a package manager selector where one applies. If the scanner can't detect your package manager from a lockfile, choose it manually and Bitrise generates a matching configuration.
+During the **<NT>CI configuration</NT>** stage, the wizard shows a **Project directory** option for each detected project, plus a package manager selector where one applies. If the scanner can't detect your package manager from a lockfile, choose it manually and <NT>Bitrise</NT> generates a matching configuration.
 
-## Database configuration for Ruby projects
+## Database configuration for <NT>Ruby</NT> projects
 
-When adding a Ruby project, our project scanner detects database gems: `pg`, `mysql2`, `redis`, `mongoid/mongo`, and `sqlite3`. For each detected database gem, the scanner generates the appropriate service container: Postgres, MySQL, Redis, or MongoDB. Each container has the correct image, port mapping, and health checks so the container is fully ready before your tests try to connect.
+When adding a <NT>Ruby</NT> project, our project scanner detects database gems: `pg`, `mysql2`, `redis`, `mongoid/mongo`, and `sqlite3`. For each detected database gem, the scanner generates the appropriate service container: Postgres, MySQL, Redis, or MongoDB. Each container has the correct image, port mapping, and health checks so the container is fully ready before your tests try to connect.
 
-The scanner also parses your `config/database.yml` for relational databases and the `config/mongoid.yml` for MongoDB, to extract connection details. It resolves ERB expressions: if your `database.yml` contains something like `ENV.fetch("DB_HOST", "localhost")`, the scanner picks up both the environment variable name and its default value. These are then set as app-level environment variables in your Bitrise configuration, which means your test Workflow connects to the service containers without any manual environment setup.
+The scanner also parses your `config/database.yml` for relational databases and the `config/mongoid.yml` for MongoDB, to extract connection details. It resolves ERB expressions: if your `database.yml` contains something like `ENV.fetch("DB_HOST", "localhost")`, the scanner picks up both the environment variable name and its <NT>default value</NT>. These are then set as app-level <NT>environment variables</NT> in your <NT>Bitrise</NT> configuration, which means your test <NT>Workflow</NT> connects to the service containers without any manual environment setup.
 
 The scanner prefers the `test` environment section in your `database.yml`, falling back to default if a test block isn't present — which is exactly the lookup order Rails itself uses.
 
 
 ## Managing dependencies
 
-Bitrise supports several dependency managers with dedicated <GlossTerm baseform="step">Steps</GlossTerm> that make it easy to handle dependencies. For web CI projects, the most important ones are:
+<NT>Bitrise</NT> supports several dependency managers with dedicated <NT><GlossTerm baseform="step">Step</GlossTerm></NT>s that make it easy to handle dependencies. For web CI projects, the most important ones are:
 
-- [Run npm command](https://bitrise.io/integrations/steps/npm): Default Workflows for Node.js contain the **npm** Step that runs `npm install`. This command installs all necessary packages defined in your `package.json` file. You can specify flags to configure the installation procedure to suit your requirements.
+- [Run npm command](https://bitrise.io/integrations/steps/npm): <NT>Default Workflows</NT> for <NT>Node.js</NT> contain the **npm** <NT>Step</NT> that runs `npm install`. This command installs all necessary packages defined in your `package.json` file. You can specify flags to configure the installation procedure to suit your requirements.
 
-  Set up the command in the **The npm command with arguments to run** input. The default input value is **install**. In the <GlossTerm baseform="configuration yaml">configuration YAML</GlossTerm> file, look for the `command` input:
+  Set up the command in the **<NT>The npm command with arguments to run</NT>** input. The default input value is **install**. In the <NT><GlossTerm baseform="configuration yaml">configuration YAML</GlossTerm></NT> file, look for the `command` input:
 
   ```yaml
   - npm:
       inputs:
       - command: install -g
   ```
-- [Run yarn command](https://bitrise.io/integrations/steps/yarn): Yarn, like npm, looks for your dependencies in the `package.json` file. The Step allows you to specify the `yarn` command you want to run, as well as any additional arguments.
+- [Run yarn command](https://bitrise.io/integrations/steps/yarn): Yarn, like npm, looks for your dependencies in the `package.json` file. The <NT>Step</NT> allows you to specify the `yarn` command you want to run, as well as any additional arguments.
 
   Add your command to **The yarn command to run** input. In your configuration YAML file, the input is called `command`. Leave it empty to install dependencies.
 
@@ -65,20 +66,20 @@ Bitrise supports several dependency managers with dedicated <GlossTerm baseform=
       - command:
   ```
 
-  Specify your yarn command arguments in the **Arguments for running yarn commands** input. In your configuration YAML file, the input is called `args`. You can add multiple arguments separated by a space character.
+  Specify your yarn command arguments in the **<NT>Arguments for running yarn commands</NT>** input. In your configuration YAML file, the input is called `args`. You can add multiple arguments separated by a space character.
 
   ```yaml
   - yarn:      
       inputs:        
       - args: "-dev"
   ```
-- [Gradle Runner](https://bitrise.io/integrations/steps/gradle-runner): If your project is built with Gradle, you can use this Step to install your dependencies during the process. To do this, you need:
+- [Gradle Runner](https://bitrise.io/integrations/steps/gradle-runner): If your project is built with <NT>Gradle</NT>, you can use this <NT>Step</NT> to install your dependencies during the process. To do this, you need:
 
-  - A Gradle Wrapper.
-  - A Gradle task that is configured correctly.
+  - A <NT>Gradle</NT> Wrapper.
+  - A <NT>Gradle</NT> task that is configured correctly.
   - Dependencies declared in your build script.
 
-  The Step requires two inputs: the **Gradle task to run** input defines the Gradle task that will run during the build. The **Gradle Wrapper path** input defines the path to the `gradlew` file in your project. In your configuration YAML file, these inputs are called `gradle_task` and `gradlew_path`.
+  The <NT>Step</NT> requires two inputs: the **<NT>Gradle task to run</NT>** input defines the <NT>Gradle</NT> task that will run during the build. The **<NT>Gradle</NT> <NT>Wrapper</NT> path** input defines the path to the `gradlew` file in your project. In your configuration YAML file, these inputs are called `gradle_task` and `gradlew_path`.
 
   ```yaml
   - gradle-runner:
@@ -89,7 +90,7 @@ Bitrise supports several dependency managers with dedicated <GlossTerm baseform=
 
 ### Package manager detection for Python
 
-For a Python project, Bitrise creates a dependency management configuration after checking package manager sources in the following order:
+For a Python project, <NT>Bitrise</NT> creates a dependency management configuration after checking package manager sources in the following order:
 
 1. `uv.lock` for the `uv` package manager.
 1. `poetry.lock` for `poetry`.
@@ -100,31 +101,31 @@ If none of these are found, the package manager is left undetected. The user pic
 
 ## Running tests
 
-All Bitrise <GlossTerm baseform="project">projects</GlossTerm> have a default testing Workflow called `run_tests`. The contents of the Workflow depends on the exact project type.
+All <NT>Bitrise</NT> <NT><GlossTerm baseform="project">project</GlossTerm></NT>s have a default testing <NT>Workflow</NT> called `run_tests`. The contents of the <NT>Workflow</NT> depends on the exact project type.
 
-### Testing with Gradle for Java and Kotlin
+### Testing with <NT>Gradle</NT> for <NT>Java</NT> and <NT>Kotlin</NT>
 
-For Java and Kotlin projects built with Gradle, testing revolves around the `test` Gradle task. Bitrise has a dedicated Step for this: **Run Gradle Tests** which is part of the default Workflow.
+For <NT>Java</NT> and <NT>Kotlin</NT> projects built with <NT>Gradle</NT>, testing revolves around the `test` <NT>Gradle</NT> task. <NT>Bitrise</NT> has a dedicated <NT>Step</NT> for this: **<NT>Run Gradle Tests</NT>** which is part of the default <NT>Workflow</NT>.
 
-- The Step needs a [Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html) in your project. The wrapper must contain at least one correctly configured test task.
-- Use **Test task** input to set the Gradle task you want to run. By default, the Step executes the `test` task but you can configure any Gradle task for it.
+- The <NT>Step</NT> needs a [Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html) in your project. The wrapper must contain at least one correctly configured test task.
+- Use **Test task** input to set the <NT>Gradle</NT> task you want to run. By default, the <NT>Step</NT> executes the `test` task but you can configure any <NT>Gradle</NT> task for it.
 - Use the **Additional flags** input to further customize your gradlew command. For example, you can set a flag to run a specific test class.
 
-### Testing with Maven for Java
+### Testing with <NT>Maven</NT> for <NT>Java</NT>
 
-For Java projects built with Maven, your tests are run using a Script Step which runs the [Maven Wrapper's](https://maven.apache.org/tools/wrapper/) test command: `./mvnw test`.
+For <NT>Java</NT> projects built with <NT>Maven</NT>, your tests are run using a <NT>Script</NT> <NT>Step</NT> which runs the [Maven Wrapper's](https://maven.apache.org/tools/wrapper/) test command: `./mvnw test`.
 
-Script Steps are fully customizable: you can create whatever Maven configuration you need. You can freely modify the default configuration at any time to suit your purposes. For more information about running tests with Maven, check out [Surefire](https://maven.apache.org/surefire/index.html).
+<NT>Script</NT> <NT>Steps</NT> are fully customizable: you can create whatever <NT>Maven</NT> configuration you need. You can freely modify the default configuration at any time to suit your purposes. For more information about running tests with <NT>Maven</NT>, check out [Surefire](https://maven.apache.org/surefire/index.html).
 
-### Linting and testing Node.js projects
+### Linting and testing <NT>Node.js</NT> projects
 
-For Node.js projects, the default `run_tests` Workflow does two things by default — it installs Node.js and runs lint, not a test suite:
+For <NT>Node.js</NT> projects, the default `run_tests` <NT>Workflow</NT> does two things by default — it installs <NT>Node.js</NT> and runs lint, not a test suite:
 
-- Installs Node.js via a **Script** Step: As it's a Script Step, you can fully modify and customize the configuration to suit your own needs. The default solution simply installs Node.js with `asdf`:
+- Installs <NT>Node.js</NT> via a **Script** <NT>Step</NT>: As it's a <NT>Script</NT> <NT>Step</NT>, you can fully modify and customize the configuration to suit your own needs. The default solution simply installs <NT>Node.js</NT> with `asdf`:
 
   :::tip
 
-  Bitrise <GlossTerm baseform="stack">stacks</GlossTerm> come with [asdf](https://github.com/asdf-vm/asdf-nodejs) pre-installed to help auto-switch between various software versions `asdf` looks for the Node.js version in these files: `.tool-versions`, `.nvmrc`, `.node-version` so it should work out-of-the-box even if the project uses another Node.js manager.
+  <NT>Bitrise</NT> <NT><GlossTerm baseform="stack">stack</GlossTerm></NT>s come with [asdf](https://github.com/asdf-vm/asdf-nodejs) pre-installed to help auto-switch between various software versions `asdf` looks for the <NT>Node.js</NT> version in these files: `.tool-versions`, `.nvmrc`, `.node-version` so it should work out-of-the-box even if the project uses another <NT>Node.js</NT> manager.
 
   :::
 
@@ -142,11 +143,11 @@ For Node.js projects, the default `run_tests` Workflow does two things by defaul
   ```
 - Runs `npm run lint` with [the npm Step](https://bitrise.io/integrations/steps/npm): The lint command will analyze your code for potential errors.
 
-The **npm** Step allows you to run tests as well: you can run the `test` command to run the tests defined in the `package.json` file.
+The **npm** <NT>Step</NT> allows you to run tests as well: you can run the `test` command to run the tests defined in the `package.json` file.
 
-### Testing Ruby projects
+### Testing <NT>Ruby</NT> projects
 
-For Ruby projects, we automatically generate a testing Workflow with the right testing command. When adding a Ruby project, the scanner looks for testing frameworks and picks the right testing command based on what it finds:
+For <NT>Ruby</NT> projects, we automatically generate a testing <NT>Workflow</NT> with the right testing command. When adding a <NT>Ruby</NT> project, the scanner looks for testing frameworks and picks the right testing command based on what it finds:
 
 - RSpec: `bundle exec rspec` (optional in each test command, used only if Bundler is detected.)
 - Minitest in a Rails project: `bundle exec rails test`
@@ -157,50 +158,50 @@ For Ruby projects, we automatically generate a testing Workflow with the right t
 
 ## Caching
 
-Bitrise offers two distinct caching solutions:
+<NT>Bitrise</NT> offers two distinct caching solutions:
 
-- [The Bitrise Build Cache](/en/bitrise-build-cache): If you build your project with Bazel or Gradle, the Bitrise Build Cache caches build and test outputs to minimize how much work is done in subsequent builds. It's compatible with any CI tool and accelerates the build cycle without requiring you to manage a caching infrastructure.
-- [Key-based caching](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching): Key-based caching works by associating cache archives with a key. A Workflow can restore a cache archive by referring to the key; at the end of the Workflow, the build files can be saved into the cache archive that the key indicates. This overwrites the cache archive.
+- [The Bitrise Build Cache](/en/bitrise-build-cache): If you build your project with Bazel or <NT>Gradle</NT>, the <NT>Bitrise</NT> <NT>Build Cache</NT> caches build and test outputs to minimize how much work is done in subsequent builds. It's compatible with any CI tool and accelerates the build cycle without requiring you to manage a caching infrastructure.
+- [Key-based caching](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching): Key-based caching works by associating cache archives with a key. A <NT>Workflow</NT> can restore a cache archive by referring to the key; at the end of the <NT>Workflow</NT>, the build files can be saved into the cache archive that the key indicates. This overwrites the cache archive.
 
-### Bitrise Build Cache
+### <NT>Bitrise</NT> <NT>Build Cache</NT>
 
-Adding a new connection to the Bitrise Build Cache consists of:
+Adding a <NT>new connection</NT> to the <NT>Bitrise</NT> <NT>Build Cache</NT> consists of:
 
-- Selecting a CI provider: you can use either Bitrise or another CI provider.
-- Selecting a build tool: currently, Bazel, Gradle, and Xcode are supported.
-- If you use Bitrise as your CI provider, selecting a Bitrise project.
-- If you use a different CI provider, adding [a personal access token](/en/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token) to allow the Bitrise Build Cache access to your CI.
-- Adding the cache activation scripts to your CI process. On Bitrise, we have dedicated [Steps](/en/bitrise-ci/workflows-and-pipelines/steps/steps-overview) for this.
+- Selecting a CI provider: you can use either <NT>Bitrise</NT> or another CI provider.
+- Selecting a build tool: currently, Bazel, <NT>Gradle</NT>, and <NT>Xcode</NT> are supported.
+- If you use <NT>Bitrise</NT> as your CI provider, selecting a <NT>Bitrise</NT> <NT>project</NT>.
+- If you use a different CI provider, adding [a personal access token](/en/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token) to allow the <NT>Bitrise</NT> <NT>Build Cache</NT> access to your CI.
+- Adding the cache activation scripts to your CI process. On <NT>Bitrise</NT>, we have dedicated [Steps](/en/bitrise-ci/workflows-and-pipelines/steps/steps-overview) for this.
 
 ### Key-based caching
 
 To use key-based caching, you have two main options:
 
-- Using our dedicated caching Steps. These require no configuration as they automatically set up the cache keys needed for your dependencies. Dedicated Steps include Steps for caching npm, Yarn, and Gradle dependencies: [Dedicated caching Steps for dependency managers](/en/bitrise-ci/dependencies-and-caching/key-based-caching/dedicated-caching-steps-for-dependency-managers).
-- Using **Script** Steps to configure keys for your cache archives. This gives you full control over your caching setup: [Using key-based caching](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching).
+- Using our dedicated caching <NT>Steps</NT>. These require no configuration as they automatically set up the <NT>cache keys</NT> needed for your dependencies. Dedicated <NT>Steps</NT> include <NT>Steps</NT> for caching npm, Yarn, and <NT>Gradle</NT> dependencies: [Dedicated caching Steps for dependency managers](/en/bitrise-ci/dependencies-and-caching/key-based-caching/dedicated-caching-steps-for-dependency-managers).
+- Using **Script** <NT>Steps</NT> to configure keys for your cache archives. This gives you full control over your caching setup: [Using key-based caching](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching).
 
 
-## Docker container support
+## <NT>Docker</NT> container support
 
-You can use Docker containers in your Bitrise Workflows and Pipelines. Container support also enables background services. Running builds in a container grants full control over your build environment, and you don't need to install dependencies during a build.
+You can use <NT>Docker</NT> containers in your <NT>Bitrise</NT> <NT>Workflows</NT> and <NT>Pipelines</NT>. Container support also enables background services. Running builds in a container grants full control over your build environment, and you don't need to install dependencies during a build.
 
-### Building a Docker image
+### Building a <NT>Docker</NT> image
 
-To use containers, you need a Docker image. You can build and push your own Docker image using the [Docker Build & Push](https://bitrise.io/integrations/steps/docker-build-push) Step. The Step requires a list of image tags to be applied to the built image. You can also specify:
+To use containers, you need a <NT>Docker</NT> image. You can build and push your own <NT>Docker</NT> image using the [Docker Build & Push](https://bitrise.io/integrations/steps/docker-build-push) <NT>Step</NT>. The <NT>Step</NT> requires a list of image tags to be applied to the built image. You can also specify:
 
 - A build context.
 - A Dockerfile path.
 
-The **Docker Build & Push** Step offers built-in support for [key-based caching](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching). It means the Step automatically caches your built Docker image, using preset cache keys. For more information, check out [Building your own Docker image](/en/bitrise-platform/infrastructure/docker-containers-on-bitrise/building-your-own-docker-image).
+The **<NT>Docker Build & Push</NT>** <NT>Step</NT> offers built-in support for [key-based caching](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching). It means the <NT>Step</NT> automatically caches your built <NT>Docker</NT> image, using preset <NT>cache keys</NT>. For more information, check out [Building your own Docker image](/en/bitrise-platform/infrastructure/docker-containers-on-bitrise/building-your-own-docker-image).
 
 ### Using containers
 
 To use containers in a build, you need to:
 
-- Define your containers. It requires a container ID and the name and version of the Docker image.
-- Refer to the container by its ID within a Workflow or Pipeline. Different parts of the same Workflow can run in different containers.
+- Define your containers. It requires a container ID and the name and version of the <NT>Docker</NT> image.
+- Refer to the container by its ID within a <NT>Workflow</NT> or <NT>Pipeline</NT>. Different parts of the same <NT>Workflow</NT> can run in different containers.
 
-You can also define service containers that allow running Docker containers as services for advanced integration testing.
+You can also define service containers that allow running <NT>Docker</NT> containers as services for advanced integration testing.
 
 For details, check out [About Docker containers on Bitrise](/en/bitrise-platform/infrastructure/docker-containers-on-bitrise/about-docker-containers-on-bitrise).
 
@@ -209,10 +210,10 @@ For details, check out [About Docker containers on Bitrise](/en/bitrise-platform
 
 Deploy your web CI project in one of three ways:
 
-- The **[Deploy to Bitrise.io](https://bitrise.io/integrations/steps/deploy-to-bitrise-io)** Step: It deploys your files on Bitrise. Set the path to the files you want to deploy in the **Deploy directory or file path** input of the Step. After a successful build, you can find them on the **Artifacts** tab of [the build page](/en/bitrise-ci/run-and-analyze-builds/finding-a-specific-build). You can download the files from here.
+- The **[Deploy to Bitrise.io](https://bitrise.io/integrations/steps/deploy-to-bitrise-io)** <NT>Step</NT>: It deploys your files on <NT>Bitrise</NT>. Set the path to the files you want to deploy in the **<NT>Deploy directory or file path</NT>** input of the <NT>Step</NT>. After a successful build, you can find them on the **<NT>Artifacts</NT>** tab of [the build page](/en/bitrise-ci/run-and-analyze-builds/finding-a-specific-build). You can download the files from here.
 
   For more information, check out [Build artifacts online](/en/bitrise-ci/run-and-analyze-builds/managing-build-files/build-artifacts-online).
-- A customized [Script Step](https://bitrise.io/integrations/steps/script): Deploy your project using your own custom script. The Step supports all the popular scripting languages. The Step also allows you to create and export your own Environment Variables which can be accessed by subsequent Steps. With Script Steps, everything is fully in your control.
-- A dedicated deploy Step: These Steps deploy your web project to a specific service. For example, the [Amazon S3 Bucket Sync Step](https://bitrise.io/integrations/steps/amazon-s3-upload) uploads the contents of a local folder to an Amazon S3 bucket; the [Heroku Deploy](https://bitrise.io/integrations/steps/heroku-deploy) Step deploys your app to Heroku with the Heroku Toolbelt.
+- A customized [Script Step](https://bitrise.io/integrations/steps/script): Deploy your project using your own custom script. The <NT>Step</NT> supports all the popular scripting languages. The <NT>Step</NT> also allows you to create and export your own <NT>Environment Variables</NT> which can be accessed by subsequent <NT>Steps</NT>. With <NT>Script</NT> <NT>Steps</NT>, everything is fully in your control.
+- A dedicated deploy <NT>Step</NT>: These <NT>Steps</NT> deploy your web project to a specific service. For example, the [Amazon S3 Bucket Sync Step](https://bitrise.io/integrations/steps/amazon-s3-upload) uploads the contents of a local folder to an Amazon S3 bucket; the [Heroku Deploy](https://bitrise.io/integrations/steps/heroku-deploy) <NT>Step</NT> deploys your app to Heroku with the Heroku Toolbelt.
 
-  We'll be actively adding new deployment Steps in the future to cover as many use cases as possible.
+  We'll be actively adding new deployment <NT>Steps</NT> in the future to cover as many use cases as possible.

@@ -6,8 +6,9 @@ sidebar_position: 2
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-We have prepared some <GlossTerm baseform="Pipeline">Pipeline</GlossTerm> recipes based on common iOS use cases. These contain some of the most frequent tasks our users need to run.
+We have prepared some <NT><GlossTerm baseform="Pipeline">Pipeline</GlossTerm></NT> recipes based on common iOS use cases. These contain some of the most frequent tasks our users need to run.
 
 
 ## (iOS) Run tests in parallel on multiple simulators
@@ -16,45 +17,45 @@ We have prepared some <GlossTerm baseform="Pipeline">Pipeline</GlossTerm> recipe
 
 This example uses the [sample-swift-project-with-parallel-ui-test](https://github.com/bitrise-io/sample-swift-project-with-parallel-ui-test) iOS Open Source sample app, which has some example Unit and UI tests and uses Test Plans to group the tests.
 
-The example Pipeline config showcases how to run all the test cases of the project on different iOS simulators.
+The example <NT>Pipeline</NT> config showcases how to run all the test cases of the project on different iOS simulators.
 
-`run_tests_on_simulators` Pipeline runs two Stages sequentially:
+`run_tests_on_simulators` <NT>Pipeline</NT> runs two Stages sequentially:
 
-1. `build_tests stage` that runs the `build_tests` <GlossTerm baseform="workflow">Workflow</GlossTerm>. This Workflow git clones the sample project and runs the `xcode-build-for-test` <GlossTerm baseform="step">Step</GlossTerm> to build the target and associated tests. The built test bundle is transferred to the next Stage (`run_tests_on_simulators`) via the `deploy-to-bitrise-io` Step.
+1. `build_tests stage` that runs the `build_tests` <NT><GlossTerm baseform="workflow">Workflow</GlossTerm></NT>. This <NT>Workflow</NT> <NT>git clone</NT>s the sample project and runs the `xcode-build-for-test` <NT><GlossTerm baseform="step">Step</GlossTerm></NT> to build the target and associated tests. The built test bundle is transferred to the next Stage (`run_tests_on_simulators`) via the `deploy-to-bitrise-io` <NT>Step</NT>.
 
    :::note[The build test bundle is compressed]
 
-   `xcode-build-for-test` Step compresses the built test bundle and moves the generated zip to the $BITRISE_DEPLOY_DIR. That directory’s content is deployed to the Workflow artifacts by default via the `deploy-to-bitrise-io` Step.
+   `xcode-build-for-test` <NT>Step</NT> compresses the built test bundle and moves the generated zip to the $BITRISE_DEPLOY_DIR. That directory’s content is deployed to the <NT>Workflow</NT> artifacts by default via the `deploy-to-bitrise-io` <NT>Step</NT>.
 
    :::
 
    :::important[Artifact file size limitation]
 
-   There is no limitation on the number of files deployed to **Artifacts** per build. There is a limitation, however, on the file size which is 2GB per file.
+   There is no limitation on the number of files deployed to **<NT>Artifacts</NT>** per build. There is a limitation, however, on the file size which is 2GB per file.
 
    :::
-1. `run_tests_on_simulators` Stage runs three Workflows in parallel: `run_tests_iPad`, `run_tests_iPhone`, and `run_tests_iPod`. All three of these Workflows use the new `xcode-test-without-building` Step, which executes the tests based on the previous stage built test bundle. The pre-built test bundle is pulled by the `_pull_test_bundle`utility Workflow.
+1. `run_tests_on_simulators` Stage runs three <NT>Workflows</NT> in parallel: `run_tests_iPad`, `run_tests_iPhone`, and `run_tests_iPod`. All three of these <NT>Workflows</NT> use the new `xcode-test-without-building` <NT>Step</NT>, which executes the tests based on the previous stage built test bundle. The pre-built test bundle is pulled by the `_pull_test_bundle`utility <NT>Workflow</NT>.
 
    ![iOS_example_modified.png](/img/_paligo/uuid-5b325bb0-a98a-bd3d-943f-c7d26897e362.png)
 
 ### Instructions
 
-To test the configuration in a new Bitrise example project, do the following:
+To test the configuration in a new <NT>Bitrise</NT> example project, do the following:
 
 1. Visit the [Create New App page](https://app.bitrise.io/apps/add) to create a new App.
-1. When prompted to select a git repository, choose **Other/Manual** and paste the sample project repository URL (`https://github.com/bitrise-io/sample-swift-project-with-parallel-ui-test`) in the **Git repository (clone) URL** field.
+1. When prompted to select a git repository, choose **<NT>Other</NT>/Manual** and paste the sample project repository URL (`https://github.com/bitrise-io/sample-swift-project-with-parallel-ui-test`) in the **<NT>Git repository (clone) URL</NT>** field.
 1. Confirm that this is a public repository in the resulting pop-up.
 1. Select the `master` branch to scan.
-1. Wait for the <GlossTerm baseform="project scanner">project scanner</GlossTerm> to complete.
-1. Select any of the offered Distribution methods (for example **development**, it does not really matter as now we are focusing on testing).
-1. Confirm the offered <GlossTerm baseform="stack">stack</GlossTerm>, skip choosing the app icon and the webhook registration and kick off the first build.
-1. Open the new Bitrise <GlossTerm baseform="project">project</GlossTerm>’s <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>.
-1. Go to the **<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>** tab and replace the existing `bitrise.yml` with the contents of the example `[bitrise.yml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/ios-run-tests-in-parallel-on-multiple-simulators.md#bitriseyml)` file.
-1. Click the **Start/Schedule a Build** button, and select the **run_tests_on_simulators** option in the “**Workflow, Pipeline**” dropdown menu at the bottom of the popup.
+1. Wait for the <NT><GlossTerm baseform="project scanner">project scanner</GlossTerm></NT> to complete.
+1. Select any of the offered <NT>Distribution method</NT>s (for example **development**, it does not really matter as now we are focusing on testing).
+1. Confirm the offered <NT><GlossTerm baseform="stack">stack</GlossTerm></NT>, skip choosing the app icon and the webhook registration and kick off the first build.
+1. Open the new <NT>Bitrise</NT> <NT><GlossTerm baseform="project">project</GlossTerm></NT>’s <NT><GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm></NT>.
+1. Go to the **<NT><GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm></NT>** tab and replace the existing `bitrise.yml` with the contents of the example `[bitrise.yml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/ios-run-tests-in-parallel-on-multiple-simulators.md#bitriseyml)` file.
+1. Click the **<NT>Start/Schedule a Build</NT>** button, and select the **run_tests_on_simulators** option in the “**<NT>Workflow, Pipeline</NT>**” dropdown menu at the bottom of the popup.
 
 ### bitrise.yml
 
-GitHub link: [https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/ios-run-tests-in-parallel-on-multiple-simulators.md#bitriseyml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/ios-run-tests-in-parallel-on-multiple-simulators.md#bitriseyml)
+<NT>GitHub</NT> link: [https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/ios-run-tests-in-parallel-on-multiple-simulators.md#bitriseyml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/ios-run-tests-in-parallel-on-multiple-simulators.md#bitriseyml)
 
 
 ## (iOS) Run test groups in parallel
@@ -63,34 +64,34 @@ GitHub link: [https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/i
 
 This example uses the [sample-swift-project-with-parallel-ui-test](https://github.com/bitrise-io/sample-swift-project-with-parallel-ui-test) iOS Open Source sample app, which has some example Unit and UI tests and uses Test Plans to group the tests.
 
-:::tip[XCode test plans]
+:::tip[<NT>XCode</NT> test plans]
 
-Xcode Test Plans provide a way to run a collection of tests with different test configurations. raywenderlich.com has a great [tutorial on how to get started with Xcode Test Plans](https://www.raywenderlich.com/10212963-xcode-test-plans-for-ios-getting-started).
+<NT>Xcode</NT> Test Plans provide a way to run a collection of tests with different test configurations. raywenderlich.com has a great [tutorial on how to get started with Xcode Test Plans](https://www.raywenderlich.com/10212963-xcode-test-plans-for-ios-getting-started).
 
 :::
 
-The example Pipeline config showcases how to run different test groups in parallel.
+The example <NT>Pipeline</NT> config showcases how to run different test groups in parallel.
 
-`run_tests_groups` Pipeline runs two Stages sequentially:
+`run_tests_groups` <NT>Pipeline</NT> runs two Stages sequentially:
 
-1. `build_tests` Stage that runs the `build_tests` Workflow. This Workflow git clones the sample project and runs the `xcode-build-for-test` Step to build the target and associated tests. The built test bundle is transferred to the next Stage (`run_tests_groups`) via the `deploy-to-bitrise-io` Step.
-1. `run_tests_groups` Stage runs two Workflows in parallel: `run_ui_tests` and `run_unit_tests`. Both of these Workflows use the new `xcode-test-without-building` Step, which executes the tests based on the previous Stage built test bundle. The pre-built test bundle is pulled by the `_pull_test_bundle` utility Workflow.
+1. `build_tests` Stage that runs the `build_tests` <NT>Workflow</NT>. This <NT>Workflow</NT> <NT>git clone</NT>s the sample project and runs the `xcode-build-for-test` <NT>Step</NT> to build the target and associated tests. The built test bundle is transferred to the next Stage (`run_tests_groups`) via the `deploy-to-bitrise-io` <NT>Step</NT>.
+1. `run_tests_groups` Stage runs two <NT>Workflows</NT> in parallel: `run_ui_tests` and `run_unit_tests`. Both of these <NT>Workflows</NT> use the new `xcode-test-without-building` <NT>Step</NT>, which executes the tests based on the previous Stage built test bundle. The pre-built test bundle is pulled by the `_pull_test_bundle` utility <NT>Workflow</NT>.
 
    ![iOS_example_2.png](/img/_paligo/uuid-789ed335-aeab-b87c-6045-270c5e87a641.png)
 
 ### Instructions
 
 1. Visit the [Create New App page](https://app.bitrise.io/apps/add) to create a new App.
-1. When prompted to select a git repository, choose **Other/Manual** and paste the sample project repository URL (`https://github.com/bitrise-io/sample-swift-project-with-parallel-ui-test`) in the **Git repository (clone) URL** field.
+1. When prompted to select a git repository, choose **<NT>Other</NT>/Manual** and paste the sample project repository URL (`https://github.com/bitrise-io/sample-swift-project-with-parallel-ui-test`) in the **<NT>Git repository (clone) URL</NT>** field.
 1. Confirm that this is a public repository in the resulting pop-up.
 1. Select the `master` branch to scan.
 1. Wait for the project scanner to complete.
-1. Select any of the offered Distribution methods (for example **development**, it does not really matter as now we are focusing on testing).
+1. Select any of the offered <NT>Distribution method</NT>s (for example **development**, it does not really matter as now we are focusing on testing).
 1. Confirm the offered stack, skip choosing the app icon and the webhook registration and kick off the first build.
-1. Open the new Bitrise project’s Workflow Editor.
+1. Open the new <NT>Bitrise</NT> <NT>project</NT>’s <NT>Workflow Editor</NT>.
 1. Go to the **bitrise.yml** tab and replace the existing `bitrise.yml` with the contents of the example `[bitrise.yml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/ios-run-test-groups-in-parallel.md#bitriseyml)` file.
-1. Click the **Start/Schedule a Build** button, and select the `run_tests_groups` option in the “**Workflow, Pipeline**” dropdown menu at the bottom of the popup.
+1. Click the **<NT>Start/Schedule a Build</NT>** button, and select the `run_tests_groups` option in the “**<NT>Workflow, Pipeline</NT>**” dropdown menu at the bottom of the popup.
 
 ### bitrise.yml
 
-GitHub link: [https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/ios-run-test-groups-in-parallel.md#bitriseyml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/ios-run-test-groups-in-parallel.md#bitriseyml)
+<NT>GitHub</NT> link: [https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/ios-run-test-groups-in-parallel.md#bitriseyml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/ios-run-test-groups-in-parallel.md#bitriseyml)

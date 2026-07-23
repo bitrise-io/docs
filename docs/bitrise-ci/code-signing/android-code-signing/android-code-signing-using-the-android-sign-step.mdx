@@ -8,29 +8,30 @@ slug: /bitrise-ci/code-signing/android-code-signing/android-code-signing-using-t
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-You can create a signed APK or AAB using the [**Android Sign**](https://github.com/bitrise-steplib/steps-sign-apk) <GlossTerm baseform="Step">Step</GlossTerm> in your Bitrise <GlossTerm baseform="Workflow">Workflow</GlossTerm>.
+You can create a signed APK or AAB using the [**Android Sign**](https://github.com/bitrise-steplib/steps-sign-apk) <NT><GlossTerm baseform="Step">Step</GlossTerm></NT> in your <NT>Bitrise</NT> <NT><GlossTerm baseform="Workflow">Workflow</GlossTerm></NT>.
 
-The **Android Sign** Step is not required if signing is configured in your project's `build.gradle` file. If so, running the [**Android Build**](https://github.com/bitrise-steplib/bitrise-step-android-build) Step (or the [**Gradle Runner**](https://github.com/bitrise-io/steps-gradle-runner) Step) signs the output (APK or AAB) automatically. Nevertheless, we recommend that you use the **Android Sign** Step to sign your project in an easy and secure way.
+The **<NT>Android Sign</NT>** <NT>Step</NT> is not required if signing is configured in your project's `build.gradle` file. If so, running the [**Android Build**](https://github.com/bitrise-steplib/bitrise-step-android-build) <NT>Step</NT> (or the [**Gradle Runner**](https://github.com/bitrise-io/steps-gradle-runner) <NT>Step</NT>) signs the output (APK or AAB) automatically. Nevertheless, we recommend that you use the **<NT>Android Sign</NT>** <NT>Step</NT> to sign your project in an easy and secure way.
 
-To sign your app with the Android Sign Step:
+To sign your app with the <NT>Android Sign</NT> <NT>Step</NT>:
 
-1. [Upload your keystore file to Bitrise](/en/bitrise-ci/code-signing/android-code-signing/uploading-android-keystore-files-to-bitrise). This creates the following Environment Variables from your keystore's credentials: 
+1. [Upload your keystore file to Bitrise](/en/bitrise-ci/code-signing/android-code-signing/uploading-android-keystore-files-to-bitrise). This creates the following <NT>Environment Variables</NT> from your keystore's credentials: 
 - `$BITRISEIO_ANDROID_KEYSTORE_URL`
 - `$BITRISEIO_ANDROID_KEYSTORE_PASSWORD`
 - `$BITRISEIO_ANDROID_KEYSTORE_ALIAS`
 - `$BITRISEIO_ANDROID_KEYSTORE_PRIVATE_KEY_PASSWORD` 
-1. Add the [**Android Sign**](https://github.com/bitrise-steplib/steps-sign-apk) Step to your Workflow, after the Step that builds your APK or AAB file.
+1. Add the [**Android Sign**](https://github.com/bitrise-steplib/steps-sign-apk) <NT>Step</NT> to your <NT>Workflow</NT>, after the <NT>Step</NT> that builds your APK or AAB file.
 
-   The Step's **Keystore url**, **Keystore password**, **Key alias**, and **Key password** inputs default to the Environment Variables generated from your keystore credentials, so you don't need to set them if you uploaded a single keystore file. If you uploaded multiple keystore files or set a custom keystore ID, point these inputs at the matching Environment Variables instead (see [Uploading Android keystore files to Bitrise](/en/bitrise-ci/code-signing/android-code-signing/uploading-android-keystore-files-to-bitrise)).
-1. Optional: on the **Signer tool** input, choose whether the Step signs with `apksigner`, `jarsigner`, or decides automatically (the default: `apksigner` for APKs, `jarsigner` for AABs). AAB files can only be signed with `jarsigner` regardless of this setting.
+   The <NT>Step</NT>'s **<NT>Keystore url</NT>**, **<NT>Keystore password</NT>**, **<NT>Key alias</NT>**, and **<NT>Key</NT> password** inputs default to the <NT>Environment Variables</NT> generated from your keystore credentials, so you don't need to set them if you uploaded a single keystore file. If you uploaded multiple keystore files or set a <NT>custom keystore ID</NT>, point these inputs at the matching <NT>Environment Variables</NT> instead (see [Uploading Android keystore files to Bitrise](/en/bitrise-ci/code-signing/android-code-signing/uploading-android-keystore-files-to-bitrise)).
+1. Optional: on the **Signer tool** input, choose whether the <NT>Step</NT> signs with `apksigner`, `jarsigner`, or decides automatically (the default: `apksigner` for APKs, `jarsigner` for AABs). AAB files can only be signed with `jarsigner` regardless of this setting.
 1. Optional: on the **APK Signature Scheme** input, choose which signature scheme(s) `apksigner` applies, or leave it on automatic (the default) to let it decide based on your app's minimum and target SDK versions.
 
-Once the Step runs, it produces a signed APK or AAB. Use the signed output in a deploy Step, for example the [**Google Play Deploy**](https://github.com/bitrise-io/steps-google-play-deploy) Step or the **Deploy to Bitrise.io** Step, which publishes it on the **Artifacts** tab. You can also use [Release Management](/en/release-management) to deploy your app once you've built a signed artifact.
+Once the <NT>Step</NT> runs, it produces a signed APK or AAB. Use the signed output in a deploy <NT>Step</NT>, for example the [**Google Play Deploy**](https://github.com/bitrise-io/steps-google-play-deploy) <NT>Step</NT> or the **<NT>Deploy to Bitrise.io</NT>** <NT>Step</NT>, which publishes it on the **<NT>Artifacts</NT>** tab. You can also use [Release Management](/en/release-management) to deploy your app once you've built a signed artifact.
 
 :::note[Downloading your keystore file]
 
-You can download your keystore file to the project directory using the **[File Downloader](https://github.com/bitrise-steplib/steps-file-downloader)** Step:
+You can download your keystore file to the project directory using the **[File Downloader](https://github.com/bitrise-steplib/steps-file-downloader)** <NT>Step</NT>:
 
 ```yaml
 - file-downloader:
@@ -39,8 +40,8 @@ You can download your keystore file to the project directory using the **[File D
    - destination: "$HOME/keystores/my_keystore.jks" #native android#
 ```
 
-If a Step requires the keystore file, make sure to include that Step AFTER the [**File Downloader**](https://github.com/bitrise-steplib/steps-file-downloader) Step.
+If a <NT>Step</NT> requires the keystore file, make sure to include that <NT>Step</NT> AFTER the [**File Downloader**](https://github.com/bitrise-steplib/steps-file-downloader) <NT>Step</NT>.
 
-After this Step, `my_keystore.jks` will be available at `$HOME/keystores/my_keystore.jks`.
+After this <NT>Step</NT>, `my_keystore.jks` will be available at `$HOME/keystores/my_keystore.jks`.
 
 :::

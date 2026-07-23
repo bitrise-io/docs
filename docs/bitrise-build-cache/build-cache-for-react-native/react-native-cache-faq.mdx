@@ -1,0 +1,64 @@
+---
+title: "React Native Cache FAQ"
+sidebar_position: 5
+---
+
+import NT from '@site/src/components/NT';
+
+## What exactly gets cached?
+
+- **<NT>Android</NT>:** <NT>Gradle</NT> task outputs (compilation, resource processing, dex generation) via the remote <NT>build cache</NT>.
+- **iOS:** <NT>Xcode</NT> compilation outputs (object files, module artifacts) via the LLVM CAS-backed cache.
+- **C++ native modules:** Compiled native bridge code and third-party native modules via `ccache`, backed by <NT>Bitrise</NT>'s remote storage.
+
+## What does NOT get cached?
+
+- **Metro JS bundling** — the <NT>JavaScript</NT> bundling step is not affected by this setup.
+- **`node_modules`** — package installation (`yarn` / `npm` / `pnpm`) is not cached by this tool. Use <NT>Bitrise</NT>'s standard caching steps if you want to cache `node_modules`.
+
+## Do I need to wrap every command?
+
+Only wrap commands that trigger *native builds*. You do not need to wrap:
+
+- `yarn install` / `npm install` / `pnpm install`
+- `yarn test` / `npm test` (JS-only tests)
+- Any command that does not invoke <NT>Gradle</NT> or <NT>Xcode</NT>
+
+Wrap commands like `npx react-native run-android`, `npx react-native run-ios`, `./gradlew assembleRelease`, `fastlane build`, or any script that ultimately calls `xcodebuild` or <NT>Gradle</NT>.
+
+## Will this speed up my tests?
+
+<NT>Build Cache</NT> reduces *compilation* time. If your test workflow includes a build step (for example `xcode-build-for-test`), that step will be faster. The actual test execution time is not affected.
+
+## Can I use this alongside the standalone <NT>Gradle</NT> or <NT>Xcode</NT> <NT>Build Cache</NT> steps?
+
+No — the **<NT>Build Cache for React Native</NT>** step configures caching for <NT>Gradle</NT>, <NT>Xcode</NT>, and C++ in one go. If you are already using a standalone **<NT>Build Cache for Gradle</NT>** or **<NT>Build Cache for Xcode</NT>** step, replace it with this step to avoid conflicting configurations.
+
+## Can I selectively disable one of the backends?
+
+Yes. The activation step exposes inputs for <NT>Gradle</NT> and <NT>Xcode</NT> (both default to `true`). On the CLI, pass `--gradle=false`, `--xcode=false`, or `--cpp=false` to `bitrise-build-cache activate react-native`. Disabling <NT>Gradle</NT> also disables the C++/`ccache` flow on the <NT>Android</NT> side; the C++ backend follows the `--cpp` flag.
+
+## Can I still fine-tune ccache configuration?
+
+Yes — the <NT>React Native</NT> activation only sets the following <NT>environment variables</NT> to point `ccache` at <NT>Bitrise</NT>'s remote storage:
+
+- CCACHE_BASEDIR
+- CCACHE_NOHASHDIR
+- CCACHE_REMOTE_ONLY
+- CCACHE_REMOTE_STORAGE
+- CMAKE_CXX_COMPILER_LAUNCHER
+- CMAKE_C_COMPILER_LAUNCHER
+
+Anything else — including your `ccache.conf` — is yours to customize. Note that the env vars above override the same parameters coming from config files.
+
+## How do I troubleshoot issues?
+
+- Enable verbose logging by setting the **Verbose logging** input on the Activate step (or pass `--debug` to the CLI). This logs additional details about cache configuration and the background storage helper.
+- Confirm that the activation step ran in the *same environment* as the build commands (same container/shell on non-<NT>Bitrise CI</NT>).
+- Confirm that native build commands are wrapped with `bitrise-build-cache react-native run`.
+- Check the **<NT>Build Cache</NT>** tab on the <NT>build details</NT> page to see whether the wrapped invocations were registered.
+- For iOS, confirm the stack uses **<NT>Xcode 26 or later</NT>**.
+
+## I'm using an official <NT>Bitrise step</NT> to build my app. Do I still need the wrapper?
+
+No. If you are using the <NT>latest version</NT>s of **<NT>Gradle Runner</NT>**, **<NT>Android Build</NT>**, or **<NT>Xcode Archive</NT>**, the wrapping is handled by the step itself — just make sure those steps are up to date. If you use a different official <NT>Bitrise step</NT> that runs a build, [let us know](https://github.com/bitrise-io/bitrise-build-cache-cli/issues) so we can add support.

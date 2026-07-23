@@ -8,23 +8,24 @@ slug: /bitrise-ci/workflows-and-pipelines/developing-your-own-bitrise-step/creat
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-The <GlossTerm baseform="project scanner">project scanner</GlossTerm> is a tool that identifies the given project’s type and generates a basic Bitrise configuration. Each supported project type has its own scanner: these scanners are stored as separate packages.
+The <NT><GlossTerm baseform="project scanner">project scanner</GlossTerm></NT> is a tool that identifies the given project’s type and generates a basic <NT>Bitrise</NT> configuration. Each supported project type has its own scanner: these scanners are stored as separate packages.
 
-A project type scanner defines at least two <GlossTerm baseform="Workflow">Workflows</GlossTerm>: one for testing (`primary`) and one for building (`deploy`). It includes the minimal amount of <GlossTerm baseform="step">Steps</GlossTerm> to successfully run them.
+A project type scanner defines at least two <NT><GlossTerm baseform="Workflow">Workflow</GlossTerm></NT>s: one for testing (`primary`) and one for building (`deploy`). It includes the minimal amount of <NT><GlossTerm baseform="step">Step</GlossTerm></NT>s to successfully run them.
 
-:::important[Build and test Steps]
+:::important[Build and test <NT>Steps</NT>]
 
-Build Steps and test Steps have specific requirements:
+Build <NT>Steps</NT> and test <NT>Steps</NT> have specific requirements:
 
-- A build Step must build your app so that it is ready for deployment and it must output an Environment Variable that points to the output file(s). For example, a build Step to build an iOS app must output an .ipa file (not, say, `.xcodearchive`) and the path to this .ipa file.
-- A test Step must output the test results so that they are available for viewing on the build page on bitrise.io.
+- A build <NT>Step</NT> must build your app so that it is ready for deployment and it must output an Environment Variable that points to the output file(s). For example, a build <NT>Step</NT> to build an iOS app must output an .ipa file (not, say, `.xcodearchive`) and the path to this .ipa file.
+- A test <NT>Step</NT> must output the test results so that they are available for viewing on the build page on bitrise.io.
 
 :::
 
 When adding a new project on the website or initializing a project on your own machine, the [bitrise-init](https://github.com/bitrise-io/bitrise-init) tool iterates through every scanner, calls the scanner interface methods on each of them and collects their outputs. Based on these outputs, a basic configuration is generated.
 
-The possible Workflows are described in a scan result model. The model consists of:
+The possible <NT>Workflows</NT> are described in a scan result model. The model consists of:
 
 - options
 - configs
@@ -60,7 +61,7 @@ warnings:
   ...
 ```
 
-- Every platform scanner writes its possible options, configurations and warnings into this model. These will be translated into Step input values by choosing the desired values for the given options.
+- Every platform scanner writes its possible options, configurations and warnings into this model. These will be translated into <NT>Step</NT> input values by choosing the desired values for the given options.
 - Every option chain’s last option selects a configuration.
 - Warnings display the issues with the given project setup.
 
@@ -72,11 +73,11 @@ warnings:
 - Question: What is the path to the iOS project files?
 - Possible answers: List of possible paths to check
 
-These questions and answers are translated into Step inputs. The scanner should either determine the input value or let the user select or type the value.
+These questions and answers are translated into <NT>Step inputs</NT>. The scanner should either determine the input value or let the user select or type the value.
 
-For example, the `Xcode Archive & Export for iOS` Step has an input called export-method. This informs the Step of the type of .ipa you want to export. The value cannot be determined based on the source code so the scanner collects every possible value and presents them to the user in the form of a list to choose from.
+For example, the `Xcode Archive & Export for iOS` <NT>Step</NT> has an input called export-method. This informs the <NT>Step</NT> of the type of .ipa you want to export. The value cannot be determined based on the source code so the scanner collects every possible value and presents them to the user in the form of a list to choose from.
 
-Selecting an option can start a chain: it can lead to different options being presented afterwards. For example, if you select an Xcode scheme that has associated test targets, it leads to different “questions”. Similarly, selecting a certain option can lead to a different workflow being generated afterwards.
+Selecting an option can start a chain: it can lead to different options being presented afterwards. For example, if you select an <NT>Xcode</NT> scheme that has associated test targets, it leads to different “questions”. Similarly, selecting a certain option can lead to a different workflow being generated afterwards.
 
 ### The option model
 
@@ -100,7 +101,7 @@ type OptionNode struct {
 - Title: the human readable name of the input.
 - Summary: a short description of the option.
 - EnvKey: it represents the input’s key in the step model.
-- ChildOptionMap: the map of the subsequent options if the user chooses a given value for the option.
+- ChildOptionMap: the map of the subsequent options if the user chooses a given value <NT>for the</NT> option.
 
 For example, let’s see a scenario where you choose a value for the Scheme input. You will have a value_map in the `options`. The possible values are:
 
@@ -132,7 +133,7 @@ By choosing `SchemeWithoutTest`, the next option will be about the export method
 
 Every option chain has a first option: this is called `head`. The possible values of the options can branch the option chain.
 
-Every option branch’s last `options` must have a config property set. config holds the id of the generated Bitrise configuration.
+Every option branch’s last `options` must have a config property set. config holds the id of the generated <NT>Bitrise</NT> configuration.
 
 An options chain’s last `options` cannot have a value_map.
 
@@ -202,19 +203,19 @@ To test a scanner, we require both unit tests and integration tests.
 
 Unit tests are written using Go’s standard testing library.
 
-For integration tests, we are validating that the project type scanners are generating the desired Bitrise configurations for an instance of the project type. To do this, we use the new scanner to scan the given sample project and we modify the generated scan result to fit our integration tests.
+For integration tests, we are validating that the project type scanners are generating the desired <NT>Bitrise</NT> configurations for an instance of the project type. To do this, we use the new scanner to scan the given sample project and we modify the generated scan result to fit our integration tests.
 
-The reason for the modification is that the scanners are adding Steps to the generated config, but the Step versions are updated from time to time. The Step version definitions can be found at `steps/const.go`.
+The reason for the modification is that the scanners are adding <NT>Steps</NT> to the generated config, but the <NT>Step</NT> versions are updated from time to time. The <NT>Step</NT> version definitions can be found at `steps/const.go`.
 
-So we call `bitrise-init --ci config` in the sample project’s root directory, and in the generated `scan_result.yml` file we replace the Step versions with `%s` and we use `fmt.Sprintf` to inject the latest defined Step versions into the config.
+So we call `bitrise-init --ci config` in the sample project’s root directory, and in the generated `scan_result.yml` file we replace the <NT>Step</NT> versions with `%s` and we use `fmt.Sprintf` to inject the latest defined <NT>Step</NT> versions into the config.
 
 In the integration tests, we are matching the `scan_result.yml` file generated by the scanner with the previously generated reference `scan_result` content.
 
 ### Submitting your own scanner
 
-You can submit your own scanner to Bitrise: we will review it and integrate it to the bitrise-init tool once it’s approved!
+You can submit your own scanner to <NT>Bitrise</NT>: we will review it and integrate it to the bitrise-init tool once it’s approved!
 
-The development path for a new scanner starts with your own sample project and ends with updating the existing Steps for your project type. Let’s go through it!
+The development path for a new scanner starts with your own sample project and ends with updating the existing <NT>Steps</NT> for your project type. Let’s go through it!
 
 1. Find or create an open source sample app that demonstrates a typical instance of your project type.
 
@@ -222,10 +223,10 @@ The development path for a new scanner starts with your own sample project and e
 
    - a readme file (including tool versions required for updating, building and testing this project).
    - a `bitrise.yml` file that is generated by your scanner.
-1. Build and test your sample app with existing Steps or custom scripts.
-1. Create the missing Steps the new project type needs.
+1. Build and test your sample app with existing <NT>Steps</NT> or custom scripts.
+1. Create the missing <NT>Steps</NT> the new project type needs.
 
-   The PR for these Steps should link the scanner PR once you created the scanner.
+   The PR for these <NT>Steps</NT> should link the scanner PR once you created the scanner.
 1. Create a scanner for your project type.
 1. Run the required unit tests and integration tests.
 1. Open a scanner pull request to the bitrise-init project.
@@ -235,7 +236,7 @@ The development path for a new scanner starts with your own sample project and e
    - link the new project type’s sample app.
    - link the new project type’s guides for testing and building.
    - include an icon for the new project type - otherwise we will create one for you.
-   - recommend the default <GlossTerm baseform="stack">stack</GlossTerm> by listing the required tools for building and testing the new project type.
-1. Update the existing Steps with the new project type if necessary.
+   - recommend the default <NT><GlossTerm baseform="stack">stack</GlossTerm></NT> by listing the required tools for building and testing the new project type.
+1. Update the existing <NT>Steps</NT> with the new project type if necessary.
 
-   The PR for these Steps should link the scanner PR.
+   The PR for these <NT>Steps</NT> should link the scanner PR.

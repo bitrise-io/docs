@@ -8,40 +8,41 @@ slug: /bitrise-platform/infrastructure/docker-containers-on-bitrise/about-docker
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-Use any Docker image as the execution environment for your <GlossTerm baseform="step">Steps</GlossTerm> or as a background service: spin up a database, HTTP server, or any dependency your tests need.
+Use any <NT>Docker</NT> image as the execution environment for your <NT><GlossTerm baseform="step">Step</GlossTerm></NT>s or as a background service: spin up a database, HTTP server, or any dependency your tests need.
 
 Using containers comes with several potential benefits:
 
-- Full control over your build environment. Install any tool, any version, without waiting on Bitrise to support it.
+- Full control over your build environment. Install any tool, any version, without waiting on <NT>Bitrise</NT> to support it.
 - Dependencies live in the image. This reduces build times and complexity. No need to install them during the build itself. This reduces build times and complexity.
 - You can use the same environment that you use locally to test and build the app.
 
-There are two types of containers supported on Bitrise:
+There are two types of containers supported on <NT>Bitrise</NT>:
 
-- [Execution containers](/en/bitrise-platform/infrastructure/docker-containers-on-bitrise/execution-containers): You can run Steps or Step bundles within execution containers. This provides an easy, clean and reliable way to provision a build environment.
-- [Service containers](/en/bitrise-platform/infrastructure/docker-containers-on-bitrise/service-containers): Define service containers and refer to them in Steps or Step bundles to run services in the background while running a Step or Step bundle. Examples of services might include an HTTP server, a database, or any other type of executable program that you wish to run in a distributed environment.
+- [Execution containers](/en/bitrise-platform/infrastructure/docker-containers-on-bitrise/execution-containers): You can run <NT>Steps</NT> or <NT>Step bundles</NT> within execution containers. This provides an easy, clean and reliable way to provision a build environment.
+- [Service containers](/en/bitrise-platform/infrastructure/docker-containers-on-bitrise/service-containers): Define service containers and refer to them in <NT>Steps</NT> or <NT>Step bundles</NT> to run services in the background while running a <NT>Step</NT> or <NT>Step bundle</NT>. Examples of services might include an HTTP server, a database, or any other type of executable program that you wish to run in a distributed environment.
 
-:::important[Linux only]
+:::important[<NT>Linux</NT> only]
 
-This is a Linux-only feature. macOS-based environments are not supported.
+This is a <NT>Linux</NT>-only feature. macOS-based environments are not supported.
 
 :::
 
 
 ## Container nesting rules
 
-Steps and Step bundles both support their own container configuration. This creates a natural hierarchy: a step can define containers that differ from its parent bundle, and bundles can be nested within other bundles — each level can override or extend what came before.
+<NT>Steps</NT> and <NT>Step bundles</NT> both support their own container configuration. This creates a natural hierarchy: a step can define containers that differ from its parent bundle, and bundles can be nested within other bundles — each level can override or extend what came before.
 
 Two rules govern how configurations at different levels combine:
 
-- Execution containers follow closest-wins inheritance. Each Step uses the execution container defined nearest to it in the hierarchy—its own definition takes priority, then its parent bundle's, then its grandparent's. Only one execution container is active per Step.
-- Service containers accumulate additively. A Step inherits service containers from every level of its ancestry, not just the nearest one. The deeper the nesting, the more service containers a Step may have.
+- <NT>Execution containers</NT> follow closest-wins inheritance. Each <NT>Step</NT> uses the execution container defined nearest to it in the hierarchy—its own definition takes priority, then its parent bundle's, then its grandparent's. Only one execution container is active per <NT>Step</NT>.
+- <NT>Service containers</NT> accumulate additively. A <NT>Step</NT> inherits service containers from every level of its ancestry, not just the nearest one. The deeper the nesting, the more service containers a <NT>Step</NT> may have.
 
 
-## Docker authentication credentials
+## <NT>Docker</NT> authentication credentials
 
-We recommend logging in with your Docker credentials when using containers. To do so, you need to provide Docker credentials when setting up containers:
+We recommend logging in with your <NT>Docker</NT> credentials when using containers. To do so, you need to provide <NT>Docker</NT> credentials when setting up containers:
 
 - Registry server: It should be a fully qualified registry server URL. This is optional if the server is already part of the image reference.
 - Username.
@@ -52,9 +53,9 @@ These credentials must be stored as [Secrets](/en/bitrise-ci/configure-builds/se
 
 ## Container resource options
 
-The `docker container create` (or shorthand: `docker create`) command creates a new container from the specified image, without starting it. In your container configuration on Bitrise, you can specify additional options for the command. It shares most of its options with the `docker run` command.
+The `docker container create` (or shorthand: `docker create`) command creates a new container from the specified image, without starting it. In your container configuration on <NT>Bitrise</NT>, you can specify additional options for the command. It shares most of its options with the `docker run` command.
 
-Bitrise supports most options for container creation. The only exceptions are:
+<NT>Bitrise</NT> supports most options for container creation. The only exceptions are:
 
 - `--network`
 - `--volume (-v)`

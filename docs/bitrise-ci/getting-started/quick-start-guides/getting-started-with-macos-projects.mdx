@@ -9,58 +9,59 @@ sidebar_label: Getting started with macOS projects
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-In this guide, we’ll walk you through how to add a macOS project to Bitrise, how to run Xcode tests, manage your code signing files and deploy the finished app to bitrise.io and to the App Store.
+In this guide, we’ll walk you through how to add a macOS project to <NT>Bitrise</NT>, how to run <NT>Xcode</NT> tests, manage your <NT>code signing</NT> files and deploy the finished app to bitrise.io and to the App Store.
 
 
-## Adding a macOS project to Bitrise
+## Adding a macOS project to <NT>Bitrise</NT>
 
 Add your project the same way as any other: see [Adding a new project](/en/bitrise-ci/getting-started/adding-a-new-project) for the full walkthrough of the wizard. This section covers what's specific to macOS.
 
 ### How the scanner detects a macOS project
 
-The <GlossTerm baseform="project scanner">project scanner</GlossTerm> looks for `.xcodeproj` files and `.xcworkspace` directories, the same way it does for iOS. To tell the two apart, it checks each build configuration's `SDKROOT`: a `macosx` value (or a `SUPPORTED_PLATFORMS` list that includes it) registers the project as macOS, while `iphoneos` registers it as iOS.
+The <NT><GlossTerm baseform="project scanner">project scanner</GlossTerm></NT> looks for `.xcodeproj` files and `.xcworkspace` directories, the same way it does for iOS. To tell the two apart, it checks each build configuration's `SDKROOT`: a `macosx` value (or a `SUPPORTED_PLATFORMS` list that includes it) registers the project as macOS, while `iphoneos` registers it as iOS.
 
-As with iOS, a `Package.swift` file without an Xcode project or workspace is treated as a Swift package, and matched to macOS if its declared platforms include `macos`.
+As with iOS, a `Package.swift` file without an <NT>Xcode</NT> project or <NT>workspace</NT> is treated as a <NT>Swift</NT> package, and matched to macOS if its declared platforms include `macos`.
 
 ### What you can configure
 
-During the **CI configuration** stage, the wizard shows:
+During the **<NT>CI configuration</NT>** stage, the wizard shows:
 
-- **Project or workspace path**: the `.xcodeproj`, `.xcworkspace`, or `Package.swift` file to build.
-- **Scheme name**: any shared scheme found in your project or workspace.
-- **Export method**: how Bitrise exports your app, for example App Store, Developer ID, Development, or none, which exports a copy of the `.app` file without re-signing it. This option isn't shown for Swift packages.
+- **<NT>Project or workspace path</NT>**: the `.xcodeproj`, `.xcworkspace`, or `Package.swift` file to build.
+- **<NT>Scheme name</NT>**: any shared scheme found in your project or <NT>workspace</NT>.
+- **Export method**: how <NT>Bitrise</NT> exports your app, for example App Store, Developer ID, Development, or none, which exports a copy of the `.app` file without re-signing it. This option isn't shown for <NT>Swift</NT> packages.
 
 ## Testing your macOS app
 
-If you have test targets defined, a default Workflow of a macOS project includes the two <GlossTerm baseform="step">Steps</GlossTerm> you need to run your Xcode tests, and view their results on [bitrise.io](https://bitrise.io/):
+If you have test targets defined, a default <NT>Workflow</NT> of a macOS project includes the two <NT><GlossTerm baseform="step">Step</GlossTerm></NT>s you need to run your <NT>Xcode</NT> tests, and view their results on [bitrise.io](https://bitrise.io/):
 
-- **Xcode Test for Mac**
-- **Deploy to Bitrise.io**
+- **<NT>Xcode Test for Mac</NT>**
+- **<NT>Deploy to Bitrise.io</NT>**
 
-:::note[Code signing files]
+:::note[<NT>Code signing</NT> files]
 
-Running Xcode tests and deploying their results to Bitrise do not require any code signing files. So don’t worry about them just yet!
+Running <NT>Xcode</NT> tests and deploying their results to <NT>Bitrise</NT> do not require any <NT>code signing</NT> files. So don’t worry about them just yet!
 
 :::
 
-The **Xcode Test for Mac** Step runs the pre-defined Xcode tests. It has a default configuration that does not need to be modified: if the tests are written correctly, they will work. You can find the same configuration options in Xcode, too.
+The **<NT>Xcode Test for Mac</NT>** <NT>Step</NT> runs the pre-defined <NT>Xcode</NT> tests. It has a default configuration that does not need to be modified: if the tests are written correctly, they will work. You can find the same configuration options in <NT>Xcode</NT>, too.
 
-The **Deploy to Bitrise.io** will deploy the following:
+The **<NT>Deploy to Bitrise.io</NT>** will deploy the following:
 
-- your Xcode test results.
+- your <NT>Xcode</NT> test results.
 - your raw `xcodebuildoutput` log.
 
 You can view the results in one place: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
 
 
-## Code signing and exporting a macOS app
+## <NT>Code signing</NT> and exporting a macOS app
 
-To install and test the app on other physical devices, you will need to create and export an .app or .pkg file. This requires setting up code signing. In the example, we’ll be exporting an app with the **development** export method: you cannot upload such an app to Testflight but you can test it, for example, on the devices of your internal testers.
+To install and test the app on other physical devices, you will need to create and export an .app or .pkg file. This requires setting up <NT>code signing</NT>. In the example, we’ll be exporting an app with the **development** export method: you cannot upload such an app to Testflight but you can test it, for example, on the devices of your internal testers.
 
 :::note[Automatic Provisioning]
 
-The example procedure described here uses manual provisioning, with the **Certificate and profile installer** Step. However, Bitrise also supports [automatic provisioning](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning) but it is not in the scope of this guide.
+The example procedure described here uses manual provisioning, with the **<NT>Certificate and profile installer</NT>** <NT>Step</NT>. However, <NT>Bitrise</NT> also supports [automatic provisioning](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning) but it is not in the scope of this guide.
 
 :::
 
@@ -70,15 +71,15 @@ You will need:
 - a **Development** certificate (a .p12 certificate file).
 - a **Development** type Provisioning Profile. For a macOS project, the file extension of the provisioning profile is `.provisionprofile`.
 
-1. Set the code signing type of your project in Xcode to either manual or automatic (Xcode managed), and generate the package file locally.
-1. Collect and upload the code signing files.
+1. Set the <NT>code signing</NT> type of your project in <NT>Xcode</NT> to either manual or automatic (<NT>Xcode</NT> managed), and generate the package file locally.
+1. Collect and upload the <NT>code signing</NT> files.
 
-   The tool can also upload your code signing files to Bitrise - we recommend doing so! Otherwise, upload them manually: enter the <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm> and select the **Code signing** tab, then upload the files in their respective fields.
-1. Go to your app’s Workflow Editor, and select the **deploy** workflow in the **WORKFLOW** dropdown menu in the top left corner.
-1. Check that you have the **Certificate and profile installer** Step in your Workflow. It must be before the **Xcode Archive for Mac** Step (you can have other Steps between the two, like **Xcode Test for Mac**).
-1. Check the **Export method** input under the **app/pkg export configs** input group of the **Xcode Archive for Mac** Step.
+   The tool can also upload your <NT>code signing</NT> files to <NT>Bitrise</NT> - we recommend doing so! Otherwise, upload them manually: enter the <NT><GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm></NT> and select the **<NT>Code signing</NT>** tab, then upload the files in their respective fields.
+1. Go to <NT>your app</NT>’s <NT>Workflow Editor</NT>, and select the **deploy** workflow in the **<NT>WORKFLOW</NT>** dropdown menu in the top left corner.
+1. Check that you have the **<NT>Certificate and profile installer</NT>** <NT>Step</NT> in your <NT>Workflow</NT>. It must be before the **<NT>Xcode Archive for Mac</NT>** <NT>Step</NT> (you can have other <NT>Steps</NT> between the two, like **<NT>Xcode Test for Mac</NT>**).
+1. Check the **Export method** input under the **app/pkg export configs** input group of the **<NT>Xcode Archive for Mac</NT>** <NT>Step</NT>.
 
-   If you selected **development** when you added the app to Bitrise, you don’t need to change the input. Otherwise, manually set it to **development**.
+   If you selected **development** when you added the app to <NT>Bitrise</NT>, you don’t need to change the input. Otherwise, manually set it to **development**.
 
    The available options are:
 
@@ -90,36 +91,36 @@ You will need:
    ![macOS_export_method.png](/img/_paligo/uuid-0edf6398-0b97-f558-978e-f7d8bae394e0.png)
 1. Start a build.
 
-If you uploaded the correct code signing files, the **Certificate and profile installer** Step should install your code signing files and the **Xcode Archive for Mac** Step should export an .app or .pkg file with the development export method. If you have the **Deploy to Bitrise.io** Step in your workflow, you can find the binary package file on the **Artifacts** tab of the build page.
+If you uploaded the correct <NT>code signing</NT> files, the **<NT>Certificate and profile installer</NT>** <NT>Step</NT> should install your <NT>code signing</NT> files and the **<NT>Xcode Archive for Mac</NT>** <NT>Step</NT> should export an .app or .pkg file with the development export method. If you have the **<NT>Deploy to Bitrise.io</NT>** <NT>Step</NT> in your workflow, you can find the binary package file on the **<NT>Artifacts</NT>** tab of the build page.
 
 
-## Deploying the app to the App Store Connect
+## Deploying the app to the <NT>App Store Connect</NT>
 
-If you set up your code signing files and created an .app or .pkg file for your internal testers, it is time to involve external testers and then to publish your macOS app to the App Store. Let’s see how!
+If you set up your <NT>code signing</NT> files and created an .app or .pkg file for your internal testers, it is time to involve external testers and then to publish your macOS app to the App Store. Let’s see how!
 
 :::tip[Developer ID]
 
-If you want to distribute your app outside the App Store, you can sign it with a [Developer ID](https://developer.apple.com/support/developer-id/). This method is not in the scope of this guide but on Bitrise, it works the same way: you just need to upload the appropriate code signing files.
+If you want to distribute your app outside the App Store, you can sign it with a [Developer ID](https://developer.apple.com/support/developer-id/). This method is not in the scope of this guide but on <NT>Bitrise</NT>, it works the same way: you just need to upload the appropriate <NT>code signing</NT> files.
 
 :::
 
-To deploy to the App Store, you will need these code signing files:
+To deploy to the App Store, you will need these <NT>code signing</NT> files:
 
-- a **Mac App** **Distribution** certificate.
-- a **Mac** **Installer Distribution** certificate.
+- a **Mac <NT>App</NT>** **<NT>Distribution</NT>** certificate.
+- a **Mac** **Installer <NT>Distribution</NT>** certificate.
 
-1. On your local machine, set up App Store code signing for your project in Xcode, and export an .app or .pkg file. If this fails locally, it will definitely fail on Bitrise, too!
-1. Collect and upload the code signing files.
-1. Go to the app’s Workflow Editor and create a new Workflow: click the **+** button next to the Workflow dropdown menu, enter the name of your new Workflow and in the **BASED ON** dropdown menu, select **deploy**. This way the new Workflow will be a copy of the basic **deploy** Workflow.
-1. Click on the the **app/pkg export methods** , and set the **Export Method** input of the **Xcode Archive for Mac** Step to **app-store**.
+1. On your local machine, set up App Store <NT>code signing</NT> for your project in <NT>Xcode</NT>, and export an .app or .pkg file. If this fails locally, it will definitely fail on <NT>Bitrise</NT>, too!
+1. Collect and upload the <NT>code signing</NT> files.
+1. Go to the app’s <NT>Workflow Editor</NT> and create a new <NT>Workflow</NT>: click the **+** button next to the <NT>Workflow</NT> dropdown menu, enter the name of your new <NT>Workflow</NT> and in the **<NT>BASED ON</NT>** dropdown menu, select **deploy**. This way the new <NT>Workflow</NT> will be a copy of the basic **deploy** <NT>Workflow</NT>.
+1. Click on the the **app/pkg export methods** , and set the **Export Method** input of the **<NT>Xcode Archive for Mac</NT>** <NT>Step</NT> to **app-store**.
 
-   You can export multiple binaries with different export methods: use the **Export macOS Xcode archive** Step in your Workflow, to do so.
-1. Add the **Deploy to App Store Connect - Application Loader (formerly iTunes Connect)** Step to your workflow, after the **Xcode Archive for Mac** Step but preferably before the **Deploy to Bitrise.io** Step.
-1. Provide your Apple credentials in the **Deploy to App Store Connect - Application Loader (formerly iTunes Connect)** Step.
+   You can export multiple binaries with different export methods: use the **<NT>Export macOS Xcode archive</NT>** <NT>Step</NT> in your <NT>Workflow</NT>, to do so.
+1. Add the **<NT>Deploy to App Store Connect</NT> - Application Loader (formerly iTunes Connect)** <NT>Step</NT> to your workflow, after the **<NT>Xcode Archive for Mac</NT>** <NT>Step</NT> but preferably before the **<NT>Deploy to Bitrise.io</NT>** <NT>Step</NT>.
+1. Provide your <NT>Apple</NT> credentials in the **<NT>Deploy to App Store Connect</NT> - Application Loader (formerly iTunes Connect)** <NT>Step</NT>.
 
-   The Step will need your:
+   The <NT>Step</NT> will need your:
 
-   - Apple ID.
+   - <NT>Apple ID</NT>.
    - password or, if you use two-factor authentication on iTunes Connect, your application password.
 
    Don’t worry, the password will not be visible in the logs or exposed - [that’s why it is marked SENSITIVE](/en/bitrise-ci/configure-builds/secrets).

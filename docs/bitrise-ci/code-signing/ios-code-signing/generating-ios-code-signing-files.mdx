@@ -8,96 +8,97 @@ slug: /bitrise-ci/code-signing/ios-code-signing/generating-ios-code-signing-file
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
 You'll need two kinds of files to sign your app: certificates and provisioning profiles.
 
-The certificates - development or distribution - are the guarantee that you, the named developer, built this code, that you are a member of the developer program, and that Apple have issued you with a certificate to do so.
+The certificates - development or distribution - are the guarantee that you, the named developer, built this code, that you are a member of the developer program, and that <NT>Apple</NT> have issued you with a certificate to do so.
 
-To get a certificate, you need to generate a Certificate Signing Request with Keychain Access and send it to Apple. This will create a public/private key pair for you if you don't have one already. Apple will then verify the information, and create a certificate for you.
+To get a certificate, you need to generate a Certificate Signing Request with Keychain Access and send it to <NT>Apple</NT>. This will create a public/private key pair for you if you don't have one already. <NT>Apple</NT> will then verify the information, and create a certificate for you.
 
 Provisioning is the process of preparing and configuring an app to launch on devices and to use app services. Development provisioning profiles holds the device identifiers (UUID) that is eligible to run your app. Distribution provisioning profiles can include App Store profiles that allow you to distribute your app to the App Store. Ad-hoc profiles are good for distributing to your testers.
 
 
-## Generating a code signing certificate with Xcode
+## Generating a code <NT>signing certificate</NT> with <NT>Xcode</NT>
 
-First, add your Apple Account to Xcode. If you've already done this, skip ahead to creating the certificate.
+First, add your <NT>Apple</NT> Account to <NT>Xcode</NT>. If you've already done this, skip ahead to creating the certificate.
 
-1. Start Xcode.
-1. Choose **Xcode > Settings**.
-1. In the toolbar, click **Accounts**.
-1. Click the **+** button in the lower-left corner and select **Add Apple ID…**.
-1. In the dialog that appears, enter your Apple Account credentials and select **Sign in**. If you don't have an account yet, select **Create Apple ID**.
-1. Select your Apple Account and team from the list, then click **Manage Certificates**.
-1. In the signing certificates sheet, click the **+** button in the lower-left corner and choose a certificate type, such as **Apple Development** or **Apple Distribution**, from the pop-up menu. Xcode generates and installs the certificate for you.
-1. Click **Done**.
+1. Start <NT>Xcode</NT>.
+1. Choose **<NT>Xcode</NT> > <NT>Settings</NT>**.
+1. In the toolbar, click **<NT>Account</NT>s**.
+1. Click the **+** button in the lower-left corner and select **<NT>Add</NT> <NT>Apple ID</NT>…**.
+1. In the dialog that appears, enter your <NT>Apple</NT> Account credentials and select **Sign in**. If you don't have an account yet, select **<NT>Create</NT> <NT>Apple ID</NT>**.
+1. Select your <NT>Apple</NT> Account and team from the list, then click **<NT>Manage</NT> <NT>Certificates</NT>**.
+1. In the <NT>signing certificate</NT>s sheet, click the **+** button in the lower-left corner and choose a certificate type, such as **<NT>Apple</NT> Development** or **<NT>Apple</NT> <NT>Distribution</NT>**, from the pop-up menu. <NT>Xcode</NT> generates and installs the certificate for you.
+1. Click **<NT>Done</NT>**.
 
 :::note[Removing a certificate]
 
-To remove a certificate, Control-click it in the signing certificates sheet and select **Delete Certificate**. You can only delete certificates that you or a team member has revoked in your developer account.
+To remove a certificate, Control-click it in the <NT>signing certificate</NT>s sheet and select **<NT>Delete</NT> Certificate**. You can only delete certificates that you or a team member has revoked in your developer account.
 
 :::
 
 
-## Generating a code signing certificate manually
+## Generating a code <NT>signing certificate</NT> manually
 
 1. Open your **Keychain Access** app on macOS.
 1. Select **Keychain Access > Certificate Assistant > Request a Certificate From a Certificate Authority…**.
-1. Fill in your **User Email Address** and **Common Name**, and select **Saved to disk**.
-1. Click **Continue** and save the generated `.certSigningRequest` file locally.
+1. Fill in your **User <NT>Email Address</NT>** and **Common <NT>Name</NT>**, and select **Saved to disk**.
+1. Click **<NT>Continue</NT>** and save the generated `.certSigningRequest` file locally.
 1. Go to [developer.apple.com](https://developer.apple.com) and log in to your account.
-1. Select **Certificates, Identifiers & Profiles** from the left sidebar.
-1. Go to **Certificates** and click the **+** button in the top-right corner.
-1. Select a certificate type, such as **Apple Development** for development or **Apple Distribution** for distribution, and click **Continue**.
-1. Upload the `.certSigningRequest` file you created and click **Continue**. Apple generates your code signing certificate.
+1. Select **<NT>Certificates, Identifiers & Profiles</NT>** from the left sidebar.
+1. Go to **<NT>Certificates</NT>** and click the **+** button in the top-right corner.
+1. Select a certificate type, such as **<NT>Apple</NT> Development** for development or **<NT>Apple</NT> <NT>Distribution</NT>** for distribution, and click **<NT>Continue</NT>**.
+1. Upload the `.certSigningRequest` file you created and click **<NT>Continue</NT>**. <NT>Apple</NT> generates your code <NT>signing certificate</NT>.
 1. Download the certificate and double-click it to install it in **Keychain Access**.
 
 
-## Generating a provisioning profile with Xcode
+## Generating a provisioning profile with <NT>Xcode</NT>
 
-Xcode automatically generates an App ID for your project that matches your project's unique bundle ID. An App ID identifies one or more of your apps: it can be an explicit App ID that matches only one bundle identifier, or a wildcard App ID that matches multiple ones.
+<NT>Xcode</NT> automatically generates an App ID for your project that matches your project's unique bundle ID. An App ID identifies one or more of your apps: it can be an explicit App ID that matches only one bundle identifier, or a wildcard App ID that matches multiple ones.
 
-With automatic signing enabled, Xcode also creates and manages a provisioning profile for your project automatically (sometimes called an Xcode Managed Profile), so you can start deploying to your device without any manual steps.
+With automatic signing enabled, <NT>Xcode</NT> also creates and manages a provisioning profile for your project automatically (sometimes called an <NT>Xcode</NT> Managed Profile), so you can start deploying to your device without any manual steps.
 
 If you hit any issues, make sure the device is eligible (for example, you'll get an error if the device doesn't match the deployment target) and that your app is connected to the correct team.
 
-To generate a provisioning profile using Xcode:
+To generate a provisioning profile using <NT>Xcode</NT>:
 
-1. Select your project file from Xcode's project navigator.
-1. Go to the **Signing & Capabilities** tab and select your correct team from the **Team** menu.
-1. Build your project in Xcode.
+1. Select your project file from <NT>Xcode</NT>'s project navigator.
+1. Go to the **Signing & Capabilities** tab and select your correct team from the **<NT>Team</NT>** menu.
+1. Build your project in <NT>Xcode</NT>.
 
-To download a provisioning profile from Xcode:
+To download a provisioning profile from <NT>Xcode</NT>:
 
-1. Start Xcode.
-1. Choose **Xcode > Settings**.
-1. In the toolbar, click **Accounts**.
-1. Select your Apple Account and team, then click **Download Manual Profiles**.
+1. Start <NT>Xcode</NT>.
+1. Choose **<NT>Xcode</NT> > <NT>Settings</NT>**.
+1. In the toolbar, click **<NT>Account</NT>s**.
+1. Select your <NT>Apple</NT> Account and team, then click **<NT>Download</NT> Manual Profiles**.
 1. Your profiles are downloaded to `~/Library/MobileDevice/Provisioning Profiles/`.
 
 
 ## Generating a provisioning profile manually
 
-To generate a provisioning profile manually, you need a working Apple Developer account, and you need to set up an App ID for your project.
+To generate a provisioning profile manually, you need a working <NT>Apple</NT> Developer account, and you need to set up an App ID for your project.
 
 ### Setting up an App ID
 
 1. If you haven't already created an App ID for your project, go to [developer.apple.com](https://developer.apple.com) and log in.
-1. Select **Certificates, Identifiers & Profiles** from the left sidebar.
+1. Select **<NT>Certificates, Identifiers & Profiles</NT>** from the left sidebar.
 1. Navigate to **Identifiers > App IDs**.
-1. In the **App ID Description**, add a recognizable name for your App ID.
-1. Select **Explicit App ID** and add your bundle identifier to the field.
-1. Select any additional **App Services** that you need.
-1. Click **Continue**.
+1. In the **<NT>App ID</NT> <NT>Description</NT>**, add a recognizable name for your App ID.
+1. Select **Explicit <NT>App ID</NT>** and add your bundle identifier to the field.
+1. Select any additional **<NT>App</NT> <NT>Service</NT>s** that you need.
+1. Click **<NT>Continue</NT>**.
 
 ### Generating a provisioning profile
 
 1. Go to [developer.apple.com](https://developer.apple.com) and log in.
-1. Select **Certificates, Identifiers & Profiles** from the left sidebar.
-1. Navigate to **Profiles**.
+1. Select **<NT>Certificates, Identifiers & Profiles</NT>** from the left sidebar.
+1. Navigate to **<NT>Profile</NT>s**.
 1. Select the **+** from the top-right corner.
-1. For development, select the correct project type under `Development`, or for distribution, select the correct one under `Distribution`, and click **Continue**.
-1. Select the App ID you would like to use, and click **Continue**.
-1. Select the certificates you wish to include in the provisioning profile. These certificates will be able to build with this profile. Click **Continue**.
-1. Select all the devices you would like to use with this profile and click **Continue**.
+1. For development, select the correct project type under `Development`, or for distribution, select the correct one under `Distribution`, and click **<NT>Continue</NT>**.
+1. Select the <NT>App ID</NT> you would like to use, and click **<NT>Continue</NT>**.
+1. Select the certificates you wish to include in the provisioning profile. These certificates will be able to build with this profile. Click **<NT>Continue</NT>**.
+1. Select all the devices you would like to use with this profile and click **<NT>Continue</NT>**.
 1. Name your provisioning profile and click **Generate**.
 1. Your profile is generated. Download it and double-click it to install it on your Mac.
