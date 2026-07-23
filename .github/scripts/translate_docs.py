@@ -175,6 +175,10 @@ def main():
 
     files = a.files or [l.strip() for l in sys.stdin if l.strip()]
     files = [f for f in files if f.endswith((".md", ".mdx"))]
+    excluded = [f for f in files if "/api-reference/" in f]
+    files = [f for f in files if f not in excluded]
+    for f in excluded:
+        print(f"  skip (auto-generated API reference, out of scope): {f}")
     if not files:
         print("No markdown files to translate.")
         return

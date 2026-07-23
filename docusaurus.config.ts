@@ -230,7 +230,7 @@ const config: Config = {
 
   i18n: {
     defaultLocale: 'en',
-    locales: ['en'],
+    locales: ['en', 'ja'],
   },
 
   headTags: [
@@ -416,6 +416,10 @@ const config: Config = {
         href: '/',
       },
       items: [
+        {
+          type: 'localeDropdown',
+          position: 'right',
+        },
         {
           href: 'https://support.bitrise.io/en/',
           label: 'Go to support',
