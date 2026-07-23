@@ -1,0 +1,163 @@
+---
+title: "Bitrise for Jira app"
+description: "The Bitrise for Jira app surfaces your Bitrise build and pipeline statuses directly on Jira issues, so your team can see where work stands without leaving Jira."
+sidebar_position: 10
+slug: /bitrise-platform/integrations/bitrise-for-jira-app
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkspaceSettingsPage from '@site/src/partials/opening-the-workspace-settings-page.mdx';
+import NT from '@site/src/components/NT';
+
+The <NT>Bitrise for Jira</NT> app surfaces your <NT>Bitrise</NT> build and pipeline statuses directly on <NT>Jira</NT> issues, so your team can see where work stands without leaving <NT>Jira</NT>.
+
+Build information appears on a <NT>Jira</NT> issue in two places:
+
+- A dedicated **<NT>Bitrise builds</NT>** section, where you can also re-run or abort a build.
+- The **<NT>Builds</NT>** tab of <NT>Jira</NT>'s standard development panel.
+
+{/* TODO: screenshot of the Bitrise builds section on a Jira issue, showing build status and the re-run/abort actions (capture at 1728×875 per the Style Guide) */}
+
+:::important[Issue key required]
+
+Build information only appears on a <NT>Jira</NT> issue when the issue key (for example, `PROJ-123`) is present in at least one of the following:
+
+- The branch name.
+- A Git tag.
+- The pull request title.
+- The pull request description.
+- A commit message.
+
+:::
+
+Setting up the app has two sides:
+
+- **On <NT>Jira</NT>**: a <NT>Jira</NT> admin installs the app and completes the connection.
+- **On <NT>Bitrise</NT>**: a user who can create the token and has <NT>Platform Engineer</NT> (or <NT>Admin</NT>) access on the relevant <GlossTerm baseform="project">projects</GlossTerm> decides which projects to connect. See [Creating a token](#creating-a-token) for why that access level is required.
+
+This page walks through both sides from start to finish. Each section names who's responsible.
+
+## Setup at a glance
+
+| Task | Done on |
+|---|---|
+| Installing the app in Jira | Jira, by a Jira admin |
+| Creating a token | Bitrise, by whoever creates the token |
+| Connecting Bitrise projects | Bitrise, then Jira |
+| Verifying the connection | Jira, by a Jira admin |
+
+## Installing the app in Jira
+
+You need permission to install and configure apps on the <NT>Jira</NT> site.
+
+1. In <NT>Jira</NT>, go to **<NT>Apps</NT> > <NT>Explore more apps</NT>** and search for **<NT>Bitrise for Jira</NT>**.
+1. Select the app and click **<NT>Get it now</NT>** to install it.
+
+:::note
+
+If you're not a <NT>Jira</NT> admin, use **<NT>Request to install</NT>** to send an approval request to your admin instead.
+
+:::
+
+## Creating a token
+
+The app authenticates to <NT>Bitrise</NT> with an API token, either a <NT>workspace API token</NT> or a <NT>Personal access token</NT>. Who can create one, and what access it needs, depends on the type:
+
+| | Workspace API token | Personal access token |
+|---|---|---|
+| Belongs to | The workspace | An individual user |
+| Scope | A single workspace; can be limited to specific projects | Everything the user can access, across all their workspaces |
+| Who can create it | A <NT>workspace</NT> owner, or a member with the <NT>Manager</NT> <NT>workspace</NT> role | Any user, for their own account |
+| Needed on each connected project | <NT>Platform Engineer</NT> (or higher) as the token's <NT>Bitrise CI</NT> product-access role | <NT>Platform Engineer</NT> (or higher) as the token owner's own project role |
+| Survives people leaving | Yes | No — the connection breaks if the user loses access |
+| Recommended for | Most setups | Connecting apps that span more than one Workspace |
+
+:::tip[Recommendation]
+
+Use a <NT>Workspace API token</NT>. It's tied to the <NT>Workspace</NT> rather than a person, can be scoped to just the Bitrise projects you want to connect to the app, and doesn't break when someone leaves the team. Choose a <NT>Personal access token</NT> only if you need to connect projects from more than one <NT>Workspace</NT>.
+
+:::
+
+:::note[Why Platform Engineer]
+
+On each connected project, the app registers an outgoing webhook (needs the `change_settings` permission) and re-runs or aborts builds (needs `run_builds`). <NT>Platform Engineer</NT> is the lowest <NT>Bitrise CI</NT> role that covers both: <NT>Admin</NT> and <NT>Owner</NT> also work, but <NT>Developer</NT> and <NT>Tester/QA</NT> don't have enough access.
+
+- For a <NT>Personal access token</NT>, this is the token owner's own role on the project.
+- For a <NT>Workspace API token</NT>, this is the <NT>Bitrise CI</NT> product access role you set on the token. The <NT>Workspace Role</NT> (<NT>Viewer</NT>, <NT>Contributor</NT>, <NT>Manager</NT>) is separate: it only controls who can manage the token, not what the app can do on connected projects.
+
+:::
+
+<Tabs>
+<TabItem value="workspace-api-token" label="Workspace API token" default>
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. On the left, select **<NT>Security</NT>**.
+1. Click **<NT>Create token</NT>** and follow [Creating a Workspace API token](/en/bitrise-platform/workspaces/workspace-api-token), with these settings:
+
+   - Set the **<NT>Workspace Role</NT>** to **<NT>Manager</NT>** (this controls who can manage the token, not what the app can do).
+   - Under **<NT>Configure Access to Products</NT>**, toggle **<NT>Bitrise CI</NT>** on and set its role to **<NT>Platform Engineer</NT>** or higher: this is the access the app actually uses on connected projects.
+   - Choose whether the token applies to all projects or only selected ones.
+
+</TabItem>
+<TabItem value="personal-access-token" label="Personal access token">
+
+1. [Create a personal access token](/en/bitrise-platform/accounts/personal-access-tokens).
+1. Make sure your own account has at least <NT>Platform Engineer</NT> role on every project you want to connect.
+
+</TabItem>
+</Tabs>
+
+:::important[Save the token]
+
+You can only view a token's value at the moment you create it. Copy it and store it securely before closing the dialog.
+
+:::
+
+:::tip
+
+You can set the token to never expire. If you set an expiry, the <NT>Jira</NT> connection stops working when the token expires: [Maintaining the connection](#maintaining-the-connection).
+
+:::
+
+## Connecting Bitrise projects
+
+To connect <NT>Bitrise</NT> projects to <NT>Jira</NT>, you need the API token and a list of the projects you want to connect. The connection is completed on the <NT>Jira</NT> side, so a <NT>Jira</NT> admin must do that part.
+
+1. **On <NT>Bitrise</NT>:** Decide which <NT>Bitrise</NT> projects should send updates to <NT>Jira</NT>. Make a list of the specific projects, or decide to connect all of them.
+1. Share the API token and the project list with the <NT>Jira</NT> admin through a secure channel, such as a password manager or secrets tool, not over plain email or chat.
+1. **On <NT>Jira</NT>:** Go to **<NT>Apps</NT> > <NT>Manage your apps</NT> > <NT>Bitrise for Jira</NT>** and open its configuration page.
+1. Under **<NT>Bitrise API Token</NT>**, paste the token you received and click **<NT>Save</NT>**.
+1. Under **<NT>Connected Bitrise Projects</NT>**, select the projects you were given and click **<NT>Save</NT>**.
+
+:::note
+
+An outgoing webhook is created automatically in <NT>Bitrise</NT> for each connected project. You don't need to configure webhooks manually.
+
+:::
+
+## Verifying the connection
+
+You can verify the connection with a <NT>Jira</NT> admin.
+
+1. Open a <NT>Jira</NT> issue whose key appears in the branch name, a Git tag, the pull request title, the pull request description, or a commit message of work in a connected <NT>Bitrise</NT> project.
+1. Confirm that <NT>Bitrise</NT> build status appears in the **<NT>Bitrise builds</NT>** section of the issue and in the **<NT>Builds</NT>** tab of the development panel.
+
+If nothing appears, see [Troubleshooting](#troubleshooting).
+
+## Maintaining the connection
+
+- **Token expiry or change:** If the API token expires, is regenerated, or is replaced, the connection stops working. Update the token on the app's configuration page and re-check your connected projects.
+- **New Bitrise projects:** When you add a new project in <NT>Bitrise</NT> that you want to appear in <NT>Jira</NT>, return to the app's configuration page and add it under **<NT>Connected Bitrise Projects</NT>**.
+
+## Troubleshooting
+
+- **No build status on issues:** Confirm the issue key is present in the branch name, a Git tag, the pull request title, the pull request description, or a commit message. Then check that the token is still valid and that the relevant project is selected under **<NT>Connected Bitrise Projects</NT>**.
+- **A project is missing from the list:** The token can't access it. Check that the token (or the project role of its owner, for a <NT>Personal access token</NT>) includes that project, or ask whoever created the token to update it.
+- **Build status that used to work stops appearing:** The usual cause is someone unchecking **<NT>Attach Bitrise OIDC token</NT>** on the connected project's outgoing webhook, in <NT>Bitrise</NT>. Check the **<NT>Activity</NT>** section on the app's <NT>Jira</NT> configuration page for rejected deliveries.
+
+## Related pages
+
+- [Workspace API token](/en/bitrise-platform/workspaces/workspace-api-token)
+- [Personal access tokens](/en/bitrise-platform/accounts/personal-access-tokens)
