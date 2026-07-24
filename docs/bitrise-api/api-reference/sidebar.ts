@@ -61,13 +61,13 @@ const sidebar: SidebarsConfig = {
         {
           type: "doc",
           id: "bitrise-api/api-reference/app-delete",
-          label: "Deletes an app",
+          label: "Delete an app",
           className: "api-method delete",
         },
         {
           type: "doc",
           id: "bitrise-api/api-reference/app-update",
-          label: "Updates an app",
+          label: "Update an app",
           className: "api-method patch",
         },
         {
@@ -109,13 +109,13 @@ const sidebar: SidebarsConfig = {
         {
           type: "doc",
           id: "bitrise-api/api-reference/app-roles-query",
-          label: "Lists group roles for an app",
+          label: "List group roles for an app",
           className: "api-method get",
         },
         {
           type: "doc",
           id: "bitrise-api/api-reference/app-roles-update",
-          label: "Replaces group roles for an app",
+          label: "Replace group roles for an app",
           className: "api-method put",
         },
         {
@@ -127,7 +127,7 @@ const sidebar: SidebarsConfig = {
         {
           type: "doc",
           id: "bitrise-api/api-reference/app-notifications",
-          label: "Updates the app's notification settings",
+          label: "Update the app's notification settings",
           className: "api-method patch",
         },
         {
@@ -157,7 +157,7 @@ const sidebar: SidebarsConfig = {
         {
           type: "doc",
           id: "bitrise-api/api-reference/app-config-create",
-          label: "Upload a new bitrise.yml for your application.",
+          label: "Upload a new bitrise.yml for your application",
           className: "api-method post",
         },
         {
@@ -397,19 +397,19 @@ const sidebar: SidebarsConfig = {
         {
           type: "doc",
           id: "bitrise-api/api-reference/cache-item-delete-all",
-          label: "Deletes all key-value cache items belonging to an app",
+          label: "Delete all key-value cache items belonging to an app",
           className: "api-method delete",
         },
         {
           type: "doc",
           id: "bitrise-api/api-reference/cache-item-delete",
-          label: "Deletes a key-value cache item",
+          label: "Delete a key-value cache item",
           className: "api-method delete",
         },
         {
           type: "doc",
           id: "bitrise-api/api-reference/cache-item-download",
-          label: "Gets the download URL of a key-value cache item",
+          label: "Get the download URL of a key-value cache item",
           className: "api-method get",
         },
       ],
@@ -529,13 +529,13 @@ const sidebar: SidebarsConfig = {
         {
           type: "doc",
           id: "bitrise-api/api-reference/pipeline-abort",
-          label: "Aborts a pipeline",
+          label: "Abort a pipeline",
           className: "api-method post",
         },
         {
           type: "doc",
           id: "bitrise-api/api-reference/pipeline-rebuild",
-          label: "Rebuilds a pipeline",
+          label: "Rebuild a pipeline",
           className: "api-method post",
         },
         {
@@ -775,7 +775,7 @@ const sidebar: SidebarsConfig = {
         {
           type: "doc",
           id: "bitrise-api/api-reference/org-show",
-          label: "Get a specified organization.",
+          label: "Get a specified organization",
           className: "api-method get",
         },
         {
@@ -793,7 +793,7 @@ const sidebar: SidebarsConfig = {
         {
           type: "doc",
           id: "bitrise-api/api-reference/organization-group-add",
-          label: "Adds a group to the organization",
+          label: "Add a group to the organization",
           className: "api-method post",
         },
         {
@@ -805,7 +805,7 @@ const sidebar: SidebarsConfig = {
         {
           type: "doc",
           id: "bitrise-api/api-reference/member-add",
-          label: "Adds a member to the organization",
+          label: "Add a member to the organization",
           className: "api-method post",
         },
       ],

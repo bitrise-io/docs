@@ -1,6 +1,10 @@
 import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
 import bitriseAPIApiSidebar from './docs/bitrise-api/api-reference/sidebar';
 import rdeAPIApiSidebar from './docs/bitrise-rde-api/api-reference/sidebar';
+import rmAppsApiSidebar from './docs/release-management-api/apps/api-reference/sidebar';
+import rmStoreReleasesApiSidebar from './docs/release-management-api/store-releases/api-reference/sidebar';
+import rmCodePushApiSidebar from './docs/release-management-api/code-push/api-reference/sidebar';
+import rmBuildDistributionsApiSidebar from './docs/release-management-api/build-distributions/api-reference/sidebar';
 
 function productSidebar(dirName: string, title: string) {
   return [
@@ -45,12 +49,74 @@ function toHubItems(generated: any, addIcon = true) {
 
 const hubItems = toHubItems(bitriseAPIApiSidebar);
 const rdeHubItems = toHubItems(rdeAPIApiSidebar, false);
+const rmAppsHubItems = toHubItems(rmAppsApiSidebar, false);
+const rmStoreReleasesHubItems = toHubItems(rmStoreReleasesApiSidebar, false);
+const rmCodePushHubItems = toHubItems(rmCodePushApiSidebar, false);
+const rmBuildDistributionsHubItems = toHubItems(rmBuildDistributionsApiSidebar, false);
 
 const sidebars: SidebarsConfig = {
   platformSidebar: productSidebar('bitrise-platform', 'Bitrise as a Platform'),
   ciSidebar: productSidebar('bitrise-ci', 'Bitrise CI'),
   buildCacheSidebar: productSidebar('bitrise-build-cache', 'Build Cache'),
-  releaseManagementSidebar: productSidebar('release-management', 'Release Management'),
+  releaseManagementSidebar: [
+    ...productSidebar('release-management', 'Release Management'),
+    {
+      type: 'category',
+      label: 'API reference',
+      collapsed: true,
+      customProps: {icon: 'Code'},
+      items: [
+        {
+          type: 'category',
+          label: 'Apps',
+          items: [
+            {
+              type: 'doc',
+              id: 'release-management-api/apps/api-reference/release-management-api',
+              label: 'Introduction',
+            },
+            ...rmAppsHubItems,
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Store releases',
+          items: [
+            {
+              type: 'doc',
+              id: 'release-management-api/store-releases/api-reference/release-management-api-app-versions',
+              label: 'Introduction',
+            },
+            ...rmStoreReleasesHubItems,
+          ],
+        },
+        {
+          type: 'category',
+          label: 'CodePush',
+          items: [
+            {
+              type: 'doc',
+              id: 'release-management-api/code-push/api-reference/release-management-api-codepush',
+              label: 'Introduction',
+            },
+            ...rmCodePushHubItems,
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Build distributions',
+          items: [
+            {
+              type: 'doc',
+              id: 'release-management-api/build-distributions/api-reference/release-management-api-build-distributions',
+              label: 'Introduction',
+            },
+            ...rmBuildDistributionsHubItems,
+          ],
+        },
+      ],
+    },
+  ],
   insightsSidebar: productSidebar('insights', 'Insights'),
   buildHubSidebar: productSidebar('bitrise-build-hub', 'Build Hub'),
   rdeSidebar: [

@@ -1,0 +1,173 @@
+---
+title: "Creating and managing presets"
+description: "Create reusable release configuration templates (presets) via the Release Management API."
+sidebar_position: 4
+slug: /release-management/api/creating-presets
+---
+
+Presets are reusable release configuration templates. They let you define automation rules, approval tasks, notifications, and CI build settings once and apply them consistently across multiple releases.
+
+The Apps sub-API base URL: `https://api.bitrise.io/release-management/v2/apps/v1`. See the [Apps API reference](/en/release-management-api/apps/api-reference/release-management-api) for the full list of endpoints, parameters, and schemas.
+
+## Creating a preset
+
+| Endpoint | Function | Required role |
+| --- | --- | --- |
+| [`POST /presets`](/en/release-management-api/apps/api-reference/create-preset) | Create a new preset. | Release manager |
+| [`GET /presets`](/en/release-management-api/apps/api-reference/get-presets-list) | List presets for an app. | Any |
+| [`GET /presets/{id}`](/en/release-management-api/apps/api-reference/get-presets) | Get a specific preset. | Any |
+| [`PUT /presets/{id}`](/en/release-management-api/apps/api-reference/update-presets) | Update a preset. | Release manager |
+| [`DELETE /presets/{id}`](/en/release-management-api/apps/api-reference/delete-preset) | Delete a preset. | Release manager |
+
+To create a preset, call `POST /presets` with at least a name and the app it belongs to.
+
+Required fields:
+- `app_id`: The ID of the app in Release Management.
+- `template_name`: A descriptive name for the preset.
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "APP_ID",
+    "template_name": "Standard release"
+  }'
+```
+
+## Creating a preset with full configuration
+
+A preset can bundle automation rules, approval tasks, Slack notifications, and upload settings into a single reusable template.
+
+### Automation
+
+Automation rules trigger a CI workflow when a release reaches a specific stage. Set the `automation` field to an array of event/workflow pairs:
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "APP_ID",
+    "template_name": "Standard release",
+    "automation": [
+      {
+        "event_name": "release_candidate_set",
+        "workflow_name": "run-tests"
+      },
+      {
+        "event_name": "approvals_completed",
+        "workflow_name": "upload-to-store"
+      }
+    ]
+  }'
+```
+
+### Approval tasks
+
+Approval tasks are created automatically for every release that uses this preset. Set the `approvals` field to define the tasks:
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "APP_ID",
+    "template_name": "Standard release",
+    "approvals": [
+      {
+        "summary": "QA sign-off",
+        "description": "Verify all test cases pass on the release build"
+      }
+    ]
+  }'
+```
+
+### Slack notifications
+
+To send Slack notifications at key release stages, pass the ID of a configured Slack integration in the `notifications` field. For more information, see [Slack integration](/en/bitrise-platform/workspaces/workspace-slack-integration).
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "APP_ID",
+    "template_name": "Standard release",
+    "notifications": {
+      "slack_notification_integration_id": "YOUR_SLACK_INTEGRATION_ID"
+    }
+  }'
+```
+
+### Automatic store upload
+
+Set `auto_upload: true` to automatically upload the build to the store once it's ready, without a manual trigger:
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "APP_ID",
+    "template_name": "Standard release",
+    "auto_upload": true
+  }'
+```
+
+You can combine any of these settings in a single request. Save the `id` from the response — you'll use it when [creating app versions](/en/release-management/api/creating-an-app-version#applying-a-preset-to-an-app-version).
+
+:::note[Default preset]
+
+Setting `default: true` marks this preset as the one automatically applied to new releases. Only one preset per app can be the default.
+
+:::
+
+## Listing presets for an app
+
+```bash
+curl -X GET "https://api.bitrise.io/release-management/v2/apps/v1/presets?app_id=APP_ID" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+
+## Updating a preset
+
+Use `PUT /presets/{id}` to replace the preset's configuration. All fields are optional.
+
+```bash
+curl -X PUT "https://api.bitrise.io/release-management/v2/apps/v1/presets/PRESET_ID" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "default": true,
+    "auto_upload": false,
+    "automation": [
+      {
+        "event_name": "release_candidate_set",
+        "workflow_name": "run-extended-tests"
+      }
+    ],
+    "approvals": [
+      {
+        "summary": "QA sign-off"
+      },
+      {
+        "summary": "Security review"
+      }
+    ]
+  }'
+```
+
+## Deleting a preset
+
+```bash
+curl -X DELETE "https://api.bitrise.io/release-management/v2/apps/v1/presets/PRESET_ID" \
+  -H "Authorization: YOUR_ACCESS_TOKEN"
+```
+
+:::important[Existing releases not affected]
+
+Deleting a preset does not affect releases that were created using it. The settings are copied to the release at creation time.
+
+:::
