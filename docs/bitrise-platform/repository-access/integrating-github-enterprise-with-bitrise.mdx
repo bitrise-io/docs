@@ -11,27 +11,28 @@ import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 import Partial_GettingToTheProjectSettingsPage from '@site/src/partials/getting-to-the-project-settings-page.mdx';
 import Partial_OpeningTheWorkspaceSettingsPage from '@site/src/partials/opening-the-workspace-settings-page.mdx';
+import NT from '@site/src/components/NT';
 
-Bitrise offers an integration for self-hosted GitHub Enterprise Server (GHES) instances. The main benefit of the integration is that self-hosted GHES users can [store the `bitrise.yml` file in their repository](/en/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml#storing-the-bitriseyml-file-in-your-repository). Storing the file in the repository allows for full version control and maintenance of your configuration file.
+<NT>Bitrise</NT> offers an integration for self-hosted <NT>GitHub Enterprise Server</NT> (GHES) instances. The main benefit of the integration is that self-hosted GHES users can [store the `bitrise.yml` file in their repository](/en/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml#storing-the-bitriseyml-file-in-your-repository). Storing the file in the repository allows for full version control and maintenance of your configuration file.
 
 
-## About the GitHub Enterprise Server integration
+## About the <NT>GitHub Enterprise Server</NT> integration
 
 :::important[Enterprise Server users only]
 
-This guide is for GitHub Enterprise Server users. For GitHub Cloud users who wish to use the Bitrise GitHub App to connect to Bitrise, we have a separate guide: [GitHub app integration](/en/bitrise-platform/repository-access/github-app-integration).
+This guide is for <NT>GitHub Enterprise Server</NT> users. For <NT>GitHub Cloud</NT> users who wish to use the <NT>Bitrise</NT> <NT>GitHub</NT> App to connect to <NT>Bitrise</NT>, we have a separate guide: [GitHub app integration](/en/bitrise-platform/repository-access/github-app-integration).
 
 :::
 
 The feature requires:
 
-- A Bitrise [Workspace owner](/en/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/workspace-collaboration) to configure the integration.
-- [A GHES organization owner](https://docs.github.com/en/enterprise-server@3.11/organizations/managing-peoples-access-to-your-organization-with-roles/roles-in-an-organization) with sufficient permissions to create a GitHub app on GHES and then install it for selected repositories.
-- Access to the GHES instance. If the Bitrise website cannot access your repository on GHES, it can't use the `bitrise.yml` file stored there. If you have IP address access control lists for security purposes, you need [to allowlist the Bitrise website](/en/bitrise-platform/infrastructure/build-machines/configuring-your-network-to-access-our-build-machines#ip-address-ranges-for-bitrise-backend-workers).
+- A <NT>Bitrise</NT> [Workspace owner](/en/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/workspace-collaboration) to configure the integration.
+- [A GHES organization owner](https://docs.github.com/en/enterprise-server@3.11/organizations/managing-peoples-access-to-your-organization-with-roles/roles-in-an-organization) with sufficient permissions to create a <NT>GitHub</NT> app on GHES and then install it for selected repositories.
+- Access to the <NT>GHES instance</NT>. If the <NT>Bitrise website</NT> cannot access your repository on GHES, it can't use the `bitrise.yml` file stored there. If you have IP address access control lists for security purposes, you need [to allowlist the Bitrise website](/en/bitrise-platform/infrastructure/build-machines/configuring-your-network-to-access-our-build-machines#ip-address-ranges-for-bitrise-backend-workers).
 
-  :::important[Allowlisting the Bitrise background workers]
+  :::important[Allowlisting the <NT>Bitrise</NT> background workers]
 
-  Be aware that the Bitrise background workers that power, among other things, app.bitrise.io and the Bitrise build machines have a different IP address range. Allowlisting the build machines is not sufficient for this feature.
+  Be aware that the <NT>Bitrise</NT> background workers that power, among other things, app.bitrise.io and the <NT>Bitrise</NT> <NT>build machines</NT> have a different IP address range. Allowlisting the <NT>build machines</NT> is not sufficient for this feature.
 
   If allowlisting is not an option for you, [reach out to Bitrise](https://www.bitrise.io/contact) so we can discuss other options.
 
@@ -41,79 +42,79 @@ To set up the integration, you need to:
 
 1. [Create a GitHub app](#creating-the-github-app-for-github-enterprise-server).
 
-   Creating the app also allows GitHub Enterprise Server users to take advantage of the [Bitrise Checks feature](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/bitrise-checks-on-github): once the app is created, you just need to [enable Checks on Bitrise](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/bitrise-checks-on-github#enabling-github-checks-on-bitrise).
+   Creating the app also allows <NT>GitHub Enterprise Server</NT> users to take advantage of the [Bitrise Checks feature](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/bitrise-checks-on-github): once the app is created, you just need to [enable Checks on Bitrise](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/bitrise-checks-on-github#enabling-github-checks-on-bitrise).
 1. [Connect your Bitrise Workspace to GHES via the GitHub app](#connecting-to-the-ghes-instance-via-the-github-app).
 
 
-## Creating the GitHub App for GitHub Enterprise Server
+## Creating the <NT>GitHub</NT> App for <NT>GitHub Enterprise Server</NT>
 
 1. <Partial_OpeningTheWorkspaceSettingsPage />
-1. On the left of the **Workspace settings** page, select **Integrations**.
-1. Select the **Git provider** tab and scroll to the **GitHub Enterprise Server** section.
-1. Copy the webhook URL you can find here.
-1. In another browser tab, open GHES and go to your organization's **Settings** page.
+1. On the left of the **<NT>Workspace settings</NT>** page, select **<NT>Integrations</NT>**.
+1. Select the **<NT>Git provider</NT>** tab and scroll to the **<NT>GitHub Enterprise Server</NT>** section.
+1. Copy the <NT>webhook URL</NT> you can find here.
+1. In another browser tab, open GHES and go to your organization's **<NT>Settings</NT>** page.
 
    :::note[Target repository]
 
-   The organization should be the one that owns the repository or repositories that your project(s) use. You can reuse the GitHub app for other organizations later.
+   The organization should be the one that owns the repository or repositories that your project(s) use. You can reuse the <NT>GitHub</NT> app for other organizations later.
 
    :::
-1. On the **Settings** page, find the **Developer** settings section and select **GitHub Apps**.
-1. Click **New GitHub App** and fill out the app creation form. The following table contains all the necessary information and fields that aren't specified in the table can be left empty:
+1. On the **<NT>Settings</NT>** page, find the **Developer** settings section and select **<NT>GitHub</NT> <NT>Apps</NT>**.
+1. Click **<NT>New</NT> <NT>GitHub</NT> <NT>App</NT>** and fill out the app creation form. The following table contains all the necessary information and fields that aren't specified in the table can be left empty:
 
-   :::important[Setting a webhook secret]
+   :::important[Setting a <NT>webhook secret</NT>]
 
-   Setting a webhook secret is mandatory for this process and you will need the secret later when connecting your Bitrise Workspace to the GHES instance.
+   Setting a <NT>webhook secret</NT> is mandatory for this process and you will need the secret later when connecting your <NT>Bitrise</NT> <NT>Workspace</NT> to the <NT>GHES instance</NT>.
 
    :::
 
-   | **GitHub App name** | Bitrise |
+   | **<NT>GitHub</NT> <NT>App name</NT>** | <NT>Bitrise</NT> |
    | --- | --- |
    | **Homepage URL** | https://app.bitrise.io |
-   | **Webhook URL** | The one you copied from your Workspace settings page on Bitrise. The format should be: `https://app.bitrise.io/organization/<org_slug>/github_webhooks` |
-   | **Webhook secret** | GitHub marks this as optional but to ensure webhook integrity we require a secret to be set. The webhook secret should be a random string of text with high entropy. Please make a note of the secret as you have to share it with Bitrise later. |
-   | **Permissions** | Set the following permissions:  - Repository permissions    - Checks read and write   - Commit statuses read and write   - Contents read only   - Metadata read only   - Pull requests read only  :::note[Upcoming features]  Bitrise will use these events and permissions to offer a fully integrated experience with supporting, for example, [GitHub Checks](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/bitrise-checks-on-github) and [selective builds](/en/bitrise-ci/configure-builds/configuring-build-settings/selective-builds). We will add these capabilities soon.  ::: |
-   | **Subscribe to events** | Enable the following events:  - Check run - Check suite - Pull request - Push |
-   | **Where can this GitHub App be installed?** | If you want to enable integration for repositories outside of this GHES organization, select **Any account**. |
-1. When done, click **Create GitHub App**.
+   | **<NT>Webhook URL</NT>** | The one you copied from your <NT>Workspace settings</NT> page on <NT>Bitrise</NT>. The format should be: `https://app.bitrise.io/organization/<org_slug>/github_webhooks` |
+   | **<NT>Webhook secret</NT>** | <NT>GitHub</NT> marks this as optional but to ensure webhook integrity we require a secret to be set. The <NT>webhook secret</NT> should be a random string of text with high entropy. Please make a note of the secret as you have to share it with <NT>Bitrise</NT> later. |
+   | **Permissions** | Set the following permissions:  - Repository permissions    - Checks read and write   - Commit statuses read and write   - Contents read only   - Metadata read only   - Pull requests read only  :::note[Upcoming features]  <NT>Bitrise</NT> will use these events and permissions to offer a fully integrated experience with supporting, for example, [GitHub Checks](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/bitrise-checks-on-github) and [selective builds](/en/bitrise-ci/configure-builds/configuring-build-settings/selective-builds). We will add these capabilities soon.  ::: |
+   | **<NT>Subscribe</NT> to events** | Enable the following events:  - Check run - Check suite - Pull request - Push |
+   | **Where can this <NT>GitHub</NT> App be installed?** | If you want to enable integration for repositories outside of this GHES organization, select **Any account**. |
+1. When done, click **<NT>Create</NT> <NT>GitHub</NT> App**.
 
-After creating the GitHub app, proceed to set up the GitHub Enterprise Server integration on Bitrise.
+After creating the <NT>GitHub</NT> app, proceed to set up the <NT>GitHub Enterprise Server</NT> integration on <NT>Bitrise</NT>.
 
 
-## Connecting to the GHES instance via the GitHub app
+## Connecting to the <NT>GHES instance</NT> via the <NT>GitHub</NT> app
 
-After creating a new GitHub app, you need to connect your Bitrise Workspace to the GHES instance via the app:
+After creating a new <NT>GitHub</NT> app, you need to connect your <NT>Bitrise</NT> <NT>Workspace</NT> to the <NT>GHES instance</NT> via the app:
 
-:::important[Webhook secret required]
+:::important[<NT>Webhook secret</NT> required]
 
-Make sure you have the webhook secret from the [GitHub app creation process](/en/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise#creating-the-github-app-for-github-enterprise-server) available.
+Make sure you have the <NT>webhook secret</NT> from the [GitHub app creation process](/en/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise#creating-the-github-app-for-github-enterprise-server) available.
 
 :::
 
-1. Open your GitHub app's page: on your GitHub organization's **Settings** page, select **GitHub apps** and click **Edit** next to the app's name.
+1. Open your <NT>GitHub</NT> app's page: on your <NT>GitHub</NT> organization's **<NT>Settings</NT>** page, select **<NT>GitHub</NT> apps** and click **<NT>Edit</NT>** next to the app's name.
 1. On the left, select **General**.
-1. Generate a new client secret: find the «**Client secrets** and click **Generate a new client secret**. Copy the secret: you will need it later!
-1. Find the **Private keys** section and click **Generate a private key**. This downloads a `.pem` file which you will need to upload to Bitrise later in this process.
-1. On Bitrise, open the **Workspace settings** page and in the **GitHub Enterprise Server** section, click **Connect**.
+1. Generate a new client secret: find the «**<NT>Client secret</NT>s** and click **Generate a new client secret**. Copy the secret: you will need it later!
+1. Find the **<NT>Private</NT> keys** section and click **Generate a private key**. This downloads a `.pem` file which you will need to upload to <NT>Bitrise</NT> later in this process.
+1. On <NT>Bitrise</NT>, open the **<NT>Workspace settings</NT>** page and in the **<NT>GitHub Enterprise Server</NT>** section, click **<NT>Connect</NT>**.
 1. Fill out the connection form:
 
-   - The **Instance base URL** should be the root URL of your server.
-   - Add the webhook secret and the client secret you generated earlier.
+   - The **<NT>Instance base URL</NT>** should be the root URL of your server.
+   - Add the <NT>webhook secret</NT> and the client secret you generated earlier.
    - Upload the `.pem` file.
-1. When done, click **Connect**.
+1. When done, click **<NT>Connect</NT>**.
 
    :::note[Instant feedback]
 
    You will receive immediate feedback about the connection and actionable error messages in the case of failure.
 
    :::
-1. Go back to GHES and open your GitHub app's page again.
-1. On the left, select **Install app**.
+1. <NT>Go back</NT> to GHES and open your <NT>GitHub</NT> app's page again.
+1. On the left, select **<NT>Install</NT> app**.
 1. Choose the organization(s) to install the app on.
-1. Under **Repository access**, select the repositories you want Bitrise to be able to access, or select all repositories.
-1. When done, click **Save**.
+1. Under **Repository access**, select the repositories you want <NT>Bitrise</NT> to be able to access, or select <NT>all repositories</NT>.
+1. When done, click **<NT>Save</NT>**.
 
-Bitrise receives a webhook event regarding the installation and automatically enables the corresponding Bitrise <GlossTerm baseform="project">projects</GlossTerm> to use the recently set up GHES integration [which you can check on the app settings page](/en/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise#troubleshooting-the-ghes-integration). Once this is done, you can now store your `bitrise.yml` file in a GHES repository: [Storing the bitrise.yml file in your repository](/en/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml#storing-the-bitriseyml-file-in-your-repository).
+<NT>Bitrise</NT> receives a webhook event regarding the installation and automatically enables the corresponding <NT>Bitrise</NT> <NT><GlossTerm baseform="project">project</GlossTerm></NT>s to use the recently set up GHES integration [which you can check on the app settings page](/en/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise#troubleshooting-the-ghes-integration). Once this is done, you can now store your `bitrise.yml` file in a GHES repository: [Storing the bitrise.yml file in your repository](/en/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml#storing-the-bitriseyml-file-in-your-repository).
 
 :::tip[Testing the integration]
 
@@ -126,42 +127,42 @@ We recommend testing the integration by creating a dummy project and store its `
 
 If the GHES integration doesn't work, you can:
 
-- Check the status of the integration on the Bitrise **Integrations** page.
-- Checking the webhook configuration and webhook deliveries on GitHub.
+- Check the status of the integration on the <NT>Bitrise</NT> **<NT>Integrations</NT>** page.
+- Checking the <NT>webhook configuration</NT> and webhook deliveries on <NT>GitHub</NT>.
 
-### Checking the webhook configuration
+### Checking the <NT>webhook configuration</NT>
 
-1. Open your GHES organization's page, and on the top navigation bar, select **Settings**.
-1. On the left, select **Developer settings** and then **GitHub Apps**.
-1. Find your GitHub app, and click **Edit** next to its name.
-1. On the left, select **Advanced**.
-1. Under the **Recent deliveries** section, check your webhook deliveries.
+1. Open your GHES organization's page, and on the top navigation bar, select **<NT>Settings</NT>**.
+1. On the left, select **Developer settings** and then **<NT>GitHub</NT> <NT>Apps</NT>**.
+1. Find your <NT>GitHub</NT> app, and click **<NT>Edit</NT>** next to its name.
+1. On the left, select **<NT>Advanced</NT>**.
+1. Under the **<NT>Recent deliveries</NT>** section, check your webhook deliveries.
 
    If the webhook is configured correctly, you should see a 200 OK response with a green checkmark next to the deliveries.
 1. If your webhook deliveries failed:
 
-   - Check the webhook URL on both Bitrise and on GitHub.
-   - If necessary, re-create the webhook secret on GitHub and paste the new secret to the GHES integration on Bitrise.
+   - Check the <NT>webhook URL</NT> on both <NT>Bitrise</NT> and on <NT>GitHub</NT>.
+   - If necessary, re-create the <NT>webhook secret</NT> on <NT>GitHub</NT> and paste the new secret to the GHES integration on <NT>Bitrise</NT>.
 
-### Checking the integration on Bitrise
+### Checking the integration on <NT>Bitrise</NT>
 
-You can test the integration for any of the projects connected to your GHES instance.
+You can test the integration for any of the projects connected to your <NT>GHES instance</NT>.
 
 1. <Partial_GettingToTheProjectSettingsPage />
-1. On the left of the **Settings** page, select **Integrations**.
-1. On the **Git provider** tab, find the **Git integration status** section.
-1. Next to the GitHub Enterprise Server Instance, click the **Test connection** button to test the connection.
+1. On the left of the **<NT>Settings</NT>** page, select **<NT>Integrations</NT>**.
+1. On the **<NT>Git provider</NT>** tab, find the **<NT>Git</NT> integration status** section.
+1. Next to the <NT>GitHub Enterprise Server</NT> Instance, click the **<NT>Test connection</NT>** button to test the connection.
 
 
-## Additional linked repositories for GitHub Enterprise Server
+## Additional linked repositories for <NT>GitHub Enterprise Server</NT>
 
-You can link additional repositories to a project that uses GitHub Enterprise Server. Linking a repository means giving the project access to multiple repositories in addition to the [default repository](/en/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch).
+You can link additional repositories to a project that uses <NT>GitHub Enterprise Server</NT>. Linking a repository means giving the project access to multiple repositories in addition to the [default repository](/en/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch).
 
 You can read about configuration details here: [Additional linked repositories](/en/bitrise-platform/repository-access/github-app-integration#additional-linked-repositories-via-a-github-app).
 
 
-## Extending GitHub App permissions for Enterprise Server users
+## Extending <NT>GitHub</NT> App permissions for Enterprise Server users
 
-The Bitrise GitHub App generates a short-term, temporary token for each build that is triggered via the app. This token has only one permission by default: `content:read`. This means the build can access the GitHub repository but can't do anything else.
+The <NT>Bitrise</NT> <NT>GitHub</NT> App generates a short-term, temporary token for each build that is triggered via the app. This token has only one permission by default: `content:read`. This means the build can access the <NT>GitHub</NT> repository but can't do anything else.
 
-You can grant additional permissions for the build token by extending all the permissions of the GitHub App. For details, check out [Extending GitHub App permissions to the builds](/en/bitrise-platform/repository-access/github-app-integration#extending-github-app-permissions-to-the-builds).
+You can grant additional permissions for the build token by extending all the permissions of the <NT>GitHub</NT> App. For details, check out [Extending GitHub App permissions to the builds](/en/bitrise-platform/repository-access/github-app-integration#extending-github-app-permissions-to-the-builds).

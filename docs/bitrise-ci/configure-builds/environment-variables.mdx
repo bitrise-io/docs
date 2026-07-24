@@ -9,78 +9,79 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
+import NT from '@site/src/components/NT';
 
-An Environment Variable (Env Var) is a key-value pair that holds data that you can use in your builds. For example, working directory of a project's repository is often stored in an Env Var so you don't have to specify the path for every <GlossTerm baseform="Step">Step</GlossTerm> input that needs it.
+An Environment Variable (Env Var) is a key-value pair that holds data that you can use in your builds. For example, working directory of a project's repository is often stored in an Env Var so you don't have to specify the path for every <NT><GlossTerm baseform="Step">Step</GlossTerm></NT> input that needs it.
 
-You can configure Env Vars for an entire project or for specific <GlossTerm baseform="pipeline">Pipelines</GlossTerm> and <GlossTerm baseform="Workflow">Workflows</GlossTerm>. Project level Env Vars are available for every Workflow of the app; Pipeline- and Workflow level Env Vars are only available for the given Pipeline or Workflow.
+You can configure Env Vars for an entire project or for specific <NT><GlossTerm baseform="pipeline">Pipeline</GlossTerm></NT>s and <NT><GlossTerm baseform="Workflow">Workflow</GlossTerm></NT>s. Project level Env Vars are available for every <NT>Workflow</NT> of the app; <NT>Pipeline</NT>- and <NT>Workflow</NT> level Env Vars are only available for the given <NT>Pipeline</NT> or <NT>Workflow</NT>.
 
 :::note[Size limit of the Env Var list]
 
-By default, the Env Var list size is 120 KB. You can easily increase the list size using a [Script](https://github.com/bitrise-io/steps-script) Step as described in this [Knowledge Base article](https://support.bitrise.io/en/articles/9676692-envman-environment-list-too-large-error).
+By default, the Env Var list size is 120 KB. You can easily increase the list size using a [Script](https://github.com/bitrise-io/steps-script) <NT>Step</NT> as described in this [Knowledge Base article](https://support.bitrise.io/en/articles/9676692-envman-environment-list-too-large-error).
 
 :::
 
-<GlossTerm baseform="secret">Secrets</GlossTerm> are a specific type of Environment Variable: they hide their information in an encrypted format and their value is not exposed in the build logs.
+<NT><GlossTerm baseform="secret">Secret</GlossTerm></NT>s are a specific type of Environment Variable: they hide their information in an encrypted format and their value is not exposed in the build logs.
 
 :::warning[Protect confidential information]
 
-Unlike Secrets, Env Vars are fully exposed in builds triggered by pull requests so you should not add any sensitive information to Env Vars.
+Unlike <NT>Secrets</NT>, Env Vars are fully exposed in builds triggered by pull requests so you should not add any sensitive information to Env Vars.
 
 :::
 
 
-## Scope of Environment Variables
+## Scope of <NT>Environment Variables</NT>
 
-Users can declare Environment Variables on three different levels:
+Users can declare <NT>Environment Variables</NT> on three different levels:
 
 - App level.
-- Workflow level.
-- Step level.
+- <NT>Workflow</NT> level.
+- <NT>Step</NT> level.
 
-In addition to the user-declared Env Vars, there are Env Vars automatically exposed by either the Bitrise CLI or bitrise.io. These are always available in any build. You can find the list of these here: [Available environment variables](/en/bitrise-ci/references/available-environment-variables)
+In addition to the user-declared Env Vars, there are Env Vars automatically exposed by either the <NT>Bitrise CLI</NT> or bitrise.io. These are always available in any build. You can find the list of these here: [Available environment variables](/en/bitrise-ci/references/available-environment-variables)
 
-**Project level Env Vars** are available to every build of a given app. Whenever you create a new Workflow, for example, it immediately and automatically has access to every single project level Env Var.
+**Project level Env Vars** are available to every build of a given app. Whenever you create a new <NT>Workflow</NT>, for example, it immediately and automatically has access to every single project level Env Var.
 
-**A Workflow level Env Var** is only available to the specific Workflow it was defined in. If your `primary` Workflow has an Env Var with the key TEST_ENV, your `deploy` Workflow won't be able to access that Env Var.
+**A <NT>Workflow</NT> level Env Var** is only available to the specific <NT>Workflow</NT> it was defined in. If your `primary` <NT>Workflow</NT> has an Env Var with the key TEST_ENV, your `deploy` <NT>Workflow</NT> won't be able to access that Env Var.
 
-:::note[Chaining Workflows together]
+:::note[Chaining <NT>Workflows</NT> together]
 
-If you [chain Workflows together](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together), using the `after_run` parameter, and define an Env Var in one of the Workflows, all subsequent Workflows in the chain will be able to access that Env Var.
+If you [chain Workflows together](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together), using the `after_run` parameter, and define an Env Var in one of the <NT>Workflows</NT>, all subsequent <NT>Workflows</NT> in the chain will be able to access that Env Var.
 
 :::
 
-**A Step level Env Var** is defined within a particular Step of a build. Such an Env Var is not available to other Workflows, or to the preceding Steps in the same Workflow. Subsequent Steps, however, can access it. Step outputs are also exposed as Environment Variables.
+**A <NT>Step</NT> level Env Var** is defined within a particular <NT>Step</NT> of a build. Such an Env Var is not available to other <NT>Workflows</NT>, or to the preceding <NT>Steps</NT> in the same <NT>Workflow</NT>. Subsequent <NT>Steps</NT>, however, can access it. <NT>Step</NT> outputs are also exposed as <NT>Environment Variables</NT>.
 
-You can set Environment Variables, regardless of level, in both the <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>, in your app's `bitrise.yml` file, or during a build with a custom Script using the [envman](https://github.com/bitrise-io/envman/) tool:
+You can set <NT>Environment Variables</NT>, regardless of level, in both the <NT><GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm></NT>, in your app's `bitrise.yml` file, or during a build with a custom Script using the [envman](https://github.com/bitrise-io/envman/) tool:
 
 - [Setting an Env Var in the Workflow Editor](/en/bitrise-ci/configure-builds/environment-variables#setting-an-env-var-in-the-workflow-editor)
 - [Exposing Env Vars and using them in another Step or Workflow](/en/bitrise-ci/configure-builds/environment-variables#setting-and-managing-env-vars-during-a-build)
 
-Environment Variables have a given processing order based on their level: [Availability order of Environment Variables](/en/bitrise-ci/configure-builds/environment-variables#availability-order-of-environment-variables)
+<NT>Environment Variables</NT> have a given processing order based on their level: [Availability order of Environment Variables](/en/bitrise-ci/configure-builds/environment-variables#availability-order-of-environment-variables)
 
 
-## Availability order of Environment Variables
+## Availability order of <NT>Environment Variables</NT>
 
-Environment Variables (Env Var) are available after the Env Var is processed.
+<NT>Environment Variables</NT> (Env Var) are available after the Env Var is processed.
 
-There are Env Vars exposed by the Bitrise CLI. These are available from the start: for example, `BITRISE_SOURCE_DIR` and `BITRISE_TRIGGERED_WORKFLOW_ID`.
+There are Env Vars exposed by the <NT>Bitrise CLI</NT>. These are available from the start: for example, `BITRISE_SOURCE_DIR` and `BITRISE_TRIGGERED_WORKFLOW_ID`.
 
 All other Env Vars are processed and made available as the build progresses.
 
 The processing order is the following:
 
-1. Env Vars exposed by the Bitrise CLI.
-1. [Secrets](/en/bitrise-ci/configure-builds/secrets): they are processed before a Workflow starts.
-1. One-off Environment Variables specified for the build through our API.
-1. App Environment Variables.
-1. Workflow Environment Variables: when the processing of the specified Workflow starts, the Env Vars specified for that Workflow are made available.
+1. <NT>Env Vars</NT> exposed by the <NT>Bitrise CLI</NT>.
+1. [Secrets](/en/bitrise-ci/configure-builds/secrets): they are processed before a <NT>Workflow</NT> starts.
+1. One-off <NT>Environment Variables</NT> specified for the build through our API.
+1. App <NT>Environment Variables</NT>.
+1. <NT>Workflow</NT> <NT>Environment Variables</NT>: when the processing of the specified <NT>Workflow</NT> starts, the Env Vars specified for that <NT>Workflow</NT> are made available.
 
-   If the Workflow has Workflows [chained before or after it](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows), the Environment Variables of the chained workflows are processed and made available right before the first Step of the Workflow would run.
-1. Step inputs: they are exposed for each Step, right before the Step would start.
-1. Step outputs: they are exposed by the specific Step, so those are available for subsequent Steps after the Step finishes.
+   If the <NT>Workflow</NT> has <NT>Workflows</NT> [chained before or after it](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows), the <NT>Environment Variables</NT> of the chained workflows are processed and made available right before the first <NT>Step</NT> of the <NT>Workflow</NT> would run.
+1. <NT>Step inputs</NT>: they are exposed for each <NT>Step</NT>, right before the <NT>Step</NT> would start.
+1. <NT>Step</NT> outputs: they are exposed by the specific <NT>Step</NT>, so those are available for subsequent <NT>Steps</NT> after the <NT>Step</NT> finishes.
 
 
-## Setting an Env Var in the Workflow Editor
+## Setting an Env Var in the <NT>Workflow Editor</NT>
 
 :::note[Every Env Var value is a string]
 
@@ -90,36 +91,36 @@ The value of an Environment Variable or Secret can only be a string. Even if you
 
 :::important[Using the $ character]
 
-You can use the `$` character in the value of an Env Var or Secret (for example, in a password) but in that case always leave the **Replace variables in inputs** option unchecked. If you replace the variable's key with its value in inputs, the Bitrise CLI will treat the value as another Env Var because of the `$` character.
+You can use the `$` character in the value of an Env Var or Secret (for example, in a password) but in that case always leave the **<NT>Replace variables in inputs</NT>** option unchecked. If you replace the variable's key with its value in inputs, the <NT>Bitrise CLI</NT> will treat the value as another Env Var because of the `$` character.
 
 :::
 
-You can set Env Vars at two levels: **Project** (available to every Workflow) or **Workflows** (scoped to a specific Workflow). For details on how these interact, see [Availability order of Environment Variables](/en/bitrise-ci/configure-builds/environment-variables#availability-order-of-environment-variables).
+You can set Env Vars at two levels: **Project** (available to every <NT>Workflow</NT>) or **<NT>Workflows</NT>** (scoped to a specific <NT>Workflow</NT>). For details on how these interact, see [Availability order of Environment Variables](/en/bitrise-ci/configure-builds/environment-variables#availability-order-of-environment-variables).
 
 <Tabs>
 <TabItem value="project" label="Project" default>
 
 1. <Partial_OpeningTheWorkflowEditor />
-1. On the left, select **Env Vars** from the navigation menu.
+1. On the left, select **<NT>Env Vars</NT>** from the navigation menu.
 1. Select the **Project** tab.
 
    ![Project Environment Variables tab in the Workflow Editor](/img/configure-builds/2026-07-08-env-vars-project-tab.png)
-1. Click **Add new**.
+1. Click **<NT>Add new</NT>**.
 1. Add a key and a value.
-1. Click **Save changes** in the top right corner.
+1. Click **<NT>Save changes</NT>** in the top right corner.
 
 </TabItem>
 <TabItem value="workflows" label="Workflows">
 
 1. <Partial_OpeningTheWorkflowEditor />
-1. On the left, select **Env Vars** from the navigation menu.
-1. Select the **Workflows** tab.
+1. On the left, select **<NT>Env Vars</NT>** from the navigation menu.
+1. Select the **<NT>Workflows</NT>** tab.
 
    ![Workflows Environment Variables tab in the Workflow Editor](/img/configure-builds/2026-07-08-env-vars-workflows-tab.png)
-1. Choose the Workflow you want to add the Env Var to.
-1. Click **Add new**.
+1. Choose the <NT>Workflow</NT> you want to add the Env Var to.
+1. Click **<NT>Add new</NT>**.
 1. Add a key and a value.
-1. Click **Save changes** in the top right corner.
+1. Click **<NT>Save changes</NT>** in the top right corner.
 
 </TabItem>
 </Tabs>
@@ -133,7 +134,7 @@ Replacing variables in inputs ensures that the value of the Env Var will be pass
 
 Toggling on this option ensures that instead of the key of the Env Var, the value of the Env Var will be passed to the build. Normally, this is not necessary.
 
-Please note that if you add a new Environment Variable directly in the `bitrise.yml` file and do NOT set the `is_expand` property, the default value will be `true`. We recommend explicitly setting `is_expand` in this case:
+Please note that if you add a new Environment Variable directly in the `bitrise.yml` file and do NOT set the `is_expand` property, the <NT>default value</NT> will be `true`. We recommend explicitly setting `is_expand` in this case:
 
 ```yaml
 envs:
@@ -145,19 +146,19 @@ envs:
 
 ## Setting a custom Env Var when starting a build
 
-When scheduling a new build or starting a new build manually, you have the option to set up custom Environment Variables (Env Var). These variables are only available for the build you started or scheduled.
+When scheduling a new build or starting a new build manually, you have the option to set up custom <NT>Environment Variables</NT> (Env Var). These variables are only available for the build you started or scheduled.
 
 :::caution[Don't use the same key as an App Env Var]
 
-App Environment Variables have precedence over custom Environment Variables! This means that if you define a custom Env Var with the same key as an App Env Var, the build will use the value of the App Env Var.
+App <NT>Environment Variables</NT> have precedence over custom <NT>Environment Variables</NT>! This means that if you define a custom Env Var with the same key as an App Env Var, the build will use the value of the App Env Var.
 
 :::
 
-1. On the **Bitrise CI** page of your app, find the **Start build** button and click the button with the clock icon next to it.
+1. On the **<NT>Bitrise CI</NT>** page of <NT>your app</NT>, find the **<NT>Start build</NT>** button and click the button with the clock icon next to it.
 
    ![scheduling-builds.png](/img/_paligo/uuid-ea158f34-25dc-4585-c7a3-0961c5ef5472.png)
-1. In the **Build configuration** pop-up window, select the **Advanced** tab.
-1. Find the **Custom Environment Variables** section.
+1. In the **<NT>Build</NT> configuration** pop-up window, select the **<NT>Advanced</NT>** tab.
+1. Find the **<NT>Custom Environment Variables</NT>** section.
 1. Enter a key and a value.
 
    :::important[Replacing variables in inputs]
@@ -165,45 +166,45 @@ App Environment Variables have precedence over custom Environment Variables! Thi
    Replacing variables in inputs ensures that the value of the Env Var will be passed to the build instead of the key. For details, check [Replacing variables in inputs](/en/bitrise-ci/configure-builds/environment-variables#replacing-variables-in-inputs).
 
    :::
-1. Press the **+ Add Environment Variable** button.
+1. Press the **+ <NT>Add</NT> <NT>Environment</NT> Variable** button.
 1. Finish starting or scheduling the build.
 
 
-## Using an Env Var in a Step input
+## Using an Env Var in a <NT>Step</NT> input
 
-Many [Step inputs](/en/bitrise-ci/workflows-and-pipelines/steps/step-versions) accept Environment Variables (Env Var) and [Secrets](/en/bitrise-ci/configure-builds/secrets) as input values.
+Many [Step inputs](/en/bitrise-ci/workflows-and-pipelines/steps/step-versions) accept <NT>Environment Variables</NT> (Env Var) and [Secrets](/en/bitrise-ci/configure-builds/secrets) as input values.
 
 :::important[Sensitive inputs]
 
-Input fields marked as **SENSITIVE** only accept Secrets as their input. Generally, we do not recommend changing the value of these inputs.
+Input fields marked as **<NT>SENSITIVE</NT>** only accept <NT>Secrets</NT> as their input. Generally, we do not recommend changing the value of these inputs.
 
 :::
 
-To use an Env Var or a Secret as a Step input value:
+To use an Env Var or a Secret as a <NT>Step</NT> input value:
 
 1. <Partial_OpeningTheWorkflowEditor />
-1. Select **Env Vars** from the navigation menu on the left.
-1. Select a Step from the Workflow. For example, the **Git Clone Repository** Step.
-1. Choose a Step input. For example, the **Clone destination (local) directory path** input of the **Git Clone Repository** Step.
-1. Next to the name of the input, click **Insert variable**.
+1. Select **<NT>Env Vars</NT>** from the navigation menu on the left.
+1. Select a <NT>Step</NT> from the <NT>Workflow</NT>. For example, the **<NT>Git Clone Repository</NT>** <NT>Step</NT>.
+1. Choose a <NT>Step</NT> input. For example, the **Clone destination (local) directory path** input of the **<NT>Git Clone Repository</NT>** <NT>Step</NT>.
+1. Next to the name of the input, click **<NT>Insert variable</NT>**.
 1. Find the Env Var in the list, and select it.
 
-   You can search for the Env Var by typing its key (or a part of it) into the **Filter by key or source** search field.
+   You can search for the Env Var by typing its key (or a part of it) into the **<NT>Filter by key</NT> or source** search field.
 
-   :::note[Env Vars generated by Steps]
+   :::note[Env Vars generated by <NT>Steps</NT>]
 
-   The interactive list of Env Vars will show the Env Vars that are generated by previous Steps of the Workflow. For example, if you want to insert an Env Var into one of the inputs of the third Step in the Workflow, you can choose from the Env Vars generated by the first and second Steps.
+   The interactive list of Env Vars will show the Env Vars that are generated by previous <NT>Steps</NT> of the <NT>Workflow</NT>. For example, if you want to insert an Env Var into one of the inputs of the third <NT>Step</NT> in the <NT>Workflow</NT>, you can choose from the Env Vars generated by the first and second <NT>Steps</NT>.
 
    :::
 
-That's it. The next time you run a build of that Workflow, the Step input will use the value of the inserted Env Var as the Step input value.
+That's it. The next time you run a build of that <NT>Workflow</NT>, the <NT>Step</NT> input will use the value of the inserted Env Var as the <NT>Step</NT> input value.
 
 
 ## Using Env Vars in the value of an Env Var
 
-Environment Variables (Env Var) normally contain a simple string value. However, it is possible to set up an Env Var that includes other Env Vars as values.
+<NT>Environment Variables</NT> (Env Var) normally contain a simple string value. However, it is possible to set up an Env Var that includes other Env Vars as values.
 
-:::note[Secrets as variable values]
+:::note[<NT>Secrets</NT> as variable values]
 
 The methods described here also apply to [Secrets](/en/bitrise-ci/configure-builds/secrets). You can also embed a Secret within an Env Var.
 
@@ -211,20 +212,20 @@ The methods described here also apply to [Secrets](/en/bitrise-ci/configure-buil
 
 You can, at any time, use another Environment Variable in the value of an Env Var - embedding the Env Var, so to speak. For example, let's say we want to set the value of the $BITRISE_AUTH Env Var to $PERSONAL_ACCESS_TOKEN which is another Env Var.
 
-To do this, you need to make sure that the key of $BITRISE_AUTH is replaced with its value so that its the embedded Env Var that is passed on to the Workflows and Steps.
+To do this, you need to make sure that the key of $BITRISE_AUTH is replaced with its value so that its the embedded Env Var that is passed on to the <NT>Workflows</NT> and <NT>Steps</NT>.
 
 1. <Partial_OpeningTheWorkflowEditor />
-1. On the left, select **Env Vars** from the navigation menu.
-1. Under the key of the Env Var you need, toggle the **Replace variables in inputs** toggle to active.
+1. On the left, select **<NT>Env Vars</NT>** from the navigation menu.
+1. Under the key of the Env Var you need, toggle the **<NT>Replace variables in inputs</NT>** toggle to active.
 
 
 ## Setting and managing Env Vars during a build
 
-You can set Env Vars during a build by defining them in a Step, typically a **Script** Step. To accomplish this, you can use the [envman](https://github.com/bitrise-io/envman/) tool.
+You can set Env Vars during a build by defining them in a <NT>Step</NT>, typically a **Script** <NT>Step</NT>. To accomplish this, you can use the [envman](https://github.com/bitrise-io/envman/) tool.
 
-:::important[New Env Vars take effect from the next Step]
+:::important[New Env Vars take effect from the next <NT>Step</NT>]
 
-Any Environment Variable you create with the `envman` tool takes effect only from the subsequent Step in the Workflow. In other words, you can't use a newly created Environment Variable in the same Step in which it was created.
+Any Environment Variable you create with the `envman` tool takes effect only from the subsequent <NT>Step</NT> in the <NT>Workflow</NT>. In other words, you can't use a newly created Environment Variable in the same <NT>Step</NT> in which it was created.
 
 :::
 
@@ -234,7 +235,7 @@ Here is a simple example where we're using `envman` to add a new Env Var with th
 envman add --key MY_RELEASE_NOTE --value "This is the release note"
 ```
 
-You can call `envman` in any Step, including a **Script** Step, or even in your own script (stored in your repository) if you call it from a `bitrise` build.
+You can call `envman` in any <NT>Step</NT>, including a **Script** <NT>Step</NT>, or even in your own script (stored in your repository) if you call it from a `bitrise` build.
 
 You can specify the value as the `--value` parameter, or by using pipe:
 
@@ -248,9 +249,9 @@ You can also read the value from a file:
 envman add --key MY_RELEASE_NOTE --valuefile ./some/file/path
 ```
 
-Once the Env Var is exposed, you can use it like any other Env Var. You can use these exposed Env Vars in the inputs of other Steps as well.
+Once the Env Var is exposed, you can use it like any other Env Var. You can use these exposed Env Vars in the inputs of other <NT>Steps</NT> as well.
 
-Here is an example where we’re exposing the release note Env Var and then using it in another **Script** Step and in a **Send a Slack message** Step:
+Here is an example where we’re exposing the release note Env Var and then using it in another **Script** <NT>Step</NT> and in a **<NT>Send a Slack message</NT>** <NT>Step</NT>:
 
 ```yaml
 workflows:
@@ -281,7 +282,7 @@ For example, to expose the value of `BITRISE_BUILD_NUMBER` under the key `MY_BUI
 envman add --key MY_BUILD_NUMBER --value "${BITRISE_BUILD_NUMBER}"
 ```
 
-After this, subsequent Steps can get the value of `BITRISE_BUILD_NUMBER` from the `MY_BUILD_NUMBER` Env Var. If you change the value of `BITRISE_BUILD_NUMBER` after this, the value of `MY_BUILD_NUMBER` won’t be modified, it will still hold the original value!
+After this, subsequent <NT>Steps</NT> can get the value of `BITRISE_BUILD_NUMBER` from the `MY_BUILD_NUMBER` Env Var. If you change the value of `BITRISE_BUILD_NUMBER` after this, the value of `MY_BUILD_NUMBER` won’t be modified, it will still hold the original value!
 
 If you need to know if a custom Env Var has been defined, you can easily check it, and even overwrite its value:
 
@@ -298,7 +299,7 @@ This script checks whether the `API_PROJECT_SCHEME` Env Var is defined, and if i
 
 ## Setting Env Vars in the configuration YAML
 
-You can set Env Vars directly in the YAML configuration file for your app. You can set both app level and Workflow level Env Vars in your app's config file.
+You can set Env Vars directly in the YAML configuration file for your app. You can set both app level and <NT>Workflow</NT> level Env Vars in your app's config file.
 
 In this example, we have a configuration with an app-level Env Var called TEST_KEY:
 
@@ -316,7 +317,7 @@ Replacing variables in inputs ensures that the value of the Env Var will be pass
 
 :::
 
-In this example, the `deploy-alpha` Workflow defines an Env Var called ENV_TYPE, and then runs another Workflow that can use that Env Var:
+In this example, the `deploy-alpha` <NT>Workflow</NT> defines an Env Var called ENV_TYPE, and then runs another <NT>Workflow</NT> that can use that Env Var:
 
 ```yaml
 workflows:
@@ -336,4 +337,4 @@ workflows:
             echo "ENV_TYPE: $ENV_TYPE"
 ```
 
-If you run the `deploy-alpha` Workflow, that will set the `ENV_TYPE` Env Var to `alpha`, then it will run the `deploy` Workflow, which can use that Env Var. In this example, it will simply print its value (the printed text will be: `ENV_TYPE: alpha`).
+If you run the `deploy-alpha` <NT>Workflow</NT>, that will set the `ENV_TYPE` Env Var to `alpha`, then it will run the `deploy` <NT>Workflow</NT>, which can use that Env Var. In this example, it will simply print its value (the printed text will be: `ENV_TYPE: alpha`).

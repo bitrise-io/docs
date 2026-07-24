@@ -10,36 +10,37 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
+import NT from '@site/src/components/NT';
 
-Key-based caching requires two <GlossTerm baseform="Step">Steps</GlossTerm> that must be used together:
+Key-based caching requires two <NT><GlossTerm baseform="Step">Step</GlossTerm></NT>s that must be used together:
 
 - [**Save Cache**](https://github.com/bitrise-steplib/bitrise-step-save-cache): saves the build files into a cache archive, identified by a key.
 - [**Restore Cache**](https://github.com/bitrise-steplib/bitrise-step-restore-cache): restores build files into a cache archive, identified by a key.
 
-:::note[Dedicated key-based caching Steps]
+:::note[Dedicated key-based caching <NT>Steps</NT>]
 
-You can use dedicated key-based caching Steps, such as the [Save NPM Cache](https://github.com/bitrise-steplib/bitrise-step-save-npm-cache), to cache npm or yarn dependencies.
+You can use dedicated key-based caching <NT>Steps</NT>, such as the [Save NPM Cache](https://github.com/bitrise-steplib/bitrise-step-save-npm-cache), to cache npm or yarn dependencies.
 
-For a full list of dedicated key-based caching Steps, check out [Dedicated caching Steps for dependency managers](/en/bitrise-ci/dependencies-and-caching/key-based-caching/dedicated-caching-steps-for-dependency-managers).
+For a full list of dedicated key-based caching <NT>Steps</NT>, check out [Dedicated caching Steps for dependency managers](/en/bitrise-ci/dependencies-and-caching/key-based-caching/dedicated-caching-steps-for-dependency-managers).
 
 :::
 
-Both Steps access cache archives via key strings. These keys need to be specified as the values of the **Cache keys** [Step input](/en/bitrise-ci/workflows-and-pipelines/steps/step-inputs); each key identifies a separate cache archive.
+Both <NT>Steps</NT> access cache archives via key strings. These keys need to be specified as the values of the **<NT>Cache keys</NT>** [Step input](/en/bitrise-ci/workflows-and-pipelines/steps/step-inputs); each key identifies a separate cache archive.
 
 ## Cache retention and eviction policy
 
 Your cache entries are retained for seven days since the last use. If they're not used in your workflows for a continuous period of seven days, they will be automatically removed.
 
-If you run out of your cache storage allowance, the Least Recently Used (LRU) cache entries on your app will be replaced with any new ones produced. LRU is a cache replacement algorithm that removes the least recently used data in order to make room for new data. This might mean that your cache hit rate could reduce if the replaced cache entries are needed by any <GlossTerm baseform="workflow">Workflows</GlossTerm>. We recommend upgrading to [a higher plan](http://www.bitrise.io/pricing) to get more storage so that you don't lose any cache entries that might be needed by your Workflows.
+If you run out of your cache storage allowance, the Least Recently Used (LRU) cache entries on your app will be replaced with any new ones produced. LRU is a cache replacement algorithm that removes the least recently used data in order to make room for new data. This might mean that your cache hit rate could reduce if the replaced cache entries are needed by any <NT><GlossTerm baseform="workflow">Workflow</GlossTerm></NT>s. We recommend upgrading to [a higher plan](http://www.bitrise.io/pricing) to get more storage so that you don't lose any cache entries that might be needed by your <NT>Workflows</NT>.
 
 ## Creating a new cache archive
 
-1. Add the [**Save Cache**](https://github.com/bitrise-steplib/bitrise-step-save-cache) Step at the end of your Workflow.
-1. In the **Cache key** input, define a cache key. This key will be used to identify the cache archive.
+1. Add the [**Save Cache**](https://github.com/bitrise-steplib/bitrise-step-save-cache) <NT>Step</NT> at the end of your <NT>Workflow</NT>.
+1. In the **<NT>Cache key</NT>** input, define a <NT>cache key</NT>. This key will be used to identify the cache archive.
 
    :::important[Key limitations]
 
-   The maximum length of a cache key is 512 characters (longer keys get truncated). Commas (,) are not allowed in keys.
+   The maximum length of a <NT>cache key</NT> is 512 characters (longer keys get truncated). Commas (,) are not allowed in keys.
 
    :::
 
@@ -47,13 +48,13 @@ If you run out of your cache storage allowance, the Least Recently Used (LRU) ca
 
    :::tip[Conditional caching with dynamic keys]
 
-   You can configure the Step in a way that allows it to automatically skip archiving and uploading the cache if its content has not changed during the build: [Conditional caching](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#using-conditional-caching-with-dynamic-keys).
+   You can configure the <NT>Step</NT> in a way that allows it to automatically skip archiving and uploading the cache if its content has not changed during the build: [Conditional caching](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#using-conditional-caching-with-dynamic-keys).
 
    :::
 
    **Creating a new cache archive with a key referring to the OS**
 
-   In this example, we're creating a cache archive with a key that refers to the type of the operating system of the build machine.
+   In this example, we're creating a cache archive with a key that refers to the type of the operating system of the <NT>build machine</NT>.
 
    ```yaml
    - save-cache@1:
@@ -61,7 +62,7 @@ If you run out of your cache storage allowance, the Least Recently Used (LRU) ca
        - key: |-
            npm-cache-{{ .OS }}
    ```
-1. In the **Paths to cache** input, define the files and folders that you want to cache.
+1. In the **<NT>Paths</NT> to cache** input, define the files and folders that you want to cache.
 
    The input allows for wildcards: `*` and `**`. The input value is evaluated at runtime.
 
@@ -81,23 +82,23 @@ If you run out of your cache storage allowance, the Least Recently Used (LRU) ca
        - paths: node_modules/
    ```
 
-Once a cache archive has been created, you can access it on the **App Settings** page: [Accessing key-based cache archives](/en/bitrise-ci/dependencies-and-caching/key-based-caching/accessing-key-based-cache-archives).
+Once a cache archive has been created, you can access it on the **<NT>App Settings</NT>** page: [Accessing key-based cache archives](/en/bitrise-ci/dependencies-and-caching/key-based-caching/accessing-key-based-cache-archives).
 
 ## Restoring an existing cache archive
 
-1. Add the [**Restore Cache**](https://github.com/bitrise-steplib/bitrise-step-restore-cache) Step at the start of your Workflow.
-1. In the **Cache key** input, type the key of the cache that you want to restore.
+1. Add the [**Restore Cache**](https://github.com/bitrise-steplib/bitrise-step-restore-cache) <NT>Step</NT> at the start of your <NT>Workflow</NT>.
+1. In the **<NT>Cache key</NT>** input, type the key of the cache that you want to restore.
 
    You can use [templates and functions](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-based-caching-templates-and-functions) to create dynamic keys that change depending on the build environment or other factors.
 
-   You can specify multiple keys; the Step will evaluate them in order and select the first matching one. Read more: [Key matching for cache archives](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-matching-for-cache-archives).
+   You can specify multiple keys; the <NT>Step</NT> will evaluate them in order and select the first matching one. Read more: [Key matching for cache archives](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-matching-for-cache-archives).
 
    **Restoring a cache archive from one of two keys**
 
    In this example, we're restoring one of two keys:
 
-   - First, we'll look for a cache archive with a key that includes the name of the current Workflow. For example, if the current Workflow's name is `primary`, the Step will look for an archive with the key `npm-cache-primary`.
-   - Second, we'll look for an archive with a key that includes the name of the current branch. For example, if the current branch's name is `main`, the Step will look for an archive with the key `npm-cache-main`.
+   - First, we'll look for a cache archive with a key that includes the name of the current <NT>Workflow</NT>. For example, if the current <NT>Workflow</NT>'s name is `primary`, the <NT>Step</NT> will look for an archive with the key `npm-cache-primary`.
+   - Second, we'll look for an archive with a key that includes the name of the current branch. For example, if the current branch's name is `main`, the <NT>Step</NT> will look for an archive with the key `npm-cache-main`.
 
    ```yaml
    - restore-cache@1:
@@ -110,7 +111,7 @@ Once a cache archive has been created, you can access it on the **App Settings**
 
 ## Key-based caching templates and functions
 
-Both key-based caching Steps support using template elements in their Step inputs. The Steps evaluate the key template at runtime and the final cache key to be used can change depending on the build environment or on certain files in the repository.
+Both key-based caching <NT>Steps</NT> support using template elements in their <NT>Step inputs</NT>. The <NT>Steps</NT> evaluate the key template at runtime and the final <NT>cache key</NT> to be used can change depending on the build environment or on certain files in the repository.
 
 ### Available caching templates
 
@@ -118,14 +119,14 @@ Both key-based caching Steps support using template elements in their Step input
 | --- | --- | --- |
 | `cache-key-{{ .Branch }}` | Current git branch the build runs on. | The exact name of any existing branch of the app. |
 | `cache-key-{{ .CommitHash }}` | SHA-256 hash of the git commit the build runs on. | Any existing commit hash. |
-| `cache-key-{{ .Workflow }}` | Current Bitrise workflow name (for example, `primary`). | The exact name of any existing Workflow of the app. |
-| `{{ .OS }}-cache-key` | Current operating system of the build <GlossTerm baseform="stack">stack</GlossTerm> (`linux` or `darwin`). | - `linux`: For Linux-based stacks. - `darwin`: For macOS-based stacks. |
+| `cache-key-{{ .Workflow }}` | Current <NT>Bitrise</NT> workflow name (for example, `primary`). | The exact name of any existing <NT>Workflow</NT> of the app. |
+| `{{ .OS }}-cache-key` | Current operating system of the build <NT><GlossTerm baseform="stack">stack</GlossTerm></NT> (`linux` or `darwin`). | - `linux`: For <NT>Linux</NT>-based stacks. - `darwin`: For macOS-based stacks. |
 
 ### Using functions in caching templates
 
 The key-based caching templates support the use of two different functions:
 
-- `checksum`: This function computes the SHA-256 checksum of the contents of one or more files. This is useful for creating unique cache keys based on files that describe content to cache. See the examples below.
+- `checksum`: This function computes the SHA-256 checksum of the contents of one or more files. This is useful for creating unique <NT>cache keys</NT> based on files that describe content to cache. See the examples below.
 - `getenv`: This function returns the value of an [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables) (Env Var) or an empty string if the variable is not defined. See the examples below.
 
 **Using the checksum function**
@@ -150,7 +151,7 @@ Use the `checksum` function to create a key that computes a checksum for any `.g
 
 **Using the getenv function**
 
-Use the `getenv` function to create a key that contains the value of the BITRISE_BUILD_NUMBER Env Var.
+Use the `getenv` function to create a key that contains the value of the <NT>BITRISE_BUILD_NUMBER</NT> Env Var.
 
 ```yaml
 - save-cache@1:
@@ -162,7 +163,7 @@ Use the `getenv` function to create a key that contains the value of the BITRISE
 
 ## Key matching for cache archives
 
-It's possible to define more than one key in the **Cache keys** input of the key-based caching Steps. You can specify additional keys by listing one key per line. The list is in priority order, so the Step will first try to find a match for the first key you provided, and if there is no cache stored for the key, it will move on to find a match for the second key (and so on).
+It's possible to define more than one key in the **<NT>Cache keys</NT>** input of the key-based caching <NT>Steps</NT>. You can specify additional keys by listing one key per line. The list is in priority order, so the <NT>Step</NT> will first try to find a match for the first key you provided, and if there is no cache stored for the key, it will move on to find a match for the second key (and so on).
 
 ```yaml
 inputs:
@@ -172,7 +173,7 @@ inputs:
     key-3
 ```
 
-In addition to listing multiple keys, each key can be a prefix of a saved cache key and still get a matching cache archive. For example, the key `my-cache-` can match an existing archive saved with the key `my-cache-a6a102ff`. We recommend configuring the keys in a way that the first key is an exact match to a checksum key, and to use a more generic prefix key as a fallback:
+In addition to listing multiple keys, each key can be a prefix of a saved <NT>cache key</NT> and still get a matching cache archive. For example, the key `my-cache-` can match an existing archive saved with the key `my-cache-a6a102ff`. We recommend configuring the keys in a way that the first key is an exact match to a checksum key, and to use a more generic prefix key as a fallback:
 
 ```yaml
 inputs:
@@ -190,31 +191,31 @@ You might not want to update a cache archive every time you run a build. By skip
 - Make the PR validation workflow faster.
 - Limit the amount of data stored and transferred.
 
-If the cached content did not change during your build at all, the **Save cache** Step can automatically skip compressing and uploading the cache. To make this work, you need to make sure your cache archive has a unique cache key that changes whenever the contents of the cache change: in practice, this requires [a dynamic key with a checksum](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-based-caching-templates-and-functions) and a file that describes the cached content. The checksum will be calculated based on the contents of the file; if the file remains unchanged, so does the checksum.
+If the cached content did not change during your build at all, the **<NT>Save cache</NT>** <NT>Step</NT> can automatically skip compressing and uploading the cache. To make this work, you need to make sure your cache archive has a unique <NT>cache key</NT> that changes whenever the contents of the cache change: in practice, this requires [a dynamic key with a checksum](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-based-caching-templates-and-functions) and a file that describes the cached content. The checksum will be calculated based on the contents of the file; if the file remains unchanged, so does the checksum.
 
-We strongly recommend configuring the Step in a way to take advantage of this feature. Follow the steps below, or skip ahead to the YAML example at the end of this section.
+We strongly recommend configuring the <NT>Step</NT> in a way to take advantage of this feature. Follow the steps below, or skip ahead to the YAML example at the end of this section.
 
-:::tip[Skipping the Save cache Step entirely]
+:::tip[Skipping the <NT>Save cache</NT> <NT>Step</NT> entirely]
 
-If you don't wish to update the cache archive even if the content that would be cached has changed, you can either remove the **Save cache** Step from your Workflow or you can set conditions for the Step: [Enabling or disabling a Step conditionally](/en/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally).
+If you don't wish to update the cache archive even if the content that would be cached has changed, you can either remove the **<NT>Save cache</NT>** <NT>Step</NT> from your <NT>Workflow</NT> or you can set conditions for the <NT>Step</NT>: [Enabling or disabling a Step conditionally](/en/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally).
 
 :::
 
 1. <Partial_OpeningTheWorkflowEditor />
-1. Open your Workflow and select the **Save cache** Step.
-1. Set the **Unique cache key** input to `true`.
+1. Open your <NT>Workflow</NT> and select the **<NT>Save cache</NT>** <NT>Step</NT>.
+1. Set the **Unique <NT>cache key</NT>** input to `true`.
 
-   If the input is set to `false`, the Step can still skip uploading the cache but it will need to create the cache archive first to calculate its checksum. This takes time.
-1. In the **Cache key** input, create a key with a checksum for a file that describes the cached content.
+   If the input is set to `false`, the <NT>Step</NT> can still skip uploading the cache but it will need to create the cache archive first to calculate its checksum. This takes time.
+1. In the **<NT>Cache key</NT>** input, create a key with a checksum for a file that describes the cached content.
 
    For example, `npm-cache-{{ checksum "package-lock.json" }}` is a dynamic key that remains unchanged as long as the `package-lock.json` file does not change.
-1. Add the same dynamic key to the **Cache keys** input of the **Restore cache** Step.
+1. Add the same dynamic key to the **<NT>Cache keys</NT>** input of the **Restore cache** <NT>Step</NT>.
 
-If everything is configured correctly, if the keys in the two caching Steps match, the cache archive will not be updated.
+If everything is configured correctly, if the keys in the two caching <NT>Steps</NT> match, the cache archive will not be updated.
 
 **YAML example for using a dynamic key with checksum**
 
-In this example, the cache key calculates the sum for any `.gradle` file and the `gradle.properties` file. Both the **Restore cache** and the **Save cache** Step looks for the same cache key:
+In this example, the <NT>cache key</NT> calculates the sum for any `.gradle` file and the `gradle.properties` file. Both the **Restore cache** and the **<NT>Save cache</NT>** <NT>Step</NT> looks for the same <NT>cache key</NT>:
 
 ```yaml
 workflows:    

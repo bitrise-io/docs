@@ -178,7 +178,7 @@ const config: Config = {
       // the same escape rules as inline content.
       fileContent = expandListPartials(fileContent);
       const ALLOWED = new Set([
-        'Tabs', 'TabItem', 'GlossTerm',
+        'Tabs', 'TabItem', 'GlossTerm', 'NT',
         'SwaggerUIEmbed',
         'br', 'hr', 'sup', 'sub', 'strong', 'em', 'code', 'pre', 'p',
         'div', 'span', 'a', 'img', 'ul', 'ol', 'li',
@@ -230,7 +230,7 @@ const config: Config = {
 
   i18n: {
     defaultLocale: 'en',
-    locales: ['en'],
+    locales: ['en', 'ja'],
   },
 
   headTags: [
@@ -416,6 +416,10 @@ const config: Config = {
         href: '/',
       },
       items: [
+        {
+          type: 'localeDropdown',
+          position: 'right',
+        },
         {
           href: 'https://support.bitrise.io/en/',
           label: 'Go to support',

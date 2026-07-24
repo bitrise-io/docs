@@ -205,7 +205,7 @@ const sidebar: SidebarsConfig = {
         {
           type: "doc",
           id: "bitrise-rde-api/api-reference/codespaces-service-session-download",
-          label: "Download files",
+          label: "Download files (deprecated)",
           className: "api-method post",
         },
         {

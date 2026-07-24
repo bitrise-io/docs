@@ -14,83 +14,84 @@ import Partial_DeployingToGooglePlay from '@site/src/partials/deploying-to-googl
 import Partial_SettingUpGooglePlayDeploymentForTheFirstTime from '@site/src/partials/setting-up-google-play-deployment-for-the-first-time.mdx';
 import Partial_GettingToTheProjectSettingsPage from '@site/src/partials/getting-to-the-project-settings-page.mdx';
 import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
+import NT from '@site/src/components/NT';
 
-In this guide, we’ll walk you through how to add an Android app to Bitrise, what the default <GlossTerm baseform="Workflow">Workflows</GlossTerm> can do, and finally how to test and deploy your app to [bitrise.io](https://www.bitrise.io/) and to Google Play Store.
+In this guide, we’ll walk you through how to add an <NT>Android</NT> app to <NT>Bitrise</NT>, what the default <NT><GlossTerm baseform="Workflow">Workflow</GlossTerm></NT>s can do, and finally how to test and deploy your app to [bitrise.io](https://www.bitrise.io/) and to <NT>Google Play Store</NT>.
 
 <Partial_NOTEDoYouHaveABitriseAccount />
 
 
-## Adding an Android project to Bitrise
+## Adding an <NT>Android</NT> project to <NT>Bitrise</NT>
 
-Add your project the same way as any other: see [Adding a new project](/en/bitrise-ci/getting-started/adding-a-new-project) for the full walkthrough of the wizard. This section covers what's specific to Android.
+Add your project the same way as any other: see [Adding a new project](/en/bitrise-ci/getting-started/adding-a-new-project) for the full walkthrough of the wizard. This section covers what's specific to <NT>Android</NT>.
 
-### How the scanner detects an Android project
+### How the scanner detects an <NT>Android</NT> project
 
-The <GlossTerm baseform="project scanner">project scanner</GlossTerm> looks for a Gradle wrapper script (`gradlew`) in your repository, then checks the Gradle build scripts next to it for the `com.android.application` plugin. If it finds this plugin in at least one `build.gradle` or `build.gradle.kts` file, it registers your project as Android.
+The <NT><GlossTerm baseform="project scanner">project scanner</GlossTerm></NT> looks for a <NT>Gradle</NT> wrapper script (`gradlew`) in your repository, then checks the <NT>Gradle</NT> build scripts next to it for the `com.android.application` plugin. If it finds this plugin in at least one `build.gradle` or `build.gradle.kts` file, it registers your project as <NT>Android</NT>.
 
-The scanner skips common non-source directories, such as `.git`, `.gradle`, `.idea`, `build`, and `node_modules`. It also steps aside if your repository is already detected as Flutter, React Native, Cordova, Ionic, or Kotlin Multiplatform, since those scanners handle their own Android configuration.
+The scanner skips common non-source directories, such as `.git`, `.gradle`, `.idea`, `build`, and `node_modules`. It also steps aside if your repository is already detected as Flutter, <NT>React Native</NT>, <NT>Cordova</NT>, <NT>Ionic</NT>, or <NT>Kotlin</NT> Multiplatform, since those scanners handle their own <NT>Android</NT> configuration.
 
 ### What you can configure
 
-During the **CI configuration** stage, the wizard shows:
+During the **<NT>CI configuration</NT>** stage, the wizard shows:
 
-- **Project location**: the directory that contains your `gradlew` file. If the scanner finds more than one, you can pick which one to use.
-- **Module**: the Gradle module to build, for example `app`.
+- **<NT>Project location</NT>**: the directory that contains your `gradlew` file. If the scanner finds more than one, you can pick which one to use.
+- **<NT>Module</NT>**: the <NT>Gradle</NT> module to build, for example `app`.
 - **Variant**: the build variant to use, for example `Debug`. You can leave this blank and add variants later.
 
-## Managing dependencies for Android projects
+## Managing dependencies for <NT>Android</NT> projects
 
-The Gradle build system allows you include external binaries or other library modules as dependencies. Bitrise can install these dependencies for your project during the build process.
+The <NT>Gradle</NT> build system allows you include external binaries or other library modules as dependencies. <NT>Bitrise</NT> can install these dependencies for your project during the build process.
 
 :::tip[Adding build dependencies]
 
-You can read more about adding dependencies to your Android project: [https://developer.android.com/studio/build/dependencies](https://developer.android.com/studio/build/dependencies)
+You can read more about adding dependencies to your <NT>Android</NT> project: [https://developer.android.com/studio/build/dependencies](https://developer.android.com/studio/build/dependencies)
 
 :::
 
 1. Make sure your project's `build.gradle` file lists all your dependencies.
 1. <Partial_OpeningTheWorkflowEditor />
-1. Make sure your Workflow includes the **Android Build** <GlossTerm baseform="step">Step</GlossTerm>.
+1. Make sure your <NT>Workflow</NT> includes the **<NT>Android Build</NT>** <NT><GlossTerm baseform="step">Step</GlossTerm></NT>.
 
-   If the project scanner generated a Workflow called **build_apk** when first adding your app, that Workflow includes the Step. It installs all dependencies listed in the `build.gradle` file without any additional configuration.
-1. Make sure your Workflow includes the **Install missing Android SDK components** Step.
+   If the project scanner generated a <NT>Workflow</NT> called **build_apk** when first adding your app, that <NT>Workflow</NT> includes the <NT>Step</NT>. It installs all dependencies listed in the `build.gradle` file without any additional configuration.
+1. Make sure your <NT>Workflow</NT> includes the **<NT>Install missing Android SDK components</NT>** <NT>Step</NT>.
 
-   The Step must be BEFORE the **Android Build** Step in the Workflow. It will install all Android SDK tool that your project might need.
-
-
-## Testing your Android app
-
-We have several Steps dedicated to assisting you in testing your Android app during the CI process.
-
-- The **[Android Lint](https://www.bitrise.io/integrations/steps/android-lint)** Step runs Lint on your Android project source files and detects potential syntax errors to keep your code error free.
-- The **[Android Unit Test](https://www.bitrise.io/integrations/steps/android-unit-test)** Step runs your project's unit tests. You can run it for all your different modules and flavors. [Android unit tests](/en/bitrise-ci/testing/testing-android-apps/android-unit-tests)
-- The [**Virtual Device Testing for Android**](https://www.bitrise.io/integrations/steps/virtual-device-testing-for-android) uses Firebase TestLab to run Android tests on virtual devices. [Device testing for Android](/en/bitrise-ci/testing/device-testing-with-firebase/device-testing-for-android)
-
-The **[Android Unit Test](https://www.bitrise.io/integrations/steps/android-unit-test)** Step and the [**Virtual Device Testing for Android**](https://www.bitrise.io/integrations/steps/virtual-device-testing-for-android) Step can both export their results to [test reports](/en/bitrise-ci/testing/deploying-and-viewing-test-results). To do so, simply make sure that your Workflow includes the **Deploy to Bitrise.io** Step at the very end of the Workflow.
+   The <NT>Step</NT> must be BEFORE the **<NT>Android Build</NT>** <NT>Step</NT> in the <NT>Workflow</NT>. It will install all <NT>Android</NT> SDK tool that your project might need.
 
 
-## Signing your Android app
+## Testing your <NT>Android</NT> app
 
-In order to publish an Android app to Google Play, you need to digitally sign the app. Bitrise can also do this for you: you'll just need to upload a keystore file, and provide the necessary authentication.
+We have several <NT>Steps</NT> dedicated to assisting you in testing your <NT>Android</NT> app during the CI process.
 
-:::note[Other code signing options]
+- The **[Android Lint](https://www.bitrise.io/integrations/steps/android-lint)** <NT>Step</NT> runs Lint on your <NT>Android</NT> <NT>project source</NT> files and detects potential syntax errors to keep your code error free.
+- The **[Android Unit Test](https://www.bitrise.io/integrations/steps/android-unit-test)** <NT>Step</NT> runs your project's unit tests. You can run it for all your different modules and flavors. [Android unit tests](/en/bitrise-ci/testing/testing-android-apps/android-unit-tests)
+- The [**Virtual Device Testing for Android**](https://www.bitrise.io/integrations/steps/virtual-device-testing-for-android) uses <NT>Firebase</NT> TestLab to run <NT>Android</NT> tests on virtual devices. [Device testing for Android](/en/bitrise-ci/testing/device-testing-with-firebase/device-testing-for-android)
 
-In this section, we'll go through how to sign an Android app with the Android Sign Step. There are other ways to sign your app - check out the other options in our relevant guides: [Android code signing](/en/bitrise-ci/code-signing/android-code-signing/android-code-signing-using-the-android-sign-step).
+The **[Android Unit Test](https://www.bitrise.io/integrations/steps/android-unit-test)** <NT>Step</NT> and the [**Virtual Device Testing for Android**](https://www.bitrise.io/integrations/steps/virtual-device-testing-for-android) <NT>Step</NT> can both export their results to [test reports](/en/bitrise-ci/testing/deploying-and-viewing-test-results). To do so, simply make sure that your <NT>Workflow</NT> includes the **<NT>Deploy to Bitrise.io</NT>** <NT>Step</NT> at the very end of the <NT>Workflow</NT>.
+
+
+## Signing your <NT>Android</NT> app
+
+In order to publish an <NT>Android</NT> app to <NT>Google Play</NT>, you need to digitally sign the app. <NT>Bitrise</NT> can also do this for you: you'll just need to upload a keystore file, and provide the necessary authentication.
+
+:::note[Other <NT>code signing</NT> options]
+
+In this section, we'll go through how to sign an <NT>Android</NT> app with the <NT>Android Sign</NT> <NT>Step</NT>. There are other ways to sign your app - check out the other options in our relevant guides: [Android code signing](/en/bitrise-ci/code-signing/android-code-signing/android-code-signing-using-the-android-sign-step).
 
 :::
 
 1. [Generate a keystore file](https://developer.android.com/studio/publish/app-signing#generate-key)[Generate a keystore file](https://reactnative.dev/docs/signed-apk-android#generating-an-upload-key).
 
    1. <Partial_GettingToTheProjectSettingsPage />
-1. On the left, select **Code signing** from the menu.
-1. Drag-and-drop your keystore file to the **ANDROID KEYSTORE FILE** field.
-1. Fill out the **Keystore password**, **Keystore alias**, and **Private key password** fields and click **Save metadata**.
+1. On the left, select **<NT>Code signing</NT>** from the menu.
+1. Drag-and-drop your keystore file to the **<NT>ANDROID</NT> KEYSTORE FILE** field.
+1. Fill out the **<NT>Keystore password</NT>**, **<NT>Keystore alias</NT>**, and **<NT>Private key password</NT>** fields and click **<NT>Save</NT> metadata**.
 
    ![keystore-alias.png](/img/_paligo/uuid-0b79fc48-3861-0744-0f53-53a6c65ffc2c.png)
-1. Open the <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>.
-1. Add the **Android Sign** Step to your Workflow.
+1. Open the <NT><GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm></NT>.
+1. Add the **<NT>Android Sign</NT>** <NT>Step</NT> to your <NT>Workflow</NT>.
 
-And that's it. The next time you'll run a build, the **Android Sign** Step will sign the generated binary.
+And that's it. The next time you'll run a build, the **<NT>Android Sign</NT>** <NT>Step</NT> will sign the generated binary.
 
 <Partial_DeployingAnAndroidAppToBitriseIo />
 

@@ -8,33 +8,34 @@ slug: /bitrise-ci/testing/testing-android-apps/running-instrumented-tests-for-an
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-[Instrumented tests](https://developer.android.com/training/testing/instrumented-tests) run on Android devices, whether physical or emulated. On Bitrise, you can run instrumented tests using [the adb tool](https://developer.android.com/tools/adb). To run your instrumented tests, you need two <GlossTerm baseform="Step">Steps</GlossTerm> in your <GlossTerm baseform="Workflow">Workflow</GlossTerm>:
+[Instrumented tests](https://developer.android.com/training/testing/instrumented-tests) run on <NT>Android</NT> devices, whether physical or emulated. On <NT>Bitrise</NT>, you can run instrumented tests using [the adb tool](https://developer.android.com/tools/adb). To run your instrumented tests, you need two <NT><GlossTerm baseform="Step">Step</GlossTerm></NT>s in your <NT><GlossTerm baseform="Workflow">Workflow</GlossTerm></NT>:
 
-- The [**Android Build for UI testing**](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing) Step builds both an APK and a test APK. For example, `MyappDebug.apk` and `MyAppDebugAndroidTest.apk`. The Step stores the path to these APKs in two output Environment Variables: BITRISE_APK_PATH and BITRISE_TEST_APK_PATH. You can use these Env Vars to access the APKs in subsequent Steps in the same Workflow.
-- The [**Android Instrumented Test**](https://github.com/bitrise-steplib/bitrise-step-android-instrumented-test) Step runs the instrumented tests using the APKs built in the previous Step.
+- The [**Android Build for UI testing**](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing) <NT>Step</NT> builds both an APK and a test APK. For example, `MyappDebug.apk` and `MyAppDebugAndroidTest.apk`. The <NT>Step</NT> stores the path to these APKs in two output <NT>Environment Variables</NT>: BITRISE_APK_PATH and BITRISE_TEST_APK_PATH. You can use these Env Vars to access the APKs in subsequent <NT>Steps</NT> in the same <NT>Workflow</NT>.
+- The [**Android Instrumented Test**](https://github.com/bitrise-steplib/bitrise-step-android-instrumented-test) <NT>Step</NT> runs the instrumented tests using the APKs built in the previous <NT>Step</NT>.
 
-To run instrumented tests for Android:
+To run instrumented tests for <NT>Android</NT>:
 
 
 <Tabs>
   <TabItem value="workflow-editor" label="Workflow Editor">
 
-  1. Add the [**Android Build for UI testing**](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing) Step to your Workflow.
-  1. Make sure the **Project location** input points to the root directory of your Android app.
-  1. Set the module and the variant you want to build in the **Module** and the **Variant** input.
+  1. Add the [**Android Build for UI testing**](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing) <NT>Step</NT> to your <NT>Workflow</NT>.
+  1. Make sure the **<NT>Project location</NT>** input points to the root directory of your <NT>Android</NT> app.
+  1. Set the module and the variant you want to build in the **<NT>Module</NT>** and the **Variant** input.
 
      You can check the available modules and variants of your project in [the Project window in Android Studio](https://developer.android.com/studio/projects).
 
      ![build-forui-tsting.png](/img/_paligo/uuid-9de8c3bc-abac-16bb-8a19-be18a97ac998.png)
   1. In the **Options** input group, you can set the location for the generated APK files in the **APK location pattern** input.
 
-     The input takes a file pattern as a value. The default value is `*/build/outputs/apk/*.apk`.
-  1. Optionally, you can [pass additional Gradle arguments](https://docs.gradle.org/current/userguide/custom_tasks.html#sec:declaring_and_using_command_line_options) to the build task in the **Additional Gradle Arguments** input.
-  1. Add the [**Android Instrumented Test**](https://github.com/bitrise-steplib/bitrise-step-android-instrumented-test) Step to the Workflow, at some point after the [**Android Build for UI testing**](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing) Step.
+     The input takes a file pattern as a value. The <NT>default value</NT> is `*/build/outputs/apk/*.apk`.
+  1. Optionally, you can [pass additional Gradle arguments](https://docs.gradle.org/current/userguide/custom_tasks.html#sec:declaring_and_using_command_line_options) to the build task in the **<NT>Additional Gradle Arguments</NT>** input.
+  1. Add the [**Android Instrumented Test**](https://github.com/bitrise-steplib/bitrise-step-android-instrumented-test) <NT>Step</NT> to the <NT>Workflow</NT>, at some point after the [**Android Build for UI testing**](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing) <NT>Step</NT>.
   1. Make sure that the **Main APK path** and the **Test APK path** inputs point to the correct location.
 
-     By default, the values of the two inputs are the BITRISE_APK_PATH and the BITRISE_TEST_APK_PATH Environment Variables, respectively. These variables are exported by the [**Android Build for UI testing**](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing) Step. As such, in the vast majority of cases, you don't have to modify the value of these inputs.
+     By default, the values of the two inputs are the BITRISE_APK_PATH and the BITRISE_TEST_APK_PATH <NT>Environment Variables</NT>, respectively. These variables are exported by the [**Android Build for UI testing**](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing) <NT>Step</NT>. As such, in the vast majority of cases, you don't have to modify the value of these inputs.
 
      ![android-instrumented.png](/img/_paligo/uuid-ab9cf08d-eb9e-d46d-7bb2-740827ec96b9.png)
   1. In the **Test runner class** input, specify the test runner you wish to use.
@@ -43,12 +44,12 @@ To run instrumented tests for Android:
   1. Optionally, you can pass additional options to the test runner with the **Additional testing options** input.
 
      With this input, you issue commands to the activity manager tool of the `adb` shell. For more information about the commands you can issue, see [the official documentation for adb](https://developer.android.com/tools/adb#issuingcommands).
-  1. Add the [**Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files**](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) Step to your Workflow to view test results: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
+  1. Add the [**Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files**](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) <NT>Step</NT> to your <NT>Workflow</NT> to view test results: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
 
   </TabItem>
   <TabItem value="yaml" label="Configuration YAML">
 
-  1. Add the `android-build-for-ui-testing` Step to your Workflow.
+  1. Add the `android-build-for-ui-testing` <NT>Step</NT> to your <NT>Workflow</NT>.
 
      ```yaml
      steps:
@@ -57,7 +58,7 @@ To run instrumented tests for Android:
              inputs:
          - deploy-to-bitrise-io: {}
      ```
-  1. Make sure the `project_location` input points to the root directory of your Android app.
+  1. Make sure the `project_location` input points to the root directory of your <NT>Android</NT> app.
 
      ```yaml
      steps:
@@ -83,7 +84,7 @@ To run instrumented tests for Android:
      ```
   1. In the `apk_path_pattern` input, you can set the location for the generated APK files.
 
-     The input takes a file pattern as a value. The default value is `*/build/outputs/apk/*.apk`.
+     The input takes a file pattern as a value. The <NT>default value</NT> is `*/build/outputs/apk/*.apk`.
 
      ```yaml
      steps:
@@ -111,7 +112,7 @@ To run instrumented tests for Android:
              - project_location: $BITRISE_SOURCE_DIR
          - deploy-to-bitrise-io: {}
      ```
-  1. Add the `android-instrumented-test` Step to the Workflow, at some point after the `android-build-for-ui-testing` Step.
+  1. Add the `android-instrumented-test` <NT>Step</NT> to the <NT>Workflow</NT>, at some point after the `android-build-for-ui-testing` <NT>Step</NT>.
 
      ```yaml
      steps:
@@ -130,7 +131,7 @@ To run instrumented tests for Android:
      ```
   1. Make sure that the `main_apk_path` and the `test_apk_path` inputs point to the correct location.
 
-     By default, the values of the two inputs are the BITRISE_APK_PATH and the BITRISE_TEST_APK_PATH Environment Variables, respectively. These variables are exported by the `android-build-for-ui-testing` Step. As such, in the vast majority of cases, you don't have to set the value of these inputs.
+     By default, the values of the two inputs are the BITRISE_APK_PATH and the BITRISE_TEST_APK_PATH <NT>Environment Variables</NT>, respectively. These variables are exported by the `android-build-for-ui-testing` <NT>Step</NT>. As such, in the vast majority of cases, you don't have to set the value of these inputs.
 
      ```yaml
      steps:
@@ -194,7 +195,7 @@ To run instrumented tests for Android:
              - test_apk_path: $BITRISE_TEST_APK_PATH
          - deploy-to-bitrise-io: {}
      ```
-  1. Add the [**Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files**](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) Step to your Workflow to view test results: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
+  1. Add the [**Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files**](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) <NT>Step</NT> to your <NT>Workflow</NT> to view test results: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
 
   </TabItem>
 </Tabs>

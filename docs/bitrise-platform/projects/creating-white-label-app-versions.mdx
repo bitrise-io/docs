@@ -8,56 +8,57 @@ slug: /bitrise-platform/projects/creating-white-label-app-versions
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-This guide explains how to create different versions of your white label project and build all or just one version by chaining <GlossTerm baseform="Workflow">Workflows</GlossTerm> and setting differences in [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables).
+This guide explains how to create different versions of your white label project and build all or just one version by chaining <NT><GlossTerm baseform="Workflow">Workflow</GlossTerm></NT>s and setting differences in [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables).
 
 In this article, we’re building three individual versions (red, green, white) of our white label project.
 
 What you’ll need for this setup:
 
-- A main Workflow that launches each version-specific Workflow.
-- One or more version-specific Workflow(s) where you can set all the parameters that distinguish your versions from each other.
-- A utility Workflow which describes your build logic, and refers to the version-specific options as parameters. [Utility Workflows are Workflows that have an underscore before their Workflow ID](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#utility-workflows). Utility Workflows cannot be executed with the `bitrise_run` command: you need to reference them with the `before_run` or `after_run` properties. You can [chain utility Workflows with your regular Workflows](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together) in the <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>.
+- A main <NT>Workflow</NT> that launches each version-specific <NT>Workflow</NT>.
+- One or more version-specific <NT>Workflow</NT>(s) where you can set all the parameters that distinguish your versions from each other.
+- A utility <NT>Workflow</NT> which describes your build logic, and refers to the version-specific options as parameters. [Utility Workflows are Workflows that have an underscore before their Workflow ID](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#utility-workflows). Utility <NT>Workflows</NT> cannot be executed with the `bitrise_run` command: you need to reference them with the `before_run` or `after_run` properties. You can [chain utility Workflows with your regular Workflows](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together) in the <NT><GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm></NT>.
 
 
-## Prepping Workflows of a white label app
+## Prepping <NT>Workflows</NT> of a white label app
 
-1. [Add your project](/en/bitrise-ci/getting-started/adding-a-new-project) to Bitrise in the usual way.
-1. Select your project on the [Bitrise CI](https://app.bitrise.io/dashboard/) page and click **Workflows**.
+1. [Add your project](/en/bitrise-ci/getting-started/adding-a-new-project) to <NT>Bitrise</NT> in the usual way.
+1. Select your project on the [Bitrise CI](https://app.bitrise.io/dashboard/) page and click **<NT>Workflows</NT>**.
 
    ![getting-to-workflows.png](/img/_paligo/uuid-32b5ff3d-8431-8fe3-9971-89d8aca076f4.png)
-1. Open the dropdown menu of available Workflows and click **Create Workflow** to create your main Workflow.
+1. Open the dropdown menu of available <NT>Workflows</NT> and click **<NT>Create</NT> <NT>Workflow</NT>** to create your main <NT>Workflow</NT>.
 
    ![create-workflow.png](/img/_paligo/uuid-426d42b4-ca6f-d5de-d91a-b9e8a4fd8ba1.png)
-1. Add a new Workflow based on an **Empty Workflow**.
+1. Add a new <NT>Workflow</NT> based on an **Empty <NT>Workflow</NT>**.
 
-   In this example, our main Workflow is called **allcolor**. This Workflow will start running your version-specific Workflows in the chain.
-1. Click **+** again to create your version-specific Workflow.
+   In this example, our main <NT>Workflow</NT> is called **allcolor**. This <NT>Workflow</NT> will start running your version-specific <NT>Workflows</NT> in the chain.
+1. Click **+** again to create your version-specific <NT>Workflow</NT>.
 
-   Keep adding as many Workflows as many different versions you wish to create.
-1. Select **Env Vars** on the left navigation menu and add your version-specific parameters to each Workflow you’ve just created.
+   Keep adding as many <NT>Workflows</NT> as many different versions you wish to create.
+1. Select **<NT>Env Vars</NT>** on the left navigation menu and add your version-specific parameters to each <NT>Workflow</NT> you’ve just created.
 
-   In this example we’re adding Workflow Environment Variables to our **green**, **red** and **white** Workflows but leaving **allcolor** intact.
+   In this example we’re adding <NT>Workflow</NT> <NT>Environment Variables</NT> to our **green**, **red** and **white** <NT>Workflows</NT> but leaving **allcolor** intact.
 
    ![env-ars-whitelabel.png](/img/_paligo/uuid-68837c3f-707c-19aa-86e2-bbac732be5a5.png)
-1. Go back to **Workflows** and create a [utility Workflow](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#utility-workflows).
+1. <NT>Go back</NT> to **<NT>Workflows</NT>** and create a [utility Workflow](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#utility-workflows).
 
-   Make sure you give a name that starts with an underscore, for example, **_runner**, otherwise Bitrise CLI will not treat it as a utility Workflow.
-1. Add <GlossTerm baseform="step">Steps</GlossTerm> to your utility Workflow.
+   Make sure you give a name that starts with an underscore, for example, **_runner**, otherwise <NT>Bitrise CLI</NT> will not treat it as a utility <NT>Workflow</NT>.
+1. Add <NT><GlossTerm baseform="step">Step</GlossTerm></NT>s to your utility <NT>Workflow</NT>.
 
-   In this example, we’re adding a **Script** Step which will inherit the Environment Variable from the Workflows and print out the value in the build log.
+   In this example, we’re adding a **Script** <NT>Step</NT> which will inherit the Environment Variable from the <NT>Workflows</NT> and print out the value in the build log.
 
    ![script-param.png](/img/_paligo/uuid-52def735-231b-d0ea-e01e-b8b12cfbe86a.png)
 
 
-## Chaining Workflows for a white label app
+## Chaining <NT>Workflows</NT> for a white label app
 
-Now that we have a bunch of Workflows ready, it’s time to chain them together in the right order.
+Now that we have a bunch of <NT>Workflows</NT> ready, it’s time to chain them together in the right order.
 
-1. Select your main Workflow (**allcolor** in this example). This is the Workflow that should be triggered by your [build triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers).
-1. Click the options menu (⋮) next to the Workflow's name and select **Chain Workflows**. Select a version Workflow (for example, **white**) and click **Add after**.
-1. Add each version-specific Workflow the same way (such as white, green, and red in our example) and add your utility Workflow after each of them, as seen in this image:
+1. Select your main <NT>Workflow</NT> (**allcolor** in this example). This is the <NT>Workflow</NT> that should be triggered by your [build triggers](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers).
+1. Click the options menu (⋮) next to the <NT>Workflow</NT>'s name and select **<NT>Chain Workflows</NT>**. <NT>Select</NT> a version <NT>Workflow</NT> (for example, **white**) and click **<NT>Add after</NT>**.
+1. Add each version-specific <NT>Workflow</NT> the same way (such as white, green, and red in our example) and add your utility <NT>Workflow</NT> after each of them, as seen in this image:
 
    ![chained-workflows.png](/img/_paligo/uuid-dada2b23-2bc7-5796-3d98-9131dbaa2a87.png)
-1. Go back to your Build’s page and click **Start build**.
-1. In the **Build configuration** dialog, select your main Workflow under **Workflow**. This will kickstart your chained Workflows and build the app versions of your white label app.
+1. <NT>Go back</NT> to your <NT>Build</NT>’s page and click **<NT>Start build</NT>**.
+1. In the **<NT>Build</NT> configuration** dialog, select your main <NT>Workflow</NT> under **<NT>Workflow</NT>**. This will kickstart your chained <NT>Workflows</NT> and build the app versions of your white label app.

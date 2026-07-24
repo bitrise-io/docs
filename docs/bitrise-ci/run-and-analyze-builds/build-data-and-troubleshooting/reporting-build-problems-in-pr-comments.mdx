@@ -1,0 +1,91 @@
+---
+title: "Reporting build problems in PR comments"
+sidebar_position: 6
+slug: /bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/reporting-build-problems-in-pr-comments
+---
+
+import NT from '@site/src/components/NT';
+
+You can receive debugging information from <NT>Bitrise</NT> builds in Pull Request (PR) comments. This brings build insights directly into your PR timeline to accelerate problem resolutions and reduce context switching.
+
+:::note[<NT>Service Credential User</NT> and PR comments]
+
+Note that PR comments will be posted using a [service credential user account](/en/bitrise-platform/integrations/the-service-credential-user) or the [Bitrise GitHub App](/en/bitrise-platform/repository-access/github-app-integration) if that is in use, rather than your personal account.
+
+:::
+
+## Configuring PR comments in <NT>Bitrise</NT>
+
+Configure PR comments with just a few clicks:
+
+1. Open your project on <NT>Bitrise</NT> with a user who has either the **Admin** role or the **<NT>Owner</NT>** role on the project.
+1. On the main page of the project, click on the **<NT>Project settings</NT>** button.
+1. Click **Repository** on the left.
+1. Scroll down to **<NT>Build reporting</NT>** and <NT>enable the</NT> toggle for **<NT>PR comments</NT>**.
+
+   ![Build reporting section with the PR Comments toggle](/img/run-and-analyze-builds/2026-07-14-build-reporting-pr-comments-toggle.png)
+1. In the **<NT>Configure PR comments</NT>** window, all <NT>information block</NT>s are unchecked by default. Select any that you want to include in PR comments. The <NT>information block</NT>s are the following:
+
+   - **<NT>Build summary</NT>**: Build overview at the top of the comment. With AI on, also shows why the build failed and what to check first.
+   - **<NT>Step failures</NT>**: Shows failed <NT>Steps</NT> and error details. Hidden when all <NT>Steps</NT> succeed.
+   - **<NT>Test failures</NT>**: Shows failed tests and error details. Hidden when all tests succeed.
+   - **<NT>Flaky tests</NT>**: Shows flaky tests and rerun information. Hidden when there are no flaky tests.
+
+     ![Configure PR comments dialog with information blocks and Comment mode options](/img/run-and-analyze-builds/2026-07-14-configure-pr-comments-dialog.png)
+1. Under **<NT>Comment mode</NT>**, you can choose a <NT>comment mode</NT> to receive either a <NT>single comment</NT> or multiple comments.
+
+   - **<NT>Single comment</NT>**: Each build on the PR replaces any existing comments from a previous build, so the PR displays only the comment from the most recent build.
+   - **<NT>Multiple comments</NT>**: Each build on the PR adds a new comment, preserving a running history in the PR timeline.
+
+     :::note[More on <NT>Comment mode</NT>]
+
+     One PR build means one comment. However, multiple different <NT>Workflows</NT> on the same PR means multiple comments regardless of the **<NT>Comment mode</NT>** you choose. If the same <NT>Workflow</NT> is re-triggered, it adds new comments or updates the existing ones on the PR based on the chosen **<NT>Comment mode</NT>**.
+
+     :::
+1. When ready, click **<NT>Save changes</NT>**.
+
+## Receiving comments only for failed builds
+
+If you have checked all the <NT>information block</NT>s, you will receive a comment for both successful and failed builds. In this case, comments from successful builds will include a summary of the build. See examples below:
+
+![reportingbuildproblemsfirstpic.png](/img/_paligo/uuid-91fa95b8-0325-7201-68ee-ddb01087718a.png)
+
+![reportingbuildproblemssecondpic.png](/img/_paligo/uuid-33093867-a2c4-50e5-79ca-cf8fba179e41.png)
+
+To prevent receiving comments on your successful builds from <NT>Bitrise</NT>, uncheck the “Build Summary” block and select the other boxes as needed. This way, you’ll only receive comments like below when there’s a problem in your build.
+
+![reportingbuildproblemsthirdpic.png](/img/_paligo/uuid-74995bb5-af37-b70b-03e0-218fc8e978f7.png)
+
+## FAQ about embedding debug information in PR commits
+
+**Who is the author of these PR comments?**
+
+This depends on the type of authentication. The [Service Credential User](/en/bitrise-platform/integrations/the-service-credential-user) account posts comments if you [authenticate with the OAuth method](/en/bitrise-platform/repository-access/repository-access-with-oauth). This applies for all Git providers, for example, <NT>Github</NT>, <NT>Gitlab</NT>, <NT>Bitbucket</NT>.
+
+If you use the [Bitrise GitHub app](/en/bitrise-platform/repository-access/github-app-integration), the associated <NT>Bitrise</NT> bot will post the comment.
+
+**Which <NT>Git providers</NT> are supported?**
+
+All major Git providers—<NT>GitHub</NT>, <NT>GitLab</NT>, and <NT>Bitbucket</NT> — are supported.
+
+**Will these comments appear for every PRs?**
+
+It's an opt-in feature per project. Comments will only be posted if you have opted into this for the project.
+
+**Will <NT>PR comments</NT> include full logs?**
+
+No. Comments include concise error snippets and links back to the full build and <NT>Step</NT> logs on <NT>Bitrise</NT>. Use the link to open the <NT>Bitrise dashboard</NT> for the full context.
+
+**What if it’s a pipeline build with many workflows? Will the comment show which <NT>Workflow</NT> the failing <NT>Step</NT> or test belongs to?**
+
+If enabled, you will get one PR comment for the pipeline build. Information will be grouped per <NT>Workflow</NT>.
+
+**Can I <NT>change settings</NT> per <NT>Workflow</NT>/<NT>Pipeline</NT>?**
+
+No. It is a project-level setting and is not customizable per <NT>Workflow</NT>/<NT>Pipeline</NT>.
+
+**What if I trigger multiple builds from the same PR? Will there be one comment or multiple comments?**
+
+If you trigger multiple builds that are distinct (for example, a PR triggered three distinct pipelines A, B, and C), you will receive multiple comments.
+
+If you trigger multiple builds that are the same (for example, a PR triggered the same pipeline twice, one after the other), then you will receive one comment if you selected **<NT>Single comment</NT>** mode, or <NT>multiple comments</NT> if you selected **<NT>Multiple comments</NT>** mode.

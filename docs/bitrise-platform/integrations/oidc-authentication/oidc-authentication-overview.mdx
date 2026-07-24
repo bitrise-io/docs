@@ -8,57 +8,58 @@ slug: /bitrise-platform/integrations/oidc-authentication/oidc-authentication-ove
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-OpenID Connect (OIDC) is an identity authentication layer built on the OAuth 2.0 framework. It allows third-party applications to verify the identity of the end user, including using Single Sign-On across applications.
+OpenID Connect (OIDC) is an identity authentication layer built on the OAuth 2.0 framework. It allows third-party applications to verify the identity of the end user, including using <NT>Single Sign-On</NT> across applications.
 
 OIDC works by issuing ID tokens (typically JSON Web Tokens or JWTs) that provide information about the authentication operation's outcome and about the user's identity. The data about the authentication outcome and the user information are called claims.
 
 The service that receives the token evaluates the token's claims against its OIDC policy. If the token's claims match the policy, the request is permitted; if they don't, it is rejected.
 
-Bitrise supports the use of OIDC tokens in two ways:
+<NT>Bitrise</NT> supports the use of OIDC tokens in two ways:
 
-- To enable your Bitrise builds to authenticate to external systems such as AWS, GCP, Azure, container registries, secret management or artifact stores.
-- To use foreign OIDC tokens to authenticate to Bitrise and receive short-lived Bitrise tokens.
+- To enable your <NT>Bitrise</NT> builds to authenticate to external systems such as <NT>AWS</NT>, <NT>GCP</NT>, Azure, container registries, secret management or artifact stores.
+- To use foreign OIDC tokens to authenticate to <NT>Bitrise</NT> and receive short-lived <NT>Bitrise</NT> tokens.
 
 
 ## Authentication to external services with OIDC
 
-OIDC enables your builds to authenticate to external systems (such as AWS, GCP, Azure, container registries, secret management or artifact stores) without embedding long-lived credentials in your <GlossTerm baseform="workflow">Workflows</GlossTerm>. Bitrise can mint one or more identity tokens tied to a specific build, with claims such as a build number, commit hash, repository slug, app slug, or Workflow name.
+OIDC enables your builds to authenticate to external systems (such as <NT>AWS</NT>, <NT>GCP</NT>, Azure, container registries, secret management or artifact stores) without embedding long-lived credentials in your <NT><GlossTerm baseform="workflow">Workflow</GlossTerm></NT>s. <NT>Bitrise</NT> can mint one or more identity tokens tied to a specific build, with claims such as a build number, commit hash, repository slug, app slug, or <NT>Workflow</NT> name.
 
 These tokens are:
 
 - Issued for a particular build interaction so third-party services can grant access scoped only to that run.
 - Short-lived to minimize the consequences of potential exposure.
-- Consumable by federated services that accept OIDC: for example, you can exchange a Bitrise OIDC token for temporary cloud credentials.
+- Consumable by federated services that accept OIDC: for example, you can exchange a <NT>Bitrise</NT> OIDC token for temporary cloud credentials.
 
 ### Request an identity token for your build
 
-To use an OIDC token to authenticate to a service from a Bitrise build, you need to fetch the token and then perform the credential exchange with the service. Bitrise offers <GlossTerm baseform="step">Steps</GlossTerm> that handle parts of the process.
+To use an OIDC token to authenticate to a service from a <NT>Bitrise</NT> build, you need to fetch the token and then perform the credential exchange with the service. <NT>Bitrise</NT> offers <NT><GlossTerm baseform="step">Step</GlossTerm></NT>s that handle parts of the process.
 
-#### Get OIDC Identity Token Step
+#### <NT>Get OIDC Identity Token</NT> <NT>Step</NT>
 
-Use an OIDC token in your build for any service with the **Get OIDC Identity Token** Step. This Step lets your Workflows and <GlossTerm baseform="pipeline">Pipelines</GlossTerm> request temporary, auditable access to cloud resources or external services at runtime, without storing secrets in the repository or build configuration.
+Use an OIDC token in your build for any service with the **<NT>Get OIDC Identity Token</NT>** <NT>Step</NT>. This <NT>Step</NT> lets your <NT>Workflows</NT> and <NT><GlossTerm baseform="pipeline">Pipeline</GlossTerm></NT>s request temporary, auditable access to cloud resources or external services at runtime, without storing secrets in the repository or build configuration.
 
-Set the **Token audience** input to configure the Step. This could be the URL of the service you want to access with the token or a specific identifier provided by the service.
+Set the **<NT>Token audience</NT>** input to configure the <NT>Step</NT>. This could be the URL of the service you want to access with the token or a specific identifier provided by the service.
 
 ![2025-11-12-get-oidc-token-step.png](/img/_paligo/uuid-aad02a5a-3899-01eb-0842-76bfcc14b1d4.png)
 
-The Step exports an Environment Variable with the key BITRISE_IDENTITY_TOKEN, containing the relevant information of the token. Use it to exchange credentials with the service you want to access.
+The <NT>Step</NT> exports an Environment Variable with the key BITRISE_IDENTITY_TOKEN, containing the relevant information of the token. Use it to exchange credentials with the service you want to access.
 
-#### Dedicated Steps for specific services
+#### Dedicated <NT>Steps</NT> for specific services
 
-The **Get OIDC Identity Token** Step lets you fetch an OIDC token for any service but it doesn't perform the credential exchange for you. For some services, we have Steps that take the care of the whole process:
+The **<NT>Get OIDC Identity Token</NT>** <NT>Step</NT> lets you fetch an OIDC token for any service but it doesn't perform the credential exchange for you. For some services, we have <NT>Steps</NT> that take the care of the whole process:
 
-- **Authenticate with Google Cloud Platform (GCP)**: Generates a Google auth token using a service account key, and authenticates to GCP.
-- **Authenticate with Amazon Web Services (AWS)**: Generates an identity token based on an AWS IAM identity provider. You can read our full guide here: [OIDC for AWS](/en/bitrise-platform/integrations/oidc-authentication/oidc-for-aws).
+- **Authenticate with Google Cloud Platform (<NT>GCP</NT>)**: Generates a Google auth token using a service account key, and authenticates to <NT>GCP</NT>.
+- **Authenticate with Amazon Web Services (<NT>AWS</NT>)**: Generates an identity token based on an <NT>AWS</NT> IAM identity provider. You can read our full guide here: [OIDC for AWS](/en/bitrise-platform/integrations/oidc-authentication/oidc-for-aws).
 
 ### Information in the OIDC token
 
-Bitrise includes the following information in the OIDC token:
+<NT>Bitrise</NT> includes the following information in the OIDC token:
 
 :::important[Limitation]
 
-As Bitrise is considered a generic identity provider, AWS keeps only two claims from our token: `aud` and `sub`. You can only use these in your policies.
+As <NT>Bitrise</NT> is considered a generic identity provider, <NT>AWS</NT> keeps only two claims from our token: `aud` and `sub`. You can only use these in your policies.
 
 You can find more information about claim fields in the [AWS documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html#Conditions_String).
 
@@ -78,7 +79,7 @@ You can find more information about claim fields in the [AWS documentation](http
 | `repository_owner` | The git repository owner |
 | `repository_slug` | Git repository slug |
 | `app_slug` | App slug |
-| `workspace_slug` | <GlossTerm baseform="workspace">Workspace</GlossTerm> slug |
+| `workspace_slug` | <NT><GlossTerm baseform="workspace">Workspace</GlossTerm></NT> slug |
 | `trigger_by` | What entity triggered the build |
 | `branch` | The branch that is getting built |
 | `branch_dest` | PR target branch |
@@ -87,23 +88,23 @@ You can find more information about claim fields in the [AWS documentation](http
 | `workflow` | Name of the triggered workflow |
 
 
-## Authentication to Bitrise with OIDC
+## Authentication to <NT>Bitrise</NT> with OIDC
 
-Bitrise supports using external OIDC tokens to authenticate to Bitrise and receive short-lived Bitrise [workspace access tokens](/en/bitrise-platform/workspaces/workspace-api-token). The issued token will be matched against your Bitrise trust policy.
+<NT>Bitrise</NT> supports using external OIDC tokens to authenticate to <NT>Bitrise</NT> and receive short-lived <NT>Bitrise</NT> [workspace access tokens](/en/bitrise-platform/workspaces/workspace-api-token). The issued token will be matched against your <NT>Bitrise</NT> trust policy.
 
-A service that receives a Bitrise token essentially becomes a temporary member of your workspace that can perform certain actions defined in your trust policy. For example, it can receive data from a build triggered on a specific branch of a given repository.
+A service that receives a <NT>Bitrise</NT> token essentially becomes a temporary member of your <NT>workspace</NT> that can perform certain actions defined in your trust policy. For example, it can receive data from a build triggered on a specific branch of a given repository.
 
 ### Trust policy
 
-An OIDC trust policy defines who to trust, under what conditions, and how to validate the OIDC tokens. A Bitrise trust policy defines:
+An OIDC trust policy defines who to trust, under what conditions, and how to validate the OIDC tokens. A <NT>Bitrise</NT> trust policy defines:
 
-- The OIDC issuers that Bitrise will trust. Claims from OIDC providers that aren't listed as issuers in our trust policy are automatically rejected.
+- The OIDC issuers that <NT>Bitrise</NT> will trust. Claims from OIDC providers that aren't listed as issuers in our trust policy are automatically rejected.
 - The duration of the short-lived token: how long it is valid.
-- Its level of access: the roles and permissions it grants in workspaces and projects.
-- The matching rules of the token: the claims that must be matched. For example, the claim can include the repository, the branch of the repository, the Workflow that should be triggered. The matching rules are in a JSON format.
+- Its level of access: the roles and permissions it grants in <NT>workspaces</NT> and projects.
+- The matching rules of the token: the claims that must be matched. For example, the claim can include the repository, the branch of the repository, the <NT>Workflow</NT> that should be triggered. The matching rules are in a JSON format.
 
 ### OIDC token request
 
-After a policy is successfully created, Bitrise automatically generates a unique policy ID. This policy ID must be included in every token request.
+After a policy is successfully created, <NT>Bitrise</NT> automatically generates a unique policy ID. This policy ID must be included in every token request.
 
-When a service sends an OIDC token to request a short-lived Bitrise workspace access token, Bitrise matches the policy ID in the request to the corresponding trust policy and checks that trust policy's matching rules. If the rules match the OIDC token's claims, the short-lived token is granted.
+When a service sends an OIDC token to request a short-lived <NT>Bitrise</NT> <NT>workspace</NT> access token, <NT>Bitrise</NT> matches the policy ID in the request to the corresponding trust policy and checks that trust policy's matching rules. If the rules match the OIDC token's claims, the short-lived token is granted.

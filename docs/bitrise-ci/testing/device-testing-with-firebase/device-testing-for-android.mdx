@@ -8,58 +8,59 @@ slug: /bitrise-ci/testing/device-testing-with-firebase/device-testing-for-androi
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-With Bitrise’s Android virtual device testing solution, you can run UI tests on emulators without having to set up and register your own devices.
+With <NT>Bitrise</NT>’s <NT>Android</NT> virtual device testing solution, you can run UI tests on emulators without having to set up and register your own devices.
 
 :::note[Limitations]
 
-The maximum duration for virtual device testing is 60 minutes. Configure this with the **Test timeout** input; the default is 15 minutes.
+The maximum duration for virtual device testing is 60 minutes. Configure this with the **<NT>Test timeout</NT>** input; the default is 15 minutes.
 
-A single build can contain only one **Virtual Device Testing** <GlossTerm baseform="step">Step</GlossTerm> performing one type of test (`instrumentation`, `robo` or `gameloop`).
+A single build can contain only one **Virtual Device Testing** <NT><GlossTerm baseform="step">Step</GlossTerm></NT> performing one type of test (`instrumentation`, `robo` or `gameloop`).
 
 :::
 
-Our device testing solution is based on [Firebase Test Lab](https://firebase.google.com/docs/test-lab/). You can find the resulting logs, videos and screenshots on Bitrise.
+Our device testing solution is based on [Firebase Test Lab](https://firebase.google.com/docs/test-lab/). You can find the resulting logs, videos and screenshots on <NT>Bitrise</NT>.
 
 
 ## Running tests
 
-With Bitrise, you can choose from 3 different test types:
+With <NT>Bitrise</NT>, you can choose from 3 different test types:
 
-- robo (default test type in Bitrise).
+- robo (default test type in <NT>Bitrise</NT>).
 - instrumentation.
 - gameloop.
 
 If you want to read up on the difference between these test types, take a look at [Firebase’s documentation.](https://firebase.google.com/docs/test-lab/android/get-started)
 
-There is a small difference between configuring your <GlossTerm baseform="Workflow">Workflow</GlossTerm> for robo and instrumentation tests, so let’s see them separately!
+There is a small difference between configuring your <NT><GlossTerm baseform="Workflow">Workflow</GlossTerm></NT> for robo and instrumentation tests, so let’s see them separately!
 
 ### Running robo tests
 
 <Tabs>
 <TabItem value="workflow-editor" label="Workflow Editor" default>
 
-1. Open the Workflow you want to use in the <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>.
-1. Add the **Android Build** Step to your Workflow to export an APK.
+1. Open the <NT>Workflow</NT> you want to use in the <NT><GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm></NT>.
+1. Add the **<NT>Android Build</NT>** <NT>Step</NT> to your <NT>Workflow</NT> to export an APK.
 
-   The Step stores the APK path in an [Env Var](/en/bitrise-ci/configure-builds/environment-variables). You will need this Env Var later.
-1. Add the `Debug` task to the **Variant** Step input field.
-1. Add **Virtual Device Testing for Android** Step after the **Android Build** Step.
+   The <NT>Step</NT> stores the APK path in an [Env Var](/en/bitrise-ci/configure-builds/environment-variables). You will need this Env Var later.
+1. Add the `Debug` task to the **Variant** <NT>Step</NT> input field.
+1. Add **<NT>Virtual Device Testing for Android</NT>** <NT>Step</NT> after the **<NT>Android Build</NT>** <NT>Step</NT>.
 1. Set the `App path` input field.
 1. Set the **Test type** input to **robo**.
-1. Add the type of test device in the **Test devices** input field.
+1. Add the type of test device in the **<NT>Test devices</NT>** input field.
 
    If choosing a different device than the default, your input should have the format of `deviceID`, `version`, `language`, `orientation` separated with `,`. Find the list of the available devices [here](https://firebase.google.com/docs/test-lab/android/available-testing-devices).
-1. Optionally, set the **Test timeout** input to control how long a test execution can run before it's automatically canceled. The default is 15 minutes; the maximum is 60 minutes.
+1. Optionally, set the **<NT>Test timeout</NT>** input to control how long a test execution can run before it's automatically canceled. The default is 15 minutes; the maximum is 60 minutes.
 1. Start a build and [check your test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
 
 </TabItem>
 <TabItem value="configuration-yaml" label="Configuration YAML">
 
-1. In the <GlossTerm baseform="configuration yaml">Configuration YAML</GlossTerm> file, find the Workflow you want to use or create a new one.
-1. Add the `android-build` Step to your Workflow.
+1. In the <NT><GlossTerm baseform="configuration yaml">Configuration YAML</GlossTerm></NT> file, find the <NT>Workflow</NT> you want to use or create a new one.
+1. Add the `android-build` <NT>Step</NT> to your <NT>Workflow</NT>.
 
-   The Step stores the APK path in an [Env Var](/en/bitrise-ci/configure-builds/environment-variables). You will need this Env Var later.
+   The <NT>Step</NT> stores the APK path in an [Env Var](/en/bitrise-ci/configure-builds/environment-variables). You will need this Env Var later.
 
    ```yaml
    my-workflow:
@@ -78,7 +79,7 @@ There is a small difference between configuring your <GlossTerm baseform="Workfl
            inputs:
            - variant: Debug
    ```
-1. Add the `virtual-device-testing-for-android` Step.
+1. Add the `virtual-device-testing-for-android` <NT>Step</NT>.
 
    ```yaml
    my-workflow:
@@ -90,7 +91,7 @@ There is a small difference between configuring your <GlossTerm baseform="Workfl
        - virtual-device-testing-for-android:
            inputs:
    ```
-1. Set the `app_path` input field: by default, its value is the $BITRISE_APK_PATH Env Var. This Env Var is exported by the `android-build` Step.
+1. Set the `app_path` input field: by default, its value is the $BITRISE_APK_PATH Env Var. This Env Var is exported by the `android-build` <NT>Step</NT>.
 
    ```yaml
    my-workflow:
@@ -165,11 +166,11 @@ There is a small difference between configuring your <GlossTerm baseform="Workfl
 
 If your app needs specific user interaction for a successful robo test, you can use the Robo Directives input field to set those necessary inputs. For example, certain UI elements of the app are only accessible for robo testing if the required user inputs (username and email address) are populated for log in.
 
-1. Click the Virtual Device Testing for Android Step in your workflow.
+1. Click the <NT>Virtual Device Testing for Android</NT> <NT>Step</NT> in your workflow.
 1. Click the Robo Test section.
 1. Find the Robo directives input field and set your required user input directives.
 
-   - provide a comma-separated list of key-value pairs, where the key is the Android resource name of the target UI element, and the value is the text string. EditText fields are supported but not text fields in WebView UI elements. For example, you could use the following parameter for custom login:
+   - <NT>provide a</NT> comma-separated list of key-value pairs, where the key is the <NT>Android</NT> resource name of the target UI element, and the value is the text string. EditText fields are supported but not text fields in WebView UI elements. For example, you could use the following parameter for custom login:
 
      ```text
      username_resource,username,ENTER_TEXT
@@ -180,7 +181,7 @@ If your app needs specific user interaction for a successful robo test, you can 
 
    ![Device_testing_for_Android.png](/img/_paligo/uuid-c9f67a4a-32c5-6ea8-fd0a-e1da4dccebf2.png)
 
-Based on the input you provide, you can successfully run a robo test (even on pages that are only accessible with a specific user input) and check the test results in the Tests tab on the Build page. The test results can be, for example:
+Based on the input you provide, you can successfully run a robo test (even on pages that are only accessible with a specific user input) and check the test results in the <NT>Tests</NT> tab on the <NT>Build</NT> page. The test results can be, for example:
 
 - Screenshots.
 
@@ -200,34 +201,34 @@ Here is a screenshot of a successful robo test, where the robo test got all the 
 <Tabs>
 <TabItem value="workflow-editor" label="Workflow Editor" default>
 
-1. Open the Workflow you want to use in the Workflow Editor.
-1. Add the **Android Build for UI testing** Step to your Workflow.
-1. To export an APK and a Test APK, you have to set the following input fields in the **Android Build for UI testing** Step.
+1. Open the <NT>Workflow</NT> you want to use in the <NT>Workflow Editor</NT>.
+1. Add the **<NT>Android Build</NT> for UI testing** <NT>Step</NT> to your <NT>Workflow</NT>.
+1. To export an APK and a Test APK, you have to set the following input fields in the **<NT>Android Build</NT> for UI testing** <NT>Step</NT>.
 
-   - **Project Location**: the root directory of your Android project.
-   - **Module**: set the module you wish to build.
+   - **<NT>Project Location</NT>**: the root directory of your <NT>Android</NT> project.
+   - **<NT>Module</NT>**: set the module you wish to build.
    - **Variant**: set the variant you wish to build (usually `Debug`).
 
    ![Device_testing_for_Android.png](/img/2026-07-16-android-build-for-ui-testing-step.png)
 
-   The Step outputs will be `BITRISE_APK_PATH` (which is the path of the generated APK after filtering) and `BITRISE_TEST_APK_PATH` (which is the path of the generated test APK after filtering).
-1. Add the **Virtual Device Testing for Android** Step right after the **Android Build for UI testing** Step.
+   The <NT>Step</NT> outputs will be `BITRISE_APK_PATH` (which is the path of the generated APK after filtering) and `BITRISE_TEST_APK_PATH` (which is the path of the generated test APK after filtering).
+1. Add the **<NT>Virtual Device Testing for Android</NT>** <NT>Step</NT> right after the **<NT>Android Build</NT> for UI testing** <NT>Step</NT>.
 1. Set the **Test type** input to `instrumentation`.
 
-   Our **Android Build for UI Testing** Step exports an APK and a Test APK and their paths get automatically set in the **App path** and the **Test APK path** input fields of the **Virtual Device Testing for Android** Step.
-1. Add the type of test device in the **Test devices** input field.
+   Our **<NT>Android Build for UI Testing</NT>** <NT>Step</NT> exports an APK and a Test APK and their paths get automatically set in the **<NT>App</NT> path** and the **Test APK path** input fields of the **<NT>Virtual Device Testing for Android</NT>** <NT>Step</NT>.
+1. Add the type of test device in the **<NT>Test devices</NT>** input field.
 
    If choosing a different device than the default, your input should have the format of `device ID`,`version`,`language`,`orientation` separated with a  `,`.
 
    ![Device_testing_for_Android.png](/img/2026-07-16-virtual-device-testing-for-android-test-devices.png)
-1. Optionally, set the **Test timeout** input to control how long a test execution can run before it's automatically canceled. The default is 15 minutes; the maximum is 60 minutes.
+1. Optionally, set the **<NT>Test timeout</NT>** input to control how long a test execution can run before it's automatically canceled. The default is 15 minutes; the maximum is 60 minutes.
 1. Start a build and check your test results.
 
 </TabItem>
 <TabItem value="configuration-yaml" label="Configuration YAML">
 
-1. In the Configuration YAML file, find the Workflow you want to use or create a new one.
-1. Add the `android-build-for-ui-testing` Step to your Workflow.
+1. In the Configuration YAML file, find the <NT>Workflow</NT> you want to use or create a new one.
+1. Add the `android-build-for-ui-testing` <NT>Step</NT> to your <NT>Workflow</NT>.
 
    ```yaml
    my-workflow:
@@ -236,9 +237,9 @@ Here is a screenshot of a successful robo test, where the robo test got all the 
        - android-build-for-ui-testing:
            inputs:
    ```
-1. To export an APK and a Test APK, you have to set the following input fields in the **Android Build for UI testing** Step.
+1. To export an APK and a Test APK, you have to set the following input fields in the **<NT>Android Build</NT> for UI testing** <NT>Step</NT>.
 
-   - `project_location`: the root directory of your Android project.
+   - `project_location`: the root directory of your <NT>Android</NT> project.
    - `module`: set the module you wish to build.
    - `variant`: set the variant you wish to build (usually debug).
 
@@ -253,8 +254,8 @@ Here is a screenshot of a successful robo test, where the robo test got all the 
            - project_location: $BITRISE_SOURCE_DIR
    ```
 
-   The Step outputs will be `BITRISE_APK_PATH` (which is the path of the generated APK after filtering) and `BITRISE_TEST_APK_PATH` (which is the path of the generated test APK after filtering).
-1. Add the `virtual-device-testing-for-android` Step right after the **Android Build for UI testing** Step.
+   The <NT>Step</NT> outputs will be `BITRISE_APK_PATH` (which is the path of the generated APK after filtering) and `BITRISE_TEST_APK_PATH` (which is the path of the generated test APK after filtering).
+1. Add the `virtual-device-testing-for-android` <NT>Step</NT> right after the **<NT>Android Build</NT> for UI testing** <NT>Step</NT>.
 
    ```yaml
    my-workflow:
@@ -270,7 +271,7 @@ Here is a screenshot of a successful robo test, where the robo test got all the 
    ```
 1. Set the `test_type` input to `instrumentation`.
 
-   Our `android-build-for-ui-testing` Step exports an APK and a Test APK and their paths get automatically set in the `app_path` and the `test_apk_path` input fields of the `virtual-device-testing-for-android` Step.
+   Our `android-build-for-ui-testing` <NT>Step</NT> exports an APK and a Test APK and their paths get automatically set in the `app_path` and the `test_apk_path` input fields of the `virtual-device-testing-for-android` <NT>Step</NT>.
 
    ```yaml
    my-workflow:

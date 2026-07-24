@@ -10,6 +10,7 @@ import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 import Partial_GettingToTheProjectSettingsPage from '@site/src/partials/getting-to-the-project-settings-page.mdx';
 import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
+import NT from '@site/src/components/NT';
 
 You might require a VPN connection for your build, to be able to connect to your server, either to `git clone` your repository or to access a private API.
 
@@ -19,7 +20,7 @@ To connect to a VPN, you need to:
 1. Install and configure the required VPN components.
 1. Connect to the VPN.
 
-You can configure and connect a VPN anywhere in your <GlossTerm baseform="workflow">Workflow</GlossTerm> - BEFORE you would use the VPN connection, of course. For example, if you require a VPN connection to access your repository, you have to connect before the [**Git Clone Repository**](https://github.com/bitrise-steplib/steps-git-clone) <GlossTerm baseform="step">Step</GlossTerm>.
+You can configure and connect a VPN anywhere in your <NT><GlossTerm baseform="workflow">Workflow</GlossTerm></NT> - BEFORE you would use the VPN connection, of course. For example, if you require a VPN connection to access your repository, you have to connect before the [**Git Clone Repository**](https://github.com/bitrise-steplib/steps-git-clone) <NT><GlossTerm baseform="step">Step</GlossTerm></NT>.
 
 :::caution[SSH sessions]
 
@@ -30,9 +31,9 @@ When you choose your VPN tool and do the setup/configuration, you have to be car
 
 ## Accessing a repository via VPN
 
-If the repository of your Bitrise <GlossTerm baseform="project">project</GlossTerm> can be only accessed via VPN, you have two things to keep in mind above all:
+If the repository of your <NT>Bitrise</NT> <NT><GlossTerm baseform="project">project</GlossTerm></NT> can be only accessed via VPN, you have two things to keep in mind above all:
 
-- During builds, the VPN connection must be established before cloning the repository to our virtual machines: in practice, this means the Step establishing the connection must be placed before the **Git Clone**Step in your Workflow.
+- During builds, the VPN connection must be established before cloning the repository to our virtual machines: in practice, this means the <NT>Step</NT> establishing the connection must be placed before the **<NT>Git Clone</NT>**<NT>Step</NT> in your <NT>Workflow</NT>.
 - When adding a new project, you need a workaround: use a dummy repository that can be accessed without a VPN during the process of adding the project.
 
 Let’s go through this workaround!
@@ -40,12 +41,12 @@ Let’s go through this workaround!
 1. Create an empty repository that is accessible without a VPN connection.
 1. Add a new project, using this repository as the source. Make sure it is a private project! There is no need to register a [webhook](/en/bitrise-platform/integrations/webhooks/adding-incoming-webhooks).
 1. <Partial_GettingToTheProjectSettingsPage />
-1. On the left, select **Git** and click **Change**.
+1. On the left, select **<NT>Git</NT>** and click **<NT>Change</NT>**.
 1. In the dialog, paste the new repository URL.
 
    ![SCR-20260331-przw.png](/img/_paligo/uuid-fa95efd5-ff6f-a7a3-2dc3-7ccc5878cd47.png)
-1. Click **Save**.
-1. Place the Step or Steps establishing the VPN connection before any Steps that have to access your repository in your Workflow.
+1. Click **<NT>Save</NT>**.
+1. Place the <NT>Step</NT> or <NT>Steps</NT> establishing the VPN connection before any <NT>Steps</NT> that have to access your repository in your <NT>Workflow</NT>.
 
 And you’re done. For the different methods of establishing a VPN connection, take a look at our example configurations.
 
@@ -58,9 +59,9 @@ In this section, we present three example configurations for connecting to a VPN
 - [Using Strongswan VPN](#using-strongswan-vpn).
 - [Using Cisco VPN](#using-cisco-vpn).
 
-### Using the Connect to OpenVPN Server Step
+### Using the <NT>Connect to OpenVPN Server</NT> <NT>Step</NT>
 
-To use the **Connect to OpenVPN Server** Step, you need to build an OpenVPN server in advance, and then encode your certificate files and your private key.
+To use the **<NT>Connect to OpenVPN Server</NT>** <NT>Step</NT>, you need to build an OpenVPN server in advance, and then encode your certificate files and your private key.
 
 1. [Set up an OpenVPN Server](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-openvpn-server-on-ubuntu-18-04).
 1. Encode the following in Base64:
@@ -74,35 +75,35 @@ To use the **Connect to OpenVPN Server** Step, you need to build an OpenVPN serv
    ```bash
    $ base64 <filepath>
    ```
-1. Open your project on Bitrise and go to the <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>.
+1. Open your project on <NT>Bitrise</NT> and go to the <NT><GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm></NT>.
 1. Register the encoded certificates and the key as [Secrets](/en/bitrise-ci/configure-builds/secrets).
 
-   We recommend using the following keys as they are the default inputs for the VPN Step:
+   We recommend using the following keys as they are the default inputs for the VPN <NT>Step</NT>:
 
    - CA certificate: `$VPN_CA_CRT_BASE64`
    - Client certificate: `$VPN_CLIENT_CRT_BASE64`
    - Private key: `VPN_CLIENT_KEY_BASE64`
-1. Add the **Connect to OpenVPN Server** Step to your Workflow.
+1. Add the **<NT>Connect to OpenVPN Server</NT>** <NT>Step</NT> to your <NT>Workflow</NT>.
 
-   Add the Step before any Steps that might require VPN connection.
-1. Add the previously created Secrets to their respective inputs:
+   Add the <NT>Step</NT> before any <NT>Steps</NT> that might require VPN connection.
+1. Add the previously created <NT>Secrets</NT> to their respective inputs:
 
    - **Base64 encoded CA Certificate**
    - **Base64 encoded Client Certificate**
    - **Base64 encoded Client Private Key**
 
-   If you created the Secrets with the recommended keys, you do not have to change the inputs.
+   If you created the <NT>Secrets</NT> with the recommended keys, you do not have to change the inputs.
 1. Fill in the other required inputs.
 
-   - **Host**: the Open VPN Server IP or hostname
+   - **<NT>Host</NT>**: the Open VPN Server IP or hostname
    - **Port**: OpenVPN Server Port number
    - **Protocol**: OpenVPN Server Protocol
 
 ### Using Strongswan VPN
 
-This is an example script which you can either save into your repository and run it from there, or just copy paste its content into a **Script Step** in your `bitrise` configuration (`bitrise.yml` / Workflow).
+This is an example script which you can either save into your repository and run it from there, or just copy paste its content into a **<NT>Script</NT> <NT>Step</NT>** in your `bitrise` configuration (`bitrise.yml` / <NT>Workflow</NT>).
 
-The script uses Strongswan VPN to connect to a VPN. It works on either macOS or Linux. Once the script has run successfully, any subsequent Bitrise Step can access devices and services over the VPN connection.
+The script uses Strongswan VPN to connect to a VPN. It works on either macOS or <NT>Linux</NT>. Once the script has run successfully, any subsequent <NT>Bitrise Step</NT> can access devices and services over the VPN connection.
 
 ```bash
 #!/usr/bin/env bash
@@ -227,13 +228,13 @@ esac
 
 ### Using Cisco VPN
 
-You can use the **Cisco VPN connect** Step: it connects with Cisco VPN provided by VPN3000 Concentrator, Juniper/Netscreen, IOS and PIX using vpnc.
+You can use the **<NT>Cisco VPN connect</NT>** <NT>Step</NT>: it connects with Cisco VPN provided by VPN3000 Concentrator, Juniper/Netscreen, <NT>IOS</NT> and PIX using vpnc.
 
 1. <Partial_OpeningTheWorkflowEditor />
-1. Add the **Cisco VPN connect** Step at the start of your Workflow.
-1. Provide VPN client settings and credentials required for the Step either by:
+1. Add the **<NT>Cisco VPN connect</NT>** <NT>Step</NT> at the start of your <NT>Workflow</NT>.
+1. Provide VPN client settings and credentials required for the <NT>Step</NT> either by:
 
    - Using the existing vpnc configuration file: `vpnc.conf`
-   - Using the **Command line options** input of the Step. The options specified in this input will take precedence over the configuration file!
+   - Using the **<NT>Command</NT> line options** input of the <NT>Step</NT>. The options specified in this input will take precedence over the configuration file!
 
 For more information on setting up vpnc, check the [vpnc homepage](https://www.unix-ag.uni-kl.de//~massar/vpnc/) and the [vpnc manual](https://linux.die.net/man/8/vpnc).

@@ -9,25 +9,26 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
+import NT from '@site/src/components/NT';
 
 Remote execution of a Bazel build allows you to distribute build and test actions across multiple machines. This speeds up build and test execution, allows reuse of build outputs across development teams, and provides a consistent environment.
 
-You can use the Bitrise Build Cache with remote build execution both on Bitrise and in a non-Bitrise CI environment.
+You can use the <NT>Bitrise</NT> <NT>Build Cache</NT> with remote build execution both on <NT>Bitrise</NT> and in a non-<NT>Bitrise CI</NT> environment.
 
-## Configuring remote build execution on Bitrise
+## Configuring remote build execution on <NT>Bitrise</NT>
 
 <Tabs>
 <TabItem value="workflow-editor" label="Workflow Editor" default>
 
-1. Set up the Bitrise [Build Cache for Bazel](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-bazel): [Configuring the build cache for Bazel in the Bitrise CI environment](/en/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-the-bitrise-ci-environment).
+1. <NT>Set up</NT> the <NT>Bitrise</NT> [Build Cache for Bazel](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-bazel): [Configuring the build cache for Bazel in the Bitrise CI environment](/en/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-the-bitrise-ci-environment).
 1. <Partial_OpeningTheWorkflowEditor />
-1. In the **Bitrise [Build Cache for Bazel](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-bazel)** <GlossTerm baseform="step">Step</GlossTerm>, set the **Enable Bazel RBE** input field to **true**.
+1. In the **<NT>Bitrise</NT> [Build Cache for Bazel](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-bazel)** <NT><GlossTerm baseform="step">Step</GlossTerm></NT>, set the **<NT>Enable</NT> <NT>Bazel</NT> RBE** input field to **true**.
 
 </TabItem>
 <TabItem value="configuration-yaml" label="Configuration YAML">
 
-1. Open your <GlossTerm baseform="configuration yaml">configuration YAML</GlossTerm> file.
-1. Add the `activate-build-cache-for-bazel` Step to your Workflow.
+1. Open your <NT><GlossTerm baseform="configuration yaml">configuration YAML</GlossTerm></NT> file.
+1. Add the `activate-build-cache-for-bazel` <NT>Step</NT> to your <NT>Workflow</NT>.
 
    ```yaml
    your-workflow:
@@ -41,13 +42,13 @@ You can use the Bitrise Build Cache with remote build execution both on Bitrise 
 </TabItem>
 </Tabs>
 
-## Configuring remote build execution in a non-Bitrise environment
+## Configuring remote build execution in a non-<NT>Bitrise</NT> environment
 
 <Tabs>
 <TabItem value="other-ci" label="Other CI" default>
 
-1. Start setting up the Bitrise [Build Cache for Bazel](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-bazel): [Configuring the build cache for Bazel in other CI environments](/en/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-other-ci-environments).
-1. When enabling the Bitrise Build Cache, add the `--rbe` flag.
+1. Start setting up the <NT>Bitrise</NT> [Build Cache for Bazel](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-bazel): [Configuring the build cache for Bazel in other CI environments](/en/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-other-ci-environments).
+1. When enabling the <NT>Bitrise</NT> <NT>Build Cache</NT>, add the `--rbe` flag.
 
    ```bash
    /tmp/bin/bitrise-build-cache activate bazel --cache --cache-push=false --rbe
@@ -62,7 +63,7 @@ You can use the Bitrise Build Cache with remote build execution both on Bitrise 
 </TabItem>
 <TabItem value="local-environment" label="Local environment">
 
-1. Start setting up the Bitrise [Build Cache for Bazel](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-bazel): [Configuring the build cache for Bazel in local builds](/en/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-local-builds).
+1. Start setting up the <NT>Bitrise</NT> [Build Cache for Bazel](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-bazel): [Configuring the build cache for Bazel in local builds](/en/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-local-builds).
 1. Add the RBE endpoint config to your `.bazelrc`:
 
    ```yaml
@@ -79,14 +80,14 @@ Bazel offers a number of command flags that are needed to get the most out of re
 
 | Flag and recommend values | Description |
 | --- | --- |
-| `--jobs=100` | Defines the maximum number of build/test actions Bazel may have "in flight" at once. If you omit the flag Bazel silently falls back to the number of logical CPU cores on the host VM. That default is appropriate for local execution but severely under‑utilises the RBE cluster.  `--jobs=100` is a good starting point for most Android/iOS monorepos but it can be increased gradually based on the worker count. |
-| MacOS:  `--remote_default_exec_properties=Arch=arm64`  `--remote_default_exec_properties=OSFamily=Darwin`  Linux:  `--remote_default_exec_properties=Arch=amd64`  `--remote_default_exec_properties=OSFamily=Linux` | Defines the default execution platform (worker pool). Supply key‑value pairs such as `Arch=arm64` or `OSFamily=Darwin`. Multiple occurrences are merged.  Make sure that no other `exec_properties` are set anywhere for the targets, otherwise Bazel will not match the worker pool and the build will fail. |
-| `--spawn_strategy=remote,local` | Determines the order in which Bazel tries to execute an action. Bazel will use the first strategy in the list that can run a given action. The default value is `remote,worker,sandboxed,local`.  Keep remote first so actions run in your remote execution environment, with a graceful fallback to local execution. |
-| `--noremote_upload_local_results` | Skips re‑uploading outputs that were produced locally. Remote workers already push artifacts to the cache, saving bandwidth.  This config flag is also configured via Bitrise Build Cache CLI. If you use it, please make sure that `--cache-push` flag is false or off in the CLI when you use this flag. |
+| `--jobs=100` | Defines the maximum number of build/test actions Bazel may have "in flight" at once. If you omit the flag Bazel silently falls back to the number of logical CPU cores on the host VM. That default is appropriate for local execution but severely under‑utilises the RBE cluster.  `--jobs=100` is a good starting point for most <NT>Android</NT>/iOS monorepos but it can be increased gradually based on the worker count. |
+| <NT>MacOS</NT>:  `--remote_default_exec_properties=Arch=arm64`  `--remote_default_exec_properties=OSFamily=Darwin`  <NT>Linux</NT>:  `--remote_default_exec_properties=Arch=amd64`  `--remote_default_exec_properties=OSFamily=Linux` | Defines the default execution platform (<NT>worker pool</NT>). Supply key‑value pairs such as `Arch=arm64` or `OSFamily=Darwin`. Multiple occurrences are merged.  Make sure that no other `exec_properties` are set anywhere for the targets, otherwise Bazel will not match the <NT>worker pool</NT> and the build will fail. |
+| `--spawn_strategy=remote,local` | Determines the order in which Bazel tries to execute an action. Bazel will use the first strategy in the list that can run a given action. The <NT>default value</NT> is `remote,worker,sandboxed,local`.  Keep remote first so actions run in your remote execution environment, with a graceful fallback to local execution. |
+| `--noremote_upload_local_results` | Skips re‑uploading outputs that were produced locally. Remote workers already push artifacts to the cache, saving bandwidth.  This config flag is also configured via <NT>Bitrise</NT> <NT>Build Cache</NT> CLI. If you use it, please make sure that `--cache-push` flag is false or off in the CLI when you use this flag. |
 
 We recommend adding these flags to your `.bazelrc` file and reuse:
 
-MacOS:
+<NT>MacOS</NT>:
 
 ```yaml
 build:remote --jobs=100
@@ -96,7 +97,7 @@ build:remote --remote_default_exec_properties=Arch=arm64
 build:remote --remote_default_exec_properties=OSFamily=Darwin
 ```
 
-Linux:
+<NT>Linux</NT>:
 
 ```yaml
 build:remote --jobs=100

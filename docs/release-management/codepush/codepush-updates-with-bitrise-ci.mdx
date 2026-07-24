@@ -8,42 +8,43 @@ slug: /release-management/codepush/codepush-updates-with-bitrise-ci
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-You can release your CodePush updates via a [Bitrise CI](/en/bitrise-ci) <GlossTerm baseform="Workflow">Workflow</GlossTerm>. The process requires:
+You can release your CodePush updates via a [Bitrise CI](/en/bitrise-ci) <NT><GlossTerm baseform="Workflow">Workflow</GlossTerm></NT>. The process requires:
 
-- Setting up CodePush credentials: create <GlossTerm baseform="Secret">Secrets</GlossTerm> and [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables) that hold the deployment ID and the deployment key from Bitrise CodePush.
-- Creating a Workflow that creates the update packages for both iOS and Android, and updates both to the Bitrise CodePush Server.
+- Setting up CodePush credentials: create <NT><GlossTerm baseform="Secret">Secret</GlossTerm></NT>s and [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables) that hold the deployment ID and the deployment key from <NT>Bitrise</NT> CodePush.
+- Creating a <NT>Workflow</NT> that creates the update packages for both iOS and <NT>Android</NT>, and updates both to the <NT>Bitrise</NT> CodePush Server.
 
 
-## Configuring CodePush credentials on Bitrise
+## Configuring CodePush credentials on <NT>Bitrise</NT>
 
-1. [Get your credentials](/en/release-management/codepush/creating-and-releasing-codepush-updates#getting-your-codepush-credentials): you need the Release Management app IDs and the CodePush deployment IDs and deployment keys.
+1. [Get your credentials](/en/release-management/codepush/creating-and-releasing-codepush-updates#getting-your-codepush-credentials): you need the <NT>Release Management</NT> app IDs and the CodePush deployment IDs and deployment keys.
 1. [Create Environment Variables](/en/bitrise-ci/configure-builds/environment-variables#setting-an-env-var-in-the-workflow-editor) for the deployment IDs and the connected app IDs:
 
    - `IOS_PROD_DEPLOYMENT_ID`: The deployment ID for the iOS app.
-   - `ANDROID_PROD_DEPLOYMENT_ID`: The deployment ID for the Android app.
+   - `ANDROID_PROD_DEPLOYMENT_ID`: The deployment ID for the <NT>Android</NT> app.
    - `IOS_CONNECTED_APP_ID`: The app ID for the iOS app.
-   - `ANDROID_CONNECTED_APP_ID`: The app ID for the Android app.
+   - `ANDROID_CONNECTED_APP_ID`: The app ID for the <NT>Android</NT> app.
 1. [Create Secrets](/en/bitrise-ci/configure-builds/secrets#setting-a-secret) for the deployment key and the API token:
 
-   - `IOS_PROD_DEPLOYMENT_KEY`: The deployment key of the iOS deployment from Bitrise CodePush.
-   - `ANDROID_PROD_DEPLOYMENT_KEY`: The deployment key of the Android deployment from Bitrise CodePush.
-   - `BITRISE_API_TOKEN`: Your personal access token or <GlossTerm baseform="workspace">workspace</GlossTerm> API token.
+   - `IOS_PROD_DEPLOYMENT_KEY`: The deployment key of the iOS deployment from <NT>Bitrise</NT> CodePush.
+   - `ANDROID_PROD_DEPLOYMENT_KEY`: The deployment key of the <NT>Android</NT> deployment from <NT>Bitrise</NT> CodePush.
+   - `BITRISE_API_TOKEN`: Your personal access token or <NT><GlossTerm baseform="workspace">workspace</GlossTerm></NT> API token.
 
 
-## Creating a Workflow for CodePush updates
+## Creating a <NT>Workflow</NT> for CodePush updates
 
-This section shows you how to create a CI Workflow that will:
+This section shows you how to create a CI <NT>Workflow</NT> that will:
 
 - Create an update package for iOS.
-- Upload the iOS update package to Bitrise CodePush Server.
-- Create an update package for Android.
-- Upload the Android update package to Bitrise CodePush Server.
+- Upload the iOS update package to <NT>Bitrise</NT> CodePush Server.
+- Create an update package for <NT>Android</NT>.
+- Upload the <NT>Android</NT> update package to <NT>Bitrise</NT> CodePush Server.
 
 <Tabs>
 <TabItem value="react-native-app" label="React Native app" default>
 
-1. Create a Workflow and after the `git-clone` <GlossTerm baseform="step">Step</GlossTerm>, add an `npm` Step with the `install` command:
+1. Create a <NT>Workflow</NT> and after the `git-clone` <NT><GlossTerm baseform="step">Step</GlossTerm></NT>, add an `npm` <NT>Step</NT> with the `install` command:
 
    ```yaml
    ---
@@ -59,7 +60,7 @@ This section shows you how to create a CI Workflow that will:
            inputs:
            - command: install
    ```
-1. Add a `script` Step that extracts the app version using a JSON parser and set version in an Environment Variable using `envman`:
+1. Add a `script` <NT>Step</NT> that extracts the app version using a JSON parser and set version in an Environment Variable using `envman`:
 
    ```yaml
    - script@1:
@@ -85,7 +86,7 @@ This section shows you how to create a CI Workflow that will:
 
            echo "Successfully set APP_VERSION=$VERSION"
    ```
-1. Add another `script` Step that clones the `release-management-recipes` repository from GitHub. This contains the upload script we'll use later.
+1. Add another `script` <NT>Step</NT> that clones the `release-management-recipes` repository from <NT>GitHub</NT>. This contains the upload script we'll use later.
 
    ```yaml
    - script@1:
@@ -184,7 +185,7 @@ This section shows you how to create a CI Workflow that will:
            ../build else   echo "⚠️ Package upload unexpected status:
            $PACKAGE_STATUS - Reason: $STATUS_REASON"   exit 1 fi cd ..
    ```
-1. Generate the Android update bundle:
+1. Generate the <NT>Android</NT> update bundle:
 
    ```yaml
    - script@1:
@@ -209,7 +210,7 @@ This section shows you how to create a CI Workflow that will:
            # Create zip archive
            zip -r update.zip ./build
    ```
-1. Upload the Android update bundle to the CodePush Server:
+1. Upload the <NT>Android</NT> update bundle to the CodePush Server:
 
    ```yaml
    - script@1:
@@ -266,7 +267,7 @@ This section shows you how to create a CI Workflow that will:
 </TabItem>
 <TabItem value="expo-app" label="Expo app">
 
-1. Create a Workflow and after the `git-clone` Step, add an `npm` Step with the `install` command:
+1. Create a <NT>Workflow</NT> and after the `git-clone` <NT>Step</NT>, add an `npm` <NT>Step</NT> with the `install` command:
 
    ```yaml
    ---
@@ -285,7 +286,7 @@ This section shows you how to create a CI Workflow that will:
            inputs:
            - command: install
    ```
-1. Add a `script` Step that extracts the app version using `awk` and sets it as an Enviromment Variable:
+1. Add a `script` <NT>Step</NT> that extracts the app version using `awk` and sets it as an Enviromment Variable:
 
    ```yaml
    - script@1:
@@ -311,7 +312,7 @@ This section shows you how to create a CI Workflow that will:
 
            echo "Successfully set APP_VERSION=$APP_VERSION"
    ```
-1. Add another `script` Step that clones the `release-management-recipes` repository from GitHub. This contains the upload script we'll use later.
+1. Add another `script` <NT>Step</NT> that clones the `release-management-recipes` repository from <NT>GitHub</NT>. This contains the upload script we'll use later.
 
    ```yaml
    - script@1:
@@ -413,7 +414,7 @@ This section shows you how to create a CI Workflow that will:
            ../build else   echo "⚠️ Package upload unexpected status:
            $PACKAGE_STATUS - Reason: $STATUS_REASON"   exit 1 fi cd ..
    ```
-1. Generate the Android update bundle:
+1. Generate the <NT>Android</NT> update bundle:
 
    ```yaml
    - script@1:
@@ -441,7 +442,7 @@ This section shows you how to create a CI Workflow that will:
            # Create zip archive
            zip -r update.zip ./build
    ```
-1. Upload the Android update bundle to the CodePush Server:
+1. Upload the <NT>Android</NT> update bundle to the CodePush Server:
 
    ```yaml
    - script@1:
@@ -501,7 +502,7 @@ This section shows you how to create a CI Workflow that will:
 
 ## Automating the CodePush update release
 
-After creating a Workflow to generate and upload your CodePush updates, you have two ways of running it:
+After creating a <NT>Workflow</NT> to generate and upload your CodePush updates, you have two ways of running it:
 
 - [Run the Workflow manually](/en/bitrise-ci/run-and-analyze-builds/starting-builds/starting-builds-manually).
 - [Triggering a build automatically](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers) when a defined condition is met. For the available conditions, see [Supported trigger conditions](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers#supported-trigger-conditions).
@@ -512,8 +513,8 @@ You can set up several different types of triggers to automate the process. Our 
 
 In this example, we're setting up a trigger where:
 
-- Bitrise looks for pull requests opened with `updates` as the target branch.
-- The `codepush_update_deploy` Workflow is triggered when a pull request to the branch receives the `release-update` label to the PR.
+- <NT>Bitrise</NT> looks for pull requests opened with `updates` as the target branch.
+- The `codepush_update_deploy` <NT>Workflow</NT> is triggered when a pull request to the branch receives the `release-update` label to the PR.
 
 1. [Create the trigger](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers#creating-build-triggers): set up a pull request trigger with two conditions, `target_branch` and `label`:
 
@@ -522,7 +523,7 @@ In this example, we're setting up a trigger where:
 
    :::tip[GUI config]
 
-   You can set these up on the GUI of the <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>, too. Here we're showing you the YAML configuration.
+   You can set these up on the GUI of the <NT><GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm></NT>, too. Here we're showing you the YAML configuration.
 
    :::
 

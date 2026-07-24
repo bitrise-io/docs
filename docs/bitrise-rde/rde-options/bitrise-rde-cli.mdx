@@ -8,14 +8,15 @@ slug: /bitrise-rde/rde-options/bitrise-rde-cli
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-The Bitrise RDE CLI lets you manage Remote Dev Environments from your terminal: create and connect to <GlossTerm baseform="rde session">sessions</GlossTerm>, run commands in them, transfer files, and start AI coding agents. The CLI is open source, and all RDE commands live under `bitrise-cli rde`.
+The <NT>Bitrise</NT> RDE CLI lets you manage Remote Dev Environments from your terminal: create and connect to <GlossTerm baseform="rde session">sessions</GlossTerm>, run commands in them, transfer files, and start AI coding agents. The CLI is open source, and all RDE commands live under `bitrise-cli rde`.
 
 If you just want to get started fast, follow the [Quickstart](/en/bitrise-rde/getting-started/quickstart). This page is the broader reference for what the CLI can do.
 
 ## Installing the CLI
 
-Install the latest version with the install script:
+Install the <NT>latest version</NT> with the install script:
 
 ```bash
 curl -fsSL https://app.bitrise.io/cli/install.sh | bash
@@ -25,7 +26,7 @@ This installs the `bitrise-cli` binary to `~/.local/bin`. Make sure that directo
 
 ## Signing in
 
-Sign in to your Bitrise account. This opens your browser to authenticate:
+Sign in to your <NT>Bitrise</NT> account. This opens your browser to authenticate:
 
 ```bash
 bitrise-cli auth login
@@ -33,9 +34,9 @@ bitrise-cli auth login
 
 Check your status with `bitrise-cli auth status`, and sign out with `bitrise-cli auth logout`. For non-interactive use, such as CI, set the `BITRISE_TOKEN` environment variable to a personal access token, or pipe a token into `bitrise-cli auth login --with-token`.
 
-### Choosing a workspace
+### Choosing a <NT>workspace</NT>
 
-RDE commands run against a <GlossTerm baseform="workspace">workspace</GlossTerm>. If you belong to exactly one, the CLI selects it automatically. If you belong to more than one, the CLI asks you to pick one. To skip the prompt, save a default:
+RDE commands run against a <NT><GlossTerm baseform="workspace">workspace</GlossTerm></NT>. If you belong to exactly one, the CLI selects it automatically. If you belong to more than one, the CLI asks you to pick one. To skip the prompt, save a default:
 
 ```bash
 bitrise-cli config set default_workspace_id WORKSPACE_ID
@@ -64,7 +65,7 @@ The `bitrise-cli rde session` commands cover the full session lifecycle. Command
 | `bitrise-cli rde session terminate SESSION_ID` | Stop the machine but keep the session for later. |
 | `bitrise-cli rde session restore SESSION_ID` | Restart a terminated session from its persistent disk. Add `--wait` to block until it's running. |
 | `bitrise-cli rde session delete SESSION_ID` | Permanently delete a terminated session. |
-| `bitrise-cli rde session delete-terminated` | Permanently delete all terminated sessions in the workspace. |
+| `bitrise-cli rde session delete-terminated` | Permanently delete all terminated sessions in the <NT>workspace</NT>. |
 
 ## Running commands in a session
 
@@ -88,7 +89,7 @@ The most useful flags:
 - `--env`: forward a local environment variable to the remote command (`--env NPM_TOKEN`), or set a literal value (`--env CI=1`). Forwarded values are never printed locally, but they are visible in the session's process list while the command runs.
 - `--output json`: emit a single JSON object with the exit code, stdout, and stderr — easy to parse from a script or an agent.
 
-To share a list of forwarded environment variables with your team, add them to `.bitrise/rde.yml` in your repository:
+To share a list of forwarded <NT>environment variables</NT> with your team, add them to `.bitrise/rde.yml` in your repository:
 
 ```yaml
 exec:
@@ -101,16 +102,16 @@ The `exec` command reads the file from the working directory or any parent folde
 
 ## Running AI coding agents
 
-The `bitrise-cli rde claude` command creates a session, clones your current repository branch into it, and drops you into Claude Code running on the cloud machine. While the agent works, the CLI keeps a secure connection open so it can open a VNC viewer or transfer files to and from your local machine.
+The `bitrise-cli rde claude` command creates a session, clones your current repository branch into it, and drops you into <NT>Claude Code</NT> running on the cloud machine. While the agent works, the CLI keeps a secure connection open so it can open a VNC viewer or transfer files to and from your local machine.
 
 This is the recommended way to start. For the full walkthrough, see the [Quickstart](/en/bitrise-rde/getting-started/quickstart). Some behaviors worth knowing:
 
 - The CLI asks you to pick a stack and a machine type, and remembers your choice for the repository. Pass `--stack` and `--machine-type` to skip the prompts, for example in scripts.
-- If no Claude Code credential is saved for your workspace yet, the CLI picks up your local one, or opens the browser so you can create one, and saves it for future sessions. You can also manage the credential in the [Bitrise RDE UI](/en/bitrise-rde/rde-options/bitrise-rde-ui#authentication).
-- If the connection drops, the CLI reconnects automatically while Claude Code keeps running in the session. Press Ctrl-C during a reconnect to detach and leave the machine running.
-- When you exit Claude Code, the session is terminated automatically, but preserved so you can restore it later.
+- If no <NT>Claude Code</NT> credential is saved for your <NT>workspace</NT> yet, the CLI picks up your local one, or opens the browser so you can create one, and saves it for future sessions. You can also manage the credential in the [Bitrise RDE UI](/en/bitrise-rde/rde-options/bitrise-rde-ui#authentication).
+- If the connection drops, the CLI reconnects automatically while <NT>Claude Code</NT> keeps running in the session. Press Ctrl-C during a reconnect to detach and leave the machine running.
+- When you exit <NT>Claude Code</NT>, the session is terminated automatically, but preserved so you can restore it later.
 
-To return to a session, use `bitrise-cli rde claude --continue` for the most recent one, or `bitrise-cli rde claude --resume` to pick from a list. Resuming reconnects to a running session, or restores a terminated one and continues the same Claude Code conversation.
+To return to a session, use `bitrise-cli rde claude --continue` for the most recent one, or `bitrise-cli rde claude --resume` to pick from a list. Resuming reconnects to a running session, or restores a terminated one and continues the same <NT>Claude Code</NT> conversation.
 
 ## Templates, saved inputs, and machine options
 
@@ -118,7 +119,7 @@ The CLI also manages the configuration objects behind your sessions:
 
 - `bitrise-cli rde template`: list, create, view, update, and delete [templates](/en/bitrise-rde/configuration/templates).
 - `bitrise-cli rde saved-input`: list, create, view, update, and delete [saved inputs](/en/bitrise-rde/configuration/saved-inputs).
-- `bitrise-cli rde stack list`: list the stacks available in your workspace.
+- `bitrise-cli rde stack list`: list the stacks available in your <NT>workspace</NT>.
 - `bitrise-cli rde machine-type list --stack STACK_ID`: list the machine types compatible with a given stack.
 
 ## Full command reference

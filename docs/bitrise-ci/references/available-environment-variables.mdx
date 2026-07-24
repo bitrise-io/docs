@@ -9,61 +9,62 @@ sidebar_label: Available Environment Variables
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-[Environment Variables](/en/bitrise-ci/configure-builds/environment-variables) (Env Vars) consist of a key and a value. They can also include optional attributes. They can be defined on the level of apps, <GlossTerm baseform="Workflow">Workflows</GlossTerm> or <GlossTerm baseform="Step">Steps</GlossTerm>.
+[Environment Variables](/en/bitrise-ci/configure-builds/environment-variables) (Env Vars) consist of a key and a value. They can also include optional attributes. They can be defined on the level of apps, <NT><GlossTerm baseform="Workflow">Workflow</GlossTerm></NT>s or <NT><GlossTerm baseform="Step">Step</GlossTerm></NT>s.
 
-You can set your own Env Vars but there is a selection of Env Vars that are exposed automatically by either the Bitrise CLI or [bitrise.io](https://www.bitrise.io).
+You can set your own Env Vars but there is a selection of Env Vars that are exposed automatically by either the <NT>Bitrise CLI</NT> or [bitrise.io](https://www.bitrise.io).
 
 - [Env Vars exposed by the Bitrise CLI](#env-vars-exposed-by-the-bitrise-cli) are available everywhere, even if you run the build on your own computer.
 - [Env Vars exposed by bitrise.io](#env-vars-exposed-by-bitriseio) are available for builds running on [bitrise.io](https://www.bitrise.io) virtual machines.
-- [Pipeline Env Vars exposed by bitrise.io](#pipeline-env-vars-exposed-by-bitriseio) are only available for Pipeline builds running on [bitrise.io](https://www.bitrise.io) virtual machines.
+- [Pipeline Env Vars exposed by bitrise.io](#pipeline-env-vars-exposed-by-bitriseio) are only available for <NT>Pipeline</NT> builds running on [bitrise.io](https://www.bitrise.io) virtual machines.
 
-In addition, plenty of Bitrise Steps export output variables. These variables are available to subsequent Steps during a build. You can find them in the Step configuration of each Step:
+In addition, plenty of <NT>Bitrise Steps</NT> export output variables. These variables are available to subsequent <NT>Steps</NT> during a build. You can find them in the <NT>Step</NT> configuration of each <NT>Step</NT>:
 
-- In the <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>, you can check them in the **Output properties** section of a Step.
-- In the `step.yml` of a Step, you can find them under `outputs`.
+- In the <NT><GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm></NT>, you can check them in the **Output properties** section of a <NT>Step</NT>.
+- In the `step.yml` of a <NT>Step</NT>, you can find them under `outputs`.
 
-Release Management also passes a number of Env Vars to Bitrise builds: [Release Management Env Vars](#release-management-env-vars).
+<NT>Release Management</NT> also passes a number of Env Vars to <NT>Bitrise</NT> builds: [Release Management Env Vars](#release-management-env-vars).
 
-Environment Variables have a set availability order. This is the order in which they are made available as a build progresses: [Availability order of Environment Variables](/en/bitrise-ci/configure-builds/environment-variables#availability-order-of-environment-variables).
+<NT>Environment Variables</NT> have a set availability order. This is the order in which they are made available as a build progresses: [Availability order of Environment Variables](/en/bitrise-ci/configure-builds/environment-variables#availability-order-of-environment-variables).
 
-:::tip[Step outputs exposed as Env Vars]
+:::tip[<NT>Step</NT> outputs exposed as Env Vars]
 
-Steps can also expose Step outputs as Env Vars. For example, a Step that builds a binary can expose that binary to other Steps as an Env Var. As basically any Bitrise Step can expose outputs this way, we won't list them all but you can find all Environment Variables related to the git cloning process: [Git clone Env Vars](#git-clone-env-vars).
+<NT>Steps</NT> can also expose <NT>Step</NT> outputs as Env Vars. For example, a <NT>Step</NT> that builds a binary can expose that binary to other <NT>Steps</NT> as an Env Var. As basically any <NT>Bitrise Step</NT> can expose outputs this way, we won't list them all but you can find all <NT>Environment Variables</NT> related to the git cloning process: [Git clone Env Vars](#git-clone-env-vars).
 
 :::
 
-## Env Vars exposed by the Bitrise CLI {#env-vars-exposed-by-the-bitrise-cli}
+## Env Vars exposed by the <NT>Bitrise CLI</NT> {#env-vars-exposed-by-the-bitrise-cli}
 
 | Env Var | Description |
 | --- | --- |
-| $BITRISE_TRIGGERED_WORKFLOW_ID | The ID of the Workflow that was <GlossTerm baseform="Trigger">triggered</GlossTerm>. This Env Var is exposed regardless of whether the Workflow was triggered manually or automatically. |
-| $BITRISE_TRIGGERED_WORKFLOW_TITLE | The title of the Workflow that was triggered. This Env Var is exposed regardless of whether the Workflow was triggered manually or automatically. |
-| $BITRISE_BUILD_STATUS | The current status of the build. The available options are:  - 0: Successful. - 1: Failed.  A successful current status means that none of the previous Steps in the build failed. |
-| $BITRISE_SOURCE_DIR | Path to the base working directory. By default, it’s the directory where Bitrise runs, unless you provide a different value. This can be overwritten during the build, which will change the working directory for subsequent Steps in the build. |
-| $BITRISE_DEPLOY_DIR | Path to the directory that stores artifacts and files for deployment. It’s a temporary directory created by the Bitrise CLI by default, and can be overwritten before starting the Bitrise CLI. The [**Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files**](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) Step looks for your build artifacts - such as an IPA or APK of the app -, test results, and other files in this directory. |
-| $BITRISE_TEST_DEPLOY_DIR | Root directory for all test results created by the Bitrise CLI. Test results placed in this directory can be viewed alongside all other test results: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results). |
-| $BITRISE_TEST_RESULT_DIR | Each Step has its own value of this variable. It provides a unique subdirectory, under $BITRISE_TEST_DEPLOY_DIR for each Step to save its test results. |
-| $BITRISE_FAILED_STEP_TITLE | The title of the Step that first fails in a build. In other words, the Step that sets the build status to **Failed**. |
-| $BITRISE_FAILED_STEP_ERROR_MESSAGE | The error message of the Step that first fails in a build. |
-| $CI | Indicates whether the Bitrise CLI is running in Continuous Integration mode. The possible values are:  - `true` - `false` |
-| $PR | Indicates whether the Bitrise CLI is running in PR (Pull Request) mode. Running in Pull Request mode means that Bitrise builds your code in the state as if the Pull Request was already merged. The possible values are:  - `true` - `false` |
+| $BITRISE_TRIGGERED_WORKFLOW_ID | The ID of the <NT>Workflow</NT> that was <NT><GlossTerm baseform="Trigger">triggered</GlossTerm></NT>. This Env Var is exposed regardless of whether the <NT>Workflow</NT> was triggered manually or automatically. |
+| $BITRISE_TRIGGERED_WORKFLOW_TITLE | The title of the <NT>Workflow</NT> that was triggered. This Env Var is exposed regardless of whether the <NT>Workflow</NT> was triggered manually or automatically. |
+| $BITRISE_BUILD_STATUS | The current status of the build. The available options are:  - 0: Successful. - 1: Failed.  A successful current status means that none of the previous <NT>Steps</NT> in the build failed. |
+| $BITRISE_SOURCE_DIR | Path to the base working directory. By default, it’s the directory where <NT>Bitrise</NT> runs, unless you provide a different value. This can be overwritten during the build, which will change the working directory for subsequent <NT>Steps</NT> in the build. |
+| $BITRISE_DEPLOY_DIR | Path to the directory that stores artifacts and files for deployment. It’s a temporary directory created by the <NT>Bitrise CLI</NT> by default, and can be overwritten before starting the <NT>Bitrise CLI</NT>. The [**Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files**](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) <NT>Step</NT> looks for your build artifacts - such as an IPA or APK of the app -, test results, and other files in this directory. |
+| $BITRISE_TEST_DEPLOY_DIR | Root directory for all test results created by the <NT>Bitrise CLI</NT>. Test results placed in this directory can be viewed alongside all other test results: [Deploying and viewing test results](/en/bitrise-ci/testing/deploying-and-viewing-test-results). |
+| $BITRISE_TEST_RESULT_DIR | Each <NT>Step</NT> has its own value of this variable. It provides a unique subdirectory, under $BITRISE_TEST_DEPLOY_DIR for each <NT>Step</NT> to save its test results. |
+| $BITRISE_FAILED_STEP_TITLE | The title of the <NT>Step</NT> that first fails in a build. In other words, the <NT>Step</NT> that sets the build status to **<NT>Failed</NT>**. |
+| $BITRISE_FAILED_STEP_ERROR_MESSAGE | The error message of the <NT>Step</NT> that first fails in a build. |
+| $CI | Indicates whether the <NT>Bitrise CLI</NT> is running in Continuous Integration mode. The possible values are:  - `true` - `false` |
+| $PR | Indicates whether the <NT>Bitrise CLI</NT> is running in PR (Pull Request) mode. Running in Pull Request mode means that <NT>Bitrise</NT> builds your code in the state as if the Pull Request was already merged. The possible values are:  - `true` - `false` |
 
 ## Env Vars exposed by bitrise.io {#env-vars-exposed-by-bitriseio}
 
 | Env Var | Description |
 | --- | --- |
-| $BITRISE_BUILD_NUMBER | Build number of the build on [bitrise.io](https://www.bitrise.io). |
-| $BITRISE_APP_TITLE | The title of your project on [bitrise.io](https://www.bitrise.io). You can change it any time on the **Project settings** page of the project. |
+| $<NT>BITRISE_BUILD_NUMBER</NT> | Build number of the build on [bitrise.io](https://www.bitrise.io). |
+| $BITRISE_APP_TITLE | The title of your project on [bitrise.io](https://www.bitrise.io). You can change it any time on the **<NT>Project settings</NT>** page of the project. |
 | $BITRISE_APP_URL | The URL or your project on [bitrise.io](https://www.bitrise.io). This is not the same as the Git repository URL! A project URL has the following format:  `app.bitrise.io/APP-SLUG/`  For example: https://app.bitrise.io/app/31e481ce08e0xfd9. |
 | $BITRISE_APP_SLUG | The slug that uniquely identifies your project on [bitrise.io](https://www.bitrise.io). It’s part of the project URL, too. |
 | $BITRISE_BUILD_URL | The URL of the build on [bitrise.io](https://www.bitrise.io). |
 | $BITRISE_BUILD_SLUG | The slug that uniquely identifies a build on [bitrise.io](https://www.bitrise.io). It’s part of the build URL, too.  For example, let’s take a look at this build URL: https://app.bitrise.io/build/d75abbebxfc9ca4e. The build slug is `d65abbebxfc9ca4e` in this example. |
 | $BITRISE_BUILD_TRIGGER_TIMESTAMP | The date and time when the build was triggered. |
-| $GIT_REPOSITORY_URL | The URL of the Git repository that hosts your project. This can be changed in the **Settings** tab of the app. It can be in either SSH or HTTPS format. |
-| $BITRISE_GIT_BRANCH | The git branch that is built by Bitrise. For example, `main`. |
+| $GIT_REPOSITORY_URL | The URL of the Git repository that hosts your project. This can be changed in the **<NT>Settings</NT>** tab of the app. It can be in either SSH or HTTPS format. |
+| $BITRISE_GIT_BRANCH | The git branch that is built by <NT>Bitrise</NT>. For example, `main`. |
 | $BITRISEIO_GIT_BRANCH_DEST | Used only with builds triggered by pull requests: the destination/target branch of the pull request that triggered the build.  For example, a pull request wants to merge the content of a branch into the branch `main`. In this case, this Env Var’s value is `main`. |
-| $BITRISE_GIT_TAG | If a build is triggered by a Git Tag, this Env Var stores the tag used. |
+| $BITRISE_GIT_TAG | If a build is triggered by a <NT>Git Tag</NT>, this Env Var stores the tag used. |
 | $BITRISE_GIT_COMMIT | The commit hash of the Git commit that triggered the build, when applicable. |
 | $BITRISE_GIT_MESSAGE | The commit message, pull request title, or the message you specified if you triggered the build manually. |
 | $BITRISEIO_GIT_REPOSITORY_OWNER | The owner of the Git repository of the project. |
@@ -72,25 +73,25 @@ Steps can also expose Step outputs as Env Vars. For example, a Step that builds 
 | $BITRISEIO_PULL_REQUEST_REPOSITORY_URL | The URL of the repository from where the pull request that triggered a build has been sent. |
 | $BITRISEIO_PULL_REQUEST_MERGE_BRANCH | The pre-merge branch - if the Git hosting provider supports and provides the pre-merged state of a pull request on a special merge branch. |
 | $BITRISEIO_PULL_REQUEST_HEAD_BRANCH | The pull request head branch, if the Git hosting provider system supports and provides this. This special git ref should point to the source of the pull request. |
-| $GITHUB_PR_IS_DRAFT | For projects hosted on GitHub only: it is set to `true` if the build is triggered by [a draft pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests#draft-pull-requests). |
-| $BITRISE_PROVISION_URL | The URL of the Apple provisioning profiles uploaded to [bitrise.io](https://www.bitrise.io). If there is more than one provisioning profile uploaded for your project, a pipe character (`|`) separates the URLs in the list.  This is only relevant for iOS projects and for cross-platform projects with iOS versions. |
-| $BITRISE_CERTIFICATE_URL | The URL of the Apple certificates uploaded to [bitrise.io](https://www.bitrise.io). If there is more than one certificate uploaded for your project, a pipe character (`|`) separates the URLs in the list.  This is only relevant for iOS projects and for cross-platform projects with iOS versions. |
-| $BITRISE_CERTIFICATE_PASSPHRASE | The passphrase you set for the uploaded Apple certificates on the project’s **Code Signing & Files** tab. If there is more than one certificate with a passphrase, a pipe character (`|`) separates the phrases in the list.  This is only relevant for iOS projects and for cross-platform projects with iOS versions. |
-| $BITRISE_IO | Indicates that the build is running in a bitrise.io environment. Value is set to true by Bitrise when it starts a build. |
-| `$BITRISE_TRIGGER_BY` | Identifies the entity that triggered the build. The value can be:  - The Git user's name when the build is [triggered by a Git provider](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers). - The Bitrise user's name if the build is triggered manually from the Bitrise web UI. - The value specified in the `triggered_by` build parameter if the build is triggered any other way (such as [scheduled builds](/en/bitrise-ci/run-and-analyze-builds/starting-builds/scheduling-builds) or builds triggered by the [API](/en/bitrise-ci/api/api-overview)). |
+| $GITHUB_PR_IS_DRAFT | For projects hosted on <NT>GitHub</NT> only: it is set to `true` if the build is triggered by [a draft pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests#draft-pull-requests). |
+| $BITRISE_PROVISION_URL | The URL of the <NT>Apple</NT> provisioning profiles uploaded to [bitrise.io](https://www.bitrise.io). If there is more than one provisioning profile uploaded for your project, a pipe character (`|`) separates the URLs in the list.  This is only relevant for iOS projects and for cross-platform projects with iOS versions. |
+| $BITRISE_CERTIFICATE_URL | The URL of the <NT>Apple</NT> certificates uploaded to [bitrise.io](https://www.bitrise.io). If there is more than one certificate uploaded for your project, a pipe character (`|`) separates the URLs in the list.  This is only relevant for iOS projects and for cross-platform projects with iOS versions. |
+| $BITRISE_CERTIFICATE_PASSPHRASE | The passphrase you set for the uploaded <NT>Apple</NT> certificates on the project’s **<NT>Code Signing & Files</NT>** tab. If there is more than one certificate with a passphrase, a pipe character (`|`) separates the phrases in the list.  This is only relevant for iOS projects and for cross-platform projects with iOS versions. |
+| $BITRISE_IO | Indicates that the build is running in a bitrise.io environment. Value is set to true by <NT>Bitrise</NT> when it starts a build. |
+| `$BITRISE_TRIGGER_BY` | Identifies the entity that triggered the build. The value can be:  - The Git user's name when the build is [triggered by a Git provider](/en/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers). - The <NT>Bitrise</NT> user's name if the build is triggered manually from the <NT>Bitrise</NT> web UI. - The value specified in the `triggered_by` build parameter if the build is triggered any other way (such as [scheduled builds](/en/bitrise-ci/run-and-analyze-builds/starting-builds/scheduling-builds) or builds triggered by the [API](/en/bitrise-ci/api/api-overview)). |
 | `$BITRISE_TRIGGER_METHOD` | The method by which the build was triggered.  - `schedule`: When the build is triggered by a scheduler. - `webhook`: When the build is triggered automatically by a webhook at a Git provider. - `manual`: When the build is triggered by any other trigger, including the API. |
-| `$BITRISE_GIT_PULL_REQUEST_COMMENT` | The comment message and its corresponding ID from a pull request (or merge request in the case of GitLab).  Only available when the build is triggered by a PR comment: the build trigger must have a `pr_comment` value. |
+| `$BITRISE_GIT_PULL_REQUEST_COMMENT` | The comment message and its corresponding ID from a pull request (or merge request in the case of <NT>GitLab</NT>).  Only available when the build is triggered by a PR comment: the build trigger must have a `pr_comment` value. |
 | `$BITRISE_GIT_PULL_REQUEST_COMMENT_ID` | The comment ID from a pull request. Only available when the build is triggered by a PR comment. |
-| `$BITRISE_GIT_PULL_REQUEST_LABELS` | A multiline list of new labels added to the pull request along with existing labels. Only available when the build is triggered by adding a label to a pull request or by a PR event with existing labels.  Only supported for GitHub and GitLab. |
-| `$BITRISE_GIT_CHANGED_FILES` | Lists file paths changed by a code push or pull request. Contains max 3000 files per event. It's available when:  - A push event triggers a build. Only supported for GitHub and GitLab. - A PR event triggers a build and the trigger has a `changed_files` or `commit_message` condition. Supported for all three main Git providers.  Note: this env var can become really large in some builds. If you build custom scripts that parse this env var, please see the env var size limitations section below. |
-| `$BITRISE_GIT_COMMIT_MESSAGES` | The commit messages of a code push or pull request. Contains max the first 2048 commits, and at most 1000 characters in each message. It's available when:  - A push event triggers the build. Only supported for GitHub and GitLab. - A PR event triggers a build and the trigger has a `commit_message` condition. Supported for all three main Git providers.  Note: this env var can become really large in some builds. If you build custom scripts that parse this env var, please see the env var size limitations section below. |
-| $BITRISE_WORKSPACE_ID | The [workspace slug](/en/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs) of the workspace that owns the project. |
+| `$BITRISE_GIT_PULL_REQUEST_LABELS` | A multiline list of new labels added to the pull request along with existing labels. Only available when the build is triggered by adding a label to a pull request or by a PR event with existing labels.  Only supported for <NT>GitHub</NT> and <NT>GitLab</NT>. |
+| `$BITRISE_GIT_CHANGED_FILES` | Lists file paths changed by a code push or pull request. Contains max 3000 files per event. It's available when:  - A push event triggers a build. Only supported for <NT>GitHub</NT> and <NT>GitLab</NT>. - A PR event triggers a build and the trigger has a `changed_files` or `commit_message` condition. Supported for all three main Git providers.  Note: this env var can become really large in some builds. If you build custom scripts that parse this env var, please see the env var size limitations section below. |
+| `$BITRISE_GIT_COMMIT_MESSAGES` | The commit messages of a code push or pull request. Contains max the first 2048 commits, and at most 1000 characters in each message. It's available when:  - A push event triggers the build. Only supported for <NT>GitHub</NT> and <NT>GitLab</NT>. - A PR event triggers a build and the trigger has a `commit_message` condition. Supported for all three main Git providers.  Note: this env var can become really large in some builds. If you build custom scripts that parse this env var, please see the env var size limitations section below. |
+| $BITRISE_WORKSPACE_ID | The [workspace slug](/en/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs) of the <NT>workspace</NT> that owns the project. |
 
 :::warning[Env Var size limitations]
 
-Some of the above environment variables can become really large in some builds (for example, if a git commit has a really long commit message or a pull request modifies thousands of files). If the total size of all env vars would hit OS limits, Bitrise removes some env vars from the runtime environment and writes the full value to a file on disk.
+Some of the above <NT>environment variables</NT> can become really large in some builds (for example, if a git commit has a really long commit message or a pull request modifies thousands of files). If the total size of all env vars would hit OS limits, <NT>Bitrise</NT> removes some env vars from the runtime environment and writes the full value to a file on disk.
 
-If you have custom scripts that rely on env vars that could grow large in some builds, you should read the value from this env file instead. The env var is located at $BITRISEIO_ENVFILE_PATH on both macOS and Linux <GlossTerm baseform="stack">stacks</GlossTerm>. It has the following format:
+If you have custom scripts that rely on env vars that could grow large in some builds, you should read the value from this env file instead. The env var is located at $BITRISEIO_ENVFILE_PATH on both macOS and <NT>Linux</NT> <NT><GlossTerm baseform="stack">stack</GlossTerm></NT>s. It has the following format:
 
 ```yaml
 envs:
@@ -108,39 +109,39 @@ erased_envs:
 
 :::
 
-## Pipeline Env Vars exposed by bitrise.io {#pipeline-env-vars-exposed-by-bitriseio}
+## <NT>Pipeline</NT> Env Vars exposed by bitrise.io {#pipeline-env-vars-exposed-by-bitriseio}
 
 | Env Var | Description |
 | --- | --- |
-| $BITRISEIO_PIPELINE_ID | The ID of the running Pipeline build. This Env Var is exposed regardless of whether the Pipeline was triggered manually or automatically. |
-| $BITRISEIO_PIPELINE_TITLE | The name of the running Pipeline build. This Env Var is exposed regardless of whether the Pipeline was triggered manually or automatically. |
-| $BITRISEIO_FINISHED_STAGES | The status of previously finished Stages and Workflows in a build. Please note that the value of this Env Var may change in the future! |
-| $BITRISEIO_PIPELINE_BUILD_STATUS | The current status of the Pipeline build. The value of this Env Var can be: `succeeded`, `succeeded_with_abort`, `failed`, and `aborted`. While the Pipeline is running, the Env Var's status is based on the previously finished Stages. |
-| $BITRISEIO_PIPELINE_BUILD_URL | The URL of the Pipeline build. |
+| $BITRISEIO_PIPELINE_ID | The ID of the running <NT>Pipeline</NT> build. This Env Var is exposed regardless of whether the <NT>Pipeline</NT> was triggered manually or automatically. |
+| $BITRISEIO_PIPELINE_TITLE | The name of the running <NT>Pipeline</NT> build. This Env Var is exposed regardless of whether the <NT>Pipeline</NT> was triggered manually or automatically. |
+| $BITRISEIO_FINISHED_STAGES | The status of previously finished Stages and <NT>Workflows</NT> in a build. Please note that the value of this Env Var may change in the future! |
+| $BITRISEIO_PIPELINE_BUILD_STATUS | The current status of the <NT>Pipeline</NT> build. The value of this Env Var can be: `succeeded`, `succeeded_with_abort`, `failed`, and `aborted`. While the <NT>Pipeline</NT> is running, the Env Var's status is based on the previously finished Stages. |
+| $BITRISEIO_PIPELINE_BUILD_URL | The URL of the <NT>Pipeline</NT> build. |
 
-## Release Management Env Vars {#release-management-env-vars}
+## <NT>Release Management</NT> Env Vars {#release-management-env-vars}
 
 | Env Var | Description |
 | --- | --- |
 | $RM_RELEASE_ID | The unique identifier of your release on bitrise.io. It’s part of the release URLs, too. |
-| $RM_RELEASE_VERSION | The release name (for Google Play releases) or version (for App Store releases) in Release Management. |
+| $RM_RELEASE_VERSION | The release name (for <NT>Google Play</NT> releases) or version (for App Store releases) in <NT>Release Management</NT>. |
 | $RM_RELEASE_CANDIDATE_VERSION | The version of the binary (APK/AAB or IPA file) generated by the release candidate build. |
 | $RM_RELEASE_CANDIDATE_DOWNLOAD_URL | The download URL of the binary (APK/AAB or IPA file) generated by the release candidate build. |
 | $RM_RELEASE_CANDIDATE_SLUG | Unique identifier of the binary (APK/AAB or IPA file) generated by the release candidate build. |
 | $RM_RELEASE_CANDIDATE_BUILD_SLUG | The build slug of the build that was selected as a release candidate for the release. |
 | $RM_CONNECTED_APP_ID | The unique identifier of your connected app on bitrise.io. |
 | $RM_PROJECT_ID | The unique identifier of your project on bitrise.io. It’s part of the project URL, too. |
-| $RM_WORKSPACE_ID | The unique identifier of your workspace on bitrise.io. |
-| $RM_EVENT_ID | Identifies the trigger which starts the Bitrise CI workflows. See the list of events and their IDs on the [Configuring release automation](/en/release-management/releases/configuring-a-release/release-automation#automation-events) page. |
+| $RM_WORKSPACE_ID | The unique identifier of your <NT>workspace</NT> on bitrise.io. |
+| $RM_EVENT_ID | Identifies the trigger which starts the <NT>Bitrise CI</NT> workflows. See the list of events and their IDs on the [Configuring release automation](/en/release-management/releases/configuring-a-release/release-automation#automation-events) page. |
 
-## Git clone Env Vars {#git-clone-env-vars}
+## <NT>Git clone</NT> Env Vars {#git-clone-env-vars}
 
 | Env Var | Description |
 | --- | --- |
 | $GIT_CLONE_COMMIT_HASH | The hash of the commit that the build uses (the cloned commit). |
 | $GIT_CLONE_COMMIT_MESSAGE_SUBJECT | The subject of the commit message of the cloned commit. |
 | $GIT_CLONE_COMMIT_MESSAGE_BODY | The body (content) of the commit message of the cloned commit. |
-| $GIT_CLONE_COMMIT_COUNT | The commit count of the cloned commit. This Env Var is influenced by the `clone_depth` Step input. For more information, check out the [Git Clone Step description](https://github.com/bitrise-steplib/steps-git-clone). |
+| $GIT_CLONE_COMMIT_COUNT | The commit count of the cloned commit. This Env Var is influenced by the `clone_depth` <NT>Step</NT> input. For more information, check out the [Git Clone Step description](https://github.com/bitrise-steplib/steps-git-clone). |
 | $GIT_CLONE_COMMIT_AUTHOR_NAME | The name of the author of the cloned commit. |
 | $GIT_CLONE_COMMIT_AUTHOR_EMAIL | The email of the author of the cloned commit. |
 | $GIT_CLONE_COMMIT_COMMITER_NAME | The name of the committer of the cloned commit. |

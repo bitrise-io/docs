@@ -42,7 +42,11 @@ function NavbarSearchPortal(): ReactNode {
 
 export default function NavbarWrapper(props: Props): ReactNode {
   const {pathname} = useLocation();
-  const isDocPage = pathname.startsWith('/en/');
+  // routeBasePath is the literal string 'en' for every locale (see
+  // docusaurus.config.ts), so a locale prefix like /ja/ stacks in front of it
+  // instead of replacing it — match '/en/' as a path segment anywhere, not
+  // just at the start.
+  const isDocPage = /(^|\/)en\//.test(pathname);
 
   return (
     <>

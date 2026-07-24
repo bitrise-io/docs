@@ -739,7 +739,7 @@ const sidebar: SidebarsConfig = {
         {
           type: "doc",
           id: "bitrise-api/api-reference/user-machine-type-update",
-          label: "Migrate machine types",
+          label: "Migrate machine types (user)",
           className: "api-method patch",
         },
         {
@@ -781,7 +781,7 @@ const sidebar: SidebarsConfig = {
         {
           type: "doc",
           id: "bitrise-api/api-reference/organization-machine-type-update",
-          label: "Migrate machine types",
+          label: "Migrate machine types (organization)",
           className: "api-method patch",
         },
         {

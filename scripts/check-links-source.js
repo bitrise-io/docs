@@ -84,6 +84,15 @@ function slugify(text) {
   return text
     .replace(/`([^`]*)`/g, '$1') // inline code
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // markdown links -> text
+    // JSX/MDX components (<NT>, <GlossTerm baseform="...">, etc.) -> their
+    // text content. Docusaurus's real anchor slugger renders these to plain
+    // text before slugifying, so a heading like "The <NT>Dashboards</NT>
+    // page" must produce the same "the-dashboards-page" here — otherwise
+    // this source-level checker flags a real, working anchor as broken.
+    // Without this, the tag delimiters get dropped by the punctuation strip
+    // below but the tag *name* survives as literal word characters, merging
+    // into the surrounding text (e.g. "the-ntdashboardsnt-page").
+    .replace(/<\/?[A-Za-z][^>]*>/g, '')
     .replace(/[*~]/g, '') // emphasis marks (keep _, it's word-internal e.g. run_if)
     .trim()
     .toLowerCase()

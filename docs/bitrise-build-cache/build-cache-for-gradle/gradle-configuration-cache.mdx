@@ -1,0 +1,93 @@
+---
+title: "Gradle configuration cache"
+description: "Gradle configuration cache reduces build times by caching the result of a Gradle project's configuration phase and reusing it in subsequent builds. For details, read [Gradle's official documentation](https://docs.gradle.org/current/userguide/configuration_cache.html). The Bitrise Build Cache supports this feature for Gradle 8.6 and later versions."
+sidebar_position: 4
+slug: /bitrise-build-cache/build-cache-for-gradle/gradle-configuration-cache
+---
+
+import NT from '@site/src/components/NT';
+
+<NT>Gradle</NT> configuration cache reduces build times by caching the result of a <NT>Gradle</NT> project's configuration phase and reusing it in subsequent builds. For details, read [Gradle's official documentation](https://docs.gradle.org/current/userguide/configuration_cache.html). The [Bitrise Build Cache](https://bitrise.io/platform/devops/build-caching) supports this feature for <NT>Gradle</NT> 8.6 and later versions.
+
+## Setting up the configuration cache
+
+To set up the configuration cache:
+
+1. Make sure you have a subscription or a trial for the [Bitrise Build Cache](https://bitrise.io/platform/devops/build-caching).
+1. Run a build locally with the `--configuration-cache` flag.
+
+   This ensures that your <NT>Gradle</NT> project supports configuration caching. To enable configuration caching in the <NT>Gradle</NT> settings, [refer to Gradle's official guide](https://docs.gradle.org/current/userguide/configuration_cache.html#config_cache:usage:enable).
+1. Generate a <NT>Bitrise</NT> [personal access token](/en/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token) and add it as a [Secret](/en/bitrise-ci/configure-builds/secrets) with the BITRISE_BUILD_CACHE_AUTH_TOKEN key.
+
+   :::note[Token consistency]
+
+   For the configuration cache to function correctly, the authentication token used by the <NT>Gradle</NT> plugins must remain consistent across builds.
+
+   :::
+1. Generate a <NT>Gradle</NT> encryption key:
+
+   ```
+   openssl rand -base64 16
+   ```
+1. Save the key as a [Secret](/en/bitrise-ci/configure-builds/secrets) named GRADLE_ENCRYPTION_KEY in your <NT>Bitrise</NT> <NT>project</NT>.
+
+   This ensures that the encrypted value of the configuration cache remains the same across different builds. Using a fixed encryption key is supported from <NT>Gradle</NT> version 8.6 or later. <NT>Bitrise</NT> doesn't support <NT>Gradle</NT> configuration cache for earlier <NT>Gradle</NT> versions.
+1. Set your <NT>Bitrise</NT> [workspace slug](/en/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs) as an Environment Variable named BITRISE_BUILD_CACHE_WORKSPACE_ID.
+1. Add the **<NT>Build Cache for Gradle</NT>** <NT>Step</NT> to your <NT>Workflow</NT>.
+
+   The <NT>Step</NT> must be of version 2.7.7 or later. Any subsequent updates to the <NT>Step</NT> will cause a one-off invalidation of the configuration cache. If this happens, do a rebuild to fix the issue.
+1. Add the **<NT>Restore Gradle configuration cache</NT>** and the **<NT>Restore Gradle Cache</NT>** <NT>Steps</NT> before your <NT>Gradle</NT> invocation in the <NT>Workflow</NT>.
+
+   The <NT>Steps</NT> retrieve cached configuration data and enable the configuration cache to access artifacts it references.
+
+   :::note[Configuration cache directory]
+
+   The **<NT>Restore Gradle configuration cache</NT>** <NT>Step</NT> saves data in the `./.gradle/configuration-cache` directory. You can override this by changing the **<NT>Configuration</NT> cache directory** input.
+
+   :::
+
+   For example, if you use **<NT>Android Build</NT>** to build your <NT>Gradle</NT> project, these two <NT>Steps</NT> must come before it in the <NT>Workflow</NT>.
+1. Add the **<NT>Save Gradle configuration cache</NT>** and the **<NT>Save Gradle Cache</NT>** <NT>Steps</NT> after your <NT>Gradle</NT> invocation in the <NT>Workflow</NT>.
+
+   The <NT>Steps</NT> save the configuration data to the cache and save artifacts referenced by the configuration cache.
+1. <NT>Enable the</NT> **<NT>Save</NT> transforms** input of the **<NT>Save Gradle Cache</NT>** <NT>Step</NT>. You need <NT>Step</NT> version 1.4.1 or later.
+
+## Saving the <NT>Gradle</NT> configuration cache log
+
+<NT>Gradle</NT>'s build logs might contain information about why it didn't reuse the configuration cache. You can save the log to the **<NT>Artifacts</NT>** page of your build:
+
+1. <NT>Enable the</NT> `--info` [log level](https://docs.gradle.org/current/userguide/logging.html) in <NT>Gradle</NT>.
+1. Add the **<NT>Deploy to Bitrise.io</NT>** <NT>Step</NT> to your <NT>Workflow</NT>.
+1. Set the **<NT>Deploy directory or file path</NT>** input to what <NT>Gradle</NT> outputs as the file path.
+
+You can check the deployed file on the **<NT>Artifacts</NT>** page: open <NT>Bitrise CI</NT>, select your project and then the build, and select the **<NT>Artifacts</NT>** tab.
+
+## Troubleshooting the configuration cache
+
+If your build doesn't reuse the configuration cache, you can check a number of potential problems.
+
+### General troubleshooting
+
+- Make sure to add the Save/Restore <NT>Gradle</NT> cache <NT>Steps</NT> to utilize dependency caching. <NT>Gradle</NT> configuration cache references artifacts that must be present.
+- It may take multiple runs before the configuration cache is fully applied and reused.
+- Check the <NT>Gradle</NT> logs to find out why <NT>Gradle</NT> didn't reuse the configuration cache. You can [save the gradle configuration cache log](#saving-the-gradle-configuration-cache-log) to your build artifacts.
+- Updates to the **<NT>Build Cache for Gradle</NT>** <NT>Step</NT> will cause a one-off invalidation of the configuration cache. Just run another build to fix the problem.
+
+### Failed to instrument class error
+
+Your build could fail with the following error:
+
+```
+org.gradle.internal.operations.BuildOperationInvocationException: Failed to instrument class io/bitrise/gradle/cache/BitriseBuildCache in ClassLoaderScopeIdentifier.Id{coreAndPlugins:init-file:/root/.gradle/init.d/bitrise-build-cache.init.gradle.kts(export)}
+```
+
+To fix this issue:
+
+1. In the **<NT>Save</NT> <NT>Gradle</NT> cache** <NT>Step</NT>, set the **<NT>Save</NT> transforms** input to **true**.
+
+   :::note[Version requirement]
+
+   The input is only available from version 1.4.1 or later.
+
+   :::
+1. Force a save by running a build without the **Restore <NT>Gradle</NT> cache** <NT>Step</NT>.

@@ -1,0 +1,56 @@
+---
+title: "Configuring the build cache for Gradle in local builds"
+sidebar_position: 3
+slug: /bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-local-builds
+sidebar_label: Configuring the Build Cache for Gradle in local environments
+---
+
+import NT from '@site/src/components/NT';
+
+You can use the <NT>Bitrise</NT> <NT>Build Cache</NT> even for local <NT>Gradle</NT> builds. In this way your local builds and CI builds will use the same <NT>build cache</NT>, minimizing build times in both environments.
+
+There are two ways to set up the <NT>Bitrise</NT> <NT>Build Cache</NT> for a <NT>Gradle</NT> project:
+
+- Configuring caching in a separate file, without changing <NT>Gradle</NT> project files.
+- Configuring caching directly in the <NT>Gradle</NT> project build files.
+
+1. Select your <NT>Bitrise</NT> <NT>workspace</NT> and go to **<NT>Build Cache</NT>**.
+1. Click **<NT>New connection</NT>**.
+1. Select **<NT>Other CI provider</NT>** and then select your build tool from the dropdown menu.
+
+   ![2025-10-21-choose-build-tool.png](/img/_paligo/uuid-95236863-449a-87ff-2713-11f9a7f3cfdd.png)
+1. Click **<NT>Create token</NT>**.
+
+   ![2025-10-21-create-token.png](/img/_paligo/uuid-20c79dca-f52e-e046-e9f2-3fce1c6019ba.png)
+1. <NT>Enter a name</NT> and set it to never expire.
+1. Copy the keys and values of the two variables.
+1. Set the variables as <NT>Environment Variables</NT> in your local configuration.
+
+   ```bash
+   export BITRISE_BUILD_CACHE_WORKSPACE_ID=<workspace ID>
+   export BITRISE_BUILD_CACHE_AUTH_TOKEN=<token>
+   ```
+1. Download the CLI and install it in a temporary location. You will only need to use it to activate the <NT>build cache</NT> once, or if any of the settings change.
+
+   ```bash
+   curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+   ```
+1. Activate the <NT>Bitrise</NT> <NT>Build Cache</NT>.
+
+   There are a couple of flags you can use to control the configuration, but we recommend these defaults:
+
+   ```
+   /tmp/bin/bitrise-build-cache activate gradle --cache --cache-push=false
+   ```
+
+   :::note[Pulling from cache]
+
+   We recommend only pulling artifacts from the cache to avoid accidentally sharing incorrect cache data due to file modifications during a build.
+
+   For the full list of flags check the CLI’s `/tmp/bin/bitrise-build-cache activate gradle --help` command.
+
+   :::
+
+Now <NT>Bitrise</NT> <NT>Build Cache</NT> will be used for your local builds. You can check the <NT>invocation details</NT> through the link printed during builds:
+
+![DevCenter_article_gradle_bazel_local_dev_env_guide_-_Google_Docs.png](/img/_paligo/uuid-f2b9bb79-63bb-0c15-7e8d-4304c3fa2a51.png)

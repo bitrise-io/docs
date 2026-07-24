@@ -8,12 +8,13 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 import Partial_CodepushCliCommandSyntax from '@site/src/partials/codepush-cli-command-syntax.mdx';
+import NT from '@site/src/components/NT';
 
 <Partial_CodepushCliCommandSyntax />
 
 :::tip
 
-For a quick overview of all commands, flags, and environment variables, see the [CodePush CLI reference](/en/release-management/codepush/codepush-cli/codepush-cli-reference).
+For a quick overview of all commands, flags, and <NT>environment variables</NT>, see the [CodePush CLI reference](/en/release-management/codepush/codepush-cli/codepush-cli-reference).
 
 :::
 
@@ -27,7 +28,7 @@ bitrise :codepush init
 
 The command creates a `.codepush.json` file in the current directory. You can commit it to version control so your team shares the same configuration.
 
-When running `init` for the first time, the CLI prompts you for the app ID. You can get it from the app URL in Release Management: `https://app.bitrise.io/release-management/workspaces/<workspace-slug>/connected-apps/<app-id>/`, or [via the API](https://api.bitrise.io/release-management/api-docs/index.html#/Connected%20Apps/ListApps).
+When running `init` for the first time, the CLI prompts you for the app ID. You can get it from the app URL in <NT>Release Management</NT>: `https://app.bitrise.io/release-management/workspaces/<workspace-slug>/connected-apps/<app-id>/`, or [via the API](https://api.bitrise.io/release-management/api-docs/index.html#/Connected%20Apps/ListApps).
 
 ```yaml
 Enter your app ID (UUID):
@@ -47,11 +48,11 @@ bitrise :codepush init --force --app-id a3f47d2c-6b9e-4f1a-9d2b-7c8e5a1b2c3d
 ```
 
 
-## Release management
+## <NT>Release management</NT>
 
 ### Bundling your app
 
-The `bundle` command generates a JavaScript bundle for React Native and Expo projects. It auto-detects the project type, entry file, Hermes configuration, and Metro config.
+The `bundle` command generates a <NT>JavaScript</NT> bundle for <NT>React Native</NT> and <NT>Expo</NT> projects. It auto-detects the project type, entry file, Hermes configuration, and Metro config.
 
 Bundle your app for each platform separately:
 
@@ -69,7 +70,7 @@ bitrise :codepush bundle --platform ios \
   --pod-file ios/Podfile
 ```
 
-For Android with Hermes, use `--gradle-file` instead of `--pod-file`:
+For <NT>Android</NT> with Hermes, use `--gradle-file` instead of `--pod-file`:
 
 ```bash
 bitrise :codepush bundle --platform android \
@@ -120,7 +121,7 @@ Patch a specific release by label:
 bitrise :codepush patch --deployment Production --label v5 --mandatory true
 ```
 
-Increase the rollout percentage on the latest release:
+Increase the <NT>rollout percentage</NT> on the latest release:
 
 ```bash
 bitrise :codepush patch --deployment Production --rollout 50
@@ -250,29 +251,29 @@ bitrise :codepush update info Staging --json | jq '.app_version'
 ```
 
 
-## Bitrise CI integration
+## <NT>Bitrise CI</NT> integration
 
-The CLI detects a Bitrise CI environment via the `BITRISE_BUILD_NUMBER` or `BITRISE_DEPLOY_DIR` environment variables. When running inside a Bitrise build, the CLI automatically:
+The CLI detects a <NT>Bitrise CI</NT> environment via the `BITRISE_BUILD_NUMBER` or `BITRISE_DEPLOY_DIR` <NT>environment variables</NT>. When running inside a <NT>Bitrise</NT> build, the CLI automatically:
 
 - Attaches build number and commit hash to push metadata.
 - Exports `codepush-bundle-summary.json` after bundling.
 - Exports `codepush-push-summary.json` after pushing.
 - Exports `codepush-patch-summary.json` after patching.
-- Exports environment variables via `envman` for downstream steps.
+- Exports <NT>environment variables</NT> via `envman` for downstream steps.
 - Disables interactive prompts and spinners.
 
 
-## Workflow examples
+## <NT>Workflow</NT> examples
 
 ### Full release lifecycle
 
-1. Authenticate with your Bitrise API token:
+1. Authenticate with your <NT>Bitrise</NT> API token:
 
    ```bash
    bitrise :codepush auth login --token $BITRISE_API_TOKEN
    ```
 
-1. Bundle the JavaScript for your target platform:
+1. Bundle the <NT>JavaScript</NT> for your target platform:
 
    ```bash
    bitrise :codepush bundle --platform ios
@@ -313,19 +314,19 @@ The CLI detects a Bitrise CI environment via the `BITRISE_BUILD_NUMBER` or `BITR
    bitrise :codepush rollback --deployment Production
    ```
 
-### Bitrise CI pipeline
+### <NT>Bitrise CI</NT> pipeline
 
-Set `BITRISE_API_TOKEN`, `CODEPUSH_APP_ID`, and `CODEPUSH_DEPLOYMENT` as environment variables in your Bitrise Workflow, then run a single command:
+Set `BITRISE_API_TOKEN`, `CODEPUSH_APP_ID`, and `CODEPUSH_DEPLOYMENT` as <NT>environment variables</NT> in your <NT>Bitrise</NT> <NT>Workflow</NT>, then run a single command:
 
 ```bash
 bitrise :codepush push --bundle --platform ios --app-version $APP_VERSION
 ```
 
-The CLI automatically detects the Bitrise environment, attaches build metadata (build number and commit hash), and exports summary files to `$BITRISE_DEPLOY_DIR`.
+The CLI automatically detects the <NT>Bitrise</NT> environment, attaches build metadata (build number and commit hash), and exports summary files to `$BITRISE_DEPLOY_DIR`.
 
-### Expo workflow
+### <NT>Expo</NT> workflow
 
-Expo is auto-detected from `package.json` — no extra flags are needed. The CLI uses `npx expo export:embed` under the hood instead of `react-native bundle`. All other flags (deployment, app version, rollout, etc.) behave identically.
+<NT>Expo</NT> is auto-detected from `package.json` — no extra flags are needed. The CLI uses `npx expo export:embed` under the hood instead of `react-native bundle`. All other flags (deployment, app version, rollout, etc.) behave identically.
 
 ```bash
 bitrise :codepush push --bundle --platform ios \

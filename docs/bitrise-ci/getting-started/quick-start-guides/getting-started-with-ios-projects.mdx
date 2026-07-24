@@ -9,85 +9,86 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 import Partial_DeployingTheAppToAppStoreConnect from '@site/src/partials/deploying-the-app-to-app-store-connect.mdx';
+import NT from '@site/src/components/NT';
 
-Developing for iOS is complex - our aim is to make it as easy as possible for you! In this guide, we’ll walk you through how to add an iOS project to Bitrise, how to run Xcode tests, manage your code signing files, and deploy the finished app to [bitrise.io](https://www.bitrise.io/) and to the App Store.
+Developing for iOS is complex - our aim is to make it as easy as possible for you! In this guide, we’ll walk you through how to add an iOS project to <NT>Bitrise</NT>, how to run <NT>Xcode</NT> tests, manage your <NT>code signing</NT> files, and deploy the finished app to [bitrise.io](https://www.bitrise.io/) and to the App Store.
 
-:::tip[Integrating fastlane to Bitrise]
+:::tip[Integrating fastlane to <NT>Bitrise</NT>]
 
-You can run your fastlane lane on Bitrise with the same commands you would use locally. Bitrise’s automated <GlossTerm baseform="step">Step</GlossTerm> provides extra functionality to your lane and speed up your builds: [fastlane](https://github.com/bitrise-io/steps-fastlane).
+You can run your fastlane lane on <NT>Bitrise</NT> with the same commands you would use locally. <NT>Bitrise</NT>’s automated <NT><GlossTerm baseform="step">Step</GlossTerm></NT> provides extra functionality to your lane and speed up your builds: [fastlane](https://github.com/bitrise-io/steps-fastlane).
 
 :::
 
 
-## Adding an iOS project to Bitrise
+## Adding an iOS project to <NT>Bitrise</NT>
 
 Add your project the same way as any other: see [Adding a new project](/en/bitrise-ci/getting-started/adding-a-new-project) for the full walkthrough of the wizard. This section covers what's specific to iOS.
 
 ### How the scanner detects an iOS project
 
-The <GlossTerm baseform="project scanner">project scanner</GlossTerm> looks for `.xcodeproj` files and `.xcworkspace` directories, then checks each one's build settings: if `SDKROOT` is set to `iphoneos` (or `SUPPORTED_PLATFORMS` includes it), the scanner registers the project as iOS. A project that's already a member of a workspace isn't listed separately, since the workspace covers it.
+The <NT><GlossTerm baseform="project scanner">project scanner</GlossTerm></NT> looks for `.xcodeproj` files and `.xcworkspace` directories, then checks each one's build settings: if `SDKROOT` is set to `iphoneos` (or `SUPPORTED_PLATFORMS` includes it), the scanner registers the project as iOS. A project that's already a member of a <NT>workspace</NT> isn't listed separately, since the <NT>workspace</NT> covers it.
 
-If your repository has no Xcode project or workspace, the scanner falls back to a `Package.swift` file and treats it as a Swift package. It also detects a `Podfile` for CocoaPods and a `Cartfile` for Carthage, and adjusts the generated Workflow to install those dependencies.
+If your repository has no <NT>Xcode</NT> project or <NT>workspace</NT>, the scanner falls back to a `Package.swift` file and treats it as a <NT>Swift</NT> package. It also detects a `Podfile` for <NT>CocoaPods</NT> and a `Cartfile` for Carthage, and adjusts the generated <NT>Workflow</NT> to install those dependencies.
 
 ### What you can configure
 
-During the **CI configuration** stage, the wizard shows:
+During the **<NT>CI configuration</NT>** stage, the wizard shows:
 
-- **Project or workspace path**: the `.xcodeproj`, `.xcworkspace`, or `Package.swift` file to build.
-- **Scheme name**: any shared scheme found in your project or workspace. The scanner can only detect shared schemes, not user-specific ones.
-- **Distribution method**: how Bitrise exports your app, for example App Store, Ad Hoc, Enterprise, or Development. This option isn't shown for Swift packages, since those aren't archived.
+- **<NT>Project or workspace path</NT>**: the `.xcodeproj`, `.xcworkspace`, or `Package.swift` file to build.
+- **<NT>Scheme name</NT>**: any shared scheme found in your project or <NT>workspace</NT>. The scanner can only detect shared schemes, not user-specific ones.
+- **<NT>Distribution method</NT>**: how <NT>Bitrise</NT> exports your app, for example App Store, Ad Hoc, Enterprise, or Development. This option isn't shown for <NT>Swift</NT> packages, since those aren't archived.
 
 ## Testing your iOS app
 
-If you have test targets defined, the default Workflows of an iOS project include the two Steps you need to run your Xcode tests, and view their results on [bitrise.io](https://www.bitrise.io/):
+If you have test targets defined, the <NT>default Workflows</NT> of an iOS project include the two <NT>Steps</NT> you need to run your <NT>Xcode</NT> tests, and view their results on [bitrise.io](https://www.bitrise.io/):
 
-- **Xcode Test for iOS**
-- **Deploy to Bitrise.io**
+- **<NT>Xcode Test for iOS</NT>**
+- **<NT>Deploy to Bitrise.io</NT>**
 
-The **Xcode Test for iOS** Step runs the pre-defined Xcode tests. It has a default configuration that does not need to be modified: if the tests are written correctly, they will work. You can find the same configuration options in Xcode, too.
+The **<NT>Xcode Test for iOS</NT>** <NT>Step</NT> runs the pre-defined <NT>Xcode</NT> tests. It has a default configuration that does not need to be modified: if the tests are written correctly, they will work. You can find the same configuration options in <NT>Xcode</NT>, too.
 
 :::tip[Checking your selected stack]
 
-We recommend checking that the stack selected for your project has the same Xcode version you used to build the project. For example, if your simulator test fails with the Ineligible destinations for the scheme message, then make sure the Xcode version in the **Stacks & Machines** section is correct. You can read more about our stacks: [Build stacks](/en/bitrise-build-hub/infrastructure/build-stacks/about-build-stacks).
+We recommend checking that the stack selected for your project has the same <NT>Xcode</NT> version you used to build the project. For example, if your simulator test fails with the Ineligible destinations for the scheme message, then make sure the <NT>Xcode</NT> version in the **<NT>Stacks & Machines</NT>** section is correct. You can read more about our stacks: [Build stacks](/en/bitrise-build-hub/infrastructure/build-stacks/about-build-stacks).
 
 :::
 
-The Deploy to Bitrise.io Step will deploy the following to the **Logs** and **Artifacts** tab of the build:
+The <NT>Deploy to Bitrise.io</NT> <NT>Step</NT> will deploy the following to the **<NT>Logs</NT>** and **<NT>Artifacts</NT>** tab of the build:
 
-- Your Xcode test results.
+- Your <NT>Xcode</NT> test results.
 - Your raw xcodebuildoutput log.
 
-The **Deploy to Bitrise.io** Step also exports the results of the **Xcode Test for iOS** Step to [test reports](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
+The **<NT>Deploy to Bitrise.io</NT>** <NT>Step</NT> also exports the results of the **<NT>Xcode Test for iOS</NT>** <NT>Step</NT> to [test reports](/en/bitrise-ci/testing/deploying-and-viewing-test-results).
 
 
-## Creating a signed IPA for Xcode projects
+## Creating a signed IPA for <NT>Xcode</NT> projects
 
-:::note[Overview on iOS code signing in Bitrise]
+:::note[Overview on iOS <NT>code signing</NT> in <NT>Bitrise</NT>]
 
-For a comprehensive overview on what Steps are available for code signing asset management, visit the [iOS code signing page](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects).
+For a comprehensive overview on what <NT>Steps</NT> are available for <NT>code signing</NT> asset management, visit the [iOS code signing page](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects).
 
 :::
 
-You can easily create a signed IPA file for your Xcode project with Bitrise.
+You can easily create a signed IPA file for your <NT>Xcode</NT> project with <NT>Bitrise</NT>.
 
-- You have set up [Apple service connection](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services) on Bitrise.
+- <NT>You have</NT> set up [Apple service connection](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services) on <NT>Bitrise</NT>.
 - Your [code signing files are managed correctly](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects).
-- You set the relevant inputs of our **Xcode Archive & Export for iOS** Step.
+- You set the relevant inputs of our **<NT>Xcode Archive & Export for iOS</NT>** <NT>Step</NT>.
 
-:::important[Upload the distribution AND the development signing certificates]
+:::important[Upload the distribution AND the development <NT>signing certificate</NT>s]
 
-We strongly recommend uploading BOTH the development and distribution signing certificates for your project. If you don't have an uploaded development signing certificate, Steps with automatic provisioning options will generate one on the fly every time you start a build. This can eventually lead to reaching the maximum number of certificates, blocking you from starting new builds.
+We strongly recommend uploading BOTH the development and distribution <NT>signing certificate</NT>s for your project. If you don't have an uploaded development <NT>signing certificate</NT>, <NT>Steps</NT> with automatic provisioning options will generate one on the fly every time you start a build. This can eventually lead to reaching the maximum number of certificates, blocking you from starting new builds.
 
 :::
 
-If you’re all set, proceed to setting up IPA export in your Workflow.
+If you’re all set, proceed to setting up IPA export in your <NT>Workflow</NT>.
 
 <Tabs>
 <TabItem value="workflow-editor" label="Workflow Editor" default>
 
 1. Make sure the necessary [code signing files have been collected and uploaded](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning#uploading-ios-code-signing-certificates-to-bitrise).
-1. Make sure you have the **Xcode Archive & Export for iOS** Step in your Workflow.
-1. Set the **Distribution method** input of the Step.
+1. Make sure you have the **<NT>Xcode Archive & Export for iOS</NT>** <NT>Step</NT> in your <NT>Workflow</NT>.
+1. Set the **<NT>Distribution method</NT>** input of the <NT>Step</NT>.
 
    ![xcode-archive.png](/img/_paligo/uuid-fced107c-9b69-e5af-1472-4d96fbada364.png)
 
@@ -95,21 +96,21 @@ If you’re all set, proceed to setting up IPA export in your Workflow.
 
    - `app-store`: Choose this if you want to deploy the app to the App Store. Requires a Distribution certificate and an App Store provisioning profile.
    - `ad-hoc`: Choose this if you want to deploy the app to ad-hoc testers. Requires a Distribution certificate and an Ad Hoc provisioning profile.
-   - `enterprise`: Choose this if you have an Apple Enterprise account and want to use that to distribute your app.
+   - `enterprise`: Choose this if you have an <NT>Apple</NT> Enterprise account and want to use that to distribute your app.
    - `development`: Choose this for internal testing. Requires a Developer certificate and a Development provisioning profile.
-1. Set the **Automatic code signing** input to the Apple service connection you want to use for code signing. The available options are:
+1. Set the **<NT>Automatic code signing</NT>** input to the <NT>Apple service connection</NT> you want to use for <NT>code signing</NT>. The available options are:
 
-   - `off` if you don’t use automatic code signing.
+   - `off` if you don’t use <NT>automatic code signing</NT>.
    - `api-key` [if you use API key authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
    - `apple-id` [if you use Apple ID authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
-1. Save the Workflow, and start a new build.
+1. Save the <NT>Workflow</NT>, and start a new build.
 
 </TabItem>
 <TabItem value="bitriseyml" label="Configuration YAML">
 
 1. Make sure all the [necessary code signing files](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects) are available for your build.
 1. Open the `bitrise.yml` file of your app.
-1. Make sure you have the `xcode-archive` Step in your Workflow.
+1. Make sure you have the `xcode-archive` <NT>Step</NT> in your <NT>Workflow</NT>.
 
    ```yaml
    my-workflow:
@@ -121,7 +122,7 @@ If you’re all set, proceed to setting up IPA export in your Workflow.
 
    - `app-store`: Choose this if you want to deploy the app to the App Store. Requires a Distribution certificate and an App Store provisioning profile.
    - `ad-hoc`: Choose this if you want to deploy the app to ad-hoc testers. Requires a Distribution certificate and an Ad Hoc provisioning profile.
-   - `enterprise`: Choose this if you have an Apple Enterprise account and want to use that to distribute your app.
+   - `enterprise`: Choose this if you have an <NT>Apple</NT> Enterprise account and want to use that to distribute your app.
    - `development`: Choose this for internal testing. Requires a Developer certificate and a Development provisioning profile.
 
    ```yaml
@@ -131,9 +132,9 @@ If you’re all set, proceed to setting up IPA export in your Workflow.
          inputs:
          - distribution_method: development
    ```
-1. Set the `automatic_code_signing` input to the Apple service connection you want to use for code signing. The available options are:
+1. Set the `automatic_code_signing` input to the <NT>Apple service connection</NT> you want to use for <NT>code signing</NT>. The available options are:
 
-   - `off` if you don’t do automatic code signing.
+   - `off` if you don’t do <NT>automatic code signing</NT>.
    - `api-key` [if you use API key authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
    - `apple-id` [if you use Apple ID authorization](/en/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services).
 
@@ -149,19 +150,19 @@ If you’re all set, proceed to setting up IPA export in your Workflow.
 </TabItem>
 </Tabs>
 
-That’s all. Xcode will automatically select the right signing files based on your project’s Bundle ID and Team ID settings, and the export method you set.
+That’s all. <NT>Xcode</NT> will automatically select the right signing files based on your project’s Bundle ID and Team ID settings, and the export method you set.
 
-### Signing an IPA file with a different team’s code signing file
+### Signing an IPA file with a different team’s <NT>code signing</NT> file
 
-You might want to sign the IPA file with a different team’s code signing files. For example:
+You might want to sign the IPA file with a different team’s <NT>code signing</NT> files. For example:
 
-- If you use your company’s code signing files for internal builds, but your client’s code signing files are used for App Store distribution.
-- If you use Apple ID for automatic code signing and the Apple ID belongs to multiple teams, use The Developer Portal team to use for this export input to specify which team should be used for automatic code signing asset management.
+- If you use your company’s <NT>code signing</NT> files for internal builds, but your client’s <NT>code signing</NT> files are used for App Store distribution.
+- If you use <NT>Apple ID</NT> for <NT>automatic code signing</NT> and the <NT>Apple ID</NT> belongs to multiple teams, use The Developer Portal team to use for this export input to specify which team should be used for <NT>automatic code signing</NT> asset management.
 
 To do so:
 
-1. Make sure the right code signing files of the new development team are uploaded to Bitrise.
-1. Set the The Developer Portal team to use for this export option as well (in addition to the **Distribution method**).
-1. Set the **Distribution method**.
+1. Make sure the right <NT>code signing</NT> files of the new development team are uploaded to <NT>Bitrise</NT>.
+1. Set the The Developer Portal team to use for this export option as well (in addition to the **<NT>Distribution method</NT>**).
+1. Set the **<NT>Distribution method</NT>**.
 
 <Partial_DeployingTheAppToAppStoreConnect />

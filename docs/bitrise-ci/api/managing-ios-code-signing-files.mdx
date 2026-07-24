@@ -8,10 +8,11 @@ slug: /bitrise-ci/api/managing-ios-code-signing-files
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-This guide describes how to manage your iOS code signing files with the Bitrise API. If you’d like to learn more about how to do the same on the UI, please check out [iOS code signing](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects).
+This guide describes how to manage your iOS <NT>code signing</NT> files with the <NT>Bitrise</NT> API. If you’d like to learn more about how to do the same on the UI, please check out [iOS code signing](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects).
 
-You can upload, update, list, and delete iOS code signing files with the API. In this guide we show you how and in what order to use those code signing endpoints.
+You can upload, update, list, and delete iOS <NT>code signing</NT> files with the API. In this guide we show you how and in what order to use those <NT>code signing</NT> endpoints.
 
 | Endpoints | Function | Required role on the app's team |
 | --- | --- | --- |
@@ -32,25 +33,25 @@ You can upload, update, list, and delete iOS code signing files with the API. In
 | DELETE/apps/\{app-slug\}/build-certificates/\{build-certificate-slug\} | Delete an uploaded build certificate | Owner or Admin |
 
 
-## Uploading an iOS code signing file
+## Uploading an iOS <NT>code signing</NT> file
 
 :::note[Required role]
 
-You must have an admin or owner role on the app's team to manage iOS code signing files using the Bitrise API.
+You must have an admin or owner role on the app's team to manage iOS <NT>code signing</NT> files using the <NT>Bitrise</NT> API.
 
 For a complete list of user roles and role cheatsheets, check [Roles and permissions for Bitrise CI](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
 
 :::
 
-You can upload an iOS code signing file (either a .p12 certificate or a provisioning profile) to a Bitrise app of your choice. This process does NOT create a new code signing file: it uploads an existing file (created and downloaded from the Apple Developer Portal) to an AWS URL. It is functionally the same as uploading your code signing files on the Bitrise website: [Managing iOS code signing files - manual provisioning](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---manual-provisioning).
+You can upload an iOS <NT>code signing</NT> file (either a .p12 certificate or a provisioning profile) to a <NT>Bitrise</NT> app of your choice. This process does NOT create a new <NT>code signing</NT> file: it uploads an existing file (created and downloaded from the <NT>Apple Developer Portal</NT>) to an <NT>AWS</NT> URL. It is functionally the same as uploading your <NT>code signing</NT> files on the <NT>Bitrise website</NT>: [Managing iOS code signing files - manual provisioning](/en/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---manual-provisioning).
 
-To upload an iOS code signing file file via the API:
+To upload an iOS <NT>code signing</NT> file file via the API:
 
 1. Call the POST method of the `provisioning-profiles` or `build-certificates` endpoint to create a temporary pre-signed upload URL that expires in ten minutes.
 
-   The call requires an existing code signing file (certificate or provisioning profile) and two parameters:
+   The call requires an existing <NT>code signing</NT> file (certificate or provisioning profile) and two parameters:
 
-   - `upload_file_name`: The filepath to the existing code signing file. For example, `/path/to/sample.p12`.
+   - `upload_file_name`: The filepath to the existing <NT>code signing</NT> file. For example, `/path/to/sample.p12`.
    - `upload_file_size`: The size of the file in bytes.
 
    ```bash
@@ -72,7 +73,7 @@ To upload an iOS code signing file file via the API:
      }
    }
    ```
-1. The response to the first call contains an `upload_url` parameter. You need to use this and the `upload_file_name` parameter to upload the file to AWS with a `curl` call.
+1. The response to the first call contains an `upload_url` parameter. You need to use this and the `upload_file_name` parameter to upload the file to <NT>AWS</NT> with a `curl` call.
 
    ```bash
    curl -T sample.provisionprofile 'https://concrete-userfiles-production.s3-us-west-2.amazonaws.com/build_certificates/uploads/30067/original/certs.p12?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAIOC7N256G7J2W2TQ%2F20180216%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20180216T124240Z&X-Amz-Expires=600&X-Amz-SignedHeaders=content-length%3Bhost&X-Amz-Signature=2bf42176650f00405abfd7b7757635c9be16b43e98013abb7f750d3c658be28e'
@@ -86,13 +87,13 @@ To upload an iOS code signing file file via the API:
    ```
 
 
-## Updating an uploaded iOS code signing file
+## Updating an uploaded iOS <NT>code signing</NT> file
 
-You can perform minor updates to an uploaded iOS code signing file using the `PATCH` method. If you’ve uploaded your file to [Bitrise](https://www.bitrise.io), you can visually check any changes to it on the **Code Signing & Files** tab.
+You can perform minor updates to an uploaded iOS <NT>code signing</NT> file using the `PATCH` method. If you’ve uploaded your file to [Bitrise](https://www.bitrise.io), you can visually check any changes to it on the **<NT>Code Signing & Files</NT>** tab.
 
 :::note[Required role]
 
-You must have an admin or owner role on the app's team to manage iOS code signing files using the Bitrise API.
+You must have an admin or owner role on the app's team to manage iOS <NT>code signing</NT> files using the <NT>Bitrise</NT> API.
 
 For a complete list of user roles and role cheatsheets, check [Roles and permissions for Bitrise CI](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
 
@@ -121,17 +122,17 @@ You can set the `is_protected`, `is_exposed` and `processed` attributes of the f
 :::
 
 
-## Getting a specific iOS code signing file's data
+## Getting a specific iOS <NT>code signing</NT> file's data
 
 :::note[Required role]
 
-You must have an admin or owner role on the app's team to manage iOS code signing files using the Bitrise API.
+You must have an admin or owner role on the app's team to manage iOS <NT>code signing</NT> files using the <NT>Bitrise</NT> API.
 
 For a complete list of user roles and role cheatsheets, check [Roles and permissions for Bitrise CI](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
 
 :::
 
-Retrieve a specific iOS code signing file’s data with the GET method of the `provisioning-profiles` and `build-certificates` endpoints. The returned data includes, among other things, the file's name, size, and download URL, as well as its current status.
+Retrieve a specific iOS <NT>code signing</NT> file’s data with the GET method of the `provisioning-profiles` and `build-certificates` endpoints. The returned data includes, among other things, the file's name, size, and download URL, as well as its current status.
 
 The required parameters are:
 
@@ -169,17 +170,17 @@ Note that the `download_url` is generated only when the file’s `is_protected` 
 :::
 
 
-## Listing the iOS code signing files of an app
+## Listing the iOS <NT>code signing</NT> files of an app
 
 :::note[Required role]
 
-You must have an admin or owner role on the app's team to manage iOS code signing files using the Bitrise API.
+You must have an admin or owner role on the app's team to manage iOS <NT>code signing</NT> files using the <NT>Bitrise</NT> API.
 
 For a complete list of user roles and role cheatsheets, check [Roles and permissions for Bitrise CI](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
 
 :::
 
-Wondering how many iOS code signing files belong to an app? Get a list of them using the `GET` method of the `provisioning-profiles` and `build-certificates` endpoints.
+Wondering how many iOS <NT>code signing</NT> files belong to an app? Get a list of them using the `GET` method of the `provisioning-profiles` and `build-certificates` endpoints.
 
 The required parameter is:
 
@@ -190,7 +191,7 @@ Optional parameters are:
 - next: slug of the first file in the response (as a string)
 - limit: max number of elements per page (as an integer) where the default is 50.
 
-**Getting all provisioning profiles of an app**
+**Getting all <NT>provisioning profiles</NT> of an app**
 
 Request:
 

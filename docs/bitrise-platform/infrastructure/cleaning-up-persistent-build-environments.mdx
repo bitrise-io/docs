@@ -10,12 +10,13 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 import Partial_NOTESecretsInSelfHostedEnvironments from '@site/src/partials/note-secrets-in-self-hosted-environments.mdx';
+import NT from '@site/src/components/NT';
 
-On Bitrise, a new virtual machine is created every time a build starts and it is destroyed when the build is finished. You can, however run Bitrise builds in a persistent build environment: for example, you can use [our on-premise runner](/en/bitrise-platform/infrastructure/running-bitrise-builds-on-premise) or [run builds on an Amazon EC2 instance](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances). In such an environment, the products of one build might affect subsequent builds.
+On <NT>Bitrise</NT>, a new virtual machine is created every time a build starts and it is destroyed when the build is finished. You can, however run <NT>Bitrise</NT> builds in a persistent build environment: for example, you can use [our on-premise runner](/en/bitrise-platform/infrastructure/running-bitrise-builds-on-premise) or [run builds on an Amazon EC2 instance](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances). In such an environment, the products of one build might affect subsequent builds.
 
-On self-hosted infrastructure, one Bitrise runner executes multiple builds. This allows sharing data between builds on the local filesystem, but it also requires care in order to avoid one build affecting another.
+On <NT>self-hosted infrastructure</NT>, one <NT>Bitrise</NT> runner executes multiple builds. This allows sharing data between builds on the local filesystem, but it also requires care in order to avoid one build affecting another.
 
-To avoid the problem, you can configure the Bitrise CLI to run in **agent mode**. Agent mode requires placing an `agent-config.yml` in the host machine's `~/.bitrise/` directory. In the file, you can specify which directories to clean up when starting a new build or at the end of a build. It also allows you to run your own custom scripts if you have a more advanced use case than a simple cleanup.
+To avoid the problem, you can configure the <NT>Bitrise CLI</NT> to run in **agent mode**. Agent mode requires placing an `agent-config.yml` in the host machine's `~/.bitrise/` directory. In the file, you can specify which directories to clean up when starting a new build or at the end of a build. It also allows you to run your own custom scripts if you have a more advanced use case than a simple cleanup.
 
 <Partial_NOTESecretsInSelfHostedEnvironments />
 
@@ -51,9 +52,9 @@ To avoid the problem, you can configure the Bitrise CLI to run in **agent mode**
      BITRISE_HTML_REPORT_DIR: /Users/ec2-user/bitrise/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/html_reports
    ```
 
-   :::caution[Multiple projects of the same Workspace]
+   :::caution[Multiple projects of the same <NT>Workspace</NT>]
 
-   Don’t forget that multiple projects of the same Workspace could run on the same agent. Make sure to always include $BITRISE_APP_SLUG in the directory hierarchy to separate projects and their source code checkouts.
+   Don’t forget that multiple projects of the same <NT>Workspace</NT> could run on the same agent. Make sure to always include $BITRISE_APP_SLUG in the directory hierarchy to separate projects and their source code checkouts.
 
    ```yaml
    # wrong:
@@ -70,9 +71,9 @@ To avoid the problem, you can configure the Bitrise CLI to run in **agent mode**
    - `do_on_build_start`: Defines a custom script that runs when a new build is started.
    - `do_on_build_end`: Defines a custom script that runs when a build is finished. Not guaranteed to run in the case of build failure.
 
-   :::important[Nested Workflows]
+   :::important[Nested <NT>Workflows</NT>]
 
-   A [**Script**](https://github.com/bitrise-io/steps-script) <GlossTerm baseform="step">Step</GlossTerm> in a Workflow can execute `bitrise run nested_workflow` and <GlossTerm baseform="trigger">trigger</GlossTerm> a nested workflow. This nested Workflow inherits all the envs and parameters of the parent Workflow, and the parent Workflow waits for the completion of the nested Workflow. When the nested Workflow is launched this way, hooks and directory cleanups are not executed in this process to avoid unexpected behavior.
+   A [**Script**](https://github.com/bitrise-io/steps-script) <NT><GlossTerm baseform="step">Step</GlossTerm></NT> in a <NT>Workflow</NT> can execute `bitrise run nested_workflow` and <NT><GlossTerm baseform="trigger">trigger</GlossTerm></NT> a nested workflow. This nested <NT>Workflow</NT> inherits all the envs and parameters of the parent <NT>Workflow</NT>, and the parent <NT>Workflow</NT> waits for the completion of the nested <NT>Workflow</NT>. When the nested <NT>Workflow</NT> is launched this way, hooks and directory cleanups are not executed in this process to avoid unexpected behavior.
 
    :::
 1. To test the agent mode, start a build. The log should show the following message at the top:
@@ -112,9 +113,9 @@ To avoid the problem, you can configure the Bitrise CLI to run in **agent mode**
      BITRISE_HTML_REPORT_DIR: /opt/bitrise/$BITRISE_APP_SLUG/$BITRISE_BUILD_SLUG/html_reports
    ```
 
-   :::caution[Multiple projects of the same Workspace]
+   :::caution[Multiple projects of the same <NT>Workspace</NT>]
 
-   Don’t forget that multiple projects of the same Workspace could run on the same agent. Make sure to always include $BITRISE_APP_SLUG in the directory hierarchy to separate projects and their source code checkouts.
+   Don’t forget that multiple projects of the same <NT>Workspace</NT> could run on the same agent. Make sure to always include $BITRISE_APP_SLUG in the directory hierarchy to separate projects and their source code checkouts.
 
    ```yaml
    # wrong:
@@ -131,9 +132,9 @@ To avoid the problem, you can configure the Bitrise CLI to run in **agent mode**
    - `do_on_build_start`: Defines a custom script that runs when a new build is started.
    - `do_on_build_end`: Defines a custom script that runs when a build is finished. Not guaranteed to run in the case of build failure.
 
-   :::important[Nested Workflows]
+   :::important[Nested <NT>Workflows</NT>]
 
-   A [**Script**](https://github.com/bitrise-io/steps-script) Step in a Workflow can execute `bitrise run nested_workflow` and trigger a nested workflow. This nested Workflow inherits all the envs and parameters of the parent Workflow, and the parent Workflow waits for the completion of the nested Workflow. When the nested Workflow is launched this way, hooks and directory cleanups are not executed in this process to avoid unexpected behavior.
+   A [**Script**](https://github.com/bitrise-io/steps-script) <NT>Step</NT> in a <NT>Workflow</NT> can execute `bitrise run nested_workflow` and trigger a nested workflow. This nested <NT>Workflow</NT> inherits all the envs and parameters of the parent <NT>Workflow</NT>, and the parent <NT>Workflow</NT> waits for the completion of the nested <NT>Workflow</NT>. When the nested <NT>Workflow</NT> is launched this way, hooks and directory cleanups are not executed in this process to avoid unexpected behavior.
 
    :::
 1. To test the agent mode, start a build. The log should show the following message at the top:
@@ -172,7 +173,7 @@ hooks:
     - $BITRISE_HTML_REPORT_DIR
 ```
 
-**Shared source code directory for warm checkouts**
+**<NT>Shared</NT> <NT>source code</NT> directory for warm checkouts**
 
 For faster source code checkouts, it’s possible to reuse a previous build’s source code directory.
 

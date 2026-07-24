@@ -6,103 +6,104 @@ sidebar_position: 3
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
 
-We have prepared some <GlossTerm baseform="Pipeline">Pipeline</GlossTerm> recipes based on common Android use cases. These contain some of the most frequent tasks our users need to run. The examples include entire <GlossTerm baseform="Workflow">Workflows</GlossTerm> that can be copied and pasted for the most part.
+We have prepared some <NT><GlossTerm baseform="Pipeline">Pipeline</GlossTerm></NT> recipes based on common <NT>Android</NT> use cases. These contain some of the most frequent tasks our users need to run. The examples include entire <NT><GlossTerm baseform="Workflow">Workflow</GlossTerm></NT>s that can be copied and pasted for the most part.
 
 
-## (Android) Run UI tests in parallel on multiple devices or shards
+## (<NT>Android</NT>) Run UI tests in parallel on multiple devices or shards
 
 ### Description
 
-Running the UI (instrumentation) tests of a single module in parallel Workflows utilizing pipelines. You can run the tests in parallel by shards or by devices.
+Running the UI (instrumentation) tests of a single module in parallel <NT>Workflows</NT> utilizing pipelines. You can run the tests in parallel by shards or by devices.
 
-The Pipeline contains two Stages that are run serially:
+The <NT>Pipeline</NT> contains two Stages that are run serially:
 
-1. `build_for_ui_testing`: This Stage executes a Workflow — also named `build_for_ui_testing` — that runs the `android-build-for-ui-testing` <GlossTerm baseform="step">Step</GlossTerm> to build APKs for use in testing, and runs the `deploy-to-bitrise-io` Step to save those APKs for use in the later Stages. Performing this Stage separately from the actual testing allows for each test Stage to use these pre-built APKs rather than having to rebuild them for each test Stage.
-1. `run_ui_tests_on_devices`: This Stage executes three UI test Workflows in parallel — `ui_test_on_phone`, `ui_test_on_tablet`, `ui_test_on_foldable` — which use the `android-instrumented-test` Step to run the UI tests on the APKs built in the previous Workflow on each specific device type.
+1. `build_for_ui_testing`: This Stage executes a <NT>Workflow</NT> — also named `build_for_ui_testing` — that runs the `android-build-for-ui-testing` <NT><GlossTerm baseform="step">Step</GlossTerm></NT> to build APKs for use in testing, and runs the `deploy-to-bitrise-io` <NT>Step</NT> to save those APKs for use in the later Stages. Performing this Stage separately from the actual testing allows for each test Stage to use these pre-built APKs rather than having to rebuild them for each test Stage.
+1. `run_ui_tests_on_devices`: This Stage executes three UI test <NT>Workflows</NT> in parallel — `ui_test_on_phone`, `ui_test_on_tablet`, `ui_test_on_foldable` — which use the `android-instrumented-test` <NT>Step</NT> to run the UI tests on the APKs built in the previous <NT>Workflow</NT> on each specific device type.
 
    ![android_example.png](/img/_paligo/uuid-f545c6a6-701f-485f-c852-70ed2222392a.png)
 
 ### Instructions
 
-To test this configuration in a new Bitrise example project, do the following:
+To test this configuration in a new <NT>Bitrise</NT> example project, do the following:
 
 1. Visit the [Create New App page](https://app.bitrise.io/apps/add) to create a new App.
-1. When prompted to select a git repository, choose **Other/Manual** and paste the sample project repository URL (`https://github.com/bitrise-io/Bitrise-Android-Modules-Sample.git`) in the **Git repository (clone) URL** field.
+1. When prompted to select a git repository, choose **<NT>Other</NT>/Manual** and paste the sample project repository URL (`https://github.com/bitrise-io/Bitrise-Android-Modules-Sample.git`) in the **<NT>Git repository (clone) URL</NT>** field.
 1. Confirm that this is a public repository in the resulting pop-up.
 1. Select the `main` branch to scan.
-1. Wait for the <GlossTerm baseform="project scanner">project scanner</GlossTerm> to complete.
+1. Wait for the <NT><GlossTerm baseform="project scanner">project scanner</GlossTerm></NT> to complete.
 1. Enter `app` as the specified module.
 1. Enter `debug` as the specified variant.
 1. Continue through the prompts as normal — no changes are needed.
-1. Open the new Bitrise <GlossTerm baseform="project">project</GlossTerm>’s <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>.
-1. Switch to **YAML** at the top of the Workflow Editor, and replace the existing yaml contents with the contents of the example `[bitrise.yml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-ui-tests-on-multiple-devices.md#bitriseyml)`.
-1. Click the **Start/Schedule a Build** button, and select the `ui_test_on_multiple_devices` option in the **Workflow, Pipeline** dropdown menu at the bottom of the popup.
+1. Open the new <NT>Bitrise</NT> <NT><GlossTerm baseform="project">project</GlossTerm></NT>’s <NT><GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm></NT>.
+1. Switch to **YAML** at the top of the <NT>Workflow Editor</NT>, and replace the existing yaml contents with the contents of the example `[bitrise.yml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-ui-tests-on-multiple-devices.md#bitriseyml)`.
+1. Click the **<NT>Start/Schedule a Build</NT>** button, and select the `ui_test_on_multiple_devices` option in the **<NT>Workflow, Pipeline</NT>** dropdown menu at the bottom of the popup.
 
 ### bitrise.yml
 
-GitHub link: [https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-ui-tests-on-multiple-devices.md#bitriseyml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-ui-tests-on-multiple-devices.md#bitriseyml)
+<NT>GitHub</NT> link: [https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-ui-tests-on-multiple-devices.md#bitriseyml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-ui-tests-on-multiple-devices.md#bitriseyml)
 
 
-## (Android) Running unit and UI tests in parallel
+## (<NT>Android</NT>) Running unit and UI tests in parallel
 
 ### Description
 
-Run unit tests and UI tests in parallel utilizing Pipelines.
+Run unit tests and UI tests in parallel utilizing <NT>Pipelines</NT>.
 
-This Pipeline contains one Stage — `stage_unit_and_ui_test` — that executes two Workflows in parallel:
+This <NT>Pipeline</NT> contains one Stage — `stage_unit_and_ui_test` — that executes two <NT>Workflows</NT> in parallel:
 
-1. `unit_tests`: This Workflow simply runs the unit tests of the given module and variant using the `android-unit-test` Step.
-1. `ui_tests`: This Workflow builds the given module and variant using the `android-build-for-ui-testing`Step, spins up an emulator using the `avd-manager` Step, waits for the emulator to boot using the `wait-for-android-emulator` Step, and runs the UI tests using the `android-instrumented-test` Step.
+1. `unit_tests`: This <NT>Workflow</NT> simply runs the unit tests of the given module and variant using the `android-unit-test` <NT>Step</NT>.
+1. `ui_tests`: This <NT>Workflow</NT> builds the given module and variant using the `android-build-for-ui-testing`<NT>Step</NT>, spins up an emulator using the `avd-manager` <NT>Step</NT>, waits for the emulator to boot using the `wait-for-android-emulator` <NT>Step</NT>, and runs the UI tests using the `android-instrumented-test` <NT>Step</NT>.
 
    ![android_example2.png](/img/_paligo/uuid-573f2524-97b7-94ea-38d4-c76306fafa29.png)
 
 ### Instructions
 
 1. Visit the [Create New App page](https://app.bitrise.io/apps/add) to create a new App.
-1. When prompted to select a git repository, choose **Other/Manual** and paste the sample project repository URL (`https://github.com/bitrise-io/Bitrise-Android-Modules-Sample.git`) in the **Git repository (clone) URL** field.
+1. When prompted to select a git repository, choose **<NT>Other</NT>/Manual** and paste the sample project repository URL (`https://github.com/bitrise-io/Bitrise-Android-Modules-Sample.git`) in the **<NT>Git repository (clone) URL</NT>** field.
 1. Confirm that this is a public repository in the resulting pop-up.
 1. Select the `main` branch to scan.
 1. Wait for the project scanner to complete.
 1. Enter `app` as the specified module.
 1. Enter `debug` as the specified variant.
 1. Continue through the prompts as normal — no changes are needed.
-1. Open the new Bitrise project’s Workflow Editor.
-1. Switch to **YAML** at the top of the Workflow Editor, and replace the existing yaml contents with the contents of the example `[bitrise.yml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-unit-and-ui-tests.md#bitriseyml)`.
-1. Click the **Start/Schedule a Build** button, and select the `pipeline_unit_and_ui_test` option in the **Workflow, Pipeline** dropdown menu at the bottom of the popup.
+1. Open the new <NT>Bitrise</NT> <NT>project</NT>’s <NT>Workflow Editor</NT>.
+1. Switch to **YAML** at the top of the <NT>Workflow Editor</NT>, and replace the existing yaml contents with the contents of the example `[bitrise.yml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-unit-and-ui-tests.md#bitriseyml)`.
+1. Click the **<NT>Start/Schedule a Build</NT>** button, and select the `pipeline_unit_and_ui_test` option in the **<NT>Workflow, Pipeline</NT>** dropdown menu at the bottom of the popup.
 
 ### bitrise.yml
 
-GitHub link: [https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-unit-and-ui-tests.md#bitriseyml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-unit-and-ui-tests.md#bitriseyml)
+<NT>GitHub</NT> link: [https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-unit-and-ui-tests.md#bitriseyml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-unit-and-ui-tests.md#bitriseyml)
 
 
-## (Android) Unit test sharding by module
+## (<NT>Android</NT>) Unit test sharding by module
 
 ### Description
 
-Run the unit tests of a modularized app in parallel Workflows utilizing Pipelines.
+Run the unit tests of a modularized app in parallel <NT>Workflows</NT> utilizing <NT>Pipelines</NT>.
 
-This Pipeline contains one Stage — stage_unit_test — that executes two Workflows in parallel:
+This <NT>Pipeline</NT> contains one Stage — stage_unit_test — that executes two <NT>Workflows</NT> in parallel:
 
-1. `unit_test_app`: This Workflow runs the unit tests of the app module using the `android-unit-test` Step.
-1. `unit_test_library`: This Workflow runs the unit tests of the `lib-example` module using the `android-unit-test` Step.
+1. `unit_test_app`: This <NT>Workflow</NT> runs the unit tests of the app module using the `android-unit-test` <NT>Step</NT>.
+1. `unit_test_library`: This <NT>Workflow</NT> runs the unit tests of the `lib-example` module using the `android-unit-test` <NT>Step</NT>.
 
    ![android_example_3.png](/img/_paligo/uuid-fb91dae2-cdfe-d531-2559-c02a58915ce3.png)
 
 ### Instructions
 
 1. Visit the [Create New App page](https://app.bitrise.io/apps/add) to create a new App.
-1. When prompted to select a git repository, choose **Other/Manual** and paste the sample project repository URL (`https://github.com/bitrise-io/Bitrise-Android-Modules-Sample.git`) in the **Git repository (clone) URL** field.
+1. When prompted to select a git repository, choose **<NT>Other</NT>/Manual** and paste the sample project repository URL (`https://github.com/bitrise-io/Bitrise-Android-Modules-Sample.git`) in the **<NT>Git repository (clone) URL</NT>** field.
 1. Confirm that this is a public repository in the resulting pop-up.
 1. Select the `main` branch to scan.
 1. Wait for the project scanner to complete.
 1. Enter `app` as the specified module.
 1. Enter `debug` as the specified variant.
 1. Continue through the prompts as normal — no changes are needed.
-1. Open the new Bitrise project’s Workflow Editor.
-1. Switch to **YAML** at the top of the Workflow Editor, and replace the existing yaml contents with the contents of the example `[bitrise.yml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-testing-unit-test-shards.md#bitriseyml)`.
-1. Click the **Start/Schedule a Build** button, and select the `pipeline_unit_test` option in the **Workflow, Pipeline** dropdown menu at the bottom of the popup.
+1. Open the new <NT>Bitrise</NT> <NT>project</NT>’s <NT>Workflow Editor</NT>.
+1. Switch to **YAML** at the top of the <NT>Workflow Editor</NT>, and replace the existing yaml contents with the contents of the example `[bitrise.yml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-testing-unit-test-shards.md#bitriseyml)`.
+1. Click the **<NT>Start/Schedule a Build</NT>** button, and select the `pipeline_unit_test` option in the **<NT>Workflow, Pipeline</NT>** dropdown menu at the bottom of the popup.
 
 ### bitrise.yml
 
-GitHub link: [https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-testing-unit-test-shards.md#bitriseyml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-testing-unit-test-shards.md#bitriseyml)
+<NT>GitHub</NT> link: [https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-testing-unit-test-shards.md#bitriseyml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-testing-unit-test-shards.md#bitriseyml)
