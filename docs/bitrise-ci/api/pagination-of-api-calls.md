@@ -29,7 +29,7 @@ The `next` property of the `paging` object is only included if there’s at leas
 Limit the number of response pages with the `limit` parameter:
 
 ```
-https://api.bitrise.io/v0.1/me/apps?limit=10
+https://api.bitrise.io/v0.1/apps?limit=10
 ```
 
 This call sets the `page_item_limit` property to 10. The default (and maximum) value of the parameter is 50.
@@ -42,10 +42,10 @@ Iterate through response items:
 
 **Iterating through all your registered apps**
 
-1. Call `https://api.bitrise.io/v0.1/me/apps`.
+1. Call `https://api.bitrise.io/v0.1/apps`.
 1. Process the items (`data` property).
 1. Check the `paging` (root) property.
 1. If there’s a `next` property inside `paging`, call the endpoint again, with the `next` query parameter
 
-   - Example: `https://api.bitrise.io/v0.1/me/apps?next=NEXTVALUE`, where `NEXTVALUE` is the value of the `next` property you got in your previous response.
+   - Example: `https://api.bitrise.io/v0.1/apps?next=NEXTVALUE`, where `NEXTVALUE` is the value of the `next` property you got in your previous response.
 1. Repeat this until the `paging` object does not include a `next` property, which means that the page you received was the last one.

@@ -32,7 +32,7 @@ The procedure and the examples are aimed at adding a private app with an SSH git
 
 1. Register the app by calling the `register` endpoint and setting all required parameters.
 
-   You need to set your git provider, the repository URL, the slug of the repository as it appears at the provider, and the slug of the owner of the repository. You also need to add the slug of the Workspace that will own the app: due to legacy naming conventions, you need the `organization_slug` parameter.
+   You need to set your git provider, the repository URL, and the slug of the repository as it appears at the provider. You also need to add the slug of the Workspace that will own the app: due to legacy naming conventions, you need the `organization_slug` parameter.
 
    ```yaml
    curl -X POST -H 'Authorization: ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/register' -d \
@@ -157,6 +157,7 @@ The required parameter is:
 
 The optional parameters are:
 
+- apple_api_credential_slug: The new Apple API key's slug (recommendation: use the UI to set this)
 - apple_credential_user_id: The new apple credential user ID (recommendation: use the UI to set this)
 - apple_credential_user_slug: The new apple credential user slug (recommendation: use the UI to set this)
 - default_branch: The new default branch for the application.
@@ -178,11 +179,14 @@ curl -X 'PATCH' 'https://api.bitrise.io/v0.1/apps/THE-APP-SLUG' -H 'accept: appl
 
 You can grant [Workspace groups](/en/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/workspace-groups#creating-groups-for-workspaces) access to application teams on Bitrise. It means that all members of the group will be able to work on the app in [the role assigned to the group](/en/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
 
-List all groups that have been granted a given role on an app's team by using the `GET /apps/{app-slug}/roles/{role-name}` endpoint. The role-name parameter takes three possible values:
+List all groups that have been granted a given role on an app's team by using the `GET /apps/{app-slug}/roles/{role-name}` endpoint. The role-name parameter takes the following values:
 
+- `owner`
 - `admin`
-- `manager`: this is the equivalent of the **Developer** role on bitrise.io.
-- `member`: this is the equivalent of **Tester/QA** on bitrise.io.
+- `manager`
+- `member`
+- `release_manager`
+- `platform_engineer`
 
 In this example, we're querying a list of Workspace groups that have been granted Admin role to a specific app:
 
@@ -353,7 +357,7 @@ curl -X 'PUT' \
 
 | Endpoints | Function | Required role |
 | --- | --- | --- |
-| PATCH /user/\{user-slug\}/apps/machine_types | Migrate a specified machine type to another in all apps owned by the same user. | N/A |
+| PATCH /users/\{user-slug\}/apps/machine_types | Migrate a specified machine type to another in all apps owned by the same user. | N/A |
 | PATCH /organizations/\{org-slug\}/apps/machine_types | Migrate a specified machine type to another in all apps owned by the same Workspace. | Workspace owner |
 
 The Bitrise API provides two endpoints that allow you to switch between one [machine type](/en/bitrise-platform/infrastructure/build-machines/about-build-machines) and another for all apps owned by either a user or a [Workspace](/en/bitrise-platform/workspaces/workspaces-overview). The endpoints parse the `bitrise.yml` file of each app, look for all occurrences of a specified machine type, and replace them with another type. For example, you can switch from M1 Medium to M1 Large on all your apps with this endpoint.
@@ -378,7 +382,7 @@ The endpoints can change the machine types for both default stacks and Workflow-
 
 ```bash
 curl -X 'PATCH' \
-  'https://api.bitrise.io/v0.1/user/USER-SLUG/apps/machine_types' \
+  'https://api.bitrise.io/v0.1/users/USER-SLUG/apps/machine_types' \
   -H 'accept: application/json' \
   -H 'Authorization: PERSONAL-ACCESS-TOKEN' \
   -H 'Content-Type: application/json' \
@@ -424,9 +428,9 @@ You can change [the email notification settings](/en/bitrise-ci/configure-builds
 
 Both parameters take three possible values:
 
-- `always`: Always send notification. The default value for failed builds.
-- `never`: Never send notification.
-- `change`: Send notification only when the [build status](/en/bitrise-ci/run-and-analyze-builds/build-statuses) changes compared to the previous build on the same branch. The default value for successful builds.
+- `always`: Always send notification.
+- `never`: Never send notification. The default value for both failed and successful builds.
+- `change`: Send notification only when the [build status](/en/bitrise-ci/run-and-analyze-builds/build-statuses) changes compared to the previous build on the same branch.
 
 For example, if you wish to receive a notification for a failed build only when the previous build was successful, you need to set the value of the on_failure parameter to `change` (replace the APP-SLUG in the example with your app's slug and ACCESS-TOKEN with your [personal access token](/en/bitrise-platform/accounts/personal-access-tokens)):
 
