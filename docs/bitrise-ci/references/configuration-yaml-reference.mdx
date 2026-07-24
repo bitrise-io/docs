@@ -124,8 +124,9 @@ services:
      --health-retries 5
  redis: 
    image: redis:7
-     ports: - 6379:6379
-     options: >-
+   ports:
+   - 6379:6379
+   options: >-
      --health-cmd "redis-cli ping"
      --health-interval 10s
      --health-timeout 5s
@@ -367,6 +368,8 @@ It can have both static and dynamic values, as well as combine the two types.
 - `<target_id>`: The ID of the triggered Workflow or Pipeline.
 - `<event_type>`: The code event that triggered the build: `PR/push/tag`.
 
+The maximum length is 100 characters.
+
 **Example of `pipelines:<pipeline-ID>:status_report_name`**
 
 ```yaml
@@ -490,7 +493,7 @@ Be aware of transitive dependency: if a Workflow that is set to always run has a
 
 **Supported values:**
 
-- `none`: If a parent Workflow fails, the Workflow will not run. This is the default value.
+- `off`: If a parent Workflow fails, the Workflow will not run. This is the default value.
 - `workflow`: If a parent Workflow fails, the Workflow will run anyway.
 
 Read more: [Configuring a Bitrise Pipeline](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline)
@@ -550,7 +553,7 @@ The property determines the number of copies running in parallel. Each copy rece
 - $BITRISE_IO_PARALLEL_INDEX: a zero based index for each copy of the Workflow.
 - $BITRISE_IO_PARALLEL_TOTAL: the total number of copies.
 
-**Supported values**: An integer.
+**Supported values**: An integer between 1 and 200.
 
 Read more: [Parallelism in Pipelines](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow).
 
@@ -575,7 +578,7 @@ workflows:
 
 A short summary of the Workflow.
 
-**Example of**
+**Example of `workflows:<workflow-id>:summary`**
 
 ```yaml
 workflows:
@@ -636,6 +639,8 @@ It can have both static and dynamic values, as well as combine the two types.
 - `<target_id>`: The ID of the triggered Workflow or Pipeline.
 - `<event_type>`: The code event that triggered the build: `PR/push/tag`.
 
+The maximum length is 100 characters.
+
 **Example of `workflows:<workflow-id>:status_report_name`**
 
 ```yaml
@@ -689,7 +694,7 @@ Use this property and `before_run` to create chains of Workflows.
 
 Read more: [Chaining Workflows together](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together).
 
-**Example of `workflows:<workflow-id>:before_run`**
+**Example of `workflows:<workflow-id>:after_run`**
 
 In this example, we're creating a configuration in which the `deploy` Workflow runs after the `ci` Workflow:
 
@@ -820,7 +825,7 @@ workflows:
 
 ## Step bundle properties
 
-### `step_bundles:<step-bundle-id:title`
+### `step_bundles:<step-bundle-id>:title`
 
 The title of the Step bundle. It is an optional property as the Step bundle ID uniquely identifies the bundle.
 
@@ -1114,6 +1119,25 @@ workflows:
   primary:
     triggers:
       enabled: false
+```
+
+### `triggers:priority`
+
+Sets a priority for an individual trigger condition, overriding the priority of the Workflow or Pipeline it triggers.
+
+**Supported values**: An integer between -100 and 100. The higher the value, the higher the priority. The default value is 0.
+
+Read more: [Build priority](/en/bitrise-ci/configure-builds/configuring-build-settings/build-priority).
+
+**Example of `triggers:priority`**
+
+```yaml
+workflows:
+  primary:
+    triggers:
+      push:
+      - branch: main
+        priority: 10
 ```
 
 ### `triggers:push`
