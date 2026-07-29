@@ -5,15 +5,13 @@ sidebar_position: 3
 slug: /release-management/codepush/configuring-your-app-for-codepush
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import GlossTerm from '@site/src/components/GlossTerm';
-
-Learn how to configure the CodePush SDK in your React Native project to receive over-the-air updates. Both Expo and plain React Native projects are supported, see the [Expo setup](#configuring-codepush-for-expo-apps) and [non-Expo setup](#configuring-codepush-for-non-expo-projects) sections below.
+Configure the CodePush SDK in your React Native app to receive over-the-air updates. Both bare React Native and Expo projects are supported: see [Configuring CodePush for bare React Native projects](#configuring-codepush-for-bare-react-native-projects) and [Configuring CodePush for Expo apps](#configuring-codepush-for-expo-apps).
 
 The CodePush SDK is an open-source SDK. Bitrise actively participates in its maintenance to make sure it serves our customers' needs.
 
 ## Configuring CodePush for bare React Native projects
+
+These instructions cover React Native's New Architecture. On older React Native versions, follow the SDK's [iOS setup](https://github.com/bitrise-io/react-native-code-push/blob/master/docs/setup-ios.md) and [Android setup](https://github.com/bitrise-io/react-native-code-push/blob/master/docs/setup-android.md) guides instead — then come back to this page for the deployment key and server URL values.
 
 1. Add the CodePush SDK to the project:
 
@@ -56,9 +54,9 @@ The CodePush SDK is an open-source SDK. Bitrise actively participates in its mai
       }
       ```
 
-   Typically, you're only going to want to use CodePush to resolve your JS bundle location within release builds, and therefore, we recommend using the DEBUG pre-processor macro to dynamically switch between using the packager server and CodePush, depending on whether you are debugging or not. This will make it much simpler to ensure you get the right behavior you want in production, while still being able to use the Chrome Dev Tools, live reload, etc. at debug-time.
+   Use CodePush to resolve the JS bundle location only in release builds. The `DEBUG` pre-processor macro switches between the Metro packager in debug builds and CodePush in release builds, so Chrome Dev Tools and live reload keep working while you debug.
 
-1. Update `ios/<projectname>/Info.plist` with your Bitrise project credentials to let the CodePush runtime know which deployment it should query for updates against.
+1. Update `ios/<projectname>/Info.plist` with the CodePush deployment key and the CodePush server URL to let the CodePush runtime know which deployment it should query for updates against.
 
    ```xml
    <key>CodePushDeploymentKey</key>
@@ -67,15 +65,15 @@ The CodePush SDK is an open-source SDK. Bitrise actively participates in its mai
    <string>https://<workspace-slug>.codepush.bitrise.io</string>
    ```
 
-   **Deployment key**: Copy value from Bitrise CodePush deployments page. You get the deployment key when creating the [CodePush deployment on Bitrise](/en/release-management/codepush/creating-a-codepush-deployment).
+   **Deployment key**: Copy the value from the Bitrise CodePush deployments page. You get the deployment key when creating the [CodePush deployment on Bitrise](/en/release-management/codepush/creating-a-codepush-deployment).
 
    **Workspace slug**: The server URL requires your Bitrise workspace slug: [Identifying Workspaces and apps with their slugs](/en/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs).
-1. Optional: If your iOS minimum deployment target is lower than 15.5, you need to bump that to at least `15.5`. In `ios/Podfile`, look for the line `platform :ios, min_ios_version_supported`. Change it to `platform :ios, 15.5`.
+1. Optional: If your iOS minimum deployment target is lower than 15.5, you need to bump it to at least `15.5`. In `ios/Podfile`, look for the line `platform :ios, min_ios_version_supported`. Change it to `platform :ios, '15.5'`.
 
 
 ### Android setup
 
-1. Edit your **app module** Gradle build script at `android/app/build.gradle`. Add this to **the end of the** file as an additional build task definition:
+1. Edit the app module's Gradle build script at `android/app/build.gradle`. Add this at the end of the file as an additional build task definition:
 
    ```groovy
    ...
@@ -85,7 +83,7 @@ The CodePush SDK is an open-source SDK. Bitrise actively participates in its mai
 1. Update your Application class at `android/app/src/main/java/…/MainApplication.kt` to hook into the CodePush runtime.
 
    ```kotlin
-   // 👉 Import the plugin class.
+   // 1. Import the plugin class.
    import com.microsoft.codepush.react.CodePush
 
    class MainApplication : Application(), ReactApplication {
@@ -97,21 +95,21 @@ The CodePush SDK is an open-source SDK. Bitrise actively participates in its mai
                   // Packages that cannot be autolinked yet can be added manually here, for example:
                   // add(MyReactNativePackage())
                },
-               // 👉 Set jsBundleFilePath to CodePush so CodePush resolves the JS bundle path
+               // 2. Set jsBundleFilePath to CodePush so CodePush resolves the JS bundle path
                // at startup (OTA update if available, fallback to bundled JS otherwise).
                jsBundleFilePath = CodePush.getJSBundleFile(),
          )
       }
    }
    ```
-1. In `android/app/src/main/res/values/strings.xml`, add your Bitrise project credentials to let the CodePush runtime know which deployment it should query for updates against.
+1. In `android/app/src/main/res/values/strings.xml`, add the CodePush deployment key and the CodePush server URL to let the CodePush runtime know which deployment it should query for updates against.
 
    ```xml
    <string name="CodePushDeploymentKey" translatable="false">...</string>
    <string name="CodePushServerUrl" translatable="false">https://<workspace-slug>.codepush.bitrise.io</string>
    ```
 
-   **Deployment key**: Copy value from Bitrise CodePush deployments page. You get the deployment key when creating the [CodePush deployment on Bitrise](/en/release-management/codepush/creating-a-codepush-deployment).
+   **Deployment key**: Copy the value from the Bitrise CodePush deployments page. You get the deployment key when creating the [CodePush deployment on Bitrise](/en/release-management/codepush/creating-a-codepush-deployment).
 
    **Workspace slug**: The server URL requires your Bitrise workspace slug: [Identifying Workspaces and apps with their slugs](/en/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs).
 
