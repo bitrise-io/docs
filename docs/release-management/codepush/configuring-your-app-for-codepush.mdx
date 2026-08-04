@@ -9,6 +9,63 @@ Configure the CodePush SDK in your React Native app to receive over-the-air upda
 
 The CodePush SDK is an open-source SDK. Bitrise actively participates in its maintenance to make sure it serves our customers' needs.
 
+## Configuring CodePush for Expo apps
+
+:::note[Continuous Native Generation]
+
+This guide is for projects which adopted Expo's [Continuous Native Generation](https://docs.expo.dev/workflow/continuous-native-generation/) feature.
+
+If you manually manage the native iOS and Android projects within your codebase (no Expo Prebuild), follow our [bare React Native setup](#configuring-codepush-for-bare-react-native-projects) instructions instead.
+
+:::
+
+
+1. Make sure your app's bundle ID and package name match the ones used while [creating the apps](/en/release-management/getting-started-with-release-management/adding-a-new-app-to-release-management) on Bitrise. In `app.json`, these are the `ios.bundleIdentifier` and `android.package` fields.
+1. Install the CodePush app SDK:
+
+   ```bash
+   npm install @code-push-next/react-native-code-push
+   ```
+1. Add the Expo CodePush plugin to `app.json`:
+
+     ```json
+     {
+        "plugins": [
+           // ...existing plugins
+           [
+              "@code-push-next/react-native-code-push/expo",
+              {
+                 "ios": {
+                    "CodePushDeploymentKey": "...",
+                    "CodePushServerURL": "https://<workspace-slug>.codepush.bitrise.io"
+                 },
+                 "android": {
+                    "CodePushDeploymentKey": "...",
+                    "CodePushServerURL": "https://<workspace-slug>.codepush.bitrise.io"
+                 }
+              }
+           ]
+        ]
+     }
+     ```
+
+   **Deployment key**: Copy the value from the Bitrise CodePush deployments page. You get the deployment key when creating the [CodePush deployment on Bitrise](/en/release-management/codepush/creating-a-codepush-deployment).
+
+   **Workspace slug**: The server URL requires your Bitrise workspace slug: [Identifying Workspaces and apps with their slugs](/en/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs).
+
+   :::note[Deployment keys are not secrets]
+
+   These end up as plain string values in final app builds. They are not secrets, but they are unique to your workspace and your CodePush deployment setup.
+
+   :::
+
+1. Verify configuration by running `npx expo prebuild`. You can manually verify the following generated files:
+   - `ios/<projectname>/Info.plist`: contains `CodePushDeploymentKey` and `CodePushServerURL` entries.
+   - `ios/<projectname>/AppDelegate.swift`: contains the `CodePush` import and `ReactNativeDelegate.bundleURL()` method override.
+   - `android/app/src/main/res/values/strings.xml`: contains `CodePushDeploymentKey` and `CodePushServerURL` entries.
+   - `android/app/src/main/java/.../MainApplication.kt`: `jsBundleFilePath` set to `CodePush.getJSBundleFile()`.
+
+
 ## Configuring CodePush for bare React Native projects
 
 These instructions cover React Native's New Architecture. On older React Native versions, follow the SDK's [iOS setup](https://github.com/bitrise-io/react-native-code-push/blob/master/docs/setup-ios.md) and [Android setup](https://github.com/bitrise-io/react-native-code-push/blob/master/docs/setup-android.md) guides instead — then come back to this page for the deployment key and server URL values.
@@ -125,59 +182,3 @@ These instructions cover React Native's New Architecture. On older React Native 
 
    :::
 
-
-## Configuring CodePush for Expo apps
-
-:::note[Continuous Native Generation]
-
-This guide is for projects which adopted Expo's [Continuous Native Generation](https://docs.expo.dev/workflow/continuous-native-generation/) feature.
-
-If you manually manage the native iOS and Android projects within your codebase (no Expo Prebuild), follow our [bare React Native setup](#configuring-codepush-for-bare-react-native-projects) instructions instead.
-
-:::
-
-
-1. Make sure your app's bundle ID and package name match the ones used while [creating the apps](/en/release-management/getting-started-with-release-management/adding-a-new-app-to-release-management) on Bitrise. In `app.json`, these are the `ios.bundleIdentifier` and `android.package` fields.
-1. Install the CodePush app SDK:
-
-   ```bash
-   npm install @code-push-next/react-native-code-push
-   ```
-1. Add the Expo CodePush plugin to `app.json`:
-
-     ```json
-     {
-        "plugins": [
-           // ...existing plugins
-           [
-              "@code-push-next/react-native-code-push/expo",
-              {
-                 "ios": {
-                    "CodePushDeploymentKey": "...",
-                    "CodePushServerURL": "https://<workspace-slug>.codepush.bitrise.io"
-                 },
-                 "android": {
-                    "CodePushDeploymentKey": "...",
-                    "CodePushServerURL": "https://<workspace-slug>.codepush.bitrise.io"
-                 }
-              }
-           ]
-        ]
-     }
-     ```
-
-   **Deployment key**: Copy the value from the Bitrise CodePush deployments page. You get the deployment key when creating the [CodePush deployment on Bitrise](/en/release-management/codepush/creating-a-codepush-deployment).
-
-   **Workspace slug**: The server URL requires your Bitrise workspace slug: [Identifying Workspaces and apps with their slugs](/en/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs).
-
-   :::note[Deployment keys are not secrets]
-
-   These end up as plain string values in final app builds. They are not secrets, but they are unique to your workspace and your CodePush deployment setup.
-
-   :::
-
-1. Verify configuration by running `npx expo prebuild`. You can manually verify the following generated files:
-   - `ios/<projectname>/Info.plist`: contains `CodePushDeploymentKey` and `CodePushServerURL` entries.
-   - `ios/<projectname>/AppDelegate.swift`: contains the `CodePush` import and `ReactNativeDelegate.bundleURL()` method override.
-   - `android/app/src/main/res/values/strings.xml`: contains `CodePushDeploymentKey` and `CodePushServerURL` entries.
-   - `android/app/src/main/java/.../MainApplication.kt`: `jsBundleFilePath` set to `CodePush.getJSBundleFile()`.
