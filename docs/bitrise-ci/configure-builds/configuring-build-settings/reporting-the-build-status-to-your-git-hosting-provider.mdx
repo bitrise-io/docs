@@ -159,9 +159,9 @@ You can use the following dynamic variables in your status reports:
 
 If a status report is set as a required check in your Git provider's branch protection rules, every pull request must produce that check before it can be merged. This is a problem for changes that don't need CI, such as a pull request that only edits documentation or Markdown files. If no build is triggered, no status is reported, and the required check stays pending, which blocks the merge.
 
-The solution is not to skip the trigger, because a skipped trigger reports nothing. Instead, trigger a Pipeline that skips all of its Workflows. A Workflow skipped by a [`run_if` expression](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#conditional-workflow-execution-in-a-pipeline) counts as successful, so the Pipeline finishes successfully and reports a green status. Skipped Workflows don't start a build machine, so this doesn't consume credits.
+Don't skip the build: a skipped build reports nothing. Instead, trigger a no-op Pipeline, where every Workflow is skipped by a [`run_if` expression](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#conditional-workflow-execution-in-a-pipeline). A skipped Workflow counts as successful, so the Pipeline finishes successfully and reports a green status. Skipped Workflows don't start a build machine, so this doesn't consume credits.
 
-Give the skip Pipeline the same `status_report_name` as your real CI check, so both satisfy the same required check:
+Give the no-op Pipeline the same [`status_report_name`](/en/bitrise-ci/references/configuration-yaml-reference#pipelinespipeline-idstatus_report_name) as your real CI check, so both satisfy the same required check:
 
 ```yaml
 pipelines:
@@ -186,14 +186,15 @@ pipelines:
         run_if:
           expression: "false"
 workflows:
-  build: {}
+  build:
+    steps: []
   no-op:
     steps: []
 ```
 
-Because both Pipelines report under the name `ci`, a single required check named `ci` is satisfied either way: the real Pipeline reports it on code changes, and the skip Pipeline reports it as successful on documentation-only changes.
+Because both Pipelines report under the name `ci`, a single required check named `ci` is satisfied either way: the real Pipeline reports it on code changes, and the no-op Pipeline reports it as successful on documentation-only changes.
 
-:::note[Scope your triggers]
+:::caution[Scope your triggers]
 
 Scope your Pipelines with `changed_files` so that each pull request triggers the intended Pipeline. A `changed_files` condition matches when any changed file matches its pattern. If no trigger matches a pull request, no build runs and the required check is not reported.
 
