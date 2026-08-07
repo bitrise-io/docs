@@ -155,48 +155,55 @@ You can use the following dynamic variables in your status reports:
 | `event_type` | Represents the type of event that triggered the status report. The possible values are:  - `pr`: pull request (GitHub, Bitbucket) - `mr`: merge request (GitLab) - `push`: code push (GitLab, GitHub, Bitbucket - `tag`: Git tag (GitLab, GitHub, Bitbucket) |
 
 
-## Passing a required check without running a build
+## Passing a required check on documentation-only pull requests
 
 If a status report is set as a required check in your Git provider's branch protection rules, every pull request must produce that check before it can be merged. This is a problem for changes that don't need CI, such as a pull request that only edits documentation or Markdown files. If no build is triggered, no status is reported, and the required check stays pending, which blocks the merge.
 
-Don't skip the build: a skipped build reports nothing. Instead, trigger a no-op Pipeline, where every Workflow is skipped by a [`run_if` expression](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#conditional-workflow-execution-in-a-pipeline). A skipped Workflow counts as successful, so the Pipeline finishes successfully and reports a green status. Skipped Workflows don't start a build machine, so this doesn't consume credits.
-
-Give the no-op Pipeline the same [`status_report_name`](/en/bitrise-ci/references/configuration-yaml-reference#pipelinespipeline-idstatus_report_name) as your real CI check, so both satisfy the same required check:
+Don't skip the build, because a skipped build reports nothing. Instead, run a single Pipeline on every pull request and let it decide whether to run your build. A first `gate` Workflow inspects the changed files and shares a [Pipeline variable](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#sharing-env-vars-between-workflows), and your `build` Workflow reads it in a [`run_if` expression](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#conditional-workflow-execution-in-a-pipeline). On a documentation-only change the `build` Workflow is skipped, and because a skipped Workflow counts as successful, the Pipeline finishes successfully and reports a green status.
 
 ```yaml
 pipelines:
-  # Your real CI Pipeline. Scope it so documentation-only changes don't trigger it.
   ci:
     status_report_name: ci
     triggers:
       pull_request:
-      - changed_files: "app/**/*"
+      - source_branch: "*"
     workflows:
-      build: {}
-
-  # Documentation-only pull requests trigger this Pipeline. It reports the same
-  # ci check, but every Workflow is skipped, so no build machine starts.
-  docs-only:
-    status_report_name: ci
-    triggers:
-      pull_request:
-      - changed_files: "**/*.md"
-    workflows:
-      no-op:
+      gate: {}
+      build:
+        depends_on: [gate]
         run_if:
-          expression: "false"
+          expression: '{{ enveq "RUN_BUILD" "true" }}'
 workflows:
+  gate:
+    steps:
+    - git-clone@8: {}
+    - script@1:
+        title: Detect documentation-only change
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -uo pipefail
+            DEST="${BITRISEIO_GIT_BRANCH_DEST:-main}"
+            git fetch -q origin "$DEST" || true
+            CHANGED="$(git diff --name-only "origin/${DEST}...HEAD")"
+            NONDOCS="$(printf '%s\n' "$CHANGED" | grep -vE '(\.md$|^$)' || true)"
+            if [ -n "$CHANGED" ] && [ -z "$NONDOCS" ]; then RUN_BUILD=false; else RUN_BUILD=true; fi
+            envman add --key RUN_BUILD --value "$RUN_BUILD"
+    - share-pipeline-variable@1:
+        inputs:
+        - variables: RUN_BUILD
   build:
-    steps: []
-  no-op:
-    steps: []
+    steps:
+    - git-clone@8: {}
+    # ... your build and test Steps ...
 ```
 
-Because both Pipelines report under the name `ci`, a single required check named `ci` is satisfied either way: the real Pipeline reports it on code changes, and the no-op Pipeline reports it as successful on documentation-only changes.
+On a documentation-only pull request the `gate` Workflow sets `RUN_BUILD` to `false`, the `build` Workflow is skipped, and the `ci` check reports success. On any pull request that changes code, `build` runs and the `ci` check reports its real result. The `gate` Workflow starts a build machine for a few seconds on every pull request, so this consumes a small amount of credits.
 
-:::caution[Scope your triggers]
+:::warning[Don't report the same check from two Pipelines]
 
-Scope your Pipelines with `changed_files` so that each pull request triggers the intended Pipeline. A `changed_files` condition matches when any changed file matches its pattern. If no trigger matches a pull request, no build runs and the required check is not reported.
+It's tempting to route documentation-only changes to a separate no-op Pipeline that shares the same `status_report_name` as your real CI Pipeline. This is only safe if a pull request can never contain both documentation and code changes. A `changed_files` condition matches when any changed file matches its pattern, so a pull request that touches both a Markdown file and a code file triggers both Pipelines. Both then report the same check on the same commit, and the successful no-op report can override the real build's result, which lets a failing build merge. Use the single-Pipeline approach above so that exactly one report is sent for the required check.
 
 :::
 
