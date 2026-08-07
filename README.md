@@ -1,5 +1,13 @@
 # Bitrise Documentation
 
+# How to contribute
+1. Check CLAUDE.md for contribution related guidance.
+2. Use Claude for your changes as the repository has been optimized for agentic work.
+3. Once you are done, **open a PR.**
+4. Once your PR's CI build succeeds, **you'll get a review environment preview URL for testing**.
+5. **Docs owners will be automatically added to your PR**, but feel free to ping us in #team-tech-writers on Slack to get more attention.
+6. Once your PR is approved, feel free to merge.
+
 Welcome to the public repository for Bitrise product documentation.
 
 ## Status
