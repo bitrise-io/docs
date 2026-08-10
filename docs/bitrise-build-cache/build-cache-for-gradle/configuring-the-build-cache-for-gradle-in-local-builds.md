@@ -56,7 +56,7 @@ The wizard asks for the following:
 
 - **Sign in to Bitrise**: opens your browser for authentication on the first run. The CLI stores the credentials in the OS keychain and refreshes them automatically, so later runs skip this step. On a machine without a usable keychain, the CLI falls back to storing them in a config file.
 - **Select a workspace**: pick the workspace whose Build Cache you want to use. The CLI selects it automatically if you only have access to one.
-- **Which build tools should I set up**: select **Gradle**, plus **ccache (C/C++)** if your project builds native code. Use space to toggle an option and enter to confirm.
+- **Which build tools should I set up**: ensure **Gradle** is selected, plus **ccache (C/C++)** if your project builds native code. Use space to toggle an option and enter to confirm.
 - **Display name for this machine's local invocations**: the name your local builds show up under in the Build Cache dashboard, for example `local-<yourhandle>`.
 - **Enable cache push**: select **No, pull only**. See [Local builds only read from the cache](#local-builds-only-read-from-the-cache).
 - **Keep the cache proxies running in the background**: select **Yes, install + start** if you set up `ccache`. This registers the helper processes with the OS so they survive shell restarts.
