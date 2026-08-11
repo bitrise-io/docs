@@ -195,93 +195,101 @@ The [CodePush JS API reference](https://github.com/bitrise-io/react-native-code-
 
 :::
 
-You can set this up in several ways:
+You can set this up in several ways.
 
-- **Silent sync on app start** (the simplest, default behavior). Your app automatically downloads available updates and applies them the next time it restarts. This way, the entire update experience is silent to the end user, since they don't see any update dialog.
+### Silent sync on app start
 
-    ```javascript
-    import { useEffect } from "react";
-    import codePush from "react-native-code-push";
+The simplest, default behavior. Your app automatically downloads available updates and applies them the next time it restarts. This way, the entire update experience is silent to the end user, since they don't see any update dialog.
 
-    function App() {
-        useEffect(() => {
-            // Fully silent update which keeps the app in
-            // sync with the server, without ever
-            // interrupting the end user
-            codePush.sync();
-        }, []);
+```javascript
+import { useEffect } from "react";
+import codePush from "react-native-code-push";
 
-        return <YourAppContent />;
-    }
-    ```
+function App() {
+    useEffect(() => {
+        // Fully silent update which keeps the app in
+        // sync with the server, without ever
+        // interrupting the end user
+        codePush.sync();
+    }, []);
 
-- **Silent sync every time the app resumes**. Same as the previous, except the app checks for updates, or applies an update if one exists every time the app returns to the foreground.
+    return <YourAppContent />;
+}
+```
 
-    ```javascript
-    import { useEffect } from "react";
-    import { AppState } from "react-native";
-    import codePush from "react-native-code-push";
+### Silent sync every time the app resumes
 
-    function App() {
-        useEffect(() => {
-            const syncOptions = {
-               installMode: codePush.InstallMode.ON_NEXT_RESUME,
-            };
-            codePush.sync(syncOptions);
+Same as the previous, except the app checks for updates, or applies an update if one exists every time the app returns to the foreground.
 
-            const subscription = AppState.addEventListener("change", (newState) => {
-                if (newState === "active") {
-                    codePush.sync(syncOptions);
-                }
-            });
+```javascript
+import { useEffect } from "react";
+import { AppState } from "react-native";
+import codePush from "react-native-code-push";
 
-            return () => subscription.remove();
-        }, []);
+function App() {
+    useEffect(() => {
+        const syncOptions = {
+           installMode: codePush.InstallMode.ON_NEXT_RESUME,
+        };
+        codePush.sync(syncOptions);
 
-        return <YourAppContent />;
-    }
-    ```
+        const subscription = AppState.addEventListener("change", (newState) => {
+            if (newState === "active") {
+                codePush.sync(syncOptions);
+            }
+        });
 
-- **Interactive**. When an update is available, prompt the end user for permission before downloading it, and then immediately apply the update. If an update sets the `mandatory` flag, the end user is still notified about the update, but they don't have the choice to ignore it.
+        return () => subscription.remove();
+    }, []);
 
-    ```javascript
-    import { useEffect } from "react";
-    import codePush from "react-native-code-push";
+    return <YourAppContent />;
+}
+```
 
-    function App() {
-        useEffect(() => {
-            // Active update, which lets the end user know
-            // about each update, and displays it to them
-            // immediately after downloading it
-            codePush.sync({
-               updateDialog: true,
-               installMode: codePush.InstallMode.IMMEDIATE
-            });
-        }, []);
+### Interactive
 
-        return <YourAppContent />;
-    }
-    ```
+When an update is available, prompt the end user for permission before downloading it, and then immediately apply the update. If an update sets the `mandatory` flag, the end user is still notified about the update, but they don't have the choice to ignore it.
 
-- **Log/display progress**. Pass the `syncStatusChangedCallback` and/or `downloadProgressCallback` arguments to `sync` to log the different stages of the process, or even display a progress bar to the user.
+```javascript
+import { useEffect } from "react";
+import codePush from "react-native-code-push";
 
-    ```javascript
-    import { useEffect, useState } from "react";
-    import codePush from "react-native-code-push";
+function App() {
+    useEffect(() => {
+        // Active update, which lets the end user know
+        // about each update, and displays it to them
+        // immediately after downloading it
+        codePush.sync({
+           updateDialog: true,
+           installMode: codePush.InstallMode.IMMEDIATE
+        });
+    }, []);
 
-    function App() {
-        const [status, setStatus] = useState(null);
+    return <YourAppContent />;
+}
+```
 
-        useEffect(() => {
-            codePush.sync(
-                {},
-                (syncStatus) => setStatus(syncStatus),
-                ({ receivedBytes, totalBytes }) => {
-                    console.log(`${receivedBytes} of ${totalBytes} received.`);
-                }
-            );
-        }, []);
+### Log/display progress
 
-        return <YourAppContent status={status} />;
-    }
-    ```
+Pass the `syncStatusChangedCallback` and/or `downloadProgressCallback` arguments to `sync` to log the different stages of the process, or even display a progress bar to the user.
+
+```javascript
+import { useEffect, useState } from "react";
+import codePush from "react-native-code-push";
+
+function App() {
+    const [status, setStatus] = useState(null);
+
+    useEffect(() => {
+        codePush.sync(
+            {},
+            (syncStatus) => setStatus(syncStatus),
+            ({ receivedBytes, totalBytes }) => {
+                console.log(`${receivedBytes} of ${totalBytes} received.`);
+            }
+        );
+    }, []);
+
+    return <YourAppContent status={status} />;
+}
+```
