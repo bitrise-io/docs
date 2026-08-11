@@ -73,6 +73,14 @@ To create the token on GitHub:
 
 Create a machine pool that allows running GitHub Action builds on Bitrise hardware. The process is slightly different based on whether you use [a GitHub app](/en/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview#authentication) or a [GitHub personal access token](/en/bitrise-build-hub/build-hub-for-github-actions/configuring-build-hub-for-github-actions#creating-github-personal-access-tokens-for-build-hub) for authentication.
 
+:::important[Public repositories]
+
+If you plan to run builds for a public repository, the runner group your machine pool registers into must have **Allow public repositories** enabled on GitHub (**Organization settings** → **Actions** → **Runner groups**). Without this, GitHub won't dispatch jobs from public repositories to your Build Hub runners: jobs stay queued indefinitely even though the pool, labels, and authentication are all healthy.
+
+**Enable this setting at your own risk.** GitHub disables it by default for a serious security reason: fork PR workflows on public repositories can execute untrusted code from external contributors on your self-hosted Build Hub runners, exposing your build environment, secrets, and infrastructure. Before enabling, require approval for workflows on fork PRs at a minimum. See [Approving workflow runs from public forks](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/approve-workflow-runs-from-public-forks) in the GitHub docs.
+
+:::
+
 <Tabs>
 <TabItem value="github-app-authentication" label="GitHub app authentication" default>
 
