@@ -64,6 +64,7 @@ If you manually manage the native iOS and Android projects within your codebase 
    - `ios/<projectname>/AppDelegate.swift`: contains the `CodePush` import and `ReactNativeDelegate.bundleURL()` method override.
    - `android/app/src/main/res/values/strings.xml`: contains `CodePushDeploymentKey` and `CodePushServerURL` entries.
    - `android/app/src/main/java/.../MainApplication.kt`: `jsBundleFilePath` set to `CodePush.getJSBundleFile()`.
+1. Initialize the update check in your app's root component: [Customizing the update lifecycle](#customizing-the-update-lifecycle).
 
 
 ## Configuring CodePush for bare React Native projects
@@ -76,8 +77,8 @@ These instructions cover React Native's New Architecture. On older React Native 
    npm install @code-push-next/react-native-code-push
    ```
 1. Set up the CodePush iOS SDK in your project: [iOS setup](#ios-setup).
-
 1. Set up the CodePush Android SDK in your project: [Android setup](#android-setup).
+1. Initialize the update check in your app's root component: [Customizing the update lifecycle](#customizing-the-update-lifecycle).
 
 ### iOS setup
 
@@ -182,3 +183,113 @@ These instructions cover React Native's New Architecture. On older React Native 
 
    :::
 
+## Customizing the update lifecycle
+
+After you complete the configuration steps, CodePush hooks into the app's lifecycle and can load an updated bundle instead of the one packaged into the app.
+
+Customize when and how updates are installed by calling `codePush.sync()` from your app's root component. The SDK provides several options to customize the update experience.
+
+:::note[API reference]
+
+The [CodePush JS API reference](https://github.com/bitrise-io/react-native-code-push/blob/master/docs/api-js.md) lists all options and parameters.
+
+:::
+
+You can set this up in several ways.
+
+### Silent sync on app start
+
+The simplest, default behavior. Your app automatically downloads available updates and applies them the next time it restarts. This way, the entire update experience is silent to the end user, since they don't see any update dialog.
+
+```javascript
+import { useEffect } from "react";
+import codePush from "react-native-code-push";
+
+function App() {
+    useEffect(() => {
+        // Fully silent update which keeps the app in
+        // sync with the server, without ever
+        // interrupting the end user
+        codePush.sync();
+    }, []);
+
+    return <YourAppContent />;
+}
+```
+
+### Silent sync every time the app resumes
+
+Same as the previous, except the app checks for updates, or applies an update if one exists every time the app returns to the foreground.
+
+```javascript
+import { useEffect } from "react";
+import { AppState } from "react-native";
+import codePush from "react-native-code-push";
+
+function App() {
+    useEffect(() => {
+        const syncOptions = {
+           installMode: codePush.InstallMode.ON_NEXT_RESUME,
+        };
+        codePush.sync(syncOptions);
+
+        const subscription = AppState.addEventListener("change", (newState) => {
+            if (newState === "active") {
+                codePush.sync(syncOptions);
+            }
+        });
+
+        return () => subscription.remove();
+    }, []);
+
+    return <YourAppContent />;
+}
+```
+
+### Interactive
+
+When an update is available, prompt the end user for permission before downloading it, and then immediately apply the update. If an update sets the `mandatory` flag, the end user is still notified about the update, but they don't have the choice to ignore it.
+
+```javascript
+import { useEffect } from "react";
+import codePush from "react-native-code-push";
+
+function App() {
+    useEffect(() => {
+        // Active update, which lets the end user know
+        // about each update, and displays it to them
+        // immediately after downloading it
+        codePush.sync({
+           updateDialog: true,
+           installMode: codePush.InstallMode.IMMEDIATE
+        });
+    }, []);
+
+    return <YourAppContent />;
+}
+```
+
+### Log/display progress
+
+Pass the `syncStatusChangedCallback` and/or `downloadProgressCallback` arguments to `sync` to log the different stages of the process, or even display a progress bar to the user.
+
+```javascript
+import { useEffect, useState } from "react";
+import codePush from "react-native-code-push";
+
+function App() {
+    const [status, setStatus] = useState(null);
+
+    useEffect(() => {
+        codePush.sync(
+            {},
+            (syncStatus) => setStatus(syncStatus),
+            ({ receivedBytes, totalBytes }) => {
+                console.log(`${receivedBytes} of ${totalBytes} received.`);
+            }
+        );
+    }, []);
+
+    return <YourAppContent status={status} />;
+}
+```
