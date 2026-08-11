@@ -206,6 +206,16 @@
       },
       "type": "object"
     },
+    "v1GetGitProviderIntegrationResponse": {
+      "description": "GetGitProviderIntegrationResponse carries the integration state.",
+      "properties": {
+        "integration": {
+          "$ref": "#/definitions/v1GitProviderIntegration",
+          "description": "The integration state."
+        }
+      },
+      "type": "object"
+    },
     "v1GetMeResponse": {
       "description": "GetMeResponse is the response containing the current authenticated user.",
       "properties": {
@@ -263,9 +273,50 @@
     "v1GetWorkspaceInfoResponse": {
       "description": "GetWorkspaceInfoResponse carries workspace-level capabilities the UI uses to\ntailor what it shows.",
       "properties": {
+        "gitProviderIntegrationAvailable": {
+          "description": "Whether the git provider integration feature is enabled for this workspace\n(rollout feature flag). Gates the integration section in the UI.",
+          "type": "boolean"
+        },
         "isFreeTrial": {
           "description": "Whether the workspace is on a free trial. Free-trial sessions are pinned to\nan 8-hour auto-terminate window that cannot be changed.",
           "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "v1GitProviderConnectionStatus": {
+      "default": "GIT_PROVIDER_CONNECTION_STATUS_UNSPECIFIED",
+      "description": "GitProviderConnectionStatus mirrors the monolith-side status of the user's\nconnected git provider account.\n\n - GIT_PROVIDER_CONNECTION_STATUS_UNSPECIFIED: Unknown status.\n - GIT_PROVIDER_CONNECTION_STATUS_NOT_CONNECTED: The user has never connected an account for this provider.\n - GIT_PROVIDER_CONNECTION_STATUS_CONNECTED: The user has a usable connection.\n - GIT_PROVIDER_CONNECTION_STATUS_ERROR: A connection exists but is unusable (grant revoked or token refresh failed);\nthe user must reconnect on the Bitrise connected-accounts page.",
+      "enum": [
+        "GIT_PROVIDER_CONNECTION_STATUS_UNSPECIFIED",
+        "GIT_PROVIDER_CONNECTION_STATUS_NOT_CONNECTED",
+        "GIT_PROVIDER_CONNECTION_STATUS_CONNECTED",
+        "GIT_PROVIDER_CONNECTION_STATUS_ERROR"
+      ],
+      "type": "string"
+    },
+    "v1GitProviderIntegration": {
+      "description": "GitProviderIntegration describes the state of the user's git provider\nintegration: the Bitrise-side connection status plus the RDE-side opt-in.",
+      "properties": {
+        "accountName": {
+          "description": "Provider-side account name (for example, the GitHub login). Empty unless connected.",
+          "type": "string"
+        },
+        "accountUrl": {
+          "description": "Provider-side account URL. Empty unless connected.",
+          "type": "string"
+        },
+        "connectionStatus": {
+          "$ref": "#/definitions/v1GitProviderConnectionStatus",
+          "description": "Status of the user's connected account on the Bitrise connected-accounts page."
+        },
+        "enabled": {
+          "description": "Whether the user opted in to automatic git credential injection into their sessions.",
+          "type": "boolean"
+        },
+        "provider": {
+          "description": "Git provider name (currently \"github-app\").",
+          "type": "string"
         }
       },
       "type": "object"
@@ -1326,6 +1377,16 @@
       },
       "type": "object"
     },
+    "v1UpdateGitProviderIntegrationResponse": {
+      "description": "UpdateGitProviderIntegrationResponse carries the integration state after the update.",
+      "properties": {
+        "integration": {
+          "$ref": "#/definitions/v1GitProviderIntegration",
+          "description": "The integration state after the update."
+        }
+      },
+      "type": "object"
+    },
     "v1UpdateSavedInputResponse": {
       "description": "UpdateSavedInputResponse is the response for updating a saved input.",
       "properties": {
@@ -1432,6 +1493,73 @@
     "version": "1.0.0"
   },
   "paths": {
+    "/v1/git-provider-integrations/{provider}": {
+      "get": {
+        "description": "Returns the current user's git provider integration state.",
+        "operationId": "CodespacesService_GetGitProviderIntegration",
+        "parameters": [
+          {
+            "description": "Git provider name. Currently only \"github-app\" is supported. Supplied via the URL path.",
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetGitProviderIntegrationResponse"
+            }
+          }
+        },
+        "summary": "Get git provider integration",
+        "tags": [
+          "User"
+        ]
+      },
+      "put": {
+        "description": "Enables or disables automatic git credential injection into the current user's sessions.",
+        "operationId": "CodespacesService_UpdateGitProviderIntegration",
+        "parameters": [
+          {
+            "description": "Git provider name. Currently only \"github-app\" is supported. Supplied via the URL path.",
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "UpdateGitProviderIntegrationRequest enables or disables the integration for\nthe current user.",
+              "properties": {
+                "enabled": {
+                  "description": "Whether automatic git credential injection into sessions should be enabled.",
+                  "type": "boolean"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateGitProviderIntegrationResponse"
+            }
+          }
+        },
+        "summary": "Update git provider integration",
+        "tags": [
+          "User"
+        ]
+      }
+    },
     "/v1/me": {
       "get": {
         "description": "Returns the currently authenticated user.",
