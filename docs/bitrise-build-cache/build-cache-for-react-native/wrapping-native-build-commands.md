@@ -1,6 +1,6 @@
 ---
 title: "Wrapping native build commands"
-sidebar_position: 4
+sidebar_position: 5
 ---
 
 After activation, prefix every command that triggers a *native* build with `bitrise-build-cache react-native run`. The wrapper:

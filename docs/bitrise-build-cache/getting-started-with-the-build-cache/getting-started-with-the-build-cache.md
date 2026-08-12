@@ -1,12 +1,12 @@
 ---
 title: "Getting started with the Build Cache"
-description: "The [Bitrise Build Cache](https://bitrise.io/platform/devops/build-caching) is a fully managed caching solution that reduces CI build durations for applications built with Gradle and Bazel build systems. It specifically caches build and test outputs to minimize how much work is done in subsequent builds, making it more efficient in environments with frequent updates. Compatible with any CI tool, it accelerates the build cycle without requiring you to manage a caching infrastructure."
+description: "The [Bitrise Build Cache](https://bitrise.io/platform/devops/build-caching) is a fully managed caching solution that reduces CI build durations for applications built with Gradle, Bazel, Xcode, and React Native. It specifically caches build and test outputs to minimize how much work is done in subsequent builds, making it more efficient in environments with frequent updates. Compatible with any CI tool, it accelerates the build cycle without requiring you to manage a caching infrastructure."
 sidebar_position: 1
 slug: /bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache
 sidebar_label: Getting started
 ---
 
-The [Bitrise Build Cache](https://bitrise.io/platform/devops/build-caching) is a fully managed caching solution that reduces CI build durations for applications built with Gradle, Bazel, and Xcode. It specifically caches build and test outputs to minimize how much work is done in subsequent builds, making it more efficient in environments with frequent updates. Compatible with any CI tool, it accelerates the build cycle without requiring you to manage a caching infrastructure.
+The [Bitrise Build Cache](https://bitrise.io/platform/devops/build-caching) is a fully managed caching solution that reduces CI build durations for applications built with Gradle, Bazel, Xcode, and React Native. It specifically caches build and test outputs to minimize how much work is done in subsequent builds, making it more efficient in environments with frequent updates. Compatible with any CI tool, it accelerates the build cycle without requiring you to manage a caching infrastructure.
 
 :::tip[Try it for free]
 
@@ -16,18 +16,35 @@ We offer a 30-day free trial at no cost; you don't even need to provide payment 
 
 :::
 
-Bitrise supports remote build caching for the following build systems:
+Bitrise supports remote build caching for the Gradle, Bazel, Xcode, and React Native build systems. Follow the guide that matches your build system and the environment you want to set the Build Cache up in.
+
+## Setting up on Bitrise CI
 
 - [Build Cache for Gradle](/en/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-the-bitrise-ci-environment).
 - [Build Cache for Bazel](/en/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-the-bitrise-ci-environment).
 - [Build Cache for Xcode](/en/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-the-bitrise-ci-environment).
+- [Build Cache for React Native](/en/bitrise-build-cache/build-cache-for-react-native/configuring-the-build-cache-for-react-native-in-the-bitrise-ci-environment).
+
+## Setting up on other CIs
+
+- [Build Cache for Gradle](/en/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-other-ci-environments).
+- [Build Cache for Bazel](/en/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-other-ci-environments).
+- [Build Cache for Xcode](/en/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-non-bitrise-ci-environments).
+- [Build Cache for React Native](/en/bitrise-build-cache/build-cache-for-react-native/configuring-the-build-cache-for-react-native-in-non-bitrise-ci-environments).
+
+## Setting up in a local dev environment
+
+- [Build Cache for Gradle](/en/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-local-builds).
+- [Build Cache for Bazel](/en/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-local-builds).
+- [Build Cache for Xcode](/en/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-local-builds).
+- [Build Cache for React Native](/en/bitrise-build-cache/build-cache-for-react-native/configuring-the-build-cache-for-react-native-in-local-builds).
 
 ## Adding a new connection to the Build Cache
 
 To start using the Bitrise Build Cache, you have to add a new connection. The process consists of:
 
 - Selecting a CI provider: you can use either Bitrise or another CI provider.
-- Selecting a build tool: currently, Bazel, Gradle, and Xcode are supported.
+- Selecting a build tool: currently, Bazel, Gradle, Xcode, and React Native are supported.
 - If you use Bitrise as your CI provider, selecting a Bitrise project.
 - If you use a different CI provider, adding [a personal access token](/en/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token) to allow the Bitrise Build Cache access to your CI.
 - Adding the cache activation scripts to your CI process. On Bitrise, we have dedicated [Steps](/en/bitrise-ci/workflows-and-pipelines/steps/steps-overview) for this.
@@ -39,13 +56,3 @@ To add a new connection:
 
    ![cache-new-connection.png](/img/_paligo/uuid-bdbb02c7-b8e7-bf04-fb52-7cacd2231760.png)
 1. Follow the instructions.
-
-   :::tip[Detailed instructions]
-
-   For more information on configuring the Build Cache, refer to our dedicated guides:
-
-   - [Build Cache for Gradle](/en/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-the-bitrise-ci-environment).
-   - [Build Cache for Bazel](/en/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-the-bitrise-ci-environment).
-   - [Build Cache for Xcode](/en/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-the-bitrise-ci-environment).
-
-   :::

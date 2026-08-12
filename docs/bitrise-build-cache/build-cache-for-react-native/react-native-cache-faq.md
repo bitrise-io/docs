@@ -1,6 +1,6 @@
 ---
 title: "React Native Cache FAQ"
-sidebar_position: 5
+sidebar_position: 6
 ---
 
 ## What exactly gets cached?
