@@ -54,12 +54,12 @@ bitrise-build-cache activate --interactive
 
 The wizard asks for the following:
 
-- **Sign in to Bitrise**: opens your browser for authentication on the first run. The CLI stores the credentials in the OS keychain and refreshes them automatically, so later runs skip this step. On a machine without a usable keychain, the CLI falls back to storing them in a config file.
-- **Select a workspace**: pick the workspace whose Build Cache you want to use. The CLI selects it automatically if you only have access to one.
-- **Which build tools should I set up**: ensure **Gradle** is selected, plus **ccache (C/C++)** if your project builds native code. Use space to toggle an option and enter to confirm.
-- **Display name for this machine's local invocations**: the name your local builds show up under in the Build Cache dashboard, for example `local-<yourhandle>`.
-- **Enable cache push**: select **No, pull only**. See [Local builds only read from the cache](#local-builds-only-read-from-the-cache).
-- **Keep the cache proxies running in the background**: select **Yes, install + start** if you set up `ccache`. This registers the helper processes with the OS so they survive shell restarts.
+1. **Sign in to Bitrise**: opens your browser for authentication on the first run. The CLI stores the credentials in the OS keychain and refreshes them automatically, so later runs skip this step. On a machine without a usable keychain, the CLI falls back to storing them in a config file.
+1. **Select a workspace**: pick the workspace whose Build Cache you want to use. The CLI selects it automatically if you only have access to one.
+1. **Which build tools should I set up**: ensure **Gradle** is selected, plus **ccache (C/C++)** if your project builds native code. Use space to toggle an option and enter to confirm.
+1. **Display name for this machine's local invocations**: the name your local builds show up under in the Build Cache dashboard, for example `local-<yourhandle>`.
+1. **Enable cache push**: select **No, pull only**. See [Local builds only read from the cache](#local-builds-only-read-from-the-cache).
+1. **Keep the cache proxies running in the background**: select **Yes, install + start** if you set up `ccache`. This registers the helper processes with the OS so they survive shell restarts.
 
 :::note[Environment Variables take precedence]
 
@@ -96,13 +96,18 @@ To let the CLI repair the issues it can fix on its own, run `bitrise-build-cache
 
 ## Running a build
 
-Clean the project's local build outputs first, so the build has to fetch from the remote cache. Pass `--no-daemon` as well: a Gradle daemon started before the activation doesn't pick up the new configuration.
+1. Clean the project's local build outputs first, so the build has to fetch from the remote cache. Pass `--no-daemon` as well: a Gradle daemon started before the activation doesn't pick up the new configuration.
 
-```bash
-cd path/to/your/gradle/project
-./gradlew clean --no-daemon
-./gradlew :app:assembleDebug
-```
+   ```bash
+   cd path/to/your/gradle/project
+   ./gradlew clean --no-daemon
+   ```
+
+1. Run the build:
+
+   ```bash
+   ./gradlew :app:assembleDebug
+   ```
 
 A build that hits a warm cache ends like this:
 
@@ -129,7 +134,7 @@ BUILD SUCCESSFUL in 18s
 
 ## Local builds only read from the cache
 
-The setup above activates the Build Cache in pull-only mode: your local builds read from the shared cache but never write to it. This is the recommended mode for local development.
+The setup in this guide activates the Build Cache in pull-only mode: your local builds read from the shared cache but never write to it. This is the recommended mode for local development.
 
 Build tools recommend writing cache entries only from an environment where the source files don't change during the build. On a local machine you might keep editing files while a build is running, which can produce cache entries that don't match their inputs — and those entries would then be served to your teammates and to CI. Pull-only removes that risk: a broken local build can't affect anyone else.
 
@@ -153,9 +158,11 @@ If a build doesn't behave as expected, re-run the activation with debug logging:
 bitrise-build-cache activate gradle --cache --cache-push --debug
 ```
 
-The trade-off is the one described above: an entry written from a build whose source files changed while it was running can be wrong, and your teammates read the same entry. Avoid editing files during a build you push from.
+:::note
+An entry written from a build whose source files changed while it was running can be wrong, and your teammates read the same entry. Avoid editing files during a build you push from.
 
 Setting up the Build Cache on CI is the more robust option, because CI builds from a clean, fixed checkout. Once it runs there, switch your machine back to pull-only.
+:::
 
 ## Troubleshooting
 
@@ -165,9 +172,11 @@ Start with the CLI's health check. It inspects every part of the local setup and
 bitrise-build-cache doctor --fix --interactive
 ```
 
-If that doesn't sort it out:
+If you're still experiencing issues, check the following table:
 
-- The wizard reports that it needs a terminal: run `TERM=dumb bitrise-build-cache activate --interactive` for line-based mode.
-- `doctor` reports a problem it can't fix: re-run it with `--debug` for the full context.
-- Your build ignores the new configuration: stop any running Gradle daemons with `./gradlew --stop`, or pass `--no-daemon`.
-- You want to start over: it's safe to re-run the wizard. It re-reads the current state and applies the same activation again.
+| Issue | Fix |
+|---|---|
+| The wizard reports that it needs a terminal | Run `TERM=dumb bitrise-build-cache activate --interactive` for line-based mode. |
+| `doctor` reports a problem it can't fix | Re-run it with `--debug` for the full context. |
+| Your build ignores the new configuration | Stop any running Gradle daemons with `./gradlew --stop`, or pass `--no-daemon`. |
+| You want to start over | It's safe to re-run the wizard. It re-reads the current state and applies the same activation again. |

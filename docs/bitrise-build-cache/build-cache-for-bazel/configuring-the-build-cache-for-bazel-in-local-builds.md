@@ -58,11 +58,11 @@ bitrise-build-cache activate --interactive
 
 The wizard asks for the following:
 
-- **Sign in to Bitrise**: opens your browser for authentication on the first run. The CLI stores the credentials in the OS keychain and refreshes them automatically, so later runs skip this step. On a machine without a usable keychain, the CLI falls back to storing them in a config file.
-- **Select a workspace**: pick the workspace whose Build Cache you want to use. The CLI selects it automatically if you only have access to one.
-- **Which build tools should I set up**: ensure **Bazel** is selected. Use space to toggle an option and enter to confirm.
-- **Display name for this machine's local invocations**: the name your local builds show up under in the Build Cache dashboard, for example `local-<yourhandle>`.
-- **Enable cache push**: select **No, pull only**. See [Local builds only read from the cache](#local-builds-only-read-from-the-cache).
+1. **Sign in to Bitrise**: opens your browser for authentication on the first run. The CLI stores the credentials in the OS keychain and refreshes them automatically, so later runs skip this step. On a machine without a usable keychain, the CLI falls back to storing them in a config file.
+1. **Select a workspace**: pick the workspace whose Build Cache you want to use. The CLI selects it automatically if you only have access to one.
+1. **Which build tools should I set up**: ensure **Bazel** is selected. Use space to toggle an option and enter to confirm.
+1. **Display name for this machine's local invocations**: the name your local builds show up under in the Build Cache dashboard, for example `local-<yourhandle>`.
+1. **Enable cache push**: select **No, pull only**. See [Local builds only read from the cache](#local-builds-only-read-from-the-cache).
 
 The non-interactive equivalent, once you have signed in:
 
@@ -139,13 +139,18 @@ To let the CLI repair the issues it can fix on its own, run `bitrise-build-cache
 
 ## Running a build
 
-Run `bazel clean` first. Bazel's local action cache sits in front of the remote cache, so if a target is already built locally, Bazel serves it from disk and never contacts Bitrise - and you see no evidence that the remote cache works.
+1. Run `bazel clean` first. Bazel's local action cache sits in front of the remote cache, so if a target is already built locally, Bazel serves it from disk and never contacts Bitrise - and you see no evidence that the remote cache works.
 
-```bash
-cd path/to/your/bazel/project
-bazel clean
-bazel build //your/target:name
-```
+   ```bash
+   cd path/to/your/bazel/project
+   bazel clean
+   ```
+
+1. Build your target:
+
+   ```bash
+   bazel build //your/target:name
+   ```
 
 A build that hits a warm cache ends like this:
 
@@ -179,7 +184,7 @@ The summary line is the proof. It reads differently in each of the three cases:
 
 ## Local builds only read from the cache
 
-The setup above activates the Build Cache in pull-only mode: your local builds read from the shared cache but never write to it. This is the recommended mode for local development.
+The setup in this guide activates the Build Cache in pull-only mode: your local builds read from the shared cache but never write to it. This is the recommended mode for local development.
 
 Build tools recommend writing cache entries only from an environment where the source files don't change during the build. On a local machine you might keep editing files while a build is running, which can produce cache entries that don't match their inputs, and those entries would then be served to your teammates and to CI. Pull-only removes that risk: a broken local build can't affect anyone else.
 
@@ -205,9 +210,11 @@ grep upload_local_results ~/.bazelrc
 # --remote_upload_local_results    → push enabled
 ```
 
-The trade-off is the one described above: an entry written from a build whose source files changed while it was running can be wrong, and your teammates read the same entry. Avoid editing files during a build you push from.
+:::note
+An entry written from a build whose source files changed while it was running can be wrong, and your teammates read the same entry. Avoid editing files during a build you push from.
 
 Setting up the Build Cache on CI is the more robust option, because CI builds from a clean, fixed checkout. Once it runs there, switch your machine back to pull-only.
+:::
 
 ## Committing the configuration to your repository
 
@@ -284,10 +291,12 @@ Start with the CLI's health check. It inspects every part of the local setup and
 bitrise-build-cache doctor --fix --interactive
 ```
 
-If that doesn't sort it out:
+If you're still experiencing issues, check the following table:
 
-- The wizard reports that it needs a terminal: run `TERM=dumb bitrise-build-cache activate --interactive` for line-based mode.
-- The build reports `action cache hit` instead of `remote cache hit`: run `bazel clean` so Bazel has to fetch from the remote cache.
-- The build fails with `Could not find file with name 'bitrise-build-cache' on PATH`: the CLI isn't installed, or isn't on your `PATH`. Install it, then run `bitrise-build-cache auth login`.
-- The build fails while fetching credentials, naming the credential helper: the CLI is installed but has no credentials. Run `bitrise-build-cache auth login`.
-- `doctor` reports a problem it can't fix: re-run it with `--debug` for the full context.
+| Issue | Fix |
+|---|---|
+| The wizard reports that it needs a terminal | Run `TERM=dumb bitrise-build-cache activate --interactive` for line-based mode. |
+| The build reports `action cache hit` instead of `remote cache hit` | Run `bazel clean` so Bazel has to fetch from the remote cache. |
+| The build fails with `Could not find file with name 'bitrise-build-cache' on PATH` | The CLI isn't installed, or isn't on your `PATH`. Install it, then run `bitrise-build-cache auth login`. |
+| The build fails while fetching credentials, naming the credential helper | The CLI is installed but has no credentials. Run `bitrise-build-cache auth login`. |
+| `doctor` reports a problem it can't fix | Re-run it with `--debug` for the full context. |
