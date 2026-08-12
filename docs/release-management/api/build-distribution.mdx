@@ -8,7 +8,7 @@ slug: /release-management/api/build-distribution
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-You can upload build artifacts to Release Management and distribute them to internal tester groups directly via the API. This covers both the artifact upload flow (Apps sub-API) and tester group management (Build Distributions sub-API).
+You can upload build artifacts to Release Management and distribute them to tester groups directly via the API. Tester groups can be internal (Bitrise users you add by their user slug) or external (testers you add by email, with no Bitrise account required). This covers both the artifact upload flow (Apps sub-API) and tester group management (Build Distributions sub-API).
 
 - **Apps sub-API base URL:** `https://api.bitrise.io/release-management/v2/apps/v1`. See the [Apps API reference](/en/release-management-api/apps/api-reference/release-management-api).
 - **Build Distributions sub-API base URL:** `https://api.bitrise.io/release-management/v2/build-distributions/v1`. See the [Build Distributions API reference](/en/release-management-api/build-distributions/api-reference/release-management-api-build-distributions).
@@ -47,12 +47,15 @@ Optional query parameters:
 
 ### Step 2: Upload the binary
 
-Use the presigned URL from the previous response to upload the file directly to storage:
+You can upload `.ipa` (iOS), `.apk`, or `.aab` (Android) files. Use the `method`, `url`, and `headers` from the previous response exactly as returned — the headers vary per upload and typically include `Content-Type` and `X-Goog-Content-Length-Range`:
 
 ```bash
+# Use the method, url, and headers exactly as returned by the Step 1 response.
+
 curl -X PUT "PRESIGNED_UPLOAD_URL" \
-  -H "Content-Type: application/octet-stream" \
-  --data-binary "@/path/to/MyApp.ipa"
+  -H "Content-Type: <value from response headers>" \
+  -H "X-Goog-Content-Length-Range: <value from response headers>" \
+  --data-binary "@/path/to/MyApp.aab"
 ```
 
 ### Step 3: Check processing status
@@ -66,6 +69,22 @@ curl -X GET "https://api.bitrise.io/release-management/v2/apps/v1/installable-ar
 ```
 
 The response returns the current `status`. Poll this endpoint until the status indicates the artifact is ready for distribution.
+
+## Listing installable artifacts
+
+To act on an artifact you didn't just upload yourself, look it up with [`GET /installable-artifacts`](/en/release-management-api/apps/api-reference/list-installable-artifacts):
+
+```bash
+curl -X GET "https://api.bitrise.io/release-management/v2/apps/v1/installable-artifacts?app_id=APP_ID&items_per_page=10&page=1" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+
+:::note[Use `uid`, not `id`]
+
+Each item in the response includes both an `id` and a `uid` field. Use `uid` as the `ARTIFACT_ID` in other calls — `id` is a separate identifier and won't work in the endpoints on this page.
+
+:::
 
 ## Enabling a public install page
 
@@ -133,6 +152,11 @@ Tester groups let you notify groups of internal testers when a new build is read
 
 ### Creating a tester group
 
+Set the `type` query parameter to choose between an internal group (Bitrise users, added by user slug) or an external group (testers added by email, no Bitrise account required). `type` defaults to `internal` when omitted.
+
+<Tabs groupId="tester-group-type">
+<TabItem value="internal" label="Internal" default>
+
 ```bash
 curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v1/tester-groups" \
   -H "Authorization: YOUR_ACCESS_TOKEN" \
@@ -144,9 +168,34 @@ curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v
   }'
 ```
 
+</TabItem>
+<TabItem value="external" label="External">
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v1/tester-groups?type=external" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "APP_ID",
+    "name": "External QA testers",
+    "auto_notify": true,
+    "emails": ["tester1@example.com", "tester2@example.com"]
+  }'
+```
+
+The `emails` array accepts up to 1,000 addresses (each up to 255 characters) and is ignored for internal groups. A tester is created for every address and added to the group.
+
+</TabItem>
+</Tabs>
+
 Setting `auto_notify: true` means testers are automatically emailed when a new build is uploaded.
 
 ### Adding testers to a group
+
+Set the `type` query parameter to match the group's type — `type` defaults to `internal` when omitted. The array that doesn't match the group's type is ignored.
+
+<Tabs groupId="tester-group-type">
+<TabItem value="internal" label="Internal" default>
 
 ```bash
 curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v1/tester-groups/GROUP_ID/add-testers" \
@@ -162,6 +211,23 @@ curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v
 To find the user slugs of workspace members, use `GET /tester-groups/{id}/potential-testers?search=name-or-email` to search for eligible testers. The response includes each user's `slug`.
 
 :::
+
+</TabItem>
+<TabItem value="external" label="External">
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v1/tester-groups/GROUP_ID/add-testers?type=external" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "emails": ["tester1@example.com", "tester2@example.com"]
+  }'
+```
+
+The `emails` array accepts up to 1,000 addresses. A tester is created or reused for each address.
+
+</TabItem>
+</Tabs>
 
 ### Notifying a tester group
 
