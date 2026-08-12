@@ -1,70 +1,302 @@
 ---
 title: "Configuring the build cache for Bazel in local builds"
+description: "Set up the Bitrise Build Cache for local Bazel builds so your machine reads the same cache your CI builds populate."
 sidebar_position: 3
 slug: /bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-local-builds
 sidebar_label: Configuring the Bitrise Build Cache for Bazel in local environments
 ---
 
-You can use the Bitrise Build Cache for Bazel on any machine: you just need to create a `bitrise.bazelrc` configuration file that includes the required configuration for the cache endpoints.
+You can use the Bitrise Build Cache for local Bazel builds too. Your local builds then read from the same cache as your CI builds, so an action your CI already ran doesn't have to run again on your machine.
 
-1. Select your Bitrise workspace and go to **Build Cache**.
-1. Click **New connection**.
-1. Select **Other CI provider** and then select your build tool from the dropdown menu.
+The Bitrise Build Cache CLI sets this up for you by writing the cache flags to your `~/.bazelrc`.
 
-   ![2025-10-21-choose-build-tool.png](/img/_paligo/uuid-95236863-449a-87ff-2713-11f9a7f3cfdd.png)
-1. Click **Create token**.
+## Before you start
 
-   ![2025-10-21-create-token.png](/img/_paligo/uuid-20c79dca-f52e-e046-e9f2-3fce1c6019ba.png)
-1. Enter a name and set it to never expire.
-1. Copy the keys and values of the two variables.
-1. Set the variables as Environment Variables in your local configuration.
+Ensure you have:
+- A working Bazel project on your machine, on Bazel 6 or later. The setup uses Bazel's credential helper support, which earlier versions don't have.
+- A Bitrise workspace with the Build Cache enabled. Check it on the [Build Cache page](https://app.bitrise.io/build-cache/).
+
+:::important[Activation is global, not per-project]
+
+`activate bazel` writes a single block to `~/.bazelrc` in your home directory. It never touches your project's `.bazelrc`.
+
+Every Bazel project on your machine picks up the cache flags, not just the one you activated from. The repository URL reported to the dashboard is read from the git remote of the directory you ran the activation in, so on a machine with several Bazel projects they all report the first one. That affects dashboard attribution only, not cache correctness. Re-run the activation from another project's directory to change it.
+
+:::
+
+## Installing the CLI
+
+Install the CLI with Homebrew (**recommended**):
+
+```bash
+brew install bitrise-io/bitrise-build-cache/bitrise-build-cache
+```
+
+Or, without Homebrew:
+
+```bash
+curl --retry 5 -sSfL \
+  'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' \
+  | sh -s -- -b ~/.local/bin
+```
+
+Make sure the install location is on your `PATH`, then check the install:
+
+```bash
+bitrise-build-cache --version
+```
+
+Keep the CLI on your `PATH` afterwards. Bazel runs the CLI on every build to fetch a fresh auth token, not only during setup.
+
+## Activating the cache
+
+Run the interactive wizard:
+
+```bash
+bitrise-build-cache activate --interactive
+```
+
+The wizard asks for the following:
+
+1. **Sign in to Bitrise**: opens your browser for authentication on the first run. The CLI stores the credentials in the OS keychain and refreshes them automatically, so later runs skip this step. On a machine without a usable keychain, the CLI falls back to storing them in a config file.
+1. **Select a workspace**: pick the workspace whose Build Cache you want to use. The CLI selects it automatically if you only have access to one.
+1. **Which build tools should I set up**: ensure **Bazel** is selected. Use space to toggle an option and enter to confirm.
+1. **Display name for this machine's local invocations**: the name your local builds show up under in the Build Cache dashboard, for example `local-<yourhandle>`.
+1. **Enable cache push**: select **No, pull only**. See [Local builds only read from the cache](#local-builds-only-read-from-the-cache).
+
+The non-interactive equivalent, once you have signed in:
+
+```bash
+bitrise-build-cache activate bazel --cache
+```
+
+### What the activation writes
+
+A single marked block appended to `~/.bazelrc`. Existing content is preserved, and re-running the activation only updates the block:
+
+```bash
+# [start] generated-by-bitrise-build-cache
+build --credential_helper=*.services.bitrise.io=bitrise-build-cache
+build --remote_cache=grpcs://bitrise-accelerate.services.bitrise.io
+build --remote_timeout=600s
+build --remote_header=x-flare-buildtool=bazel
+build --remote_header=x-flare-builduser=
+build --noremote_upload_local_results
+build --bes_backend=grpcs://flare-bes.services.bitrise.io:443
+build --bes_results_url=https://app.bitrise.io/build-cache/invocations/bazel/
+build --bes_timeout=2m
+build --bes_upload_mode=wait_for_upload_complete
+build --build_event_publish_all_actions
+build --show_timestamps
+build --remote_header='x-org-id=<workspace-id>'
+build --bes_header='x-org-id=<workspace-id>'
+build --remote_header='x-repository-url=https://github.com/<org>/<repo>.git'
+build --bes_header='x-repository-url=https://github.com/<org>/<repo>.git'
+build --bes_header='x-os=<detailed OS info>'
+build --bes_header='x-locale=C'
+build --bes_header='x-default-charset=UTF-8'
+build --bes_header='x-cpu-cores=4'
+build --bes_header='x-mem-size=16759259136'
+# [end] generated-by-bitrise-build-cache
+```
+
+Two lines worth highlighting:
+
+- `--credential_helper` points at the CLI rather than storing a token, so Bazel fetches a fresh one on every build and an expiring login keeps working. This is why the CLI has to stay on your `PATH`.
+- `--noremote_upload_local_results` is pull-only mode. Activating with `--cache-push` writes `--remote_upload_local_results` instead.
+
+The `x-os`, `x-cpu-cores`, `x-mem-size`, `x-locale`, and `x-default-charset` headers describe your machine and are used for analytics only, and don't affect cache keys. They matter if you commit the configuration, because they're specific to the machine that generated the block. See [What is safe to commit](#what-is-safe-to-commit).
+
+## Verifying the setup
+
+Run the CLI's health check:
+
+```bash
+bitrise-build-cache doctor
+```
+
+It reports the status of every part of the local setup and ends with an overall verdict. The probes for the other build tools report as skipped:
+
+```bash
+Bitrise Build Cache - doctor
+CLI version: 3.x.y
+
+Healthy:
+  ✓ auth                   OAuth login (keychain) (workspace <id>), token valid until <iso-timestamp>
+  ✓ keychain-smoke         Set/Get/Delete round-trip OK
+  ✓ auth-backend           latency <ms>, source=keychain, workspace=<id>
+  ✓ xcelerate-proxy        skipped (xcode not activated)
+  ✓ xcelerate-wrapper-path skipped (xcode not activated)
+  ✓ xcelerate-enrichment   skipped (xcode not activated)
+  ✓ ccache-helper          skipped (c++ not activated)
+  ✓ ccache-binary          skipped (c++ not activated)
+  ✓ log-dirs               no activated tool writes logs
+
+Overall: ok
+```
+
+To let the CLI repair the issues it can fix on its own, run `bitrise-build-cache doctor --fix --interactive`.
+
+## Running a build
+
+1. Run `bazel clean` first. Bazel's local action cache sits in front of the remote cache, so if a target is already built locally, Bazel serves it from disk and never contacts Bitrise - and you see no evidence that the remote cache works.
 
    ```bash
-   export BITRISE_BUILD_CACHE_WORKSPACE_ID=<workspace ID>
-   export BITRISE_BUILD_CACHE_AUTH_TOKEN=<token>
+   cd path/to/your/bazel/project
+   bazel clean
    ```
-1. Download the CLI and install it in a temporary location. You will only need to use it to activate the build cache once, or if any of the settings change.
+
+1. Build your target:
 
    ```bash
-   curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
-   ```
-1. Activate the Bitrise Build Cache.
-
-   There are a couple of flags you can use to control the configuration, but we recommend these defaults:
-
-   ```
-   /tmp/bin/bitrise-build-cache activate bazel --cache --cache-push=false
+   bazel build //your/target:name
    ```
 
-   :::note[Pulling from cache]
+A build that hits a warm cache ends like this:
 
-   We recommend only pulling artifacts from the cache to avoid accidentally sharing incorrect cache data due to file modifications during a build.
+```bash
+(16:47:35) INFO: Invocation ID: <invocation-id>
+(16:47:35) INFO: Streaming build results to: https://app.bitrise.io/build-cache/invocations/bazel/<invocation-id>
+(16:47:36) INFO: Analyzed target //src/close-matching-prs:close-matching-prs (91 packages loaded, 9216 targets configured).
+(16:47:36) INFO: Found 1 target...
+(16:47:36) INFO: Elapsed time: 0.934s, Critical Path: 0.18s
+(16:47:36) INFO: 11 processes: 4 remote cache hit, 7 internal.
+(16:47:36) INFO: Build completed successfully, 11 total actions
+```
 
-   For the full list of flags check the CLI’s `/tmp/bin/bitrise-build-cache activate bazel --help` command.
+## Checking that it worked
 
-   :::
-1. If you have Remote Build Execution enabled for your workspace, you can also use it locally by adding the `--rbe` flag.
+The summary line is the proof. It reads differently in each of the three cases:
 
-   :::note[Enabling RBE locally]
+| Summary line | What it means |
+|---|---|
+| `11 processes: 4 remote cache hit, 7 internal.` | Working. The actions were fetched from the Bitrise Build Cache. |
+| `1 process: 4 action cache hit, 1 internal.` | Served from your local cache. The remote cache was never contacted, so run `bazel clean` first. |
+| `11 processes: 7 internal, 4 processwrapper-sandbox.` | Built locally from scratch. Either the cache has no entries for this target, or authentication failed. Look for `WARNING: Remote Cache: UNAUTHENTICATED` earlier in the output. |
 
-   You will need to have the workers set up for your workspace, and the pool configuration in your repository’s `.bazelrc` file before enabling RBE locally!
+`internal` actions, such as symlinks and file writes, are never cacheable. The ratio that matters is remote cache hits against the actions that aren't internal.
 
-   :::
-1. Optionally, add your repository URL in your repository’s root `.bazelrc` file.
+| Signal | Where to find it | What success looks like |
+|---|---|---|
+| `INFO: N processes: X remote cache hit` | Bazel build summary | A non-zero `remote cache hit` count after a `bazel clean` |
+| `INFO: Streaming build results to:` | First and last lines of the build | A link to the invocation is printed |
+| Dashboard | The printed link, or the [Build Cache page](https://app.bitrise.io/build-cache/) | A row appears under your display name, with the same hit counts |
 
-   We recommend doing this to be able to identify your local builds.
+## Local builds only read from the cache
 
-   :::note[Replace the URL]
+The setup in this guide activates the Build Cache in pull-only mode: your local builds read from the shared cache but never write to it. This is the recommended mode for local development.
 
-   Make sure to replace the placeholder URL in the command with your own!
+Build tools recommend writing cache entries only from an environment where the source files don't change during the build. On a local machine you might keep editing files while a build is running, which can produce cache entries that don't match their inputs, and those entries would then be served to your teammates and to CI. Pull-only removes that risk: a broken local build can't affect anyone else.
 
-   :::
+The usual pattern is to have CI populate the cache, because CI builds from a clean, fixed checkout, and to let local machines pull from it.
 
-   ```
-   build --remote_header='x-repository-url=https://github.com/bazelbuild/bazel.git'
-   build --bes_header='x-repository-url=https://github.com/bazelbuild/bazel.git'
-   ```
+## Pushing to the cache from local builds
 
-That's it! You can now run any `bazel` commands and take advantage of the Bitrise Build Cache. You can check the invocation details through the link printed during builds:
+Pull-only assumes that something else fills the cache, which is normally CI. If nothing does, your local builds have nothing to read: the summary line keeps reporting `0 remote cache hit`.
 
-![bazel-local-printout.png](/img/_paligo/uuid-a87ac3d9-b1bf-89bc-8d33-84e7edc358c9.png)
+If your team doesn't run the Build Cache on CI, turn pushing on for your local builds and leave it on. Your machine then populates the cache as you work, for you and for your teammates.
+
+Re-run `bitrise-build-cache activate --interactive` and answer **Yes, push too** at the cache push prompt when you run the wizard, or run the non-interactive activate command:
+
+```bash
+bitrise-build-cache activate bazel --cache --cache-push
+```
+
+You can check which mode you're in without running a build:
+
+```bash
+grep upload_local_results ~/.bazelrc
+# --noremote_upload_local_results  → pull-only
+# --remote_upload_local_results    → push enabled
+```
+
+:::note
+An entry written from a build whose source files changed while it was running can be wrong, and your teammates read the same entry. Avoid editing files during a build you push from.
+
+Setting up the Build Cache on CI is the more robust option, because CI builds from a clean, fixed checkout. Once it runs there, switch your machine back to pull-only.
+:::
+
+## Committing the configuration to your repository
+
+Bazel already reads a `.bazelrc` from your workspace root, so the cache flags can be committed to the repository instead of being generated on every machine. Onboarding a dev machine then comes down to installing the CLI and signing in:
+
+```bash
+brew install bitrise-io/bitrise-build-cache/bitrise-build-cache
+bitrise-build-cache auth login
+```
+
+### How the files combine
+
+Bazel reads its configuration files in this order, and the last value wins for a single-valued flag:
+
+1. The system file, `/etc/bazel.bazelrc`
+1. The workspace file, `<repo>/.bazelrc` (the committed one)
+1. The home file, `~/.bazelrc` (what the activation writes, if it was ever run)
+1. Command-line flags
+
+So the home file takes precedence over the committed one, and command-line flags beat both. Add `--announce_rc` to a build to see what Bazel actually loaded.
+
+### Commit pull-only and let CI opt into push
+
+A developer who only installs the CLI and runs `auth login` never gets a `~/.bazelrc`, so there is nothing to override the committed block. Whatever you commit is what they build with, so commit the safe mode:
+
+```bash
+build --noremote_upload_local_results
+```
+
+On CI, run the activation with pushing enabled before the build. Because the home file beats the committed workspace file, it overrides the committed pull-only flag on that machine only:
+
+```bash
+bitrise-build-cache activate bazel --cache --cache-push
+```
+
+That gives you the split with no per-developer setup: the committed file is the pull-only default everyone inherits, and the one environment that should write to the cache is the one that runs the activation.
+
+### What is safe to commit
+
+| Lines | Commit | Why |
+|---|---|---|
+| `--remote_cache`, `--remote_timeout`, `--bes_backend`, `--bes_results_url`, `--bes_timeout`, `--bes_upload_mode`, `--build_event_publish_all_actions`, `--show_timestamps` | Yes | Identical on every machine |
+| `--remote_header='x-org-id=…'` and the matching `--bes_header` | Yes | Workspace-wide, not machine-specific |
+| `--remote_header='x-repository-url=…'` and the matching `--bes_header` | Yes | It identifies this repository |
+| `--noremote_upload_local_results` | Yes, in the pull-only form | Every developer who only runs `auth login` inherits it. CI flips it by running the activation with `--cache-push` |
+| `--credential_helper=*.services.bitrise.io=bitrise-build-cache` | Yes, after checking the value | It's the bare binary name, which Bazel looks up on `PATH`. If the activation ran on a machine where the CLI wasn't on `PATH`, the CLI writes an absolute path instead. Don't commit that form |
+| `--bes_header='x-os=…'`, `x-cpu-cores`, `x-mem-size`, `x-locale`, `x-default-charset` | No | Per-machine, and `x-os` contains your hostname. They're analytics only and don't affect cache keys, but committing them attributes everyone's builds to your machine |
+| `--remote_header=authorization="Bearer …"` | Never | A live credential. It only appears in a block generated on CI |
+
+### What happens without the CLI installed
+
+If you commit the `--credential_helper` line, a teammate who hasn't installed the CLI can't build at all. Bazel looks the helper up on `PATH`, doesn't find it, and fails while initializing the remote cache:
+
+```bash
+ERROR: Could not find file with name 'bitrise-build-cache' on PATH '...'
+ERROR: Could not find file with name 'bitrise-build-cache' on PATH '...'
+ERROR: Could not find file with name 'bitrise-build-cache' on PATH '...'
+ERROR: Error initializing RemoteModule
+```
+
+Bazel exits with code 2 and no targets are built. There's no fallback to a local build, because the failure happens before the build starts.
+
+Installing the CLI and running `bitrise-build-cache auth login` on that machine resolves it.
+
+## Remote Build Execution
+
+If Remote Build Execution is enabled for your workspace, you can use it locally by adding the `--rbe` flag to the activation. You need the workers set up for your workspace and the pool configuration in your repository's `.bazelrc` first. See [Remote Build Execution for Bazel](/en/bitrise-build-cache/build-cache-for-bazel/remote-build-execution-for-bazel).
+
+## Troubleshooting
+
+Start with the CLI's health check. It inspects every part of the local setup and repairs the issues it can fix on its own:
+
+```bash
+bitrise-build-cache doctor --fix --interactive
+```
+
+If you're still experiencing issues, check the following table:
+
+| Issue | Fix |
+|---|---|
+| The wizard reports that it needs a terminal | Run `TERM=dumb bitrise-build-cache activate --interactive` for line-based mode. |
+| The build reports `action cache hit` instead of `remote cache hit` | Run `bazel clean` so Bazel has to fetch from the remote cache. |
+| The build fails with `Could not find file with name 'bitrise-build-cache' on PATH` | The CLI isn't installed, or isn't on your `PATH`. Install it, then run `bitrise-build-cache auth login`. |
+| The build fails while fetching credentials, naming the credential helper | The CLI is installed but has no credentials. Run `bitrise-build-cache auth login`. |
+| `doctor` reports a problem it can't fix | Re-run it with `--debug` for the full context. |
