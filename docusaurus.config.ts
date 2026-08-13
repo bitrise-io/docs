@@ -315,6 +315,39 @@ const config: Config = {
               groupPathsBy: 'tag',
             },
           },
+          // Release Management is split across four sub-APIs, each with its
+          // own hosted spec (see docs/release-management/api/release-management-api.mdx
+          // for the sub-API URLs). Snapshots are refreshed by the matching
+          // scripts/sync_rm_*.py scripts (nightly / on-demand by
+          // .github/workflows/sync-api-references.yml).
+          bitriseRMApps: {
+            specPath: 'api/bitrise-rm-apps.json',
+            outputDir: 'docs/release-management-api/apps/api-reference',
+            sidebarOptions: {
+              groupPathsBy: 'tag',
+            },
+          },
+          bitriseRMStoreReleases: {
+            specPath: 'api/bitrise-rm-store-releases.json',
+            outputDir: 'docs/release-management-api/store-releases/api-reference',
+            sidebarOptions: {
+              groupPathsBy: 'tag',
+            },
+          },
+          bitriseRMCodePush: {
+            specPath: 'api/bitrise-rm-code-push.json',
+            outputDir: 'docs/release-management-api/code-push/api-reference',
+            sidebarOptions: {
+              groupPathsBy: 'tag',
+            },
+          },
+          bitriseRMBuildDistributions: {
+            specPath: 'api/bitrise-rm-build-distributions.json',
+            outputDir: 'docs/release-management-api/build-distributions/api-reference',
+            sidebarOptions: {
+              groupPathsBy: 'tag',
+            },
+          },
         },
       },
     ],
