@@ -5,6 +5,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import bitriseAPIApiSidebar from './docs/bitrise-api/api-reference/sidebar';
 import changelogFeedPlugin from './src/plugins/changelog-feed';
+import {DEFAULT_DESCRIPTION} from './shared/site-metadata';
 
 // Build-time expansion for list-context partial references.
 //
@@ -144,7 +145,7 @@ function injectApiSidebar(items: any[]): any[] {
 
 const config: Config = {
   title: 'Bitrise Docs',
-  tagline: 'Find product documentation, code samples, API & CLI references, and more.',
+  tagline: DEFAULT_DESCRIPTION,
   favicon: 'favicon.ico',
 
   url: 'https://docs.bitrise.io',
