@@ -42,6 +42,34 @@
       ],
       "type": "string"
     },
+    "v1AndroidEmulatorConfig": {
+      "description": "AndroidEmulatorConfig configures the platform-managed Android emulator capability.\nEmpty fields fall back to platform defaults.",
+      "properties": {
+        "deviceProfile": {
+          "description": "avdmanager device profile (for example, \"pixel_7\"). Empty = platform default.",
+          "type": "string"
+        },
+        "systemImage": {
+          "description": "sdkmanager system image package (for example,\n\"system-images;android-36;google_apis_ps16k;x86_64\"). Empty = platform default.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1AndroidEmulatorRequest": {
+      "description": "AndroidEmulatorRequest expresses a session creator's decision about the Android\nemulator capability. When the message is absent from CreateSessionRequest, the\ntemplate's declaration (if any) is inherited; when present, it wins — including\nenabled=false as an explicit opt-out of a template default.",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1AndroidEmulatorConfig",
+          "description": "Emulator configuration. Empty fields fall back to the template's declared\nconfig (if any), then to platform defaults."
+        },
+        "enabled": {
+          "description": "Whether the session should run the platform-managed Android emulator.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "v1AutoMappedInput": {
       "description": "AutoMappedInput records a template session input that was auto-filled from\nthe caller's saved inputs because map_saved_to_session_inputs was set.",
       "properties": {
@@ -273,6 +301,14 @@
     "v1GetWorkspaceInfoResponse": {
       "description": "GetWorkspaceInfoResponse carries workspace-level capabilities the UI uses to\ntailor what it shows.",
       "properties": {
+        "androidEmulatorAvailable": {
+          "description": "Whether the Android emulator capability (and the service ports that expose\nit) is enabled for this workspace (rollout feature flag). Gates declaring\nit on templates and requesting it on sessions.",
+          "type": "boolean"
+        },
+        "devicePreviewAvailable": {
+          "description": "Whether device preview links and streaming are enabled for this workspace\n(rollout feature flag). Gates minting/resolving preview links and the\nviewer affordances in the UI.",
+          "type": "boolean"
+        },
         "gitProviderIntegrationAvailable": {
           "description": "Whether the git provider integration feature is enabled for this workspace\n(rollout feature flag). Gates the integration section in the UI.",
           "type": "boolean"
@@ -552,6 +588,58 @@
         "value": {
           "description": "Value of the input. For secret inputs this is empty unless the request explicitly\nset include_secrets=true (see GetSavedInputRequest/ListSavedInputsRequest).",
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1ServicePort": {
+      "description": "ServicePort represents a network service a template's sessions expose on the VM\n(for example a dev web server). Sessions snapshot these and the UI renders\nSSH tunnel (ssh -L) connection help from them.",
+      "properties": {
+        "description": {
+          "description": "Description shown next to the tunnel help (for example, \"Storybook dev server\").",
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier (UUID).",
+          "type": "string"
+        },
+        "localPort": {
+          "description": "Suggested local port for the tunnel. 0 means \"same as port\". Use when the\nremote port commonly clashes with something on developer machines.",
+          "format": "int32",
+          "type": "integer"
+        },
+        "name": {
+          "description": "Short name of the service (for example, \"web-app\"). Unique per template.",
+          "type": "string"
+        },
+        "port": {
+          "description": "Port the service listens on inside the VM (1-65535).",
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "v1ServicePortCreate": {
+      "description": "ServicePortCreate is used when creating a service port on a template.",
+      "properties": {
+        "description": {
+          "description": "Description shown next to the tunnel help.",
+          "type": "string"
+        },
+        "localPort": {
+          "description": "Suggested local port for the tunnel. 0 means \"same as port\".",
+          "format": "int32",
+          "type": "integer"
+        },
+        "name": {
+          "description": "Short name of the service. Unique per template.",
+          "type": "string"
+        },
+        "port": {
+          "description": "Port the service listens on inside the VM (1-65535).",
+          "format": "int32",
+          "type": "integer"
         }
       },
       "type": "object"
@@ -901,6 +989,14 @@
     "v1SessionTemplateSnapshot": {
       "description": "SessionTemplateSnapshot contains the template configuration snapshotted at session creation time.\nThis makes sessions self-contained and resilient to template changes or deletions.",
       "properties": {
+        "androidEmulator": {
+          "$ref": "#/definitions/v1AndroidEmulatorConfig",
+          "description": "Resolved Android emulator configuration (only meaningful when\nandroid_emulator_enabled is true)."
+        },
+        "androidEmulatorEnabled": {
+          "description": "Whether this session runs the platform-managed Android emulator.",
+          "type": "boolean"
+        },
         "featureFlags": {
           "description": "Feature flag states for this session.",
           "items": {
@@ -924,6 +1020,14 @@
         "machineType": {
           "description": "Machine type name from the template.",
           "type": "string"
+        },
+        "servicePorts": {
+          "description": "Network services this session exposes (template-declared plus any\ncapability-added ports, for example the Android emulator's).",
+          "items": {
+            "$ref": "#/definitions/v1SnapshotPort",
+            "type": "object"
+          },
+          "type": "array"
         },
         "sessionInputs": {
           "description": "Session input values provided by the session starter (or defaults).",
@@ -1020,6 +1124,35 @@
       },
       "type": "object"
     },
+    "v1SnapshotPort": {
+      "description": "SnapshotPort represents an exposed service port captured at session creation time.",
+      "properties": {
+        "description": {
+          "description": "Description shown next to the tunnel help.",
+          "type": "string"
+        },
+        "localPort": {
+          "description": "Suggested local port for the tunnel. 0 means \"same as port\".",
+          "format": "int32",
+          "type": "integer"
+        },
+        "name": {
+          "description": "Short name of the service (for example, \"web-app\").",
+          "type": "string"
+        },
+        "port": {
+          "description": "Port the service listens on inside the VM.",
+          "format": "int32",
+          "type": "integer"
+        },
+        "sortOrder": {
+          "description": "Sort order for display.",
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "v1Stack": {
       "description": "Stack is a provisionable development environment stack with human-friendly\nmetadata (title, OS, status, Xcode version). The id is the stable identifier\nstored on a template/session.",
       "properties": {
@@ -1093,6 +1226,10 @@
     "v1Template": {
       "description": "Template defines a reusable configuration for creating sessions.",
       "properties": {
+        "androidEmulator": {
+          "$ref": "#/definitions/v1AndroidEmulatorConfig",
+          "description": "When set, sessions created from this template run the platform-managed Android\nemulator by default (Linux stacks only). Session creators can override or opt out."
+        },
         "createdAt": {
           "description": "When the template was created.",
           "format": "date-time",
@@ -1129,6 +1266,14 @@
         "name": {
           "description": "Human-readable name of the template.",
           "type": "string"
+        },
+        "servicePorts": {
+          "description": "Network services this template's sessions expose (rendered as SSH tunnel help).",
+          "items": {
+            "$ref": "#/definitions/v1ServicePort",
+            "type": "object"
+          },
+          "type": "array"
         },
         "sessionInputs": {
           "description": "Session inputs that users must or may provide when creating a session.",
@@ -1185,6 +1330,14 @@
     "v1TemplateConfig": {
       "description": "TemplateConfig contains the full template configuration for comparison.\nUsed by CompareSessionTemplate to show what changed between snapshot and current template.",
       "properties": {
+        "androidEmulator": {
+          "$ref": "#/definitions/v1AndroidEmulatorConfig",
+          "description": "Android emulator configuration (when declared/enabled)."
+        },
+        "androidEmulatorEnabled": {
+          "description": "Whether the Android emulator capability is declared/enabled.",
+          "type": "boolean"
+        },
         "featureFlags": {
           "description": "Feature flags.",
           "items": {
@@ -1200,6 +1353,14 @@
         "machineType": {
           "description": "Machine type name.",
           "type": "string"
+        },
+        "servicePorts": {
+          "description": "Exposed service ports.",
+          "items": {
+            "$ref": "#/definitions/v1SnapshotPort",
+            "type": "object"
+          },
+          "type": "array"
         },
         "sessionInputs": {
           "description": "Session input definitions (keys and metadata, not actual values).",
@@ -1920,6 +2081,10 @@
                 "aiPrompt": {
                   "description": "Optional AI prompt to pass to Claude Code when the session starts.",
                   "type": "string"
+                },
+                "androidEmulator": {
+                  "$ref": "#/definitions/v1AndroidEmulatorRequest",
+                  "description": "Android emulator decision for this session (Linux stacks only). Absent = inherit\nthe template's declaration (if any); present = this wins, including enabled=false\nas an explicit opt-out."
                 },
                 "autoTerminateMinutes": {
                   "description": "Minutes before auto-termination. Defaults to 7200 (5 days).\nSet to 0 to disable auto-termination (\"Never\").",
@@ -3264,6 +3429,10 @@
             "schema": {
               "description": "CreateTemplateRequest is the request for creating a new template.",
               "properties": {
+                "androidEmulator": {
+                  "$ref": "#/definitions/v1AndroidEmulatorConfig",
+                  "description": "When set, sessions created from this template run the platform-managed Android\nemulator by default (Linux stacks only)."
+                },
                 "description": {
                   "description": "Description explaining what this template is for.",
                   "type": "string"
@@ -3287,6 +3456,14 @@
                 "name": {
                   "description": "Human-readable name of the template.",
                   "type": "string"
+                },
+                "servicePorts": {
+                  "description": "Network services this template's sessions expose (rendered as SSH tunnel help).",
+                  "items": {
+                    "$ref": "#/definitions/v1ServicePortCreate",
+                    "type": "object"
+                  },
+                  "type": "array"
                 },
                 "sessionInputs": {
                   "description": "Session inputs for this template.",
@@ -3444,6 +3621,10 @@
             "schema": {
               "description": "UpdateTemplateRequest is the request for updating a template.",
               "properties": {
+                "androidEmulator": {
+                  "$ref": "#/definitions/v1AndroidEmulatorConfig",
+                  "description": "Updated Android emulator declaration. Only applied when update_android_emulator is\ntrue; leaving the message unset then clears the declaration."
+                },
                 "description": {
                   "description": "Updated description (optional).",
                   "type": "string"
@@ -3467,6 +3648,14 @@
                 "name": {
                   "description": "Updated name (optional).",
                   "type": "string"
+                },
+                "servicePorts": {
+                  "description": "Updated service ports (replaces all existing when update_service_ports is true).",
+                  "items": {
+                    "$ref": "#/definitions/v1ServicePortCreate",
+                    "type": "object"
+                  },
+                  "type": "array"
                 },
                 "sessionInputs": {
                   "description": "Updated session inputs (replaces all existing when update_session_inputs is true).",
@@ -3492,8 +3681,16 @@
                   },
                   "type": "array"
                 },
+                "updateAndroidEmulator": {
+                  "description": "Whether to update the android_emulator declaration.",
+                  "type": "boolean"
+                },
                 "updateFeatureFlags": {
                   "description": "Whether to update feature_flags (false = don't touch, true = replace with provided list).",
+                  "type": "boolean"
+                },
+                "updateServicePorts": {
+                  "description": "Whether to update service_ports (false = don't touch, true = replace with provided list).",
                   "type": "boolean"
                 },
                 "updateSessionInputs": {
