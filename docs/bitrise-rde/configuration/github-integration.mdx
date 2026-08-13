@@ -6,21 +6,30 @@ slug: /bitrise-rde/configuration/github-integration
 ---
 
 import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToYourProfileSettings from '@site/src/partials/getting-to-your-profile-settings.mdx';
 
-With the GitHub integration enabled, your <GlossTerm baseform="rde session">sessions</GlossTerm> authenticate to GitHub as you. In every new session, `git clone`, `git push`, and the GitHub CLI (`gh`) work over HTTPS out of the box — no personal access tokens to paste and no SSH keys to manage.
+Authenticate your <GlossTerm baseform="rde session">sessions</GlossTerm> to GitHub as you with the [Bitrise GitHub App](/en/bitrise-platform/repository-access/github-app-integration) integration. In every new session, `git clone`, `git push`, and the GitHub CLI (`gh`) work over HTTPS out of the box without needing to paste personal access tokens or manage SSH keys.
 
-## How it works
+## Overview
 
 When you enable the integration, Bitrise plants a short-lived GitHub access token on each new session machine, issued through your GitHub account connection on Bitrise (the Bitrise GitHub App):
 
 - Tokens are valid for at most eight hours and refresh automatically for the whole lifetime of the session, including restores.
 - No long-lived credential is ever stored on the machine.
 - Commits you author in a session are attributed to your GitHub account, using your GitHub noreply email address so your real email address is never exposed.
-- Disabling the integration stops credential issuance immediately.
 
 ## Enabling the integration
 
-1. Connect your GitHub account to Bitrise: on your profile's **Connected accounts** page, connect **GitHub** through the Bitrise GitHub App.
+1. Open Bitrise.
+1. <Partial_GettingToYourProfileSettings />
+1. Select **Connected accounts**, then connect **GitHub** through the Bitrise GitHub App.
+
+   :::info[Workspace-level GitHub App connections don't count]
+
+   This integration checks your personal GitHub account connection, not a GitHub App installed at the Workspace level. Even if your organization's admin already connected the Bitrise GitHub App for CI, you still need to connect your own account on the **Connected accounts** page.
+
+   :::
+
 1. In the [Bitrise RDE UI](/en/bitrise-rde/rde-options/bitrise-rde-ui), select **Saved Inputs** on the left, under **User settings**.
 1. On the **GitHub** card, check that your account shows as connected, then enable the toggle.
 
@@ -35,12 +44,21 @@ Sessions act as you through the Bitrise GitHub App, so a session can access the 
 - You have access to the repository on GitHub.
 - The Bitrise GitHub App is installed on the repository.
 
-:::info[Repository not found?]
+:::info[Repository not found]
 
-If a clone fails with "repository not found" for a repository you can open in the browser, the Bitrise GitHub App isn't installed on that repository or organization — your own permissions are fine. Ask an organization admin to install the app there.
+If a clone fails with "repository not found" for a repository you can open in the browser, the Bitrise GitHub App isn't installed on that repository or organization. Ask an organization admin to install the app there.
 
 :::
 
+To check which repositories the app is installed on:
+
+1. On GitHub, open the [installed GitHub Apps](https://github.com/settings/installations) page for your account, or your organization's, if the app is installed at the organization level.
+1. Find **Bitrise** in the list and select **Configure**.
+1. Under **Repository access**, review the repositories the installation is scoped to.
+
 ## Disabling the integration
 
-Turn off the toggle on the **GitHub** card. New sessions no longer receive credentials, running sessions immediately stop being able to refresh theirs, and the most recently issued token expires within eight hours.
+Disabling the integration stops credential issuance immediately: new sessions no longer receive credentials, running sessions immediately stop being able to refresh theirs, and the most recently issued token expires within eight hours.
+
+1. In the [Bitrise RDE UI](/en/bitrise-rde/rde-options/bitrise-rde-ui), select **Saved Inputs** on the left, under **User settings**.
+1. On the **GitHub** card, turn off the toggle.
