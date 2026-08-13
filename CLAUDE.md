@@ -159,7 +159,7 @@ sidebar_label: "Run Xcode tests"   # optional, only if it differs from title
 ---
 ```
 
-- `title` and `slug` are required.
+- `title` and `slug` are required. **Always add `description` too, on every new page** — it's not just SEO copy: pages without their own `image` frontmatter get a social preview card auto-generated from `title` + `description` (see `functions/og.js`), so a missing description means that page's link previews fall back to the generic site tagline instead of describing the actual page.
 - **Slugs always start with `/`.** Otherwise Docusaurus prefixes them with the file's natural path and you get duplicated segments.
 - **Don't change an existing slug** without adding a redirect in `redirects.json`. Live URLs are part of our SEO contract.
 - `sidebar_label` lets the navigation entry differ from the page's H1.
@@ -429,3 +429,7 @@ If you discover a new convention or pitfall while editing, **add it here** so th
 Before proposing any docs edit (new page, moved page, changed slug, or reworded heading), run the source-level checker on the files you touched and fix anything it flags. This catches broken internal `/en/...` links and missing `#anchor` targets at authoring time — before the PR — rather than relying on the build-time `onBrokenLinks` warning or the post-build `link_analyzer.js`.
 
 Run `node scripts/check-links-source.js docs/path/to/edited-page.mdx` to check specific files, or `node scripts/check-links-source.js` with no arguments to scan the whole `docs/` tree. Exit code is non-zero if any internal link points to a missing page or any `#anchor` points to a heading that doesn't exist on the target page. It follows `@site/src/partials/*.mdx` imports and understands OpenAPI-generated `.api.mdx` / `.info.mdx` routes, so those aren't false positives. Don't hand over a page with unresolved cross-references.
+
+## Checking for a missing description before a PR
+
+Whenever you edit or create a page (`.md`/`.mdx` under `docs/`), check its frontmatter for a `description` field. If it's missing, **warn the user explicitly before opening a PR** — don't silently add a placeholder and don't skip the check. Say which file(s) lack one and ask whether to write one now or proceed without it. This matters beyond SEO: the social preview card (`functions/og.js`) is generated from `title` + `description`, so a page without one falls back to the generic site tagline in link previews instead of describing that page.
