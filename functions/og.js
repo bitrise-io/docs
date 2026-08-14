@@ -14,6 +14,23 @@ function sanitizeText(value) {
   return value.replace(/[<>]/g, "");
 }
 
+// Trims back to the last full word at or before maxChars and appends a
+// single ellipsis character, instead of hard-clipping mid-word.
+function truncateText(value, maxChars) {
+  if (value.length <= maxChars) return value;
+  const cut = value.slice(0, maxChars);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${(lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
+}
+
+// No live text-measurement available at render time, so title size is a
+// character-count heuristic rather than an exact fit calculation.
+function titleFontSize(title) {
+  if (title.length <= 35) return 52;
+  if (title.length <= 55) return 42;
+  return 34;
+}
+
 function arrayBufferToBase64(buffer) {
   let binary = "";
   const bytes = new Uint8Array(buffer);
@@ -82,13 +99,20 @@ export async function onRequest(context) {
   }
 }
 
+const TITLE_HARD_CAP = 120; // sanity cap only, not the normal wrap path
+const DESCRIPTION_MAX_CHARS = 130;
+
 async function renderOg(context) {
   const { request } = context;
   const url = new URL(request.url);
-  const title = (url.searchParams.get("title") || "Bitrise Docs").slice(0, 120);
-  const description = (
-    url.searchParams.get("description") || DEFAULT_DESCRIPTION
-  ).slice(0, 200);
+  const title = (url.searchParams.get("title") || "Bitrise Docs").slice(
+    0,
+    TITLE_HARD_CAP,
+  );
+  const description = truncateText(
+    url.searchParams.get("description") || DEFAULT_DESCRIPTION,
+    DESCRIPTION_MAX_CHARS,
+  );
 
   const origin = url.origin;
 
@@ -103,7 +127,7 @@ async function renderOg(context) {
       <img src="${logoDataUri}" width="244" height="46" style="position:absolute; top:50px; left:80px; width:244px; height:46px;" />
       <div style="display:flex; align-items:center; width:100%; height:100%; padding:0 70px 0 80px;">
         <div style="display:flex; flex-direction:column; width:660px;">
-          <div style="display:flex; font-size:52px; font-weight:800; color:#ffffff; line-height:1.2; margin-bottom:28px;">${sanitizeText(title)}</div>
+          <div style="display:flex; font-size:${titleFontSize(title)}px; font-weight:800; color:#ffffff; line-height:1.2; margin-bottom:28px;">${sanitizeText(title)}</div>
           <div style="display:flex; font-size:26px; font-weight:400; color:#c9c1cd; line-height:1.5;">${sanitizeText(description)}</div>
         </div>
         <img src="${illustrationDataUri}" width="300" height="212" style="width:300px; height:212px; margin-left:auto;" />
