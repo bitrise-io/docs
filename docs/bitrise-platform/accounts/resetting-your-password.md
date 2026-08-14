@@ -17,12 +17,8 @@ If you try to log in but you forgot your password:
 1. Provide your **Email** or **Username** so that we know where to send password recovery link.
 1. Check your inbox for the **Reset password instructions** sent by letsconnect.
 1. Click **Reset Password** or copy the URL into your browser.
-1. Add your new password and hit **Save**.
+1. Add your new password and hit **Change Password**.
 1. Once your password has been changed, click **Log in** to access our login page again.
 1. Add your **Username** and new **Password** to log into your Bitrise Dashboard.
 
-If you failed to log in for the third time, [reCAPTCHA](https://developers.google.com/recaptcha/) will get enabled to check if you are a human.
-
 If you failed to log in for an excessive amount of attempts, you will automatically get locked out. Check your inbox for our **Unlock Instructions** email!
-
-![Resetting_your_password.png](/img/_paligo/uuid-6466da39-be6a-66e4-fc28-662201fbb0b2.png)
