@@ -13,6 +13,16 @@
  * pre-existing legacy /jp/* one) would silently stop applying after
  * deploy, even though the build succeeds and looks correct locally.
  *
+ * NOTE: index.html deliberately does NOT get promoted the same way. It was
+ * tried and reverted — copying build/en/index.html to build/index.html
+ * serves correct HTML on the initial request, but Docusaurus's client-side
+ * router has no route registered for bare "/" (only /en/... and /ja/...),
+ * so React hydration fails (errors #418/#423) and immediately replaces the
+ * page with a client-rendered 404 for real browser users. A redirect
+ * (see static/_redirects) happens at the HTTP layer before any JS runs,
+ * so it doesn't hit this at all — that's why the root case is a redirect,
+ * not a promoted file, unlike _redirects/_headers here.
+ *
  * Every locale gets an identical copy of static/, so copying from any one
  * of them is equivalent — DEFAULT_LOCALE picks a deterministic source
  * rather than relying on directory-listing order.
