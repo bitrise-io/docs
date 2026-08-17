@@ -2,6 +2,7 @@ import React from 'react';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import {
   BitkitProvider,
 
@@ -196,6 +197,7 @@ function ProductCard({section}: {section: Section}) {
 
 export default function Home(): React.JSX.Element {
   const {siteConfig} = useDocusaurusContext();
+  const heroIllustrationSrc = useBaseUrl('/img/brand/portal-header-illustration.png');
 
   return (
     <Layout title="Home" description={siteConfig.tagline}>
@@ -226,7 +228,7 @@ export default function Home(): React.JSX.Element {
               </div>
             </div>
             <img
-              src="/img/brand/portal-header-illustration.png"
+              src={heroIllustrationSrc}
               alt=""
               className={styles.heroIllustration}
             />
