@@ -12,11 +12,11 @@ Yes, absolutely. It makes no difference to Pipelines.
 
 **How can I set the stack for my Pipeline?**
 
-In the current version, you can set the default stack for your app, or you can set Workflow-specific stacks, just like with standalone builds: [Setting the stack for your builds](/en/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds).
+In the current version, you can set the default stack for your app, or you can set Workflow-specific stacks, just like with standalone builds: [Setting the stack for your builds](/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds).
 
 **How can I use Environment Variables with a Pipeline?**
 
-You can keep using project-level and Workflow-level [Environment Variables](/en/bitrise-ci/configure-builds/environment-variables).
+You can keep using project-level and Workflow-level [Environment Variables](/bitrise-ci/configure-builds/environment-variables).
 
 **Can I rerun a failed Pipeline?**
 

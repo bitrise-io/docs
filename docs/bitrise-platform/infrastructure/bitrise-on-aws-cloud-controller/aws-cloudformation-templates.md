@@ -13,8 +13,8 @@ Bitrise maintains CloudFormation templates for different use cases:
 
 - **Deploy Cloud Controller to an existing VPC:** Choose this template if the user has an established AWS presence with already built-out networking.
 - **Deploy Cloud Controller into a brand new VPC**: Choose this template if the user is new to AWS or doesn’t have an already built-out networking. This template creates a new VPC first (based on customer preferences) and then deploys the controller into it.
-- **Deploy Airgapped Cloud Controller to an existing VPC**: Choose this template if the user has an established AWS presence with already built-out networking and would like to run the controller in a strictly [airgapped environment](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates). This is not fully automated: some [manual configuration is needed](#deploy-airgapped-cloud-controller-to-an-existing-vpc).
-- **Deploy Airgapped Cloud Controller into a brand new VPC**: Choose this template if the user is new to AWS or doesn’t have an already built-out networking and would like to run the controller in a strictly [airgapped environment](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates). This template creates a new VPC first with the correct airgapped configuration and then deploys the controller into it.
+- **Deploy Airgapped Cloud Controller to an existing VPC**: Choose this template if the user has an established AWS presence with already built-out networking and would like to run the controller in a strictly [airgapped environment](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates). This is not fully automated: some [manual configuration is needed](#deploy-airgapped-cloud-controller-to-an-existing-vpc).
+- **Deploy Airgapped Cloud Controller into a brand new VPC**: Choose this template if the user is new to AWS or doesn’t have an already built-out networking and would like to run the controller in a strictly [airgapped environment](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates). This template creates a new VPC first with the correct airgapped configuration and then deploys the controller into it.
 
 ## Deploy CloudController to an existing VPC
 
@@ -176,4 +176,4 @@ Template parameters:
 
 The controller needs certain AWS permissions to perform actions on the build nodes. We did our best to limit the required permissions to a minimal scope. We even made [our CloudFormation template repository](https://github.com/bitrise-io/cloud-controller-cloudformation/blob/production/iam/roles.yaml) public to build trust. Please see the [entire list of (up-to-date) required permissions](https://github.com/bitrise-io/cloud-controller-cloudformation/blob/production/iam/roles.yaml) in the repository.
 
-The controller requires connectivity to certain Bitrise endpoints. See more [in the controller documentation](/en/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/creating-and-configuring-a-controller).
+The controller requires connectivity to certain Bitrise endpoints. See more [in the controller documentation](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/creating-and-configuring-a-controller).

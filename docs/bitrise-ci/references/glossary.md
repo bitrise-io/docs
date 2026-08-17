@@ -26,7 +26,7 @@ The project scanner is a tool that identifies the given project's type and gener
 
 ## Secret {#secret}
 
-A Secret is a specific type of [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables): they hide their information in an encrypted format and their value is not exposed in the build logs nor in the `bitrise.yml` configuration. You can store confidential information, such as passwords or API keys as Secrets.
+A Secret is a specific type of [Environment Variable](/bitrise-ci/configure-builds/environment-variables): they hide their information in an encrypted format and their value is not exposed in the build logs nor in the `bitrise.yml` configuration. You can store confidential information, such as passwords or API keys as Secrets.
 
 ## Stack {#stack}
 
@@ -50,7 +50,7 @@ A Workflow is a collection of Steps, Environment Variables, and other configurat
 
 ## Workflow Editor {#workflow-editor}
 
-The Bitrise Workflow Editor allows you to edit your Workflows, configure Steps, upload files (including code signing files) and manage your app's triggers and stacks on a graphical user interface. It is available both online and [offline](/en/bitrise-ci/bitrise-cli/installing-and-upgrading-the-offline-workflow-editor).
+The Bitrise Workflow Editor allows you to edit your Workflows, configure Steps, upload files (including code signing files) and manage your app's triggers and stacks on a graphical user interface. It is available both online and [offline](/bitrise-ci/bitrise-cli/installing-and-upgrading-the-offline-workflow-editor).
 
 ## Workspace {#workspace}
 

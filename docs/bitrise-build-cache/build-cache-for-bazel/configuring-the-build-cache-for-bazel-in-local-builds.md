@@ -281,7 +281,7 @@ Installing the CLI and running `bitrise-build-cache auth login` on that machine 
 
 ## Remote Build Execution
 
-If Remote Build Execution is enabled for your workspace, you can use it locally by adding the `--rbe` flag to the activation. You need the workers set up for your workspace and the pool configuration in your repository's `.bazelrc` first. See [Remote Build Execution for Bazel](/en/bitrise-build-cache/build-cache-for-bazel/remote-build-execution-for-bazel).
+If Remote Build Execution is enabled for your workspace, you can use it locally by adding the `--rbe` flag to the activation. You need the workers set up for your workspace and the pool configuration in your repository's `.bazelrc` first. See [Remote Build Execution for Bazel](/bitrise-build-cache/build-cache-for-bazel/remote-build-execution-for-bazel).
 
 ## Troubleshooting
 

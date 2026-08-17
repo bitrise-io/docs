@@ -89,7 +89,7 @@ Once everything is configured, you can release your app. Depending on your setti
 
 ## Editing the release note of an Android app
 
-If you wish to release an app with a different release note than [what's already set in Release presets](/en/release-management/releases/configuring-a-release/release-automation), you can manually edit the note before rolling out a new app version. This change will not override the default configuration of the **Release presets**, it only affects the current release.
+If you wish to release an app with a different release note than [what's already set in Release presets](/release-management/releases/configuring-a-release/release-automation), you can manually edit the note before rolling out a new app version. This change will not override the default configuration of the **Release presets**, it only affects the current release.
 
 :::note[Release Managers only]
 

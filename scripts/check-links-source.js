@@ -2,7 +2,8 @@
 /**
  * Source-level internal link & anchor checker for the Bitrise docs.
  *
- * Validates, WITHOUT a build, that every internal `/en/...` link (and any
+ * Validates, WITHOUT a build, that every internal bare-absolute-path link
+ * (e.g. `/bitrise-ci/foo`, no locale prefix — see strip_en_prefix.py) (and any
  * `#anchor` on it) written in a `.md` / `.mdx` file points at a real page and
  * a real heading. Meant to run at authoring time — before a change reaches a
  * PR — as a complement to the build-time checks (`onBrokenLinks` in
@@ -30,17 +31,22 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const DOCS_DIR = path.join(ROOT, 'docs');
 const PARTIALS_DIR = path.join(ROOT, 'src', 'partials');
-const ROUTE_BASE = '/en'; // docusaurus.config.ts -> routeBasePath: 'en'
+// Internal links are bare absolute paths with no locale/routeBasePath
+// prefix (each locale has its own baseUrl now — see docusaurus.config.ts's
+// i18n.localeConfigs and scripts/strip_en_prefix.py). ROUTE_BASE stays as a
+// named constant (rather than inlining '') so routeForFile/normalizePath
+// read the same as before this convention changed.
+const ROUTE_BASE = '';
 
 // Routes whose anchors are generated at build time — validate the page exists,
 // but don't try to validate #anchors against source.
 const GENERATED_ANCHOR_ROUTE_PREFIXES = [
-  '/en/bitrise-api/api-reference',
-  '/en/bitrise-rde-api/api-reference',
+  '/bitrise-api/api-reference',
+  '/bitrise-rde-api/api-reference',
 ];
 
 const KNOWN_ANCHOR_EXCEPTIONS = new Set([
-  // '/en/some/page#anchor-from-a-partial',
+  // '/some/page#anchor-from-a-partial',
 ]);
 
 const args = process.argv.slice(2);

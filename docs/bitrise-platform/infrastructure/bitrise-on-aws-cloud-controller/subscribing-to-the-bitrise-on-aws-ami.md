@@ -34,4 +34,4 @@ You can get a private offer of the Bitrise on AWS listings:
 
    ![continue-to-launch.png](/img/_paligo/uuid-d1f6b886-e707-4116-3eb6-331b765507ba.png)
 
-To read more about configuring your Amazon EC2 instance and running builds there: [Launching an EC2 instance for the Bitrise AMI](/en/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/launching-an-ec2-instance-for-the-bitrise-ami).
+To read more about configuring your Amazon EC2 instance and running builds there: [Launching an EC2 instance for the Bitrise AMI](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/launching-an-ec2-instance-for-the-bitrise-ami).

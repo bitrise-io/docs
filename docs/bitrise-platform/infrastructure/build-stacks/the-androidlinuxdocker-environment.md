@@ -9,7 +9,7 @@ For our Linux-based stacks, we use standard Docker images, hosted on [Docker Hub
 
 :::note[Pre-installed tools]
 
-All stacks have a large number of pre-installed tools available: [Preinstalled tools on Bitrise stacks](/en/bitrise-platform/infrastructure/build-stacks/preinstalled-tools-on-bitrise-stacks)
+All stacks have a large number of pre-installed tools available: [Preinstalled tools on Bitrise stacks](/bitrise-platform/infrastructure/build-stacks/preinstalled-tools-on-bitrise-stacks)
 
 :::
 

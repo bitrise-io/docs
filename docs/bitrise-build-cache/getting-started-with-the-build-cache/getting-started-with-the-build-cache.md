@@ -20,24 +20,24 @@ Bitrise supports remote build caching for the Gradle, Bazel, Xcode, and React Na
 
 ## Setting up on Bitrise CI
 
-- [Build Cache for Gradle](/en/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-the-bitrise-ci-environment).
-- [Build Cache for Bazel](/en/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-the-bitrise-ci-environment).
-- [Build Cache for Xcode](/en/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-the-bitrise-ci-environment).
-- [Build Cache for React Native](/en/bitrise-build-cache/build-cache-for-react-native/configuring-the-build-cache-for-react-native-in-the-bitrise-ci-environment).
+- [Build Cache for Gradle](/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-the-bitrise-ci-environment).
+- [Build Cache for Bazel](/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-the-bitrise-ci-environment).
+- [Build Cache for Xcode](/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-the-bitrise-ci-environment).
+- [Build Cache for React Native](/bitrise-build-cache/build-cache-for-react-native/configuring-the-build-cache-for-react-native-in-the-bitrise-ci-environment).
 
 ## Setting up on other CIs
 
-- [Build Cache for Gradle](/en/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-other-ci-environments).
-- [Build Cache for Bazel](/en/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-other-ci-environments).
-- [Build Cache for Xcode](/en/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-non-bitrise-ci-environments).
-- [Build Cache for React Native](/en/bitrise-build-cache/build-cache-for-react-native/configuring-the-build-cache-for-react-native-in-non-bitrise-ci-environments).
+- [Build Cache for Gradle](/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-other-ci-environments).
+- [Build Cache for Bazel](/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-other-ci-environments).
+- [Build Cache for Xcode](/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-non-bitrise-ci-environments).
+- [Build Cache for React Native](/bitrise-build-cache/build-cache-for-react-native/configuring-the-build-cache-for-react-native-in-non-bitrise-ci-environments).
 
 ## Setting up in a local dev environment
 
-- [Build Cache for Gradle](/en/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-local-builds).
-- [Build Cache for Bazel](/en/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-local-builds).
-- [Build Cache for Xcode](/en/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-local-builds).
-- [Build Cache for React Native](/en/bitrise-build-cache/build-cache-for-react-native/configuring-the-build-cache-for-react-native-in-local-builds).
+- [Build Cache for Gradle](/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-local-builds).
+- [Build Cache for Bazel](/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-local-builds).
+- [Build Cache for Xcode](/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-local-builds).
+- [Build Cache for React Native](/bitrise-build-cache/build-cache-for-react-native/configuring-the-build-cache-for-react-native-in-local-builds).
 
 ## Adding a new connection to the Build Cache
 
@@ -46,8 +46,8 @@ To start using the Bitrise Build Cache, you have to add a new connection. The pr
 - Selecting a CI provider: you can use either Bitrise or another CI provider.
 - Selecting a build tool: currently, Bazel, Gradle, Xcode, and React Native are supported.
 - If you use Bitrise as your CI provider, selecting a Bitrise project.
-- If you use a different CI provider, adding [a personal access token](/en/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token) to allow the Bitrise Build Cache access to your CI.
-- Adding the cache activation scripts to your CI process. On Bitrise, we have dedicated [Steps](/en/bitrise-ci/workflows-and-pipelines/steps/steps-overview) for this.
+- If you use a different CI provider, adding [a personal access token](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token) to allow the Bitrise Build Cache access to your CI.
+- Adding the cache activation scripts to your CI process. On Bitrise, we have dedicated [Steps](/bitrise-ci/workflows-and-pipelines/steps/steps-overview) for this.
 
 To add a new connection:
 

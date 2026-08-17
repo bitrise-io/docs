@@ -238,10 +238,14 @@ workflows:
 
 ### Cross-references
 
-- Internal links use **absolute paths starting with `/en/...`**.
+- Internal links use **bare absolute paths — no locale prefix**. Each locale
+  (`en`, `ja`, ...) has its own `baseUrl` (see `docusaurus.config.ts`'s
+  `i18n.localeConfigs`), so a hardcoded `/en/...` prefix breaks under any
+  other locale (`/ja/en/...`, which doesn't exist). Docusaurus resolves a
+  bare path against whichever locale is currently rendering.
 - The link target is the page's **slug**, not its file path:
   ```mdx
-  See [Adding a new project](/en/bitrise-ci/getting-started/adding-a-new-project).
+  See [Adding a new project](/bitrise-ci/getting-started/adding-a-new-project).
   ```
 - Don't add the `.html` suffix; Docusaurus handles it.
 - For glossary terms, prefer `<GlossTerm baseform="Workflow">Workflow</GlossTerm>` on first mention so readers get the inline tooltip.
@@ -426,7 +430,7 @@ If you discover a new convention or pitfall while editing, **add it here** so th
 
 ## Validating links before a change
 
-Before proposing any docs edit (new page, moved page, changed slug, or reworded heading), run the source-level checker on the files you touched and fix anything it flags. This catches broken internal `/en/...` links and missing `#anchor` targets at authoring time — before the PR — rather than relying on the build-time `onBrokenLinks` warning or the post-build `link_analyzer.js`.
+Before proposing any docs edit (new page, moved page, changed slug, or reworded heading), run the source-level checker on the files you touched and fix anything it flags. This catches broken internal links and missing `#anchor` targets at authoring time — before the PR — rather than relying on the build-time `onBrokenLinks` warning or the post-build `link_analyzer.js`.
 
 Run `node scripts/check-links-source.js docs/path/to/edited-page.mdx` to check specific files, or `node scripts/check-links-source.js` with no arguments to scan the whole `docs/` tree. Exit code is non-zero if any internal link points to a missing page or any `#anchor` points to a heading that doesn't exist on the target page. It follows `@site/src/partials/*.mdx` imports and understands OpenAPI-generated `.api.mdx` / `.info.mdx` routes, so those aren't false positives. Don't hand over a page with unresolved cross-references.
 

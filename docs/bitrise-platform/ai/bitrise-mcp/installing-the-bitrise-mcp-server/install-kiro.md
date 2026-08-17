@@ -56,7 +56,7 @@ Once installed, the Bitrise Power will automatically activate when relevant. You
 - Configure pipelines
 - Set up release management
 
-The power provides access to all 63 Bitrise tools. For a complete list of available tools and their parameters, refer to the [tools documentation](/en/bitrise-platform/ai/bitrise-mcp/tools).
+The power provides access to all 63 Bitrise tools. For a complete list of available tools and their parameters, refer to the [tools documentation](/bitrise-platform/ai/bitrise-mcp/tools).
 
 ## OAuth-based Configuration (experimental)
 

@@ -15,6 +15,6 @@ In this example, B and C are executed, in parallel, once A is successful. D is e
 
 Read more about Pipelines:
 
-- [Configuring a Bitrise Pipeline](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline)
-- [Pipeline builds](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/pipeline-builds)
-- [Default Pipelines](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/default-pipelines)
+- [Configuring a Bitrise Pipeline](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline)
+- [Pipeline builds](/bitrise-ci/workflows-and-pipelines/build-pipelines/pipeline-builds)
+- [Default Pipelines](/bitrise-ci/workflows-and-pipelines/build-pipelines/default-pipelines)

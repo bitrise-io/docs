@@ -6,7 +6,7 @@ import styles from './styles.module.css';
 type GlossaryEntry = {term: string; definition: string};
 const data: Record<string, GlossaryEntry> = glossary as Record<string, GlossaryEntry>;
 
-const GLOSSARY_PATH = '/en/bitrise-ci/references/glossary';
+const GLOSSARY_PATH = '/bitrise-ci/references/glossary';
 
 function slugify(text: string): string {
   return text

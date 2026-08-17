@@ -1,5 +1,6 @@
 import React from 'react';
 import Layout from '@theme/Layout';
+import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import {
   BitkitProvider,
@@ -33,20 +34,20 @@ const sections: Section[] = [
     id: 'bitrise-platform',
     title: 'Bitrise as a Platform',
     description: 'Learn the fundamentals of your Mobile DevOps platform.',
-    href: '/en/bitrise-platform',
+    href: '/bitrise-platform',
     icon: IconDashboard,
     iconBg: '#f6eaff',
     iconColor: '#7b3ba5',
     columns: [
       [
-        {label: 'Getting started with Bitrise', href: '/en/bitrise-platform/getting-started/getting-started-with-the-bitrise-platform'},
-        {label: 'Integrations', href: '/en/bitrise-platform/integrations/about-integrations'},
-        {label: 'Migrating from Jenkins', href: '/en/bitrise-ci/getting-started/migrating-to-bitrise/migrating-from-jenkins-to-bitrise'},
+        {label: 'Getting started with Bitrise', href: '/bitrise-platform/getting-started/getting-started-with-the-bitrise-platform'},
+        {label: 'Integrations', href: '/bitrise-platform/integrations/about-integrations'},
+        {label: 'Migrating from Jenkins', href: '/bitrise-ci/getting-started/migrating-to-bitrise/migrating-from-jenkins-to-bitrise'},
       ],
       [
-        {label: 'Workspaces', href: '/en/bitrise-platform/workspaces/workspaces-overview'},
-        {label: 'Migrating from App Center', href: '/en/bitrise-ci/getting-started/migrating-to-bitrise/migrating-from-app-center-to-bitrise'},
-        {label: 'Bitrise AI FAQs', href: '/en/bitrise-platform/ai/ai-faq---how-bitrise-leverages-ai-technologies-in-its-features-and-services'},
+        {label: 'Workspaces', href: '/bitrise-platform/workspaces/workspaces-overview'},
+        {label: 'Migrating from App Center', href: '/bitrise-ci/getting-started/migrating-to-bitrise/migrating-from-app-center-to-bitrise'},
+        {label: 'Bitrise AI FAQs', href: '/bitrise-platform/ai/ai-faq---how-bitrise-leverages-ai-technologies-in-its-features-and-services'},
       ],
     ],
   },
@@ -54,20 +55,20 @@ const sections: Section[] = [
     id: 'bitrise-ci',
     title: 'Bitrise CI',
     description: 'Automate builds and tests, and deploy your mobile apps.',
-    href: '/en/bitrise-ci',
+    href: '/bitrise-ci',
     icon: IconCi,
     iconBg: '#ffd7c9',
     iconColor: '#d45202',
     columns: [
       [
-        {label: 'Getting started with CI', href: '/en/bitrise-ci/getting-started/getting-started'},
-        {label: 'Workflows and Pipelines', href: '/en/bitrise-ci/workflows-and-pipelines/workflows/workflows-overview'},
-        {label: 'Builds', href: '/en/bitrise-ci/run-and-analyze-builds/starting-builds/starting-builds-manually'},
+        {label: 'Getting started with CI', href: '/bitrise-ci/getting-started/getting-started'},
+        {label: 'Workflows and Pipelines', href: '/bitrise-ci/workflows-and-pipelines/workflows/workflows-overview'},
+        {label: 'Builds', href: '/bitrise-ci/run-and-analyze-builds/starting-builds/starting-builds-manually'},
       ],
       [
-        {label: 'Code signing', href: '/en/bitrise-ci/code-signing/ios-code-signing/ios-code-signing'},
-        {label: 'Testing', href: '/en/bitrise-ci/testing/testing-android-apps/android-unit-tests'},
-        {label: 'Bitrise API', href: '/en/bitrise-ci/api/authenticating-with-the-bitrise-api'},
+        {label: 'Code signing', href: '/bitrise-ci/code-signing/ios-code-signing/ios-code-signing'},
+        {label: 'Testing', href: '/bitrise-ci/testing/testing-android-apps/android-unit-tests'},
+        {label: 'Bitrise API', href: '/bitrise-ci/api/authenticating-with-the-bitrise-api'},
       ],
     ],
   },
@@ -75,15 +76,15 @@ const sections: Section[] = [
     id: 'bitrise-build-cache',
     title: 'Build Cache',
     description: 'Speed up your builds on any CI/CD platform or in a local environment.',
-    href: '/en/bitrise-build-cache',
+    href: '/bitrise-build-cache',
     icon: IconBuildCache,
     iconBg: '#fff4cd',
     iconColor: '#b27e00',
     columns: [
       [
-        {label: 'Build Cache for Xcode', href: '/en/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-the-bitrise-ci-environment'},
-        {label: 'Build Cache for Gradle', href: '/en/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-the-bitrise-ci-environment'},
-        {label: 'Build Cache for Bazel', href: '/en/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-the-bitrise-ci-environment'},
+        {label: 'Build Cache for Xcode', href: '/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-the-bitrise-ci-environment'},
+        {label: 'Build Cache for Gradle', href: '/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-the-bitrise-ci-environment'},
+        {label: 'Build Cache for Bazel', href: '/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-the-bitrise-ci-environment'},
       ],
     ],
   },
@@ -91,15 +92,15 @@ const sections: Section[] = [
     id: 'release-management',
     title: 'Release Management',
     description: 'Test and release your mobile apps in an automated and transparent way.',
-    href: '/en/release-management',
+    href: '/release-management',
     icon: IconRelease,
     iconBg: '#d7f5ff',
     iconColor: '#2582d0',
     columns: [
       [
-        {label: 'Build distribution for testing', href: '/en/release-management/build-distribution/distributing-builds-to-testers'},
-        {label: 'Bitrise CodePush', href: '/en/release-management/codepush/about-codepush'},
-        {label: 'Distribution API', href: '/en/release-management/release-management-api'},
+        {label: 'Build distribution for testing', href: '/release-management/build-distribution/distributing-builds-to-testers'},
+        {label: 'Bitrise CodePush', href: '/release-management/codepush/about-codepush'},
+        {label: 'Distribution API', href: '/release-management/release-management-api'},
       ],
     ],
   },
@@ -107,15 +108,15 @@ const sections: Section[] = [
     id: 'insights',
     title: 'Insights',
     description: 'Explore analytics, monitor trends, and set up alerts to improve efficiency.',
-    href: '/en/insights',
+    href: '/insights',
     icon: IconInsights,
     iconBg: '#dbfff3',
     iconColor: '#2a9d4c',
     columns: [
       [
-        {label: 'Metrics', href: '/en/insights/available-metrics-in-insights/bitrise-ci-metrics'},
-        {label: 'Alerts', href: '/en/insights/configuring-alerts-in-insights'},
-        {label: 'Insights tutorials', href: '/en/insights/insights-tutorials/monitoring-and-optimizing-your-slowest-mobile-builds'},
+        {label: 'Metrics', href: '/insights/available-metrics-in-insights/bitrise-ci-metrics'},
+        {label: 'Alerts', href: '/insights/configuring-alerts-in-insights'},
+        {label: 'Insights tutorials', href: '/insights/insights-tutorials/monitoring-and-optimizing-your-slowest-mobile-builds'},
       ],
     ],
   },
@@ -123,15 +124,15 @@ const sections: Section[] = [
     id: 'bitrise-build-hub',
     title: 'Build Hub',
     description: 'Use high-performance build infrastructure for GitHub Actions, purpose-built for mobile app development.',
-    href: '/en/bitrise-build-hub',
+    href: '/bitrise-build-hub',
     icon: IconCpu,
     iconBg: '#efebef',
     iconColor: '#7d7184',
     columns: [
       [
-        {label: 'Build Hub overview', href: '/en/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview'},
-        {label: 'Configuring Build Hub for Github Actions', href: '/en/bitrise-build-hub/build-hub-for-github-actions/configuring-build-hub-for-github-actions'},
-        {label: 'Machine types', href: '/en/bitrise-build-hub/infrastructure/build-machine-types'},
+        {label: 'Build Hub overview', href: '/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview'},
+        {label: 'Configuring Build Hub for Github Actions', href: '/bitrise-build-hub/build-hub-for-github-actions/configuring-build-hub-for-github-actions'},
+        {label: 'Machine types', href: '/bitrise-build-hub/infrastructure/build-machine-types'},
       ],
     ],
   },
@@ -139,16 +140,16 @@ const sections: Section[] = [
     id: 'bitrise-rde',
     title: 'Remote Dev Environments',
     description: 'Spin up on-demand macOS and Linux cloud dev machines, and connect from your terminal, IDE, or AI agent.',
-    href: '/en/bitrise-rde',
+    href: '/bitrise-rde',
     icon: IconRemoteAccess,
     iconBg: '#e6e9ff',
     iconColor: '#3f51d4',
     columns: [
       [
-        {label: 'Remote Dev Environments overview', href: '/en/bitrise-rde/getting-started/remote-dev-environments-overview'},
-        {label: 'Quickstart', href: '/en/bitrise-rde/getting-started/quickstart'},
-        {label: 'Bitrise RDE CLI', href: '/en/bitrise-rde/rde-options/bitrise-rde-cli'},
-        {label: 'RDE API', href: '/en/bitrise-rde/configuration/rde-api'},
+        {label: 'Remote Dev Environments overview', href: '/bitrise-rde/getting-started/remote-dev-environments-overview'},
+        {label: 'Quickstart', href: '/bitrise-rde/getting-started/quickstart'},
+        {label: 'Bitrise RDE CLI', href: '/bitrise-rde/rde-options/bitrise-rde-cli'},
+        {label: 'RDE API', href: '/bitrise-rde/configuration/rde-api'},
       ],
     ],
   },
@@ -167,7 +168,7 @@ function ProductCard({section}: {section: Section}) {
             <Icon size="24" />
           </div>
           <div className={styles.cardTextBlock}>
-            <a href={section.href} className={styles.cardTitleLink}><h3 className={styles.cardTitle}>{section.title}</h3></a>
+            <Link to={section.href} className={styles.cardTitleLink}><h3 className={styles.cardTitle}>{section.title}</h3></Link>
             <p className={styles.cardDescription}>{section.description}</p>
           </div>
         </div>
@@ -176,9 +177,9 @@ function ProductCard({section}: {section: Section}) {
           {section.columns.map((col, colIdx) => (
             <div key={colIdx} className={styles.linkColumn}>
               {col.map((link) => (
-                <a key={link.label} href={link.href} className={styles.cardLink}>
+                <Link key={link.label} to={link.href} className={styles.cardLink}>
                   {link.label}
-                </a>
+                </Link>
               ))}
             </div>
           ))}
@@ -186,7 +187,7 @@ function ProductCard({section}: {section: Section}) {
 
         <div className={styles.cardFooter}>
           <hr className={styles.cardDivider} />
-          <a href={section.href} className={styles.viewAllLink}>View all</a>
+          <Link to={section.href} className={styles.viewAllLink}>View all</Link>
         </div>
       </div>
     </div>
