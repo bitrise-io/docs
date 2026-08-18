@@ -22,7 +22,7 @@ A self-updating system that (1) keeps a **UI copy library** in sync with the liv
 | `ja-preferred-translations.yaml` | Human-owned terminology-consistency map — one approved Japanese rendering per English term we *do* translate (e.g. "build number" → "ビルド番号"). Separate from the glossary because the glossary is regenerated weekly and would overwrite it. |
 | `JA-TRANSLATION-GUIDE.md` | House rules for the translation (register, orthography, terminology) with a LIVE/PROCESS/ROADMAP status legend. |
 | `.github/workflows/refresh-ui-library.yml` | Weekly + on-demand: rebuilds the library/glossary and opens a PR if anything changed — touching only `localization/`, a diff a human can actually review. |
-| `.github/workflows/translate-ja-docs.yml` | On docs PRs: translates the changed pages and commits the JA versions. |
+| `.github/workflows/translate-ja-docs.yml` | On docs PRs: translates the changed pages and commits the JA versions. **Ships disabled** — gated on the `JA_AUTO_TRANSLATE` repo variable until enough pages are migrated; runs show as skipped meanwhile. |
 | `.github/workflows/ja-style-check.yml` + `.textlintrc.yaml` | Runs the JTF Japanese Standard Style Guide checker (textlint) on changed JA docs — the automated stand-in for a native reviewer on style/orthography, not meaning. |
 
 ## How it flows
@@ -68,6 +68,7 @@ A self-updating system that (1) keeps a **UI copy library** in sync with the liv
    - `ANTHROPIC_API_KEY` — for translation.
    - `CI_REPO_TOKEN` — a PAT or GitHub App token with **read** access to `bitrise-website`, `bitrise-workflow-editor`, `bitrise-codespaces`, `bitkit`, `bitrise-steplib` (the default `GITHUB_TOKEN` can't read other repos).
 4. Enable Actions. Run **Refresh UI copy library** once manually to seed `localization/`. No tagging pass is needed — the docs source stays as-is; protection is applied at translation time.
+5. When enough pages are migrated to keep `/ja/` in lock-step, set the repo variable `JA_AUTO_TRANSLATE=true` (Settings → Secrets and variables → Actions → Variables) to turn on translate-on-PR. Until then the job skips silently.
 
 ## Run locally (no CI)
 

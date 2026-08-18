@@ -17,8 +17,15 @@
 #
 # Commit translate_docs.py to .github/scripts/ and this file to .github/workflows/.
 #
-# REQUIRED SECRET
-#   ANTHROPIC_API_KEY — for the translation calls.
+# CURRENTLY DISABLED — auto-translation on PRs is off until enough pages are
+# migrated to make the /ja/ locale worth keeping in lock-step. The job is
+# gated on the repo variable JA_AUTO_TRANSLATE (Settings → Secrets and
+# variables → Actions → Variables): set it to 'true' to enable. Until then
+# every run shows as skipped, so PRs get no noise and no failing check.
+#
+# REQUIRED TO ENABLE
+#   ANTHROPIC_API_KEY secret — for the translation calls.
+#   JA_AUTO_TRANSLATE repo variable set to 'true'.
 #
 # ADJUST for your Docusaurus i18n layout:
 #   --src-root / --dest-root and the `paths:` filter below.
@@ -37,6 +44,8 @@ permissions:
 
 jobs:
   translate:
+    # Disabled until enough pages are migrated — see the header comment.
+    if: vars.JA_AUTO_TRANSLATE == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
