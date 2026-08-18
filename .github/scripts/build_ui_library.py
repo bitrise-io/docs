@@ -53,7 +53,10 @@ PROTECT_PATTERNS = [
     # Import/export lines, masked whole so a term or filename fragment inside
     # one can't be half-masked into invalid MDX.
     ("import_export_line", r'(?m)^(?:import|export)\b[^\n]*$'),
-    ("env_var",           r'\$?[A-Z][A-Z0-9_]{2,}'),
+    # Must contain a digit or underscore (or a $ prefix): a bare ALL-CAPS run
+    # is as often English emphasis ("NOT", "MUST") as an identifier, and the
+    # acronyms tier already protects real acronyms exact-case.
+    ("env_var",           r'(\$[A-Z][A-Z0-9_]+|[A-Z][A-Z0-9]*[_0-9][A-Z0-9_]*)'),
     ("filename",          r'\S+\.(yml|yaml|json|sh|rb|swift|kt|kts|java|md|mdx|plist|xml|gradle|podspec|toml|lock|cfg|env)'),
     ("mdx_component",     r'</?[A-Za-z][^>]*>'),
     ("docusaurus_admonition", r':::[a-z]+'),

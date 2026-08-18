@@ -62,8 +62,10 @@ protect_patterns:
                                     #   one at a time and leave the protected text exposed between
   - name: import_export_line       # whole import/export lines — a term or filename fragment
     regex: '(?m)^(?:import|export)\b[^\n]*$'  #   inside one must not be half-masked into invalid MDX
-  - name: env_var                  # BITRISE_BUILD_NUMBER, GIT_HTTP_PASSWORD, $FOO
-    regex: '\$?[A-Z][A-Z0-9_]{2,}'
+  - name: env_var                  # BITRISE_BUILD_NUMBER, EC2, $FOO — must contain a digit or
+    regex: '(\$[A-Z][A-Z0-9_]+|[A-Z][A-Z0-9]*[_0-9][A-Z0-9_]*)'  #   underscore (or a $ prefix), so ALL-CAPS
+                                    #   English emphasis ("NOT", "MUST") stays translatable prose;
+                                    #   bare acronyms are covered exact-case by the acronyms tier
   - name: filename                 # bitrise.yml, Podfile.lock, build.gradle
     regex: '\S+\.(yml|yaml|json|sh|rb|swift|kt|kts|java|md|mdx|plist|xml|gradle|podspec|toml|lock|cfg|env)'
   - name: mdx_component            # <Tabs>, <CodeBlock>, </Admonition>
