@@ -61,21 +61,33 @@ async function fetchAsDataUri(origin, path, mime) {
 // lifetime, so evict on rejection and let the next request retry.
 const assetsCache = new Map();
 
+// Every locale gets its own baseUrl (/en/, /ja/, ...), so static/ is emitted
+// under each locale directory and nothing is served from /img or /fonts at
+// the root any more. These are locale-independent brand assets, so they are
+// read from the default locale rather than from the requested one. The root
+// paths do still 301 here (static/_redirects), but a same-zone subrequest
+// from a Pages Function is not the place to rely on redirect following.
+const ASSET_BASE = "/en";
+
 function loadAssets(origin) {
   if (!assetsCache.has(origin)) {
     const assets = Promise.all([
-      fetchAsDataUri(origin, "/img/brand/bitrise-docs-lockup.png", "image/png"),
       fetchAsDataUri(
         origin,
-        "/img/brand/portal-header-illustration-2x.png",
+        `${ASSET_BASE}/img/brand/bitrise-docs-lockup.png`,
         "image/png",
       ),
-      fetchOk(new URL("/fonts/figtree/Figtree-ExtraBold.ttf", origin)).then(
-        (r) => r.arrayBuffer(),
+      fetchAsDataUri(
+        origin,
+        `${ASSET_BASE}/img/brand/portal-header-illustration-2x.png`,
+        "image/png",
       ),
-      fetchOk(new URL("/fonts/figtree/Figtree-Regular.ttf", origin)).then(
-        (r) => r.arrayBuffer(),
-      ),
+      fetchOk(
+        new URL(`${ASSET_BASE}/fonts/figtree/Figtree-ExtraBold.ttf`, origin),
+      ).then((r) => r.arrayBuffer()),
+      fetchOk(
+        new URL(`${ASSET_BASE}/fonts/figtree/Figtree-Regular.ttf`, origin),
+      ).then((r) => r.arrayBuffer()),
     ]).then(([logoDataUri, illustrationDataUri, fontBold, fontRegular]) => ({
       logoDataUri,
       illustrationDataUri,

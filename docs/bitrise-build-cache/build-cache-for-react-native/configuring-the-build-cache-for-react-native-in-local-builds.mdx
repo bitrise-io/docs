@@ -11,7 +11,7 @@ import TabItem from '@theme/TabItem';
 
 You can use the Bitrise Build Cache for local React Native builds too. Your local builds then read from the same cache as your CI builds, so native code your CI already compiled doesn't have to be compiled again on your machine.
 
-A React Native project builds through three native toolchains, and the Bitrise Build Cache CLI covers all of them: Gradle for Android, Xcode for iOS, and `ccache` for C++ native modules. For an overview of what each one caches, see [Build Cache for React Native overview](/en/bitrise-build-cache/build-cache-for-react-native/build-cache-for-react-native-overview).
+A React Native project builds through three native toolchains, and the Bitrise Build Cache CLI covers all of them: Gradle for Android, Xcode for iOS, and `ccache` for C++ native modules. For an overview of what each one caches, see [Build Cache for React Native overview](/bitrise-build-cache/build-cache-for-react-native/build-cache-for-react-native-overview).
 
 ## Before you start
 
@@ -159,7 +159,7 @@ xcodebuild \
 
 Expect a `CompilationCacheMetrics` line with non-zero hits and a `[Bitrise Analytics] Invocation saved` link at the end of the output. Native modules compile through `ccache`, and their stats are included in the same invocation.
 
-For more about which commands to wrap and why, see [Wrapping native build commands](/en/bitrise-build-cache/build-cache-for-react-native/wrapping-native-build-commands).
+For more about which commands to wrap and why, see [Wrapping native build commands](/bitrise-build-cache/build-cache-for-react-native/wrapping-native-build-commands).
 
 ## Checking that it worked
 
@@ -210,6 +210,16 @@ If a build doesn't behave as expected, re-run the wizard with debug logging:
 ```bash
 bitrise-build-cache activate --interactive --debug
 ```
+
+:::note
+If `xcelerate-proxy` or `ccache-helper` was already running from an earlier activation, the new push setting won't take effect until you restart it — both lock in push-enablement at start-up and don't reload it when you re-run the wizard. Restart them:
+
+```bash
+bitrise-build-cache xcelerate stop-proxy
+bitrise-build-cache ccache storage-helper stop
+bitrise-build-cache activate --interactive
+```
+:::
 
 :::note
 An entry written from a build whose source files changed while it was running can be wrong, and your teammates read the same entry. Avoid editing files during a build you push from.

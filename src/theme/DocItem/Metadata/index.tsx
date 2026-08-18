@@ -7,6 +7,12 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 // request by the /og Cloudflare Pages Function (functions/og.js), using this
 // page's title + description. This keeps every doc page's card in sync with
 // its content without committing a PNG per page.
+//
+// PageMetadata resolves this path with withBaseUrl(image, {absolute: true}),
+// and each locale has its own baseUrl, so the emitted og:image is
+// https://docs.bitrise.io/<locale>/og?… rather than /og?…. That locale-
+// prefixed route is served by functions/[locale]/og.js — keep the two in
+// sync if this path ever changes.
 function useGeneratedOgImage(): string {
   const {
     metadata: {title, description},

@@ -72,8 +72,13 @@ def added_page_slugs() -> set[str]:
             ['git', 'fetch', '--depth=1', 'origin', base_ref],
             check=True, capture_output=True, cwd=ROOT,
         )
+        # Two-dot diff (not three-dot): CI checks out a shallow merge ref and
+        # a separately shallow-fetched base ref, which share no common
+        # ancestor commit. Three-dot diff needs a merge-base to compute and
+        # fails in that case; two-dot compares the two tree snapshots
+        # directly and needs no shared history.
         diff = subprocess.run(
-            ['git', 'diff', '--name-status', f'origin/{base_ref}...HEAD'],
+            ['git', 'diff', '--name-status', f'origin/{base_ref}..HEAD'],
             check=True, capture_output=True, text=True, cwd=ROOT,
         ).stdout
     except (subprocess.CalledProcessError, OSError):

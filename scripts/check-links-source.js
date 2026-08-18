@@ -2,7 +2,8 @@
 /**
  * Source-level internal link & anchor checker for the Bitrise docs.
  *
- * Validates, WITHOUT a build, that every internal `/en/...` link (and any
+ * Validates, WITHOUT a build, that every internal bare-absolute-path link
+ * (e.g. `/bitrise-ci/foo`, no locale prefix — see strip_en_prefix.py) (and any
  * `#anchor` on it) written in a `.md` / `.mdx` file points at a real page and
  * a real heading. Meant to run at authoring time — before a change reaches a
  * PR — as a complement to the build-time checks (`onBrokenLinks` in
@@ -30,17 +31,22 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const DOCS_DIR = path.join(ROOT, 'docs');
 const PARTIALS_DIR = path.join(ROOT, 'src', 'partials');
-const ROUTE_BASE = '/en'; // docusaurus.config.ts -> routeBasePath: 'en'
+// Internal links are bare absolute paths with no locale/routeBasePath
+// prefix (each locale has its own baseUrl now — see docusaurus.config.ts's
+// i18n.localeConfigs and scripts/strip_en_prefix.py). ROUTE_BASE stays as a
+// named constant (rather than inlining '') so routeForFile/normalizePath
+// read the same as before this convention changed.
+const ROUTE_BASE = '';
 
 // Routes whose anchors are generated at build time — validate the page exists,
 // but don't try to validate #anchors against source.
 const GENERATED_ANCHOR_ROUTE_PREFIXES = [
-  '/en/bitrise-api/api-reference',
-  '/en/bitrise-rde-api/api-reference',
+  '/bitrise-api/api-reference',
+  '/bitrise-rde-api/api-reference',
 ];
 
 const KNOWN_ANCHOR_EXCEPTIONS = new Set([
-  // '/en/some/page#anchor-from-a-partial',
+  // '/some/page#anchor-from-a-partial',
 ]);
 
 const args = process.argv.slice(2);
@@ -84,6 +90,15 @@ function slugify(text) {
   return text
     .replace(/`([^`]*)`/g, '$1') // inline code
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // markdown links -> text
+    // JSX/MDX components (<NT>, <GlossTerm baseform="...">, etc.) -> their
+    // text content. Docusaurus's real anchor slugger renders these to plain
+    // text before slugifying, so a heading like "The <NT>Dashboards</NT>
+    // page" must produce the same "the-dashboards-page" here — otherwise
+    // this source-level checker flags a real, working anchor as broken.
+    // Without this, the tag delimiters get dropped by the punctuation strip
+    // below but the tag *name* survives as literal word characters, merging
+    // into the surrounding text (e.g. "the-ntdashboardsnt-page").
+    .replace(/<\/?[A-Za-z][^>]*>/g, '')
     .replace(/[*~]/g, '') // emphasis marks (keep _, it's word-internal e.g. run_if)
     .trim()
     .toLowerCase()
@@ -166,17 +181,41 @@ function anchorsForSource(src) {
   return anchors;
 }
 
-// Extract internal /en/ link targets from a page (markdown + JSX props).
+// Absolute paths that are served but are not doc routes, so they must not be
+// looked up in the route map. Everything else starting with a single "/" is a
+// doc link and gets validated.
+const NON_ROUTE_PREFIXES = ['/img/', '/fonts/', '/og?', '/og/', '/llms', '/favicon'];
+
+// Same idea, by shape rather than by prefix: a target whose last segment has a
+// file extension is a served file (a feed, an asset, a .md mirror), not a doc
+// route. `.html` is excluded on purpose — legacy-style `/foo.html` links are
+// real doc routes, and normalizePath() strips the suffix before lookup.
+const FILE_TARGET_RE = /\/[^/]+\.(?!html\b)[a-z0-9]{2,5}(?:$|[?#])/i;
+
+// Extract internal link targets from a page (markdown + JSX props). Links are
+// bare absolute paths now (no locale prefix — see strip_en_prefix.py), so these
+// patterns must NOT be anchored on a leading /en/: that would silently match
+// nothing and turn this whole checker into a no-op that always reports "clean".
 function internalLinks(src) {
   const clean = stripCodeFences(src).replace(/`[^`]*`/g, ''); // drop inline code too
   const targets = [];
   const patterns = [
-    /\]\((\/en\/[^)\s]+)\)/g, // [text](/en/...)
-    /\b(?:href|to)=["'](\/en\/[^"']+)["']/g, // href="/en/..." / to="/en/..."
+    /\]\((\/[^)\s]+)\)/g, // [text](/path)
+    /\b(?:href|to)=["'](\/[^"']+)["']/g, // href="/path" / to="/path"
+    // Object-literal form used by the hub landing pages (docs/*/index.mdx):
+    // href: '/path' and overviewHref="/path" / quickstartHref="/path".
+    /\b(?:href|to)\s*:\s*["'](\/[^"']+)["']/g,
+    /\b\w*Href\s*=\s*["'](\/[^"']+)["']/g,
   ];
   for (const re of patterns) {
     let m;
-    while ((m = re.exec(clean))) targets.push(m[1]);
+    while ((m = re.exec(clean))) {
+      const target = m[1];
+      if (target.startsWith('//')) continue; // protocol-relative, external
+      if (NON_ROUTE_PREFIXES.some((pre) => target.startsWith(pre))) continue;
+      if (FILE_TARGET_RE.test(target)) continue; // served file, not a doc route
+      targets.push(target);
+    }
   }
   return targets;
 }

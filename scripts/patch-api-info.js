@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Patches the generated *.info.mdx files after `docusaurus gen-api-docs`.
+ * Patches the generated *.info.mdx and *.api.mdx files after
+ * `docusaurus gen-api-docs`.
  *
  * The openapi-docs plugin regenerates these files from the spec on every run,
- * discarding manual edits. This script reapplies two fixes automatically for
- * each generated API reference:
+ * discarding manual edits. This script reapplies fixes automatically:
  *
  *   1. Adds `displayed_sidebar: <sidebar>` to the frontmatter so the page
  *      renders inside the correct product sidebar.
@@ -12,6 +12,14 @@
  *   2. Inserts the license name into the License section, which the plugin
  *      generates as an empty heading. Skipped when the spec has no license or
  *      isn't available as a local file (e.g. it's fetched from a remote URL).
+ *
+ *   3. Disambiguates duplicate sidebar labels. Two different operations can
+ *      share an identical OpenAPI `summary` (a spec-authoring issue upstream,
+ *      not something to fix here since both api/bitrise-ci.json and
+ *      api/bitrise-rde.json are themselves synced/generated). Docusaurus
+ *      derives i18n translation keys from sidebar labels, so a duplicate
+ *      breaks `docusaurus write-translations` outright — see DUPLICATE_LABEL_
+ *      OVERRIDES below for the specific pairs found so far.
  *
  * Every step is existsSync-guarded and idempotent, so running this after a
  * single-spec regeneration (only one info file present) is safe.
@@ -36,6 +44,25 @@ const TARGETS = [
     sidebar: 'rdeSidebar',
     specFile: null,
   },
+];
+
+// Explicit fix map, not a generic auto-disambiguation heuristic — same
+// convention as TARGETS above. Keyed by the generated file's `id` (stable
+// across regenerations; derived from the operationId/path in the spec).
+// Extend this if a future spec sync introduces another duplicate pair —
+// `docusaurus write-translations` will fail loudly with the exact `id`s
+// involved if it does, same as it did for these two.
+const DUPLICATE_LABEL_OVERRIDES = {
+  'organization-machine-type-update': 'Migrate machine types (organization)',
+  'user-machine-type-update': 'Migrate machine types (user)',
+  // Deprecated in favor of SessionDownloadFile — see this file's own
+  // description ("Deprecated: use SessionDownloadFile.").
+  'codespaces-service-session-download': 'Download files (deprecated)',
+};
+
+const API_REFERENCE_DIRS = [
+  '../docs/bitrise-api/api-reference',
+  '../docs/bitrise-rde-api/api-reference',
 ];
 
 for (const target of TARGETS) {
@@ -76,6 +103,66 @@ for (const target of TARGETS) {
   }
 
   fs.writeFileSync(filePath, content, 'utf-8');
+}
+
+// 3. Disambiguate known duplicate sidebar labels on the generated *.api.mdx
+// files (a different file per operation, unlike the *.info.mdx above).
+for (const dir of API_REFERENCE_DIRS) {
+  const dirPath = path.resolve(__dirname, dir);
+  if (!fs.existsSync(dirPath)) {
+    console.log(`· ${dir} not found, skipping duplicate-label patch`);
+    continue;
+  }
+  for (const file of fs.readdirSync(dirPath)) {
+    if (!file.endsWith('.api.mdx')) continue;
+    const id = file.slice(0, -'.api.mdx'.length);
+    const override = DUPLICATE_LABEL_OVERRIDES[id];
+    if (!override) continue;
+
+    const filePath = path.join(dirPath, file);
+    let content = fs.readFileSync(filePath, 'utf-8');
+    if (content.includes(`sidebar_label: "${override}"`)) {
+      console.log(`· [${id}] label override already applied, skipping`);
+      continue;
+    }
+    const before = content;
+    content = content
+      .replace(/^title: ".*"$/m, `title: "${override}"`)
+      .replace(/^sidebar_label: ".*"$/m, `sidebar_label: "${override}"`)
+      .replace(/children=\{".*?"\}/, `children={"${override}"}`);
+    if (content !== before) {
+      fs.writeFileSync(filePath, content, 'utf-8');
+      console.log(`✔ [${id}] disambiguated sidebar label -> "${override}"`);
+    } else {
+      console.log(`· [${id}] expected title/sidebar_label/heading pattern not found, skipped`);
+    }
+  }
+
+  // The doc's own frontmatter isn't what Docusaurus reads for the sidebar —
+  // sidebar.ts (generated alongside the *.api.mdx files) carries its own
+  // separate `label` per item, keyed by the item's full `id`. Both need the
+  // override or the duplicate survives for i18n purposes even though the
+  // page itself looks fixed.
+  const sidebarPath = path.join(dirPath, 'sidebar.ts');
+  if (fs.existsSync(sidebarPath)) {
+    let content = fs.readFileSync(sidebarPath, 'utf-8');
+    const before = content;
+    for (const [id, override] of Object.entries(DUPLICATE_LABEL_OVERRIDES)) {
+      // Match this item's own { id: "...id", label: "..." } pair specifically
+      // (id and label always appear on adjacent lines in the generated
+      // output), so a shared id suffix can't accidentally patch a sibling.
+      const itemPattern = new RegExp(
+        `(id: "[^"]*${id}",\\n\\s*label: ")[^"]*(")`,
+      );
+      content = content.replace(itemPattern, `$1${override}$2`);
+    }
+    if (content !== before) {
+      fs.writeFileSync(sidebarPath, content, 'utf-8');
+      console.log(`✔ [${dir}] disambiguated label(s) in sidebar.ts`);
+    } else {
+      console.log(`· [${dir}] sidebar.ts labels already patched or pattern not found`);
+    }
+  }
 }
 
 console.log('✔ Patch complete');

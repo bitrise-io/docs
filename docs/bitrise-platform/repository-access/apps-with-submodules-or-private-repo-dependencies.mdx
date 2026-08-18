@@ -13,17 +13,17 @@ import Partial_GettingToTheProjectSettingsPage from '@site/src/partials/getting-
 
 :::note[GitHub App integration]
 
-If your project uses a GitHub App installation to connect to your repository, you can simply [link additional repositories](/en/bitrise-platform/repository-access/github-app-integration#additional-linked-repositories-via-a-github-app). You don't need any of the workarounds described in this document.
+If your project uses a GitHub App installation to connect to your repository, you can simply [link additional repositories](/bitrise-platform/repository-access/github-app-integration#additional-linked-repositories-via-a-github-app). You don't need any of the workarounds described in this document.
 
 :::
 
 If you have a project with one or more submodules or other private repository dependencies (for example, CocoaPods repositories), Bitrise needs access to all repositories or submodules for a successful build.
 
-For private projects with OAuth connections, Bitrise uses SSH to access Git repositories: to grant access, you need to make sure all the repositories can be accessed with the public [SSH key generated](/en/bitrise-platform/repository-access/configuring-ssh-keys) for your Bitrise <GlossTerm baseform="project">project</GlossTerm>.
+For private projects with OAuth connections, Bitrise uses SSH to access Git repositories: to grant access, you need to make sure all the repositories can be accessed with the public [SSH key generated](/bitrise-platform/repository-access/configuring-ssh-keys) for your Bitrise <GlossTerm baseform="project">project</GlossTerm>.
 
 There are two ways to achieve this:
 
-- [Register the same SSH key](/en/bitrise-platform/repository-access/configuring-ssh-keys) for every repository you have to access during the build.
+- [Register the same SSH key](/bitrise-platform/repository-access/configuring-ssh-keys) for every repository you have to access during the build.
 - Register the SSH key with a bot user and add that user to all repositories.
 
 Registering the same SSH key for every repository is the best, most secure way - but not all services support it. GitLab and Bitbucket does support it, GitHub, however, doesn’t. If your code is stored on GitHub and you use an OAuth connection, read on!
@@ -71,7 +71,7 @@ In order for Bitrise to be able to use the machine user to access your repositor
 
 #### When adding a new project
 
-1. Start the process of [adding your project on Bitrise](/en/bitrise-ci/getting-started/adding-a-new-project).
+1. Start the process of [adding your project on Bitrise](/bitrise-ci/getting-started/adding-a-new-project).
 1. When prompted to setup repository access, you can choose from three options:
 
    **Auto-add a generated SSH key to your repository**: Bitrise automatically registers a public SSH key to your GitHub repository.
@@ -98,9 +98,9 @@ You have three options when it comes to accessing multiple repositories during a
 
 - Cloning all the repositories on the virtual machine, and accessing them as needed.
 - Adding the additional repositories as submodules to your main repository.
-- Using the [GitHub App integration](/en/bitrise-platform/repository-access/github-app-integration) and [linking additional repositories](/en/bitrise-platform/repository-access/github-app-integration#additional-linked-repositories-via-a-github-app).
+- Using the [GitHub App integration](/bitrise-platform/repository-access/github-app-integration) and [linking additional repositories](/bitrise-platform/repository-access/github-app-integration#additional-linked-repositories-via-a-github-app).
 
-In the latter case, you do not need to worry about cloning them: if you set up [SSH access](/en/bitrise-platform/repository-access/configuring-ssh-keys) correctly, the **Git Clone** Step will take care of everything.
+In the latter case, you do not need to worry about cloning them: if you set up [SSH access](/bitrise-platform/repository-access/configuring-ssh-keys) correctly, the **Git Clone** Step will take care of everything.
 
 If you don’t want to or can’t add your repository dependencies as submodules, read on: we’ll talk about how to clone them.
 
@@ -129,7 +129,7 @@ git submodule update –recursive –remote –merge –force
 
 ### Public vs private projects
 
-There is one important detail to keep in mind when you want to give access to all submodules or private repository dependencies for a Bitrise project: the project’s privacy settings determine what [git URL should you use](/en/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch#changing-the-repository-url).
+There is one important detail to keep in mind when you want to give access to all submodules or private repository dependencies for a Bitrise project: the project’s privacy settings determine what [git URL should you use](/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch#changing-the-repository-url).
 
-- If you have a private project: use SSH URLs everywhere! Most services support SSH key based authentication only for SSH URLs (for example, `git@github.com:bitrise-io/bitrise.git`). Therefore every private repository you want to use have to be addressed with the SSH URL. If you have direct private git repo references in your CocoaPods Podfile, you’ll have to use the SSH URL there as well. The same applies for submodules and every other private git repository URL you want to use with [the SSH key you register](/en/bitrise-platform/repository-access/configuring-ssh-keys) on [bitrise.io](https://www.bitrise.io/).
+- If you have a private project: use SSH URLs everywhere! Most services support SSH key based authentication only for SSH URLs (for example, `git@github.com:bitrise-io/bitrise.git`). Therefore every private repository you want to use have to be addressed with the SSH URL. If you have direct private git repo references in your CocoaPods Podfile, you’ll have to use the SSH URL there as well. The same applies for submodules and every other private git repository URL you want to use with [the SSH key you register](/bitrise-platform/repository-access/configuring-ssh-keys) on [bitrise.io](https://www.bitrise.io/).
 - If you have a public project: use HTTPS URLs everywhere! SSH URLs require SSH keys even if the repository is public. For security reasons, public projects CANNOT have SSH keys. As HTTPS git clone URLs do not require any authentication in the case of public repositories, they should be used for public Bitrise projects.
