@@ -396,6 +396,46 @@ Sentence case only. ✓ `Adding a new project` ✗ `Adding a New Project`.
 
 ---
 
+## Tagging do-not-translate terms
+
+Product names, UI labels, Step names, and other terms that must stay in English
+in every locale are wrapped in `<NT>` in the docs source. That wrapping is
+generated, never typed by hand:
+
+```bash
+python3 scripts/add_notranslate_tags.py
+```
+
+**Run it before pushing any new or edited page**, and commit the result
+alongside your content change. Pass a path to tag a single file
+(`python3 scripts/add_notranslate_tags.py docs/section/page.mdx`), or `--dry-run`
+to preview without writing. It's idempotent — re-running never double-wraps, so
+it's always safe to run again.
+
+The script inserts `import NT from '@site/src/components/NT';` itself, so a page
+you just wrote needs no manual import.
+
+Two things to know about it:
+
+- **It needs the network.** Canonical Step titles come from the live steplib
+  `spec.json`, which is most of its ~4s runtime. If that fetch fails the script
+  still exits 0, but falls back to glossary-only Step coverage — so an offline
+  run tags *less* than an online one, with only a warning on stderr.
+- **A weekly job sweeps up what local runs miss.**
+  `.github/workflows/refresh-ui-library.yml` regenerates the glossary from the
+  live product and re-runs the tagger across the whole tree, opening a PR with
+  anything new. That covers offline runs, pages written before a term entered
+  the glossary, and anyone who forgot. But it runs once a week, so a skipped
+  local run means that page ships untagged until the next Monday.
+
+Why it matters: `translate_docs.py` masks whole `<NT>` spans out before the
+model ever sees the text — that is the *entire* do-not-translate mechanism. The
+glossary is only the tagger's term source; it is never read at translation time,
+and the term lists are never injected into the prompt. A term with no tag around
+it has no protection at all, and gets machine-translated into Japanese.
+
+---
+
 ## Syncing MCP docs
 
 When asked to sync, pull, or update the Bitrise MCP docs, run:
