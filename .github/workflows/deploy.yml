@@ -48,6 +48,15 @@ jobs:
 
       - run: npm run build
 
+      # A literal <Partial_Foo /> left in a generated .md means the llms plugin
+      # stopped resolving '@site/src/partials/*.mdx' imports — invisible on the
+      # docs site itself, so nothing else catches it. Blocking on pull requests
+      # so a regression can't merge; advisory on main so a degraded AI mirror
+      # never holds up a site deploy.
+      - name: Assert partials expanded in generated markdown
+        continue-on-error: ${{ github.event_name != 'pull_request' }}
+        run: node scripts/check-generated-partials.js
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
