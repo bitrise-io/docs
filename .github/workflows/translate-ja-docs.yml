@@ -3,12 +3,17 @@
 # =====================================================================
 # When a PR changes English docs, translate ONLY the changed files to Japanese
 # and commit the JA versions back to the PR branch. This keeps JA in
-# lock-step with EN — it can never silently go stale.
+# lock-step with EN — it can never silently go stale. The bot commit only
+# ever ADDS files under i18n/ja/; a contributor's own files are never touched.
 #
-# Do-not-translate enforcement is structural: product names, UI labels, Step
-# names, etc. are tagged in the docs source with <NT>...</NT> (see
-# scripts/add_notranslate_tags.py), and translate_docs.py masks those spans
-# out before the model ever sees them — no term list to keep in sync here.
+# Do-not-translate enforcement is list-driven and structural: the glossary's
+# term tiers (product names, UI labels, Step names, ...) are compiled into
+# masking regexes at translation time (scripts/nt_terms.py) and masked out of
+# the text before the model sees it — no <NT> tags in the docs source needed
+# (a manual <NT> span remains a rare page-specific escape hatch and is masked
+# too). After translation, every masked token is verified restored; a page
+# that fails verification is retried and, if still failing, fails this job
+# instead of being committed.
 #
 # Commit translate_docs.py to .github/scripts/ and this file to .github/workflows/.
 #

@@ -3,9 +3,10 @@
 # =====================================================================
 # Keeps the library/glossary in sync with the product instead of going stale.
 # Runs weekly (and on demand). Re-scans the frontend repos + steplib + docs,
-# regenerates the artifacts, re-runs the NT-tagging pass so any newly
-# discovered terms get tagged in the docs too, and opens a PR if anything
-# changed.
+# regenerates the artifacts, and opens a PR if anything changed. The PR only
+# touches localization/ — term protection is applied at translation time from
+# these lists (see translate-ja-docs.yml), so no docs re-tagging pass exists
+# and a glossary change never produces a mass diff across the docs source.
 #
 # Lives in the docs repo (bitrise-io/docs). Commit build_ui_library.py to
 #   .github/scripts/build_ui_library.py  and this file to .github/workflows/.
@@ -59,24 +60,21 @@ jobs:
       - name: Clean up sources
         run: rm -rf _src
 
-      - name: Re-tag docs with any newly discovered terms
-        run: python3 scripts/add_notranslate_tags.py
-
       - name: Open PR if changed
         uses: peter-evans/create-pull-request@v6
         with:
           add-paths: |
             localization/ui_copy_library.json
             localization/ja-do-not-translate-glossary.yaml
-            docs/**/*.mdx
-            src/partials/**/*.mdx
           branch: chore/refresh-ui-copy-library
           title: "chore: refresh UI copy library + JA glossary"
           commit-message: "chore: refresh UI copy library + JA glossary (automated)"
           body: |
             Automated refresh of the UI copy library and Japanese do-not-translate glossary
-            from the current product frontends + steplib + docs, plus any new <NT> tags
-            those changes surfaced in the docs (scripts/add_notranslate_tags.py is
-            idempotent, so this only adds tags for terms not already covered).
+            from the current product frontends + steplib + docs. Term protection is applied
+            at translation time from these lists, so this PR is the entire blast radius of
+            the refresh — no docs source is touched.
 
-            Review the diff: new/removed UI strings reflect real product UI changes.
+            Review the diff: new/removed UI strings reflect real product UI changes. Removed
+            terms stop being protected in future translations; check removals aren't scanner
+            regressions before merging.

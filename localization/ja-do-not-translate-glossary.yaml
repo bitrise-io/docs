@@ -6,14 +6,27 @@
 # transliterated to katakana), because it is a product name, UI label, brand,
 # acronym, or code literal.
 #
-# How the pipeline uses this file:
+# How the pipeline uses this file (all at translation time, in translate_docs.py —
+# nothing here is ever injected into the model prompt, and no tags are needed
+# in the docs source):
 #   1. `protect_patterns` are applied FIRST via regex — code, URLs, env vars,
 #      filenames, MDX/Docusaurus syntax are masked so the model never touches
 #      them. This is structural and catches the long tail automatically.
-#   2. `do_not_translate` terms are injected into the translation prompt as a
-#      hard rule ("keep these exactly as written").
-#   3. `preferred_translations` (optional, for later) pins the ONE approved
-#      Japanese rendering for terms we DO translate but want consistent.
+#   2. `do_not_translate` terms are compiled into masking regexes by the shared
+#      matcher (scripts/nt_terms.py) and masked out the same way — with
+#      disambiguation (Title-Case gating for ambiguous single words, context
+#      gating for UI labels, exact-case acronyms/code literals). Tiers are read
+#      generically by NAME: `ui_labels_context_protect` is context-gated,
+#      `acronyms`/`code_literals` are exact-case, everything else (whatever
+#      it's called) is always-protect — so a renamed tier can't silently drop
+#      out of protection. After translation, every masked token is verified
+#      restored, so a term surviving verbatim is checked, not hoped for.
+#   3. A manual <NT>...</NT> span in a page (see scripts/add_notranslate_tags.py)
+#      is the rare page-specific escape hatch — it is masked before term
+#      matching runs, so it always wins over these lists.
+#   (Preferred JA renderings for terms we DO translate live in
+#   ja-preferred-translations.yaml, not here — this file is regenerated weekly
+#   and would overwrite them.)
 #
 # STATUS: v1 — built from the live product, not hand-typed. UI labels extracted from
 #   bitrise-website + bitrise-workflow-editor, cross-checked against the docs, audited
@@ -25,8 +38,8 @@
 #   >> CONFIRMED with product/frontend: app UI stays English-only; no plan to localize to JA. <<
 #
 # MAINTENANCE: this is a snapshot of today's product and WILL go stale as the UI changes.
-#   The translate-on-PR pipeline should re-run extract_ui_strings.py so this file stays
-#   current automatically; until that exists, re-run the extraction periodically.
+#   The weekly refresh workflow (.github/workflows/refresh-ui-library.yml) regenerates it
+#   with build_ui_library.py and opens a one-file review PR — no docs re-tagging involved.
 #
 # COVERAGE: covers the two main app repos. Not yet included — Remote Dev Environments
 #   (bitrise-codespaces) and the design system (bitkit); step names are doc-mined rather
@@ -44,9 +57,11 @@ protect_patterns:
     regex: '`[^`]+`'
   - name: url                      # https://... http://...
     regex: 'https?://[^\s)]+'
-  - name: nt_span                  # whole <NT>...</NT> spans — matched before mdx_component,
-    regex: '<NT\b[^>]*>[\s\S]*?</NT>'  #   which would otherwise mask the tags one at a time and
-                                    #   leave the protected text exposed in between
+  - name: nt_span                  # whole <NT>...</NT> spans (the manual escape hatch) — matched
+    regex: '<NT\b[^>]*>[\s\S]*?</NT>'  #   before mdx_component, which would otherwise mask the tags
+                                    #   one at a time and leave the protected text exposed between
+  - name: import_export_line       # whole import/export lines — a term or filename fragment
+    regex: '(?m)^(?:import|export)\b[^\n]*$'  #   inside one must not be half-masked into invalid MDX
   - name: env_var                  # BITRISE_BUILD_NUMBER, GIT_HTTP_PASSWORD, $FOO
     regex: '\$?[A-Z][A-Z0-9_]{2,}'
   - name: filename                 # bitrise.yml, Podfile.lock, build.gradle
@@ -55,6 +70,8 @@ protect_patterns:
     regex: '</?[A-Za-z][^>]*>'
   - name: docusaurus_admonition    # :::note  :::tip  :::warning
     regex: ':::[a-z]+'
+  - name: heading_anchor           # `## Workspace {#workspace}` — Docusaurus custom-ID syntax,
+    regex: '\{#[^}\n]*\}'          #   not prose; a translated anchor breaks links to the heading
   - name: template_placeholder     # {{ var }}, {% ... %}, ${...}
     regex: '(\{\{[^}]*\}\}|\{%[^%]*%\}|\$\{[^}]*\})'
   - name: frontmatter_keys         # do not translate YAML front-matter KEYS (values may translate)
@@ -1637,12 +1654,6 @@ do_not_translate:
     - "Xcode Test for Mac"
     - "you install all of the app's dependencies"
 
-# ----------------------------------------------------------------------------
-# 3. PREFERRED TRANSLATIONS (optional — for later)
-#    Terms we DO translate, but want rendered the same way every time so JA
-#    stays consistent across pages. Left as a stub for now.
-# ----------------------------------------------------------------------------
-preferred_translations:
-  # English term: 承認済みの日本語訳
-  # example ->  "build number": "ビルド番号"
-  {}
+# Preferred JA renderings for terms we DO translate live in
+# ja-preferred-translations.yaml (human-owned — this file is regenerated
+# weekly and would overwrite them).
