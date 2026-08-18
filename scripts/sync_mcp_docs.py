@@ -124,7 +124,12 @@ def derive_position(stem: str, install_stems: List[str], root_stems: List[str]) 
 def rewrite_internal_links(content: str) -> str:
     """
     Rewrite links that use the source repo's path (/docs/<file>.md) to the
-    equivalent devcenter slug (/en/bitrise-platform/ai/bitrise-mcp/...).
+    equivalent devcenter slug (/bitrise-platform/ai/bitrise-mcp/...).
+
+    The slug is a bare absolute path with no locale prefix. Each locale has
+    its own baseUrl (i18n.localeConfigs in docusaurus.config.ts), which
+    Docusaurus prepends at render time — so a hardcoded /en/ would resolve to
+    /ja/en/... under any other locale, which doesn't exist.
     """
     def replace(m: re.Match) -> str:
         stem = m.group(1)
@@ -133,10 +138,29 @@ def rewrite_internal_links(content: str) -> str:
             slug = f"{SLUG_INSTALL}/{stem}"
         else:
             slug = f"{SLUG_BASE}/{stem}"
-        return f"(/en{slug}{anchor})"
+        return f"({slug}{anchor})"
 
     # Matches (/docs/<stem>.md) or (/docs/<stem>.md#anchor)
     return re.sub(r'\(/docs/([^)#]+?)\.md(#[^)]*)?\)', replace, content)
+
+
+VOID_TAG_RE = re.compile(r"<(br|hr|img)((?:\s[^<>]*?)?)\s*(?<!/)>")
+
+
+def fix_void_html_tags(content: str) -> str:
+    """
+    Self-close bare void HTML tags (`<br>` -> `<br/>`).
+
+    The source repo's docs are plain Markdown, which tolerates an unclosed
+    `<br>`. These pages land here as .mdx, where MDX parses it as JSX and
+    demands a closing tag or a self-closing slash — an unclosed one fails the
+    build with "Unexpected closing tag ..., expected corresponding closing tag
+    for <br>".
+
+    Applied at sync time rather than fixed by hand in the written files: these
+    are generated, so a manual edit is silently reverted by the next run.
+    """
+    return VOID_TAG_RE.sub(r"<\1\2/>", content)
 
 
 def fix_list_code_blocks(content: str) -> str:
@@ -238,16 +262,21 @@ def sync():
         label    = derive_sidebar_label(stem, h1)
         position = derive_position(stem, install_stems, root_stems)
         body = rewrite_internal_links(body)
-        new_content = build_frontmatter(stem, h1, label, position) + fix_list_code_blocks(body)
+        new_content = build_frontmatter(stem, h1, label, position) + fix_void_html_tags(fix_list_code_blocks(body))
 
-        dest = (INSTALL_DIR if is_install_file(stem) else BASE_DIR) / filename
+        # The synced pages live in this repo as .mdx, not .md — the source
+        # repo's own extension. Writing `filename` verbatim would recreate a
+        # second, .md copy of a page that already exists as .mdx, and both
+        # carry the same explicit `slug`, which Docusaurus rejects as a
+        # duplicate route.
+        dest = (INSTALL_DIR if is_install_file(stem) else BASE_DIR) / f"{stem}.mdx"
         existing = dest.read_text(encoding="utf-8") if dest.exists() else None
 
         if existing == new_content:
-            print(f"  unchanged  {filename}")
+            print(f"  unchanged  {dest.name}")
             continue
 
-        print(f"  {'(dry-run) ' if DRY_RUN else ''}write      {filename}")
+        print(f"  {'(dry-run) ' if DRY_RUN else ''}write      {dest.name}")
         if not DRY_RUN:
             dest.write_text(new_content, encoding="utf-8")
         changed += 1
