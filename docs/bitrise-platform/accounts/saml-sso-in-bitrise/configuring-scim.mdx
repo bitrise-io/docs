@@ -44,6 +44,8 @@ By default, all SCIM-provisioned users receive the Viewer role. If your IdP supp
 
 For a detailed breakdown of permissions, see [Roles and permissions in Workspaces](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces).
 
+These three values are the only ones SCIM accepts. If your Workspace also defines its own workspace-level roles, see [Custom workspace roles and SCIM](#custom-workspace-roles-and-scim).
+
 ### How role assignment works
 
 Each role entry's `value` field uses the format `workspace:<role_name>`. Configure your IdP to include the `roles` attribute in SCIM requests using one of the following formats.
@@ -108,3 +110,12 @@ Bitrise handles all three formats automatically.
 If the `roles` attribute is present in a SCIM request, Bitrise treats it as the complete role assignment and replaces the user's current workspace role. If `roles` is absent from the request entirely, existing role assignments are left untouched. An empty `roles` array reverts the user to the default Viewer role.
 
 :::
+
+### Custom workspace roles and SCIM
+
+A member's workspace role can also be a custom role that your Workspace defines. Two things to keep in mind when you provision members through SCIM:
+
+- **Your IdP can't assign a custom role.** The `roles` attribute accepts the three built-in values only. If a request names anything else, Bitrise rejects it and the member keeps the role they already had.
+- **A SCIM push replaces a custom role.** A member has one workspace role at a time, so the built-in role your IdP sends takes the place of whatever the member held before — including a custom role someone assigned on Bitrise. An empty `roles` array does the same, reverting the member to Viewer.
+
+If you want a member to keep a custom role, leave the `roles` attribute out of your SCIM requests for that member. Bitrise only touches the workspace role when `roles` is present.
