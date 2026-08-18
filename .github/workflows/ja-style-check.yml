@@ -1,0 +1,51 @@
+# =====================================================================
+# JA style check — enforces the JTF Japanese Standard Style Guide
+# =====================================================================
+# Runs the open-source JTF checker (textlint + textlint-rule-preset-jtf-style)
+# on changed Japanese docs. This is the automated QA gate for register/orthography
+# — the stand-in for a native reviewer on *style* (not meaning).
+#
+# Self-contained: installs textlint on the fly, so it does NOT touch the repo's
+# existing package.json. Config lives in .textlintrc.yaml at the repo root.
+#
+# ADJUST the paths below to your Docusaurus i18n layout if different.
+# =====================================================================
+name: JA style check (JTF)
+
+on:
+  pull_request:
+    paths:
+      - 'i18n/ja/**/*.md'
+      - 'i18n/ja/**/*.mdx'
+      - '.textlintrc.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  jtf-style:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+
+      - name: Lint changed Japanese docs against the JTF style guide
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          # NOTE: textlint core parses .md well. .mdx (JSX in docs) may need an MDX
+          # plugin — validate on a sample page before trusting the .mdx path.
+          FILES=$(git diff -z --name-only --diff-filter=AM "$BASE" HEAD \
+                  | tr '\0' '\n' | grep -E '^i18n/ja/.*\.(md|mdx)$' || true)
+          if [ -z "$FILES" ]; then echo "No Japanese docs changed."; exit 0; fi
+          echo "Checking:"; echo "$FILES"
+          # Isolated run via npx --package: installs textlint + the JTF preset + the
+          # comments filter into npx's cache only — does NOT touch the repo's own
+          # package.json or node_modules (important: this repo is a Docusaurus app).
+          echo "$FILES" | xargs npx --yes \
+            --package textlint \
+            --package textlint-rule-preset-jtf-style \
+            --package textlint-filter-rule-comments \
+            textlint -c .textlintrc.yaml
