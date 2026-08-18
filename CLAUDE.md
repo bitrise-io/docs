@@ -248,6 +248,13 @@ workflows:
   See [Adding a new project](/bitrise-ci/getting-started/adding-a-new-project).
   ```
 - Don't add the `.html` suffix; Docusaurus handles it.
+- Keep the **leading slash**. These are absolute paths; `bitrise-ci/foo` without
+  it resolves relative to the current page, which looks correct on a hub landing
+  page and is wrong everywhere else.
+- In JSX (components, `docs/*/index.mdx` props), link with `<Link to="/path">`
+  and resolve assets with `useBaseUrl('/img/...')`. A raw `<a href>` or
+  `<img src>` skips baseUrl resolution entirely, so it requests the path at the
+  domain root — where nothing is served (see the root-files pitfall below).
 - For glossary terms, prefer `<GlossTerm baseform="Workflow">Workflow</GlossTerm>` on first mention so readers get the inline tooltip.
 
 ---
@@ -341,6 +348,25 @@ Some sidebar categories are intentionally non-clickable — they only toggle exp
 ### Don't put images at random paths
 
 All images go under `static/img/`. References in pages start with `/img/...` (Docusaurus serves `static/` from root). Don't reference `static/img/...` directly — that path doesn't exist at runtime.
+
+### Don't assume anything is served from the domain root
+
+Each locale has its own `baseUrl`, so Docusaurus writes the whole build — all of
+`static/`, plus the generated `sitemap.xml` and the `docusaurus-plugin-llms`
+output — into `build/en/` and `build/ja/`. **Nothing lands at `build/` itself.**
+
+Anything that a client can only ever request at the root (`/robots.txt`,
+`/sitemap.xml`, `/llms.txt`, `/favicon.ico`, `/changelog.xml`, `404.html`,
+`_redirects`, `_headers`, the `<page>.md` mirrors) is copied back up by
+`scripts/promote-root-static-files.js`,
+which runs as part of `npm run build`. If you add a file that needs a root URL,
+add it there too — the build stays green either way, so nothing else will catch
+it. Large directories (`/img`, `/fonts`) are 301'd to `/en/...` in
+`static/_redirects` instead of being copied a third time.
+
+Cloudflare Pages Functions are routed by their path under `functions/`, so a
+function reached from a page also needs a locale-prefixed route (see
+`functions/[locale]/og.js`) — page-emitted URLs go through `baseUrl`.
 
 ### Don't break numbered lists with unindented content
 
