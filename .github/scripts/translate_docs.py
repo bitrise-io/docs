@@ -301,8 +301,10 @@ def main():
     except ImportError:
         print("pip install anthropic", file=sys.stderr)
         sys.exit(1)
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("ANTHROPIC_API_KEY not set", file=sys.stderr)
+    if not (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")):
+        # The SDK picks up either automatically: an API key (CI) is sent as
+        # x-api-key, an OAuth token (local runs) as a Bearer header.
+        print("neither ANTHROPIC_API_KEY nor ANTHROPIC_AUTH_TOKEN is set", file=sys.stderr)
         sys.exit(1)
 
     patterns = load_protect_patterns(a.glossary)
