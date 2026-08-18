@@ -60,6 +60,7 @@ import argparse
 import os
 import re
 import sys
+import time
 from collections import Counter
 
 import yaml
@@ -254,9 +255,20 @@ def translate_text(client, model, sysp, text):
 
 def translate_verified(client, model, sysp, masked):
     """Translate with the deterministic post-check, retrying on failure.
+    Transient API errors (429s, 5xx — beyond the SDK's own retries) count as
+    failed attempts too, with a linear backoff, instead of crashing the run.
     Returns the verified translation, or None if every attempt failed."""
+    import anthropic
     for attempt in range(1, MAX_ATTEMPTS + 1):
-        translated, stop_reason = translate_text(client, model, sysp, masked)
+        try:
+            translated, stop_reason = translate_text(client, model, sysp, masked)
+        except (anthropic.APIStatusError, anthropic.APIConnectionError) as e:
+            print(f"    attempt {attempt}/{MAX_ATTEMPTS} API error: {e}", file=sys.stderr)
+            if attempt < MAX_ATTEMPTS:
+                delay = 30 * attempt
+                print(f"    backing off {delay}s", file=sys.stderr)
+                time.sleep(delay)
+            continue
         problems = []
         if stop_reason != "end_turn":
             problems.append(f"stop_reason={stop_reason!r} (output truncated?)")
