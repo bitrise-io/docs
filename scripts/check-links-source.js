@@ -172,17 +172,41 @@ function anchorsForSource(src) {
   return anchors;
 }
 
-// Extract internal /en/ link targets from a page (markdown + JSX props).
+// Absolute paths that are served but are not doc routes, so they must not be
+// looked up in the route map. Everything else starting with a single "/" is a
+// doc link and gets validated.
+const NON_ROUTE_PREFIXES = ['/img/', '/fonts/', '/og?', '/og/', '/llms', '/favicon'];
+
+// Same idea, by shape rather than by prefix: a target whose last segment has a
+// file extension is a served file (a feed, an asset, a .md mirror), not a doc
+// route. `.html` is excluded on purpose — legacy-style `/foo.html` links are
+// real doc routes, and normalizePath() strips the suffix before lookup.
+const FILE_TARGET_RE = /\/[^/]+\.(?!html\b)[a-z0-9]{2,5}(?:$|[?#])/i;
+
+// Extract internal link targets from a page (markdown + JSX props). Links are
+// bare absolute paths now (no locale prefix — see strip_en_prefix.py), so these
+// patterns must NOT be anchored on a leading /en/: that would silently match
+// nothing and turn this whole checker into a no-op that always reports "clean".
 function internalLinks(src) {
   const clean = stripCodeFences(src).replace(/`[^`]*`/g, ''); // drop inline code too
   const targets = [];
   const patterns = [
-    /\]\((\/en\/[^)\s]+)\)/g, // [text](/en/...)
-    /\b(?:href|to)=["'](\/en\/[^"']+)["']/g, // href="/en/..." / to="/en/..."
+    /\]\((\/[^)\s]+)\)/g, // [text](/path)
+    /\b(?:href|to)=["'](\/[^"']+)["']/g, // href="/path" / to="/path"
+    // Object-literal form used by the hub landing pages (docs/*/index.mdx):
+    // href: '/path' and overviewHref="/path" / quickstartHref="/path".
+    /\b(?:href|to)\s*:\s*["'](\/[^"']+)["']/g,
+    /\b\w*Href\s*=\s*["'](\/[^"']+)["']/g,
   ];
   for (const re of patterns) {
     let m;
-    while ((m = re.exec(clean))) targets.push(m[1]);
+    while ((m = re.exec(clean))) {
+      const target = m[1];
+      if (target.startsWith('//')) continue; // protocol-relative, external
+      if (NON_ROUTE_PREFIXES.some((pre) => target.startsWith(pre))) continue;
+      if (FILE_TARGET_RE.test(target)) continue; // served file, not a doc route
+      targets.push(target);
+    }
   }
   return targets;
 }
