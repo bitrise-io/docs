@@ -124,7 +124,12 @@ def derive_position(stem: str, install_stems: List[str], root_stems: List[str]) 
 def rewrite_internal_links(content: str) -> str:
     """
     Rewrite links that use the source repo's path (/docs/<file>.md) to the
-    equivalent devcenter slug (/en/bitrise-platform/ai/bitrise-mcp/...).
+    equivalent devcenter slug (/bitrise-platform/ai/bitrise-mcp/...).
+
+    The slug is a bare absolute path with no locale prefix. Each locale has
+    its own baseUrl (i18n.localeConfigs in docusaurus.config.ts), which
+    Docusaurus prepends at render time — so a hardcoded /en/ would resolve to
+    /ja/en/... under any other locale, which doesn't exist.
     """
     def replace(m: re.Match) -> str:
         stem = m.group(1)
@@ -133,7 +138,7 @@ def rewrite_internal_links(content: str) -> str:
             slug = f"{SLUG_INSTALL}/{stem}"
         else:
             slug = f"{SLUG_BASE}/{stem}"
-        return f"(/en{slug}{anchor})"
+        return f"({slug}{anchor})"
 
     # Matches (/docs/<stem>.md) or (/docs/<stem>.md#anchor)
     return re.sub(r'\(/docs/([^)#]+?)\.md(#[^)]*)?\)', replace, content)
