@@ -242,9 +242,12 @@ def system_prompt(preferred):
 
 
 def translate_text(client, model, sysp, text):
-    msg = client.messages.create(
-        model=model, max_tokens=32000, system=sysp,
-        messages=[{"role": "user", "content": text}])
+    # Streamed because the SDK refuses non-streaming requests whose
+    # max_tokens implies a >10 min worst case — 32k output tokens does.
+    with client.messages.stream(
+            model=model, max_tokens=32000, system=sysp,
+            messages=[{"role": "user", "content": text}]) as stream:
+        msg = stream.get_final_message()
     out = "".join(b.text for b in msg.content if getattr(b, "type", None) == "text")
     return out, msg.stop_reason
 
