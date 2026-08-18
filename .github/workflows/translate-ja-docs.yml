@@ -18,14 +18,12 @@
 # Commit translate_docs.py to .github/scripts/ and this file to .github/workflows/.
 #
 # CURRENTLY DISABLED — auto-translation on PRs is off until enough pages are
-# migrated to make the /ja/ locale worth keeping in lock-step. The job is
-# gated on the repo variable JA_AUTO_TRANSLATE (Settings → Secrets and
-# variables → Actions → Variables): set it to 'true' to enable. Until then
-# every run shows as skipped, so PRs get no noise and no failing check.
-#
-# REQUIRED TO ENABLE
-#   ANTHROPIC_API_KEY secret — for the translation calls.
-#   JA_AUTO_TRANSLATE repo variable set to 'true'.
+# migrated to make the /ja/ locale worth keeping in lock-step. The gate is
+# the ANTHROPIC_API_KEY secret itself: while it doesn't exist, the translate
+# job shows as skipped on every PR — no noise, no failing check. Adding the
+# secret (Settings → Secrets and variables → Actions) is the ON switch.
+# (The secrets context isn't available in a job-level `if`, hence the tiny
+# check job that exports its presence as an output.)
 #
 # ADJUST for your Docusaurus i18n layout:
 #   --src-root / --dest-root and the `paths:` filter below.
@@ -43,9 +41,18 @@ permissions:
   contents: write
 
 jobs:
+  check-key:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.key.outputs.enabled }}
+    steps:
+      - id: key
+        run: echo "enabled=${{ secrets.ANTHROPIC_API_KEY != '' }}" >> "$GITHUB_OUTPUT"
+
   translate:
-    # Disabled until enough pages are migrated — see the header comment.
-    if: vars.JA_AUTO_TRANSLATE == 'true'
+    # Skipped until the ANTHROPIC_API_KEY secret exists — see the header comment.
+    needs: check-key
+    if: needs.check-key.outputs.enabled == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

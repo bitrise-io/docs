@@ -22,7 +22,7 @@ A self-updating system that (1) keeps a **UI copy library** in sync with the liv
 | `ja-preferred-translations.yaml` | Human-owned terminology-consistency map — one approved Japanese rendering per English term we *do* translate (e.g. "build number" → "ビルド番号"). Separate from the glossary because the glossary is regenerated weekly and would overwrite it. |
 | `JA-TRANSLATION-GUIDE.md` | House rules for the translation (register, orthography, terminology) with a LIVE/PROCESS/ROADMAP status legend. |
 | `.github/workflows/refresh-ui-library.yml` | Weekly + on-demand: rebuilds the library/glossary and opens a PR if anything changed — touching only `localization/`, a diff a human can actually review. |
-| `.github/workflows/translate-ja-docs.yml` | On docs PRs: translates the changed pages and commits the JA versions. **Ships disabled** — gated on the `JA_AUTO_TRANSLATE` repo variable until enough pages are migrated; runs show as skipped meanwhile. |
+| `.github/workflows/translate-ja-docs.yml` | On docs PRs: translates the changed pages and commits the JA versions. **Ships disabled** — gated on the existence of the `ANTHROPIC_API_KEY` secret; until it's added, the job skips silently on every PR. |
 | `.github/workflows/ja-style-check.yml` + `.textlintrc.yaml` | Runs the JTF Japanese Standard Style Guide checker (textlint) on changed JA docs — the automated stand-in for a native reviewer on style/orthography, not meaning. |
 
 ## How it flows
@@ -64,11 +64,9 @@ A self-updating system that (1) keeps a **UI copy library** in sync with the liv
    - the current `ja-do-not-translate-glossary.yaml`, `ja-preferred-translations.yaml`, `JA-TRANSLATION-GUIDE.md` → `localization/`
    - `.textlintrc.yaml` → repo root
 2. Add `NT` to the `ALLOWED` set in `docusaurus.config.ts`'s markdown preprocessor — it escapes any JSX tag name not on that list, so without this a manual `<NT>` renders as literal escaped text instead of the component.
-3. Add repo secrets:
-   - `ANTHROPIC_API_KEY` — for translation.
-   - `CI_REPO_TOKEN` — a PAT or GitHub App token with **read** access to `bitrise-website`, `bitrise-workflow-editor`, `bitrise-codespaces`, `bitkit`, `bitrise-steplib` (the default `GITHUB_TOKEN` can't read other repos).
+3. Add the `CI_REPO_TOKEN` repo secret — a PAT or GitHub App token with **read** access to `bitrise-website`, `bitrise-workflow-editor`, `bitrise-codespaces`, `bitkit`, `bitrise-steplib` (the default `GITHUB_TOKEN` can't read other repos).
 4. Enable Actions. Run **Refresh UI copy library** once manually to seed `localization/`. No tagging pass is needed — the docs source stays as-is; protection is applied at translation time.
-5. When enough pages are migrated to keep `/ja/` in lock-step, set the repo variable `JA_AUTO_TRANSLATE=true` (Settings → Secrets and variables → Actions → Variables) to turn on translate-on-PR. Until then the job skips silently.
+5. When enough pages are migrated to keep `/ja/` in lock-step, add the `ANTHROPIC_API_KEY` repo secret — its existence is the ON switch for translate-on-PR. Until then the job skips silently on every docs PR.
 
 ## Run locally (no CI)
 
