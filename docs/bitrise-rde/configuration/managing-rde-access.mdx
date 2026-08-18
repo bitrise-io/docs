@@ -1,0 +1,145 @@
+---
+title: "Managing RDE access"
+description: "Grant and revoke Remote Dev Environments access for workspace members and groups from the Collaboration page, or automate it with SCIM."
+sidebar_position: 5
+slug: /bitrise-rde/configuration/managing-rde-access
+sidebar_label: "Managing access"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkspaceSettingsPage from '@site/src/partials/opening-the-workspace-settings-page.mdx';
+import Partial_RDEBetaNotice from '@site/src/partials/rde-beta-notice.mdx';
+
+Access to Remote Dev Environments is granted per <GlossTerm baseform="workspace">workspace</GlossTerm> member. Being a member of a workspace that has RDE isn't enough on its own: until someone grants you access, the **Remote Dev Environments** section doesn't open for you.
+
+<Partial_RDEBetaNotice />
+
+## RDE access overview
+
+RDE is a **standalone product**. Unlike Bitrise CI and Release Management, its access isn't tied to <GlossTerm baseform="project">projects</GlossTerm>: it's a single on-or-off setting that applies to the whole workspace. There's nothing to configure per project, and no role to choose.
+
+- Granting access assigns the **RDE User** role on the workspace. That's the only RDE role.
+- Admin access to projects doesn't include RDE. It has to be granted separately.
+- Workspace owners always have access.
+
+Everyone with the RDE User role can create and manage their own <GlossTerm baseform="rde session">sessions</GlossTerm>, <GlossTerm baseform="rde template">templates</GlossTerm>, and <GlossTerm baseform="saved input">saved inputs</GlossTerm>.
+
+:::important[Owners and managers only]
+
+Only workspace owners and workspace managers can grant or revoke RDE access. For the full picture of workspace roles, see [Roles and permissions in workspaces](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces).
+
+:::
+
+You can grant access in three places, all on the **Collaboration** page of the workspace settings:
+
+- To an existing member: [Granting access to a member](#granting-access-to-a-member).
+- To a whole [workspace group](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/workspace-groups): [Granting access to a group](#granting-access-to-a-group).
+- To someone you're inviting: [Adding members to workspaces](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/workspace-collaboration#adding-members-to-workspaces).
+
+If your workspace provisions users through an identity provider, you can assign the role automatically: [Managing RDE access with SCIM](#managing-rde-access-with-scim).
+
+## Granting access to a member
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. On the left, select **Collaboration**.
+1. On the **Members** tab, find the member and click the options menu (⋮) next to their name, then select **View details**.
+1. On the **Overview** tab, click **Manage access**.
+1. Under **Standalone products**, turn on **Remote Dev Environments**.
+1. Click **Save changes**.
+
+The member gets the **RDE User** role and can open the **Remote Dev Environments** section right away.
+
+:::note[All projects only]
+
+The **Standalone products** section shows up when you manage access across all projects. It isn't part of the per-project **Change access** flow, because RDE access isn't project-specific.
+
+:::
+
+## Granting access to a group
+
+Every member of the group inherits the access, including people you add to the group later.
+
+<Tabs>
+<TabItem value="existing-group" label="Existing group" default>
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. On the left, select **Collaboration**.
+1. Select the **Groups** tab and find the group you need.
+1. Open the group's details and click **Manage access**.
+1. Under **Standalone products**, turn on **Remote Dev Environments**.
+1. Click **Save changes**.
+
+</TabItem>
+<TabItem value="new-group" label="New group">
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. On the left, select **Collaboration**.
+1. Select the **Groups** tab and click **Create group**.
+1. Enter a group name in the **Group name** field.
+1. Under **Standalone products**, turn on **Remote Dev Environments**.
+1. Click **Create group**.
+
+</TabItem>
+</Tabs>
+
+## Checking who has access
+
+The workspace settings show RDE access in a few places:
+
+| Location | What you'll see |
+|---|---|
+| **Workspace settings** > **Collaboration** > **Members** tab | **Remote Dev Environments** listed in each member's **Product access** column. Members without any product access show `(no access)`. |
+| **Workspace settings** > **Collaboration** > **Members** tab > options menu (⋮) > **View details** > **Overview** tab | A **Product access** table with a **Remote Dev Environments** row and the **RDE User** tag. |
+| **Workspace settings** > **Collaboration** > **Groups** tab | The **RDE User** role on each group. Filter the list by that role to see every group with access. |
+
+## Revoking access
+
+Revoking access doesn't delete the person's sessions. Terminated sessions keep their persistent disk until the usual cleanup, and running sessions keep running until they auto-terminate.
+
+:::note[Access from a group]
+
+If a member still has RDE access after you revoke it directly, check their **Groups** tab: a group they belong to may grant it. Remove them from that group, or turn off RDE for the group.
+
+:::
+
+<Tabs>
+<TabItem value="member" label="Member" default>
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. On the left, select **Collaboration**.
+1. On the **Members** tab, find the member and click the options menu (⋮) next to their name, then select **View details**.
+1. On the **Overview** tab, click **Manage access**.
+1. Under **Standalone products**, turn off **Remote Dev Environments**.
+1. Click **Save changes**.
+
+</TabItem>
+<TabItem value="group" label="Group">
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. On the left, select **Collaboration**.
+1. Select the **Groups** tab and find the group you need.
+1. Open the group's details and click **Manage access**.
+1. Under **Standalone products**, turn off **Remote Dev Environments**.
+1. Click **Save changes**.
+
+</TabItem>
+</Tabs>
+
+## Managing RDE access with SCIM
+
+If your workspace uses SCIM provisioning, your identity provider can assign the RDE User role with the standard `roles` attribute. The value is `rde:rde_admin`:
+
+```json
+{
+  "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+  "userName": "user@example.com",
+  "roles": [
+    { "value": "workspace:workspace_contributor" },
+    { "value": "rde:rde_admin" }
+  ]
+}
+```
+
+Sending a `roles` array without an `rde:` entry removes the user's RDE access. For the request formats each identity provider uses, see [Configuring SCIM](/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-scim#managing-workspace-and-product-roles-via-scim).
