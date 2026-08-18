@@ -182,14 +182,14 @@ def translate_text(client, model, sysp, text):
 
 
 def dest_path(src, src_root, dest_root):
-    # map .../<src_root>/rest -> <dest_root>/rest ; fallback: swap /en/ -> /ja/
+    # map .../<src_root>/rest -> <dest_root>/rest
     marker = f"/{src_root}/"
     if marker in src:
         rest = src.split(marker, 1)[1]
         return os.path.join(dest_root, rest)
     if src.startswith(src_root + "/"):
         return os.path.join(dest_root, src[len(src_root) + 1:])
-    return src.replace("/en/", "/ja/")
+    raise ValueError(f"{src!r} is not under src_root {src_root!r}")
 
 
 def main():
