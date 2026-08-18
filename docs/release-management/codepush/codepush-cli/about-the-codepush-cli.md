@@ -6,7 +6,7 @@ sidebar_position: 1
 
 The Bitrise CodePush CLI is a client for CodePush. Use it on your local machine to configure and manage your CodePush integration and updates.
 
-The CodePush CLI can run in two modes: as a [Bitrise CLI](/en/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli) plugin (commands prefixed with `bitrise :codepush`), or as a standalone binary (commands prefixed with `codepush`). Both modes support the same commands and require a Bitrise API token to authenticate to the Bitrise CodePush server.
+The CodePush CLI can run in two modes: as a [Bitrise CLI](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli) plugin (commands prefixed with `bitrise :codepush`), or as a standalone binary (commands prefixed with `codepush`). Both modes support the same commands and require a Bitrise API token to authenticate to the Bitrise CodePush server.
 
 The CodePush CLI is a Go binary that communicates with the Bitrise API over HTTPS. Most commands require a Bitrise API token for authentication. The exceptions are purely local operations: `bundle` invokes the React Native or Expo bundler directly on your machine (`npx react-native bundle` or `npx expo export:embed`), and `debug` streams logs from a connected device via `adb` or `xcrun` without making any API calls.
 

@@ -7,11 +7,11 @@ Linux stacks on Bitrise are based on Ubuntu LTS releases. Each Bitrise stack is
 
 :::note[Previous version of a stack]
 
-Updating a stack to a new version might cause problems with some builds. To help ease the transition, you can use the previous version of a stack for 2-3 days after an update: [Using the previous version of a stack](/en/bitrise-build-hub/infrastructure/build-stacks/stack-update-policy#using-the-previous-version-of-a-stack).
+Updating a stack to a new version might cause problems with some builds. To help ease the transition, you can use the previous version of a stack for 2-3 days after an update: [Using the previous version of a stack](/bitrise-build-hub/infrastructure/build-stacks/stack-update-policy#using-the-previous-version-of-a-stack).
 
 :::
 
-For macOS specific information, check out [macOS stack update policy](/en/bitrise-build-hub/infrastructure/build-stacks/macos-stack-update-policy).
+For macOS specific information, check out [macOS stack update policy](/bitrise-build-hub/infrastructure/build-stacks/macos-stack-update-policy).
 
 ## Linux stack offerings
 
@@ -91,4 +91,4 @@ June 2025
 
 **New**
 
-Introduced the concept of Edge, Stable and Frozen stacks with regards to Linux, similar to the [macOS stack update policy](/en/bitrise-build-hub/infrastructure/build-stacks/macos-stack-update-policy). Defined the yearly cadence of new Linux stacks, as well as the deprecation and removal of older Linux stacks.
+Introduced the concept of Edge, Stable and Frozen stacks with regards to Linux, similar to the [macOS stack update policy](/bitrise-build-hub/infrastructure/build-stacks/macos-stack-update-policy). Defined the yearly cadence of new Linux stacks, as well as the deprecation and removal of older Linux stacks.

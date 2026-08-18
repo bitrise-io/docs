@@ -8,6 +8,8 @@
 import React from 'react';
 import clsx from 'clsx';
 import {useThemeConfig} from '@docusaurus/theme-common';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import Link from '@docusaurus/Link';
 import Logo from '@theme/Logo';
 import CollapseButton from '@theme/DocSidebar/Desktop/CollapseButton';
 import Content from '@theme/DocSidebar/Desktop/Content';
@@ -40,25 +42,37 @@ const IconArrowNE = () => (
   </svg>
 );
 
-function SidebarBottomLinks({path}: {path: string}) {
-  // path is like /en/bitrise-ci/... — segment[2] is the hub dirName
-  const dirName = path.split('/')[2] ?? '';
+// Some top-level docs/ folders are auto-generated OpenAPI output, not
+// real hubs with their own changelog page — they belong to a parent hub
+// instead. bitrise-api is a genuine independent hub (its own index.mdx),
+// so it is deliberately not in this map.
+const HUB_ALIASES: Record<string, string> = {
+  'bitrise-rde-api': 'bitrise-rde',
+};
+
+function SidebarBottomLinks({path, locale}: {path: string; locale: string}) {
+  // path is like /en/bitrise-ci/... or /ja/bitrise-ci/... — the locale
+  // occupies segment[1] (the slot the static 'en' routeBasePath segment
+  // used to), so the hub dirName is segment[2].
+  const rawDirName = path.split('/')[2] ?? '';
+  const dirName = HUB_ALIASES[rawDirName] ?? rawDirName;
   const isChangelog = path.endsWith('/changelog');
-  // Only render the changelog link when we can resolve a hub slug.
-  // On /en/ or other non-hub paths dirName is empty, which would produce /en//changelog.
-  const changelogHref = dirName ? `/en/${dirName}/changelog` : null;
+  // Only render the changelog link when we can resolve a hub slug. On a
+  // locale-root or other non-hub path dirName is empty, which would
+  // produce a malformed double-slash href.
+  const changelogHref = dirName ? `/${locale}/${dirName}/changelog` : null;
 
   return (
     <div className="sidebar-bottom-links">
       {changelogHref && (
-      <a
-        href={changelogHref}
+      <Link
+        to={changelogHref}
         className={`sidebar-bottom-link${isChangelog ? ' sidebar-bottom-link--active' : ''}`}
         aria-current={isChangelog ? 'page' : undefined}
       >
         <IconBook />
         Docs changelog
-      </a>
+      </Link>
       )}
       <a
         href="https://bitrise.io/integrations"
@@ -91,6 +105,7 @@ function DocSidebarDesktop({path, sidebar, onCollapse, isHidden}: Props) {
       sidebar: {hideable},
     },
   } = useThemeConfig();
+  const {i18n: {currentLocale}} = useDocusaurusContext();
 
   return (
     <div
@@ -101,7 +116,7 @@ function DocSidebarDesktop({path, sidebar, onCollapse, isHidden}: Props) {
       )}>
       {hideOnScroll && <Logo tabIndex={-1} className={styles.sidebarLogo} />}
       <Content path={path} sidebar={sidebar} />
-      <SidebarBottomLinks path={path} />
+      <SidebarBottomLinks path={path} locale={currentLocale} />
       {hideable && <CollapseButton onClick={onCollapse} />}
     </div>
   );

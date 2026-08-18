@@ -6,7 +6,7 @@ slug: /bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install
 ---
 # Install Bitrise MCP Server in Copilot IDEs
 
-Quick setup guide for the Bitrise MCP server in GitHub Copilot across different IDEs. For VS Code instructions, refer to the [Install Bitrise MCP Server in VS Code](/en/bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-vscode)
+Quick setup guide for the Bitrise MCP server in GitHub Copilot across different IDEs. For VS Code instructions, refer to the [Install Bitrise MCP Server in VS Code](/bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-vscode)
 
 ### Requirements:
 1. GitHub Copilot License: Any Copilot plan (Free, Pro, Pro+, Business, Enterprise) for Copilot access
@@ -275,7 +275,7 @@ After setup:
 
 ## Advanced configuration
 
-See [Tools](/en/bitrise-platform/ai/bitrise-mcp/tools) for enabling/disabling specific API groups.
+See [Tools](/bitrise-platform/ai/bitrise-mcp/tools) for enabling/disabling specific API groups.
 
 ## Troubleshooting
 

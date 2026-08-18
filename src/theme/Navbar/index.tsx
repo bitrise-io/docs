@@ -3,6 +3,7 @@ import Navbar from '@theme-original/Navbar';
 import type NavbarType from '@theme/Navbar';
 import type {WrapperProps} from '@docusaurus/types';
 import {useLocation} from '@docusaurus/router';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import {createPortal} from 'react-dom';
 
 type Props = WrapperProps<typeof NavbarType>;
@@ -42,7 +43,10 @@ function NavbarSearchPortal(): ReactNode {
 
 export default function NavbarWrapper(props: Props): ReactNode {
   const {pathname} = useLocation();
-  const isDocPage = pathname.startsWith('/en/');
+  const {i18n: {currentLocale}} = useDocusaurusContext();
+  // Each locale now has its own baseUrl (/en/, /ja/, ...) instead of a
+  // hardcoded /en/, so this checks whichever locale is currently rendering.
+  const isDocPage = pathname.startsWith(`/${currentLocale}/`);
 
   return (
     <>

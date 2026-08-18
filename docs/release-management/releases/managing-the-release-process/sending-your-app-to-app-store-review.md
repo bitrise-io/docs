@@ -37,11 +37,11 @@ After you’ve uploaded your release candidate to TestFlight and the build proce
 
 You can monitor the release status on the **Release** page.
 
-You can proceed to [Releasing your app on the App Store](/en/release-management/releases/managing-the-release-process/releasing-your-app-on-the-app-store) for manual releases.
+You can proceed to [Releasing your app on the App Store](/release-management/releases/managing-the-release-process/releasing-your-app-on-the-app-store) for manual releases.
 
 ## Editing the release note of an iOS app
 
-If you wish to release an app with a different release note than what's [already set in release presets](/en/release-management/releases/configuring-a-release/release-automation), you can manually edit the note before rolling out a new app version. This change will not override the default configuration of the **Release presets**, it only affects the current release.
+If you wish to release an app with a different release note than what's [already set in release presets](/release-management/releases/configuring-a-release/release-automation), you can manually edit the note before rolling out a new app version. This change will not override the default configuration of the **Release presets**, it only affects the current release.
 
 :::note[Release Managers only]
 

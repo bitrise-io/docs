@@ -20,11 +20,11 @@ Key-based caching requires two <GlossTerm baseform="Step">Steps</GlossTerm> that
 
 You can use dedicated key-based caching Steps, such as the [Save NPM Cache](https://github.com/bitrise-steplib/bitrise-step-save-npm-cache), to cache npm or yarn dependencies.
 
-For a full list of dedicated key-based caching Steps, check out [Dedicated caching Steps for dependency managers](/en/bitrise-ci/dependencies-and-caching/key-based-caching/dedicated-caching-steps-for-dependency-managers).
+For a full list of dedicated key-based caching Steps, check out [Dedicated caching Steps for dependency managers](/bitrise-ci/dependencies-and-caching/key-based-caching/dedicated-caching-steps-for-dependency-managers).
 
 :::
 
-Both Steps access cache archives via key strings. These keys need to be specified as the values of the **Cache keys** [Step input](/en/bitrise-ci/workflows-and-pipelines/steps/step-inputs); each key identifies a separate cache archive.
+Both Steps access cache archives via key strings. These keys need to be specified as the values of the **Cache keys** [Step input](/bitrise-ci/workflows-and-pipelines/steps/step-inputs); each key identifies a separate cache archive.
 
 ## Cache retention and eviction policy
 
@@ -43,11 +43,11 @@ If you run out of your cache storage allowance, the Least Recently Used (LRU) ca
 
    :::
 
-   You can use [templates and functions](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-based-caching-templates-and-functions) to create dynamic keys that change depending on the build environment or other factors.
+   You can use [templates and functions](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-based-caching-templates-and-functions) to create dynamic keys that change depending on the build environment or other factors.
 
    :::tip[Conditional caching with dynamic keys]
 
-   You can configure the Step in a way that allows it to automatically skip archiving and uploading the cache if its content has not changed during the build: [Conditional caching](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#using-conditional-caching-with-dynamic-keys).
+   You can configure the Step in a way that allows it to automatically skip archiving and uploading the cache if its content has not changed during the build: [Conditional caching](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#using-conditional-caching-with-dynamic-keys).
 
    :::
 
@@ -81,16 +81,16 @@ If you run out of your cache storage allowance, the Least Recently Used (LRU) ca
        - paths: node_modules/
    ```
 
-Once a cache archive has been created, you can access it on the **App Settings** page: [Accessing key-based cache archives](/en/bitrise-ci/dependencies-and-caching/key-based-caching/accessing-key-based-cache-archives).
+Once a cache archive has been created, you can access it on the **App Settings** page: [Accessing key-based cache archives](/bitrise-ci/dependencies-and-caching/key-based-caching/accessing-key-based-cache-archives).
 
 ## Restoring an existing cache archive
 
 1. Add the [**Restore Cache**](https://github.com/bitrise-steplib/bitrise-step-restore-cache) Step at the start of your Workflow.
 1. In the **Cache key** input, type the key of the cache that you want to restore.
 
-   You can use [templates and functions](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-based-caching-templates-and-functions) to create dynamic keys that change depending on the build environment or other factors.
+   You can use [templates and functions](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-based-caching-templates-and-functions) to create dynamic keys that change depending on the build environment or other factors.
 
-   You can specify multiple keys; the Step will evaluate them in order and select the first matching one. Read more: [Key matching for cache archives](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-matching-for-cache-archives).
+   You can specify multiple keys; the Step will evaluate them in order and select the first matching one. Read more: [Key matching for cache archives](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-matching-for-cache-archives).
 
    **Restoring a cache archive from one of two keys**
 
@@ -126,7 +126,7 @@ Both key-based caching Steps support using template elements in their Step input
 The key-based caching templates support the use of two different functions:
 
 - `checksum`: This function computes the SHA-256 checksum of the contents of one or more files. This is useful for creating unique cache keys based on files that describe content to cache. See the examples below.
-- `getenv`: This function returns the value of an [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables) (Env Var) or an empty string if the variable is not defined. See the examples below.
+- `getenv`: This function returns the value of an [Environment Variable](/bitrise-ci/configure-builds/environment-variables) (Env Var) or an empty string if the variable is not defined. See the examples below.
 
 **Using the checksum function**
 
@@ -190,13 +190,13 @@ You might not want to update a cache archive every time you run a build. By skip
 - Make the PR validation workflow faster.
 - Limit the amount of data stored and transferred.
 
-If the cached content did not change during your build at all, the **Save cache** Step can automatically skip compressing and uploading the cache. To make this work, you need to make sure your cache archive has a unique cache key that changes whenever the contents of the cache change: in practice, this requires [a dynamic key with a checksum](/en/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-based-caching-templates-and-functions) and a file that describes the cached content. The checksum will be calculated based on the contents of the file; if the file remains unchanged, so does the checksum.
+If the cached content did not change during your build at all, the **Save cache** Step can automatically skip compressing and uploading the cache. To make this work, you need to make sure your cache archive has a unique cache key that changes whenever the contents of the cache change: in practice, this requires [a dynamic key with a checksum](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-based-caching-templates-and-functions) and a file that describes the cached content. The checksum will be calculated based on the contents of the file; if the file remains unchanged, so does the checksum.
 
 We strongly recommend configuring the Step in a way to take advantage of this feature. Follow the steps below, or skip ahead to the YAML example at the end of this section.
 
 :::tip[Skipping the Save cache Step entirely]
 
-If you don't wish to update the cache archive even if the content that would be cached has changed, you can either remove the **Save cache** Step from your Workflow or you can set conditions for the Step: [Enabling or disabling a Step conditionally](/en/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally).
+If you don't wish to update the cache archive even if the content that would be cached has changed, you can either remove the **Save cache** Step from your Workflow or you can set conditions for the Step: [Enabling or disabling a Step conditionally](/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally).
 
 :::
 

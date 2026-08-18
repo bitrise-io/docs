@@ -231,7 +231,18 @@ const config: Config = {
 
   i18n: {
     defaultLocale: 'en',
-    locales: ['en'],
+    locales: ['en', 'ja'],
+    // Each locale gets its own explicit baseUrl instead of the automatic
+    // /<locale>/ heuristic, which would otherwise stack on top of the
+    // (also locale-independent) docs.routeBasePath below and produce
+    // /ja/en/... URLs. See scripts/strip_en_prefix.py for the companion
+    // change this depends on: internal doc links are bare absolute paths
+    // (no /en/ prefix), which Docusaurus resolves against whichever
+    // locale's baseUrl is currently rendering.
+    localeConfigs: {
+      en: {baseUrl: '/en/'},
+      ja: {baseUrl: '/ja/'},
+    },
   },
 
   headTags: [
@@ -380,7 +391,10 @@ const config: Config = {
       'classic',
       {
         docs: {
-          routeBasePath: 'en',
+          // Empty: the locale segment now comes from i18n.localeConfigs
+          // above, not from a static prefix here — the two would otherwise
+          // stack (/en/en/... or /ja/en/...).
+          routeBasePath: '',
           path: 'docs',
           sidebarPath: './sidebars.ts',
           // Transform sidebar items: resolve hub-link markers and append API reference links.

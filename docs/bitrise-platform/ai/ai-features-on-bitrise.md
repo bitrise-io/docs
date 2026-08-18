@@ -7,17 +7,17 @@ slug: /bitrise-platform/ai/ai-features-on-bitrise
 
 :::tip[AI FAQ]
 
-This page offers a short summary of the available AI features on Bitrise. For a detailed breakdown of how Bitrise uses AI and how we handle customer data related to AI features, see the [AI FAQ](/en/bitrise-platform/ai/ai-faq---how-bitrise-leverages-ai-technologies-in-its-features-and-services).
+This page offers a short summary of the available AI features on Bitrise. For a detailed breakdown of how Bitrise uses AI and how we handle customer data related to AI features, see the [AI FAQ](/bitrise-platform/ai/ai-faq---how-bitrise-leverages-ai-technologies-in-its-features-and-services).
 
 :::
 
-Bitrise offers multiple AI features to help enhance your Mobile DevOps processes. You can enable or disable any individual feature, or completely disable AI features altogether: [Enabling AI features on Bitrise](/en/bitrise-platform/ai/enabling-ai-features-on-bitrise).
+Bitrise offers multiple AI features to help enhance your Mobile DevOps processes. You can enable or disable any individual feature, or completely disable AI features altogether: [Enabling AI features on Bitrise](/bitrise-platform/ai/enabling-ai-features-on-bitrise).
 
 The following features are available:
 
 ## Code reviewer
 
-The AI [code reviewer](/en/bitrise-platform/integrations/ai-code-reviewer) creates a comment every time a new pull request is opened on GitHub, and every time a user adds a new commit to the pull request. It can provide:
+The AI [code reviewer](/bitrise-platform/integrations/ai-code-reviewer) creates a comment every time a new pull request is opened on GitHub, and every time a user adds a new commit to the pull request. It can provide:
 
 - A summary: Highlights key code changes and their potential impact.
 - Walkthrough: Generates context-aware documentation to help team members quickly understand code changes.
@@ -35,17 +35,17 @@ If you need more projects or AI credits, go to **Workspace settings** →**Plan 
 
 ## AI build summary
 
-The [AI build summary](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/ai-build-summary) gives you a summary of why a CI build failed and suggests the fix right there on the build page. You can turn off the feature at any time.
+The [AI build summary](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/ai-build-summary) gives you a summary of why a CI build failed and suggests the fix right there on the build page. You can turn off the feature at any time.
 
 ![Bitrise AI panel with Failure details, Reason, and Suggested solution](/img/run-and-analyze-builds/2026-07-14-bitrise-ai-failure-details-panel.png)
 
 ## AI build fixer
 
-If you have a failed build, the [AI build fixer](/en/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/ai-build-fixer) corrects it right on the build’s details page without you having to switch to other tools and processes. The AI build fixer executes the suggested code changes and pushes a PR to your GitHub repository. You can check the changes through a link to the repo. Based on your configured build triggers, Bitrise kicks off a new CI build to validate the AI changes. This means less fragmented work and quicker debugging.
+If you have a failed build, the [AI build fixer](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/ai-build-fixer) corrects it right on the build’s details page without you having to switch to other tools and processes. The AI build fixer executes the suggested code changes and pushes a PR to your GitHub repository. You can check the changes through a link to the repo. Based on your configured build triggers, Bitrise kicks off a new CI build to validate the AI changes. This means less fragmented work and quicker debugging.
 
 ## AI configuration assistant
 
-The [AI configuration assistant](/en/bitrise-ci/workflows-and-pipelines/ai-configuration-assistant) is a chat-based assistant built into the Workflow Editor. You describe what you want in plain language and the assistant produces a working Workflow or Pipeline in validated YAML, which you can refine further, either with the assistant or manually.
+The [AI configuration assistant](/bitrise-ci/workflows-and-pipelines/ai-configuration-assistant) is a chat-based assistant built into the Workflow Editor. You describe what you want in plain language and the assistant produces a working Workflow or Pipeline in validated YAML, which you can refine further, either with the assistant or manually.
 
 The assistant can also:
 
@@ -56,7 +56,7 @@ The AI configuration assistant requires the **Configuration generator** feature 
 
 ## Bitrise MCP
 
-The [Bitrise Model Context Protocol (MCP) Server](/en/bitrise-platform/ai/bitrise-mcp) lets you talk to Bitrise via an AI client of your choice. It enables seamless interaction with your existing CI setup.
+The [Bitrise Model Context Protocol (MCP) Server](/bitrise-platform/ai/bitrise-mcp) lets you talk to Bitrise via an AI client of your choice. It enables seamless interaction with your existing CI setup.
 
 - Troubleshoot issues by directly asking about failure reasons. The AI analyzes logs and configurations, providing actionble recommendations.
 - Optimize configurations by instructing the AI to suggest improvements. You will receive instant insights and practical suggestions.

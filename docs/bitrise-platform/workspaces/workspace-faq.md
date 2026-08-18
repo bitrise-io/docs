@@ -11,11 +11,11 @@ Workspaces are used to seamlessly manage bigger teams and members inside a compa
 
 **How do I add a project to a workspace?**
 
-[Adding a new project](/en/bitrise-ci/getting-started/adding-a-new-project)
+[Adding a new project](/bitrise-ci/getting-started/adding-a-new-project)
 
 **How do I migrate/transfer my existing projects to a workspace?**
 
-After you’ve created a workspace, you can transfer any of your projects to it at any time: [Changing the owner of a project](/en/bitrise-platform/projects/changing-the-owner-of-a-project).
+After you’ve created a workspace, you can transfer any of your projects to it at any time: [Changing the owner of a project](/bitrise-platform/projects/changing-the-owner-of-a-project).
 
 **What are owners inside a workspace?**
 
@@ -23,11 +23,11 @@ Workspaces can have more than one owner. owners can manage billing, delete proje
 
 **What can members of a workspace do?**
 
-Workspace members have access to different projects and different products, depending on their roles and permissions: [Roles and permissions in workspaces](/en/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces)
+Workspace members have access to different projects and different products, depending on their roles and permissions: [Roles and permissions in workspaces](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces)
 
 **What are groups good for?**
 
-By creating [groups](/en/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/workspace-groups), you can assign multiple workspace members to each project at once, making it faster and easier to setup new projects on Bitrise. It also make it faster to reassign, remove and change role of multiple members.
+By creating [groups](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/workspace-groups), you can assign multiple workspace members to each project at once, making it faster and easier to setup new projects on Bitrise. It also make it faster to reassign, remove and change role of multiple members.
 
 Groups can be assigned to a project, the group’s role can be set, and by removing the group from the project, you can revoke the access of every member of that group from the project.
 

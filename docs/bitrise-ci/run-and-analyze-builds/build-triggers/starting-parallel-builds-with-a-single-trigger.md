@@ -7,7 +7,7 @@ slug: /bitrise-ci/run-and-analyze-builds/build-triggers/starting-parallel-builds
 
 :::tip[Using Build Pipelines to start parallel builds with a single trigger]
 
-If you have a credit-based account and you are planning on running multiple tasks parallel with a single trigger, we recommend using Build Pipelines. For more information, check out [Build Pipelines](/en/bitrise-ci/workflows-and-pipelines/build-pipelines/pipelines-with-stages/configuring-a-pipeline-with-stages).
+If you have a credit-based account and you are planning on running multiple tasks parallel with a single trigger, we recommend using Build Pipelines. For more information, check out [Build Pipelines](/bitrise-ci/workflows-and-pipelines/build-pipelines/pipelines-with-stages/configuring-a-pipeline-with-stages).
 
 :::
 
@@ -17,7 +17,7 @@ In the example, we have three Workflows of a single app set up to run at the sam
 
 All workflows run on separate, clean Virtual Machines. They can also run on different types of stacks: to choose the stack for any Workflow, go to the Workflow Editor of the app and select the **Stack** tab.
 
-If any of the builds fail, the build will be considered a failed build. If the build is triggered by a webhook, Bitrise will send [a summarized build result](/en/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider) to your Git provider. If any of the parallel builds fail, a failed status will be reported.
+If any of the builds fail, the build will be considered a failed build. If the build is triggered by a webhook, Bitrise will send [a summarized build result](/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider) to your Git provider. If any of the parallel builds fail, a failed status will be reported.
 
 :::important[No reports for "child" builds]
 

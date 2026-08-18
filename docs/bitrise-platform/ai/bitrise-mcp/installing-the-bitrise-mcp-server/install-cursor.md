@@ -99,7 +99,7 @@ The local Bitrise MCP server runs via Go and uses a Personal Access Token (stdio
 
 ## Advanced configuration
 
-See [Tools](/en/bitrise-platform/ai/bitrise-mcp/tools) for enabling/disabling specific API groups.
+See [Tools](/bitrise-platform/ai/bitrise-mcp/tools) for enabling/disabling specific API groups.
 
 ## Troubleshooting
 

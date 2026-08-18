@@ -9,7 +9,7 @@ Command metrics provides data-driven visibility into your Gradle and Bazel comma
 
 :::note[Caching performance]
 
-Even though command metrics are available only with the Bitrise Build Cache, they don't measure cache performance. For that, see [Build cache metrics](/en/insights/available-metrics-in-insights/build-cache-metrics).
+Even though command metrics are available only with the Bitrise Build Cache, they don't measure cache performance. For that, see [Build cache metrics](/insights/available-metrics-in-insights/build-cache-metrics).
 
 :::
 
@@ -23,5 +23,5 @@ The following metrics are available:
 
 Like for any other metrics in Insights, you can:
 
-- [Create a dashboard](/en/insights/getting-started-with-insights#the-dashboards-page).
-- [Set alerts](/en/insights/configuring-alerts-in-insights) for specific thresholds.
+- [Create a dashboard](/insights/getting-started-with-insights#the-dashboards-page).
+- [Set alerts](/insights/configuring-alerts-in-insights) for specific thresholds.

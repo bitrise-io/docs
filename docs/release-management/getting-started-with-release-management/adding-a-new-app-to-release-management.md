@@ -6,7 +6,7 @@ slug: /release-management/getting-started-with-release-management/adding-a-new-a
 sidebar_label: Adding a new app
 ---
 
-To start using Release Management, you need to add at least one app. It doesn't require any store connection or a code repository. You will need to link the app to a [Bitrise project](/en/bitrise-platform/projects/projects-overview). If you don't have an existing Bitrise project, we'll automatically create one for you.
+To start using Release Management, you need to add at least one app. It doesn't require any store connection or a code repository. You will need to link the app to a [Bitrise project](/bitrise-platform/projects/projects-overview). If you don't have an existing Bitrise project, we'll automatically create one for you.
 
 To add an app:
 
@@ -31,6 +31,6 @@ To add an app:
    ![adding-app.png](/img/_paligo/uuid-9073242e-afd9-262e-25cf-395ab1881ea6.png)
 1. Click **Add app**.
 
-Once an app is added, you can start uploading installable artifacts and use our build distribution feature: [Distributing builds to testers](/en/release-management/build-distribution/distributing-builds-to-testers).
+Once an app is added, you can start uploading installable artifacts and use our build distribution feature: [Distributing builds to testers](/release-management/build-distribution/distributing-builds-to-testers).
 
-To manage releases, you need to connect the app to an app store: [Connecting an app](/en/release-management/getting-started-with-release-management/connecting-an-app).
+To manage releases, you need to connect the app to an app store: [Connecting an app](/release-management/getting-started-with-release-management/connecting-an-app).
