@@ -21,6 +21,36 @@
  *      breaks `docusaurus write-translations` outright — see DUPLICATE_LABEL_
  *      OVERRIDES below for the specific pairs found so far.
  *
+ *   4. Rewrites `info_path` on every generated *.api.mdx to a bare route path.
+ *
+ *      docusaurus-plugin-openapi-docs builds this value from its `outputDir`
+ *      option, which is a filesystem path ('docs/bitrise-api/api-reference').
+ *      It does have logic to convert that into a route, but the logic is
+ *      guarded (plugin src/index.ts, v5.0.2):
+ *
+ *          let infoBasePath = `${outputDir}/${item.infoId}`;
+ *          if (docRouteBasePath) {
+ *            // ...strip docPath, rebuild from docRouteBasePath...
+ *          }
+ *
+ *      Our `docs.routeBasePath` is '' (docusaurus.config.ts) — falsy — so the
+ *      guard never fires and the raw filesystem path is written out. That was
+ *      latent until routeBasePath changed from 'en' to '', at which point the
+ *      next spec regeneration emitted `docs/...`.
+ *
+ *      The theme renders the value through Docusaurus's <Link> (see
+ *      docusaurus-theme-openapi-docs theme/ApiExplorer/SecuritySchemes:
+ *      `const infoAuthPath = `/${props.infoPath}#authentication`` , then
+ *      `<Link to={infoAuthPath}>`), and <Link> prepends the active locale's
+ *      baseUrl unless the path already starts with it. So the value must be a
+ *      BARE route path with no locale prefix — the same convention as body
+ *      links, and for the same reason (see the note in sync_mcp_docs.py's
+ *      rewrite_internal_links): hardcoding `en/` renders as /ja/en/... on the
+ *      ja build, which doesn't exist.
+ *
+ *      Derived from each target's own infoFile rather than hardcoded, so a
+ *      future outputDir change can't silently reintroduce a filesystem prefix.
+ *
  * Every step is existsSync-guarded and idempotent, so running this after a
  * single-spec regeneration (only one info file present) is safe.
  */
@@ -64,6 +94,16 @@ const API_REFERENCE_DIRS = [
   '../docs/bitrise-api/api-reference',
   '../docs/bitrise-rde-api/api-reference',
 ];
+
+// Root of the docs plugin's content dir (docusaurus.config.ts: docs.path).
+const DOCS_ROOT = '../docs';
+
+// docusaurus.config.ts: docs.routeBasePath. Empty means docs are served at the
+// site root, so a route path is just the file's path relative to DOCS_ROOT.
+// Kept as a named constant so this still resolves correctly if it ever changes.
+// No locale prefix belongs here — <Link> adds the active locale's baseUrl (see
+// step 4 above), so a prefix would double up as /ja/en/... on the ja build.
+const ROUTE_BASE_PATH = '';
 
 for (const target of TARGETS) {
   const filePath = path.resolve(__dirname, target.infoFile);
@@ -162,6 +202,71 @@ for (const dir of API_REFERENCE_DIRS) {
     } else {
       console.log(`· [${dir}] sidebar.ts labels already patched or pattern not found`);
     }
+  }
+}
+
+// 4. Point `info_path` at a real URL path instead of the plugin's outputDir.
+for (const target of TARGETS) {
+  const infoPath = path.resolve(__dirname, target.infoFile);
+  const dirPath = path.dirname(infoPath);
+  if (!fs.existsSync(dirPath)) {
+    console.log(`· ${target.sidebar} reference dir not found, skipping info_path patch`);
+    continue;
+  }
+
+  // e.g. .../docs/bitrise-api/api-reference/bitrise-api.info.mdx
+  //   -> bitrise-api/api-reference/bitrise-api
+  const routePath = path
+    .relative(path.resolve(__dirname, DOCS_ROOT), infoPath)
+    .replace(/\.info\.mdx$/, '')
+    .split(path.sep)
+    .join('/');
+  const expected = [ROUTE_BASE_PATH, routePath]
+    .filter(Boolean)
+    .join('/')
+    .replace(/^\/+/, '');
+
+  let patched = 0;
+  let alreadyCorrect = 0;
+  let missing = 0;
+
+  for (const file of fs.readdirSync(dirPath)) {
+    if (!file.endsWith('.api.mdx')) continue;
+
+    const filePath = path.join(dirPath, file);
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const current = content.match(/^info_path:[ \t]*(.*)$/m);
+
+    if (!current) {
+      missing += 1;
+      continue;
+    }
+    if (current[1].trim() === expected) {
+      alreadyCorrect += 1;
+      continue;
+    }
+
+    fs.writeFileSync(
+      filePath,
+      content.replace(/^info_path:[ \t]*.*$/m, `info_path: ${expected}`),
+      'utf-8',
+    );
+    patched += 1;
+  }
+
+  if (patched > 0) {
+    console.log(
+      `✔ [${target.sidebar}] info_path -> ${expected} ` +
+        `(${patched} rewritten, ${alreadyCorrect} already correct)`,
+    );
+  } else {
+    console.log(
+      `· [${target.sidebar}] info_path already ${expected} on all ` +
+        `${alreadyCorrect} file(s), skipping`,
+    );
+  }
+  if (missing > 0) {
+    console.log(`· [${target.sidebar}] ${missing} *.api.mdx had no info_path line`);
   }
 }
 
