@@ -41,6 +41,12 @@ PROTECT_PATTERNS = [
     ("fenced_code_block", r'```[\s\S]*?```'),
     ("inline_code",       r'`[^`]+`'),
     ("url",               r'https?://[^\s)]+'),
+    # Internal link/image targets — ](/bitrise-ci/foo), ![alt](/img/foo.png).
+    # There is no legitimate case for translating a relative path: it's a
+    # route, not prose. Mirrors the url pattern above for the site's own
+    # bare-path convention (see scripts/strip_en_prefix.py) instead of
+    # relying on the model's "preserve links" instruction to leave it alone.
+    ("relative_link_target", r'\]\(/[^)\s]*\)'),
     # Whole <NT>...</NT> spans, matched BEFORE mdx_component (which would
     # otherwise mask the opening/closing tags one at a time and leave the
     # protected text exposed in between). <NT> is the rare MANUAL escape
