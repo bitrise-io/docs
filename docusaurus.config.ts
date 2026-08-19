@@ -462,7 +462,7 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
-      additionalLanguages: ['yaml', 'bash', 'json', 'ruby', 'swift', 'kotlin', 'groovy', 'dart'],
+      additionalLanguages: ['yaml', 'bash', 'json', 'ruby', 'swift', 'kotlin', 'groovy', 'dart', 'diff'],
     },
     zoom: {
       selector: '.markdown img:not(a > img)',
