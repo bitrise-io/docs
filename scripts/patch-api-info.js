@@ -21,6 +21,24 @@
  *      breaks `docusaurus write-translations` outright — see DUPLICATE_LABEL_
  *      OVERRIDES below for the specific pairs found so far.
  *
+ *   4. Rewrites `info_path` on every generated *.api.mdx to a real URL path.
+ *      The plugin derives this value from its `outputDir` option, which is a
+ *      filesystem path ('docs/bitrise-api/api-reference'), and writes it into
+ *      the frontmatter unchanged. But the theme consumes it as a URL, not a
+ *      doc id — see docusaurus-theme-openapi-docs
+ *      theme/ApiExplorer/SecuritySchemes/index.tsx:
+ *
+ *          const infoAuthPath = `/${props.infoPath}#authentication`;
+ *
+ *      That href is emitted verbatim, so it never goes through Docusaurus's
+ *      locale/routeBasePath resolution and has to carry the locale prefix
+ *      itself. With `routeBasePath: ''` and `i18n.localeConfigs.en.baseUrl:
+ *      '/en/'`, the generated `docs/...` value resolves to /docs/... — a 404
+ *      on every API reference page. The correct value is `en/...`.
+ *
+ *      Derived from each target's own infoFile rather than hardcoded, so a
+ *      future outputDir change can't silently reintroduce the wrong prefix.
+ *
  * Every step is existsSync-guarded and idempotent, so running this after a
  * single-spec regeneration (only one info file present) is safe.
  */
@@ -64,6 +82,18 @@ const API_REFERENCE_DIRS = [
   '../docs/bitrise-api/api-reference',
   '../docs/bitrise-rde-api/api-reference',
 ];
+
+// Root of the docs plugin's content dir (docusaurus.config.ts: docs.path).
+// Route paths are relative to this, since routeBasePath is ''.
+const DOCS_ROOT = '../docs';
+
+// Locale prefix that generated `info_path` values must carry — the theme
+// emits them as raw hrefs with no locale resolution (see step 4 above).
+// Mirrors docusaurus.config.ts i18n.localeConfigs.en.baseUrl ('/en/').
+// The ja build has no translated copies of the API reference, so it falls
+// back to these files and links to the en info page: not ideal, but a live
+// page rather than a 404. Revisit if the reference is ever translated.
+const EN_ROUTE_PREFIX = 'en';
 
 for (const target of TARGETS) {
   const filePath = path.resolve(__dirname, target.infoFile);
@@ -162,6 +192,68 @@ for (const dir of API_REFERENCE_DIRS) {
     } else {
       console.log(`· [${dir}] sidebar.ts labels already patched or pattern not found`);
     }
+  }
+}
+
+// 4. Point `info_path` at a real URL path instead of the plugin's outputDir.
+for (const target of TARGETS) {
+  const infoPath = path.resolve(__dirname, target.infoFile);
+  const dirPath = path.dirname(infoPath);
+  if (!fs.existsSync(dirPath)) {
+    console.log(`· ${target.sidebar} reference dir not found, skipping info_path patch`);
+    continue;
+  }
+
+  // e.g. .../docs/bitrise-api/api-reference/bitrise-api.info.mdx
+  //   -> en/bitrise-api/api-reference/bitrise-api
+  const routePath = path
+    .relative(path.resolve(__dirname, DOCS_ROOT), infoPath)
+    .replace(/\.info\.mdx$/, '')
+    .split(path.sep)
+    .join('/');
+  const expected = `${EN_ROUTE_PREFIX}/${routePath}`;
+
+  let patched = 0;
+  let alreadyCorrect = 0;
+  let missing = 0;
+
+  for (const file of fs.readdirSync(dirPath)) {
+    if (!file.endsWith('.api.mdx')) continue;
+
+    const filePath = path.join(dirPath, file);
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const current = content.match(/^info_path:[ \t]*(.*)$/m);
+
+    if (!current) {
+      missing += 1;
+      continue;
+    }
+    if (current[1].trim() === expected) {
+      alreadyCorrect += 1;
+      continue;
+    }
+
+    fs.writeFileSync(
+      filePath,
+      content.replace(/^info_path:[ \t]*.*$/m, `info_path: ${expected}`),
+      'utf-8',
+    );
+    patched += 1;
+  }
+
+  if (patched > 0) {
+    console.log(
+      `✔ [${target.sidebar}] info_path -> ${expected} ` +
+        `(${patched} rewritten, ${alreadyCorrect} already correct)`,
+    );
+  } else {
+    console.log(
+      `· [${target.sidebar}] info_path already ${expected} on all ` +
+        `${alreadyCorrect} file(s), skipping`,
+    );
+  }
+  if (missing > 0) {
+    console.log(`· [${target.sidebar}] ${missing} *.api.mdx had no info_path line`);
   }
 }
 
