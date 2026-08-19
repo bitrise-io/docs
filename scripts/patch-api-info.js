@@ -21,23 +21,35 @@
  *      breaks `docusaurus write-translations` outright — see DUPLICATE_LABEL_
  *      OVERRIDES below for the specific pairs found so far.
  *
- *   4. Rewrites `info_path` on every generated *.api.mdx to a real URL path.
- *      The plugin derives this value from its `outputDir` option, which is a
- *      filesystem path ('docs/bitrise-api/api-reference'), and writes it into
- *      the frontmatter unchanged. But the theme consumes it as a URL, not a
- *      doc id — see docusaurus-theme-openapi-docs
- *      theme/ApiExplorer/SecuritySchemes/index.tsx:
+ *   4. Rewrites `info_path` on every generated *.api.mdx to a bare route path.
  *
- *          const infoAuthPath = `/${props.infoPath}#authentication`;
+ *      docusaurus-plugin-openapi-docs builds this value from its `outputDir`
+ *      option, which is a filesystem path ('docs/bitrise-api/api-reference').
+ *      It does have logic to convert that into a route, but the logic is
+ *      guarded (plugin src/index.ts, v5.0.2):
  *
- *      That href is emitted verbatim, so it never goes through Docusaurus's
- *      locale/routeBasePath resolution and has to carry the locale prefix
- *      itself. With `routeBasePath: ''` and `i18n.localeConfigs.en.baseUrl:
- *      '/en/'`, the generated `docs/...` value resolves to /docs/... — a 404
- *      on every API reference page. The correct value is `en/...`.
+ *          let infoBasePath = `${outputDir}/${item.infoId}`;
+ *          if (docRouteBasePath) {
+ *            // ...strip docPath, rebuild from docRouteBasePath...
+ *          }
+ *
+ *      Our `docs.routeBasePath` is '' (docusaurus.config.ts) — falsy — so the
+ *      guard never fires and the raw filesystem path is written out. That was
+ *      latent until routeBasePath changed from 'en' to '', at which point the
+ *      next spec regeneration emitted `docs/...`.
+ *
+ *      The theme renders the value through Docusaurus's <Link> (see
+ *      docusaurus-theme-openapi-docs theme/ApiExplorer/SecuritySchemes:
+ *      `const infoAuthPath = `/${props.infoPath}#authentication`` , then
+ *      `<Link to={infoAuthPath}>`), and <Link> prepends the active locale's
+ *      baseUrl unless the path already starts with it. So the value must be a
+ *      BARE route path with no locale prefix — the same convention as body
+ *      links, and for the same reason (see the note in sync_mcp_docs.py's
+ *      rewrite_internal_links): hardcoding `en/` renders as /ja/en/... on the
+ *      ja build, which doesn't exist.
  *
  *      Derived from each target's own infoFile rather than hardcoded, so a
- *      future outputDir change can't silently reintroduce the wrong prefix.
+ *      future outputDir change can't silently reintroduce a filesystem prefix.
  *
  * Every step is existsSync-guarded and idempotent, so running this after a
  * single-spec regeneration (only one info file present) is safe.
@@ -84,16 +96,14 @@ const API_REFERENCE_DIRS = [
 ];
 
 // Root of the docs plugin's content dir (docusaurus.config.ts: docs.path).
-// Route paths are relative to this, since routeBasePath is ''.
 const DOCS_ROOT = '../docs';
 
-// Locale prefix that generated `info_path` values must carry — the theme
-// emits them as raw hrefs with no locale resolution (see step 4 above).
-// Mirrors docusaurus.config.ts i18n.localeConfigs.en.baseUrl ('/en/').
-// The ja build has no translated copies of the API reference, so it falls
-// back to these files and links to the en info page: not ideal, but a live
-// page rather than a 404. Revisit if the reference is ever translated.
-const EN_ROUTE_PREFIX = 'en';
+// docusaurus.config.ts: docs.routeBasePath. Empty means docs are served at the
+// site root, so a route path is just the file's path relative to DOCS_ROOT.
+// Kept as a named constant so this still resolves correctly if it ever changes.
+// No locale prefix belongs here — <Link> adds the active locale's baseUrl (see
+// step 4 above), so a prefix would double up as /ja/en/... on the ja build.
+const ROUTE_BASE_PATH = '';
 
 for (const target of TARGETS) {
   const filePath = path.resolve(__dirname, target.infoFile);
@@ -205,13 +215,16 @@ for (const target of TARGETS) {
   }
 
   // e.g. .../docs/bitrise-api/api-reference/bitrise-api.info.mdx
-  //   -> en/bitrise-api/api-reference/bitrise-api
+  //   -> bitrise-api/api-reference/bitrise-api
   const routePath = path
     .relative(path.resolve(__dirname, DOCS_ROOT), infoPath)
     .replace(/\.info\.mdx$/, '')
     .split(path.sep)
     .join('/');
-  const expected = `${EN_ROUTE_PREFIX}/${routePath}`;
+  const expected = [ROUTE_BASE_PATH, routePath]
+    .filter(Boolean)
+    .join('/')
+    .replace(/^\/+/, '');
 
   let patched = 0;
   let alreadyCorrect = 0;
