@@ -433,6 +433,10 @@ const config: Config = {
       },
       items: [
         {
+          type: 'localeDropdown',
+          position: 'right',
+        },
+        {
           href: 'https://support.bitrise.io/en/',
           label: 'Go to support',
           position: 'right',

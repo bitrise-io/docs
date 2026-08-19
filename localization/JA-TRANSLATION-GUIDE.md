@@ -1,0 +1,124 @@
+# Bitrise Japanese Docs — Auto-Translation Guide
+
+House rules for machine-translating docs.bitrise.io into Japanese as reliably as an LLM can, for a Claude-driven pipeline with no full-time in-house Japanese linguist.
+
+**Status legend — read this first, so nothing here is mistaken for magic that isn't wired:**
+- **[LIVE]** — implemented and working in the scripts today.
+- **[PROCESS]** — a human step we recommend (not code).
+- **[ROADMAP]** — designed here but **not built yet**; do not rely on it until it ships.
+
+> **Standing assumption:** the Bitrise app UI is English-only for Japanese users, so on-screen labels, product names, Step names, code, and URLs stay in English; only the surrounding prose is translated.
+
+Base standard: the **JTF Japanese Standard Style Guide (translation)** — native-authored, has an English edition and a free style-checker tool.
+
+---
+
+## 1. What Japanese to write — register & tone  **[LIVE]**
+
+These rules are embedded in the translator's system prompt (`translate_docs.py`), so every run applies them:
+- **Register:** polite **です・ます調** throughout; instructions as 〜してください / 〜します. No plain だ・である style. Light, neutral honorifics (no heavy keigo).
+- **Voice:** clear and instructional; subject omission is natural — don't force 「あなた」.
+
+## 2. Orthography  **[LIVE]**
+
+Embedded in the prompt, and mechanically checked afterward:
+- Full-width Japanese punctuation (。 、).
+- Keep the long-vowel mark on katakana loanwords (サーバー, not サーバ).
+- Half-width numerals.
+- Embedded English / product terms stay in Latin script inside the Japanese sentence.
+
+The JTF **automated style-checker** (`.github/workflows/ja-style-check.yml` + `.textlintrc.yaml`, textlint + `textlint-rule-preset-jtf-style`) runs on changed JA docs and mechanically enforces the JTF rule set — register, katakana long-vowels, punctuation, spacing. It's a non-blocking CI check for now (see its own file header: `.mdx`/JSX support needs validating on a sample page before it's trusted as a required check).
+
+## 3. What never gets translated  **[LIVE]**
+
+Enforcement is **structural**, not instruction-following — the model is never shown the protected text at all, so there's nothing for it to get wrong:
+
+- **The glossary term lists, masked at translation time, are the actual mechanism.** `translate_docs.py` compiles every `do_not_translate` tier in `ja-do-not-translate-glossary.yaml` into matching rules via the shared matcher (`scripts/nt_terms.py` — plus canonical Step titles fetched from the steplib spec) and masks every term occurrence — product names, UI labels, Step names, Bitrise-specific concepts — out of the text before the model sees it, the same way it masks code and URLs, restoring them verbatim afterward. The docs source carries **no** translation markup; a glossary edit takes effect everywhere on the next translation.
+- **`ja-do-not-translate-glossary.yaml` IS read at translation time.** `build_ui_library.py` regenerates it weekly from the live product + steplib + docs. Tiers are read generically by name: `ui_labels_context_protect` is context-gated, `acronyms`/`code_literals` require an exact-case match, and every other tier (whatever it's called) is always-protect — so a renamed or new tier can't silently drop out of protection.
+- **`ui_labels_context_protect` terms** (common words that are only sometimes UI labels, e.g. "Add", "Details") are masked contextually — only where the surrounding markdown already marks them as a literal UI reference (bold, a click/select verb just before, a button/dialog/toggle noun just after, or the start of a numbered procedure step). Elsewhere they're left as ordinary, translatable prose.
+- **Pattern-masked before term matching** (`protect_patterns` in the glossary): fenced code blocks, inline code, URLs, manual `<NT>` spans, env vars, filenames, MDX/JSX components, admonitions, import lines, heading anchors, templates, front-matter keys. This is byte-exact and tested. URLs are **not** translated — the `url` pattern masks them independently.
+- **Verified afterwards, deterministically.** Every placeholder token visible in the masked input must appear exactly once in the model output, and the response must not be truncated. A page that fails is retried; if it still fails, the run exits non-zero **without writing the page** — a bad translation can't be silently committed. A token surviving verbatim *is* the term surviving verbatim: protection is checked, not hoped for.
+- **A manual `<NT>...</NT>` span is the page-specific escape hatch.** For the rare case the lists can't decide (see `scripts/add_notranslate_tags.py`), a hand-placed `<NT>` wrapper (component: `src/components/NT`) is masked whole before term matching runs, so it always wins.
+- **Inflectional suffixes are NOT frozen with the term.** The plural/possessive "s"/"'s" stays outside the mask, visible to the model with an explicit prompt rule to drop it or express it as Japanese grammar (の for possession; Japanese has no plural marker). Only the term itself is a frozen literal.
+- **Front matter is never sent to the model.** `translate_docs.py` splits it off before masking/translating and reattaches it untouched — `title`/`description` stay in English for now (see the "Known gaps" section in `README.md`), and `slug` can never be touched no matter what the model does.
+- **Every bold `**...**` span in the JA output is rewritten to `<strong>...</strong>`** (`promote_bold_to_strong` in `translate_docs.py`, run before unmasking so code can never be touched), deterministically, not via a prompt instruction. Markdown's `**` emphasis depends on whitespace/punctuation next to the delimiter to tell one `**` pair from another; Japanese puts bold spans hard against particles (e.g. `**X**で**Y**を...`), which reliably breaks that disambiguation and both mismatches the bold and leaks a literal `**` into the page. `<strong>` sidesteps CommonMark delimiter matching entirely.
+
+## 4. Terminology consistency — "same thing, same word, everywhere"  **[LIVE]**
+
+Mechanism: a **preferred-translations map** — one approved Japanese rendering per English term we *do* translate — in its own file `ja-preferred-translations.yaml`, injected into every translation prompt via `translate_docs.py --preferred`.
+
+```yaml
+preferred_translations:
+  "build number": "ビルド番号"
+  "environment variable": "環境変数"
+  # English term (lowercased) : the ONE approved Japanese rendering
+```
+
+- A term is either **kept English via the glossary lists** (§3) **or** has a **fixed rendering here** — never both.
+- **Why a separate file:** the glossary is regenerated weekly by the builder, which would overwrite terms added there. This file is human-owned; the builder never touches it, so edits are permanent.
+- Growing this map is the main curation job: spot two renderings of one concept → pick one → add it here.
+
+## 5. Reliability checklist that is TRUE today  **[LIVE]**
+
+What actually makes the current output as good as LLM translation gets:
+1. Code/URLs/identifiers physically masked, so they can't be mangled (tested byte-exact).
+2. Product/UI/Step names physically masked out before translation, straight from the glossary lists — the model never sees them, so it can't mistranslate them.
+3. Every masked token deterministically verified in the output (retry, then hard-fail without writing) — protection and truncation are checked per page, not assumed.
+4. JTF register + orthography rules in the prompt, mechanically checked afterward by the textlint JTF style checker.
+5. Preferred-terms map for consistent terminology.
+6. Claude is a strong model for JA (honorifics/omission handling).
+
+## 6. Human calibration  **[PROCESS]**
+
+Because there's no in-house linguist: have a fluent Japanese reader review a sample of pilot pages **once** to (a) confirm the house style, (b) seed/correct `ja-preferred-translations.yaml`, and (c) sanity-check that the protected (masked) terms actually read naturally with the surrounding Japanese grammar (the inflection-split behavior in particular — see §3). After that, the [LIVE] mechanisms run unattended. This is the single most valuable non-code step.
+
+---
+
+## 7. Reuse of existing translations — translation memory  **[ROADMAP — NOT BUILT]**
+
+*Designed, not yet implemented. Do not assume this is running.*
+
+Plan: a `ja-translation-memory.json` storing each English segment → approved Japanese, so identical English is reused verbatim (free + automatically consistent) instead of re-translated. Seed it from the old pre-drop `/ja/` pages: import old EN↔JA pairs, run them through the checks (§8); passing ones are reused, failing ones are re-translated. This is the "reuse existing translations unless they prove bad" behavior — but it needs building.
+
+## 8. Automated quality gate & propagation  **[PARTIALLY LIVE / ROADMAP]**
+
+- JTF style-checker: **[LIVE]**, see §2 — non-blocking until validated on `.mdx`.
+- A terminology check (every preferred term rendered its one way), a cross-page consistency check (no English segment rendered two ways), a structure check: **[ROADMAP — NOT BUILT]**.
+- Invalidation & propagation: when a preferred rendering is fixed, invalidate every stored segment containing that term so the correction re-translates on every page ("fix once, fix everywhere"). Requires the translation memory (§7) to exist first. **[ROADMAP — NOT BUILT]**.
+
+---
+
+## 9. How it's wired today (files)
+
+| File | Role | Status |
+|------|------|--------|
+| `ja-do-not-translate-glossary.yaml` | protect_patterns + the do-not-translate term tiers, read at translation time | **LIVE** |
+| `../scripts/nt_terms.py` | shared term matcher: tier loading + steplib Step titles + all disambiguation rules | **LIVE** |
+| `translate_docs.py` | masks code/URLs/manual `<NT>` spans + every glossary-term match, injects style + preferred, translates, verifies every token restored | **LIVE** |
+| `ja-preferred-translations.yaml` | terminology consistency map | **LIVE** |
+| `../scripts/add_notranslate_tags.py` | optional: reports what the matcher protects; `--write` places manual `<NT>` escape-hatch tags | **LIVE** (optional) |
+| `../src/components/NT` | the do-not-translate marker component (manual escape hatch only) | **LIVE** |
+| `.github/workflows/ja-style-check.yml` + `.textlintrc.yaml` | JTF style checker (textlint) | **LIVE** (non-blocking) |
+| translation memory / terminology & consistency CI checks / invalidation | reuse + gates + propagation | **ROADMAP** |
+
+Run today:
+```bash
+python3 .github/scripts/translate_docs.py \
+  --glossary localization/ja-do-not-translate-glossary.yaml \
+  --preferred localization/ja-preferred-translations.yaml \
+  --src-root docs --dest-root i18n/ja/docusaurus-plugin-content-docs/current \
+  path/to/changed.mdx
+```
+
+## 10. Definition of done for a translated page (today)
+
+- [ ] All protected terms, code, and URLs still English — guaranteed by token verification (the run fails rather than writing a page that lost one).
+- [ ] Preferred terms use their one rendering.
+- [ ] Register/orthography read as natural です・ます Japanese (JTF style checker passes; eyeball until it's validated as a required check).
+- [ ] Markdown/MDX structure intact, including inflectional suffixes dropped or rendered as Japanese grammar (no stray English "'s" or plural "s").
+
+---
+
+### References
+- JTF Japanese Standard Style Guide (translation) — base standard + free checker.
+- Industry LLM-translation practice: isolation zones for code, structural do-not-translate markup, translation memory for reuse/consistency.
