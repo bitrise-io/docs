@@ -286,6 +286,53 @@ def dest_path(src, src_root, dest_root):
     raise ValueError(f"{src!r} is not under src_root {src_root!r}")
 
 
+def is_relevant(path):
+    return path.endswith((".md", ".mdx")) and "/api-reference/" not in path
+
+
+def parse_changes(lines):
+    """Parse `git diff --name-status` lines into (to_translate, to_delete,
+    to_rename). A plain path with no status prefix (no tab) is treated as
+    something to translate — the original interface, still used for manual
+    CLI invocation (`translate_docs.py file1.mdx file2.mdx`) and preserved
+    unchanged.
+
+    Without this, a deleted or renamed English page leaves its Japanese
+    translation orphaned forever: the old `--diff-filter=AM` in the
+    workflow discarded D and R entries outright, so neither case was ever
+    even visible to this script.
+    """
+    to_translate = []
+    to_delete = []
+    to_rename = []  # (old, new)
+    for line in lines:
+        line = line.rstrip("\n")
+        if not line:
+            continue
+        parts = line.split("\t")
+        status = parts[0]
+        if len(parts) == 1:
+            to_translate.append(parts[0])
+        elif status.startswith("R"):
+            if len(parts) != 3:
+                raise ValueError(f"malformed rename line: {line!r}")
+            to_rename.append((parts[1], parts[2]))
+        elif status == "D":
+            to_delete.append(parts[1])
+        elif status in ("A", "M"):
+            to_translate.append(parts[1])
+        else:
+            # C (copy), T (typechange), or anything else unrecognized —
+            # treat conservatively as "translate", the same as every
+            # status used to be handled before this function existed.
+            to_translate.append(parts[1])
+    return (
+        [p for p in to_translate if is_relevant(p)],
+        [p for p in to_delete if is_relevant(p)],
+        [(o, n) for o, n in to_rename if is_relevant(o) or is_relevant(n)],
+    )
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--glossary", required=True)
@@ -296,12 +343,35 @@ def main():
     ap.add_argument("files", nargs="*")
     a = ap.parse_args()
 
-    files = a.files or [l.strip() for l in sys.stdin if l.strip()]
-    files = [f for f in files if f.endswith((".md", ".mdx"))]
-    excluded = [f for f in files if "/api-reference/" in f]
-    files = [f for f in files if f not in excluded]
-    for f in excluded:
-        print(f"  skip (auto-generated API reference, out of scope): {f}")
+    lines = a.files or [l.strip() for l in sys.stdin if l.strip()]
+    files, to_delete, to_rename = parse_changes(lines)
+
+    # Deletes and renames are pure filesystem operations — handle them
+    # before anything that needs an API key, so a PR that only deletes or
+    # moves pages (no content changes) doesn't require one at all.
+    for src in to_delete:
+        dst = dest_path(src, a.src_root, a.dest_root)
+        if os.path.isfile(dst):
+            os.remove(dst)
+            print(f"  deleted {dst} (source {src} was deleted)")
+        else:
+            print(f"  skip delete (no JA counterpart): {src}")
+
+    for old_src, new_src in to_rename:
+        old_dst = dest_path(old_src, a.src_root, a.dest_root)
+        new_dst = dest_path(new_src, a.src_root, a.dest_root)
+        if not os.path.isfile(old_dst):
+            # Renamed page was never translated in the first place — nothing
+            # to move, but the content at its new path still needs a first
+            # translation, same as if it had just been added.
+            print(f"  skip rename (no JA counterpart): {old_src} -> {new_src}")
+            if is_relevant(new_src):
+                files.append(new_src)
+            continue
+        os.makedirs(os.path.dirname(new_dst) or ".", exist_ok=True)
+        os.rename(old_dst, new_dst)
+        print(f"  moved {old_dst} -> {new_dst} (source renamed {old_src} -> {new_src})")
+
     if not files:
         print("No markdown files to translate.")
         return

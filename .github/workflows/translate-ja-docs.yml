@@ -3,8 +3,11 @@
 # =====================================================================
 # When a PR changes English docs, translate ONLY the changed files to Japanese
 # and commit the JA versions back to the PR branch. This keeps JA in
-# lock-step with EN — it can never silently go stale. The bot commit only
-# ever ADDS files under i18n/ja/; a contributor's own files are never touched.
+# lock-step with EN — it can never silently go stale. Added/modified pages
+# are translated; deleted pages have their JA counterpart removed; renamed
+# or moved pages have their JA counterpart relocated to match (translate_docs.py's
+# parse_changes(), driven by `git diff --name-status`). The bot commit only
+# ever touches files under i18n/ja/; a contributor's own files are never touched.
 #
 # Do-not-translate enforcement is list-driven and structural: the glossary's
 # term tiers (product names, UI labels, Step names, ...) are compiled into
@@ -69,8 +72,14 @@ jobs:
         id: changed
         run: |
           BASE="${{ github.event.pull_request.base.sha }}"
-          git diff --name-only --diff-filter=AM "$BASE" HEAD \
-            | grep -E '^docs/.*\.(md|mdx)$' > changed.txt || true
+          # Full --name-status, not --name-only --diff-filter=AM: a deleted
+          # or renamed page needs its own handling (remove/move the JA
+          # counterpart), not just "ignore it". -M turns on rename detection
+          # explicitly (it's git's default too, but this makes the
+          # dependency clear). translate_docs.py's parse_changes() reads the
+          # status codes directly and filters to .md/.mdx itself, so this
+          # scopes to the docs/ directory and leaves the rest to it.
+          git diff --name-status -M "$BASE" HEAD -- docs > changed.txt || true
           echo "count=$(wc -l < changed.txt)" >> "$GITHUB_OUTPUT"
           cat changed.txt
 
