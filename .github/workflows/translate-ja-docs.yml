@@ -40,6 +40,20 @@ on:
       - 'docs/**/*.md'          # <-- adjust to your English docs location
       - 'docs/**/*.mdx'
 
+# A fast-follow push to the same PR (a very ordinary thing to do — push,
+# notice something, push again) starts a new run while the previous one may
+# still be mid-translation. Without this, the stale run's own git push at
+# the end can land translations based on outdated English content, or just
+# fail outright as a non-fast-forward push. Cancelling the superseded run
+# outright — before it ever reaches that final push — is cleaner than
+# teaching the push step to rebase and retry: it can't push stale content,
+# and it doesn't burn API calls on a translation that's about to be
+# superseded anyway. Same pattern deploy.yml already uses for the same
+# reason, just keyed to the PR branch instead of the ref.
+concurrency:
+  group: translate-ja-docs-${{ github.head_ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
