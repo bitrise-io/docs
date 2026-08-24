@@ -17,7 +17,7 @@ export default function DocItemPaginator(props) {
   const { metadata } = useDoc();
   return (
     <>
-      <SeeAlso source={metadata.source} />
+      <SeeAlso id={metadata.id} />
       <OriginalDocItemPaginator {...props} />
     </>
   );

@@ -15,19 +15,35 @@ Writers can override the automatic picks per page via frontmatter:
 
 `see_also` fully replaces the automatic picks for that page. `see_also_exclude`
 removes specific candidates from the automatic picks (ignored if `see_also` is
-also set). Entries can be a slug (as written in frontmatter) or a full
-`/en/...` permalink (as written in a Markdown link).
+also set). Entries are a bare path, exactly as it would appear in a Markdown
+link (e.g. `/bitrise-ci/testing/running-xcode-tests-on-bitrise`) -- this
+resolves to the target's stable doc id, which is all that gets written to the
+output. A locale-prefixed permalink (`/en/...`, `/ja/...`) also resolves, for
+anything pasted from a browser URL, but isn't the form to write -- this
+repo's cross-reference convention is bare, locale-less paths (see CLAUDE.md).
+
+The output maps each page's doc id to a list of its related pages' doc ids --
+no titles, no hrefs. Display data (title, locale-correct permalink) is
+resolved live at render time by <SeeAlso> via Docusaurus's own per-locale doc
+data, so the same relatedness graph serves every locale correctly without
+regenerating per locale, and a page whose id no longer exists by the time a
+reader loads it is just skipped rather than rendered as a dead link.
 
 Requires a Docusaurus *production build* cache to exist (for authoritative
-permalinks, since ~1/3 of pages compute their slug implicitly rather than
-declaring it in frontmatter). Run `npm run build` first -- not `npm start`:
-dev-mode metadata includes draft/unlisted docs that a production build (and
-therefore the live site) excludes, which would otherwise let a draft page
-leak into see_also.json as a link that 404s once published.
+ids/permalinks, since ~1/3 of pages compute their slug implicitly rather than
+declaring it in frontmatter). Build the English locale specifically --
+`npx docusaurus build --locale en`, not the multi-locale `npm run build`:
+building every configured locale in one invocation leaves the cache
+reflecting whichever locale happened to build last, which would make the
+embedding corpus's structural data (id, draft/unlisted, sourceDirName) depend
+on build order rather than being deterministic. Also not `npm start`: dev-mode
+metadata includes draft/unlisted docs that a production build (and therefore
+the live site) excludes, which would otherwise let a draft page leak into
+see_also.json as a link that 404s once published.
 
 Usage:
     pip install -r scripts/requirements-see-also.txt
-    npm run build
+    npx docusaurus build --locale en
     python scripts/generate_see_also.py
 """
 import json
@@ -39,6 +55,8 @@ import numpy as np
 import yaml
 from sentence_transformers import SentenceTransformer
 
+from see_also_common import EXCLUDED_SOURCE_DIRS
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DOCS_ROOT = REPO_ROOT / "docs"
 CONTENT_DOCS_CACHE = REPO_ROOT / ".docusaurus" / "docusaurus-plugin-content-docs" / "default"
@@ -48,11 +66,6 @@ MODEL_NAME = "all-mpnet-base-v2"
 TOP_K = 5
 FLOOR = 0.45
 MAX_PER_SOURCE_DIR = 2
-
-# Generated API reference docs are excluded entirely: they're auto-generated
-# from OpenAPI specs (not hand-written prose), and per-operation pages embed
-# as near-duplicates of each other, crowding out genuine matches.
-EXCLUDED_SOURCE_DIRS = ("bitrise-api/api-reference", "bitrise-rde-api/api-reference")
 
 # Top-level product landing pages (e.g. /en/bitrise-ci/) are built entirely
 # from a <ProductOverview> component, so once the JSX is stripped there's
@@ -122,9 +135,10 @@ def _is_draft_or_unlisted(path: Path) -> bool:
 def check_cache_is_fresh(cache_files):
     """Warn if the docs on disk and the cache entries loaded from
     .docusaurus disagree -- the symptom of forgetting to rebuild the cache
-    (`npm run build`) after adding, removing, or renaming pages. A production
-    build cache legitimately omits draft/unlisted pages entirely, so those
-    are excluded from the disk side of the comparison rather than flagged."""
+    (`npx docusaurus build --locale en`) after adding, removing, or renaming
+    pages. A production build cache legitimately omits draft/unlisted pages
+    entirely, so those are excluded from the disk side of the comparison
+    rather than flagged."""
     disk_paths = {
         p.relative_to(REPO_ROOT).as_posix()
         for p in list(DOCS_ROOT.rglob("*.md")) + list(DOCS_ROOT.rglob("*.mdx"))
@@ -140,7 +154,7 @@ def check_cache_is_fresh(cache_files):
     missing_from_cache = disk_paths - cache_paths
     stale_in_cache = cache_paths - disk_paths
     if missing_from_cache or stale_in_cache:
-        print("WARNING: docs on disk and the Docusaurus cache disagree -- rebuild with `npm run build` first.", file=sys.stderr)
+        print("WARNING: docs on disk and the Docusaurus cache disagree -- rebuild with `npx docusaurus build --locale en` first.", file=sys.stderr)
         for p in sorted(missing_from_cache):
             print(f"  on disk but not in cache: {p}", file=sys.stderr)
         for p in sorted(stale_in_cache):
@@ -149,17 +163,18 @@ def check_cache_is_fresh(cache_files):
 
 def load_doc_metadata():
     """Read Docusaurus's own generated per-doc metadata: authoritative
-    source path, permalink, title, and description for every page.
+    id, source path, permalink, title, and description for every page.
 
     Returns (docs, lookup): `docs` is the filtered list used for embedding;
     `lookup` maps every page's slug and permalink (including pages excluded
-    from `docs`, e.g. API reference) to {title, permalink, source}, so
-    frontmatter overrides can reference any page in the site.
+    from `docs`, e.g. API reference) to its doc id, so frontmatter overrides
+    can reference any page in the site by the same human-friendly slug/
+    permalink a Markdown link would use.
     """
     if not CONTENT_DOCS_CACHE.is_dir():
         raise SystemExit(
             f"No Docusaurus cache found at {CONTENT_DOCS_CACHE}.\n"
-            "Run `npm run build` once first, then re-run this script."
+            "Run `npx docusaurus build --locale en` once first, then re-run this script."
         )
 
     cache_files = sorted(CONTENT_DOCS_CACHE.glob("site-docs-*.json"))
@@ -173,10 +188,10 @@ def load_doc_metadata():
         if not source.startswith("@site/docs/"):
             continue
 
-        entry = {"title": meta["title"], "permalink": meta["permalink"], "source": source}
-        lookup[meta["permalink"]] = entry
+        doc_id = meta["id"]
+        lookup[meta["permalink"]] = doc_id
         if meta.get("slug"):
-            lookup[meta["slug"]] = entry
+            lookup[meta["slug"]] = doc_id
 
         if meta.get("draft") or meta.get("unlisted"):
             # Belt-and-suspenders: a production build cache already excludes
@@ -191,9 +206,9 @@ def load_doc_metadata():
 
         front_matter = meta.get("frontMatter", {}) or {}
         docs.append({
+            "id": doc_id,
             "source": source,
             "raw": raw,
-            "permalink": meta["permalink"],
             "title": meta["title"],
             "description": meta.get("description", ""),
             "sourceDirName": meta.get("sourceDirName", ""),
@@ -204,15 +219,15 @@ def load_doc_metadata():
 
 
 def resolve_refs(refs, lookup, doc_source):
-    """Resolve frontmatter slug/permalink references to lookup entries,
-    warning (not failing) on typos or renamed pages."""
+    """Resolve frontmatter slug/permalink references to doc ids, warning
+    (not failing) on typos or renamed pages."""
     resolved = []
     for ref in refs:
-        entry = lookup.get(ref)
-        if entry is None:
+        doc_id = lookup.get(ref)
+        if doc_id is None:
             print(f"WARNING: {doc_source} references unknown page '{ref}' in frontmatter -- skipping.", file=sys.stderr)
             continue
-        resolved.append(entry)
+        resolved.append(doc_id)
     return resolved
 
 
@@ -234,27 +249,26 @@ def main():
     output = {}
     for i, doc in enumerate(docs):
         if doc["see_also_override"]:
-            resolved = resolve_refs(doc["see_also_override"], lookup, doc["source"])
-            neighbors = [{"title": e["title"], "href": e["permalink"]} for e in resolved]
+            neighbor_ids = resolve_refs(doc["see_also_override"], lookup, doc["source"])
         else:
-            excluded_sources = {e["source"] for e in resolve_refs(doc["see_also_exclude"], lookup, doc["source"])}
+            excluded_ids = set(resolve_refs(doc["see_also_exclude"], lookup, doc["source"]))
             order = np.argsort(-sims[i])
-            neighbors = []
+            neighbor_ids = []
             dir_counts = {}
             for j in order:
-                if sims[i][j] < FLOOR or len(neighbors) >= TOP_K:
+                if sims[i][j] < FLOOR or len(neighbor_ids) >= TOP_K:
                     break
                 candidate = docs[j]
-                if candidate["source"] in excluded_sources:
+                if candidate["id"] in excluded_ids:
                     continue
                 subdir = candidate["sourceDirName"]
                 if dir_counts.get(subdir, 0) >= MAX_PER_SOURCE_DIR:
                     continue
-                neighbors.append({"title": candidate["title"], "href": candidate["permalink"]})
+                neighbor_ids.append(candidate["id"])
                 dir_counts[subdir] = dir_counts.get(subdir, 0) + 1
 
-        if neighbors:
-            output[doc["source"]] = neighbors
+        if neighbor_ids:
+            output[doc["id"]] = neighbor_ids
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(json.dumps(output, indent=2) + "\n")
