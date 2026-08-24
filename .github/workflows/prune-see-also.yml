@@ -1,0 +1,69 @@
+name: Prune stale See also links
+
+# Companion to regenerate-see-also.yml's scheduled full regeneration: that
+# job only fires once enough docs have changed (see the threshold there) and
+# always does a full re-embed. This workflow instead runs on every PR that
+# deletes or renames a docs page and does the cheap part immediately --
+# dropping (or, for a rename, remapping) the affected doc id in
+# src/data/see_also.json -- so a reader never sees a "See also" section drop
+# a link (or worse, keep showing one) for longer than it takes this job to
+# run, without waiting on the next scheduled full regeneration.
+#
+# scripts/prune_see_also.py has no heavy dependencies (no numpy/torch/
+# sentence-transformers) -- it's pure git-diff + JSON bookkeeping -- so this
+# is cheap enough to run on every relevant PR, unlike the full embed.
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'docs/**/*.md'
+      - 'docs/**/*.mdx'
+
+# A fast-follow push to the same PR shouldn't race a still-running prune from
+# the previous push -- same reasoning (and same pattern) as
+# translate-ja-docs.yml's concurrency group.
+concurrency:
+  group: prune-see-also-${{ github.head_ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  prune:
+    # Fork PRs get a read-only GITHUB_TOKEN against this repo (a deliberate
+    # GitHub security boundary), so the push step below can never succeed
+    # for one -- skip cleanly instead of failing on a permissions error that
+    # has nothing to do with the contributor's actual change. A fork PR that
+    # deletes/renames a page just relies on the scheduled full regeneration
+    # (regenerate-see-also.yml) to catch up -- safe, since a stale id is
+    # dropped at render time (src/components/SeeAlso), never rendered as a
+    # dead link.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+
+      - name: Prune deleted/renamed doc ids from see_also.json
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          git diff --name-status -M "$BASE" HEAD -- docs \
+            | python3 scripts/prune_see_also.py
+
+      - name: Commit if anything changed
+        run: |
+          git config user.name  "bitrise-docs-bot"
+          git config user.email "docs-bot@bitrise.io"
+          git add src/data/see_also.json
+          if ! git diff --cached --quiet; then
+            git commit -m "docs(see-also): prune stale ids after page delete/rename [skip ci]"
+            git push
+          else
+            echo "No see_also.json changes to commit."
+          fi
