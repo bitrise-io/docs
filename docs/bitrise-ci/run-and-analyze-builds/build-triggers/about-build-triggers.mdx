@@ -95,7 +95,15 @@ pipelines:
 
 ## GitHub stacked pull requests
 
-GitHub stacked pull requests split a change into an ordered series, where each pull request targets the branch of the one below it and the whole series lands on a single base branch.
+A [GitHub stack](https://docs.github.com/en/pull-requests/get-started/about-stacked-prs) splits a large change into a series of smaller, ordered pull requests. Each pull request in the stack targets the branch of the pull request below it, and the whole stack lands on a single base branch.
 
-- Triggers match the target branch condition against the base branch of the stack, not the branch a pull request targets directly. Set up your pull request triggers against the branch the stack lands on, such as `main`.
-- `$BITRISEIO_GIT_BRANCH_DEST` holds the base branch of the stack.
+For example, a stack of three pull requests could look like this:
+
+- `feature/part-1` targets `main`.
+- `feature/part-2` targets `feature/part-1`.
+- `feature/part-3` targets `feature/part-2`.
+
+All three pull requests ultimately land on `main`.
+
+- Triggers match the target branch condition against the base branch of the stack (`main` in the example above), not against the branch a pull request targets directly. Set `target_branch: main` in your pull request trigger, not `feature/part-1` or `feature/part-2`.
+- `$BITRISEIO_GIT_BRANCH_DEST` holds the base branch of the stack (`main`) for every pull request in the stack.
