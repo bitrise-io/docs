@@ -1,0 +1,186 @@
+---
+title: "Remote Dev Environments FAQ"
+description: "Frequently asked questions about Bitrise Remote Dev Environments: sessions and storage, connecting, GitHub credentials, AI coding agents, limits, and pricing."
+sidebar_position: 4
+slug: /bitrise-rde/getting-started/rde-faq
+sidebar_label: "FAQ"
+---
+
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Getting started
+
+**What is a Remote Dev Environment?**
+
+An on-demand cloud machine - macOS or Linux - running on the same infrastructure, <GlossTerm baseform="stack">stacks</GlossTerm>, and caches as Bitrise CI. You create a <GlossTerm baseform="rde session">session</GlossTerm> in seconds, connect from your terminal, IDE, or an AI coding agent, and terminate it when you're done. The persistent disk is kept, so you can restore the session later and pick up where you left off.
+
+**How do I get access?**
+
+There are two ways to get RDE. **Self-serve:** sign up on the [Remote Dev Environments page](https://bitrise.io/platform/remote-dev-environments). **Enterprise:** RDE is enabled on your workspace through Bitrise sales - contact Bitrise.
+
+Either way, you then need the **RDE User** role on the workspace - membership alone isn't enough. A workspace owner or manager grants it from **Settings** → **Collaboration**, per member or per group. If your workspace uses SCIM, assign the `rde:rde_admin` role from your identity provider. See [Managing RDE access](/bitrise-rde/configuration/managing-rde-access).
+
+**What's the fastest way to try it?**
+
+Three commands: install the Bitrise CLI, run `bitrise-cli auth login`, then `bitrise-cli rde claude` from your repository folder. That creates a session, clones your current branch, and drops you into Claude Code on the cloud machine. See [Quickstart](/bitrise-rde/getting-started/quickstart).
+
+**Which machines can I get?**
+
+macOS on Apple silicon (M2 Pro, M4, M4 Pro) and Linux from 2 to 48 vCPUs, on shared or dedicated clusters. The exact stacks and machine types available depend on your workspace - check the in-product list when creating a session. For what each way of buying RDE includes, see [RDE pricing](https://bitrise.io/pricing#rde) for self-serve, or the [Bitrise pricing calculator](https://pricing-calculator.tools.bitrise.dev/calc) for Enterprise.
+
+## Sessions, storage, and lifetime
+
+**What are the session states?**
+
+**Running**: provisioned and connectable. **Terminated**: the machine is stopped, and the session and its persistent disk are kept; fully reversible. **Deleted**: permanently removed. You can only delete a session that's already terminated.
+
+**Will my session shut down on its own?**
+
+Yes, in two ways. Every session has an auto-terminate timer, defaulting to 5 days of inactivity. You can set it to anything up to 30 days, or turn it off so the session never auto-terminates. Sessions in free-trial workspaces are capped at 8 hours and can't change this.
+
+Separately from that timer, Bitrise stops long-running machines for infrastructure maintenance from time to time. Those sessions are drained (shut down) and can be restarted afterwards, and turning the auto-terminate timer off doesn't exempt a session from it.
+
+In both cases, terminating is not deleting - your disk is preserved.
+
+**How long is my session kept after I terminate it?**
+
+Indefinitely, as long as you don't delete it and the stack it was created from is still available on Bitrise. There is no inactivity-based deletion of terminated sessions.
+
+**Can my session be deleted without me deleting it?**
+
+Yes, in one case: if the stack your session was created from is removed. Your session's disk holds only your changes on top of that stack image, so it can't be started once the image is gone. Stack removals follow the published [stack deprecation and removal policy](/bitrise-build-hub/infrastructure/build-stacks/stack-deprecation-and-removal-policy), with at least four weeks' notice. Upcoming removals are listed on the [upcoming stack deprecations](https://stacks.bitrise.io/announcements/upcoming-stack-deprecations/) page, and you can [subscribe to RSS updates](https://stacks.bitrise.io/tips/get-notified/) to follow them.
+
+**What happens to my work if that happens?**
+
+It's permanently erased and can't be recovered. Commit your work to your repository, or export it, before the stack removal date. You can create a new session from a current stack at any time.
+
+**Can I move an existing session to a newer stack?**
+
+No. A session stays on the stack it was created from for its whole life. To move to a newer stack, create a new session from it and clone your repository again.
+
+**Is my session disk backed up?**
+
+No. Session disks are working storage, and not backed up. They aren't covered by a service-level commitment. Treat anything that exists only on a session disk as unsaved work. Push your branches.
+
+**What's actually on the persistent disk?**
+
+Only the changes made since the session was created - your clone, build outputs, local configuration - stored as a difference against the stack image. That's what makes restore fast, and why the session depends on that image continuing to exist.
+
+**Does session storage cost extra?**
+
+Session storage isn't billed separately today. Enterprise agreements define a storage allowance and how storage beyond it is handled - if you're on one, check your Order Form.
+
+**What happens to sessions when someone leaves the workspace?**
+
+Revoking a member's RDE access doesn't delete their sessions. Running sessions continue until they auto-terminate; terminated sessions keep their disk until someone deletes them. To reclaim the storage, delete the sessions explicitly.
+
+**Do sessions survive maintenance?**
+
+Long-running machines may be stopped for infrastructure maintenance. These sessions are drained (shut down) and can be restarted afterwards.
+
+**How long does a restore take?**
+
+Usually between roughly 20 seconds and a few minutes, depending on image size.
+
+## Connecting
+
+**How do I connect to a session?**
+
+Four ways: the browser-based web terminal on the session detail page; SSH, using the address and one-time password shown there or from `bitrise-cli rde session view`; VS Code, through **Open in VS Code** with the Remote-SSH extension; and VNC for a graphical desktop on macOS sessions. Linux sessions have no desktop, so VNC isn't available. See [Connecting to a session](/bitrise-rde/rde-options/connecting-to-a-session).
+
+**Can I connect without copying a password every time?**
+
+Yes - register your SSH public key as a [saved input](/bitrise-rde/configuration/saved-inputs) and Bitrise adds it to the session's authorized keys. macOS sessions sign in as the `vagrant` user, Linux sessions as the `ubuntu` user.
+
+**Can I get an interactive shell from the CLI?**
+
+`bitrise-cli rde session exec` runs a single command and streams the output back - it isn't an interactive shell. For an interactive session, use SSH or the web terminal.
+
+**My remote command times out. Can I raise the limit?**
+
+Yes. `session exec` stops the remote command after 10 minutes by default. Use `--timeout 30m` for long builds, or `--timeout 0` to disable the cap.
+
+**How do I move files in and out?**
+
+Use `bitrise-cli rde session upload` and `bitrise-cli rde session download`. If you're working through an AI agent started by `bitrise-cli rde claude`, ask it in plain language - it can transfer files and open a VNC viewer on your local machine.
+
+A session is a normal machine you have SSH access to, so the tools you already use work too:
+
+- Copy single files or folders with `scp`, using the session's SSH address from the session detail page or `bitrise-cli rde session view`.
+- Keep a folder in sync with `rsync` over SSH. You can start it from your laptop or from inside the session, in either direction.
+- Pull straight from the internet inside the session with `curl`, `wget`, or `git clone`. For large dependencies and artifacts this is usually much faster than uploading from your laptop, because the session sits on Bitrise infrastructure.
+- Push results out from inside the session to wherever you already store them, such as your own object storage bucket or an artifact server.
+- Skip transferring altogether and edit in place with [VS Code Remote - SSH](/bitrise-rde/rde-options/connecting-to-a-session#vs-code-remote---ssh), which reads and writes files on the session directly.
+
+Register your SSH public key as a [saved input](/bitrise-rde/configuration/saved-inputs) first. Passwordless access is what makes scripted and repeated transfers practical, instead of copying a one-time password every time.
+
+**The macOS desktop locked over VNC. How do I get back in?**
+
+Use the VNC password shown on the session detail page in the RDE UI.
+
+## Git and credentials
+
+**How do I clone private repositories?**
+
+Enable the [GitHub integration](/bitrise-rde/configuration/github-integration). Bitrise plants a short-lived GitHub token on each new session, issued through your personal GitHub App connection, so `git clone`, `git push`, and the `gh` CLI work over HTTPS without personal access tokens or SSH keys. Tokens are valid for at most eight hours and refresh automatically for the lifetime of the session, including across restores. No long-lived credential is stored on the machine.
+
+**I enabled it, but a clone fails with "repository not found."**
+
+The Bitrise GitHub App isn't installed on that repository or organization. Note that a workspace-level GitHub App connection doesn't count - this integration uses your **personal** connection under **Account settings** → **Connected accounts**.
+
+**Are commits attributed to me?**
+
+Yes, to your GitHub account, using your GitHub noreply address so your real email address is never exposed.
+
+**How do I store other credentials?**
+
+As [saved inputs](/bitrise-rde/configuration/saved-inputs) - API tokens, SSH keys, agent credentials. They're scoped to your user account rather than a single workspace, and secret values are encrypted at rest.
+
+## AI coding agents
+
+**Which agents can I run?**
+
+Claude Code is first-class: `bitrise-cli rde claude` creates a session, clones your branch, and starts the agent. Other agents can be installed from a [template](/bitrise-rde/configuration/templates) warmup script. Any assistant that supports the Model Context Protocol can drive sessions through the [RDE MCP server](/bitrise-rde/rde-options/bitrise-rde-mcp-server).
+
+**Do I need my own AI subscription?**
+
+Yes - agents run on your own subscription or API key. On first use the CLI picks up your local Claude Code credential, or opens a browser so you can sign in. The credential is saved, so later sessions start already authenticated.
+
+**Can the agent reach my local machine?**
+
+Yes, over a secure connection the CLI keeps open while you work. The agent can open a VNC viewer pointed at the session's desktop and upload or download files. The VNC password stays local and is never sent to the session.
+
+**What if my connection drops?**
+
+The CLI reconnects automatically and the agent keeps running in the session. `bitrise-cli rde claude --continue` resumes your most recent session and conversation for that repository; `--resume` lets you pick from earlier ones.
+
+## Capabilities and limits
+
+**Can I run Docker?**
+
+On Linux, yes - full Docker support. On macOS, no: Apple's virtualization doesn't expose nested virtualization, so Docker, OrbStack, and Android emulators can't run inside a macOS session. Use a Linux session for container work.
+
+**Does using RDE consume my CI build credits?**
+
+No. RDE is billed separately and doesn't draw down your build minutes or credits.
+
+**Can I reach a private network or VPN?**
+
+Yes, through custom scripts in your [template](/bitrise-rde/configuration/templates), the same way CI machines do. There's no dedicated Step or one-click setup yet.
+
+**Can several people share one session?**
+
+Not today. Each session is owned by the user who created it.
+
+**Is there an API?**
+
+Yes - the full session, template, and saved-input lifecycle is available. See [Remote Dev Environments API](/bitrise-rde/configuration/rde-api).
+
+## Pricing
+
+**How is RDE priced?**
+
+RDE is billed separately from Bitrise CI and doesn't consume your build credits. There are two ways to buy it:
+
+- **Self-serve**: pricing is public. See [RDE pricing](https://bitrise.io/pricing#rde) and sign up from there.
+- **Enterprise**: pricing is based on committed capacity and goes through Bitrise sales. Model it with the [Bitrise pricing calculator](https://pricing-calculator.tools.bitrise.dev/calc), then contact Bitrise for a quote.
