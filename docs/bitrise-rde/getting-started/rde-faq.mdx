@@ -16,9 +16,12 @@ An on-demand cloud machine - macOS or Linux - running on the same infrastructure
 
 **How do I get access?**
 
-There are two ways to get RDE. **Self-serve:** sign up on the [Remote Dev Environments page](https://bitrise.io/platform/remote-dev-environments). **Enterprise:** RDE is enabled on your workspace through Bitrise sales - contact Bitrise.
+There are two ways to get RDE.
 
-Either way, you then need the **RDE User** role on the workspace - membership alone isn't enough. A workspace owner or manager grants it from **Settings** → **Collaboration**, per member or per group. If your workspace uses SCIM, assign the `rde:rde_admin` role from your identity provider. See [Managing RDE access](/bitrise-rde/configuration/managing-rde-access).
+- **Self-serve:** sign up on the [Remote Dev Environments page](https://bitrise.io/platform/remote-dev-environments).
+- **Enterprise:** RDE is enabled on your workspace through Bitrise sales. Contact Bitrise.
+
+Either way, you then need the **RDE User** role on the workspace: membership alone isn't enough. A workspace owner or manager grants it from **Settings** → **Collaboration**, per member or per group. If your workspace uses SCIM, assign the `rde:rde_admin` role from your identity provider. See [Managing RDE access](/bitrise-rde/configuration/managing-rde-access).
 
 **What's the fastest way to try it?**
 
@@ -32,15 +35,17 @@ macOS on Apple silicon (M2 Pro, M4, M4 Pro) and Linux from 2 to 48 vCPUs, on sha
 
 **What are the session states?**
 
-**Running**: provisioned and connectable. **Terminated**: the machine is stopped, and the session and its persistent disk are kept; fully reversible. **Deleted**: permanently removed. You can only delete a session that's already terminated.
+- **Running**: provisioned and connectable.
+- **Terminated**: the machine is stopped, and the session and its persistent disk are kept; fully reversible.
+- **Deleted**: permanently removed. You can only delete a session that's already terminated.
 
 **Will my session shut down on its own?**
 
-Yes, in two ways. Every session has an auto-terminate timer, defaulting to 5 days of inactivity. You can set it to anything up to 30 days, or turn it off so the session never auto-terminates. Sessions in free-trial workspaces are capped at 8 hours and can't change this.
+Yes, in two ways. Every session has an auto-terminate timer, defaulting to five days of inactivity. You can set it to anything up to 30 days, or turn it off so the session never auto-terminates. Sessions in free-trial workspaces are capped at eight hours and can't change this.
 
 Separately from that timer, Bitrise stops long-running machines for infrastructure maintenance from time to time. Those sessions are drained (shut down) and can be restarted afterwards, and turning the auto-terminate timer off doesn't exempt a session from it.
 
-In both cases, terminating is not deleting - your disk is preserved.
+In both cases, terminating is not deleting: your disk is preserved.
 
 **How long is my session kept after I terminate it?**
 
@@ -48,7 +53,7 @@ Indefinitely, as long as you don't delete it and the stack it was created from i
 
 **Can my session be deleted without me deleting it?**
 
-Yes, in one case: if the stack your session was created from is removed. Your session's disk holds only your changes on top of that stack image, so it can't be started once the image is gone. Stack removals follow the published [stack deprecation and removal policy](/bitrise-build-hub/infrastructure/build-stacks/stack-deprecation-and-removal-policy), with at least four weeks' notice. Upcoming removals are listed on the [upcoming stack deprecations](https://stacks.bitrise.io/announcements/upcoming-stack-deprecations/) page, and you can [subscribe to RSS updates](https://stacks.bitrise.io/tips/get-notified/) to follow them.
+Yes, if the stack your session was created from is removed. Your session's disk holds only your changes on top of that stack image, so it can't be started once the image is gone. Stack removals follow the published [stack deprecation and removal policy](/bitrise-build-hub/infrastructure/build-stacks/stack-deprecation-and-removal-policy), with at least four weeks' notice. Upcoming removals are listed on the [upcoming stack deprecations](https://stacks.bitrise.io/announcements/upcoming-stack-deprecations/) page, and you can [subscribe to RSS updates](https://stacks.bitrise.io/tips/get-notified/) to follow them.
 
 **What happens to my work if that happens?**
 
@@ -68,7 +73,7 @@ Only the changes made since the session was created - your clone, build outputs,
 
 **Does session storage cost extra?**
 
-Session storage isn't billed separately today. Enterprise agreements define a storage allowance and how storage beyond it is handled - if you're on one, check your Order Form.
+Session storage isn't billed separately today. Enterprise agreements define a storage allowance and how storage beyond it is handled. If you're on one, check your Order Form.
 
 **What happens to sessions when someone leaves the workspace?**
 
@@ -86,15 +91,20 @@ Usually between roughly 20 seconds and a few minutes, depending on image size.
 
 **How do I connect to a session?**
 
-Four ways: the browser-based web terminal on the session detail page; SSH, using the address and one-time password shown there or from `bitrise-cli rde session view`; VS Code, through **Open in VS Code** with the Remote-SSH extension; and VNC for a graphical desktop on macOS sessions. Linux sessions have no desktop, so VNC isn't available. See [Connecting to a session](/bitrise-rde/rde-options/connecting-to-a-session).
+Four ways:
+
+- The browser-based web terminal on the session detail page.
+- SSH, using the address and one-time password shown there or from `bitrise-cli rde session view`.
+- VS Code, through **Open in VS Code** with the Remote-SSH extension.
+- VNC for a graphical desktop on macOS sessions. Linux sessions have no desktop, so VNC isn't available. See [Connecting to a session](/bitrise-rde/rde-options/connecting-to-a-session).
 
 **Can I connect without copying a password every time?**
 
-Yes - register your SSH public key as a [saved input](/bitrise-rde/configuration/saved-inputs) and Bitrise adds it to the session's authorized keys. macOS sessions sign in as the `vagrant` user, Linux sessions as the `ubuntu` user.
+Yes. Register your SSH public key as a [saved input](/bitrise-rde/configuration/saved-inputs) and Bitrise adds it to the session's authorized keys. macOS sessions sign in as the `vagrant` user, Linux sessions as the `ubuntu` user.
 
 **Can I get an interactive shell from the CLI?**
 
-`bitrise-cli rde session exec` runs a single command and streams the output back - it isn't an interactive shell. For an interactive session, use SSH or the web terminal.
+`bitrise-cli rde session exec` runs a single command and streams the output back: it isn't an interactive shell. For an interactive session, use SSH or the web terminal.
 
 **My remote command times out. Can I raise the limit?**
 
@@ -102,7 +112,7 @@ Yes. `session exec` stops the remote command after 10 minutes by default. Use `-
 
 **How do I move files in and out?**
 
-Use `bitrise-cli rde session upload` and `bitrise-cli rde session download`. If you're working through an AI agent started by `bitrise-cli rde claude`, ask it in plain language - it can transfer files and open a VNC viewer on your local machine.
+Use `bitrise-cli rde session upload` and `bitrise-cli rde session download`. If you're working through an AI agent started by `bitrise-cli rde claude`, ask it in plain language. It can transfer files and open a VNC viewer on your local machine.
 
 A session is a normal machine you have SSH access to, so the tools you already use work too:
 
@@ -126,7 +136,7 @@ Enable the [GitHub integration](/bitrise-rde/configuration/github-integration). 
 
 **I enabled it, but a clone fails with "repository not found."**
 
-The Bitrise GitHub App isn't installed on that repository or organization. Note that a workspace-level GitHub App connection doesn't count - this integration uses your **personal** connection under **Account settings** → **Connected accounts**.
+The Bitrise GitHub App isn't installed on that repository or organization. Note that a workspace-level GitHub App connection doesn't count: this integration uses your **personal** connection under **Account settings** → **Connected accounts**.
 
 **Are commits attributed to me?**
 
@@ -134,7 +144,7 @@ Yes, to your GitHub account, using your GitHub noreply address so your real emai
 
 **How do I store other credentials?**
 
-As [saved inputs](/bitrise-rde/configuration/saved-inputs) - API tokens, SSH keys, agent credentials. They're scoped to your user account rather than a single workspace, and secret values are encrypted at rest.
+As [saved inputs](/bitrise-rde/configuration/saved-inputs): API tokens, SSH keys, agent credentials. They're scoped to your user account rather than a single workspace, and secret values are encrypted at rest.
 
 ## AI coding agents
 
@@ -144,7 +154,7 @@ Claude Code is first-class: `bitrise-cli rde claude` creates a session, clones y
 
 **Do I need my own AI subscription?**
 
-Yes - agents run on your own subscription or API key. On first use the CLI picks up your local Claude Code credential, or opens a browser so you can sign in. The credential is saved, so later sessions start already authenticated.
+Yes. Agents run on your own subscription or API key. On first use the CLI picks up your local Claude Code credential, or opens a browser so you can sign in. The credential is saved, so later sessions start already authenticated.
 
 **Can the agent reach my local machine?**
 
@@ -158,7 +168,8 @@ The CLI reconnects automatically and the agent keeps running in the session. `bi
 
 **Can I run Docker?**
 
-On Linux, yes - full Docker support. On macOS, no: Apple's virtualization doesn't expose nested virtualization, so Docker, OrbStack, and Android emulators can't run inside a macOS session. Use a Linux session for container work.
+- Linux: yes, full Docker support.
+- macOS: no. Apple's virtualization doesn't expose nested virtualization, so Docker, OrbStack, and Android emulators can't run inside a macOS session. Use a Linux session for container work.
 
 **Does using RDE consume my CI build credits?**
 
@@ -174,7 +185,7 @@ Not today. Each session is owned by the user who created it.
 
 **Is there an API?**
 
-Yes - the full session, template, and saved-input lifecycle is available. See [Remote Dev Environments API](/bitrise-rde/configuration/rde-api).
+Yes, the full session, template, and saved-input lifecycle is available. See [Remote Dev Environments API](/bitrise-rde/configuration/rde-api).
 
 ## Pricing
 
