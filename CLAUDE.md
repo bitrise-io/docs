@@ -214,8 +214,26 @@ the same `slug:`).
 ### Code
 
 - Inline: backticks for filenames, command names, env var names. ``Open `bitrise.yml`.``
-- Blocks: triple backticks with a language hint (one of `yaml`, `bash`, `json`, `swift`, `kotlin`, `groovy`, `ruby`, `dart` — those are the languages our Prism config loads).
+- Blocks: triple backticks with a language hint (one of `yaml`, `bash`, `json`, `swift`, `kotlin`, `groovy`, `ruby`, `dart`, `diff` — those are the languages our Prism config loads).
 - **Don't put code blocks inside admonitions.** Render the admonition first, then the code block as a sibling.
+
+**Showing a change to an existing file**
+
+Readers meet two situations, and they need two different blocks.
+
+Use a `diff` block when the reader edits a file they already have and the change is a few lines. Mark added lines with `+`, removed lines with `-`, and keep enough surrounding context that the reader can find the spot:
+
+```diff
+  dependencies {
++     implementation("com.microsoft.codepush.react:react-native-code-push:+")
+  }
+```
+
+Use a normal language-tagged block when the file is new, or when you show it whole.
+
+One page uses one convention. Don't mix a `diff` block with a `// ...existing` placeholder or a bare `...` on the same page.
+
+A `diff` block is for reading, not for pasting. The copy button hands the reader the `+` and `-` characters, so if a snippet is meant to be copied whole, it isn't a diff block — show the full file instead.
 
 ### Admonitions
 
