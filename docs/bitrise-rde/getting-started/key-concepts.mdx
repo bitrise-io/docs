@@ -15,7 +15,7 @@ Remote Dev Environments share the same building blocks across every client — t
 
 A <GlossTerm baseform="rde session">session</GlossTerm> is a single Remote Dev Environment instance: one cloud machine that you connect to and work on. You create a session either from a [template](#templates) or directly by choosing a [stack and a machine type](#stacks-and-machine-types).
 
-Each session belongs to the <GlossTerm baseform="workspace">workspace</GlossTerm> it was created in and is owned by the user who created it. You can connect to it in several ways — see [Connecting to a session](/en/bitrise-rde/rde-options/connecting-to-a-session).
+Each session belongs to the <GlossTerm baseform="workspace">workspace</GlossTerm> it was created in and is owned by the user who created it. You can connect to it in several ways — see [Connecting to a session](/bitrise-rde/rde-options/connecting-to-a-session).
 
 ## Session lifecycle
 
@@ -25,7 +25,9 @@ A session moves through a few states during its life:
 - **Terminated**: the machine is stopped, but the session and its persistent disk are kept. Terminating is reversible.
 - **Deleted**: the session is permanently removed. You can only delete a session that's already terminated.
 
-Terminating a session preserves its **persistent disk**, so when you restore the session your files and changes are still there. The disk is kept for a limited time after termination and is eventually cleaned up, after which the session can no longer be restored.
+Terminating a session preserves its **persistent disk**, so when you restore it your files and changes are still there. There is no time limit on how long a terminated session is kept - it stays until you delete it, or until the stack it was created from is removed from Bitrise.
+
+A session's disk stores only the changes you have made on top of the stack image it was created from, so the session can only be started while that stack image is still available. Stacks are removed on a published schedule, with at least four weeks' notice - see [Stack deprecation and removal policy](/bitrise-build-hub/infrastructure/build-stacks/stack-deprecation-and-removal-policy). When a stack is removed, sessions created from it are permanently erased and cannot be restored. Create a new session from a current stack, and commit or export anything you want to keep, before then.
 
 To avoid leaving machines running, every session has an **auto-terminate** timer:
 
@@ -42,6 +44,8 @@ When you create a session you choose two things:
 
 A template can set these for you, or you can pick them directly when creating a session. The available stacks and machine types depend on your workspace.
 
+**Your session stays tied to the stack you choose.** The stack isn't only a starting point - a session keeps a permanent dependency on the stack image it was created from. Your session's disk stores only the changes you make on top of that image, so the session can be started only while that image is still available on Bitrise. You cannot move an existing session to a different stack; to move to a newer stack, create a new session from it. Because stacks are eventually removed on a published schedule, this also determines how long a session can be kept - see [Session lifecycle](#session-lifecycle).
+
 ## Templates
 
 A <GlossTerm baseform="rde template">template</GlossTerm> is a reusable session configuration. Instead of choosing a stack, machine type, and setup steps every time, you define them once in a template and create sessions from it. A template can include:
@@ -51,10 +55,10 @@ A <GlossTerm baseform="rde template">template</GlossTerm> is a reusable session 
 - **Template variables** and **session inputs**: values the session needs, which can be exposed as environment variables and marked as secret.
 - **Workspace links**: shortcut buttons that open a specific folder in your IDE.
 
-For details, see [Templates](/en/bitrise-rde/configuration/templates).
+For details, see [Templates](/bitrise-rde/configuration/templates).
 
 ## Saved inputs
 
 A <GlossTerm baseform="saved input">saved input</GlossTerm> is a reusable value or credential — such as an SSH public key, an API token, or a Claude Code credential — that you store once and map into sessions as needed. Saved inputs are scoped to your user account, not to a single workspace, and secret values are encrypted at rest.
 
-For details, see [Saved inputs](/en/bitrise-rde/configuration/saved-inputs).
+For details, see [Saved inputs](/bitrise-rde/configuration/saved-inputs).

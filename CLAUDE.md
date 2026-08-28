@@ -17,7 +17,7 @@ See [README.md](./README.md#run-the-docs-locally) — it has the full step-by-st
 
 | Path | What it's for | Touch when |
 |---|---|---|
-| `docs/<section>/<page>.md` (or `.mdx`) | A documentation page. Subfolder structure becomes the sidebar tree. | Editing or adding pages. |
+| `docs/<section>/<page>.mdx` | A documentation page — always `.mdx`, never `.md`. Subfolder structure becomes the sidebar tree. | Editing or adding pages. |
 | `docs/<section>/<sub>/_category_.json` | Sidebar category metadata (label, position, optional link). `link: null` means "non-clickable toggle". | Renaming/reordering sidebar entries; never delete by hand. |
 | `src/partials/<slug>.mdx` | Reusable content fragment imported by `<Partial_X />`. **Edit here once, every consumer updates.** | Editing shared content; adding new reusable chunks. |
 | `static/img/<topic>/<file>.png` | Static images served at `/img/<topic>/<file>.png`. UUID-prefixed files in `_paligo/` are migration-managed — don't rename. | Adding new screenshots; replacing existing ones. |
@@ -159,21 +159,50 @@ sidebar_label: "Run Xcode tests"   # optional, only if it differs from title
 ---
 ```
 
-- `title` and `slug` are required.
+- `title` and `slug` are required. **Always add `description` too, on every new page** — it's not just SEO copy: pages without their own `image` frontmatter get a social preview card auto-generated from `title` + `description` (see `functions/og.js`), so a missing description means that page's link previews fall back to the generic site tagline instead of describing the actual page.
 - **Slugs always start with `/`.** Otherwise Docusaurus prefixes them with the file's natural path and you get duplicated segments.
 - **Don't change an existing slug** without adding a redirect in `redirects.json`. Live URLs are part of our SEO contract.
 - `sidebar_label` lets the navigation entry differ from the page's H1.
 
-### `.md` vs `.mdx`
+### Always `.mdx`, never `.md`
 
-- **`.md`** — plain Markdown. Use this when the page has no JSX.
-- **`.mdx`** — Markdown + JSX. Required when the page imports a partial, uses `<Tabs>`, or includes `<GlossTerm>`.
-- Adding any of those? Rename `.md` → `.mdx` and add the matching `import` line at the top:
-  ```mdx
-  import Tabs from '@theme/Tabs';
-  import TabItem from '@theme/TabItem';
-  import GlossTerm from '@site/src/components/GlossTerm';
-  ```
+**Every page under `docs/` is `.mdx`.** Create new ones that way too, even when
+the page has no JSX in it today. There are no `.md` pages left in `docs/`; if
+you see one, rename it.
+
+The reason is translation. A protected term is marked in the source with a
+`<NT>` do-not-translate wrapper (`src/components/NT`), and that's JSX — a `.md`
+page physically cannot carry one. The tagging pass that adds those wrappers
+only globs `**/*.mdx`, so a stray `.md` page is skipped **silently**: no error,
+just a page whose product names, UI labels, and Step names go unprotected and
+get machine-translated.
+
+Two things follow from the extension, both of which turned up as build failures
+during the bulk rename on pages that had been fine as `.md`:
+
+- The file is parsed as MDX, not CommonMark. Bare `<Word>` placeholders and
+  `{kebab-case}` become JSX and fail the build (see Common pitfalls below), and
+  void HTML tags must self-close — `<br/>`, not `<br>`.
+- `docusaurus.config.ts`'s `markdown.preprocessor` is gated on `.mdx`, so the
+  page now also goes through `expandListPartials` and the JSX tag escaper.
+
+Importing a partial, `<Tabs>`, `<GlossTerm>`, or `<NT>` needs the matching
+`import` line at the top:
+
+```mdx
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import NT from '@site/src/components/NT';
+```
+
+Renaming `.md` → `.mdx` needs no redirect: every page carries an explicit
+`slug:`, and Docusaurus strips either extension when building the route.
+
+Scripts that write pages must emit `.mdx` too — `scripts/sync_mcp_docs.py`
+pins the extension rather than reusing the source repo's filename, because a
+`.md` twin of an existing `.mdx` page is a duplicate-route error (both carry
+the same `slug:`).
 
 ### Images
 
@@ -185,8 +214,26 @@ sidebar_label: "Run Xcode tests"   # optional, only if it differs from title
 ### Code
 
 - Inline: backticks for filenames, command names, env var names. ``Open `bitrise.yml`.``
-- Blocks: triple backticks with a language hint (one of `yaml`, `bash`, `json`, `swift`, `kotlin`, `groovy`, `ruby`, `dart` — those are the languages our Prism config loads).
+- Blocks: triple backticks with a language hint (one of `yaml`, `bash`, `json`, `swift`, `kotlin`, `groovy`, `ruby`, `dart`, `diff` — those are the languages our Prism config loads).
 - **Don't put code blocks inside admonitions.** Render the admonition first, then the code block as a sibling.
+
+**Showing a change to an existing file**
+
+Readers meet two situations, and they need two different blocks.
+
+Use a `diff` block when the reader edits a file they already have and the change is a few lines. Mark added lines with `+`, removed lines with `-`, and keep enough surrounding context that the reader can find the spot:
+
+```diff
+  dependencies {
++     implementation("com.microsoft.codepush.react:react-native-code-push:+")
+  }
+```
+
+Use a normal language-tagged block when the file is new, or when you show it whole.
+
+One page uses one convention. Don't mix a `diff` block with a `// ...existing` placeholder or a bare `...` on the same page.
+
+A `diff` block is for reading, not for pasting. The copy button hands the reader the `+` and `-` characters, so if a snippet is meant to be copied whole, it isn't a diff block — show the full file instead.
 
 ### Admonitions
 
@@ -238,12 +285,23 @@ workflows:
 
 ### Cross-references
 
-- Internal links use **absolute paths starting with `/en/...`**.
+- Internal links use **bare absolute paths — no locale prefix**. Each locale
+  (`en`, `ja`, ...) has its own `baseUrl` (see `docusaurus.config.ts`'s
+  `i18n.localeConfigs`), so a hardcoded `/en/...` prefix breaks under any
+  other locale (`/ja/en/...`, which doesn't exist). Docusaurus resolves a
+  bare path against whichever locale is currently rendering.
 - The link target is the page's **slug**, not its file path:
   ```mdx
-  See [Adding a new project](/en/bitrise-ci/getting-started/adding-a-new-project).
+  See [Adding a new project](/bitrise-ci/getting-started/adding-a-new-project).
   ```
 - Don't add the `.html` suffix; Docusaurus handles it.
+- Keep the **leading slash**. These are absolute paths; `bitrise-ci/foo` without
+  it resolves relative to the current page, which looks correct on a hub landing
+  page and is wrong everywhere else.
+- In JSX (components, `docs/*/index.mdx` props), link with `<Link to="/path">`
+  and resolve assets with `useBaseUrl('/img/...')`. A raw `<a href>` or
+  `<img src>` skips baseUrl resolution entirely, so it requests the path at the
+  domain root — where nothing is served (see the root-files pitfall below).
 - For glossary terms, prefer `<GlossTerm baseform="Workflow">Workflow</GlossTerm>` on first mention so readers get the inline tooltip.
 
 ---
@@ -330,13 +388,32 @@ MDX reads `{...}` as a JSX expression. Hyphens make it invalid (kebab-case isn't
 
 If you rename a page or change its `slug`, add a rule in `redirects.json` so the old URL still resolves. Cloudflare serves the redirects; the 444 live URLs are part of our SEO contract. If the page is listed in `static/llms.txt` (the hand-curated AI-agent index), update its link there too — the weekly `check-llms-txt.yml` job fails on dead llms.txt links.
 
-### Don't add an `index.md` to a topichead category
+### Don't add an `index.mdx` to a topichead category
 
-Some sidebar categories are intentionally non-clickable — they only toggle expand/collapse. Their `_category_.json` has `"link": null`. Adding an `index.md` makes Docusaurus auto-link the category and breaks that behavior.
+Some sidebar categories are intentionally non-clickable — they only toggle expand/collapse. Their `_category_.json` has `"link": null`. Adding an `index.mdx` makes Docusaurus auto-link the category and breaks that behavior.
 
 ### Don't put images at random paths
 
 All images go under `static/img/`. References in pages start with `/img/...` (Docusaurus serves `static/` from root). Don't reference `static/img/...` directly — that path doesn't exist at runtime.
+
+### Don't assume anything is served from the domain root
+
+Each locale has its own `baseUrl`, so Docusaurus writes the whole build — all of
+`static/`, plus the generated `sitemap.xml` and the `docusaurus-plugin-llms`
+output — into `build/en/` and `build/ja/`. **Nothing lands at `build/` itself.**
+
+Anything that a client can only ever request at the root (`/robots.txt`,
+`/sitemap.xml`, `/llms.txt`, `/favicon.ico`, `/changelog.xml`, `404.html`,
+`_redirects`, `_headers`, the `<page>.md` mirrors) is copied back up by
+`scripts/promote-root-static-files.js`,
+which runs as part of `npm run build`. If you add a file that needs a root URL,
+add it there too — the build stays green either way, so nothing else will catch
+it. Large directories (`/img`, `/fonts`) are 301'd to `/en/...` in
+`static/_redirects` instead of being copied a third time.
+
+Cloudflare Pages Functions are routed by their path under `functions/`, so a
+function reached from a page also needs a locale-prefixed route (see
+`functions/[locale]/og.js`) — page-emitted URLs go through `baseUrl`.
 
 ### Don't break numbered lists with unindented content
 
@@ -374,7 +451,7 @@ When asked to sync, pull, or update the Bitrise MCP docs, run:
 python3 scripts/sync_mcp_docs.py
 ```
 
-This fetches `.md` files from `bitrise-io/bitrise-mcp/docs/` on GitHub and writes them (with injected frontmatter, link rewriting, and list rendering fixes) to `docs/bitrise-platform/ai/bitrise-mcp/`. Set `GITHUB_TOKEN` in the environment for authenticated requests (5,000 req/hr vs 60 req/hr unauthenticated).
+This fetches `.md` files from `bitrise-io/bitrise-mcp/docs/` on GitHub and writes them as `.mdx` (with injected frontmatter, link rewriting, and MDX/list rendering fixes) to `docs/bitrise-platform/ai/bitrise-mcp/`. Set `GITHUB_TOKEN` in the environment for authenticated requests (5,000 req/hr vs 60 req/hr unauthenticated).
 
 The script is idempotent. After running, review the diff and commit if the changes look correct. Never manually edit the synced files — edits belong in the source repo.
 
@@ -426,6 +503,10 @@ If you discover a new convention or pitfall while editing, **add it here** so th
 
 ## Validating links before a change
 
-Before proposing any docs edit (new page, moved page, changed slug, or reworded heading), run the source-level checker on the files you touched and fix anything it flags. This catches broken internal `/en/...` links and missing `#anchor` targets at authoring time — before the PR — rather than relying on the build-time `onBrokenLinks` warning or the post-build `link_analyzer.js`.
+Before proposing any docs edit (new page, moved page, changed slug, or reworded heading), run the source-level checker on the files you touched and fix anything it flags. This catches broken internal links and missing `#anchor` targets at authoring time — before the PR — rather than relying on the build-time `onBrokenLinks` warning or the post-build `link_analyzer.js`.
 
 Run `node scripts/check-links-source.js docs/path/to/edited-page.mdx` to check specific files, or `node scripts/check-links-source.js` with no arguments to scan the whole `docs/` tree. Exit code is non-zero if any internal link points to a missing page or any `#anchor` points to a heading that doesn't exist on the target page. It follows `@site/src/partials/*.mdx` imports and understands OpenAPI-generated `.api.mdx` / `.info.mdx` routes, so those aren't false positives. Don't hand over a page with unresolved cross-references.
+
+## Checking for a missing description before a PR
+
+Whenever you edit or create a page (`.mdx` under `docs/`), check its frontmatter for a `description` field. If it's missing, **warn the user explicitly before opening a PR** — don't silently add a placeholder and don't skip the check. Say which file(s) lack one and ask whether to write one now or proceed without it. This matters beyond SEO: the social preview card (`functions/og.js`) is generated from `title` + `description`, so a page without one falls back to the generic site tagline in link previews instead of describing that page.

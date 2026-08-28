@@ -18,21 +18,21 @@ SCIM provisioning requires a verified domain, and SCIM credentials: a SCIM base 
 
 1. <Partial_OpeningTheWorkspaceSettingsPage />
 1. On the left, select **Single sign-on**.
-1. [Set up a verified domain](/en/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-saml-sso-on-bitrise#verifying-your-domain).
+1. [Set up a verified domain](/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-saml-sso-on-bitrise#verifying-your-domain).
 1. Select the **SCIM** tab.
-1. In the **SCIM credentials** section, click **Generate SCIM credentials** to open the SCIM credentials dialog box.
-1. Save your SCIM credentials. In the dialog box, you will see:
+1. In the **SCIM credentials** section, click **Connect with IdP** to open the **Connect with IdP** dialog.
+1. Save your SCIM credentials. In the dialog, you will see:
 
    - Your SCIM base URL.
    - Your SCIM authentication token.
 
-   Copy and save both. You need them for SCIM provisioning.
+   Copy and save both. You need them for SCIM provisioning. Once you've pasted them into your identity provider, select the checkbox confirming this, and click **Done**.
 
-   For Okta, check out our [SCIM provisioning guide](/en/bitrise-platform/accounts/saml-sso-in-bitrise/setting-up-okta-sso-for-bitrise#setting-up-scim-provisioning-in-okta).
+   For Okta, check out our [SCIM provisioning guide](/bitrise-platform/accounts/saml-sso-in-bitrise/setting-up-okta-sso-for-bitrise#setting-up-scim-provisioning-in-okta).
 
-## Managing workspace roles via SCIM
+## Managing workspace and product roles via SCIM
 
-By default, all SCIM-provisioned users receive the Viewer role. If your IdP supports the SCIM `roles` attribute, you can automate <GlossTerm baseform="workspace">Workspace</GlossTerm> role assignment so that users are provisioned with the correct role from the start.
+By default, all SCIM-provisioned users receive the Viewer role and no product access. If your IdP supports the SCIM `roles` attribute, you can automate <GlossTerm baseform="workspace">Workspace</GlossTerm> and product role assignment so that users are provisioned with the correct access from the start.
 
 ### Available workspace roles
 
@@ -42,11 +42,19 @@ By default, all SCIM-provisioned users receive the Viewer role. If your IdP supp
 | `workspace:workspace_contributor` | Contributor | Can create new apps and projects. Cannot modify Workspace settings or manage members. |
 | `workspace:workspace_manager` | Manager | Can modify Workspace settings, manage members, and manage integrations and infrastructure. |
 
-For a detailed breakdown of permissions, see [Roles and permissions in Workspaces](/en/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces).
+For a detailed breakdown of permissions, see [Roles and permissions in Workspaces](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces).
+
+### Available product roles
+
+| SCIM value | Product role | Description |
+|---|---|---|
+| `rde:rde_admin` | RDE User | Can create and manage Remote Dev Environment sessions in the Workspace. |
+
+Project-level Bitrise CI and Release Management roles can't be assigned through SCIM. Set those up on the **Collaboration** page instead: [Roles and permissions in Workspaces](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces).
 
 ### How role assignment works
 
-Each role entry's `value` field uses the format `workspace:<role_name>`. Configure your IdP to include the `roles` attribute in SCIM requests using one of the following formats.
+Each role entry's `value` field uses the format `<family>:<role_name>`, where the family is either `workspace` or `rde`. Configure your IdP to include the `roles` attribute in SCIM requests using one of the following formats.
 
 **User creation and full update (POST and PUT):**
 
@@ -57,7 +65,8 @@ Include `roles` as a top-level attribute in the request body:
   "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
   "userName": "user@example.com",
   "roles": [
-    { "value": "workspace:workspace_manager" }
+    { "value": "workspace:workspace_manager" },
+    { "value": "rde:rde_admin" }
   ]
 }
 ```
@@ -105,6 +114,8 @@ Bitrise handles all three formats automatically.
 
 :::important
 
-If the `roles` attribute is present in a SCIM request, Bitrise treats it as the complete role assignment and replaces the user's current workspace role. If `roles` is absent from the request entirely, existing role assignments are left untouched. An empty `roles` array reverts the user to the default Viewer role.
+If the `roles` attribute is present in a SCIM request, Bitrise treats it as the complete role assignment and replaces the user's current roles. This applies to every family, not just the ones you send: a request that lists only a `workspace:` role removes the user's RDE access, and a request that lists only `rde:rde_admin` reverts the user's workspace role to Viewer. Send every role the user should keep.
+
+If `roles` is absent from the request entirely, existing role assignments are left untouched. An empty `roles` array reverts the user to the default Viewer role and removes their product access.
 
 :::

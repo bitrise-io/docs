@@ -14,15 +14,15 @@ Bitrise offers full support for using [Unity](https://unity.com/) software on ou
 
 To be able to build a Unity app on Bitrise, you need to:
 
-- [Add your project as a Bitrise app](/en/bitrise-ci/getting-started/unity-on-bitrise#adding-a-unity-project-as-a-bitrise-app).
-- [Download and install Unity on the virtual machine running your build](/en/bitrise-ci/getting-started/unity-on-bitrise#downloading-and-installing-unity-software-on-bitrise).
-- [Add your licenses to Bitrise and activate it during the build](/en/bitrise-ci/getting-started/unity-on-bitrise#setting-up-unity-licenses-on-bitrise).
-- [Build your project](/en/bitrise-ci/getting-started/unity-on-bitrise#running-a-build-using-unity-software).
+- [Add your project as a Bitrise app](/bitrise-ci/getting-started/unity-on-bitrise#adding-a-unity-project-as-a-bitrise-app).
+- [Download and install Unity on the virtual machine running your build](/bitrise-ci/getting-started/unity-on-bitrise#downloading-and-installing-unity-software-on-bitrise).
+- [Add your licenses to Bitrise and activate it during the build](/bitrise-ci/getting-started/unity-on-bitrise#setting-up-unity-licenses-on-bitrise).
+- [Build your project](/bitrise-ci/getting-started/unity-on-bitrise#running-a-build-using-unity-software).
 
 
 ## Adding a Unity project as a Bitrise app
 
-Add your Unity project [as a new app](/en/bitrise-ci/getting-started/adding-a-new-project). The <GlossTerm baseform="Project scanner">project scanner</GlossTerm> doesn't support Unity software so it won't detect your project as a Unity project so you can skip automatic configuration and register the project as **Other**.
+Add your Unity project [as a new app](/bitrise-ci/getting-started/adding-a-new-project). The <GlossTerm baseform="Project scanner">project scanner</GlossTerm> doesn't support Unity software so it won't detect your project as a Unity project so you can skip automatic configuration and register the project as **Other**.
 
 We recommend using an Xcode <GlossTerm baseform="Stack">stack</GlossTerm>: these contain the most important Android tools, too. You can build both iOS and Android versions of your Unity apps on our Xcode stacks.
 
@@ -94,7 +94,7 @@ To run multiple builds concurrently, you need separate license keys for each bui
    You must set:
 
    - A name: that's how you can find your pool in the <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>.
-   - An [Environment Variable](/en/bitrise-ci/configure-builds/environment-variables) key: this is how you can use the license in a build script.
+   - An [Environment Variable](/bitrise-ci/configure-builds/environment-variables) key: this is how you can use the license in a build script.
    - The license keys themselves. A license key can't have a space or any special character other than underscore in it.
 1. Click **Save**.
 1. Open the Workflow Editor for the app you need and go to the **Licenses** tab.
@@ -104,7 +104,7 @@ To run multiple builds concurrently, you need separate license keys for each bui
 
 ### Activating a Unity license
 
-When trying to run a build, you need to activate your Unity license first. This requires providing your Unity email address and password. We recommend using [Secrets](/en/bitrise-ci/configure-builds/secrets) to store these.
+When trying to run a build, you need to activate your Unity license first. This requires providing your Unity email address and password. We recommend using [Secrets](/bitrise-ci/configure-builds/secrets) to store these.
 
 :::note[Deactivating a license]
 
@@ -120,7 +120,7 @@ Once your build is finished, we strongly recommend deactivating the Unity licens
 
    - UNITY_EMAIL, with your email address as the value.
    - UNITY_PW, with your Unity password as a value.
-1. Add the following code to a **Script** Step that comes after [the Step installing Unity software](/en/bitrise-ci/getting-started/unity-on-bitrise#downloading-and-installing-unity-software-on-bitrise) in the Workflow:
+1. Add the following code to a **Script** Step that comes after [the Step installing Unity software](/bitrise-ci/getting-started/unity-on-bitrise#downloading-and-installing-unity-software-on-bitrise) in the Workflow:
 
    ```bash
    /Applications/Unity/Unity.app/Contents/MacOS/Unity -quit -batchmode -serial "$UNITY_SERIAL" -username "$UNITY_EMAIL" -password "$UNITY_PW" -logfile
@@ -128,7 +128,7 @@ Once your build is finished, we strongly recommend deactivating the Unity licens
 
    :::tip[Use a Utility Workflow]
 
-   A best practice is to create a [utility Workflow](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#utility-workflows) that contains this Step, and [run it before each Workflow](/en/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together) that requires Unity.
+   A best practice is to create a [utility Workflow](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#utility-workflows) that contains this Step, and [run it before each Workflow](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together) that requires Unity.
 
    :::
 
@@ -139,9 +139,9 @@ Once everything is set up, you can run a build using Unity software on Bitrise. 
 
 To run a build using Unity software on Bitrise:
 
-1. [Add Unity license pools to Bitrise](/en/bitrise-ci/getting-started/unity-on-bitrise#setting-up-unity-licenses-on-bitrise).
-1. [Activate your Unity license in the build](/en/bitrise-ci/getting-started/unity-on-bitrise#setting-up-unity-licenses-on-bitrise).
-1. [Download and install Unity on the virtual machine](/en/bitrise-ci/getting-started/unity-on-bitrise#downloading-and-installing-unity-software-on-bitrise).
+1. [Add Unity license pools to Bitrise](/bitrise-ci/getting-started/unity-on-bitrise#setting-up-unity-licenses-on-bitrise).
+1. [Activate your Unity license in the build](/bitrise-ci/getting-started/unity-on-bitrise#setting-up-unity-licenses-on-bitrise).
+1. [Download and install Unity on the virtual machine](/bitrise-ci/getting-started/unity-on-bitrise#downloading-and-installing-unity-software-on-bitrise).
 1. To build the Android version of your app, add a **Script** Step and in the **Content** input, add the following:
 
    ```bash
@@ -152,7 +152,7 @@ To run a build using Unity software on Bitrise:
    ```bash
    /Applications/Unity/Unity.app/Contents/MacOS/Unity -nographics -quit -batchmode -logFile -projectPath "$BITRISE_SOURCE_DIR" -executeMethod BitriseUnity.Build -buildOutput "$BITRISE_SOURCE_DIR/xcodebuild" -buildPlatform ios
    ```
-1. [Create and export an IPA from the Xcode project](/en/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects).
+1. [Create and export an IPA from the Xcode project](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects).
 1. When you are done, deactivate your license:
 
    ```bash

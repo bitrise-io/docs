@@ -1,0 +1,122 @@
+# =====================================================================
+# Translate changed English docs to Japanese on PRs
+# =====================================================================
+# When a PR changes English docs, translate ONLY the changed files to Japanese
+# and commit the JA versions back to the PR branch. This keeps JA in
+# lock-step with EN — it can never silently go stale. Added/modified pages
+# are translated; deleted pages have their JA counterpart removed; renamed
+# or moved pages have their JA counterpart relocated to match (translate_docs.py's
+# parse_changes(), driven by `git diff --name-status`). The bot commit only
+# ever touches files under i18n/ja/; a contributor's own files are never touched.
+#
+# Do-not-translate enforcement is list-driven and structural: the glossary's
+# term tiers (product names, UI labels, Step names, ...) are compiled into
+# masking regexes at translation time (scripts/nt_terms.py) and masked out of
+# the text before the model sees it — no <NT> tags in the docs source needed
+# (a manual <NT> span remains a rare page-specific escape hatch and is masked
+# too). After translation, every masked token is verified restored; a page
+# that fails verification is retried and, if still failing, fails this job
+# instead of being committed.
+#
+# Commit translate_docs.py to .github/scripts/ and this file to .github/workflows/.
+#
+# CURRENTLY DISABLED — auto-translation on PRs is off until enough pages are
+# migrated to make the /ja/ locale worth keeping in lock-step. The gate is
+# the ANTHROPIC_API_KEY secret itself: while it doesn't exist, the translate
+# job shows as skipped on every PR — no noise, no failing check. Adding the
+# secret (Settings → Secrets and variables → Actions) is the ON switch.
+# (The secrets context isn't available in a job-level `if`, hence the tiny
+# check job that exports its presence as an output.)
+#
+# ADJUST for your Docusaurus i18n layout:
+#   --src-root / --dest-root and the `paths:` filter below.
+# =====================================================================
+name: Translate docs to Japanese
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'docs/**/*.md'          # <-- adjust to your English docs location
+      - 'docs/**/*.mdx'
+
+# A fast-follow push to the same PR (a very ordinary thing to do — push,
+# notice something, push again) starts a new run while the previous one may
+# still be mid-translation. Without this, the stale run's own git push at
+# the end can land translations based on outdated English content, or just
+# fail outright as a non-fast-forward push. Cancelling the superseded run
+# outright — before it ever reaches that final push — is cleaner than
+# teaching the push step to rebase and retry: it can't push stale content,
+# and it doesn't burn API calls on a translation that's about to be
+# superseded anyway. Same pattern deploy.yml already uses for the same
+# reason, just keyed to the PR branch instead of the ref.
+concurrency:
+  group: translate-ja-docs-${{ github.head_ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  check-key:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.key.outputs.enabled }}
+    steps:
+      - id: key
+        run: echo "enabled=${{ secrets.ANTHROPIC_API_KEY != '' }}" >> "$GITHUB_OUTPUT"
+
+  translate:
+    # Skipped until the ANTHROPIC_API_KEY secret exists — see the header comment.
+    needs: check-key
+    if: needs.check-key.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+
+      - run: pip install anthropic pyyaml
+
+      - name: Detect changed English docs
+        id: changed
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          # Full --name-status, not --name-only --diff-filter=AM: a deleted
+          # or renamed page needs its own handling (remove/move the JA
+          # counterpart), not just "ignore it". -M turns on rename detection
+          # explicitly (it's git's default too, but this makes the
+          # dependency clear). translate_docs.py's parse_changes() reads the
+          # status codes directly and filters to .md/.mdx itself, so this
+          # scopes to the docs/ directory and leaves the rest to it.
+          git diff --name-status -M "$BASE" HEAD -- docs > changed.txt || true
+          echo "count=$(wc -l < changed.txt)" >> "$GITHUB_OUTPUT"
+          cat changed.txt
+
+      - name: Translate changed files
+        if: steps.changed.outputs.count != '0'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          cat changed.txt | python3 .github/scripts/translate_docs.py \
+            --glossary localization/ja-do-not-translate-glossary.yaml \
+            --preferred localization/ja-preferred-translations.yaml \
+            --src-root docs \
+            --dest-root i18n/ja/docusaurus-plugin-content-docs/current
+
+      - name: Commit Japanese translations
+        if: steps.changed.outputs.count != '0'
+        run: |
+          git config user.name  "bitrise-docs-bot"
+          git config user.email "docs-bot@bitrise.io"
+          git add i18n/ja/ || true
+          if ! git diff --cached --quiet; then
+            git commit -m "docs(ja): auto-translate changed pages [skip ci]"
+            git push
+          else
+            echo "No JA changes to commit."
+          fi

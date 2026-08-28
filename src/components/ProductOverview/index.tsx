@@ -1,4 +1,6 @@
 import React from 'react';
+import Link from '@docusaurus/Link';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './ProductOverview.module.css';
 
 type OverviewLink = {
@@ -29,6 +31,11 @@ export default function ProductOverview({
   quickstartHref,
   columns,
 }: ProductOverviewProps) {
+  // Every href/src below is a bare absolute path (no locale prefix), so it
+  // needs Docusaurus's baseUrl resolution to land in the locale that is
+  // actually rendering — a raw <a href> or <img src> skips that entirely and
+  // requests the path at the domain root, where nothing is served any more.
+  const illustrationSrc = useBaseUrl(illustration ?? '');
   return (
     <div className={styles.wrapper} data-product-overview>
       <div className={styles.hero}>
@@ -38,21 +45,21 @@ export default function ProductOverview({
           {(overviewHref || quickstartHref) && (
             <div className={styles.heroButtons}>
               {overviewHref && (
-                <a href={overviewHref} className={styles.buttonPrimary}>
+                <Link to={overviewHref} className={styles.buttonPrimary}>
                   Overview
-                </a>
+                </Link>
               )}
               {quickstartHref && (
-                <a href={quickstartHref} className={styles.buttonSecondary}>
+                <Link to={quickstartHref} className={styles.buttonSecondary}>
                   Quickstart
-                </a>
+                </Link>
               )}
             </div>
           )}
         </div>
         {illustration && (
           <div className={styles.heroIllustration}>
-            <img src={illustration} alt="" />
+            <img src={illustrationSrc} alt="" />
           </div>
         )}
       </div>
@@ -63,10 +70,10 @@ export default function ProductOverview({
             <div className={styles.columnTitle}>{col.title}</div>
             <div className={styles.columnLinks}>
               {col.links.map((link) => (
-                <a key={link.label} href={link.href} className={styles.linkCard}>
+                <Link key={link.label} to={link.href} className={styles.linkCard}>
                   <span className={styles.linkLabel}>{link.label}</span>
                   <span className={styles.linkDescription}>{link.description}</span>
-                </a>
+                </Link>
               ))}
             </div>
           </div>

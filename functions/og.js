@@ -1,0 +1,162 @@
+import { ImageResponse } from "workers-og";
+import { DEFAULT_DESCRIPTION } from "../shared/site-metadata";
+
+const WIDTH = 1200;
+const HEIGHT = 630;
+
+// The HTML parser used to build the image (HTMLRewriter, via workers-og)
+// does not decode entities back to characters when rendering text nodes —
+// e.g. "&amp;" renders as the literal string "&amp;", not "&". So instead of
+// entity-escaping, strip the characters that could break the markup
+// structure and leave everything else (including "&" and quotes) as-is,
+// since this text only ever appears inside a text node, never an attribute.
+function sanitizeText(value) {
+  return value.replace(/[<>]/g, "");
+}
+
+// Trims back to the last full word at or before maxChars and appends a
+// single ellipsis character, instead of hard-clipping mid-word.
+function truncateText(value, maxChars) {
+  if (value.length <= maxChars) return value;
+  const cut = value.slice(0, maxChars);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${(lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
+}
+
+// No live text-measurement available at render time, so title size is a
+// character-count heuristic rather than an exact fit calculation.
+function titleFontSize(title) {
+  if (title.length <= 35) return 52;
+  if (title.length <= 55) return 42;
+  return 34;
+}
+
+function arrayBufferToBase64(buffer) {
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+async function fetchOk(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+  }
+  return response;
+}
+
+async function fetchAsDataUri(origin, path, mime) {
+  const response = await fetchOk(new URL(path, origin));
+  const buffer = await response.arrayBuffer();
+  return `data:${mime};base64,${arrayBufferToBase64(buffer)}`;
+}
+
+// The logo, illustration, and fonts are identical for every render, so fetch
+// and encode them once per isolate instead of on every request. Keyed by
+// origin in case the same isolate ever serves more than one (e.g. preview
+// deployments). A failed fetch must not poison the cache for the isolate's
+// lifetime, so evict on rejection and let the next request retry.
+const assetsCache = new Map();
+
+// Every locale gets its own baseUrl (/en/, /ja/, ...), so static/ is emitted
+// under each locale directory and nothing is served from /img or /fonts at
+// the root any more. These are locale-independent brand assets, so they are
+// read from the default locale rather than from the requested one. The root
+// paths do still 301 here (static/_redirects), but a same-zone subrequest
+// from a Pages Function is not the place to rely on redirect following.
+const ASSET_BASE = "/en";
+
+function loadAssets(origin) {
+  if (!assetsCache.has(origin)) {
+    const assets = Promise.all([
+      fetchAsDataUri(
+        origin,
+        `${ASSET_BASE}/img/brand/bitrise-docs-lockup.png`,
+        "image/png",
+      ),
+      fetchAsDataUri(
+        origin,
+        `${ASSET_BASE}/img/brand/portal-header-illustration-2x.png`,
+        "image/png",
+      ),
+      fetchOk(
+        new URL(`${ASSET_BASE}/fonts/figtree/Figtree-ExtraBold.ttf`, origin),
+      ).then((r) => r.arrayBuffer()),
+      fetchOk(
+        new URL(`${ASSET_BASE}/fonts/figtree/Figtree-Regular.ttf`, origin),
+      ).then((r) => r.arrayBuffer()),
+    ]).then(([logoDataUri, illustrationDataUri, fontBold, fontRegular]) => ({
+      logoDataUri,
+      illustrationDataUri,
+      fontBold,
+      fontRegular,
+    }));
+    assets.catch(() => assetsCache.delete(origin));
+    assetsCache.set(origin, assets);
+  }
+  return assetsCache.get(origin);
+}
+
+export async function onRequest(context) {
+  try {
+    return await renderOg(context);
+  } catch (err) {
+    return new Response(`OG render error: ${err.stack || err}`, {
+      status: 500,
+      headers: { "content-type": "text/plain" },
+    });
+  }
+}
+
+const TITLE_HARD_CAP = 120; // sanity cap only, not the normal wrap path
+const DESCRIPTION_MAX_CHARS = 130;
+
+async function renderOg(context) {
+  const { request } = context;
+  const url = new URL(request.url);
+  const title = (url.searchParams.get("title") || "Bitrise Docs").slice(
+    0,
+    TITLE_HARD_CAP,
+  );
+  const description = truncateText(
+    url.searchParams.get("description") || DEFAULT_DESCRIPTION,
+    DESCRIPTION_MAX_CHARS,
+  );
+
+  const origin = url.origin;
+
+  const { logoDataUri, illustrationDataUri, fontBold, fontRegular } =
+    await loadAssets(origin);
+
+  // Every <div> below needs an explicit display (flex/none) even leaves with
+  // no children — Satori silently returns an empty image body otherwise, with
+  // no error surfaced. This is easy to reintroduce when editing this layout.
+  const html = `
+    <div style="display:flex; width:${WIDTH}px; height:${HEIGHT}px; background:#2b0e3f; position:relative; font-family:Figtree;">
+      <img src="${logoDataUri}" width="244" height="46" style="position:absolute; top:50px; left:80px; width:244px; height:46px;" />
+      <div style="display:flex; align-items:center; width:100%; height:100%; padding:0 70px 0 80px;">
+        <div style="display:flex; flex-direction:column; width:660px;">
+          <div style="display:flex; font-size:${titleFontSize(title)}px; font-weight:800; color:#ffffff; line-height:1.2; margin-bottom:28px;">${sanitizeText(title)}</div>
+          <div style="display:flex; font-size:26px; font-weight:400; color:#c9c1cd; line-height:1.5;">${sanitizeText(description)}</div>
+        </div>
+        <img src="${illustrationDataUri}" width="300" height="212" style="width:300px; height:212px; margin-left:auto;" />
+      </div>
+      <div style="display:flex; position:absolute; bottom:0; left:0; width:100%; height:10px; background:linear-gradient(90deg, #9247c2, #11bba9, #f9cc15);"></div>
+    </div>
+  `;
+
+  return new ImageResponse(html, {
+    width: WIDTH,
+    height: HEIGHT,
+    headers: {
+      "Cache-Control": "public, max-age=31536000, s-maxage=31536000, immutable",
+    },
+    fonts: [
+      { name: "Figtree", data: fontBold, weight: 800, style: "normal" },
+      { name: "Figtree", data: fontRegular, weight: 400, style: "normal" },
+    ],
+  });
+}

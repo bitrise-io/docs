@@ -24,3 +24,10 @@ jobs:
       # this check (and blocks the merge once it is marked required).
       - name: Check internal links and anchors
         run: node scripts/check-links-source.js
+
+      # docusaurus-plugin-llms deletes every line starting with `import` when it
+      # inlines a partial, so a code sample like `import Foundation` would vanish
+      # from the generated .md mirrors with no error. Fails the day someone adds
+      # one. Same no-dependency rule as the check above.
+      - name: Check partials for silently-stripped imports
+        run: node scripts/check-partials-source.js

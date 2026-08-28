@@ -27,18 +27,18 @@ If the triggered entity is a Pipeline, it will report its build status but the i
 
 There are two ways to set up Git status reports on Bitrise:
 
-- By using the [GitHub App integration](/en/bitrise-platform/repository-access/github-app-integration). It automatically sends status reports without any additional configuration, other than optionally customizing your reports.
-- Via the [service credential user](/en/bitrise-platform/integrations/the-service-credential-user). If you use [OAuth authentication for repository access](/en/bitrise-platform/repository-access/repository-access-with-oauth), this is how you can send status reports. The service credential user must have their Bitrise account connected to the Git provider account and must have access to the Git repository. The following permissions are required:
+- By using the [GitHub App integration](/bitrise-platform/repository-access/github-app-integration). It automatically sends status reports without any additional configuration, other than optionally customizing your reports.
+- Via the [service credential user](/bitrise-platform/integrations/the-service-credential-user). If you use [OAuth authentication for repository access](/bitrise-platform/repository-access/repository-access-with-oauth), this is how you can send status reports. The service credential user must have their Bitrise account connected to the Git provider account and must have access to the Git repository. The following permissions are required:
 
   - GitHub: **Write**
   - Bitbucket: **Write**
   - GitLab: **Developer**.
 
-  You can test the service credential user's connection at any time: [Troubleshooting build status reporting](/en/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#troubleshooting-build-status-reporting).
+  You can test the service credential user's connection at any time: [Troubleshooting build status reporting](/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#troubleshooting-build-status-reporting).
 
 :::tip[Allowlist the Bitrise website IP addresses]
 
-If you use some form of self-hosted solution for storing your code, you might need to allowlist the static IP addresses of the Bitrise website and its background workers. This allows you to use such features as storing the `<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>` file in your own repository, or receiving build status updates from Bitrise: [IP addresses for the Bitrise website](/en/bitrise-platform/infrastructure/build-machines/configuring-your-network-to-access-our-build-machines#ip-address-ranges-for-bitrise-backend-workers).
+If you use some form of self-hosted solution for storing your code, you might need to allowlist the static IP addresses of the Bitrise website and its background workers. This allows you to use such features as storing the `<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>` file in your own repository, or receiving build status updates from Bitrise: [IP addresses for the Bitrise website](/bitrise-platform/infrastructure/build-machines/configuring-your-network-to-access-our-build-machines#ip-address-ranges-for-bitrise-backend-workers).
 
 :::
 
@@ -48,7 +48,7 @@ You can send both project level and Workflow or Pipeline level reports with both
 
 When updating your build status report settings, you might need to change your branch protection rules at your Git provider.
 
-If you use [Workflow/Pipeline level status reports](/en/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#custom-status-reports) or use the `target-id` [dynamic variable](/en/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#custom-status-reports), you will have a different status check for every Workflow or Pipeline that was run. This means you might need more than one branch protection rule IF all checks are mandatory for all your pull requests.
+If you use [Workflow/Pipeline level status reports](/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#custom-status-reports) or use the `target-id` [dynamic variable](/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#custom-status-reports), you will have a different status check for every Workflow or Pipeline that was run. This means you might need more than one branch protection rule IF all checks are mandatory for all your pull requests.
 
 
 ## Custom status reports
@@ -135,7 +135,7 @@ Find the available variables here: [Dynamic variables](#dynamic-variables).
 
 :::note[Branch protection rules]
 
-When switching from project-based status reports to Workflow level status reports, you might need to update [branch protection rules](/en/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#setting-up-build-status-reporting).
+When switching from project-based status reports to Workflow level status reports, you might need to update [branch protection rules](/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#setting-up-build-status-reporting).
 
 :::
 
@@ -155,13 +155,58 @@ You can use the following dynamic variables in your status reports:
 | `event_type` | Represents the type of event that triggered the status report. The possible values are:  - `pr`: pull request (GitHub, Bitbucket) - `mr`: merge request (GitLab) - `push`: code push (GitLab, GitHub, Bitbucket - `tag`: Git tag (GitLab, GitHub, Bitbucket) |
 
 
+## Passing a required check on documentation-only pull requests
+
+If a status report is set as a required check in your Git provider's branch protection rules, every pull request must produce that check before it can be merged. This is a problem for changes that don't need CI, such as a pull request that only edits documentation or Markdown files. If no build is triggered, no status is reported, and the required check stays pending, which blocks the merge.
+
+Don't skip the build, because a skipped build reports nothing. Instead, trigger a Pipeline that reports the required check but does no work: every Workflow in it is skipped by a [`run_if` expression](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#conditional-workflow-execution-in-a-pipeline). Because a skipped Workflow counts as successful, the Pipeline finishes successfully and reports a green status, and skipped Workflows don't start a build machine, so this doesn't consume credits.
+
+Give this Pipeline the same `status_report_name` as your real CI Pipeline so both satisfy the same required check, and scope each one with `changed_files`:
+
+```yaml
+pipelines:
+  # Real CI. Runs on code changes.
+  ci:
+    status_report_name: ci
+    triggers:
+      pull_request:
+      - changed_files: "app/**"
+    workflows:
+      build: {}
+
+  # Documentation-only pull requests. Reports the same ci check, but does no work.
+  docs-only:
+    status_report_name: ci
+    triggers:
+      pull_request:
+      - changed_files: "**/*.md"
+    workflows:
+      no-op:
+        run_if:
+          expression: "false"
+workflows:
+  build:
+    steps:
+    - git-clone@8: {}
+    # ... your build and test Steps ...
+  no-op:
+    steps: []
+```
+
+:::warning[Keep documentation and code changes in separate pull requests]
+
+This pattern is reliable only when a pull request contains **either** documentation changes **or** code changes, not both. A `changed_files` condition matches when any changed file matches its pattern, so a pull request that touches both a Markdown file and a code file triggers **both** Pipelines. Both then report the same `ci` check on the same commit, and the successful `docs-only` report can override the real build's result, which lets a failing build merge. Keep documentation-only changes in their own pull request. If a pull request must include both, run full CI on it rather than relying on the `docs-only` Pipeline.
+
+:::
+
+
 ## Troubleshooting build status reporting
 
 If your builds do not send status reports to your Git hosting provider - GitHub, GitLab or Bitbucket -, you will need to do a little investigating to find out what causes the problem. Let’s take a look at the potential issues!
 
 ### Checking the service credential user
 
-[The service credential user](/en/bitrise-platform/integrations/the-service-credential-user) of the app on [bitrise.io](https://www.bitrise.io) must have connected their Bitrise account to their Git hosting account and must have access to the repository of the app on that Git account.
+[The service credential user](/bitrise-platform/integrations/the-service-credential-user) of the app on [bitrise.io](https://www.bitrise.io) must have connected their Bitrise account to their Git hosting account and must have access to the repository of the app on that Git account.
 
 You can check the service credential user and test their Git connection.
 

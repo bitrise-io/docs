@@ -3,13 +3,13 @@ import Link from '@docusaurus/Link';
 import {useDocsSidebar} from '@docusaurus/plugin-content-docs/client';
 
 const sidebarConfig: Record<string, {label: string; href: string}> = {
-  platformSidebar:          {label: 'Bitrise as a Platform', href: '/en/bitrise-platform'},
-  ciSidebar:                {label: 'Bitrise CI',            href: '/en/bitrise-ci'},
-  buildCacheSidebar:        {label: 'Build Cache',           href: '/en/bitrise-build-cache'},
-  releaseManagementSidebar: {label: 'Release Management',    href: '/en/release-management'},
-  insightsSidebar:          {label: 'Insights',              href: '/en/insights'},
-  buildHubSidebar:          {label: 'Build Hub',             href: '/en/bitrise-build-hub'},
-  bitriseAPISidebar:        {label: 'Bitrise API',           href: '/en/bitrise-api'},
+  platformSidebar:          {label: 'Bitrise as a Platform', href: '/bitrise-platform'},
+  ciSidebar:                {label: 'Bitrise CI',            href: '/bitrise-ci'},
+  buildCacheSidebar:        {label: 'Build Cache',           href: '/bitrise-build-cache'},
+  releaseManagementSidebar: {label: 'Release Management',    href: '/release-management'},
+  insightsSidebar:          {label: 'Insights',              href: '/insights'},
+  buildHubSidebar:          {label: 'Build Hub',             href: '/bitrise-build-hub'},
+  bitriseAPISidebar:        {label: 'Bitrise API',           href: '/bitrise-api'},
 };
 
 export default function HomeBreadcrumbItem(): ReactNode {

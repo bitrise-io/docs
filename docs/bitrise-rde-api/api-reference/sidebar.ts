@@ -12,6 +12,18 @@ const sidebar: SidebarsConfig = {
       items: [
         {
           type: "doc",
+          id: "bitrise-rde-api/api-reference/codespaces-service-get-git-provider-integration",
+          label: "Get git provider integration",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "bitrise-rde-api/api-reference/codespaces-service-update-git-provider-integration",
+          label: "Update git provider integration",
+          className: "api-method put",
+        },
+        {
+          type: "doc",
           id: "bitrise-rde-api/api-reference/codespaces-service-get-me",
           label: "Get current user",
           className: "api-method get",
@@ -205,7 +217,7 @@ const sidebar: SidebarsConfig = {
         {
           type: "doc",
           id: "bitrise-rde-api/api-reference/codespaces-service-session-download",
-          label: "Download files",
+          label: "Download files (deprecated)",
           className: "api-method post",
         },
         {

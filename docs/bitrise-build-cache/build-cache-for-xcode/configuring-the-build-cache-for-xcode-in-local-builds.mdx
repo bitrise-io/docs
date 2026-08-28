@@ -1,0 +1,230 @@
+---
+title: "Configuring the Build Cache for Xcode in local builds"
+description: "Set up the Bitrise Build Cache for local xcodebuild runs so your machine reads the same compilation cache your CI builds populate."
+sidebar_position: 3
+slug: /bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-local-builds
+sidebar_label: Configuring the Build Cache for Xcode in local environments
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+You can use the Bitrise Build Cache for local Xcode builds too. Your local builds then read from the same compilation cache as your CI builds, so code your CI already compiled doesn't have to be compiled again on your machine.
+
+The Bitrise Build Cache CLI sets this up by installing an `xcodebuild` wrapper on your `PATH`. Your project files stay untouched.
+
+## Before you start
+
+Ensure you have:
+- A working Xcode project on your machine, built with Xcode 26 or later. Earlier versions don't expose the compilation cache flags the CLI needs, and the wrapper does nothing there.
+- A Bitrise workspace with the Build Cache enabled. Check it on the [Build Cache page](https://app.bitrise.io/build-cache/).
+
+:::important[Terminal builds only]
+
+The cache works for `xcodebuild` runs that resolve through your `PATH`: Terminal, iTerm, the integrated terminal of your editor, `fastlane`, and any script that shells out to `xcodebuild`.
+
+Xcode.app invokes `xcodebuild` through a hard-coded absolute path, so pressing ⌘B or ⌘R in the IDE bypasses the wrapper. Those builds get no cache reads, no cache writes, and no analytics. If you build from the IDE and see no cache activity, that's why — run the build from a terminal instead.
+
+:::
+
+## Installing the CLI
+
+<Tabs>
+<TabItem value="homebrew" label="Homebrew" default>
+
+```bash
+brew install bitrise-io/bitrise-build-cache/bitrise-build-cache
+```
+
+</TabItem>
+<TabItem value="curl" label="curl">
+
+```bash
+curl --retry 5 -sSfL \
+  'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' \
+  | sh -s -- -b ~/.local/bin
+```
+
+</TabItem>
+</Tabs>
+
+Make sure the install location is on your `PATH`, then check the install:
+
+```bash
+bitrise-build-cache --version
+```
+
+## Activating the cache
+
+Run the interactive wizard:
+
+```bash
+bitrise-build-cache activate --interactive
+```
+
+The wizard asks for the following:
+
+1. **Sign in to Bitrise**: opens your browser for authentication on the first run. The CLI stores the credentials in the macOS keychain and refreshes them automatically, so later runs skip this step.
+1. **Select a workspace**: pick the workspace whose Build Cache you want to use. The CLI selects it automatically if you only have access to one.
+1. **Which build tools should I set up**: ensure **Xcode** is selected. Use space to toggle an option and enter to confirm.
+1. **Display name for this machine's local invocations**: the name your local builds show up under in the Build Cache dashboard, for example `local-<yourhandle>`.
+1. **Enable cache push**: select **No, pull only**. See [Local builds only read from the cache](#local-builds-only-read-from-the-cache).
+1. **Keep the cache proxies running in the background**: select **Yes, install + start**. This registers the cache proxy with the OS so it survives shell restarts.
+
+:::important[Open a new terminal afterwards]
+
+The activation prepends `~/.bitrise-xcelerate/bin` to your `PATH` by writing a line to your shell rc file. Your current shell hasn't picked that up yet, so builds started in it still run without the wrapper — and `doctor` won't warn you about it.
+
+:::
+
+Open a new terminal, or run `source ~/.zshrc`, then confirm that the wrapper is in place:
+
+```bash
+which xcodebuild
+# → /Users/<you>/.bitrise-xcelerate/bin/xcodebuild
+```
+
+## Verifying the setup
+
+Run the CLI's health check:
+
+```bash
+bitrise-build-cache doctor
+```
+
+It reports the status of every part of the local setup — credentials, backend connectivity, the cache proxy, and log directories — and ends with an overall verdict:
+
+```bash
+Bitrise Build Cache - doctor
+CLI version: 3.x.y
+
+Healthy:
+  ✓ auth                   OAuth login (keychain) (workspace <id>), token valid until <iso-timestamp>
+  ✓ keychain-smoke         Set/Get/Delete round-trip OK
+  ✓ auth-backend           latency <ms>, source=keychain, workspace=<id>
+  ✓ xcelerate-proxy        running (/var/folders/…/T/xcelerate-proxy.sock)
+  ✓ xcelerate-enrichment   no enrichment attempts yet
+  ✓ log-dirs               all log dirs present + writable
+
+Overall: ok
+```
+
+`xcelerate-enrichment` changes from `no enrichment attempts yet` to `healthy` after your first build. To let the CLI repair the issues it can fix on its own, run `bitrise-build-cache doctor --fix --interactive`.
+
+## Running a build
+
+Run your usual `xcodebuild` command from a terminal:
+
+```bash
+cd path/to/your/xcode/project
+
+xcodebuild \
+  -workspace <yourworkspace>.xcworkspace \
+  -scheme <yourscheme> \
+  -configuration Debug \
+  -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' \
+  CODE_SIGNING_ALLOWED=NO clean build
+```
+
+The wrapper redirects the build's derived data to `~/.bitrise/cache/xcode-dd/` and its module cache to `~/.bitrise/cache/xcode-ptd/`, so the cache keys are the same across machines. Your existing `~/Library/Developer/Xcode/DerivedData/` folder stays as it is, and Xcode.app keeps using it.
+
+A build that hits a warm cache ends like this:
+
+```bash
+CompilationCacheMetrics
+note: 82 hits / 82 cacheable tasks (100%)
+
+** BUILD SUCCEEDED **
+
+[Bitrise Analytics] Invocation succeeded ✅ after 15.808s
+[Bitrise Analytics] Proxy blob stats: hits: 168 (60 MB) / total: 168 (100.00%). Uploaded blobs: 0 (0 B)
+[Bitrise Analytics] Proxy KV stats:   hits: 82 / total: 82 (100.00%). Uploaded KV blobs: 0 B
+[Bitrise Analytics] Xcode task stats: hits: 82 / total: 82 (100.00%)
+[Bitrise Analytics] Invocation saved. Visit 👉 https://app.bitrise.io/build-cache/invocations/xcode/<uuid>
+```
+
+## Checking that it worked
+
+| Signal | Where to find it | What success looks like |
+|---|---|---|
+| `CompilationCacheMetrics note: N / M cacheable tasks (P%)` | Xcode build output | The line is present, with non-zero hits |
+| `[Bitrise Analytics] Xcode task stats:` | Last lines of the build output | The same numbers as `CompilationCacheMetrics` |
+| `[Bitrise Analytics] Proxy blob stats:` | Last lines of the build output | `hits: N / total: M`, showing blobs served from the remote cache |
+| Invocation link | Printed at the end of the build | Opens the invocation with the same hit ratios |
+| Dashboard | [Build Cache page](https://app.bitrise.io/build-cache/) | A row appears under your display name |
+| Per-invocation log | `~/.local/state/xcelerate/logs/xcelerate-<uuid>.log` | The full wrapper log for the build |
+
+:::note[Explicit module build warnings]
+
+A few `swift compiler caching requires explicit module build` warnings can appear even though the wrapper sets `SWIFT_ENABLE_EXPLICIT_MODULES=YES`. Xcode emits them before the wrapper's build settings apply, and they are safe to ignore. The cache hit numbers confirm that caching is working.
+
+:::
+
+Some projects can't build under explicit modules at all, and fail with `unable to resolve module dependency`. Activate with `--no-swift-cache` there: it caches clang and Objective-C compilation only, leaving Swift uncached. The wizard doesn't ask about this, so use the non-interactive activate command:
+
+```bash
+bitrise-build-cache activate xcode --cache --no-swift-cache
+```
+
+## Local builds only read from the cache
+
+The setup in this guide activates the Build Cache in pull-only mode: your local builds read from the shared cache but never write to it. This is the recommended mode for local development.
+
+Build tools recommend writing cache entries only from an environment where the source files don't change during the build. On a local machine you might keep editing files while a build is running, which can produce cache entries that don't match their inputs — and those entries would then be served to your teammates and to CI. Pull-only removes that risk: a broken local build can't affect anyone else.
+
+The usual pattern is to have CI populate the cache, because CI builds from a clean, fixed checkout, and to let local machines pull from it.
+
+## Pushing to the cache from local builds
+
+Pull-only assumes that something else fills the cache, which is normally CI. If nothing does, your local builds have nothing to read: the ratio stays at `0 / N (0%)` for your scheme, configuration, and SDK combination.
+
+If your team doesn't run the Build Cache on CI, turn pushing on for your local builds and leave it on. Your machine then populates the cache as you work, for you and for your teammates.
+
+You have two options to turn on pushing:
+
+- Re-run `bitrise-build-cache activate --interactive` and answer **Yes, push too** at the cache push prompt.
+- Run the non-interactive activate command:
+
+  ```bash
+  bitrise-build-cache activate xcode --cache --cache-push
+  ```
+
+  If a build doesn't behave as expected, re-run the activation with debug logging:
+
+  ```bash
+  bitrise-build-cache activate xcode --cache --cache-push --debug
+  ```
+
+:::note
+If the cache proxy was already running from an earlier activation, the new push setting won't take effect until you restart it — the proxy locks in push-enablement at start-up and doesn't reload it when you re-activate. Restart it:
+
+```bash
+bitrise-build-cache xcelerate stop-proxy
+bitrise-build-cache activate xcode --cache --cache-push
+```
+:::
+
+:::note
+An entry written from a build whose source files changed while it was running can be wrong, and your teammates read the same entry. Avoid editing files during a build you push from.
+
+Setting up the Build Cache on CI is the more robust option, because CI builds from a clean, fixed checkout. Once it runs there, switch your machine back to pull-only.
+:::
+
+## Troubleshooting
+
+Start with the CLI's health check. It inspects every part of the local setup and repairs the issues it can fix on its own:
+
+```bash
+bitrise-build-cache doctor --fix --interactive
+```
+
+If you're still experiencing issues, check the following table:
+
+| Issue | Fix |
+|---|---|
+| The wizard reports that it needs a terminal | Run `TERM=dumb bitrise-build-cache activate --interactive` for line-based mode. |
+| `which xcodebuild` still points to `/usr/bin/xcodebuild` | Open a new terminal, or run `source ~/.zshrc`. |
+| The build shows no cache activity at all | Check that you ran it from a terminal and not from Xcode.app. |
+| `doctor` reports a problem it can't fix | Re-run it with `--debug` for the full context. |
+| You want to start over | It's safe to re-run the wizard. It re-reads the current state and applies the same activation again. |

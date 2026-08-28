@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Patches generated files after `docusaurus gen-api-docs`.
+ * Patches the generated *.info.mdx and *.api.mdx files after
+ * `docusaurus gen-api-docs`.
  *
  * The openapi-docs plugin regenerates these files from the spec on every run,
  * discarding manual edits. This script reapplies fixes automatically for each
@@ -21,6 +22,44 @@
  *      every title reads as an imperative ("Creates a preset." -> "Create a
  *      preset"). Applied to each *.api.mdx file's title/sidebar_label/heading
  *      and the matching label in that directory's sidebar.ts.
+ *
+ *   4. Disambiguates duplicate sidebar labels. Two different operations can
+ *      share an identical OpenAPI `summary` (a spec-authoring issue upstream,
+ *      not something to fix here since both api/bitrise-ci.json and
+ *      api/bitrise-rde.json are themselves synced/generated). Docusaurus
+ *      derives i18n translation keys from sidebar labels, so a duplicate
+ *      breaks `docusaurus write-translations` outright — see DUPLICATE_LABEL_
+ *      OVERRIDES below for the specific pairs found so far.
+ *
+ *   5. Rewrites `info_path` on every generated *.api.mdx to a bare route path.
+ *
+ *      docusaurus-plugin-openapi-docs builds this value from its `outputDir`
+ *      option, which is a filesystem path ('docs/bitrise-api/api-reference').
+ *      It does have logic to convert that into a route, but the logic is
+ *      guarded (plugin src/index.ts, v5.0.2):
+ *
+ *          let infoBasePath = `${outputDir}/${item.infoId}`;
+ *          if (docRouteBasePath) {
+ *            // ...strip docPath, rebuild from docRouteBasePath...
+ *          }
+ *
+ *      Our `docs.routeBasePath` is '' (docusaurus.config.ts) — falsy — so the
+ *      guard never fires and the raw filesystem path is written out. That was
+ *      latent until routeBasePath changed from 'en' to '', at which point the
+ *      next spec regeneration emitted `docs/...`.
+ *
+ *      The theme renders the value through Docusaurus's <Link> (see
+ *      docusaurus-theme-openapi-docs theme/ApiExplorer/SecuritySchemes:
+ *      `const infoAuthPath = `/${props.infoPath}#authentication`` , then
+ *      `<Link to={infoAuthPath}>`), and <Link> prepends the active locale's
+ *      baseUrl unless the path already starts with it. So the value must be a
+ *      BARE route path with no locale prefix — the same convention as body
+ *      links, and for the same reason (see the note in sync_mcp_docs.py's
+ *      rewrite_internal_links): hardcoding `en/` renders as /ja/en/... on the
+ *      ja build, which doesn't exist.
+ *
+ *      Derived from each target's own infoFile rather than hardcoded, so a
+ *      future outputDir change can't silently reintroduce a filesystem prefix.
  *
  * Every step is existsSync-guarded and idempotent, so running this after a
  * single-spec regeneration (only one info file present) is safe.
@@ -70,6 +109,35 @@ const TARGETS = [
   },
 ];
 
+// Explicit fix map, not a generic auto-disambiguation heuristic — same
+// convention as TARGETS above. Keyed by the generated file's `id` (stable
+// across regenerations; derived from the operationId/path in the spec).
+// Extend this if a future spec sync introduces another duplicate pair —
+// `docusaurus write-translations` will fail loudly with the exact `id`s
+// involved if it does, same as it did for these two.
+const DUPLICATE_LABEL_OVERRIDES = {
+  'organization-machine-type-update': 'Migrate machine types (organization)',
+  'user-machine-type-update': 'Migrate machine types (user)',
+  // Deprecated in favor of SessionDownloadFile — see this file's own
+  // description ("Deprecated: use SessionDownloadFile.").
+  'codespaces-service-session-download': 'Download files (deprecated)',
+};
+
+const API_REFERENCE_DIRS = [
+  '../docs/bitrise-api/api-reference',
+  '../docs/bitrise-rde-api/api-reference',
+];
+
+// Root of the docs plugin's content dir (docusaurus.config.ts: docs.path).
+const DOCS_ROOT = '../docs';
+
+// docusaurus.config.ts: docs.routeBasePath. Empty means docs are served at the
+// site root, so a route path is just the file's path relative to DOCS_ROOT.
+// Kept as a named constant so this still resolves correctly if it ever changes.
+// No locale prefix belongs here — <Link> adds the active locale's baseUrl (see
+// step 4 above), so a prefix would double up as /ja/en/... on the ja build.
+const ROUTE_BASE_PATH = '';
+
 for (const target of TARGETS) {
   const filePath = path.resolve(__dirname, target.infoFile);
   if (!fs.existsSync(filePath)) {
@@ -111,6 +179,131 @@ for (const target of TARGETS) {
 
   // 3. Normalize operation titles in every *.api.mdx sibling of this info file.
   normalizeOperationTitles(path.dirname(filePath));
+}
+
+// 3. Disambiguate known duplicate sidebar labels on the generated *.api.mdx
+// files (a different file per operation, unlike the *.info.mdx above).
+for (const dir of API_REFERENCE_DIRS) {
+  const dirPath = path.resolve(__dirname, dir);
+  if (!fs.existsSync(dirPath)) {
+    console.log(`· ${dir} not found, skipping duplicate-label patch`);
+    continue;
+  }
+  for (const file of fs.readdirSync(dirPath)) {
+    if (!file.endsWith('.api.mdx')) continue;
+    const id = file.slice(0, -'.api.mdx'.length);
+    const override = DUPLICATE_LABEL_OVERRIDES[id];
+    if (!override) continue;
+
+    const filePath = path.join(dirPath, file);
+    let content = fs.readFileSync(filePath, 'utf-8');
+    if (content.includes(`sidebar_label: "${override}"`)) {
+      console.log(`· [${id}] label override already applied, skipping`);
+      continue;
+    }
+    const before = content;
+    content = content
+      .replace(/^title: ".*"$/m, `title: "${override}"`)
+      .replace(/^sidebar_label: ".*"$/m, `sidebar_label: "${override}"`)
+      .replace(/children=\{".*?"\}/, `children={"${override}"}`);
+    if (content !== before) {
+      fs.writeFileSync(filePath, content, 'utf-8');
+      console.log(`✔ [${id}] disambiguated sidebar label -> "${override}"`);
+    } else {
+      console.log(`· [${id}] expected title/sidebar_label/heading pattern not found, skipped`);
+    }
+  }
+
+  // The doc's own frontmatter isn't what Docusaurus reads for the sidebar —
+  // sidebar.ts (generated alongside the *.api.mdx files) carries its own
+  // separate `label` per item, keyed by the item's full `id`. Both need the
+  // override or the duplicate survives for i18n purposes even though the
+  // page itself looks fixed.
+  const sidebarPath = path.join(dirPath, 'sidebar.ts');
+  if (fs.existsSync(sidebarPath)) {
+    let content = fs.readFileSync(sidebarPath, 'utf-8');
+    const before = content;
+    for (const [id, override] of Object.entries(DUPLICATE_LABEL_OVERRIDES)) {
+      // Match this item's own { id: "...id", label: "..." } pair specifically
+      // (id and label always appear on adjacent lines in the generated
+      // output), so a shared id suffix can't accidentally patch a sibling.
+      const itemPattern = new RegExp(
+        `(id: "[^"]*${id}",\\n\\s*label: ")[^"]*(")`,
+      );
+      content = content.replace(itemPattern, `$1${override}$2`);
+    }
+    if (content !== before) {
+      fs.writeFileSync(sidebarPath, content, 'utf-8');
+      console.log(`✔ [${dir}] disambiguated label(s) in sidebar.ts`);
+    } else {
+      console.log(`· [${dir}] sidebar.ts labels already patched or pattern not found`);
+    }
+  }
+}
+
+// 4. Point `info_path` at a real URL path instead of the plugin's outputDir.
+for (const target of TARGETS) {
+  const infoPath = path.resolve(__dirname, target.infoFile);
+  const dirPath = path.dirname(infoPath);
+  if (!fs.existsSync(dirPath)) {
+    console.log(`· ${target.sidebar} reference dir not found, skipping info_path patch`);
+    continue;
+  }
+
+  // e.g. .../docs/bitrise-api/api-reference/bitrise-api.info.mdx
+  //   -> bitrise-api/api-reference/bitrise-api
+  const routePath = path
+    .relative(path.resolve(__dirname, DOCS_ROOT), infoPath)
+    .replace(/\.info\.mdx$/, '')
+    .split(path.sep)
+    .join('/');
+  const expected = [ROUTE_BASE_PATH, routePath]
+    .filter(Boolean)
+    .join('/')
+    .replace(/^\/+/, '');
+
+  let patched = 0;
+  let alreadyCorrect = 0;
+  let missing = 0;
+
+  for (const file of fs.readdirSync(dirPath)) {
+    if (!file.endsWith('.api.mdx')) continue;
+
+    const filePath = path.join(dirPath, file);
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const current = content.match(/^info_path:[ \t]*(.*)$/m);
+
+    if (!current) {
+      missing += 1;
+      continue;
+    }
+    if (current[1].trim() === expected) {
+      alreadyCorrect += 1;
+      continue;
+    }
+
+    fs.writeFileSync(
+      filePath,
+      content.replace(/^info_path:[ \t]*.*$/m, `info_path: ${expected}`),
+      'utf-8',
+    );
+    patched += 1;
+  }
+
+  if (patched > 0) {
+    console.log(
+      `✔ [${target.sidebar}] info_path -> ${expected} ` +
+        `(${patched} rewritten, ${alreadyCorrect} already correct)`,
+    );
+  } else {
+    console.log(
+      `· [${target.sidebar}] info_path already ${expected} on all ` +
+        `${alreadyCorrect} file(s), skipping`,
+    );
+  }
+  if (missing > 0) {
+    console.log(`· [${target.sidebar}] ${missing} *.api.mdx had no info_path line`);
+  }
 }
 
 console.log('✔ Patch complete');

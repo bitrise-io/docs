@@ -1,6 +1,24 @@
 # Bitrise Documentation
 
-Welcome to the public repository for Bitrise product documentation.
+## How to contribute
+
+Anyone can edit these docs, you don't need to be a developer. There's nothing to
+install, clone, or set up: ask Claude to do the work and it handles the mechanics.
+
+1. **Ask Claude to draft the change.** Describe what's wrong or missing in plain
+   language ("the X page doesn't mention Y — add a section") and let Claude write
+   the copy. You don't need to find the right file or write Markdown yourself.
+2. **Ask Claude to open the PR.** You don't have to touch Git or GitHub.
+3. **Check the preview.** When CI passes, a review environment URL is commented on
+   your PR. Open it and confirm your change looks right, this is the one step
+   Claude can't do for you.
+4. **Post your PR in [#team-tech-writers](link).** Docs owners are added
+   automatically as code owners, but posting in the channel is what actually gets
+   a reviewer on it.
+5. A docs owner reviews and the PR can be merged.
+
+That's it. If you're curious what Claude is working from, the repo's `CLAUDE.md`
+holds the detailed contribution guidance.
 
 ## Status
 

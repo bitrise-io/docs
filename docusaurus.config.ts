@@ -5,6 +5,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import bitriseAPIApiSidebar from './docs/bitrise-api/api-reference/sidebar';
 import changelogFeedPlugin from './src/plugins/changelog-feed';
+import {DEFAULT_DESCRIPTION} from './shared/site-metadata';
 
 // Build-time expansion for list-context partial references.
 //
@@ -144,7 +145,7 @@ function injectApiSidebar(items: any[]): any[] {
 
 const config: Config = {
   title: 'Bitrise Docs',
-  tagline: 'Find product documentation, code samples, API & CLI references, and more.',
+  tagline: DEFAULT_DESCRIPTION,
   favicon: 'favicon.ico',
 
   url: 'https://docs.bitrise.io',
@@ -178,7 +179,7 @@ const config: Config = {
       // the same escape rules as inline content.
       fileContent = expandListPartials(fileContent);
       const ALLOWED = new Set([
-        'Tabs', 'TabItem', 'GlossTerm',
+        'Tabs', 'TabItem', 'GlossTerm', 'NT',
         'SwaggerUIEmbed',
         'br', 'hr', 'sup', 'sub', 'strong', 'em', 'code', 'pre', 'p',
         'div', 'span', 'a', 'img', 'ul', 'ol', 'li',
@@ -230,7 +231,18 @@ const config: Config = {
 
   i18n: {
     defaultLocale: 'en',
-    locales: ['en'],
+    locales: ['en', 'ja'],
+    // Each locale gets its own explicit baseUrl instead of the automatic
+    // /<locale>/ heuristic, which would otherwise stack on top of the
+    // (also locale-independent) docs.routeBasePath below and produce
+    // /ja/en/... URLs. See scripts/strip_en_prefix.py for the companion
+    // change this depends on: internal doc links are bare absolute paths
+    // (no /en/ prefix), which Docusaurus resolves against whichever
+    // locale's baseUrl is currently rendering.
+    localeConfigs: {
+      en: {baseUrl: '/en/'},
+      ja: {baseUrl: '/ja/'},
+    },
   },
 
   headTags: [
@@ -412,7 +424,10 @@ const config: Config = {
       'classic',
       {
         docs: {
-          routeBasePath: 'en',
+          // Empty: the locale segment now comes from i18n.localeConfigs
+          // above, not from a static prefix here — the two would otherwise
+          // stack (/en/en/... or /ja/en/...).
+          routeBasePath: '',
           path: 'docs',
           sidebarPath: './sidebars.ts',
           // Transform sidebar items: resolve hub-link markers and append API reference links.
@@ -441,6 +456,7 @@ const config: Config = {
   ],
 
   themeConfig: {
+    image: 'img/social-card.png',
     navbar: {
       title: '',
       logo: {
@@ -449,6 +465,10 @@ const config: Config = {
         href: '/',
       },
       items: [
+        {
+          type: 'localeDropdown',
+          position: 'right',
+        },
         {
           href: 'https://support.bitrise.io/en/',
           label: 'Go to support',
@@ -475,7 +495,7 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
-      additionalLanguages: ['yaml', 'bash', 'json', 'ruby', 'swift', 'kotlin', 'groovy', 'dart'],
+      additionalLanguages: ['yaml', 'bash', 'json', 'ruby', 'swift', 'kotlin', 'groovy', 'dart', 'diff'],
     },
     zoom: {
       selector: '.markdown img:not(a > img)',

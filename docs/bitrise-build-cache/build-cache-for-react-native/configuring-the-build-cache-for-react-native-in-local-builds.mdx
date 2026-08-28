@@ -1,0 +1,246 @@
+---
+title: "Configuring the Build Cache for React Native in local builds"
+description: "Set up the Bitrise Build Cache for local React Native builds, covering the Gradle, Xcode, and ccache backends."
+sidebar_position: 4
+slug: /bitrise-build-cache/build-cache-for-react-native/configuring-the-build-cache-for-react-native-in-local-builds
+sidebar_label: Configuring the Build Cache for React Native in local environments
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+You can use the Bitrise Build Cache for local React Native builds too. Your local builds then read from the same cache as your CI builds, so native code your CI already compiled doesn't have to be compiled again on your machine.
+
+A React Native project builds through three native toolchains, and the Bitrise Build Cache CLI covers all of them: Gradle for Android, Xcode for iOS, and `ccache` for C++ native modules. For an overview of what each one caches, see [Build Cache for React Native overview](/bitrise-build-cache/build-cache-for-react-native/build-cache-for-react-native-overview).
+
+## Before you start
+
+Ensure you have:
+- A working React Native project on your machine, with Xcode 26 or later for the iOS side. Earlier versions don't expose the compilation cache flags the CLI needs, and the wrapper does nothing there.
+- A Bitrise workspace with the Build Cache enabled. Check it on the [Build Cache page](https://app.bitrise.io/build-cache/).
+
+## Installing the CLI and ccache
+
+<Tabs>
+<TabItem value="homebrew" label="Homebrew" default>
+
+```bash
+brew install bitrise-io/bitrise-build-cache/bitrise-build-cache
+brew install ccache
+```
+
+</TabItem>
+<TabItem value="curl" label="curl">
+
+Install the CLI with the installer script and [download `ccache`](https://ccache.dev/download.html) manually:
+
+```bash
+curl --retry 5 -sSfL \
+  'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' \
+  | sh -s -- -b ~/.local/bin
+```
+
+</TabItem>
+</Tabs>
+
+Make sure both install locations are on your `PATH`, then check the installs:
+
+```bash
+bitrise-build-cache --version
+which ccache
+```
+
+## Activating the cache
+
+Run the interactive wizard:
+
+```bash
+bitrise-build-cache activate --interactive
+```
+
+The wizard asks for the following:
+
+1. **Sign in to Bitrise**: opens your browser for authentication on the first run. The CLI stores the credentials in the OS keychain and refreshes them automatically, so later runs skip this step.
+1. **Select a workspace**: pick the workspace whose Build Cache you want to use. The CLI selects it automatically if you only have access to one.
+1. **Which build tools should I set up**: ensure **Gradle**, **Xcode**, and **ccache (C/C++)** are selected. Use space to toggle an option and enter to confirm.
+1. **Display name for this machine's local invocations**: the name your local builds show up under in the Build Cache dashboard, for example `local-<yourhandle>`.
+1. **Enable cache push**: select **No, pull only**. See [Local builds only read from the cache](#local-builds-only-read-from-the-cache).
+1. **Keep the cache proxies running in the background**: select **Yes, install + start**. This registers the helper processes with the OS so they survive shell restarts.
+
+:::important[Open a new terminal afterwards]
+
+Activating Xcode prepends `~/.bitrise-xcelerate/bin` to your `PATH` by writing a line to your shell rc file. Your current shell hasn't picked that up yet, so builds started in it still run without the `xcodebuild` wrapper — and `doctor` won't warn you about it.
+
+:::
+
+Open a new terminal, or run `source ~/.zshrc`, then confirm that the wrapper is in place:
+
+```bash
+which xcodebuild
+# → /Users/<you>/.bitrise-xcelerate/bin/xcodebuild
+```
+
+## Verifying the setup
+
+Run the CLI's health check:
+
+```bash
+bitrise-build-cache doctor
+```
+
+It reports the status of every part of the local setup — credentials, backend connectivity, helper processes, and log directories — and ends with an overall verdict:
+
+```bash
+Bitrise Build Cache - doctor
+CLI version: 3.x.y
+
+Healthy:
+  ✓ auth                   OAuth login (keychain) (workspace <id>), token valid until <iso-timestamp>
+  ✓ keychain-smoke         Set/Get/Delete round-trip OK
+  ✓ auth-backend           latency <ms>, source=keychain, workspace=<id>
+  ✓ ccache-binary          found at /opt/homebrew/bin/ccache
+  ✓ xcelerate-proxy        running (/var/folders/…/T/xcelerate-proxy.sock)
+  ✓ xcelerate-enrichment   no enrichment attempts yet
+  ✓ ccache-helper          running (~/.local/state/ccache/ccache.sock)
+  ✓ log-dirs               all log dirs present + writable
+
+Overall: ok
+```
+
+`xcelerate-enrichment` changes from `no enrichment attempts yet` to `healthy` after your first build. To let the CLI repair the issues it can fix on its own, run `bitrise-build-cache doctor --fix --interactive`.
+
+## Running an Android build
+
+1. Clean the project's local build outputs first, so the build has to fetch from the remote cache. Pass `--no-daemon` as well: a Gradle daemon started before the activation doesn't pick up the new configuration.
+
+   ```bash
+   cd path/to/your/rn/project/android
+   ./gradlew clean --no-daemon
+   ```
+
+1. Run the build:
+
+   ```bash
+   cd ..
+   bitrise-build-cache react-native run -- npx react-native build-android
+   ```
+
+A build that hits a warm cache ends like this:
+
+```bash
+> Task :app:compileDebugKotlin FROM-CACHE
+
+BUILD SUCCESSFUL in 22s
+149 actionable tasks: 71 executed, 78 from cache
+
+[Bitrise Analytics] 155 tasks uploaded. Check invocation at
+    https://app.bitrise.io/build-cache/invocations/gradle/<uuid>
+```
+
+## Running an iOS build
+
+Run the build through the CLI's wrapper command:
+
+```bash
+bitrise-build-cache react-native run -- npx react-native build-ios
+```
+
+Or call `xcodebuild` directly if you want full control over the destination and configuration:
+
+```bash
+xcodebuild \
+  -workspace ios/<yourproject>.xcworkspace \
+  -scheme <yourscheme> \
+  -configuration Debug \
+  -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' \
+  CODE_SIGNING_ALLOWED=NO clean build
+```
+
+Expect a `CompilationCacheMetrics` line with non-zero hits and a `[Bitrise Analytics] Invocation saved` link at the end of the output. Native modules compile through `ccache`, and their stats are included in the same invocation.
+
+For more about which commands to wrap and why, see [Wrapping native build commands](/bitrise-build-cache/build-cache-for-react-native/wrapping-native-build-commands).
+
+## Checking that it worked
+
+| Signal | Where to find it | What success looks like |
+|---|---|---|
+| `FROM-CACHE` and the `Y from cache` summary | Android build output | A non-zero `from cache` count |
+| `CompilationCacheMetrics N / M (P%)` | iOS build output | Non-zero hits |
+| `[Bitrise Analytics] Invocation saved` | Last lines of the build output | An invocation link is printed |
+| Dashboard | [Build Cache page](https://app.bitrise.io/build-cache/) | One row per iOS build and one per Android build, under your display name |
+| `bitrise-build-cache doctor` | Your shell | `xcelerate-proxy`, `xcelerate-enrichment`, and `ccache-helper` are all healthy |
+
+:::note[Explicit module build warnings]
+
+A few `swift compiler caching requires explicit module build` warnings can appear even though the wrapper sets `SWIFT_ENABLE_EXPLICIT_MODULES=YES`. Xcode emits them before the wrapper's build settings apply, and they are safe to ignore. The cache hit numbers confirm that caching is working.
+
+:::
+
+Some projects can't build under explicit modules at all, and fail with `unable to resolve module dependency`. Activate with `--no-swift-cache` there: it caches clang and Objective-C compilation only, leaving Swift uncached. The wizard doesn't ask about this, so use the non-interactive activate command:
+
+```bash
+bitrise-build-cache activate react-native --no-swift-cache
+```
+
+## Local builds only read from the cache
+
+The setup in this guide activates the Build Cache in pull-only mode: your local builds read from the shared cache but never write to it. This is the recommended mode for local development.
+
+Build tools recommend writing cache entries only from an environment where the source files don't change during the build. On a local machine you might keep editing files while a build is running, which can produce cache entries that don't match their inputs — and those entries would then be served to your teammates and to CI. Pull-only removes that risk: a broken local build can't affect anyone else.
+
+The usual pattern is to have CI populate the cache, because CI builds from a clean, fixed checkout, and to let local machines pull from it.
+
+## Pushing to the cache from local builds
+
+Pull-only assumes that something else fills the cache, which is normally CI. If nothing does, your local builds have nothing to read: the Android build keeps reporting `0 from cache` and the iOS build `0 / N (0%)`.
+
+If your team doesn't run the Build Cache on CI, turn pushing on for your local builds and leave it on. Your machine then populates the cache as you work, for you and for your teammates.
+
+Re-run the wizard and answer **Yes, push too** at the cache push prompt:
+
+```bash
+bitrise-build-cache activate --interactive
+```
+
+This covers all three backends at once, so your Android, iOS, and native module builds all start writing to the cache.
+
+If a build doesn't behave as expected, re-run the wizard with debug logging:
+
+```bash
+bitrise-build-cache activate --interactive --debug
+```
+
+:::note
+If `xcelerate-proxy` or `ccache-helper` was already running from an earlier activation, the new push setting won't take effect until you restart it — both lock in push-enablement at start-up and don't reload it when you re-run the wizard. Restart them:
+
+```bash
+bitrise-build-cache xcelerate stop-proxy
+bitrise-build-cache ccache storage-helper stop
+bitrise-build-cache activate --interactive
+```
+:::
+
+:::note
+An entry written from a build whose source files changed while it was running can be wrong, and your teammates read the same entry. Avoid editing files during a build you push from.
+
+Setting up the Build Cache on CI is the more robust option, because CI builds from a clean, fixed checkout. Once it runs there, switch your machine back to pull-only.
+:::
+
+## Troubleshooting
+
+Start with the CLI's health check. It inspects every part of the local setup and repairs the issues it can fix on its own:
+
+```bash
+bitrise-build-cache doctor --fix --interactive
+```
+
+If you're still experiencing issues, check the following table:
+
+| Issue | Fix |
+|---|---|
+| The wizard reports that it needs a terminal | Run `TERM=dumb bitrise-build-cache activate --interactive` for line-based mode. |
+| `which xcodebuild` still points to `/usr/bin/xcodebuild` | Open a new terminal, or run `source ~/.zshrc`. |
+| The iOS build shows no cache activity at all | Check that you ran it from a terminal and not from Xcode.app, which bypasses the wrapper. |
+| Your Android build ignores the new configuration | Stop any running Gradle daemons with `./gradlew --stop`, or pass `--no-daemon`. |
+| `doctor` reports a problem it can't fix | Re-run it with `--debug` for the full context. |

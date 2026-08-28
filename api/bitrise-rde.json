@@ -42,6 +42,48 @@
       ],
       "type": "string"
     },
+    "v1AndroidEmulatorConfig": {
+      "description": "AndroidEmulatorConfig configures the platform-managed Android emulator capability.\nEmpty fields fall back to platform defaults.",
+      "properties": {
+        "coldBoot": {
+          "description": "Boot the emulator cold (-no-snapshot-load) and never save a quickboot\nsnapshot, so every boot is a full first boot.",
+          "type": "boolean"
+        },
+        "cores": {
+          "description": "Emulator CPU core count. 0 = sized to the host (cores/2, clamped to\n[2, 4]). The VM clamps out-of-range values, always leaving the host a core.",
+          "format": "int64",
+          "type": "integer"
+        },
+        "deviceProfile": {
+          "description": "avdmanager device profile (for example, \"pixel_7\"). Empty = platform default.",
+          "type": "string"
+        },
+        "ramMb": {
+          "description": "Emulator RAM in MB. 0 = sized to the host (RAM/4, clamped to [2048, 6144]).\nThe VM clamps out-of-range values to what the host can spare.",
+          "format": "int64",
+          "type": "integer"
+        },
+        "systemImage": {
+          "description": "sdkmanager system image package (for example,\n\"system-images;android-36;google_apis_ps16k;x86_64\"). Empty = platform default.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1AndroidEmulatorRequest": {
+      "description": "AndroidEmulatorRequest expresses a session creator's decision about the Android\nemulator capability. When the message is absent from CreateSessionRequest, the\ntemplate's declaration (if any) is inherited; when present, it wins — including\nenabled=false as an explicit opt-out of a template default.",
+      "properties": {
+        "config": {
+          "$ref": "#/definitions/v1AndroidEmulatorConfig",
+          "description": "Emulator configuration. Empty fields fall back to the template's declared\nconfig (if any), then to platform defaults."
+        },
+        "enabled": {
+          "description": "Whether the session should run the platform-managed Android emulator.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "v1AutoMappedInput": {
       "description": "AutoMappedInput records a template session input that was auto-filled from\nthe caller's saved inputs because map_saved_to_session_inputs was set.",
       "properties": {
@@ -206,6 +248,16 @@
       },
       "type": "object"
     },
+    "v1GetGitProviderIntegrationResponse": {
+      "description": "GetGitProviderIntegrationResponse carries the integration state.",
+      "properties": {
+        "integration": {
+          "$ref": "#/definitions/v1GitProviderIntegration",
+          "description": "The integration state."
+        }
+      },
+      "type": "object"
+    },
     "v1GetMeResponse": {
       "description": "GetMeResponse is the response containing the current authenticated user.",
       "properties": {
@@ -263,9 +315,58 @@
     "v1GetWorkspaceInfoResponse": {
       "description": "GetWorkspaceInfoResponse carries workspace-level capabilities the UI uses to\ntailor what it shows.",
       "properties": {
+        "androidEmulatorAvailable": {
+          "description": "Whether the Android emulator capability (and the service ports that expose\nit) is enabled for this workspace (rollout feature flag). Gates declaring\nit on templates and requesting it on sessions.",
+          "type": "boolean"
+        },
+        "devicePreviewAvailable": {
+          "description": "Whether device preview links and streaming are enabled for this workspace\n(rollout feature flag). Gates minting/resolving preview links and the\nviewer affordances in the UI.",
+          "type": "boolean"
+        },
+        "gitProviderIntegrationAvailable": {
+          "description": "Whether the git provider integration feature is enabled for this workspace\n(rollout feature flag). Gates the integration section in the UI.",
+          "type": "boolean"
+        },
         "isFreeTrial": {
           "description": "Whether the workspace is on a free trial. Free-trial sessions are pinned to\nan 8-hour auto-terminate window that cannot be changed.",
           "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "v1GitProviderConnectionStatus": {
+      "default": "GIT_PROVIDER_CONNECTION_STATUS_UNSPECIFIED",
+      "description": "GitProviderConnectionStatus mirrors the monolith-side status of the user's\nconnected git provider account.\n\n - GIT_PROVIDER_CONNECTION_STATUS_UNSPECIFIED: Unknown status.\n - GIT_PROVIDER_CONNECTION_STATUS_NOT_CONNECTED: The user has never connected an account for this provider.\n - GIT_PROVIDER_CONNECTION_STATUS_CONNECTED: The user has a usable connection.\n - GIT_PROVIDER_CONNECTION_STATUS_ERROR: A connection exists but is unusable (grant revoked or token refresh failed);\nthe user must reconnect on the Bitrise connected-accounts page.",
+      "enum": [
+        "GIT_PROVIDER_CONNECTION_STATUS_UNSPECIFIED",
+        "GIT_PROVIDER_CONNECTION_STATUS_NOT_CONNECTED",
+        "GIT_PROVIDER_CONNECTION_STATUS_CONNECTED",
+        "GIT_PROVIDER_CONNECTION_STATUS_ERROR"
+      ],
+      "type": "string"
+    },
+    "v1GitProviderIntegration": {
+      "description": "GitProviderIntegration describes the state of the user's git provider\nintegration: the Bitrise-side connection status plus the RDE-side opt-in.",
+      "properties": {
+        "accountName": {
+          "description": "Provider-side account name (for example, the GitHub login). Empty unless connected.",
+          "type": "string"
+        },
+        "accountUrl": {
+          "description": "Provider-side account URL. Empty unless connected.",
+          "type": "string"
+        },
+        "connectionStatus": {
+          "$ref": "#/definitions/v1GitProviderConnectionStatus",
+          "description": "Status of the user's connected account on the Bitrise connected-accounts page."
+        },
+        "enabled": {
+          "description": "Whether the user opted in to automatic git credential injection into their sessions.",
+          "type": "boolean"
+        },
+        "provider": {
+          "description": "Git provider name (currently \"github-app\").",
+          "type": "string"
         }
       },
       "type": "object"
@@ -505,6 +606,58 @@
       },
       "type": "object"
     },
+    "v1ServicePort": {
+      "description": "ServicePort represents a network service a template's sessions expose on the VM\n(for example a dev web server). Sessions snapshot these and the UI renders\nSSH tunnel (ssh -L) connection help from them.",
+      "properties": {
+        "description": {
+          "description": "Description shown next to the tunnel help (for example, \"Storybook dev server\").",
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier (UUID).",
+          "type": "string"
+        },
+        "localPort": {
+          "description": "Suggested local port for the tunnel. 0 means \"same as port\". Use when the\nremote port commonly clashes with something on developer machines.",
+          "format": "int32",
+          "type": "integer"
+        },
+        "name": {
+          "description": "Short name of the service (for example, \"web-app\"). Unique per template.",
+          "type": "string"
+        },
+        "port": {
+          "description": "Port the service listens on inside the VM (1-65535).",
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "v1ServicePortCreate": {
+      "description": "ServicePortCreate is used when creating a service port on a template.",
+      "properties": {
+        "description": {
+          "description": "Description shown next to the tunnel help.",
+          "type": "string"
+        },
+        "localPort": {
+          "description": "Suggested local port for the tunnel. 0 means \"same as port\".",
+          "format": "int32",
+          "type": "integer"
+        },
+        "name": {
+          "description": "Short name of the service. Unique per template.",
+          "type": "string"
+        },
+        "port": {
+          "description": "Port the service listens on inside the VM (1-65535).",
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "v1Session": {
       "description": "Session represents a remote development environment instance.",
       "properties": {
@@ -561,6 +714,14 @@
         },
         "name": {
           "description": "Human-readable name of the session.",
+          "type": "string"
+        },
+        "ownerId": {
+          "description": "The owner's identifier, typed by owner_type: the owning user's ID for\n\"user\", the workspace slug for \"workspace\".",
+          "type": "string"
+        },
+        "ownerType": {
+          "description": "Who owns the session: \"user\" (owned by the creating user; the default) or\n\"workspace\" (owned by the workspace itself — for example sessions spawned\nby a preview link minted with a Workspace API Token; any workspace member\ncan see and manage these). Future owner kinds (such as \"agent\") extend\nthis value set without a schema change.",
           "type": "string"
         },
         "persistentDiskStatus": {
@@ -739,6 +900,16 @@
       },
       "type": "object"
     },
+    "v1SessionListScope": {
+      "default": "SESSION_LIST_SCOPE_UNSPECIFIED",
+      "description": "SessionListScope selects which sessions ListSessions (and the terminated\ncleanup) operates on, by session ownership.\n\n - SESSION_LIST_SCOPE_UNSPECIFIED: Defaults to SESSION_LIST_SCOPE_MINE.\n - SESSION_LIST_SCOPE_MINE: Sessions owned by the calling user.\n - SESSION_LIST_SCOPE_WORKSPACE: Sessions owned by the workspace itself (owner_type \"workspace\") —\nvisible to and manageable by every member of the workspace.",
+      "enum": [
+        "SESSION_LIST_SCOPE_UNSPECIFIED",
+        "SESSION_LIST_SCOPE_MINE",
+        "SESSION_LIST_SCOPE_WORKSPACE"
+      ],
+      "type": "string"
+    },
     "v1SessionMouseDragResponse": {
       "description": "SessionMouseDragResponse is the response for dragging the mouse.",
       "type": "object"
@@ -850,6 +1021,14 @@
     "v1SessionTemplateSnapshot": {
       "description": "SessionTemplateSnapshot contains the template configuration snapshotted at session creation time.\nThis makes sessions self-contained and resilient to template changes or deletions.",
       "properties": {
+        "androidEmulator": {
+          "$ref": "#/definitions/v1AndroidEmulatorConfig",
+          "description": "Resolved Android emulator configuration (only meaningful when\nandroid_emulator_enabled is true)."
+        },
+        "androidEmulatorEnabled": {
+          "description": "Whether this session runs the platform-managed Android emulator.",
+          "type": "boolean"
+        },
         "featureFlags": {
           "description": "Feature flag states for this session.",
           "items": {
@@ -873,6 +1052,14 @@
         "machineType": {
           "description": "Machine type name from the template.",
           "type": "string"
+        },
+        "servicePorts": {
+          "description": "Network services this session exposes (template-declared plus any\ncapability-added ports, for example the Android emulator's).",
+          "items": {
+            "$ref": "#/definitions/v1SnapshotPort",
+            "type": "object"
+          },
+          "type": "array"
         },
         "sessionInputs": {
           "description": "Session input values provided by the session starter (or defaults).",
@@ -969,6 +1156,35 @@
       },
       "type": "object"
     },
+    "v1SnapshotPort": {
+      "description": "SnapshotPort represents an exposed service port captured at session creation time.",
+      "properties": {
+        "description": {
+          "description": "Description shown next to the tunnel help.",
+          "type": "string"
+        },
+        "localPort": {
+          "description": "Suggested local port for the tunnel. 0 means \"same as port\".",
+          "format": "int32",
+          "type": "integer"
+        },
+        "name": {
+          "description": "Short name of the service (for example, \"web-app\").",
+          "type": "string"
+        },
+        "port": {
+          "description": "Port the service listens on inside the VM.",
+          "format": "int32",
+          "type": "integer"
+        },
+        "sortOrder": {
+          "description": "Sort order for display.",
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "v1Stack": {
       "description": "Stack is a provisionable development environment stack with human-friendly\nmetadata (title, OS, status, Xcode version). The id is the stable identifier\nstored on a template/session.",
       "properties": {
@@ -1042,6 +1258,10 @@
     "v1Template": {
       "description": "Template defines a reusable configuration for creating sessions.",
       "properties": {
+        "androidEmulator": {
+          "$ref": "#/definitions/v1AndroidEmulatorConfig",
+          "description": "When set, sessions created from this template run the platform-managed Android\nemulator by default (Linux stacks only). Session creators can override or opt out."
+        },
         "createdAt": {
           "description": "When the template was created.",
           "format": "date-time",
@@ -1078,6 +1298,14 @@
         "name": {
           "description": "Human-readable name of the template.",
           "type": "string"
+        },
+        "servicePorts": {
+          "description": "Network services this template's sessions expose (rendered as SSH tunnel help).",
+          "items": {
+            "$ref": "#/definitions/v1ServicePort",
+            "type": "object"
+          },
+          "type": "array"
         },
         "sessionInputs": {
           "description": "Session inputs that users must or may provide when creating a session.",
@@ -1134,6 +1362,14 @@
     "v1TemplateConfig": {
       "description": "TemplateConfig contains the full template configuration for comparison.\nUsed by CompareSessionTemplate to show what changed between snapshot and current template.",
       "properties": {
+        "androidEmulator": {
+          "$ref": "#/definitions/v1AndroidEmulatorConfig",
+          "description": "Android emulator configuration (when declared/enabled)."
+        },
+        "androidEmulatorEnabled": {
+          "description": "Whether the Android emulator capability is declared/enabled.",
+          "type": "boolean"
+        },
         "featureFlags": {
           "description": "Feature flags.",
           "items": {
@@ -1149,6 +1385,14 @@
         "machineType": {
           "description": "Machine type name.",
           "type": "string"
+        },
+        "servicePorts": {
+          "description": "Exposed service ports.",
+          "items": {
+            "$ref": "#/definitions/v1SnapshotPort",
+            "type": "object"
+          },
+          "type": "array"
         },
         "sessionInputs": {
           "description": "Session input definitions (keys and metadata, not actual values).",
@@ -1326,6 +1570,16 @@
       },
       "type": "object"
     },
+    "v1UpdateGitProviderIntegrationResponse": {
+      "description": "UpdateGitProviderIntegrationResponse carries the integration state after the update.",
+      "properties": {
+        "integration": {
+          "$ref": "#/definitions/v1GitProviderIntegration",
+          "description": "The integration state after the update."
+        }
+      },
+      "type": "object"
+    },
     "v1UpdateSavedInputResponse": {
       "description": "UpdateSavedInputResponse is the response for updating a saved input.",
       "properties": {
@@ -1432,6 +1686,73 @@
     "version": "1.0.0"
   },
   "paths": {
+    "/v1/git-provider-integrations/{provider}": {
+      "get": {
+        "description": "Returns the current user's git provider integration state.",
+        "operationId": "CodespacesService_GetGitProviderIntegration",
+        "parameters": [
+          {
+            "description": "Git provider name. Currently only \"github-app\" is supported. Supplied via the URL path.",
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetGitProviderIntegrationResponse"
+            }
+          }
+        },
+        "summary": "Get git provider integration",
+        "tags": [
+          "User"
+        ]
+      },
+      "put": {
+        "description": "Enables or disables automatic git credential injection into the current user's sessions.",
+        "operationId": "CodespacesService_UpdateGitProviderIntegration",
+        "parameters": [
+          {
+            "description": "Git provider name. Currently only \"github-app\" is supported. Supplied via the URL path.",
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "UpdateGitProviderIntegrationRequest enables or disables the integration for\nthe current user.",
+              "properties": {
+                "enabled": {
+                  "description": "Whether automatic git credential injection into sessions should be enabled.",
+                  "type": "boolean"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateGitProviderIntegrationResponse"
+            }
+          }
+        },
+        "summary": "Update git provider integration",
+        "tags": [
+          "User"
+        ]
+      }
+    },
     "/v1/me": {
       "get": {
         "description": "Returns the currently authenticated user.",
@@ -1736,7 +2057,7 @@
     },
     "/v1/workspaces/{workspaceId}/sessions": {
       "get": {
-        "description": "Retrieves all sessions for the current user.",
+        "description": "Retrieves the sessions in the selected ownership scope: the current user's own sessions (default) or the workspace-owned ones (?scope=SESSION_LIST_SCOPE_WORKSPACE).",
         "operationId": "CodespacesService_ListSessions",
         "parameters": [
           {
@@ -1756,6 +2077,19 @@
             "name": "labelSelectors",
             "required": false,
             "type": "array"
+          },
+          {
+            "default": "SESSION_LIST_SCOPE_UNSPECIFIED",
+            "description": "Which ownership scope to list. Defaults to the caller's own sessions.\nEncoded on the REST surface as a query parameter, by enum name\n(?scope=SESSION_LIST_SCOPE_WORKSPACE).\n\n - SESSION_LIST_SCOPE_UNSPECIFIED: Defaults to SESSION_LIST_SCOPE_MINE.\n - SESSION_LIST_SCOPE_MINE: Sessions owned by the calling user.\n - SESSION_LIST_SCOPE_WORKSPACE: Sessions owned by the workspace itself (owner_type \"workspace\") —\nvisible to and manageable by every member of the workspace.",
+            "enum": [
+              "SESSION_LIST_SCOPE_UNSPECIFIED",
+              "SESSION_LIST_SCOPE_MINE",
+              "SESSION_LIST_SCOPE_WORKSPACE"
+            ],
+            "in": "query",
+            "name": "scope",
+            "required": false,
+            "type": "string"
           }
         ],
         "responses": {
@@ -1792,6 +2126,10 @@
                 "aiPrompt": {
                   "description": "Optional AI prompt to pass to Claude Code when the session starts.",
                   "type": "string"
+                },
+                "androidEmulator": {
+                  "$ref": "#/definitions/v1AndroidEmulatorRequest",
+                  "description": "Android emulator decision for this session (Linux stacks only). Absent = inherit\nthe template's declaration (if any); present = this wins, including enabled=false\nas an explicit opt-out."
                 },
                 "autoTerminateMinutes": {
                   "description": "Minutes before auto-termination. Defaults to 7200 (5 days).\nSet to 0 to disable auto-termination (\"Never\").",
@@ -3024,7 +3362,7 @@
     },
     "/v1/workspaces/{workspaceId}/sessions:delete-terminated": {
       "post": {
-        "description": "Deletes all terminated sessions for the current user.",
+        "description": "Deletes all terminated sessions in the selected ownership scope: the current user's own (default) or the workspace-owned ones (any member may clean those up).",
         "operationId": "CodespacesService_DeleteTerminatedSessions",
         "parameters": [
           {
@@ -3040,6 +3378,12 @@
             "required": true,
             "schema": {
               "description": "DeleteTerminatedSessionsRequest is the request for deleting all terminated sessions.",
+              "properties": {
+                "scope": {
+                  "$ref": "#/definitions/v1SessionListScope",
+                  "description": "Which ownership scope to clean up: the caller's own terminated sessions\n(default) or the workspace's own terminated sessions (any member may —\nworkspace-owned sessions have no personal owner to clean them up)."
+                }
+              },
               "type": "object"
             }
           }
@@ -3136,6 +3480,10 @@
             "schema": {
               "description": "CreateTemplateRequest is the request for creating a new template.",
               "properties": {
+                "androidEmulator": {
+                  "$ref": "#/definitions/v1AndroidEmulatorConfig",
+                  "description": "When set, sessions created from this template run the platform-managed Android\nemulator by default (Linux stacks only)."
+                },
                 "description": {
                   "description": "Description explaining what this template is for.",
                   "type": "string"
@@ -3159,6 +3507,14 @@
                 "name": {
                   "description": "Human-readable name of the template.",
                   "type": "string"
+                },
+                "servicePorts": {
+                  "description": "Network services this template's sessions expose (rendered as SSH tunnel help).",
+                  "items": {
+                    "$ref": "#/definitions/v1ServicePortCreate",
+                    "type": "object"
+                  },
+                  "type": "array"
                 },
                 "sessionInputs": {
                   "description": "Session inputs for this template.",
@@ -3316,6 +3672,10 @@
             "schema": {
               "description": "UpdateTemplateRequest is the request for updating a template.",
               "properties": {
+                "androidEmulator": {
+                  "$ref": "#/definitions/v1AndroidEmulatorConfig",
+                  "description": "Updated Android emulator declaration. Only applied when update_android_emulator is\ntrue; leaving the message unset then clears the declaration."
+                },
                 "description": {
                   "description": "Updated description (optional).",
                   "type": "string"
@@ -3339,6 +3699,14 @@
                 "name": {
                   "description": "Updated name (optional).",
                   "type": "string"
+                },
+                "servicePorts": {
+                  "description": "Updated service ports (replaces all existing when update_service_ports is true).",
+                  "items": {
+                    "$ref": "#/definitions/v1ServicePortCreate",
+                    "type": "object"
+                  },
+                  "type": "array"
                 },
                 "sessionInputs": {
                   "description": "Updated session inputs (replaces all existing when update_session_inputs is true).",
@@ -3364,8 +3732,16 @@
                   },
                   "type": "array"
                 },
+                "updateAndroidEmulator": {
+                  "description": "Whether to update the android_emulator declaration.",
+                  "type": "boolean"
+                },
                 "updateFeatureFlags": {
                   "description": "Whether to update feature_flags (false = don't touch, true = replace with provided list).",
+                  "type": "boolean"
+                },
+                "updateServicePorts": {
+                  "description": "Whether to update service_ports (false = don't touch, true = replace with provided list).",
                   "type": "boolean"
                 },
                 "updateSessionInputs": {
