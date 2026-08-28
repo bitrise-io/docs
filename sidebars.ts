@@ -1,6 +1,10 @@
 import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
 import bitriseAPIApiSidebar from './docs/bitrise-api/api-reference/sidebar';
 import rdeAPIApiSidebar from './docs/bitrise-rde-api/api-reference/sidebar';
+import rmAppsApiSidebar from './docs/release-management-api/apps/api-reference/sidebar';
+import rmStoreReleasesApiSidebar from './docs/release-management-api/store-releases/api-reference/sidebar';
+import rmCodePushApiSidebar from './docs/release-management-api/code-push/api-reference/sidebar';
+import rmBuildDistributionsApiSidebar from './docs/release-management-api/build-distributions/api-reference/sidebar';
 
 function productSidebar(dirName: string, title: string) {
   return [
@@ -28,7 +32,12 @@ const TAG_LABEL_OVERRIDES: Record<string, string> = {
 // sentence-case the tag labels and tag every entry with the "Code" icon. The
 // generated info doc has no label and is filtered out (added explicitly below).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function toHubItems(generated: any, addIcon = true) {
+// `keyPrefix`, when given, sets a unique i18n `key` on every item (its own
+// label collides across the four Release Management sub-APIs otherwise —
+// e.g. two sub-APIs both tag-group an "Apps" category — since Docusaurus
+// derives translation keys from `key ?? label`, scoped per sidebar name, and
+// all four share `releaseManagementSidebar`).
+function toHubItems(generated: any, addIcon = true, keyPrefix?: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (generated as any[]).filter((item: any) => item.label).map(item => {
     const originalLabel = item.label as string | undefined;
@@ -39,18 +48,91 @@ function toHubItems(generated: any, addIcon = true) {
       ...item,
       ...(correctedLabel !== undefined ? {label: correctedLabel} : {}),
       ...(addIcon ? {customProps: {...(item.customProps ?? {}), icon: 'Code'}} : {}),
+      ...(keyPrefix ? {key: `${keyPrefix}.${originalLabel}`} : {}),
     };
   });
 }
 
 const hubItems = toHubItems(bitriseAPIApiSidebar);
 const rdeHubItems = toHubItems(rdeAPIApiSidebar, false);
+const rmAppsHubItems = toHubItems(rmAppsApiSidebar, false, 'ReleaseManagementApps');
+const rmStoreReleasesHubItems = toHubItems(rmStoreReleasesApiSidebar, false, 'ReleaseManagementStoreReleases');
+const rmCodePushHubItems = toHubItems(rmCodePushApiSidebar, false, 'ReleaseManagementCodePush');
+const rmBuildDistributionsHubItems = toHubItems(rmBuildDistributionsApiSidebar, false, 'ReleaseManagementBuildDistributions');
 
 const sidebars: SidebarsConfig = {
   platformSidebar: productSidebar('bitrise-platform', 'Bitrise as a Platform'),
   ciSidebar: productSidebar('bitrise-ci', 'Bitrise CI'),
   buildCacheSidebar: productSidebar('bitrise-build-cache', 'Build Cache'),
-  releaseManagementSidebar: productSidebar('release-management', 'Release Management'),
+  releaseManagementSidebar: [
+    ...productSidebar('release-management', 'Release Management'),
+    {
+      type: 'category',
+      label: 'API reference',
+      collapsed: true,
+      customProps: {icon: 'Code'},
+      items: [
+        {
+          type: 'category',
+          label: 'Apps',
+          // Disambiguates from the unrelated "Apps" category at
+          // docs/release-management/configuring-connected-apps (same sidebar).
+          key: 'ReleaseManagementApiApps',
+          items: [
+            {
+              type: 'doc',
+              id: 'release-management-api/apps/api-reference/release-management-api',
+              label: 'Introduction',
+              key: 'ReleaseManagementApiAppsIntroduction',
+            },
+            ...rmAppsHubItems,
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Store releases',
+          key: 'ReleaseManagementApiStoreReleases',
+          items: [
+            {
+              type: 'doc',
+              id: 'release-management-api/store-releases/api-reference/release-management-api-app-versions',
+              label: 'Introduction',
+              key: 'ReleaseManagementApiStoreReleasesIntroduction',
+            },
+            ...rmStoreReleasesHubItems,
+          ],
+        },
+        {
+          type: 'category',
+          label: 'CodePush',
+          key: 'ReleaseManagementApiCodePush',
+          items: [
+            {
+              type: 'doc',
+              id: 'release-management-api/code-push/api-reference/release-management-api-codepush',
+              label: 'Introduction',
+              key: 'ReleaseManagementApiCodePushIntroduction',
+            },
+            ...rmCodePushHubItems,
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Build distributions',
+          key: 'ReleaseManagementApiBuildDistributions',
+          items: [
+            {
+              type: 'doc',
+              id: 'release-management-api/build-distributions/api-reference/release-management-api-build-distributions',
+              label: 'Introduction',
+              key: 'ReleaseManagementApiBuildDistributionsIntroduction',
+            },
+            ...rmBuildDistributionsHubItems,
+          ],
+        },
+      ],
+    },
+  ],
   insightsSidebar: productSidebar('insights', 'Insights'),
   buildHubSidebar: productSidebar('bitrise-build-hub', 'Build Hub'),
   rdeSidebar: [

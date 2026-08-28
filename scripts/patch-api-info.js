@@ -4,16 +4,36 @@
  * `docusaurus gen-api-docs`.
  *
  * The openapi-docs plugin regenerates these files from the spec on every run,
- * discarding manual edits. This script reapplies fixes automatically:
+ * discarding manual edits. This script reapplies fixes automatically for each
+ * generated API reference:
  *
- *   1. Adds `displayed_sidebar: <sidebar>` to the frontmatter so the page
- *      renders inside the correct product sidebar.
+ *   1. Adds `displayed_sidebar: <sidebar>` to the info doc's frontmatter so
+ *      the page renders inside the correct product sidebar.
  *
  *   2. Inserts the license name into the License section, which the plugin
  *      generates as an empty heading. Skipped when the spec has no license or
  *      isn't available as a local file (e.g. it's fetched from a remote URL).
  *
- *   3. Disambiguates duplicate sidebar labels. Two different operations can
+ *   3. Rewrites host-relative links in the info page's description to the
+ *      API host they actually resolve against. The four Release Management
+ *      specs' `info.description` (upstream content, not authored here) links
+ *      to the legacy v1 API docs and migration guide with paths like
+ *      `/release-management/api-docs/index.html` — relative paths that make
+ *      sense rendered on api.bitrise.io (see each rm_*_spec_sync SPEC_URL),
+ *      but 404 when rendered as-is on this docs site. Rewrites known paths to
+ *      an absolute `https://api.bitrise.io/...` URL. Skipped (silently, via
+ *      an empty map) for specs with no known relative links to fix.
+ *
+ *   4. Normalizes operation titles generated straight from the spec's
+ *      `summary` field, which mixes imperative ("Create a preset") and
+ *      third-person-singular ("Creates a preset") verb forms depending on how
+ *      each endpoint's summary was written upstream. Strips a trailing period
+ *      and the trailing "s" off a third-person-singular leading verb, so
+ *      every title reads as an imperative ("Creates a preset." -> "Create a
+ *      preset"). Applied to each *.api.mdx file's title/sidebar_label/heading
+ *      and the matching label in that directory's sidebar.ts.
+ *
+ *   5. Disambiguates duplicate sidebar labels. Two different operations can
  *      share an identical OpenAPI `summary` (a spec-authoring issue upstream,
  *      not something to fix here since both api/bitrise-ci.json and
  *      api/bitrise-rde.json are themselves synced/generated). Docusaurus
@@ -21,7 +41,7 @@
  *      breaks `docusaurus write-translations` outright — see DUPLICATE_LABEL_
  *      OVERRIDES below for the specific pairs found so far.
  *
- *   4. Rewrites `info_path` on every generated *.api.mdx to a bare route path.
+ *   6. Rewrites `info_path` on every generated *.api.mdx to a bare route path.
  *
  *      docusaurus-plugin-openapi-docs builds this value from its `outputDir`
  *      option, which is a filesystem path ('docs/bitrise-api/api-reference').
@@ -74,6 +94,29 @@ const TARGETS = [
     sidebar: 'rdeSidebar',
     specFile: null,
   },
+  {
+    infoFile: '../docs/release-management-api/apps/api-reference/release-management-api.info.mdx',
+    sidebar: 'releaseManagementSidebar',
+    specFile: '../api/bitrise-rm-apps.json',
+  },
+  {
+    infoFile:
+      '../docs/release-management-api/store-releases/api-reference/release-management-api-app-versions.info.mdx',
+    sidebar: 'releaseManagementSidebar',
+    specFile: '../api/bitrise-rm-store-releases.json',
+  },
+  {
+    infoFile:
+      '../docs/release-management-api/code-push/api-reference/release-management-api-codepush.info.mdx',
+    sidebar: 'releaseManagementSidebar',
+    specFile: '../api/bitrise-rm-code-push.json',
+  },
+  {
+    infoFile:
+      '../docs/release-management-api/build-distributions/api-reference/release-management-api-build-distributions.info.mdx',
+    sidebar: 'releaseManagementSidebar',
+    specFile: '../api/bitrise-rm-build-distributions.json',
+  },
 ];
 
 // Explicit fix map, not a generic auto-disambiguation heuristic — same
@@ -94,6 +137,17 @@ const API_REFERENCE_DIRS = [
   '../docs/bitrise-api/api-reference',
   '../docs/bitrise-rde-api/api-reference',
 ];
+
+// Host-relative paths found in some specs' `info.description` (upstream
+// content) that only resolve correctly against api.bitrise.io, not this docs
+// site. Plain string replacement — order doesn't matter, matches don't
+// overlap. Extend this if a future spec sync introduces another one; an empty
+// or non-matching map is a no-op (step 3 below just does nothing).
+const API_HOST = 'https://api.bitrise.io';
+const HOST_RELATIVE_LINK_FIXES = {
+  '/release-management/api-docs/index.html': `${API_HOST}/release-management/api-docs/index.html`,
+  '/release-management/migration-guide.html': `${API_HOST}/release-management/migration-guide.html`,
+};
 
 // Root of the docs plugin's content dir (docusaurus.config.ts: docs.path).
 const DOCS_ROOT = '../docs';
@@ -142,10 +196,28 @@ for (const target of TARGETS) {
     }
   }
 
+  // 3. Rewrite host-relative links (frontmatter description + body text) to
+  // an absolute api.bitrise.io URL.
+  let linkFixCount = 0;
+  for (const [from, to] of Object.entries(HOST_RELATIVE_LINK_FIXES)) {
+    if (content.includes(from)) {
+      content = content.split(from).join(to);
+      linkFixCount += 1;
+    }
+  }
+  if (linkFixCount > 0) {
+    console.log(`✔ [${target.sidebar}] rewrote ${linkFixCount} host-relative link(s) to ${API_HOST}`);
+  } else {
+    console.log(`· [${target.sidebar}] no host-relative links to rewrite`);
+  }
+
   fs.writeFileSync(filePath, content, 'utf-8');
+
+  // 4. Normalize operation titles in every *.api.mdx sibling of this info file.
+  normalizeOperationTitles(path.dirname(filePath));
 }
 
-// 3. Disambiguate known duplicate sidebar labels on the generated *.api.mdx
+// 5. Disambiguate known duplicate sidebar labels on the generated *.api.mdx
 // files (a different file per operation, unlike the *.info.mdx above).
 for (const dir of API_REFERENCE_DIRS) {
   const dirPath = path.resolve(__dirname, dir);
@@ -205,7 +277,7 @@ for (const dir of API_REFERENCE_DIRS) {
   }
 }
 
-// 4. Point `info_path` at a real URL path instead of the plugin's outputDir.
+// 6. Point `info_path` at a real URL path instead of the plugin's outputDir.
 for (const target of TARGETS) {
   const infoPath = path.resolve(__dirname, target.infoFile);
   const dirPath = path.dirname(infoPath);
@@ -278,4 +350,55 @@ function readLicenseName(specFile) {
   if (!fs.existsSync(specPath)) return null;
   const spec = JSON.parse(fs.readFileSync(specPath, 'utf-8'));
   return spec?.info?.license?.name ?? null;
+}
+
+// Strip a lone trailing period, then fix a leading third-person-singular verb
+// ("Gets" -> "Get"). Guards against words ending in a doubled "s" (Access,
+// Process, …), which aren't third-person-singular verbs and would otherwise
+// get mangled.
+function normalizeTitle(title) {
+  let t = title.trim();
+  if (t.endsWith('.') && !t.endsWith('..')) {
+    t = t.slice(0, -1);
+  }
+  t = t.replace(/^([A-Z][a-z]+)s(\s|$)/, (whole, verb, ws) => {
+    if (verb.endsWith('s')) return whole;
+    return verb + ws;
+  });
+  return t;
+}
+
+function normalizeOperationTitles(dir) {
+  const apiFiles = fs.readdirSync(dir).filter(f => f.endsWith('.api.mdx'));
+  const sidebarPath = path.join(dir, 'sidebar.ts');
+  let sidebarContent = fs.existsSync(sidebarPath) ? fs.readFileSync(sidebarPath, 'utf-8') : null;
+  let changedCount = 0;
+
+  for (const file of apiFiles) {
+    const filePath = path.join(dir, file);
+    let content = fs.readFileSync(filePath, 'utf-8');
+    const match = content.match(/^title: "(.*)"$/m);
+    if (!match) continue;
+
+    const oldTitle = match[1];
+    const newTitle = normalizeTitle(oldTitle);
+    if (newTitle === oldTitle) continue;
+
+    // title / sidebar_label / Heading children all carry the exact same
+    // string — replace every literal occurrence.
+    content = content.split(`"${oldTitle}"`).join(`"${newTitle}"`);
+    fs.writeFileSync(filePath, content, 'utf-8');
+    changedCount++;
+
+    if (sidebarContent) {
+      sidebarContent = sidebarContent.split(`label: "${oldTitle}"`).join(`label: "${newTitle}"`);
+    }
+  }
+
+  if (sidebarContent !== null) {
+    fs.writeFileSync(sidebarPath, sidebarContent, 'utf-8');
+  }
+  if (changedCount > 0) {
+    console.log(`✔ normalized ${changedCount} operation title(s) in ${path.relative(path.resolve(__dirname, '..'), dir)}`);
+  }
 }
