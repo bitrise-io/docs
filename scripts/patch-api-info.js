@@ -14,7 +14,17 @@
  *      generates as an empty heading. Skipped when the spec has no license or
  *      isn't available as a local file (e.g. it's fetched from a remote URL).
  *
- *   3. Normalizes operation titles generated straight from the spec's
+ *   3. Rewrites host-relative links in the info page's description to the
+ *      API host they actually resolve against. The four Release Management
+ *      specs' `info.description` (upstream content, not authored here) links
+ *      to the legacy v1 API docs and migration guide with paths like
+ *      `/release-management/api-docs/index.html` — relative paths that make
+ *      sense rendered on api.bitrise.io (see each rm_*_spec_sync SPEC_URL),
+ *      but 404 when rendered as-is on this docs site. Rewrites known paths to
+ *      an absolute `https://api.bitrise.io/...` URL. Skipped (silently, via
+ *      an empty map) for specs with no known relative links to fix.
+ *
+ *   4. Normalizes operation titles generated straight from the spec's
  *      `summary` field, which mixes imperative ("Create a preset") and
  *      third-person-singular ("Creates a preset") verb forms depending on how
  *      each endpoint's summary was written upstream. Strips a trailing period
@@ -23,7 +33,7 @@
  *      preset"). Applied to each *.api.mdx file's title/sidebar_label/heading
  *      and the matching label in that directory's sidebar.ts.
  *
- *   4. Disambiguates duplicate sidebar labels. Two different operations can
+ *   5. Disambiguates duplicate sidebar labels. Two different operations can
  *      share an identical OpenAPI `summary` (a spec-authoring issue upstream,
  *      not something to fix here since both api/bitrise-ci.json and
  *      api/bitrise-rde.json are themselves synced/generated). Docusaurus
@@ -31,7 +41,7 @@
  *      breaks `docusaurus write-translations` outright — see DUPLICATE_LABEL_
  *      OVERRIDES below for the specific pairs found so far.
  *
- *   5. Rewrites `info_path` on every generated *.api.mdx to a bare route path.
+ *   6. Rewrites `info_path` on every generated *.api.mdx to a bare route path.
  *
  *      docusaurus-plugin-openapi-docs builds this value from its `outputDir`
  *      option, which is a filesystem path ('docs/bitrise-api/api-reference').
@@ -128,6 +138,17 @@ const API_REFERENCE_DIRS = [
   '../docs/bitrise-rde-api/api-reference',
 ];
 
+// Host-relative paths found in some specs' `info.description` (upstream
+// content) that only resolve correctly against api.bitrise.io, not this docs
+// site. Plain string replacement — order doesn't matter, matches don't
+// overlap. Extend this if a future spec sync introduces another one; an empty
+// or non-matching map is a no-op (step 3 below just does nothing).
+const API_HOST = 'https://api.bitrise.io';
+const HOST_RELATIVE_LINK_FIXES = {
+  '/release-management/api-docs/index.html': `${API_HOST}/release-management/api-docs/index.html`,
+  '/release-management/migration-guide.html': `${API_HOST}/release-management/migration-guide.html`,
+};
+
 // Root of the docs plugin's content dir (docusaurus.config.ts: docs.path).
 const DOCS_ROOT = '../docs';
 
@@ -175,13 +196,28 @@ for (const target of TARGETS) {
     }
   }
 
+  // 3. Rewrite host-relative links (frontmatter description + body text) to
+  // an absolute api.bitrise.io URL.
+  let linkFixCount = 0;
+  for (const [from, to] of Object.entries(HOST_RELATIVE_LINK_FIXES)) {
+    if (content.includes(from)) {
+      content = content.split(from).join(to);
+      linkFixCount += 1;
+    }
+  }
+  if (linkFixCount > 0) {
+    console.log(`✔ [${target.sidebar}] rewrote ${linkFixCount} host-relative link(s) to ${API_HOST}`);
+  } else {
+    console.log(`· [${target.sidebar}] no host-relative links to rewrite`);
+  }
+
   fs.writeFileSync(filePath, content, 'utf-8');
 
-  // 3. Normalize operation titles in every *.api.mdx sibling of this info file.
+  // 4. Normalize operation titles in every *.api.mdx sibling of this info file.
   normalizeOperationTitles(path.dirname(filePath));
 }
 
-// 3. Disambiguate known duplicate sidebar labels on the generated *.api.mdx
+// 5. Disambiguate known duplicate sidebar labels on the generated *.api.mdx
 // files (a different file per operation, unlike the *.info.mdx above).
 for (const dir of API_REFERENCE_DIRS) {
   const dirPath = path.resolve(__dirname, dir);
@@ -241,7 +277,7 @@ for (const dir of API_REFERENCE_DIRS) {
   }
 }
 
-// 4. Point `info_path` at a real URL path instead of the plugin's outputDir.
+// 6. Point `info_path` at a real URL path instead of the plugin's outputDir.
 for (const target of TARGETS) {
   const infoPath = path.resolve(__dirname, target.infoFile);
   const dirPath = path.dirname(infoPath);
