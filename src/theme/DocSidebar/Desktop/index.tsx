@@ -48,6 +48,7 @@ const IconArrowNE = () => (
 // so it is deliberately not in this map.
 const HUB_ALIASES: Record<string, string> = {
   'bitrise-rde-api': 'bitrise-rde',
+  'release-management-api': 'release-management',
 };
 
 function SidebarBottomLinks({path, locale}: {path: string; locale: string}) {
