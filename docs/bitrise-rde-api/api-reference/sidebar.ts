@@ -40,6 +40,12 @@ const sidebar: SidebarsConfig = {
           label: "Get workspace info",
           className: "api-method get",
         },
+        {
+          type: "doc",
+          id: "bitrise-rde-api/api-reference/codespaces-service-get-workspace-usage",
+          label: "Get workspace usage",
+          className: "api-method get",
+        },
       ],
     },
     {
