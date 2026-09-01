@@ -1,6 +1,6 @@
 ---
 title: "Remote Dev Environments API"
-description: "Manage Remote Dev Environment sessions, templates, and saved inputs programmatically over the REST API. The API is in beta and may change."
+description: "Manage Remote Dev Environment sessions, templates, and saved inputs programmatically over the REST API, and report on workspace usage. The API is in beta and may change."
 sidebar_position: 4
 slug: /bitrise-rde/configuration/rde-api
 sidebar_label: "API"
@@ -11,7 +11,7 @@ import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 import Partial_RDEBetaNotice from '@site/src/partials/rde-beta-notice.mdx';
 
-The Remote Dev Environments REST API lets you manage <GlossTerm baseform="rde session">sessions</GlossTerm>, <GlossTerm baseform="rde template">templates</GlossTerm>, and <GlossTerm baseform="saved input">saved inputs</GlossTerm> programmatically. It's the same API that the CLI, the web UI, and the MCP server use.
+The Remote Dev Environments REST API lets you manage <GlossTerm baseform="rde session">sessions</GlossTerm>, <GlossTerm baseform="rde template">templates</GlossTerm>, and <GlossTerm baseform="saved input">saved inputs</GlossTerm> programmatically, and report on what the workspace's active sessions consume. It's the same API that the CLI, the web UI, and the MCP server use.
 
 <Partial_RDEBetaNotice />
 
@@ -36,6 +36,16 @@ Authenticate with a Bitrise [personal access token](https://app.bitrise.io/me/ac
 ```text
 Authorization: token YOUR_BITRISE_PAT
 ```
+
+## Workspace usage report
+
+The usage endpoint returns a point-in-time snapshot of the workspace's active sessions: session counts and vCPU and memory totals split by OS, workspace-wide and per user. It reports what the sessions consume right now — it's not a historical or billing-period report.
+
+```text
+GET /v1/workspaces/{workspace_id}/usage
+```
+
+Unlike the other endpoints, this one requires billing visibility: workspace owners and members with a billing-managing custom role can call it. Other members get a `403` response.
 
 ## Reference
 
