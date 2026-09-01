@@ -288,6 +288,24 @@ const sidebar: SidebarsConfig = {
         },
       ],
     },
+    {
+      type: "category",
+      label: "App Versions - Event History",
+      items: [
+        {
+          type: "doc",
+          id: "release-management-api/store-releases/api-reference/list-release-events",
+          label: "Get the event history of an app version",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "release-management-api/store-releases/api-reference/download-release-events",
+          label: "Download the event history of an app version as CSV",
+          className: "api-method get",
+        },
+      ],
+    },
   ],
 };
 
