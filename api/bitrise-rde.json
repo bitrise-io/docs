@@ -338,6 +338,29 @@
       },
       "type": "object"
     },
+    "v1GetWorkspaceUsageResponse": {
+      "description": "GetWorkspaceUsageResponse is the workspace usage report: a point-in-time\nsnapshot of who is running how many active sessions, on how many vCPUs and\nhow much memory, split by OS.",
+      "properties": {
+        "totals": {
+          "$ref": "#/definitions/v1UsageTotals",
+          "description": "Workspace-wide totals across all users."
+        },
+        "unknownMachineTypeCount": {
+          "description": "Number of active sessions whose machine type had no resolvable vCPU/RAM\nspec — those sessions are counted in session counts but contribute 0 to\nthe vcpu/memory sums, so totals may undercount when this is non-zero.",
+          "format": "int32",
+          "type": "integer"
+        },
+        "users": {
+          "description": "Per-user breakdown, plus at most one workspace-owned bucket row.\nSorted by email for determinism; clients re-sort freely.",
+          "items": {
+            "$ref": "#/definitions/v1UserUsage",
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "v1GitProviderConnectionStatus": {
       "default": "GIT_PROVIDER_CONNECTION_STATUS_UNSPECIFIED",
       "description": "GitProviderConnectionStatus mirrors the monolith-side status of the user's\nconnected git provider account.\n\n - GIT_PROVIDER_CONNECTION_STATUS_UNSPECIFIED: Unknown status.\n - GIT_PROVIDER_CONNECTION_STATUS_NOT_CONNECTED: The user has never connected an account for this provider.\n - GIT_PROVIDER_CONNECTION_STATUS_CONNECTED: The user has a usable connection.\n - GIT_PROVIDER_CONNECTION_STATUS_ERROR: A connection exists but is unusable (grant revoked or token refresh failed);\nthe user must reconnect on the Bitrise connected-accounts page.",
@@ -553,6 +576,27 @@
         "PERSISTENT_DISK_STATUS_UNAVAILABLE"
       ],
       "type": "string"
+    },
+    "v1PlatformUsage": {
+      "description": "PlatformUsage aggregates active sessions on one OS platform.",
+      "properties": {
+        "memoryGb": {
+          "description": "Total memory in GB across those sessions; unknown specs contribute 0.",
+          "format": "int32",
+          "type": "integer"
+        },
+        "sessionCount": {
+          "description": "Number of active sessions (VM still consuming resources: starting,\nrunning, terminating, or draining).",
+          "format": "int32",
+          "type": "integer"
+        },
+        "vcpu": {
+          "description": "Total vCPUs across those sessions. Sessions whose machine type carries\nno parseable spec contribute 0 (see unknown_machine_type_count).",
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "type": "object"
     },
     "v1ResolveClustersResponse": {
       "description": "ResolveClustersResponse contains the list of clusters that offer both the\nrequested image and machine type.",
@@ -1614,6 +1658,24 @@
       },
       "type": "object"
     },
+    "v1UsageTotals": {
+      "description": "UsageTotals splits active-session usage by OS platform.",
+      "properties": {
+        "linux": {
+          "$ref": "#/definitions/v1PlatformUsage",
+          "description": "Usage on Linux machine types."
+        },
+        "macos": {
+          "$ref": "#/definitions/v1PlatformUsage",
+          "description": "Usage on macOS machine types."
+        },
+        "unknown": {
+          "$ref": "#/definitions/v1PlatformUsage",
+          "description": "Usage on sessions whose operating system could not be determined from\nthe session's machine type or stack. Kept separate so linux and macos\nnever silently absorb guesses."
+        }
+      },
+      "type": "object"
+    },
     "v1User": {
       "description": "User represents an authenticated user in the system.",
       "properties": {
@@ -1633,6 +1695,36 @@
         "updatedAt": {
           "description": "When the user record was last updated.",
           "format": "date-time",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1UserUsage": {
+      "description": "UserUsage is one row of the per-user usage breakdown.",
+      "properties": {
+        "email": {
+          "description": "The user's email address (empty for the workspace-owned bucket).",
+          "type": "string"
+        },
+        "isWorkspace": {
+          "description": "True for the single aggregate row of sessions owned by the workspace\nitself rather than by an individual user (for example sessions spawned\nby a preview link minted with a Workspace API Token).",
+          "type": "boolean"
+        },
+        "totals": {
+          "$ref": "#/definitions/v1UsageTotals",
+          "description": "This row's usage, split by OS platform."
+        },
+        "userId": {
+          "description": "Internal identifier of the user (empty for the workspace-owned bucket).\nUse user_slug to reference the user in other Bitrise APIs.",
+          "type": "string"
+        },
+        "userSlug": {
+          "description": "The user's Bitrise slug, usable with other Bitrise APIs. Best-effort:\nmay be empty, so do not treat emptiness as marking the workspace-owned\nbucket — use is_workspace for that.",
+          "type": "string"
+        },
+        "username": {
+          "description": "The user's Bitrise username. Best-effort: may be empty.",
           "type": "string"
         }
       },
@@ -3792,6 +3884,33 @@
         "summary": "Update template",
         "tags": [
           "Templates"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/usage": {
+      "get": {
+        "description": "Returns a point-in-time snapshot of the workspace's active remote development sessions: session counts and vCPU/memory totals split by OS, workspace-wide and per user. This reports sessions currently consuming resources; it is not a historical or billing-period report. Requires the caller to hold the workspace's billing-view permission (workspace owners and billing-managing custom roles); other members receive a permission-denied error.",
+        "operationId": "CodespacesService_GetWorkspaceUsage",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetWorkspaceUsageResponse"
+            }
+          }
+        },
+        "summary": "Get workspace usage",
+        "tags": [
+          "Workspace"
         ]
       }
     }
