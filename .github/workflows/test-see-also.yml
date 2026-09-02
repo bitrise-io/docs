@@ -1,0 +1,36 @@
+name: Test See also pipeline
+
+# Runs scripts/test_prune_see_also.py whenever the "See also" pipeline's own
+# code changes -- not on ordinary docs content changes, which never touch
+# this code at all (that's what prune-see-also.yml and regenerate-see-also.yml
+# exercise, against real data, not the logic itself).
+#
+# Plain stdlib unittest, no dependencies to install, so this has nothing to
+# set up and finishes in well under a second. No special permissions needed
+# either (read-only: checkout + run), so unlike prune-see-also.yml this runs
+# the same way for fork PRs too.
+on:
+  pull_request:
+    paths:
+      - 'scripts/generate_see_also.py'
+      - 'scripts/prune_see_also.py'
+      - 'scripts/see_also_common.py'
+      - 'scripts/test_prune_see_also.py'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/generate_see_also.py'
+      - 'scripts/prune_see_also.py'
+      - 'scripts/see_also_common.py'
+      - 'scripts/test_prune_see_also.py'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+
+      - run: python3 scripts/test_prune_see_also.py -v

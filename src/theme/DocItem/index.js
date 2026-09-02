@@ -10,6 +10,10 @@ import { HtmlClassNameProvider } from '@docusaurus/theme-common';
  *
  * Also adds `api-reference-page` to the <html> element so CSS can target
  * API pages specifically (e.g. to expand the content column to full width).
+ *
+ * (The auto-generated <SeeAlso> section lives in the DocItem/Paginator
+ * swizzle, so it renders between the article content and the Previous/Next
+ * buttons rather than after them.)
  */
 export default function DocItem(props) {
   const { api } = props.content.frontMatter ?? {};
