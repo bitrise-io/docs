@@ -15,7 +15,7 @@ The list covers everything the Bitrise Build Cache CLI, the Gradle plugins it in
 Allowlist these hosts and ports:
 
 ```bash
-*.services.bitrise.io    :443, :444, :8090
+*.services.bitrise.io    :443, :444
 app.bitrise.io           :443
 oauth.bitrise.io         :443
 api.bitrise.io           :443
@@ -40,7 +40,6 @@ Allowlist the sections that match the build tools you actually run. React Native
 | `bitrise-accelerate.services.bitrise.io` | 443 | gRPC/TLS | Remote build cache, and the Test Distribution endpoint |
 | `gradle-analytics.services.bitrise.io` | 443 **and 444** | gRPC/TLS | Plugin analytics, including per-task and task input file data |
 | `gradle-sink.services.bitrise.io` | 443 | HTTPS | Analytics HTTP sink |
-| `repository-manager.services.bitrise.io` | **8090** | HTTPS | Maven Central mirror. Used on Bitrise CI builds, not on local builds |
 
 ### Bazel
 
@@ -83,7 +82,6 @@ If you authenticate with the `BITRISE_BUILD_CACHE_AUTH_TOKEN` Env Var instead of
 ## Things to watch out for
 
 - **Port 444 on `gradle-analytics`.** A rule that only opens 443 breaks Gradle analytics silently, while the cache itself keeps working.
-- **Port 8090 on `repository-manager`.** It's a non-standard port, and the mirror soft-fails when it's blocked, so you see traffic going to Maven Central directly rather than a build error. Local builds don't use the mirror.
 - **No separate host for task analytics.** The Gradle plugin uploads per-task and task input file data over the `gradle-analytics` and `gradle-sink` hosts above, so there's nothing extra to allowlist for it.
 - **Proxy endpoint overrides.** Point the cache and Remote Build Execution endpoints at your own proxy with the `BITRISE_BUILD_CACHE_ENDPOINT` and `BITRISE_RBE_ENDPOINT` Env Vars.
 - **Verify with the CLI.** `bitrise-build-cache doctor` checks backend connectivity from the machine itself, which is the quickest way to tell a network rule from a configuration problem.
