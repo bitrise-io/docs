@@ -1,0 +1,90 @@
+---
+title: "Network endpoints for firewalls and VPNs"
+description: "Every Bitrise host the Build Cache CLI, plugins, and proxies connect to, so you can allowlist them on a corporate VPN, firewall, or proxy."
+sidebar_position: 6
+slug: /bitrise-build-cache/getting-started-with-the-build-cache/network-endpoints-for-firewalls-and-vpns
+sidebar_label: Network endpoints
+---
+
+If your machine or your CI runner sits behind a corporate VPN, a firewall, or an outbound proxy, you must make sure the Bitrise Build Cache can access a handful of Bitrise hosts.
+
+The allowlist in this document covers:
+
+- The Bitrise Build Cache CLI.
+- The Gradle plugins it installs.
+- The Bazel configuration it writes.
+- Everything the Xcode and `ccache` proxies connect to.
+
+It applies to local development machines and to CI runners outside Bitrise alike. On Bitrise-hosted machines there's nothing to do: the traffic stays inside our datacenter.
+
+## Allowlist
+
+Allowlist these hosts and ports:
+
+```bash
+*.services.bitrise.io    :443, :444
+app.bitrise.io           :443
+oauth.bitrise.io         :443
+api.bitrise.io           :443
+```
+
+That's the complete set. If you need specific host names instead of using wildcards, the sections below break it down per build tool.
+
+:::note[Non-Bitrise hosts]
+
+Installing and updating the CLI itself goes to GitHub and Google Artifact Registry, and the Gradle init script resolves plugins from the Gradle Plugin Portal, Maven Central, and JitPack. Those aren't Bitrise hosts, so they aren't listed here, but your build needs them too.
+
+:::
+
+## Endpoints used on every build
+
+Allowlist the sections that match the build tools you actually run. React Native builds need the Gradle, Xcode, and `ccache` sections together.
+
+### Gradle
+
+| Host | Port | Protocol | Purpose |
+|---|---|---|---|
+| `bitrise-accelerate.services.bitrise.io` | 443 | gRPC/TLS | Remote build cache, and the Test Distribution endpoint |
+| `gradle-analytics.services.bitrise.io` | 443 **and 444** | gRPC/TLS | Plugin analytics, including per-task and task input file data |
+| `gradle-sink.services.bitrise.io` | 443 | HTTPS | Analytics HTTP sink |
+
+### Bazel
+
+| Host | Port | Protocol | Purpose |
+|---|---|---|---|
+| `bitrise-accelerate.services.bitrise.io` | 443 | gRPC/TLS | Remote cache and Remote Build Execution |
+| `flare-bes.services.bitrise.io` | 443 | gRPC/TLS | Build Event Service |
+
+### Xcode
+
+| Host | Port | Protocol | Purpose |
+|---|---|---|---|
+| `bitrise-accelerate.services.bitrise.io` | 443 | gRPC/TLS | Compilation cache, through the `xcelerate` proxy |
+| `xcode-analytics.services.bitrise.io` | 443 | HTTPS | Invocation analytics, and DerivedData save and restore |
+| `multiplatform-analytics.services.bitrise.io` | 443 | HTTPS | Invocation analytics of the `xcodebuild` wrapper |
+
+### ccache
+
+| Host | Port | Protocol | Purpose |
+|---|---|---|---|
+| `bitrise-accelerate.services.bitrise.io` | 443 | gRPC/TLS | Object cache, through the storage helper |
+| `multiplatform-analytics.services.bitrise.io` | 443 | HTTPS | Invocation analytics |
+
+### React Native
+
+For a React Native build, you need:
+
+- Everything in the Gradle, Xcode, and `ccache` sections.
+- `multiplatform-analytics.services.bitrise.io` on port 443 for the React Native invocation record.
+
+## Endpoints used during activation and login
+
+The CLI reaches these while you activate the cache or log in:
+
+| Host | Port | Purpose |
+|---|---|---|
+| `app.bitrise.io` | 443 | Benchmark phase status, invocation links, OAuth client metadata, and the `/oidc/token` endpoint |
+| `oauth.bitrise.io` | 443 | OAuth issuer for `bitrise-build-cache auth login` |
+| `api.bitrise.io` | 443 | The workspace picker of the login flow |
+
+If you authenticate with the `BITRISE_BUILD_CACHE_AUTH_TOKEN` Env Var instead of an interactive login, you can drop `oauth.bitrise.io` and `api.bitrise.io` from the allowlist.
