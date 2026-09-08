@@ -77,7 +77,7 @@ Create a machine pool that allows running GitHub Action builds on Bitrise hardwa
 
 If you plan to run builds for a public repository, the runner group your machine pool registers into must have **Allow public repositories** enabled on GitHub (**Organization settings** → **Actions** → **Runner groups**). Without this, GitHub won't dispatch jobs from public repositories to your Build Hub runners: jobs stay queued indefinitely even though the pool, labels, and authentication are all healthy.
 
-**Enable this setting at your own risk.** GitHub disables it by default for a serious security reason: fork PR workflows on public repositories can execute untrusted code from external contributors on your self-hosted Build Hub runners, exposing your build environment, secrets, and infrastructure. Before enabling, require approval for workflows on fork PRs at a minimum. See [Approving workflow runs from public forks](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/approve-workflow-runs-from-public-forks) in the GitHub docs.
+**Enable this setting at your own risk.** GitHub disables it by default for a serious security reason: fork PR workflows on public repositories can execute untrusted code from external contributors on your self-hosted Build Hub runners, exposing your build environment, secrets, and infrastructure. Before enabling, require approval for workflows on fork PRs at a minimum. See [Approving workflow runs from public forks](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/approve-runs-from-forks) in the GitHub docs.
 
 :::
 
@@ -85,10 +85,10 @@ If you plan to run builds for a public repository, the runner group your machine
 <TabItem value="github-app-authentication" label="GitHub app authentication" default>
 
 1. On the left navigation bar, select **Build Hub**.
+1. Click **Machine pool**.
 
-   ![SCR-20260320-nseo.png](/img/_paligo/uuid-77517798-21b7-dd6d-6df8-5fdf12758e59.png)
-1. Click **+Machine pool**.
-1. Open the **Select account** dropdown menu and click **Connect account**.
+   ![Build Hub page with the left navigation bar Build Hub item and the Machine pool button highlighted](/img/bitrise-build-hub/2026-09-08-build-hub-select-machine-pool.png)
+1. Open the **CI provider** dropdown menu. Select an already-connected account, or click **Connect account** to add a new one.
 1. Select GitHub **(GitHub App)** and click **Continue to install**.
 
    ![SCR-20260320-mmwy.png](/img/_paligo/uuid-115c121e-082e-a3b6-6741-f53cdab5d89e.png)
@@ -99,46 +99,46 @@ If you plan to run builds for a public repository, the runner group your machine
    - **Only select repositories**: Select at least one repository. Also includes public repositories (read-only).
 
    ![SCR-20260320-nqmt.png](/img/_paligo/uuid-6186a9bb-4a81-f79c-3200-1e65de613b47.png)
-1. Add a runner group and optionally, a runner version.
+1. Set a unique **Pool name**. You can't change this after creation.
+1. Select the connected account in the **CI provider** dropdown menu.
+1. Add a **Runner group**.
 
-   - The runner version needs to be exact, such as v2.328.0. If you don't specify a runner version, the latest version will be used.
-   - [Runner groups](https://docs.github.com/en/actions/concepts/runners/runner-groups) are used to collect sets of runners and create a security boundary around them.
-1. Check **Use Bitrise for GitHub Actions caching** if you want Bitrise infrastructure to handle GitHub Actions cache requests instead of GitHub's cache backend.
-
-   This results in faster cache operations.
-1. Click **Next**.
-1. Set a unique name for the pool.
+   [Runner groups](https://docs.github.com/en/actions/concepts/runners/runner-groups) create a security boundary in GitHub that controls which repositories or organizations can dispatch jobs to your runners. If the group doesn't exist yet on GitHub, Bitrise creates it automatically. Runner groups aren't used to target this specific pool in your workflow: use labels and the `runs-on` property for that instead.
+1. When done, click **Next**.
 1. Select the image in the **Image** dropdown menu and the amount of machines you need in the **Nr. of machines** field.
 
    You can check the images on the [stack reports page](https://bitrise.io/stacks).
 
-   ![SCR-20260309-pxsf.png](/img/_paligo/uuid-1bc3b149-c8cd-82d2-2d94-62bbc35b89df.png)
 1. Select a machine type.
 
    For more information about Bitrise machines, check out [Build machines](/bitrise-platform/infrastructure/build-machines/about-build-machines).
-1. Set a rolling update percentage: this is the amount of machines to be rebooted simultaneously after reconfiguration.
 1. When done, click **Next**.
-1. Create labels: they allow your [GitHub Actions configuration](/bitrise-build-hub/build-hub-for-github-actions/configuring-build-hub-for-github-actions#configuring-your-github-actions-workflow) to target your Bitrise runner pool. You must have at least one label.
+1. Check **Use Bitrise for GitHub Actions caching** if you want Bitrise infrastructure to handle GitHub Actions cache requests instead of GitHub's cache backend.
 
-   Labels are a key-value pair but only the key is mandatory. By default, Bitrise suggests labels for the pool name, the image, and the machine type. You can change these at any time.
-1. Optionally, add a warmup script to customize your build environment. When done, click **Create pool**.
+   This results in faster cache operations.
+1. Optionally, add a warmup script to customize your build environment before your Workflow runs.
 
-   Leave it empty if you don’t need a warmup script.
+   Leave it empty if you don't need a warmup script.
 
    :::important[Non-zero exit code]
 
-   Make sure that it returns a non-zero exit code in case of an error. The script will only fail if your script returns with a non-zero exit code.
+   To prevent build start failures, make sure the script returns a non-zero exit code in case of an error.
 
    :::
+1. When done, click **Next**.
+1. Optionally, add extra labels to help target this pool in your workflow.
+
+   Bitrise always applies a default set of labels — the pool name, the image, and the machine type — and these can't be changed or removed. You can add your own labels alongside them; a label is a key-value pair, but only the key is mandatory. Labels are how your [GitHub Actions configuration](/bitrise-build-hub/build-hub-for-github-actions/configuring-build-hub-for-github-actions#configuring-your-github-actions-workflow) targets this pool, so make sure the `runs-on` property in your workflow file uses the same labels you set here.
+1. Click **Create pool**.
 
 </TabItem>
 <TabItem value="github-personal-access-token" label="GitHub personal access token">
 
 1. On the left navigation bar, select **Build Hub**.
+1. Click **Machine pool**.
 
-   ![SCR-20260320-nseo.png](/img/_paligo/uuid-77517798-21b7-dd6d-6df8-5fdf12758e59.png)
-1. Click **+ Machine pool**.
-1. Open the **Select account** dropdown menu and click **Connect account**.
+   ![Build Hub page with the left navigation bar Build Hub item and the Machine pool button highlighted](/img/bitrise-build-hub/2026-09-08-build-hub-select-machine-pool.png)
+1. Open the **CI provider** dropdown menu. Select an already-connected account, or click **Connect account** to add a new one.
 1. Click **Connect account** and select **GitHub (PAT)**.
 1. Set a connection name and a target scope URL.
 
@@ -146,37 +146,37 @@ If you plan to run builds for a public repository, the runner group your machine
 
    ![SCR-20260320-nsxn.png](/img/_paligo/uuid-22b5a6f5-fedb-0cc6-b685-1bb5406d1e12.png)
 1. In the **Personal access token** field, add your GitHub personal access token then click **Connect**.
-1. Add a runner group and, optionally, a runner version.
+1. Set a unique **Pool name**. You can't change this after creation.
+1. Select the connected account in the **CI provider** dropdown menu.
+1. Add a **Runner group**.
 
-   - The runner version needs to be exact, such as v2.328.0. If you don't specify a runner version, the latest version will be used.
-   - [Runner groups](https://docs.github.com/en/actions/concepts/runners/runner-groups) are used to collect sets of runners and create a security boundary around them.
-1. Check **Use Bitrise for GitHub Actions caching** if you want Bitrise infrastructure to handle GitHub Actions cache requests instead of GitHub's cache backend.
-
-   This results in faster cache operations.
-1. Click **Next**.
-1. Set a unique name for the pool.
+   [Runner groups](https://docs.github.com/en/actions/concepts/runners/runner-groups) create a security boundary in GitHub that controls which repositories or organizations can dispatch jobs to your runners. If the group doesn't exist yet on GitHub, Bitrise creates it automatically. Runner groups aren't used to target this specific pool in your workflow: use labels and the `runs-on` property for that instead.
+1. When done, click **Next**.
 1. Select the image in the **Image** dropdown menu and the amount of machines you need in the **Nr. of machines** field.
 
    You can check the images on the [stack reports page](https://bitrise.io/stacks).
 
-   ![SCR-20260309-pxsf.png](/img/_paligo/uuid-1bc3b149-c8cd-82d2-2d94-62bbc35b89df.png)
 1. Select a machine type.
 
    For more information about Bitrise machines, check out [Build machines](/bitrise-platform/infrastructure/build-machines/about-build-machines).
-1. Set a rolling update percentage: this is the amount of machines to be rebooted simultaneously after reconfiguration.
 1. When done, click **Next**.
-1. Create labels: they allow your [GitHub Actions configuration](/bitrise-build-hub/build-hub-for-github-actions/configuring-build-hub-for-github-actions#configuring-your-github-actions-workflow) to target your Bitrise runner pool. You must have at least one label.
+1. Check **Use Bitrise for GitHub Actions caching** if you want Bitrise infrastructure to handle GitHub Actions cache requests instead of GitHub's cache backend.
 
-   Labels are a key-value pair but only the key is mandatory. By default, Bitrise suggests labels for the pool name, the image, and the machine type. You can change these at any time.
-1. Optionally, add a warmup script to customize your build environment. When done, click **Create pool**.
+   This results in faster cache operations.
+1. Optionally, add a warmup script to customize your build environment before your Workflow runs.
 
-   Leave it empty if you don’t need a warmup script.
+   Leave it empty if you don't need a warmup script.
 
    :::important[Non-zero exit code]
 
-   Make sure that it returns a non-zero exit code in case of an error. The script will only fail if your script returns with a non-zero exit code.
+   To prevent build start failures, make sure the script returns a non-zero exit code in case of an error.
 
    :::
+1. When done, click **Next**.
+1. Optionally, add extra labels to help target this pool in your workflow.
+
+   Bitrise always applies a default set of labels — the pool name, the image, and the machine type — and these can't be changed or removed. You can add your own labels alongside them; a label is a key-value pair, but only the key is mandatory. Labels are how your [GitHub Actions configuration](/bitrise-build-hub/build-hub-for-github-actions/configuring-build-hub-for-github-actions#configuring-your-github-actions-workflow) targets this pool, so make sure the `runs-on` property in your workflow file uses the same labels you set here.
+1. Click **Create pool**.
 
 </TabItem>
 </Tabs>
@@ -205,8 +205,10 @@ Use the `runs-on` property in your workflow to specify the Bitrise machines. You
      ```yaml
      jobs:
        build:
-         runs-on: [bitrise_pool_name:bitrise-runner, image:xcode-26]
+         runs-on: [bitrise-runner-my-pool, image:xcode-26]
      ```
+
+     Bitrise automatically creates a `bitrise-runner-<pool-name>` label for every machine pool, so you can target a specific pool by name.
 
 For more information on the `runs-on` property, check out the [GitHub Actions documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/choose-the-runner-for-a-job).
 
