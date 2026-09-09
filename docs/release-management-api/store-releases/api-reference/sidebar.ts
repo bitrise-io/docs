@@ -252,6 +252,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "release-management-api/store-releases/api-reference/get-store-release-android",
+          label: "Get the current release user fraction. - Android only",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
           id: "release-management-api/store-releases/api-reference/create-store-release-android",
           label: "Release app for all users or for a fraction of users. - Android only",
           className: "api-method post",
