@@ -295,12 +295,17 @@ const config: Config = {
 
   clientModules: [
     './src/clientModules/genSearchWidget.ts',
+    './src/clientModules/intercomWidget.ts',
   ],
 
   customFields: {
     gtmId: process.env.GTM_ID || '',
     genSearchWidgetConfigId: process.env.GEN_SEARCH_WIDGET_ID || '',
     intercomAppId: 'e2rdidtm',
+    // Real support traffic only: on by default for production builds; set
+    // ENABLE_INTERCOM=true to verify the widget on a local dev server.
+    intercomEnabled:
+      process.env.NODE_ENV === 'production' || process.env.ENABLE_INTERCOM === 'true',
   },
 
   plugins: [
