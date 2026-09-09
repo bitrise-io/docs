@@ -2307,7 +2307,7 @@
     },
     "/v1/workspaces/{workspaceId}/sessions/{sessionId}": {
       "delete": {
-        "description": "Deletes a session.",
+        "description": "Permanently deletes a session in any known state — it does not have to be terminated first. The session is removed immediately and cannot be restored; a running VM is stopped and then discarded together with its disk once it has shut down. Prefer this over TerminateSession unless you need to restore the session later. Rejected with FAILED_PRECONDITION while the VM's state is unknown (e.g. its node is unreachable) — retry once it settles.",
         "operationId": "CodespacesService_DeleteSession",
         "parameters": [
           {
@@ -3366,7 +3366,7 @@
     },
     "/v1/workspaces/{workspaceId}/sessions/{sessionId}/terminate": {
       "post": {
-        "description": "Terminates a running session (stops the VM, preserving the session for later restore).",
+        "description": "Stops the session's VM but keeps its disk, so the session stays listed as terminated and can be restored later. Use only when you intend to restore the session; otherwise call DeleteSession, which works on running sessions too and frees the disk.",
         "operationId": "CodespacesService_TerminateSession",
         "parameters": [
           {
@@ -3388,7 +3388,7 @@
             "name": "body",
             "required": true,
             "schema": {
-              "description": "TerminateSessionRequest is the request for terminating a running session.",
+              "description": "TerminateSessionRequest is the request for terminating a running session\nwhile keeping it restorable. To get rid of a session for good — running or\nnot — use DeleteSessionRequest instead.",
               "type": "object"
             }
           }
@@ -3401,7 +3401,7 @@
             }
           }
         },
-        "summary": "Terminate session",
+        "summary": "Terminate session (keep for restore)",
         "tags": [
           "Sessions"
         ]
