@@ -87,7 +87,14 @@ def added_page_slugs() -> set[str]:
     slugs = set()
     for line in diff.splitlines():
         parts = line.split('\t')
-        if len(parts) < 2 or parts[0] != 'A':
+        if len(parts) < 2:
+            continue
+        # 'A' (added) is a plain two-column line. A move/rename ('R100') or
+        # copy ('C100') is three columns, old-path then new-path — the page
+        # is just as unreachable at its (possibly new) URL until this PR
+        # deploys, so it gets the same "pending" treatment. Only the status
+        # letter matters; the similarity percentage after it doesn't.
+        if parts[0][0] not in ('A', 'R', 'C'):
             continue
         rel = parts[-1]
         if not (rel.startswith('docs/') and rel.endswith(('.md', '.mdx'))):
