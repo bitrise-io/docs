@@ -59,7 +59,7 @@ The wizard asks for the following:
 1. **Select a workspace**: pick the workspace whose Build Cache you want to use. The CLI selects it automatically if you only have access to one.
 1. **Which build tools should I set up**: ensure **Gradle** is selected, plus **ccache (C/C++)** if your project builds native code. Use space to toggle an option and enter to confirm.
 1. **Display name for this machine's local invocations**: the name your local builds show up under in the Build Cache dashboard, for example `local-<yourhandle>`.
-1. **Enable cache push**: select **No, pull only**. See [Local builds only read from the cache](#local-builds-only-read-from-the-cache).
+1. **Enable cache push**: keep the default **Yes, push too**. See [Cache push mode](#cache-push-mode).
 1. **Keep the cache proxies running in the background**: select **Yes, install + start** if you set up `ccache`. This registers the helper processes with the OS so they survive shell restarts.
 
 :::note[Environment Variables take precedence]
@@ -133,37 +133,31 @@ BUILD SUCCESSFUL in 18s
 | Dashboard | [Build Cache page](https://app.bitrise.io/build-cache/) | A row appears under your display name |
 | Init script | `~/.gradle/init.d/bitrise-build-cache.init.gradle.kts` | The file exists and contains `buildCache {` |
 
-## Local builds only read from the cache
+## Cache push mode
 
-The setup in this guide activates the Build Cache in pull-only mode: your local builds read from the shared cache but never write to it. This is the recommended mode for local development.
+The setup in this guide activates the Build Cache with cache push enabled: your local builds read from and write to the shared cache. Every task your machine builds becomes an entry your teammates and CI can reuse, and your activity shows up on the [Build Cache page](https://app.bitrise.io/build-cache/).
 
-Build tools recommend writing cache entries only from an environment where the source files don't change during the build. On a local machine you might keep editing files while a build is running, which can produce cache entries that don't match their inputs — and those entries would then be served to your teammates and to CI. Pull-only removes that risk: a broken local build can't affect anyone else.
+If you'd rather have your local builds only read from the cache, see [Opting into pull-only mode](#opting-into-pull-only-mode) below.
 
-The usual pattern is to have CI populate the cache, because CI builds from a clean, fixed checkout, and to let local machines pull from it.
+:::note
+An entry written from a build whose source files changed while it was running can be wrong, and your teammates read the same entry. Avoid editing files during a build you push from.
+:::
 
-## Pushing to the cache from local builds
+## Opting into pull-only mode
 
-Pull-only assumes that something else fills the cache, which is normally CI. If nothing does, your local builds have nothing to read: the summary line says `0 from cache`, and it keeps saying that.
+If your team already populates the cache from CI and you want your local builds to only read from it, turn cache push off. A broken local build then can't affect anyone else — the trade-off is that your local builds contribute nothing, so if CI doesn't run yet the summary line stays at `0 from cache`.
 
-If your team doesn't run the Build Cache on CI, turn pushing on for your local builds and leave it on. Your machine then populates the cache as you work, for you and for your teammates.
-
-Re-run `bitrise-build-cache activate --interactive` and answer **Yes, push too** at the cache push prompt when you run the wizard, or run the non-interactive activate command:
+Re-run `bitrise-build-cache activate --interactive` and answer **No, pull only** at the cache push prompt, or run the non-interactive activate command:
 
 ```bash
-bitrise-build-cache activate gradle --cache --cache-push
+bitrise-build-cache activate gradle --cache --cache-push=false
 ```
 
 If a build doesn't behave as expected, re-run the activation with debug logging:
 
 ```bash
-bitrise-build-cache activate gradle --cache --cache-push --debug
+bitrise-build-cache activate gradle --cache --cache-push=false --debug
 ```
-
-:::note
-An entry written from a build whose source files changed while it was running can be wrong, and your teammates read the same entry. Avoid editing files during a build you push from.
-
-Setting up the Build Cache on CI is the more robust option, because CI builds from a clean, fixed checkout. Once it runs there, switch your machine back to pull-only.
-:::
 
 ## Troubleshooting
 
