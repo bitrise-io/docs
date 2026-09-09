@@ -193,7 +193,7 @@ const sidebar: SidebarsConfig = {
         {
           type: "doc",
           id: "bitrise-rde-api/api-reference/codespaces-service-terminate-session",
-          label: "Terminate session",
+          label: "Terminate session (keep for restore)",
           className: "api-method post",
         },
         {
