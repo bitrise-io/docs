@@ -87,6 +87,44 @@
   flex-shrink: 0;
 }
 
+/* Pull the search bar out of the normal navbar flow and pin its left edge to
+   roughly where doc-page content starts (approximated from a representative
+   page with a right-side TOC: sidebar (300px) + a centered 1320px container
+   + the grid column's own padding — calc(50vw - 494px) — not exact on every
+   page/viewport, since the real offset also depends on whether a page has a
+   TOC and the sidebar's collapsed state, but close on the common case).
+   Clamped with a floor so it never collides with the logo on narrow screens. */
+.navbar__items--right:has(> div > .DocSearch-Button) {
+  position: relative;
+}
+
+.navbar__items--right > div:has(> .DocSearch-Button) {
+  position: fixed;
+  left: max(220px, calc(50vw - 494px));
+  top: 0;
+  height: var(--ifm-navbar-height);
+  display: flex;
+  align-items: center;
+}
+
+.navbar__items--right > div:has(> .DocSearch-Button) .DocSearch-Button {
+  width: 320px;
+  /* Matches the translucent white the old custom navbar search bar used on
+     this same purple header, before it was replaced by Algolia's default
+     white button background. Text color drives the icon too (it's
+     `currentColor` in DocSearch's own CSS), matching the old
+     .navbar-search__icon/__input color. */
+  --docsearch-search-button-background: rgba(255, 255, 255, 0.1);
+  --docsearch-search-button-text-color: var(--pal-neutral-95);
+  /* The ⌘K hint "keys" pick up --docsearch-key-* for their fill/text and
+     --docsearch-subtle-color for their border-mix — same translucent/light
+     treatment as the rest of the button. */
+  --docsearch-key-background: rgba(255, 255, 255, 0.15);
+  --docsearch-key-color: var(--pal-neutral-95);
+  --docsearch-subtle-color: rgba(255, 255, 255, 0.3);
+  border: none;
+}
+
 /* Locale dropdown toggle sits directly on the purple header, so it needs the
    same white treatment as the rest of the navbar text — the dropdown menu
    popup itself keeps IFM's default light background/dark text, unaffected. */
@@ -146,52 +184,142 @@
   display: none;
 }
 
-/* Navbar search bar */
+/* ---- Search modal (DocSearch) ---- */
 
-.navbar-search {
-  flex: 1 1 auto;
+/* The modal portals straight into document.body, outside our navbar markup,
+   so it needs its own top-level selector rather than the scoped
+   .navbar__items--right rules above. Most of DocSearch's own CSS already
+   inherits the ambient font (font: inherit), which would pick up Figtree
+   from <body> regardless — except the ⌘K key hints, which hardcode
+   system-ui. Setting it explicitly on the modal covers both cases. */
+.DocSearch-Modal {
+  font-family: var(--ifm-font-family-base);
+  /* DocSearch's own CSS sets these per-theme via :root/html[data-theme=dark],
+     loaded lazily (only once the modal first opens) — scoping our override
+     to .DocSearch-Modal itself outranks those on specificity, so it wins
+     regardless of load order, and tracks whichever theme is actually active
+     instead of Algolia's fixed default palette. */
+  --docsearch-modal-background: var(--ifm-background-color);
+  --docsearch-searchbox-background: var(--ifm-background-color);
+  --docsearch-searchbox-focus-background: var(--ifm-background-color);
+  --docsearch-hit-background: var(--ifm-background-color);
+  --docsearch-footer-background: var(--ifm-background-color);
+
+  /* Brand purple instead of Algolia's default blue — drives the search
+     icon, matched-text highlighting, and selected-hit accents. */
+  --docsearch-highlight-color: var(--ifm-color-primary);
+  --docsearch-primary-color: var(--ifm-color-primary);
+  --docsearch-soft-primary-color: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
+  /* The hovered/selected result row's background — a separate variable
+     from the two above. */
+  --docsearch-hit-highlight-color: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
+
+  /* Plain properties (unlike the custom-property overrides above) don't get
+     the specificity escape hatch — DocSearch's own same-selector rule can
+     load after ours since its stylesheet is lazy-loaded, so this needs
+     !important to reliably win regardless of order. */
+  border-radius: 12px !important;
+}
+
+/* Swap DocSearch's own magnifying-glass SVG (rendered by React, not a
+   swappable background-image) for the repo's own icon — used both in the
+   collapsed search button and inside the modal's search box. Hide the
+   original vector and use ours as a mask instead of a background-image, so
+   it still picks up currentColor (--docsearch-highlight-color already set
+   above) rather than being locked to a fixed color. */
+.DocSearch-Search-Icon {
+  background-color: currentColor;
+  mask-image: url('/img/brand/navicons/magnifier.svg');
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
+
+/* Inside the modal, DocSearch's own default colors this icon with
+   --docsearch-highlight-color (our brand purple, since we tied that
+   variable to it too) — too loud for an input-field icon. Use the same
+   muted grey as the rest of the modal's secondary UI (the "Powered by"
+   label, etc.) instead. Scoped to the modal specifically so the collapsed
+   navbar button's own (already-right) near-white color is untouched. */
+.DocSearch-Modal .DocSearch-Search-Icon,
+/* DocSearch's own .DocSearch-Form:focus-within .DocSearch-MagnifierLabel svg
+   rule is more specific than the one above and re-applies the highlight
+   purple the moment the input is focused (i.e. as soon as the modal opens
+   — the "active" state), so it needs matching directly, not just the
+   general case. */
+.DocSearch-Form:focus-within .DocSearch-Search-Icon {
+  color: var(--docsearch-icon-color) !important;
+}
+
+.DocSearch-Search-Icon path {
+  display: none;
+}
+
+/* "Powered by Algolia" logo — match the "Powered by" label's own color
+   instead of Algolia's blue brand mark. The --docsearch-logo-color variable
+   doesn't reach it: the logo SVG hardcodes its fill via an internal
+   <style>.cls-1,.cls-2{fill:#003dff} block, bypassing currentColor
+   entirely, so it has to be overridden by targeting those classes directly. */
+.DocSearch-Logo .cls-1,
+.DocSearch-Logo .cls-2 {
+  fill: var(--docsearch-secondary-text-color) !important;
+}
+
+/* Each result row's icon — swap Algolia's default "lines" glyph for the
+   repo's own doc icon, same mask technique as the search icon above. */
+.DocSearch-Hit-icon {
+  background-color: currentColor;
+  mask-image: url('../images/icon-doc-24px.svg');
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
+
+.DocSearch-Hit-icon svg {
+  display: none;
+}
+
+.DocSearch-Button-Key {
+  font-family: var(--ifm-font-family-base);
+}
+
+/* ---- Ask Fin (search modal footer) ---- */
+
+.ask-fin-results-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* !important: ties on specificity with DocSearch's own lazy-loaded
+   .DocSearch-HitsFooter a { color: inherit }, which can load after ours. */
+.ask-fin-results-footer > a {
+  color: var(--docsearch-highlight-color) !important;
+}
+
+.ask-fin-results-footer__button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 0.5rem;
-  background-color: rgba(255, 255, 255, 0.1);
-  height: 32px;
-  border-radius: 4px;
-  position: relative;
-  margin-right: calc(1rem + 1px);
-  cursor: pointer;
-}
-
-.navbar-search::after {
-  content: '';
-  display: block;
-  opacity: 0.5;
-  width: 1px;
-  background-color: white;
-  height: 1.5rem;
-  position: absolute;
-  right: calc(-1rem - 2px);
-}
-
-.navbar-search__icon {
-  color: var(--pal-neutral-95);
-  flex-shrink: 0;
-}
-
-.navbar-search__input {
-  background: transparent;
+  margin-left: auto;
+  padding: 0.375rem 0.75rem;
   border: none;
-  outline: none;
-  color: var(--pal-neutral-95);
-  font-family: 'Figtree', sans-serif;
-  font-size: 14px;
-  line-height: 20px;
-  width: 100%;
+  border-radius: var(--docsearch-searchbox-border-radius, 6px);
+  background: var(--docsearch-highlight-color, var(--ifm-color-primary));
+  color: white;
+  font-size: 0.8125rem;
+  font-weight: 600;
   cursor: pointer;
 }
 
-.navbar-search__input::placeholder {
-  color: var(--pal-neutral-95);
+.ask-fin-results-footer__button:hover {
+  filter: brightness(1.1);
+}
+
+.ask-fin-results-footer__icon {
+  font-size: 0.875rem;
 }
 
 /* ---- Footer ---- */
@@ -595,10 +723,6 @@ article:has([data-product-overview]) > .markdown {
 /* ---- Responsive overrides ---- */
 
 @media (max-width: 996px) {
-  .navbar-search {
-    display: none;
-  }
-
   .navbar-btn {
     display: none;
   }
@@ -628,36 +752,6 @@ article:has([data-product-overview]) > .markdown {
 
   body:not(:has(.theme-doc-sidebar-container)) .navbar__toggle {
     display: none !important;
-  }
-
-  .navbar-search {
-    display: flex !important;
-    flex: 0 0 auto;
-    order: 1;
-    width: auto;
-    padding: 0;
-    background: none;
-    margin-right: 0;
-    height: auto;
-    margin-right: 20px;
-  }
-
-  .navbar-search::after {
-    display: none;
-  }
-
-  .navbar-search__input {
-    width: 0;
-    padding: 0;
-    border: 0;
-    overflow: hidden;
-    position: absolute;
-  }
-
-  .navbar-search__icon {
-    color: white;
-    width: 20px;
-    height: 20px;
   }
 
   .navbar-sidebar__back {
