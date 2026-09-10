@@ -293,7 +293,6 @@ const config: Config = {
 
   clientModules: [
     './src/clientModules/intercomWidget.ts',
-    './src/clientModules/askFinButton.ts',
   ],
 
   customFields: {
