@@ -63,7 +63,7 @@ The wizard asks for the following:
 1. **Select a workspace**: pick the workspace whose Build Cache you want to use. The CLI selects it automatically if you only have access to one.
 1. **Which build tools should I set up**: ensure **Bazel** is selected. Use space to toggle an option and enter to confirm.
 1. **Display name for this machine's local invocations**: the name your local builds show up under in the Build Cache dashboard, for example `local-<yourhandle>`.
-1. **Enable cache push**: select **No, pull only**. See [Local builds only read from the cache](#local-builds-only-read-from-the-cache).
+1. **Enable cache push**: keep the default **Yes, push too**. See [Cache push mode](#cache-push-mode).
 
 The non-interactive equivalent, once you have signed in:
 
@@ -82,7 +82,7 @@ build --remote_cache=grpcs://bitrise-accelerate.services.bitrise.io
 build --remote_timeout=600s
 build --remote_header=x-flare-buildtool=bazel
 build --remote_header=x-flare-builduser=
-build --noremote_upload_local_results
+build --remote_upload_local_results
 build --bes_backend=grpcs://flare-bes.services.bitrise.io:443
 build --bes_results_url=https://app.bitrise.io/build-cache/invocations/bazel/
 build --bes_timeout=2m
@@ -104,7 +104,7 @@ build --bes_header='x-mem-size=16759259136'
 Two lines worth highlighting:
 
 - `--credential_helper` points at the CLI rather than storing a token, so Bazel fetches a fresh one on every build and an expiring login keeps working. This is why the CLI has to stay on your `PATH`.
-- `--noremote_upload_local_results` is pull-only mode. Activating with `--cache-push` writes `--remote_upload_local_results` instead.
+- `--remote_upload_local_results` is push mode, the default. Activating with `--cache-push=false` writes `--noremote_upload_local_results` instead.
 
 The `x-os`, `x-cpu-cores`, `x-mem-size`, `x-locale`, and `x-default-charset` headers describe your machine and are used for analytics only, and don't affect cache keys. They matter if you commit the configuration, because they're specific to the machine that generated the block. See [What is safe to commit](#what-is-safe-to-commit).
 
@@ -183,39 +183,29 @@ The summary line is the proof. It reads differently in each of the three cases:
 | `INFO: Streaming build results to:` | First and last lines of the build | A link to the invocation is printed |
 | Dashboard | The printed link, or the [Build Cache page](https://app.bitrise.io/build-cache/) | A row appears under your display name, with the same hit counts |
 
-## Local builds only read from the cache
+## Cache push mode
 
-The setup in this guide activates the Build Cache in pull-only mode: your local builds read from the shared cache but never write to it. This is the recommended mode for local development.
+The setup in this guide activates the Build Cache with cache push enabled: your local builds read from and write to the shared cache. Every action your machine runs becomes an entry your teammates and CI can reuse, and your activity shows up on the [Build Cache page](https://app.bitrise.io/build-cache/).
 
-Build tools recommend writing cache entries only from an environment where the source files don't change during the build. On a local machine you might keep editing files while a build is running, which can produce cache entries that don't match their inputs, and those entries would then be served to your teammates and to CI. Pull-only removes that risk: a broken local build can't affect anyone else.
+If you'd rather have your local builds only read from the cache, see [Opting into pull-only mode](#opting-into-pull-only-mode) below.
 
-The usual pattern is to have CI populate the cache, because CI builds from a clean, fixed checkout, and to let local machines pull from it.
+## Opting into pull-only mode
 
-## Pushing to the cache from local builds
+If your team already populates the cache from CI and you want your local builds to only read from it, turn cache push off. The trade-off is that your local builds contribute nothing, so if CI doesn't run yet the summary line keeps reporting `0 remote cache hit`.
 
-Pull-only assumes that something else fills the cache, which is normally CI. If nothing does, your local builds have nothing to read: the summary line keeps reporting `0 remote cache hit`.
-
-If your team doesn't run the Build Cache on CI, turn pushing on for your local builds and leave it on. Your machine then populates the cache as you work, for you and for your teammates.
-
-Re-run `bitrise-build-cache activate --interactive` and answer **Yes, push too** at the cache push prompt when you run the wizard, or run the non-interactive activate command:
+Re-run `bitrise-build-cache activate --interactive` and answer **No, pull only** at the cache push prompt, or run the non-interactive activate command:
 
 ```bash
-bitrise-build-cache activate bazel --cache --cache-push
+bitrise-build-cache activate bazel --cache --cache-push=false
 ```
 
 You can check which mode you're in without running a build:
 
 ```bash
 grep upload_local_results ~/.bazelrc
+# --remote_upload_local_results    → push enabled (default)
 # --noremote_upload_local_results  → pull-only
-# --remote_upload_local_results    → push enabled
 ```
-
-:::note
-An entry written from a build whose source files changed while it was running can be wrong, and your teammates read the same entry. Avoid editing files during a build you push from.
-
-Setting up the Build Cache on CI is the more robust option, because CI builds from a clean, fixed checkout. Once it runs there, switch your machine back to pull-only.
-:::
 
 ## Committing the configuration to your repository
 
@@ -237,21 +227,21 @@ Bazel reads its configuration files in this order, and the last value wins for a
 
 So the home file takes precedence over the committed one, and command-line flags beat both. Add `--announce_rc` to a build to see what Bazel actually loaded.
 
-### Commit pull-only and let CI opt into push
+### Force pull-only for developers who don't run the activation
 
-A developer who only installs the CLI and runs `auth login` never gets a `~/.bazelrc`, so there is nothing to override the committed block. Whatever you commit is what they build with, so commit the safe mode:
+A developer who only installs the CLI and runs `auth login` never gets a `~/.bazelrc`, so there is nothing to override the committed block. If you want those developers to only read from the cache regardless of what the CLI default is, commit the pull-only flag:
 
 ```bash
 build --noremote_upload_local_results
 ```
 
-On CI, run the activation with pushing enabled before the build. Because the home file beats the committed workspace file, it overrides the committed pull-only flag on that machine only:
+On CI, run the activation. The CLI writes the push-enabled flag to `~/.bazelrc`, and because the home file beats the committed workspace file, it overrides the committed pull-only flag on that machine only:
 
 ```bash
-bitrise-build-cache activate bazel --cache --cache-push
+bitrise-build-cache activate bazel --cache
 ```
 
-That gives you the split with no per-developer setup: the committed file is the pull-only default everyone inherits, and the one environment that should write to the cache is the one that runs the activation.
+That gives you the split with no per-developer setup: the committed file is the pull-only default anyone who skips the activation inherits, and the environment that should write to the cache is the one that runs the activation.
 
 ### What is safe to commit
 
@@ -260,7 +250,7 @@ That gives you the split with no per-developer setup: the committed file is the 
 | `--remote_cache`, `--remote_timeout`, `--bes_backend`, `--bes_results_url`, `--bes_timeout`, `--bes_upload_mode`, `--build_event_publish_all_actions`, `--show_timestamps` | Yes | Identical on every machine |
 | `--remote_header='x-org-id=…'` and the matching `--bes_header` | Yes | Workspace-wide, not machine-specific |
 | `--remote_header='x-repository-url=…'` and the matching `--bes_header` | Yes | It identifies this repository |
-| `--noremote_upload_local_results` | Yes, in the pull-only form | Every developer who only runs `auth login` inherits it. CI flips it by running the activation with `--cache-push` |
+| `--noremote_upload_local_results` | Optional, if you want to force pull-only for developers who skip the activation | Every developer who only runs `auth login` inherits it. Running the activation on CI writes `--remote_upload_local_results` to `~/.bazelrc`, which overrides the committed value on that machine |
 | `--credential_helper=*.services.bitrise.io=bitrise-build-cache` | Yes, after checking the value | It's the bare binary name, which Bazel looks up on `PATH`. If the activation ran on a machine where the CLI wasn't on `PATH`, the CLI writes an absolute path instead. Don't commit that form |
 | `--bes_header='x-os=…'`, `x-cpu-cores`, `x-mem-size`, `x-locale`, `x-default-charset` | No | Per-machine, and `x-os` contains your hostname. They're analytics only and don't affect cache keys, but committing them attributes everyone's builds to your machine |
 | `--remote_header=authorization="Bearer …"` | Never | A live credential. It only appears in a block generated on CI |
