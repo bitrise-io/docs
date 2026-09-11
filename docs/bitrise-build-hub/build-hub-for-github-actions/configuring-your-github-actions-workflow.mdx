@@ -1,0 +1,93 @@
+---
+title: "Configuring your GitHub Actions workflow"
+description: "Configure your GitHub Actions workflow to run on Bitrise Build Hub infrastructure using the runs-on property, and set up tooling access on the deprecated Linux Docker image."
+sidebar_position: 3
+slug: /bitrise-build-hub/build-hub-for-github-actions/configuring-your-github-actions-workflow
+---
+
+import GlossTerm from '@site/src/components/GlossTerm';
+
+After you successfully create a machine pool, you need to configure your GitHub Actions workflow to use the machine pool when running your builds.
+
+Use the `runs-on` property in your workflow to specify the Bitrise machines. You can target runners based on the labels assigned to them.
+
+1. In your repository, open the GitHub Actions workflow file you want to run on Build Hub: it's usually a YAML file under `.github/workflows/`. 
+
+   You can edit the file directly in your code editor, or find it from GitHub's UI: open your GitHub repository, select **Actions**, click the name of the <GlossTerm baseform="workflow">Workflow</GlossTerm>, then click its YAML file name shown underneath.
+1. Add the `runs-on` property to the jobs you want to run on Build Hub. You must target the labels you create when [creating or updating a machine pool](/bitrise-build-hub/build-hub-for-github-actions/creating-machine-pools-for-github-actions#creating-a-machine-pool).
+
+   - You can use a single label. This will allow the use of all runners that have the specified label:
+
+     ```yaml
+     jobs:
+       build:
+         runs-on: image:xcode-26
+     ```
+   - You can use an array of labels. A runner is only allowed if it has all the specified labels:
+
+     ```yaml
+     jobs:
+       build:
+         runs-on: [bitrise-runner-my-pool, image:xcode-26]
+     ```
+
+     Bitrise automatically creates a `bitrise-runner-<pool-name>` label for every machine pool, so you can target a specific pool by name.
+
+For more information on using labels to target self-hosted runners, check out [Using labels with self-hosted runners](https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/using-labels-with-self-hosted-runners) in the GitHub Actions documentation.
+
+Once your workflow runs on Build Hub, see [Monitoring machine pools for GitHub Actions](/bitrise-build-hub/build-hub-for-github-actions/monitoring-machine-pools-for-github-actions) to check on the machine running it.
+
+## Enabling Linux machines to access tooling
+
+:::warning[Only for the deprecated Docker-based Linux image]
+
+This section only applies to machine pools using the deprecated Docker-based `linux-docker-bitvirt` image. The `linux-bitvirt-2026` image doesn't require any of these steps.
+
+:::
+
+Machine pools using the `linux-docker-bitvirt` image require a workaround to access the preinstalled tools on the Linux image when running a GitHub Actions workflow on Build Hub.
+
+When a GitHub Actions workflow uses the `container:` property to run steps inside a Docker container, the runner changes the environment in ways that break the image's tool setup. This means that the build can't access `asdf` as the tool manager and therefore preinstalled tools are not accessible.
+
+To solve the problem:
+
+1. Add an `env` property to your container configuration in the GitHub Actions workflow. Set three Environment Variables to tell `asdf` where its core scripts and plugins, installed versions, and shims are, and to override the image's `BASH_ENV=/.bashrc`.
+
+   ```yaml
+   container:
+     image: bitriseio/ubuntu-noble-24.04-bitrise-2025-android:latest
+     env:
+       ASDF_DIR: /root/.asdf
+       ASDF_DATA_DIR: /root/.asdf
+       BASH_ENV: /root/.asdf/asdf.sh
+   ```
+1. Under the `defaults` property, set the default shell to `bash`.
+
+   ```yaml
+   container:
+     image: bitriseio/ubuntu-noble-24.04-bitrise-2025-android:latest
+     env:
+       ASDF_DIR: /root/.asdf
+       ASDF_DATA_DIR: /root/.asdf
+       BASH_ENV: /root/.asdf/asdf.sh
+     defaults:
+       run:
+         shell: bash
+   ```
+1. Under the `steps` property, add a step that copies the image's default tool versions to where `asdf` expects them.
+
+   ```yaml
+   steps:
+     - name: Setup environment
+       run: |
+         cp /root/.tool-versions "$HOME/.tool-versions"
+   ```
+1. Tell Git to treat all working directories as safe. Without this, some commands might fail because of directory ownership mismatch.
+
+   ```yaml
+   steps:
+     - name: Setup environment
+       run: |
+         cp /root/.tool-versions "$HOME/.tool-versions"
+         git config --global --add safe.directory '*'
+   ```
