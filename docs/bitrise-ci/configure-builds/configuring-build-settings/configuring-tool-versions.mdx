@@ -23,7 +23,7 @@ To help you choose the right approach, consider the differences and limitations 
 | Executed automatically before the first Step of a Workflow. | Executed manually within the Workflow. Can be executed in the middle of the Workflow. |
 | Can't read config from version files: tool setup is executed before the [**Git Clone**](https://github.com/bitrise-steplib/steps-git-clone) Step.  Tool versions are defined in two files (version file and your configuration YAML file). | You can read the configuration from version files if you run the command after the [**Git Clone**](https://github.com/bitrise-steplib/steps-git-clone) Step.  For reusability, we recommend [creating a `step bundle`](/bitrise-ci/workflows-and-pipelines/steps/step-bundles) and reference that in all Workflows. |
 | No additional configuration required: tools automatically become available in `$PATH` in Workflow Steps. | Our dedicated Step requires no additional configuration.  If you use your own script, shell sourcing is required before the tools become active in the current shell or script step (see details below). |
-| Doesn't configure the local development environment (except when running Workflows locally via `bitrise run workflow_name`). | Configures the local developer environment if tools versions are defined in a version file (for example, `.ruby-version`) and everyone in the team has a tool version manager set up (for example, `Mise`). |
+| Doesn't configure the local development environment (except when running Workflows locally via `bitrise local run workflow_name`). | Configures the local developer environment if tools versions are defined in a version file (for example, `.ruby-version`) and everyone in the team has a tool version manager set up (for example, `Mise`). |
 
 
 ## Declarative tool setup
@@ -155,7 +155,7 @@ To perform tool setup during Workflow execution, you can use a purpose-built dep
 
 ### Tool setup with CLI subcommand
 
-Call the `bitrise tools setup` from your Workflow. The tool looks for configuration or version file paths: if you don't specify a path, the tool detects files in the working directory.
+Call the `bitrise local tools setup` from your Workflow. The tool looks for configuration or version file paths: if you don't specify a path, the tool detects files in the working directory.
 
 In the example, we're calling the command from a **Script** Step with a `--config` flag that finds the `.tool-versions` file.
 
@@ -169,7 +169,7 @@ workflows:
           title: Set up environment
           inputs:
             # Set up tools based on the .tool-versions file in the repo
-            - content: bitrise tools setup --config .tool-versions
+            - content: bitrise local tools setup --config .tool-versions
       
       # Rest of the workflow has access to the right tools and versions in $PATH
 ```
@@ -177,20 +177,20 @@ workflows:
 You can also install specific tools without a configuration file:
 
 ```bash
-bitrise tools install [--provider PROVIDER] [--format FORMAT] <TOOL> <VERSION>[:SUFFIX]
+bitrise local tools install [--provider PROVIDER] [--format FORMAT] <TOOL> <VERSION>[:SUFFIX]
 
 # Examples:
-bitrise tools install nodejs 20.10.0
-bitrise tools install nodejs 22:latest
-eval "$(bitrise tools install ruby 3.2.0 --format bash)"  # activate in shell
+bitrise local tools install nodejs 20.10.0
+bitrise local tools install nodejs 22:latest
+eval "$(bitrise local tools install ruby 3.2.0 --format bash)"  # activate in shell
 ```
 
-By default, running `bitrise tools setup` doesn't activate tool changes in the same shell session (for example, if the tool setup and tool use happens in the same **Script** Step). In the example, we're installing a new Ruby version:
+By default, running `bitrise local tools setup` doesn't activate tool changes in the same shell session (for example, if the tool setup and tool use happens in the same **Script** Step). In the example, we're installing a new Ruby version:
 
 ```bash
 #! /bin/bash
 
-bitrise tools setup --config .ruby-version
+bitrise local tools setup --config .ruby-version
 
 ruby --version
 ```
@@ -200,12 +200,12 @@ If you run this command in a **Script** Step, `PATH` will still point to the pre
 You can install and activate the tool in the same shell session using `eval`:
 
 ```bash
-eval "$(bitrise tools setup --config .ruby-version --format bash)"
+eval "$(bitrise local tools setup --config .ruby-version --format bash)"
 
 ruby --version # $PATH is updated with the newly set up ruby version
 ```
 
-Alternatively, you can run `bitrise tools setup` in a separate Step.
+Alternatively, you can run `bitrise local tools setup` in a separate Step.
 
 ```yaml
 workflows:
@@ -216,7 +216,7 @@ workflows:
           title: Set up environment
           inputs:
             # Set up tools based on the .tool-versions file in the repo
-            - content: bitrise tools setup --config .tool-versions
+            - content: bitrise local tools setup --config .tool-versions
       
       # Rest of the workflow has access to the right tools and versions in $PATH
       - cocoapods-install: {}
