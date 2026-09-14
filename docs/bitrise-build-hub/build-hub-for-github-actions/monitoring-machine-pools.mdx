@@ -1,0 +1,90 @@
+---
+title: "Monitoring machine pools"
+description: "Check machine and stage statuses, view stdout and stderr logs, connect to a running machine with remote access, and filter or search your Build Hub machine pools."
+sidebar_position: 4
+slug: /bitrise-build-hub/build-hub-for-github-actions/monitoring-machine-pools-for-github-actions
+---
+
+import GlossTerm from '@site/src/components/GlossTerm';
+
+When a GitHub Actions job targets one of your Build Hub machine pools, Bitrise provisions a machine to run it. This page covers what you can see and do while that machine is working: checking its status, viewing its logs, connecting to it remotely, and finding the right pool or machine in the first place.
+
+On the left navigation bar, select **Build Hub**, then click a machine pool to open it. Each pool shows a list of its machines, and you can expand any machine row for more detail.
+
+## Machine and pool statuses
+
+The pool card shows an overall status for the pool:
+
+| Status | Meaning |
+| --- | --- |
+| Up-to-date | Every machine in the pool is running the pool's current configuration. |
+| Updating... | The pool was recently reconfigured and some machines are still being replaced. |
+| Unspecified | The pool's status can't be determined right now. |
+
+Each machine in the pool's table has its own status:
+
+| Status | Meaning |
+| --- | --- |
+| Pending... | The machine is waiting to be scheduled or started. |
+| Running | The machine is running and up to date with the pool's configuration. |
+| Out-of-date | The machine is still running, but the pool's configuration changed since it started. It's replaced during the pool's next rolling update. |
+| Finished | The machine terminated successfully. |
+| Failed | The machine terminated with a failure. |
+| Unspecified | The machine's status can't be determined right now, typically because it isn't responding. |
+
+## Warmup and Main stages
+
+Every machine goes through two stages:
+
+- **Warmup**: the machine installs dependencies and prepares its environment.
+- **Main**: the machine is warmed up and doing work. This is the stage where your GitHub Actions runner actually executes your workflow's job.
+
+The **Stage** column in the machine table shows which stage a machine is currently in. Expand a machine row to see a **Warmup stage** tab and a **Main stage** tab, each with its own status:
+
+| Stage status | Meaning |
+| --- | --- |
+| Pending | The stage is waiting to be scheduled or started. |
+| Running | The stage is in progress. |
+| Complete | The stage finished successfully. |
+| Failed | The stage finished with a failure. |
+| Skipped | The stage was skipped, typically because the machine was terminated during an earlier stage. |
+
+Each stage tab also shows when it started, when it finished, and how long it took.
+
+## Viewing logs
+
+Expand a machine row and open the **Warmup stage** or **Main stage** tab to see that stage's **Logs** section. Logs are only available once a stage has started, so this section only appears for stages in the `Running`, `Complete`, or `Failed` state. There's nothing to show for a stage that's still `Pending` or was `Skipped`.
+
+Use the stdout/stderr toggle above the log output to switch between the two log streams:
+
+- **stdout**: the regular progress and status messages you'd expect to see from the stage's process while it runs.
+- **stderr**: the standard error stream. Use it for troubleshooting: it contains error messages and debug logs, which makes it easier to debug issues with a stage.
+
+Logs stream live while the stage is running.
+
+## Checking resource usage
+
+If resource-usage monitoring is enabled for your <GlossTerm baseform="workspace">workspace</GlossTerm>, a machine's expanded row also shows a **Monitoring** tab with charts for CPU, memory, load average, swap, network interfaces, mount paths, and disk usage. Use the time range selector above the charts to zoom in or out.
+
+## Connecting to a machine with remote access
+
+Build Hub supports two ways to connect directly to a running machine: SSH, and screenshare over VNC for images that support it. Both give you hands-on access to the machine for troubleshooting while it's running your workflow.
+
+While a machine is in the **Main stage** and hasn't terminated or failed, you can connect to it directly:
+
+1. Expand the machine's row and open the **Main stage** tab.
+1. Turn on the **Remote access** toggle.
+
+   The connection automatically stops 4 hours after you request it.
+1. Once the connection is open, copy the credentials you need:
+
+   - **SSH**: a ready-to-use `Command` and a `Password`.
+   - **Screenshare (VNC)**: an `Address`, `Username`, and `Password`. VNC is only available for images that support it.
+
+The machine table's **Remote access** column shows an **On** or **Off** badge so you can tell at a glance which machines currently have an open connection.
+
+## Filtering and searching machine pools
+
+On the **Machine pools** list page, click **+ Add filter** to filter pools by **Label**: select one or more of the pool-name, image, and machine-type labels (or any custom labels you've added) to narrow down the list. Use the search box next to the filter to find a pool by name.
+
+Within a pool's machine table, click the **Machine ID**, **Stage**, or **Status** column headers to sort the machines by that column.
