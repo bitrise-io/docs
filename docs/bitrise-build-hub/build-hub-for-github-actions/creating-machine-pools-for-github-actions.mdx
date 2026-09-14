@@ -12,10 +12,10 @@ To successfully use Build Hub for GitHub Actions, you need to:
 
 1. Create a machine pool on Bitrise.
 
-   The machine pool requires authentication information. You can either:
+   The machine pool requires authentication information. Enterprise plans can use either the Bitrise - Build Hub app or a GitHub personal access token; all other plans (free trial, Starter, Pro) can only use the app:
 
-   - Install the Bitrise - Build Hub GitHub app. This is the only option for free trial and self-serve (Starter or Pro plan) workspaces. 
-   - [Create a GitHub personal access token](#creating-github-personal-access-tokens-for-build-hub). This is only available on an Enterprise plan. 
+   - Install the Bitrise - Build Hub GitHub app.
+   - [Create a GitHub personal access token](#creating-github-personal-access-tokens-for-build-hub), on an Enterprise plan.
 
 1. [Configure your GitHub Actions workflow](/bitrise-build-hub/build-hub-for-github-actions/configuring-your-github-actions-workflow) to use Bitrise infrastructure for your builds.
 
@@ -53,6 +53,8 @@ If you plan to run builds for a public repository, the runner group your machine
 
    - **All repositories**: Applies to all current and future repositories owned by the organization. Also includes public repositories (read-only).
    - **Only select repositories**: Select at least one repository. Also includes public repositories (read-only).
+
+   If you scope the installation to specific repositories, Bitrise can't dispatch jobs for any repository outside that list, even if its workflow's `runs-on` labels match this pool.
 
    ![SCR-20260320-nqmt.png](/img/_paligo/uuid-6186a9bb-4a81-f79c-3200-1e65de613b47.png)
 1. Set a unique **Pool name**. You can't change this after creation.
@@ -253,9 +255,9 @@ To create the token on GitHub:
 1. [Go through the process described here](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) until you get to selecting the scopes.
 1. Select the right scope: it depends on the target scope you need for your machine pool.
 
-   - GitHub Cloud organization (https://github.com/&lt;org&gt;) and GHE organization (https://&lt;hostname&gt;/&lt;org&gt;): **org:admin**
-   - GitHub Enterprise (GHE) Cloud (https://github.com/enterprises/&lt;enterprise&gt;) and GHE Server (https://&lt;hostname&gt;/enterprises/&lt;enterprise&gt;): **manage_runners:enterprise**.
-   - GitHub Cloud repository (https://github.com/&lt;owner&gt;/&lt;repo&gt;) and GHE repository (https://&lt;hostname&gt;/&lt;owner&gt;/&lt;repo&gt;): **workflow**.
+   - GitHub Cloud organization (`https://github.com/<org>`) and GHE organization (`https://<hostname>/<org>`): **org:admin**
+   - GitHub Enterprise (GHE) Cloud (`https://github.com/enterprises/<enterprise>`) and GHE Server (`https://<hostname>/enterprises/<enterprise>`): **manage_runners:enterprise**.
+   - GitHub Cloud repository (`https://github.com/<owner>/<repo>`) and GHE repository (`https://<hostname>/<owner>/<repo>`): **workflow**.
 1. Click **Generate token**.
 1. Copy your personal access token: you won't be able to see it again but you need it when [creating a machine pool](#creating-a-machine-pool).
 
