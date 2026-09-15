@@ -132,7 +132,7 @@ const sections: Section[] = [
     columns: [
       [
         {label: 'Build Hub overview', href: '/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview'},
-        {label: 'Configuring Build Hub for Github Actions', href: '/bitrise-build-hub/build-hub-for-github-actions/configuring-build-hub-for-github-actions'},
+        {label: 'Creating machine pools for GitHub Actions', href: '/bitrise-build-hub/build-hub-for-github-actions/creating-machine-pools-for-github-actions'},
         {label: 'Machine types', href: '/bitrise-build-hub/infrastructure/build-machine-types'},
       ],
     ],
