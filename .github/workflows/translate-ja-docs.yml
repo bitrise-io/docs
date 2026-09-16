@@ -93,7 +93,17 @@ jobs:
           # dependency clear). translate_docs.py's parse_changes() reads the
           # status codes directly and filters to .md/.mdx itself, so this
           # scopes to the docs/ directory and leaves the rest to it.
-          git diff --name-status -M "$BASE" HEAD -- docs > changed.txt || true
+          #
+          # Three-dot (BASE...HEAD), not two-dot: BASE is main's tip at the
+          # time of this event, not the commit this branch actually diverged
+          # from. A two-dot diff would pull in anything that changed on main
+          # since divergence too -- e.g. a page renamed on main after this
+          # branch split off would show up here as if this PR renamed it,
+          # producing a bogus i18n/ja/ move. Three-dot diffs against the
+          # merge-base instead, which is what "what did this PR change"
+          # actually means. fetch-depth: 0 above makes the merge-base
+          # available to compute.
+          git diff --name-status -M "$BASE...HEAD" -- docs > changed.txt || true
           echo "count=$(wc -l < changed.txt)" >> "$GITHUB_OUTPUT"
           cat changed.txt
 
