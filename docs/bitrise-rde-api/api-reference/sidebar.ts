@@ -156,6 +156,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "bitrise-rde-api/api-reference/codespaces-service-resolve-session-viewer",
+          label: "Open a session's device view",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
           id: "bitrise-rde-api/api-reference/codespaces-service-list-session-notifications",
           label: "List session notifications",
           className: "api-method get",
@@ -315,6 +321,18 @@ const sidebar: SidebarsConfig = {
           id: "bitrise-rde-api/api-reference/codespaces-service-list-stacks",
           label: "List stacks",
           className: "api-method get",
+        },
+      ],
+    },
+    {
+      type: "category",
+      label: "Device preview",
+      items: [
+        {
+          type: "doc",
+          id: "bitrise-rde-api/api-reference/codespaces-service-create-preview-link",
+          label: "Create device preview link",
+          className: "api-method post",
         },
       ],
     },
