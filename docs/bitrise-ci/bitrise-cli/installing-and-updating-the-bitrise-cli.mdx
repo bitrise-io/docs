@@ -62,7 +62,12 @@ Simply run `bitrise update` - that’s it! The CLI checks for updates once every
 
 The CLI reads configuration from up to three files, in order of precedence from highest to lowest:
 
+- `~/.bitrise/config.json` — a legacy config file. Earlier CLI versions wrote it, and it is authoritative if present. New settings don't belong here.
 - `.bitrise-cli.yml` — a per-directory config file. The CLI looks for it in the current directory and its parent directories.
-- `~/.config/bitrise/cli/config.yml` — a global config file.
+- `~/.config/bitrise/cli/config.yml` — a global config file. Set `$XDG_CONFIG_HOME` to read it from somewhere other than `~/.config`.
+
+If none of the files set a value, the CLI falls back to its built-in default.
+
+The `api_base_url`, `web_base_url`, and `rde_api_base_url` settings are an exception: they skip the per-directory file, so only the legacy and the global file can set them. All three point the CLI at a host it then sends your credentials to, and a `.bitrise-cli.yml` is read from any parent directory without asking you first — so a repository you only cloned could otherwise redirect your login to a server you don't control.
 
 Make sure `~/.config` (or `$XDG_CONFIG_HOME`, if you set it) is writable. Otherwise, `bitrise local setup` and plugin commands can fail.
