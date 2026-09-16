@@ -1,0 +1,28 @@
+---
+title: "Delta updates"
+description: "CodePush computes delta updates between your package versions automatically, so updates download and install faster and cost less to transfer."
+sidebar_position: 6
+slug: /release-management/codepush/delta-updates
+---
+
+When you deliver an over-the-air update to a device, the time it takes to download and install the update matters for a smooth user experience.
+
+Updates deployed via CodePush typically only change a small portion of the app's code, so downloading and installing the entire bundle would be inefficient. CodePush computes delta updates between your package versions automatically, so only the changes are downloaded and installed.
+
+## Delta update mechanisms
+
+A delta update package only contains the changes between the version already installed on the device and the version to install, rather than the full new version.
+
+![Diagram comparing file-based diffing and binary diffing update packages](/img/codepush/file-vs-binary-diffing.png)
+
+**File-level diffing:** CodePush compares two releases file-by-file. The update package contains only newly added and changed files in full, plus a list of files to delete. Unchanged files are left out of the package.
+
+**Binary diffing:** A more efficient diffing mechanism. Like file-level diffing, unchanged files are left out of the package, and the package contains a list of files to delete. For a file that changed between the two versions, CodePush computes a byte-level patch between the old and new versions of that file, and ships the patch instead of the entire file. In most React Native updates, the JS bundle always changes between versions, so this technique avoids fetching the entire JS bundle file.
+
+## Delta updates with CodePush
+
+CodePush computes delta updates between your package versions automatically. This is enabled by default, and results in smaller updates that the client SDK downloads and installs faster. It also reduces your data transfer costs.
+
+CodePush delta updates are computed on the server side, so you don't need to do anything special to enable them.
+
+The delta update mechanism is file-level diffing at the moment, with binary diffing support coming in Q4 2026 to the [Bitrise CodePush SDK](https://github.com/bitrise-io/react-native-code-push).

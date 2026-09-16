@@ -15,13 +15,6 @@ To set up the configuration cache:
 1. Run a build locally with the `--configuration-cache` flag.
 
    This ensures that your Gradle project supports configuration caching. To enable configuration caching in the Gradle settings, [refer to Gradle's official guide](https://docs.gradle.org/current/userguide/configuration_cache.html#config_cache:usage:enable).
-1. Generate a Bitrise [personal access token](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token) and add it as a [Secret](/bitrise-ci/configure-builds/secrets) with the BITRISE_BUILD_CACHE_AUTH_TOKEN key.
-
-   :::note[Token consistency]
-
-   For the configuration cache to function correctly, the authentication token used by the Gradle plugins must remain consistent across builds.
-
-   :::
 1. Generate a Gradle encryption key:
 
    ```
@@ -30,10 +23,17 @@ To set up the configuration cache:
 1. Save the key as a [Secret](/bitrise-ci/configure-builds/secrets) named GRADLE_ENCRYPTION_KEY in your Bitrise project.
 
    This ensures that the encrypted value of the configuration cache remains the same across different builds. Using a fixed encryption key is supported from Gradle version 8.6 or later. Bitrise doesn't support Gradle configuration cache for earlier Gradle versions.
-1. Set your Bitrise [workspace slug](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs) as an Environment Variable named BITRISE_BUILD_CACHE_WORKSPACE_ID.
 1. Add the **Build Cache for Gradle** Step to your Workflow.
 
    The Step must be of version 2.7.7 or later. Any subsequent updates to the Step will cause a one-off invalidation of the configuration cache. If this happens, do a rebuild to fix the issue.
+
+   :::note[Authentication tokens]
+
+   From Step version 3.6.1, the Gradle plugins authenticate with the token of the build that is running, so you don't need to set up an authentication token for the configuration cache.
+
+   On earlier Step versions, the token is part of the cached configuration and has to stay the same across builds. Those versions need a [personal access token](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token) saved as a [Secret](/bitrise-ci/configure-builds/secrets) with the BITRISE_BUILD_CACHE_AUTH_TOKEN key, and your [workspace slug](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs) as an Environment Variable named BITRISE_BUILD_CACHE_WORKSPACE_ID.
+
+   :::
 1. Add the **Restore Gradle configuration cache** and the **Restore Gradle Cache** Steps before your Gradle invocation in the Workflow.
 
    The Steps retrieve cached configuration data and enable the configuration cache to access artifacts it references.
@@ -70,6 +70,7 @@ If your build doesn't reuse the configuration cache, you can check a number of p
 - It may take multiple runs before the configuration cache is fully applied and reused.
 - Check the Gradle logs to find out why Gradle didn't reuse the configuration cache. You can [save the gradle configuration cache log](#saving-the-gradle-configuration-cache-log) to your build artifacts.
 - Updates to the **Build Cache for Gradle** Step will cause a one-off invalidation of the configuration cache. Just run another build to fix the problem.
+- On Step versions before 3.6.1, check that the authentication token is the same in every build. A token that changes between builds invalidates the cached configuration.
 
 ### Failed to instrument class error
 

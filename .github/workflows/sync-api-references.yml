@@ -1,13 +1,14 @@
 name: Sync API references
 
-# Keeps the generated API references (Bitrise CI + RDE) in sync with their
-# hosted OpenAPI specs. Runs nightly and on demand ("Run workflow"). For each
-# spec, when the hosted spec has actually changed, it regenerates that one
-# reference and opens a PR for review — it never commits to main directly.
+# Keeps the generated API references (Bitrise CI, RDE, and the four Release
+# Management sub-APIs) in sync with their hosted OpenAPI specs. Runs nightly
+# and on demand ("Run workflow"). For each spec, when the hosted spec has
+# actually changed, it regenerates that one reference and opens a PR for
+# review — it never commits to main directly.
 #
-# Each spec runs as its own matrix job → its own PR, so the two products stay
+# Each spec runs as its own matrix job → its own PR, so the products stay
 # independent (separate review, separate branches, one host being down doesn't
-# block the other).
+# block the others).
 on:
   schedule:
     - cron: '0 6 * * *' # 06:00 UTC daily
@@ -46,6 +47,42 @@ jobs:
               api/bitrise-rde.json
               scripts/rde_spec_sync_state.json
               docs/bitrise-rde-api/api-reference
+          - name: Release Management Apps
+            spec: bitriseRMApps
+            sync_script: scripts/sync_rm_apps_spec.py
+            branch: auto/rm-apps-api-sync
+            title: 'docs: sync Release Management Apps API reference from updated spec'
+            paths: |
+              api/bitrise-rm-apps.json
+              scripts/rm_apps_spec_sync_state.json
+              docs/release-management-api/apps/api-reference
+          - name: Release Management Store Releases
+            spec: bitriseRMStoreReleases
+            sync_script: scripts/sync_rm_store_releases_spec.py
+            branch: auto/rm-store-releases-api-sync
+            title: 'docs: sync Release Management Store Releases API reference from updated spec'
+            paths: |
+              api/bitrise-rm-store-releases.json
+              scripts/rm_store_releases_spec_sync_state.json
+              docs/release-management-api/store-releases/api-reference
+          - name: Release Management Code Push
+            spec: bitriseRMCodePush
+            sync_script: scripts/sync_rm_code_push_spec.py
+            branch: auto/rm-code-push-api-sync
+            title: 'docs: sync Release Management Code Push API reference from updated spec'
+            paths: |
+              api/bitrise-rm-code-push.json
+              scripts/rm_code_push_spec_sync_state.json
+              docs/release-management-api/code-push/api-reference
+          - name: Release Management Build Distributions
+            spec: bitriseRMBuildDistributions
+            sync_script: scripts/sync_rm_build_distributions_spec.py
+            branch: auto/rm-build-distributions-api-sync
+            title: 'docs: sync Release Management Build Distributions API reference from updated spec'
+            paths: |
+              api/bitrise-rm-build-distributions.json
+              scripts/rm_build_distributions_spec_sync_state.json
+              docs/release-management-api/build-distributions/api-reference
     steps:
       - uses: actions/checkout@v4
 

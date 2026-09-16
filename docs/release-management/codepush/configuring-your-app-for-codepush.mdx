@@ -90,24 +90,15 @@ These instructions cover React Native's New Architecture. On older React Native 
       ```swift
       import CodePush
       ```
-   1. In `class ReactNativeDelegate`, find the line which returns the bundle URL for production builds:
+   1. In `class ReactNativeDelegate`, find the line which returns the bundle URL for production builds and replace it with a call to the CodePush SDK:
 
-      ```swift
-      Bundle.main.url(forResource: "main", withExtension: "jsbundle")
-      ```
-   1. Replace that with the following call to the CodePush SDK:
-
-      ```swift
-      CodePush.bundleURL()
-      ```
-   1. Your `bundleURL` method should look like this:
-
-      ```swift
+      ```diff
       override func bundleURL() -> URL? {
       #if DEBUG
          RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
       #else
-         CodePush.bundleURL()
+      -    Bundle.main.url(forResource: "main", withExtension: "jsbundle")
+      +    CodePush.bundleURL()
       #endif
       }
       ```
@@ -146,25 +137,24 @@ These instructions cover React Native's New Architecture. On older React Native 
    ```
 1. Update your Application class at `android/app/src/main/java/…/MainApplication.kt` to hook into the CodePush runtime.
 
-   ```kotlin
-   // 1. Import the plugin class.
-   import com.microsoft.codepush.react.CodePush
+   ```diff
+   + import com.microsoft.codepush.react.CodePush
 
-   class MainApplication : Application(), ReactApplication {
+     class MainApplication : Application(), ReactApplication {
 
-      override val reactHost: ReactHost by lazy {
-         getDefaultReactHost(
-               context = applicationContext,
-               packageList = PackageList(this).packages.apply {
-                  // Packages that cannot be autolinked yet can be added manually here, for example:
-                  // add(MyReactNativePackage())
-               },
-               // 2. Set jsBundleFilePath to CodePush so CodePush resolves the JS bundle path
-               // at startup (OTA update if available, fallback to bundled JS otherwise).
-               jsBundleFilePath = CodePush.getJSBundleFile(),
-         )
-      }
-   }
+        override val reactHost: ReactHost by lazy {
+           getDefaultReactHost(
+                 context = applicationContext,
+                 packageList = PackageList(this).packages.apply {
+                    // Packages that cannot be autolinked yet can be added manually here, for example:
+                    // add(MyReactNativePackage())
+                 },
+   +             // Set jsBundleFilePath to CodePush so CodePush resolves the JS bundle path
+   +             // at startup (OTA update if available, fallback to bundled JS otherwise).
+   +             jsBundleFilePath = CodePush.getJSBundleFile(),
+           )
+        }
+     }
    ```
 1. In `android/app/src/main/res/values/strings.xml`, add the CodePush deployment key and the CodePush server URL to let the CodePush runtime know which deployment it should query for updates against.
 

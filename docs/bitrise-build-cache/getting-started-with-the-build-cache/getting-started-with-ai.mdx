@@ -1,0 +1,55 @@
+---
+title: "Getting started with AI"
+description: "Use this AI prompt to set up the Bitrise Build Cache in your project with a coding agent."
+sidebar_position: 2
+slug: /bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai
+sidebar_label: Getting started with AI
+---
+
+You can set up the Bitrise Build Cache with a coding agent instead of following the setup guides manually. Paste the prompt below into your AI coding assistant (for example, Claude Code or another agent with shell and file access) and it walks through discovering your build tool, installing the Bitrise Build Cache CLI, authenticating, and verifying the cache works, locally and on CI.
+
+## The prompt
+
+```text
+I want you to set up Bitrise Build Cache in this project.
+
+The goal is to follow the Bitrise Documentation articles about setting up build cache in the **local** environment. The articles are build-tool specific and can be found as children under https://docs.bitrise.io/en/bitrise-build-cache. **Note:** discover all the pages in these sections to find the detailed instructions for the exact build tool and CI provider (`local` in this case).
+
+If there is already a remote build cache set up, the goal is to replace that, but be explicit about that.
+
+After gathering all the context, briefly tell the user what the plan is and ask for confirmation that it is good to go. Include one-line details about what you are going to perform, which build command, and also include info on which files you are going to edit, where, and why.
+
+On every step, inform the user about what the progress is, what has been done already, and what is next. Include reasoning for why something has to happen, and which files need to be edited.
+
+1. Choose a typical build command that can utilize remote build caching (so not a query-only invocation), and verify that it builds successfully first. This is important to rule out any errors introduced by enabling build cache. If the build command is not easy to guess from the repository, ask the user. Choose something easy to run, because you will run it many times, and try to reduce the cycle time. Ideally, only build one module, debug.
+
+2. The local guide page is generic, so you need to decide which flow to use based on the build tool used in this project.
+
+3. Install the Bitrise Build Cache CLI to the PATH so that the CLI is available for later fine-tuning.
+
+4. Authenticate the user to Bitrise. Offer the command `bitrise-build-cache auth login` (on the installed PATH) so that they can log in via OAuth. RDE and agentic flow are supported. Use `auth login --no-workspace --print-url` for the login, then use `--callback`. The callback URL can be pasted back, so even if there is no installed browser, the OAuth flow can be completed. Read the help of the CLI to understand more.
+
+   Use `auth workspace --list --json` to list the workspaces, let the user choose one, then use `auth workspace --set <slug>`. Do not try to infer the workspace from the repo/app name.
+
+   Alternatively, but only if the user explicitly refuses that, ask for the workspace ID / token auth as described on the page and describe how they can generate an auth token: https://docs.bitrise.io/en/bitrise-platform/accounts/personal-access-tokens
+
+5. Start or check the build cache trial. Get the credential with `bitrise-build-cache auth token` and the selected workspace with `bitrise-build-cache auth workspace --json`.
+
+   **Note:** `auth token` prints the credential in the form the Gradle remote cache expects — `<workspace_id>:<token>` when a workspace is selected, a bare token otherwise. Strip any prefix before using it as an API credential: `TOKEN="${CRED##*:}"`. Keep this value out of anything you echo back to the user.
+
+   Then:
+
+   `curl -sS -X POST -H "Authorization: token $TOKEN" https://app.bitrise.io/workspaces/$WORKSPACE_ID/build_cache_trial`
+
+   The response `status` is `trial_created`, `trial_already_active` or `already_subscribed` — all fine, move on. Only `trial_expired` (HTTP 422) is a failure: it means no trial and no subscription, which blocks the whole flow — surface it to the user and stop.
+
+6. Then, follow the instructions to make it work locally and verify that it indeed works, does not break the build, correctly sets up tools, and reaches the remote cache. There are verification methods on the page described.
+
+7. Once successful, briefly describe to the user what you did, what files you edited, and how you verified it works. Quote actual build logs and config files about important items.
+
+8. Seed the cache as described on the page, and then clean and re-run a cache-touching build to verify that build cache is utilized.
+
+9. If everything is successful and the project already utilizes Bitrise CI or GitHub Actions, set up the Bitrise or GitHub Actions CI config to enable build cache on CI too. **Note:** these are separate articles, under the same parent as the local setup guide.
+
+Also importantly, on non-Bitrise CI the authentication should be done using Workspace access tokens, not OAuth and not the PAT the user might have created earlier. On Bitrise CI, authentication is automatic by using the dedicated steps. Workspace access tokens are supported for build cache, this is how the user can create it: https://docs.bitrise.io/en/bitrise-platform/workspaces/workspace-api-token
+```

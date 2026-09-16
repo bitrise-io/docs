@@ -5,6 +5,8 @@ sidebar_position: 3
 
 The Bitrise Build Cache CLI can be downloaded and run on any third-party CI provider (GitHub Actions, GitLab CI, CircleCI, Jenkins, etc.).
 
+You can also set this up with an AI coding agent instead of following the steps manually. See [Getting started with AI](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai).
+
 1. Create a [Personal Access Token](urn:resource:component:54560).
 1. [Get your Workspace slug](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs).
 1. Set two variables in your CI provider's secret/environment settings:
@@ -32,6 +34,12 @@ The Bitrise Build Cache CLI can be downloaded and run on any third-party CI prov
 
    ```
    /tmp/bin/bitrise-build-cache activate react-native --gradle=true --xcode=true --cpp=false
+   ```
+
+   CI is normally the environment that fills the cache. Pass `--cache-push` to activate write access alongside reads:
+
+   ```
+   /tmp/bin/bitrise-build-cache activate react-native --cache-push
    ```
 
    :::note
@@ -63,7 +71,7 @@ jobs:
           curl --retry 5 -sSfL \
             'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' \
             | sh -s -- -b /tmp/bin -d
-          /tmp/bin/bitrise-build-cache activate react-native
+          /tmp/bin/bitrise-build-cache activate react-native --cache-push
       - name: Install JS dependencies
         run: yarn install
       - name: Build iOS

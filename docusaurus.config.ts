@@ -295,12 +295,17 @@ const config: Config = {
 
   clientModules: [
     './src/clientModules/genSearchWidget.ts',
+    './src/clientModules/intercomWidget.ts',
   ],
 
   customFields: {
     gtmId: process.env.GTM_ID || '',
     genSearchWidgetConfigId: process.env.GEN_SEARCH_WIDGET_ID || '',
     intercomAppId: 'e2rdidtm',
+    // Real support traffic only: on by default for production builds; set
+    // ENABLE_INTERCOM=true to verify the widget on a local dev server.
+    intercomEnabled:
+      process.env.NODE_ENV === 'production' || process.env.ENABLE_INTERCOM === 'true',
   },
 
   plugins: [
@@ -323,6 +328,39 @@ const config: Config = {
             // on-demand by .github/workflows/sync-api-references.yml).
             specPath: 'api/bitrise-rde.json',
             outputDir: 'docs/bitrise-rde-api/api-reference',
+            sidebarOptions: {
+              groupPathsBy: 'tag',
+            },
+          },
+          // Release Management is split across four sub-APIs, each with its
+          // own hosted spec (see docs/release-management/api/release-management-api.mdx
+          // for the sub-API URLs). Snapshots are refreshed by the matching
+          // scripts/sync_rm_*.py scripts (nightly / on-demand by
+          // .github/workflows/sync-api-references.yml).
+          bitriseRMApps: {
+            specPath: 'api/bitrise-rm-apps.json',
+            outputDir: 'docs/release-management-api/apps/api-reference',
+            sidebarOptions: {
+              groupPathsBy: 'tag',
+            },
+          },
+          bitriseRMStoreReleases: {
+            specPath: 'api/bitrise-rm-store-releases.json',
+            outputDir: 'docs/release-management-api/store-releases/api-reference',
+            sidebarOptions: {
+              groupPathsBy: 'tag',
+            },
+          },
+          bitriseRMCodePush: {
+            specPath: 'api/bitrise-rm-code-push.json',
+            outputDir: 'docs/release-management-api/code-push/api-reference',
+            sidebarOptions: {
+              groupPathsBy: 'tag',
+            },
+          },
+          bitriseRMBuildDistributions: {
+            specPath: 'api/bitrise-rm-build-distributions.json',
+            outputDir: 'docs/release-management-api/build-distributions/api-reference',
             sidebarOptions: {
               groupPathsBy: 'tag',
             },
@@ -462,7 +500,7 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
-      additionalLanguages: ['yaml', 'bash', 'json', 'ruby', 'swift', 'kotlin', 'groovy', 'dart'],
+      additionalLanguages: ['yaml', 'bash', 'json', 'ruby', 'swift', 'kotlin', 'groovy', 'dart', 'diff'],
     },
     zoom: {
       selector: '.markdown img:not(a > img)',

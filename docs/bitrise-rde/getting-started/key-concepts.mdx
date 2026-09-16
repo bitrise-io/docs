@@ -25,7 +25,9 @@ A session moves through a few states during its life:
 - **Terminated**: the machine is stopped, but the session and its persistent disk are kept. Terminating is reversible.
 - **Deleted**: the session is permanently removed. You can only delete a session that's already terminated.
 
-Terminating a session preserves its **persistent disk**, so when you restore the session your files and changes are still there. The disk is kept for a limited time after termination and is eventually cleaned up, after which the session can no longer be restored.
+Terminating a session preserves its **persistent disk**, so when you restore it your files and changes are still there. There is no time limit on how long a terminated session is kept - it stays until you delete it, or until the stack it was created from is removed from Bitrise.
+
+A session's disk stores only the changes you have made on top of the stack image it was created from, so the session can only be started while that stack image is still available. Stacks are removed on a published schedule, with at least four weeks' notice - see [Stack deprecation and removal policy](/bitrise-build-hub/infrastructure/build-stacks/stack-deprecation-and-removal-policy). When a stack is removed, sessions created from it are permanently erased and cannot be restored. Create a new session from a current stack, and commit or export anything you want to keep, before then.
 
 To avoid leaving machines running, every session has an **auto-terminate** timer:
 
@@ -41,6 +43,8 @@ When you create a session you choose two things:
 - A **machine type**: the size of the machine, defined by its CPU and RAM. macOS uses Apple silicon machine types; Linux machine types range from small shared instances to large dedicated ones.
 
 A template can set these for you, or you can pick them directly when creating a session. The available stacks and machine types depend on your workspace.
+
+**Your session stays tied to the stack you choose.** The stack isn't only a starting point - a session keeps a permanent dependency on the stack image it was created from. Your session's disk stores only the changes you make on top of that image, so the session can be started only while that image is still available on Bitrise. You cannot move an existing session to a different stack; to move to a newer stack, create a new session from it. Because stacks are eventually removed on a published schedule, this also determines how long a session can be kept - see [Session lifecycle](#session-lifecycle).
 
 ## Templates
 

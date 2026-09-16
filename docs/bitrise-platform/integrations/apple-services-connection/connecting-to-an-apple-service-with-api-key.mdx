@@ -56,8 +56,11 @@ You can add API key authentication data on the **<GlossTerm baseform="workspace"
    - **Key ID**: When you successfully generate a new API key, App Store Connect shows you the key ID.
 
    ![api-key-dialog.png](/img/_paligo/uuid-22e6048e-7f47-9480-fea3-958eb9a0348b.png)
+1. If your API key is an Apple Enterprise API key, check **Use for Enterprise Program API**.
+
+   ![api-key-enterprise.png](/img/_paligo/uuid-7dc1ff71-7abf-8c37-8117-a2f7abb13861.png)
 1. Upload the `.p8` file: either drag and drop it to the upload field, or click it and select the file from your computer.
-1. Click **Connect**.
+1. Click **Add API key**.
 
 Once done, you can now assign this API key to any app that you have access to on this account. From then, the app will use that API connection to access App Store Connect.
 
@@ -66,7 +69,7 @@ Once done, you can now assign this API key to any app that you have access to on
 
 To use API key authentication for Apple services for your project, you must:
 
-- [Add an API key on Bitrise](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key#adding-api-key-authentication-data-on-bitrise): You can add multiple API keys to the same account.
+- [Add an API key on Bitrise](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key#adding-api-key-authentication-data-on-bitrise): You can add multiple API keys to the same account. If your API key is an Apple Enterprise API key, check **Use for Enterprise Program API** when adding it.
 - Assign an API key to your project: Each project can only have one API key assigned to it.
 
 To assign the API key to the project:
@@ -85,9 +88,7 @@ To assign the API key to the project:
    With the **Add API key** button, you can add a new App Store Connect API key to your Bitrise account. Other projects you have access to can use this API key, too.
 
    :::
-1. If your API key is an Apple Enterprise API key, check **This API key is used for the Apple Enterprise Program API**.
-
-   ![api-key-enterprise.png](/img/_paligo/uuid-7dc1ff71-7abf-8c37-8117-a2f7abb13861.png)
+1. Select the API key you want to use for this project.
 
 The <GlossTerm baseform="Step">Step</GlossTerm> is now able to connect to the App Store Connect or the Apple Developer Portal during your build.
 
@@ -104,9 +105,8 @@ If your Enterprise account still uses Apple ID authentication, we strongly recom
 
 To change your authentication method:
 
-1. [Assign API key authentication](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key#assigning-api-key-authentication-to-your-project) for your project(s) on Bitrise. Make sure to check the **This API key is used for the Apple Enterprise Program API** option for your API key during the process!
-
-   ![api-key-enterprise.png](/img/_paligo/uuid-7dc1ff71-7abf-8c37-8117-a2f7abb13861.png)
+1. If you haven't already, [add an API key on Bitrise](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key#adding-api-key-authentication-data-on-bitrise), making sure to check **Use for Enterprise Program API**.
+1. [Assign the API key](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key#assigning-api-key-authentication-to-your-project) to your project(s) on Bitrise.
 
    :::caution[Keep the Apple ID connection]
 
@@ -115,10 +115,10 @@ To change your authentication method:
    :::
 1. Adjust all Step inputs that use Apple ID authentication to access Apple services. The following Steps are affected:
 
-   - **Xcode Archive & Export for iOS**: version 5.3.0 and above. The `automatic_code_signing` input should be set to `auto` or `api-key`.
-   - **Xcode Build for Testing**: version 3.1.0 and above. The `automatic_code_signing` input should be set to `auto` or `api-key`.
-   - **Manage iOS Code Signing**: version 2.1.0 and above. The `apple_service_connection` input should be set to `auto` or `api-key`.
-   - **Export iOS and tvOS Xcode archive**: version 4.6.0 and above. The `automatic_code_signing` input should be set to `auto` or `api-key`.
+   - **Xcode Archive & Export for iOS**: version 5.3.0 and above. Set the `automatic_code_signing` input to `api-key`.
+   - **Xcode Build for Testing**: version 3.1.0 and above. Set the `automatic_code_signing` input to `api-key`.
+   - **Manage iOS Code Signing**: version 2.1.0 and above. Set the `apple_service_connection` input to `api-key`.
+   - **Export iOS and tvOS Xcode archive**: version 4.6.0 and above. Set the `automatic_code_signing` input to `api-key`.
 
 ### Multiple API keys for the same project
 
@@ -126,12 +126,12 @@ You can only set up one API connection for each project on the Bitrise website. 
 
 ![api-key-chart.png](/img/_paligo/uuid-ea47d90b-0ff0-7cd5-2f80-4013e10f7fb3.png)
 
-If your Bitrise <GlossTerm baseform="project">project</GlossTerm> needs to handle the code signing of multiple developer teams, you can pass additional API keys as Step inputs. Doing so overrides the Bitrise-managed API connection. The following inputs are available to all Steps that can access Apple services:
+If your Bitrise <GlossTerm baseform="project">project</GlossTerm> needs to handle the code signing of multiple developer teams, you can pass additional API keys as Step inputs. Doing so overrides the Bitrise-managed API connection. The available inputs differ by Step:
 
-- `api_key_path`: This can be a local file path or a download URL. You can use the Bitrise project’s file storage (Project settings/Files) to store and get a download URL for the API Keys.
-- `api_key_id`: Private key ID. You can find the key ID for each API key on App Store Connect.
-- `api_key_issuer_id`. The private key issuer ID. You can find the issuer ID for each API key on App Store Connect.
-- `api_key_enterprise_account`: Use it to indicate whether the API key belongs to an account that is part of the Apple Enterprise developer program. Takes two values: `yes` and `no`.
+| Step | Inputs |
+| --- | --- |
+| <ul><li>Xcode Archive & Export for iOS</li><li>Xcode Build for Testing</li><li>Manage iOS Code Signing</li><li>Export iOS and tvOS Xcode archive</li></ul> | <ul><li>`api_key_path`: A local file path or download URL for the API key.</li><li>`api_key_id`: The key ID from App Store Connect.</li><li>`api_key_issuer_id`: The issuer ID from App Store Connect.</li><li>`api_key_enterprise_account`: `yes` or `no`, whether the key belongs to an Apple Enterprise Program account.</li></ul> |
+| <ul><li>fastlane</li><li>Deploy to App Store Connect with Deliver</li></ul> | <ul><li>`api_key_path`: A local file path or download URL for the API key. Embed the key ID in the file name — there's no separate key ID input.</li><li>`api_issuer`: The issuer ID from App Store Connect.</li></ul> |
 
 :::note[Inputs on the GUI]
 

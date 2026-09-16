@@ -45,9 +45,23 @@
     "v1AndroidEmulatorConfig": {
       "description": "AndroidEmulatorConfig configures the platform-managed Android emulator capability.\nEmpty fields fall back to platform defaults.",
       "properties": {
+        "coldBoot": {
+          "description": "Boot the emulator cold (-no-snapshot-load) and never save a quickboot\nsnapshot, so every boot is a full first boot.",
+          "type": "boolean"
+        },
+        "cores": {
+          "description": "Emulator CPU core count. 0 = sized to the host (cores/2, clamped to\n[2, 4]). The VM clamps out-of-range values, always leaving the host a core.",
+          "format": "int64",
+          "type": "integer"
+        },
         "deviceProfile": {
           "description": "avdmanager device profile (for example, \"pixel_7\"). Empty = platform default.",
           "type": "string"
+        },
+        "ramMb": {
+          "description": "Emulator RAM in MB. 0 = sized to the host (RAM/4, clamped to [2048, 6144]).\nThe VM clamps out-of-range values to what the host can spare.",
+          "format": "int64",
+          "type": "integer"
         },
         "systemImage": {
           "description": "sdkmanager system image package (for example,\n\"system-images;android-36;google_apis_ps16k;x86_64\"). Empty = platform default.",
@@ -305,6 +319,10 @@
           "description": "Whether the Android emulator capability (and the service ports that expose\nit) is enabled for this workspace (rollout feature flag). Gates declaring\nit on templates and requesting it on sessions.",
           "type": "boolean"
         },
+        "canViewUsage": {
+          "description": "Whether the caller may see the workspace usage page (org permission\n\"view_billing_data\" — workspace owners and billing-managing custom\nroles). Gates the Usage navigation item in the UI; GetWorkspaceUsage\nenforces the same permission server-side.",
+          "type": "boolean"
+        },
         "devicePreviewAvailable": {
           "description": "Whether device preview links and streaming are enabled for this workspace\n(rollout feature flag). Gates minting/resolving preview links and the\nviewer affordances in the UI.",
           "type": "boolean"
@@ -316,6 +334,29 @@
         "isFreeTrial": {
           "description": "Whether the workspace is on a free trial. Free-trial sessions are pinned to\nan 8-hour auto-terminate window that cannot be changed.",
           "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "v1GetWorkspaceUsageResponse": {
+      "description": "GetWorkspaceUsageResponse is the workspace usage report: a point-in-time\nsnapshot of who is running how many active sessions, on how many vCPUs and\nhow much memory, split by OS.",
+      "properties": {
+        "totals": {
+          "$ref": "#/definitions/v1UsageTotals",
+          "description": "Workspace-wide totals across all users."
+        },
+        "unknownMachineTypeCount": {
+          "description": "Number of active sessions whose machine type had no resolvable vCPU/RAM\nspec — those sessions are counted in session counts but contribute 0 to\nthe vcpu/memory sums, so totals may undercount when this is non-zero.",
+          "format": "int32",
+          "type": "integer"
+        },
+        "users": {
+          "description": "Per-user breakdown, plus at most one workspace-owned bucket row.\nSorted by email for determinism; clients re-sort freely.",
+          "items": {
+            "$ref": "#/definitions/v1UserUsage",
+            "type": "object"
+          },
+          "type": "array"
         }
       },
       "type": "object"
@@ -535,6 +576,27 @@
         "PERSISTENT_DISK_STATUS_UNAVAILABLE"
       ],
       "type": "string"
+    },
+    "v1PlatformUsage": {
+      "description": "PlatformUsage aggregates active sessions on one OS platform.",
+      "properties": {
+        "memoryGb": {
+          "description": "Total memory in GB across those sessions; unknown specs contribute 0.",
+          "format": "int32",
+          "type": "integer"
+        },
+        "sessionCount": {
+          "description": "Number of active sessions (VM still consuming resources: starting,\nrunning, terminating, or draining).",
+          "format": "int32",
+          "type": "integer"
+        },
+        "vcpu": {
+          "description": "Total vCPUs across those sessions. Sessions whose machine type carries\nno parseable spec contribute 0 (see unknown_machine_type_count).",
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "type": "object"
     },
     "v1ResolveClustersResponse": {
       "description": "ResolveClustersResponse contains the list of clusters that offer both the\nrequested image and machine type.",
@@ -1596,6 +1658,24 @@
       },
       "type": "object"
     },
+    "v1UsageTotals": {
+      "description": "UsageTotals splits active-session usage by OS platform.",
+      "properties": {
+        "linux": {
+          "$ref": "#/definitions/v1PlatformUsage",
+          "description": "Usage on Linux machine types."
+        },
+        "macos": {
+          "$ref": "#/definitions/v1PlatformUsage",
+          "description": "Usage on macOS machine types."
+        },
+        "unknown": {
+          "$ref": "#/definitions/v1PlatformUsage",
+          "description": "Usage on sessions whose operating system could not be determined from\nthe session's machine type or stack. Kept separate so linux and macos\nnever silently absorb guesses."
+        }
+      },
+      "type": "object"
+    },
     "v1User": {
       "description": "User represents an authenticated user in the system.",
       "properties": {
@@ -1615,6 +1695,36 @@
         "updatedAt": {
           "description": "When the user record was last updated.",
           "format": "date-time",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1UserUsage": {
+      "description": "UserUsage is one row of the per-user usage breakdown.",
+      "properties": {
+        "email": {
+          "description": "The user's email address (empty for the workspace-owned bucket).",
+          "type": "string"
+        },
+        "isWorkspace": {
+          "description": "True for the single aggregate row of sessions owned by the workspace\nitself rather than by an individual user (for example sessions spawned\nby a preview link minted with a Workspace API Token).",
+          "type": "boolean"
+        },
+        "totals": {
+          "$ref": "#/definitions/v1UsageTotals",
+          "description": "This row's usage, split by OS platform."
+        },
+        "userId": {
+          "description": "Internal identifier of the user (empty for the workspace-owned bucket).\nUse user_slug to reference the user in other Bitrise APIs.",
+          "type": "string"
+        },
+        "userSlug": {
+          "description": "The user's Bitrise slug, usable with other Bitrise APIs. Best-effort:\nmay be empty, so do not treat emptiness as marking the workspace-owned\nbucket — use is_workspace for that.",
+          "type": "string"
+        },
+        "username": {
+          "description": "The user's Bitrise username. Best-effort: may be empty.",
           "type": "string"
         }
       },
@@ -2197,7 +2307,7 @@
     },
     "/v1/workspaces/{workspaceId}/sessions/{sessionId}": {
       "delete": {
-        "description": "Deletes a session.",
+        "description": "Permanently deletes a session in any known state — it does not have to be terminated first. The session is removed immediately and cannot be restored; a running VM is stopped and then discarded together with its disk once it has shut down. Prefer this over TerminateSession unless you need to restore the session later. Rejected with FAILED_PRECONDITION while the VM's state is unknown (e.g. its node is unreachable) — retry once it settles.",
         "operationId": "CodespacesService_DeleteSession",
         "parameters": [
           {
@@ -3256,7 +3366,7 @@
     },
     "/v1/workspaces/{workspaceId}/sessions/{sessionId}/terminate": {
       "post": {
-        "description": "Terminates a running session (stops the VM, preserving the session for later restore).",
+        "description": "Stops the session's VM but keeps its disk, so the session stays listed as terminated and can be restored later. Use only when you intend to restore the session; otherwise call DeleteSession, which works on running sessions too and frees the disk.",
         "operationId": "CodespacesService_TerminateSession",
         "parameters": [
           {
@@ -3278,7 +3388,7 @@
             "name": "body",
             "required": true,
             "schema": {
-              "description": "TerminateSessionRequest is the request for terminating a running session.",
+              "description": "TerminateSessionRequest is the request for terminating a running session\nwhile keeping it restorable. To get rid of a session for good — running or\nnot — use DeleteSessionRequest instead.",
               "type": "object"
             }
           }
@@ -3291,7 +3401,7 @@
             }
           }
         },
-        "summary": "Terminate session",
+        "summary": "Terminate session (keep for restore)",
         "tags": [
           "Sessions"
         ]
@@ -3774,6 +3884,33 @@
         "summary": "Update template",
         "tags": [
           "Templates"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/usage": {
+      "get": {
+        "description": "Returns a point-in-time snapshot of the workspace's active remote development sessions: session counts and vCPU/memory totals split by OS, workspace-wide and per user. This reports sessions currently consuming resources; it is not a historical or billing-period report. Requires the caller to hold the workspace's billing-view permission (workspace owners and billing-managing custom roles); other members receive a permission-denied error.",
+        "operationId": "CodespacesService_GetWorkspaceUsage",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetWorkspaceUsageResponse"
+            }
+          }
+        },
+        "summary": "Get workspace usage",
+        "tags": [
+          "Workspace"
         ]
       }
     }

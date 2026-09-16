@@ -21,7 +21,7 @@ See [README.md](./README.md#run-the-docs-locally) — it has the full step-by-st
 | `docs/<section>/<sub>/_category_.json` | Sidebar category metadata (label, position, optional link). `link: null` means "non-clickable toggle". | Renaming/reordering sidebar entries; never delete by hand. |
 | `src/partials/<slug>.mdx` | Reusable content fragment imported by `<Partial_X />`. **Edit here once, every consumer updates.** | Editing shared content; adding new reusable chunks. |
 | `static/img/<topic>/<file>.png` | Static images served at `/img/<topic>/<file>.png`. UUID-prefixed files in `_paligo/` are migration-managed — don't rename. | Adding new screenshots; replacing existing ones. |
-| `static/llms.txt` | Hand-curated index of the docs for AI agents (#114). `docusaurus-plugin-llms` generates `llms-full.txt` and per-page `.md` mirrors, but not the root `llms.txt` — that file is maintained by hand. | Adding a product area or major section; renaming or moving a page listed in it. |
+| `static/llms.txt` | Hand-curated index of the docs for AI agents (#114). `docusaurus-plugin-llms` generates `llms-full.txt` and per-page `.md` mirrors, but not the root `llms.txt` — that file is maintained by hand. `bitrise.io/llms.txt`, kept in [bitrise-io/llms-txt](https://github.com/bitrise-io/llms-txt), points its documentation section here rather than repeating it, so this file is the developer surface an agent reaches from the marketing site. | Adding a product area or major section; renaming or moving a page listed in it. |
 | `src/pages/index.tsx` | The portal landing page (`/`). | Changing the homepage cards/links. |
 | `src/components/GlossTerm/` | Tooltip glossary component. | Almost never. |
 | `migration/` | Paligo→Markdown converter + supporting JSON (URL map, partial index, glossary, nav labels). | Re-running the full migration only. |
@@ -214,8 +214,26 @@ the same `slug:`).
 ### Code
 
 - Inline: backticks for filenames, command names, env var names. ``Open `bitrise.yml`.``
-- Blocks: triple backticks with a language hint (one of `yaml`, `bash`, `json`, `swift`, `kotlin`, `groovy`, `ruby`, `dart` — those are the languages our Prism config loads).
+- Blocks: triple backticks with a language hint (one of `yaml`, `bash`, `json`, `swift`, `kotlin`, `groovy`, `ruby`, `dart`, `diff` — those are the languages our Prism config loads).
 - **Don't put code blocks inside admonitions.** Render the admonition first, then the code block as a sibling.
+
+**Showing a change to an existing file**
+
+Readers meet two situations, and they need two different blocks.
+
+Use a `diff` block when the reader edits a file they already have and the change is a few lines. Mark added lines with `+`, removed lines with `-`, and keep enough surrounding context that the reader can find the spot:
+
+```diff
+  dependencies {
++     implementation("com.microsoft.codepush.react:react-native-code-push:+")
+  }
+```
+
+Use a normal language-tagged block when the file is new, or when you show it whole.
+
+One page uses one convention. Don't mix a `diff` block with a `// ...existing` placeholder or a bare `...` on the same page.
+
+A `diff` block is for reading, not for pasting. The copy button hands the reader the `+` and `-` characters, so if a snippet is meant to be copied whole, it isn't a diff block — show the full file instead.
 
 ### Admonitions
 

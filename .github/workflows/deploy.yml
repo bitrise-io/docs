@@ -57,7 +57,12 @@ jobs:
         continue-on-error: ${{ github.event_name != 'pull_request' }}
         run: node scripts/check-generated-partials.js
 
+      # Dependabot-triggered pull_request runs don't get repository secrets
+      # (GitHub sandboxes them like third-party PRs), so CF_API_TOKEN_PAGES
+      # resolves empty and wrangler fails. Skip the deploy for those runs;
+      # the change still deploys normally once merged to main via push.
       - name: Deploy to Cloudflare Pages
+        if: github.actor != 'dependabot[bot]'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CF_API_TOKEN_PAGES }}
@@ -76,7 +81,7 @@ jobs:
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
 
       - name: Comment preview URL
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
         uses: actions/github-script@v7
         with:
           script: |
