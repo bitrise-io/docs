@@ -7,6 +7,12 @@ The Bitrise Build Cache CLI can be downloaded and run on any third-party CI prov
 
 You can also set this up with an AI coding agent instead of following the steps manually. See [Getting started with AI](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai).
 
+:::tip[Using GitHub Actions?]
+
+There is a dedicated guide with GitHub Actions workflow examples: [Configuring the Build Cache for React Native in GitHub Actions](/bitrise-build-cache/build-cache-for-react-native/configuring-the-build-cache-for-react-native-in-github-actions).
+
+:::
+
 1. Create a [Personal Access Token](urn:resource:component:54560).
 1. [Get your Workspace slug](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs).
 1. Set two variables in your CI provider's secret/environment settings:
@@ -57,28 +63,7 @@ You can also set this up with an AI coding agent instead of following the steps 
 
 **Example configuration: GitHub Actions**
 
-```yaml
-jobs:
-  build-rn:
-    runs-on: macos-latest
-    env:
-      BITRISE_BUILD_CACHE_AUTH_TOKEN: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
-      BITRISE_BUILD_CACHE_WORKSPACE_ID: ${{ secrets.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Activate Bitrise Build Cache for React Native
-        run: |
-          curl --retry 5 -sSfL \
-            'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' \
-            | sh -s -- -b /tmp/bin -d
-          /tmp/bin/bitrise-build-cache activate react-native --cache-push
-      - name: Install JS dependencies
-        run: yarn install
-      - name: Build iOS
-        run: /tmp/bin/bitrise-build-cache react-native run npx react-native run-ios --configuration=Release
-      - name: Build Android
-        run: /tmp/bin/bitrise-build-cache react-native run npx react-native run-android --mode=release
-```
+For GitHub Actions workflow examples, including jobs running on Bitrise Build Hub runners, see [Configuring the Build Cache for React Native in GitHub Actions](/bitrise-build-cache/build-cache-for-react-native/configuring-the-build-cache-for-react-native-in-github-actions).
 
 ## Validating the setup
 

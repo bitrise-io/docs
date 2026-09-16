@@ -1,0 +1,13 @@
+### Run the activation as its own step
+
+The CLI publishes its configuration through `$GITHUB_ENV`, which GitHub Actions applies to the **following** steps of the job. If you activate the Build Cache and run your build inside the same `run:` block, the build does not pick up the configuration.
+
+Keep activation in a step of its own, before the step that runs the build.
+
+### Workflows triggered by forks have no secrets
+
+GitHub does not pass repository or organization secrets to workflow runs triggered from a fork. In those runs `BITRISE_BUILD_CACHE_AUTH_TOKEN` is empty, so the CLI cannot authenticate and the build runs without the cache.
+
+### Don't cache the same files with `actions/cache`
+
+If you also cache your build tool's local state (for example `~/.gradle`) with `actions/cache`, the restored local cache serves the outputs that the Bitrise Build Cache would have served, and your remote cache hit rate drops to near zero. Use one or the other.

@@ -1,0 +1,136 @@
+---
+title: "Configuring the Build Cache for Gradle in GitHub Actions"
+description: "Set up the Bitrise Build Cache for Gradle in a GitHub Actions workflow, on GitHub-hosted runners or on Bitrise Build Hub runners."
+sidebar_position: 3
+slug: /bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-github-actions
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Partial_BuildCacheGitHubActionsAuthentication from '@site/src/partials/build-cache-github-actions-authentication.mdx';
+import Partial_BuildCacheGitHubActionsNotes from '@site/src/partials/build-cache-github-actions-notes.mdx';
+import Partial_BuildCacheGitHubActionsVerifying from '@site/src/partials/build-cache-github-actions-verifying.mdx';
+
+You can use the Bitrise Build Cache to speed up Gradle builds in a GitHub Actions workflow, without moving your CI to Bitrise. It works the same way on GitHub-hosted runners and on [Bitrise Build Hub](/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview) runners.
+
+Your workflow needs two extra steps: one that installs the Bitrise Build Cache CLI, and one that activates the cache for Gradle. Every Gradle step that runs afterwards in the same job uses the cache.
+
+You can also set this up with an AI coding agent instead of following the steps manually. See [Getting started with AI](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai).
+
+## Authentication
+
+<Partial_BuildCacheGitHubActionsAuthentication />
+
+## Adding the Build Cache to your workflow
+
+1. Add the two environment variables to the job. Take the token from a secret and the Workspace slug from a variable:
+
+   ```yaml
+   jobs:
+     build:
+       runs-on: ubuntu-latest
+       env:
+         BITRISE_BUILD_CACHE_AUTH_TOKEN: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+         BITRISE_BUILD_CACHE_WORKSPACE_ID: ${{ vars.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
+   ```
+1. Add a step that installs the Bitrise Build Cache CLI:
+
+   ```yaml
+   - name: Install the Bitrise Build Cache CLI
+     run: curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+   ```
+1. Add a step that activates the Build Cache for Gradle, before the step that runs Gradle:
+
+   ```yaml
+   - name: Activate Bitrise Build Cache for Gradle
+     run: /tmp/bin/bitrise-build-cache activate gradle --cache --cache-push
+   ```
+
+   `--cache` enables reading from the cache and `--cache-push` enables writing to it. CI is normally the environment that fills the cache, so keep both enabled.
+
+   :::important[Containers]
+
+   If your job runs in a container, or in several containers, the CLI has to run in the same container as the Gradle command it speeds up.
+
+   :::
+
+## Example workflow
+
+<Tabs>
+<TabItem value="github-hosted" label="GitHub-hosted runners" default>
+
+```yaml
+name: build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      BITRISE_BUILD_CACHE_AUTH_TOKEN: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+      BITRISE_BUILD_CACHE_WORKSPACE_ID: ${{ vars.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+
+      - name: Install the Bitrise Build Cache CLI
+        run: curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+
+      - name: Activate Bitrise Build Cache for Gradle
+        run: /tmp/bin/bitrise-build-cache activate gradle --cache --cache-push
+
+      - name: Build
+        run: ./gradlew assembleDebug
+```
+
+</TabItem>
+<TabItem value="build-hub" label="Build Hub runners">
+
+The only difference is the `runs-on` label. Bitrise creates a `bitrise-runner-<pool name>` label for every machine pool, so a pool named `android-builds` is targeted with `bitrise-runner-android-builds`.
+
+```yaml
+name: build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: bitrise-runner-android-builds
+    env:
+      BITRISE_BUILD_CACHE_AUTH_TOKEN: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+      BITRISE_BUILD_CACHE_WORKSPACE_ID: ${{ vars.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+
+      - name: Install the Bitrise Build Cache CLI
+        run: curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+
+      - name: Activate Bitrise Build Cache for Gradle
+        run: /tmp/bin/bitrise-build-cache activate gradle --cache --cache-push
+
+      - name: Build
+        run: ./gradlew assembleDebug
+```
+
+You can also use a custom label of the pool. For more information, see [Configuring your GitHub Actions workflow](/bitrise-build-hub/build-hub-for-github-actions/configuring-your-github-actions-workflow).
+
+</TabItem>
+</Tabs>
+
+## Things to know
+
+<Partial_BuildCacheGitHubActionsNotes />
+
+## Verifying the setup
+
+<Partial_BuildCacheGitHubActionsVerifying />
