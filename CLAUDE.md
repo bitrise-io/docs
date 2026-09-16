@@ -304,6 +304,22 @@ workflows:
   domain root — where nothing is served (see the root-files pitfall below).
 - For glossary terms, prefer `<GlossTerm baseform="Workflow">Workflow</GlossTerm>` on first mention so readers get the inline tooltip.
 
+### The auto-generated "See also" section
+
+Every page gets a "See also" section generated automatically from local
+embeddings (`scripts/generate_see_also.py`) — you don't write these links by
+hand. Override or exclude the automatic picks per page via frontmatter:
+
+```yaml
+see_also: [/bitrise-ci/testing/running-xcode-tests-on-bitrise, /bitrise-ci/testing/running-android-tests-on-bitrise]
+see_also_exclude: [/bitrise-ci/some-loosely-related-page]
+```
+
+- `see_also` fully replaces the automatic picks for that page.
+- `see_also_exclude` removes specific candidates from the automatic picks (ignored if `see_also` is also set).
+- Entries are bare paths, same as any other cross-reference above — not a locale-prefixed permalink.
+- These take effect only the next time `see_also.json` is regenerated, not immediately on save — see `scripts/generate_see_also.py`'s docstring for when that happens.
+
 ---
 
 ## Reusable content (partials)
