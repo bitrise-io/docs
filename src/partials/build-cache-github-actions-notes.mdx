@@ -8,6 +8,10 @@ Keep activation in a step of its own, before the step that runs the build.
 
 GitHub does not pass repository or organization secrets to workflow runs triggered from a fork. In those runs `BITRISE_BUILD_CACHE_AUTH_TOKEN` is empty, so the CLI cannot authenticate and the build runs without the cache.
 
-### Don't cache the same files with `actions/cache`
+### Keep dependency caching separate from the Build Cache
 
-If you also cache your build tool's local state (for example `~/.gradle`) with `actions/cache`, the restored local cache serves the outputs that the Bitrise Build Cache would have served, and your remote cache hit rate drops to near zero. Use one or the other.
+`actions/cache` does **dependency caching**: it saves the packages your build downloads, such as the Gradle or CocoaPods caches, and restores them on the next run so they don't have to be fetched again. On Bitrise CI, the key-based caching Steps do the same job. For more information, see [Dependencies and caching overview](/bitrise-ci/dependencies-and-caching/dependencies-and-caching-overview).
+
+That is a different job from the Bitrise Build Cache, which reuses the **outputs** of the build itself: compiled classes, compiled sources and task results. The two work well together, so keep caching your dependencies.
+
+What you should not do is put build outputs into the dependency cache. If, for example, `actions/cache` restores Gradle's local build cache directory (`~/.gradle/caches/build-cache-1`), the restored local copy serves the results that the Bitrise Build Cache would have served, and your remote cache hit rate drops to near zero. Cache the dependency directories, not the build output directories.
