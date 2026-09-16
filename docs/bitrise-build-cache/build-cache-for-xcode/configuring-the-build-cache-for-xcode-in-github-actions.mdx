@@ -28,7 +28,7 @@ You can also set this up with an AI coding agent instead of following the steps 
 
 ## Adding the Build Cache to your workflow
 
-1. Add the two environment variables to the job. Take the token from a secret and the Workspace slug from a variable:
+1. On a GitHub-hosted runner, add the two environment variables to the job. Take the token from a secret and the Workspace slug from a variable:
 
    ```yaml
    jobs:
@@ -38,6 +38,8 @@ You can also set this up with an AI coding agent instead of following the steps 
          BITRISE_BUILD_CACHE_AUTH_TOKEN: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
          BITRISE_BUILD_CACHE_WORKSPACE_ID: ${{ vars.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
    ```
+
+   On Build Hub runners, skip this step: the credentials come from the machine.
 1. Add a step that installs the Bitrise Build Cache CLI:
 
    ```yaml
@@ -95,7 +97,7 @@ jobs:
 </TabItem>
 <TabItem value="build-hub" label="Build Hub runners">
 
-The only difference is the `runs-on` label. Bitrise creates a `bitrise-runner-<pool name>` label for every machine pool, so a pool named `ios-builds` is targeted with `bitrise-runner-ios-builds`.
+The job needs no token and no environment variables. The `runs-on` label targets your pool. Bitrise creates a `bitrise-runner-<pool name>` label for every machine pool, so a pool named `ios-builds` is targeted with `bitrise-runner-ios-builds`.
 
 ```yaml
 name: build
@@ -105,9 +107,6 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: bitrise-runner-ios-builds
-    env:
-      BITRISE_BUILD_CACHE_AUTH_TOKEN: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
-      BITRISE_BUILD_CACHE_WORKSPACE_ID: ${{ vars.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
     steps:
       - uses: actions/checkout@v4
 

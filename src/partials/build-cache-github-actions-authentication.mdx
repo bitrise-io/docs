@@ -1,19 +1,19 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-The Bitrise Build Cache CLI authenticates with two environment variables:
-
-- `BITRISE_BUILD_CACHE_AUTH_TOKEN`: a Bitrise API token. Store it as a repository or organization **secret**.
-- `BITRISE_BUILD_CACHE_WORKSPACE_ID`: your Bitrise Workspace slug. This is not sensitive, so you can store it as a repository or organization **variable**.
-
-[Find your Workspace slug](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs) on the **Workspace settings** page, under **General settings**.
-
-For the token, pick one of the following:
+How the Build Cache authenticates depends on where the job runs.
 
 <Tabs>
-<TabItem value="workspace-api-token" label="Workspace API token" default>
+<TabItem value="build-hub" label="Build Hub runners" default>
 
-A [Workspace API token](/bitrise-platform/workspaces/workspace-api-token) is the recommended option for CI. It belongs to the Workspace rather than to a person, so it keeps working when someone changes roles or leaves the company.
+On [Bitrise Build Hub](/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview) runners there is nothing to set up. The machine is already connected to your Bitrise Workspace, so the CLI picks up the credentials from it: you don't create a token, and you don't add any secret or variable to GitHub.
+
+The machine pool has to belong to the same Workspace as the Build Cache you want to use.
+
+</TabItem>
+<TabItem value="workspace-api-token" label="Workspace API token">
+
+On GitHub-hosted runners, a [Workspace API token](/bitrise-platform/workspaces/workspace-api-token) is the recommended option. It belongs to the Workspace rather than to a person, so it keeps working when someone changes roles or leaves the company.
 
 Give the token at least the **viewer** Workspace role: that is the lowest role that can access the Build Cache.
 
@@ -29,15 +29,11 @@ A Personal Access Token has the same roles as the user who created it. Its acces
 :::
 
 </TabItem>
-<TabItem value="build-hub" label="Build Hub runners">
-
-Jobs running on [Bitrise Build Hub](/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview) runners authenticate the same way: create a Workspace API token and set both environment variables. Only the `runs-on` label differs from a job on a GitHub-hosted runner.
-
-:::note[Seamless authentication is on the way]
-
-We are working on letting the Build Cache authenticate automatically on Build Hub runners, using the credentials already present on the machine, so that no token or secret is needed in GitHub. Until that ships, use a Workspace API token.
-
-:::
-
-</TabItem>
 </Tabs>
+
+If you use a token, pass it and your Workspace slug to the job in two environment variables:
+
+- `BITRISE_BUILD_CACHE_AUTH_TOKEN`: the token. Store it as a repository or organization **secret**.
+- `BITRISE_BUILD_CACHE_WORKSPACE_ID`: your Bitrise Workspace slug. This is not sensitive, so you can store it as a repository or organization **variable**.
+
+[Find your Workspace slug](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs) on the **Workspace settings** page, under **General settings**.
