@@ -1,0 +1,138 @@
+---
+title: "Device sessions"
+description: "Create a Remote Dev Environment session that boots an iOS simulator or Android emulator, optionally with your app preinstalled, then drive it from the browser, the CLI, or an AI coding agent."
+sidebar_position: 2
+slug: /bitrise-rde/devices/device-sessions
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+A <GlossTerm baseform="device session">device session</GlossTerm> is a Remote Dev Environment <GlossTerm baseform="rde session">session</GlossTerm> that boots a virtual device alongside the machine. Bitrise boots the device, optionally installs and launches an app build on it, reports when it's ready, and streams its screen to the browser. On the machine, the device is a normal simulator or emulator that you drive with `xcrun simctl`, `adb`, or any mobile testing tool.
+
+Use a device session to test a CI build on a specific screen size and OS version, to build the app on the session and run it, or to hand the whole loop to an AI coding agent that builds, installs, taps through the UI, and takes screenshots while you watch in the browser.
+
+## Creating a device session
+
+Create the session as usual and ask for a device. Stack and machine type are optional: when you leave them out, Bitrise uses a known-good pair for the platform.
+
+<Tabs>
+<TabItem value="rde-ui" label="RDE UI" default>
+
+On the **New session** form, the device section appears once the selected stack or template supports a device: a macOS stack for iOS, a Linux Android stack for Android.
+
+1. Turn on **Start an iOS simulator** or **Start an Android emulator**.
+1. Optionally set the **Device** or **Device profile**, the **iOS version** or **System image**, and an **App to install** as a download URL.
+1. Click **Create**.
+
+</TabItem>
+<TabItem value="cli" label="CLI">
+
+Pass `--device-platform ios` or `--device-platform android`. With `--wait`, the command returns when the device is ready, not just when the machine is running:
+
+```bash
+bitrise-cli rde session create ios-check --device-platform ios --wait
+```
+
+To pick a device and preinstall a build, read the download URL from a file so a signed URL stays out of your shell history:
+
+```bash
+bitrise-cli rde session create android-check --device-platform android \
+  --device-model pixel_7 --artifact-url-stdin --wait < artifact-url.txt
+```
+
+Before your first device session, read `bitrise-cli rde device-guide`, then `bitrise-cli rde device-guide ios` or `android`. See [Guides for AI agents](#guides-for-ai-agents).
+
+</TabItem>
+<TabItem value="mcp" label="AI assistant (MCP)">
+
+Ask your assistant in plain language, for example: *"Create a device session with an iPhone 16 simulator, install this build, and check that the login screen renders."* It calls `bitrise_devenv_create` with a `device_spec`:
+
+```json
+{
+  "name": "ios-check",
+  "device_spec": { "platform": "ios", "device_model": "iPhone 16" },
+  "artifact": { "url": "https://…/App.zip", "app_name": "My App" }
+}
+```
+
+</TabItem>
+<TabItem value="api" label="API">
+
+Add a `device_spec`, and optionally an `artifact`, to the create session request body:
+
+```json
+{
+  "name": "android-check",
+  "device_spec": { "platform": "android", "device_model": "pixel_7" },
+  "artifact": { "url": "https://…/app.apk", "app_name": "My App" }
+}
+```
+
+See [Create session](/bitrise-rde-api/api-reference/codespaces-service-create-session) in the API reference.
+
+</TabItem>
+</Tabs>
+
+A [template](/bitrise-rde/configuration/templates#declared-device) can declare the device instead, so sessions created from it boot one with no device settings of their own.
+
+## Device options
+
+Every option except the platform is optional.
+
+| Option | Applies to | Description |
+| --- | --- | --- |
+| Platform | Both | `ios` boots a simulator on a macOS stack, `android` boots an emulator on a Linux Android stack. |
+| Device model | Both | A screen profile: a simulator device type such as `iPhone 16` or `iPad Pro 13-inch (M4)`, or an emulator device profile such as `pixel_7`, `pixel_tablet`, or `pixel_fold`. Defaults to `iPhone 15` or `pixel_7`. |
+| OS version | iOS | An iOS version such as `18.2`. Defaults to the newest iOS runtime installed on the stack. |
+| System image | Android | An SDK system image package such as `system-images;android-34;google_apis;x86_64`. This is how you pick the Android API level. Defaults to the stack's default image. |
+| App to install | Both | A download URL for a zipped simulator `.app` (iOS) or an `.apk` (Android). Bitrise installs and launches the app once the device is ready. A signed, expiring URL works, and is stored encrypted on the session. |
+| Emulator RAM, cores, cold boot | Android | Available through the API and the MCP server only. By default the emulator is sized to the machine. |
+
+Only what's preinstalled on the stack can boot. If you request an OS version, system image, or device model the stack doesn't have, Bitrise boots the default instead and records the substitution in the device notes, shown on the session page and by `bitrise-cli rde session view`. Check the notes before relying on an exact OS version.
+
+## Waiting for the device
+
+A session's status turns **running** when the machine is up, but the device boots in the background and usually needs one to three minutes more, longer when the platform is under load. The session detail page, `bitrise-cli rde session view`, and the `device` field on the API report the device state:
+
+| State | Meaning | What to do |
+| --- | --- | --- |
+| Booting | The machine is running and the device is starting. | Wait. Don't run anything against the device, and don't restart or recreate it. |
+| Ready | The device is booted and streaming. | Start working. Check the device notes if you requested a specific OS or model. |
+| Failed | This boot gave up, or only its video stream did. | Read the device notes: after a stream-only failure the device still works over `adb` or `xcrun simctl`, only the browser view is lost. Otherwise delete the session and create a new one. |
+
+When you asked for an app to be installed, the same places show the install status. A failed install leaves the device usable: install the app yourself, or restore the session to retry.
+
+## Watching the device in the browser
+
+On the session detail page, click **Open device view** in the **Device** row. The viewer streams the device screen and lets you tap, type, swipe, rotate, switch between light and dark appearance, and take a screenshot. It's the same viewer a [device preview link](/bitrise-rde/devices/device-preview-links) opens, attached to this session.
+
+The device view requires a Bitrise login and access to the session: its owner for a personal session, or any workspace member for a workspace-owned one. There's no anonymous link to a device session. To hand the app to someone without a Bitrise account, mint a preview link instead.
+
+Your taps and an agent's commands go to the same device. Take turns.
+
+## Working with the device
+
+Everything on the machine is ready to use without installing anything:
+
+- Run commands on the session with `bitrise-cli rde session exec`, or let an AI agent run them through the MCP server's execute tool. `xcrun simctl` and `adb` see the booted device.
+- Prefer the accessibility tree to screenshots when automating. On iOS, the streaming service on the machine exposes the frontmost app's accessibility tree as JSON and a command-line tool for taps and typing. On Android, use `adb shell` for input and `uiautomator dump` for the view hierarchy.
+- Bring your own tooling if you like: XCUITest, Espresso, Maestro, Appium, or Detox all work, as long as you point them at the booted device by its UDID or serial instead of letting them create their own.
+- Connect from your own machine over SSH to use local tools. `bitrise-cli rde session ssh` prints the SSH command and password. Forward the device ports listed in the session's service ports: the browser view on both platforms, and `adb` on Android, so `adb connect` works from your machine.
+- Move files with `bitrise-cli rde session upload` and `download`, for example to bring a build in or a screenshot out.
+
+Don't shut down, erase, or recreate the device that Bitrise booted, and don't boot a second one. The readiness state and the browser view follow the original device, and tools that quietly create their own simulator end up running on a device nobody can see.
+
+## Guides for AI agents
+
+The know-how for driving a device efficiently ships with the tools, so an agent discovers it on its own and works out of the box:
+
+- **CLI**: `bitrise-cli rde device-guide` prints the main guide, and `bitrise-cli rde device-guide ios` or `android` the platform specifics. The help of `bitrise-cli rde session create` points to it.
+- **MCP server**: the same guides are the `bitrise-devenv://guides/device-sessions`, `.../ios`, and `.../android` resources, and the `bitrise_devenv_device_guide` tool returns them for clients that don't read resources. The session tools tell the assistant to read the guide before it creates or drives a device.
+
+The guides cover how long to wait, how to read the accessibility tree and send input, how to install, launch, screenshot, and read logs, what breaks the device, and how to recover from a failed boot.
+
+## Terminating, restoring, and deleting
+
+A device session follows the normal [session lifecycle](/bitrise-rde/getting-started/key-concepts#session-lifecycle), with two additions. Terminating clears the device state, so a stopped session never reports a ready device. Restoring boots the device again and reinstalls the app if one was configured.
