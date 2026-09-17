@@ -39,11 +39,18 @@ Please note that when using the Bitrise runner this way, you have to make sure y
 1. Configure Bitrise runner pools in your **Workspace settings** page on bitrise.io: [Configuring runner pools](/bitrise-platform/infrastructure/configuring-runner-pools).
 
    Make sure to get the token from the process.
-1. Fetch the `bitrise-den-agent` formula from Homebrew.
+1. Fetch the `bitrise-den-agent` formula from Homebrew and trust the tap.
 
    ```bash
    brew tap bitrise-io/den-agent
+   brew trust bitrise-io/den-agent
    ```
+
+   :::note
+
+   Recent Homebrew versions refuse to install formulae from untrusted third-party taps. If your Homebrew version doesn't have the `brew trust` command, skip that line.
+
+   :::
 1. Install the latest version.
 
    ```bash
@@ -82,6 +89,12 @@ Please note that when using the Bitrise runner this way, you have to make sure y
 </TabItem>
 <TabItem value="linux" label="Linux">
 
+:::note[Supported architectures]
+
+The deb package repository serves both `amd64` (x86_64) and `arm64` packages; the commands below work on both architectures. The agent also requires the `ip` command (the `iproute2` package), which is preinstalled on standard Ubuntu installations.
+
+:::
+
 1. Configure Bitrise runner pools in your **Workspace settings** page on bitrise.io: [Configuring runner pools](/bitrise-platform/infrastructure/configuring-runner-pools).
 
    Make sure to get the token from the process.
@@ -94,7 +107,7 @@ Please note that when using the Bitrise runner this way, you have to make sure y
 1. Add the Bitrise DEN agent deb package repository.
 
    ```bash
-   echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/DEB-GPG-KEY-bitrise.gpg] https://bitrise-den-agent-deb.s3.amazonaws.com stable main' | 
+   echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/DEB-GPG-KEY-bitrise.gpg] https://bitrise-den-agent-deb.s3.amazonaws.com stable main" | 
    sudo tee /etc/apt/sources.list.d/den-agent-deb.list
    ```
 1. Install the runner and connect it on your machine to your Bitrise workspace.
@@ -105,6 +118,13 @@ Please note that when using the Bitrise runner this way, you have to make sure y
    sudo apt update
    sudo apt install bitrise-den-agent
    /opt/bitrise/releases/bitrise-den-agent-configure.sh $TOKEN --enable-agent-self-update
+   ```
+1. Install [the Bitrise CLI](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli). The CLI runs the builds based on YAML configurations.
+
+   ```bash
+   curl -fL https://github.com/bitrise-io/bitrise/releases/latest/download/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
+   chmod +x /usr/local/bin/bitrise
+   bitrise setup
    ```
 1. Configure agent mode to clean up your build environment after a build: [Cleaning up persistent build environments](/bitrise-platform/infrastructure/cleaning-up-persistent-build-environments).
 
