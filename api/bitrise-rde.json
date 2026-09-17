@@ -324,24 +324,8 @@
     "v1GetWorkspaceInfoResponse": {
       "description": "GetWorkspaceInfoResponse carries workspace-level capabilities the UI uses to\ntailor what it shows.",
       "properties": {
-        "androidEmulatorAvailable": {
-          "description": "Whether the Android emulator capability (and the service ports that expose\nit) is enabled for this workspace (rollout feature flag). Gates the\nemulator service ports on templates and Android device_spec on sessions.",
-          "type": "boolean"
-        },
         "canViewUsage": {
           "description": "Whether the caller may see the workspace usage page (org permission\n\"view_billing_data\" — workspace owners and billing-managing custom\nroles). Gates the Usage navigation item in the UI; GetWorkspaceUsage\nenforces the same permission server-side.",
-          "type": "boolean"
-        },
-        "devicePreviewAvailable": {
-          "description": "Whether device preview links and streaming are enabled for this workspace\n(rollout feature flag). Gates minting/resolving preview links and the\nviewer affordances in the UI.",
-          "type": "boolean"
-        },
-        "gitProviderIntegrationAvailable": {
-          "description": "Whether the git provider integration feature is enabled for this workspace\n(rollout feature flag). Gates the integration section in the UI.",
-          "type": "boolean"
-        },
-        "iosSimulatorAvailable": {
-          "description": "Whether the iOS simulator capability is enabled for this workspace\n(rollout feature flag). Gates requesting an iOS device on sessions.",
           "type": "boolean"
         },
         "isFreeTrial": {
@@ -770,7 +754,7 @@
           "type": "string"
         },
         "streamBaseUrl": {
-          "description": "Absolute base URL (scheme + host, no path, no trailing slash) of the\nDC-local stream gateway serving this session's media endpoints\n(RDE-480). When set, the viewer builds every stream/asset/control URL\nagainst it (base + stream_path etc.) instead of the API host; empty\nmeans the legacy same-host media path. Chosen server-side per session\ncluster from deployment config, gated by the enable-rde-stream-gateway\nworkspace flag and the gateway's live health. The rollout and fallback\nlevers, with honest latencies for NEW and RECONNECTING connections: a\nflag flip lands within one resolve poll (≤3s pre-stream, ≤60s\nstreaming); the map is deploy config, so changing it takes a pod roll\nplus one poll; a gateway OUTAGE additionally waits on health detection\nfirst — the API's probe (15s cadence + up to a 5s timeout), stacked on\nthe gateway's own cached /readyz self-check (10s cadence + 5s timeout,\ndemoting a ready gateway only after 3 consecutive failures, ~35s) when\nthe failure is gateway-side, e.g. a stale token or a severed\ngateway-to-control-plane path. Established\nstreams are never cut by any lever — they migrate on their next\nreconnect or at the 30-minute connection cap; the emergency drain of a\nlive gateway is stopping its process.",
+          "description": "Absolute base URL (scheme + host, no path, no trailing slash) of the\nstream gateway serving this session's media endpoints. When set, build\nevery stream/asset/control URL against it (base + stream_path etc.)\ninstead of the API host; when empty, the media endpoints live on the API\nhost itself. Chosen server-side and may differ between resolves of the\nsame session, so read it from the latest response rather than caching it.\nAn established stream is never cut when it changes — it keeps running and\nmoves on its next reconnect (or at the 30-minute connection cap).",
           "type": "string"
         },
         "streamGrant": {
@@ -2491,7 +2475,7 @@
         ]
       },
       "post": {
-        "description": "Creates a new session (remote development environment).",
+        "description": "Creates a new session (remote development environment) and starts provisioning it.\n\n## Authentication\n\nAccepts a Personal Access Token or a **Workspace API Token** (`bitwat_…`, created with Remote Dev Environments access). A PAT creates a personal session by default; set `owner_type` to `workspace` to create one owned by the workspace instead. A workspace token always creates **workspace-owned** sessions (`owner_type` may be omitted or `workspace`; `user` is rejected) — there is no user behind the token, so the session is visible to and manageable by every workspace member and listed under `?scope=SESSION_LIST_SCOPE_WORKSPACE`. The token can then manage the sessions it created — read, list, update, terminate, restore, delete, sweep terminated ones, run commands, transfer files, take screenshots — and read the workspace's templates and machine catalog; it never sees a member's personal session.\n\n## Workspace-owned sessions\n\nUse an existing template (`template_id`) or a bare `stack_id` + `machine_type`. Session inputs are given as plain values in `session_inputs`: every **required** input must be supplied that way, optional ones fall back to the template's `default_value` when omitted. Saved inputs are personal, so `saved_input_id` references and `map_saved_to_session_inputs` are rejected, and no saved SSH key or Claude credential is injected. `ai_prompt` is rejected for the same reason.",
         "operationId": "CodespacesService_CreateSession",
         "parameters": [
           {
@@ -2531,7 +2515,7 @@
                 },
                 "deviceSpec": {
                   "$ref": "#/definitions/v1PreviewDeviceSpec",
-                  "description": "Virtual device to boot with this session: an Android emulator (Linux\nstacks) or an iOS simulator (macOS stacks) — the same message a device\npreview link carries, so links and sessions describe devices identically.\nWhen set:\n  - the session boots the device and streams it exactly like a preview\n    link's session (see Session.device for readiness);\n  - with a template that declares a device (Template.device_spec), the\n    request is an override: WITH a platform it is the complete device to\n    boot (empty fields = platform defaults, the template's are ignored);\n    WITHOUT a platform it tweaks the template's device field by field\n    (empty fields inherit); no device_spec at all boots the template's\n    device as declared; no_device skips it;\n  - stack_id and machine_type may be omitted on a template-less session:\n    the deployment's per-platform device defaults apply, and the cluster\n    is picked deterministically instead of erroring on ambiguity;\n  - a supplied stack/machine type must fit the platform (OS family, spec\n    floor) or the request is rejected — no silent fallback.\nAbsent = no device. auto_terminate_minutes keeps its ordinary default\neither way. Gated per platform by the enable-rde-android-emulator /\nenable-rde-ios-simulator workspace flags."
+                  "description": "Virtual device to boot with this session: an Android emulator (Linux\nstacks) or an iOS simulator (macOS stacks) — the same message a device\npreview link carries, so links and sessions describe devices identically.\nWhen set:\n  - the session boots the device and streams it exactly like a preview\n    link's session (see Session.device for readiness);\n  - with a template that declares a device (Template.device_spec), the\n    request is an override: WITH a platform it is the complete device to\n    boot (empty fields = platform defaults, the template's are ignored);\n    WITHOUT a platform it tweaks the template's device field by field\n    (empty fields inherit); no device_spec at all boots the template's\n    device as declared; no_device skips it;\n  - stack_id and machine_type may be omitted on a template-less session:\n    the deployment's per-platform device defaults apply, and the cluster\n    is picked deterministically instead of erroring on ambiguity;\n  - a supplied stack/machine type must fit the platform (OS family, spec\n    floor) or the request is rejected — no silent fallback.\nAbsent = no device. auto_terminate_minutes keeps its ordinary default\neither way."
                 },
                 "enabledFeatureFlagNames": {
                   "description": "Names of feature flags to enable.",
@@ -2566,6 +2550,10 @@
                 "noDevice": {
                   "description": "Create the session WITHOUT the template's declared device\n(Template.device_spec). Only meaningful with such a template; cannot be\ncombined with device_spec.",
                   "type": "boolean"
+                },
+                "ownerType": {
+                  "description": "Who owns the session (see Session.owner_type): \"user\" (the default — the\ncalling user's personal session) or \"workspace\" (owned by the workspace\nitself; visible to and manageable by every member, listed under\n?scope=SESSION_LIST_SCOPE_WORKSPACE).\n\nA Workspace API Token caller always creates workspace-owned sessions —\nempty and \"workspace\" are accepted, \"user\" is rejected (there is no user\nbehind the token). A user (PAT) may opt into \"workspace\" to create a\nshared session; their user id is kept as attribution only.\n\nWorkspace-owned sessions carry no personal state: session_inputs must be\ngiven as values (saved_input_id references are rejected; optional inputs\nstill fall back to their default_value when omitted),\nmap_saved_to_session_inputs is rejected, the creator's saved SSH key /\nClaude credentials are not injected, and ai_prompt is rejected.",
+                  "type": "string"
                 },
                 "sessionInputs": {
                   "description": "Session input values (key/value pairs or saved input references).",
