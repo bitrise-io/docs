@@ -49,13 +49,14 @@ The `bitrise-cli rde session` commands cover the full session lifecycle. Command
 
 | Command | What it does |
 | --- | --- |
-| `bitrise-cli rde session create NAME` | Create a session from a `--template`, or without one by passing `--stack` and `--machine-type`. Add `--wait` to block until the session is running. |
+| `bitrise-cli rde session create NAME` | Create a session from a `--template`, or without one by passing `--stack` and `--machine-type`. Add `--device-platform ios` or `android` to boot a virtual device with it. Add `--wait` to block until the session, and its device, are ready. |
 | `bitrise-cli rde session list` | List your sessions and their status. |
 | `bitrise-cli rde session view SESSION_ID` | Show a session's details, including connection credentials. |
 | `bitrise-cli rde session update SESSION_ID` | Rename a session, change its description, or adjust its auto-terminate timer. |
 | `bitrise-cli rde session exec SESSION_ID -- COMMAND` | Run a command in the session over SSH. See [Running commands in a session](#running-commands-in-a-session). |
 | `bitrise-cli rde session upload SESSION_ID LOCAL_PATH REMOTE_FOLDER` | Upload a file or folder into the session. |
 | `bitrise-cli rde session download SESSION_ID REMOTE_PATH LOCAL_PATH` | Download a file or folder from the session. |
+| `bitrise-cli rde session ssh SESSION_ID` | Print the session's SSH command and password, for `scp` or for tunneling a device session's ports. |
 | `bitrise-cli rde session vnc SESSION_ID` | Print the session's VNC connection details, or tunnel them to a local port with `--forward` (macOS only). |
 | `bitrise-cli rde session open-vnc SESSION_ID` | Open the session's desktop in your default VNC viewer (macOS only). |
 | `bitrise-cli rde session logs SESSION_ID --stage startup` | Print the session's warmup or startup script logs. Add `--follow` to stream them live. |
@@ -111,6 +112,14 @@ This is the recommended way to start. For the full walkthrough, see the [Quickst
 - When you exit Claude Code, the session is terminated automatically, but preserved so you can restore it later.
 
 To return to a session, use `bitrise-cli rde claude --continue` for the most recent one, or `bitrise-cli rde claude --resume` to pick from a list. Resuming reconnects to a running session, or restores a terminated one and continues the same Claude Code conversation.
+
+## Virtual devices
+
+The CLI covers both ways to use [virtual devices](/bitrise-rde/devices/virtual-devices):
+
+- `bitrise-cli rde session create NAME --device-platform ios|android`: create a [device session](/bitrise-rde/devices/device-sessions). The `--device-model`, `--device-os-version`, `--device-system-image`, and `--artifact-url-stdin` flags set the device and the app to install.
+- `bitrise-cli rde device-guide [ios|android]`: print the guide for waiting for, connecting to, and driving a device.
+- `bitrise-cli rde preview-link create --device-platform ios|android --artifact-url URL`: mint a [device preview link](/bitrise-rde/devices/device-preview-links).
 
 ## Templates, saved inputs, and machine options
 

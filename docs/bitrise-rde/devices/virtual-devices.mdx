@@ -1,0 +1,43 @@
+---
+title: "Virtual devices"
+description: "Boot an iOS simulator or Android emulator on a Remote Dev Environment session, or share an app build with anyone through a device preview link that runs it in the browser."
+sidebar_position: 1
+slug: /bitrise-rde/devices/virtual-devices
+---
+
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Remote Dev Environments can boot a virtual device — an iOS simulator or an Android emulator — on Bitrise infrastructure and stream it to a browser. Nobody needs Xcode, Android Studio, or a local simulator: the device runs on the cloud machine, and whoever has access sees and controls it from a browser.
+
+## Using virtual devices
+
+There are two ways to use virtual devices, built on the same machinery:
+
+- A **<GlossTerm baseform="device session">device session</GlossTerm>** is an ordinary RDE <GlossTerm baseform="rde session">session</GlossTerm> that also boots a device. You, or an AI coding agent, get a full development machine plus a booted simulator or emulator to build on, install to, test against, and watch in the browser. See [Device sessions](/bitrise-rde/devices/device-sessions).
+- A **<GlossTerm baseform="device preview link">device preview link</GlossTerm>** turns a finished app build into a URL. Whoever opens it gets a fresh device with the app installed and running, with no Bitrise login. The typical use is the [Device Preview Step](https://github.com/bitrise-io/steps-device-preview) posting the link on every pull request. See [Device preview links](/bitrise-rde/devices/device-preview-links).
+
+| | Device session | Device preview link |
+| --- | --- | --- |
+| Who it's for | Developers and AI agents working on the app | Reviewers, designers, and stakeholders trying the app |
+| Bitrise login | Required, with RDE access | Not required |
+| What you get | A dev machine with a booted device, reachable over SSH, `adb`, and `xcrun simctl` | A browser tab showing the app running on a device |
+| App build | Optional: install one, or build it on the machine | Required: the link exists to show one build |
+| Created from | RDE UI, CLI, MCP server, API | CI Step, CLI, MCP server, API |
+| Lifetime | Like any session: runs until you terminate it or its auto-terminate timer fires, and can be restored | The link expires after 24 hours by default; each device shuts down once nobody has watched it for a while |
+
+## Supported platforms
+
+| Platform | Runs on | App build it accepts |
+| --- | --- | --- |
+| iOS simulator | macOS stacks | An `.app` built for the simulator, zipped |
+| Android emulator | Linux Android stacks | An `.apk` |
+
+The app must be built for a simulator or an emulator, not for a physical device: an `.ipa` and an Android App Bundle (`.aab`) can't be installed on a virtual device. On Bitrise CI, the [Xcode Build for Simulator](https://bitrise.io/integrations/steps/xcode-build-for-simulator) Step produces the iOS build and the [Android Build](https://bitrise.io/integrations/steps/android-build) Step produces the `.apk`. See [Building an iOS app for a simulator](/bitrise-ci/testing/testing-ios-apps/building-an-ios-app-for-a-simulator).
+
+You don't need to pick a stack or a machine type. When you ask for a device, Bitrise applies a known-good stack and machine type for the platform. You can still pin them, in which case they have to fit: iOS needs a macOS stack, and Android needs a Linux Android stack on a machine with at least 4 vCPUs.
+
+:::note[The device model is a screen profile]
+
+The device model sets the screen size and pixel density of the virtual device. It doesn't give you that phone's firmware: `pixel_7` is the generic Android system image on a Pixel 7-sized screen, not Pixel software.
+
+:::

@@ -1,0 +1,167 @@
+---
+title: "Device preview links"
+description: "Turn an app build into a shareable link that opens it on a live iOS simulator or Android emulator in the browser, with no Bitrise login, and post it on every pull request from CI."
+sidebar_position: 3
+slug: /bitrise-rde/devices/device-preview-links
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+A <GlossTerm baseform="device preview link">device preview link</GlossTerm> is a URL that opens an app build on a live iOS simulator or Android emulator in the recipient's browser. Whoever opens it gets their own fresh device with the app installed and launched, ready to tap through. They don't need a Bitrise account, Xcode, Android Studio, or anything installed, just a browser.
+
+The typical use is code review: a CI Workflow builds the app, mints a link for the build, and posts it on the pull request. Reviewers, designers, and anyone else you share the link with can try the change before it's merged.
+
+## About preview links
+
+- A link is minted for one app build and one device configuration. Nothing is stored when it's minted: the link is a signed token, and a link nobody opens costs nothing.
+- Every open of the link starts a new <GlossTerm baseform="device session">device session</GlossTerm> in your <GlossTerm baseform="workspace">workspace</GlossTerm>, boots the device, downloads the build, and installs and launches the app. One link serves several reviewers at once.
+- The sessions a link opens are regular sessions. Links minted from CI or with a [Workspace API token](/bitrise-platform/workspaces/workspace-api-token) create workspace-owned sessions that every member sees under **Workspace sessions** in the RDE UI. Links minted with a personal access token create sessions owned by you.
+- A device shuts down on its own once nobody has been watching it for a while. Nobody restores a preview device: reopening the link starts a new one.
+- The link stops working when it expires. Devices that are already open are unaffected.
+
+The build has to be a simulator or emulator build, reachable by an anonymous `GET` on an absolute `https` URL. See [Supported platforms](/bitrise-rde/devices/virtual-devices#supported-platforms) for the accepted formats. A presigned, expiring download URL is fine and is never shown to viewers, but it has to outlive the link: a viewer who opens the link after the URL expired gets a device with a failed install.
+
+## Creating a link from a CI Workflow
+
+The open-source [**Device Preview** Step](https://github.com/bitrise-io/steps-device-preview):
+
+- Creates the link for an app built earlier in the Workflow.
+- Exports it as `$BITRISE_DEVICE_PREVIEW_URL`.
+- Optionally posts it as a comment on the pull request the build belongs to.
+
+It authenticates with the build's own API token, so there's nothing to configure. The Step isn't in the Bitrise Step Library yet: reference it by its Git URL.
+
+<Tabs>
+<TabItem value="ios" label="iOS" default>
+
+```yaml
+workflows:
+  pr-preview:
+    steps:
+    - xcode-build-for-simulator@0:
+        inputs:
+        - project_path: $BITRISE_PROJECT_PATH
+        - scheme: $BITRISE_SCHEME
+    - deploy-to-bitrise-io@2: {}
+    - git::https://github.com/bitrise-io/steps-device-preview.git@main:
+        inputs:
+        - app_path: $BITRISE_APP_DIR_PATH.zip
+        - post_pr_comment: "true"
+```
+
+</TabItem>
+<TabItem value="android" label="Android">
+
+```yaml
+workflows:
+  pr-preview:
+    steps:
+    - android-build@1:
+        inputs:
+        - variant: debug
+    - deploy-to-bitrise-io@2: {}
+    - git::https://github.com/bitrise-io/steps-device-preview.git@main:
+        inputs:
+        - app_path: $BITRISE_APK_PATH
+        - post_pr_comment: "true"
+```
+
+</TabItem>
+</Tabs>
+
+The Step detects the platform from the `app_path` input: a `.zip` for iOS, an `.apk` for Android, as in the examples above. `app_path` is a local file on the CI build machine. If the [Deploy to Bitrise.io](https://bitrise.io/integrations/steps/deploy-to-bitrise-io) Step already uploaded that file earlier in the Workflow, the Device Preview Step reuses its URL to create the preview link. Otherwise, it uploads the file itself and creates the link from that.
+
+Its other inputs map to the [link options](#link-options) below: `device_model`, `os_version`, `system_image`, `link_ttl_hours`, `auto_terminate_minutes`, `stack`, `machine_type`, and the Android emulator sizing inputs. The [Step's README](https://github.com/bitrise-io/steps-device-preview#readme) documents every input and output.
+
+The Step exports `BITRISE_DEVICE_PREVIEW_URL` and `BITRISE_DEVICE_PREVIEW_EXPIRES_AT` for later Steps: post the URL to Slack, attach it to a check, or drop it into release notes. The Step fails the build when it can't create a link; set `is_skippable: true` on it if a preview problem shouldn't stop the build.
+
+:::tip[Build for the simulator on pull requests]
+
+A pull request Workflow that only produces a device build has nothing to preview. Add a simulator or emulator build to the Workflow, or run it in parallel in a Pipeline, and pass its output to the Step.
+
+:::
+
+## Creating a link from the CLI
+
+Mint a link for a build you already have a URL for:
+
+```bash
+bitrise-cli rde preview-link create --device-platform ios --artifact-url https://…/App.zip
+```
+
+The command prints the link, its ID, and when it expires. Add `--output json` for the same fields as JSON, and `--artifact-url-stdin` to read a signed URL from a file instead of the command line.
+
+In CI, or anywhere no person is signed in, authenticate with a [Workspace API token](/bitrise-platform/workspaces/workspace-api-token) created with **Remote Dev Environments** access. Pass it as `BITRISE_TOKEN` and name the workspace explicitly, because a workspace token belongs to one workspace and can't look one up:
+
+```bash
+BITRISE_TOKEN=bitwat_… bitrise-cli rde preview-link create --workspace WORKSPACE_ID \
+  --device-platform android --artifact-url-stdin < artifact-url.txt
+```
+
+## Creating a link from an AI assistant
+
+Ask for a link in plain language, for example: *"Build the app for the simulator and give me a preview link I can post in the design channel."* The assistant builds the app in a session, uploads it somewhere reachable, and calls `bitrise_devenv_create_preview_link` with a `device_spec` and an `artifact`. The tool returns the URL to hand over.
+
+The tool description tells the assistant when a preview link is the right tool: when a person should try the app. When the assistant needs to drive a device itself, it creates a [device session](/bitrise-rde/devices/device-sessions) instead.
+
+## Creating a link with the API
+
+Call the create preview link endpoint. Unlike the rest of the RDE API, it accepts a Workspace API token as well as a personal access token:
+
+```bash
+curl -X POST "https://api.bitrise.io/rde/v1/workspaces/WORKSPACE_ID/preview-links" \
+  -H "Authorization: token YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "device_spec": { "platform": "android" },
+    "artifact": {
+      "url": "https://…/app.apk",
+      "app_name": "My App",
+      "build_number": "1234",
+      "commit_sha": "0a1b2c3"
+    },
+    "ttl_seconds": 14400
+  }'
+```
+
+The response contains the shareable `url`, the link's ID, and `expires_at`. See [Create device preview link](/bitrise-rde-api/api-reference/codespaces-service-create-preview-link) in the API reference.
+
+## Link options
+
+The device fields are the same as a device session's [device options](/bitrise-rde/devices/device-sessions#device-options): platform, device model, OS version or system image, and on Android the emulator sizing. Two differences: the platform and the app build are required, and the device model isn't validated when the link is minted, so an unknown model boots the default and the viewer sees a notice.
+
+The link-specific options:
+
+| Option | Description |
+| --- | --- |
+| App name, build number, commit | Display metadata shown on the viewer page, so reviewers know which build they're looking at. |
+| Link lifetime | How long the link can be opened. Defaults to 24 hours, 72 hours is the maximum. |
+| Auto-terminate | How long a device stays up after its last viewer disconnects. Defaults to 60 minutes, at least 10. |
+| Stack and machine type | Where the devices run. Leave empty for the platform default. A value that doesn't fit the platform is rejected when the link is minted. |
+
+## What the recipient sees
+
+Opening the link shows the app name, build number, and commit, then a progress view while the device boots and the app installs and launches, which usually takes one to three minutes. From there the viewer taps, types, and swipes on the device screen, and has controls for the home button, the app switcher, the back button on Android, rotation, light and dark appearance, and a full-resolution screenshot.
+
+Two more actions are available:
+
+- **Share this device** copies a link that opens this exact device, with its current state, so a second person can look at the same screen instead of getting a fresh install. Use it to show someone the bug you just found.
+- **Delete session** ends the device immediately instead of waiting for it to time out.
+
+After the link expires, opening it shows that the preview link has expired. Someone with a workspace login can still find the sessions the link created in the RDE UI.
+
+## Security and limits
+
+Treat a preview link like a password. Anyone holding the URL can open a device in your workspace, and a link can't be revoked: it works until it expires. Post links on pull requests and in team channels, never publicly, and keep the lifetime as short as your review cycle allows.
+
+The limits that bound what one link can cost:
+
+- A link works for 24 hours by default, 72 hours at most.
+- At most 5 devices per link and 20 per workspace can be alive at the same time. Opens beyond the cap are refused until a device shuts down.
+- Each device shuts down after its auto-terminate window without viewers, and never runs longer than 8 hours in total.
+
+To stop devices a link already opened, terminate or delete their sessions from the **Workspace sessions** list in the RDE UI or with `bitrise-cli rde session list --scope workspace`. To stop a leaked Workspace API token from minting more links, regenerate the token.
+
+Preview links require Remote Dev Environments access on the workspace. A Workspace API token can only mint links if it was created with **Remote Dev Environments** access.
