@@ -1,0 +1,148 @@
+---
+title: "Configuring the Build Cache for React Native in GitHub Actions"
+description: "Set up the Bitrise Build Cache for React Native in a GitHub Actions workflow, on GitHub-hosted runners or on Bitrise Build Hub runners."
+sidebar_position: 3
+slug: /bitrise-build-cache/build-cache-for-react-native/configuring-the-build-cache-for-react-native-in-github-actions
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Partial_BuildCacheGitHubActionsAuthentication from '@site/src/partials/build-cache-github-actions-authentication.mdx';
+import Partial_BuildCacheGitHubActionsNotes from '@site/src/partials/build-cache-github-actions-notes.mdx';
+import Partial_BuildCacheGitHubActionsVerifying from '@site/src/partials/build-cache-github-actions-verifying.mdx';
+
+You can use the Bitrise Build Cache to speed up React Native builds in a GitHub Actions workflow, without moving your CI to Bitrise. It works the same way on GitHub-hosted runners and on [Bitrise Build Hub](/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview) runners.
+
+A single activation covers all three backends a React Native build uses: Gradle for Android, the Xcode Compilation Cache for iOS, and `ccache` for C++.
+
+You can also set this up with an AI coding agent instead of following the steps manually. See [Getting started with AI](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai).
+
+## Requirements
+
+Bitrise Build Cache CLI v1.0.0 or later. Earlier versions have no React Native support.
+
+## Authentication
+
+<Partial_BuildCacheGitHubActionsAuthentication />
+
+## Adding the Build Cache to your workflow
+
+1. On a GitHub-hosted runner, add `BITRISE_BUILD_CACHE_AUTH_TOKEN` and `BITRISE_BUILD_CACHE_WORKSPACE_ID` as environment variables to the job.
+
+   These are the token and Workspace slug you set up in [Authentication](#authentication) above:
+
+   ```yaml
+   jobs:
+     build:
+       runs-on: macos-latest
+       env:
+         BITRISE_BUILD_CACHE_AUTH_TOKEN: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+         BITRISE_BUILD_CACHE_WORKSPACE_ID: ${{ vars.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
+   ```
+
+   On Build Hub runners, skip this step: the credentials come from the machine.
+1. Add a step that installs the Bitrise Build Cache CLI:
+
+   ```yaml
+   - name: Install the Bitrise Build Cache CLI
+     run: curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+   ```
+1. Add a step that activates the Build Cache for React Native, before the steps that run a build:
+
+   ```yaml
+   - name: Activate Bitrise Build Cache for React Native
+     run: /tmp/bin/bitrise-build-cache activate react-native --cache-push
+   ```
+
+   All three backends are enabled by default. To disable one, pass the matching flag:
+
+   ```bash
+   /tmp/bin/bitrise-build-cache activate react-native --gradle=true --xcode=true --cpp=false
+   ```
+
+   CI is normally the environment that fills the cache, so keep `--cache-push` enabled.
+1. Prefix every command that runs a native build with `bitrise-build-cache react-native run`:
+
+   ```yaml
+   - name: Build iOS
+     run: /tmp/bin/bitrise-build-cache react-native run npx react-native run-ios --configuration=Release
+   ```
+
+   For more information, see [Wrapping native build commands](/bitrise-build-cache/build-cache-for-react-native/wrapping-native-build-commands).
+
+## Example workflow
+
+<Tabs>
+<TabItem value="github-hosted" label="GitHub-hosted runners" default>
+
+```yaml
+name: build-rn
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    env:
+      BITRISE_BUILD_CACHE_AUTH_TOKEN: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+      BITRISE_BUILD_CACHE_WORKSPACE_ID: ${{ vars.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the Bitrise Build Cache CLI
+        run: curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+
+      - name: Activate Bitrise Build Cache for React Native
+        run: /tmp/bin/bitrise-build-cache activate react-native --cache-push
+
+      - name: Install JavaScript dependencies
+        run: yarn install
+
+      - name: Build iOS
+        run: /tmp/bin/bitrise-build-cache react-native run npx react-native run-ios --configuration=Release
+
+      - name: Build Android
+        run: /tmp/bin/bitrise-build-cache react-native run npx react-native run-android --mode=release
+```
+
+</TabItem>
+<TabItem value="build-hub" label="Build Hub runners">
+
+The job needs no token and no environment variables. The `runs-on` label targets your pool. Bitrise creates a `bitrise-runner-<pool name>` label for every machine pool, so a pool named `rn-builds` is targeted with `bitrise-runner-rn-builds`.
+
+```yaml
+name: build-rn
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: bitrise-runner-rn-builds
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the Bitrise Build Cache CLI
+        run: curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+
+      - name: Activate Bitrise Build Cache for React Native
+        run: /tmp/bin/bitrise-build-cache activate react-native --cache-push
+
+      - name: Install JavaScript dependencies
+        run: yarn install
+
+      - name: Build iOS
+        run: /tmp/bin/bitrise-build-cache react-native run npx react-native run-ios --configuration=Release
+```
+
+You can also use a custom label of the pool. For more information, see [Configuring your GitHub Actions workflow](/bitrise-build-hub/build-hub-for-github-actions/configuring-your-github-actions-workflow).
+
+</TabItem>
+</Tabs>
+
+## Best practices and limitations
+
+<Partial_BuildCacheGitHubActionsNotes />
+
+## Verifying the setup
+
+<Partial_BuildCacheGitHubActionsVerifying />
