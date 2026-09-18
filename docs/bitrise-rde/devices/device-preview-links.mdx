@@ -13,7 +13,7 @@ A <GlossTerm baseform="device preview link">device preview link</GlossTerm> is a
 
 The typical use is code review: a CI Workflow builds the app, mints a link for the build, and posts it on the pull request. Reviewers, designers, and anyone else you share the link with can try the change before it's merged.
 
-## How preview links work
+## About preview links
 
 - A link is minted for one app build and one device configuration. Nothing is stored when it's minted: the link is a signed token, and a link nobody opens costs nothing.
 - Every open of the link starts a new <GlossTerm baseform="device session">device session</GlossTerm> in your <GlossTerm baseform="workspace">workspace</GlossTerm>, boots the device, downloads the build, and installs and launches the app. One link serves several reviewers at once.
@@ -25,7 +25,13 @@ The build has to be a simulator or emulator build, reachable by an anonymous `GE
 
 ## Creating a link from a CI Workflow
 
-The open-source [**Device Preview** Step](https://github.com/bitrise-io/steps-device-preview) creates the link for an app built earlier in the Workflow, exports it as `$BITRISE_DEVICE_PREVIEW_URL`, and optionally posts it as a comment on the pull request the build belongs to. It authenticates with the build's own API token, so there's nothing to configure. The Step isn't in the Bitrise Step Library yet: reference it by its Git URL.
+The open-source [**Device Preview** Step](https://github.com/bitrise-io/steps-device-preview):
+
+- Creates the link for an app built earlier in the Workflow.
+- Exports it as `$BITRISE_DEVICE_PREVIEW_URL`.
+- Optionally posts it as a comment on the pull request the build belongs to.
+
+It authenticates with the build's own API token, so there's nothing to configure. The Step isn't in the Bitrise Step Library yet: reference it by its Git URL.
 
 <Tabs>
 <TabItem value="ios" label="iOS" default>
@@ -65,7 +71,9 @@ workflows:
 </TabItem>
 </Tabs>
 
-The Step detects the platform from the file. It works together with the [Deploy to Bitrise.io](https://bitrise.io/integrations/steps/deploy-to-bitrise-io) Step you likely already use to upload build artifacts: when that Step ran earlier in the Workflow, the Device Preview Step reuses the uploaded artifact instead of uploading the app again. Its other inputs map to the [link options](#link-options) below: `device_model`, `os_version`, `system_image`, `link_ttl_hours`, `auto_terminate_minutes`, `stack`, `machine_type`, and the Android emulator sizing inputs. The [Step's README](https://github.com/bitrise-io/steps-device-preview#readme) documents every input and output.
+The Step detects the platform from the `app_path` input: a `.zip` for iOS, an `.apk` for Android, as in the examples above. `app_path` is a local file on the CI build machine. If the [Deploy to Bitrise.io](https://bitrise.io/integrations/steps/deploy-to-bitrise-io) Step already uploaded that file earlier in the Workflow, the Device Preview Step reuses its URL to create the preview link. Otherwise, it uploads the file itself and creates the link from that.
+
+Its other inputs map to the [link options](#link-options) below: `device_model`, `os_version`, `system_image`, `link_ttl_hours`, `auto_terminate_minutes`, `stack`, `machine_type`, and the Android emulator sizing inputs. The [Step's README](https://github.com/bitrise-io/steps-device-preview#readme) documents every input and output.
 
 The Step exports `BITRISE_DEVICE_PREVIEW_URL` and `BITRISE_DEVICE_PREVIEW_EXPIRES_AT` for later Steps: post the URL to Slack, attach it to a check, or drop it into release notes. The Step fails the build when it can't create a link; set `is_skippable: true` on it if a preview problem shouldn't stop the build.
 
