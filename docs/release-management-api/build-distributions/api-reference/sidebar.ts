@@ -30,6 +30,12 @@ const sidebar: SidebarsConfig = {
       items: [
         {
           type: "doc",
+          id: "release-management-api/build-distributions/api-reference/list-workspace-potential-testers",
+          label: "Get a list of potential tester candidates in a workspace",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
           id: "release-management-api/build-distributions/api-reference/list-tester-groups",
           label: "Get a list of tester groups",
           className: "api-method get",
