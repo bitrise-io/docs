@@ -289,6 +289,17 @@ const config: Config = {
           },
         ]
       : []),
+    // Loads the Vertex AI Search custom-element definition (<gen-search-widget>)
+    // that the "Ask AI" panel in the Algolia search modal creates on demand —
+    // see src/theme/SearchBar's AskAiPanel.
+    ...(process.env.GEN_SEARCH_WIDGET_ID
+      ? [
+          {
+            src: 'https://cloud.google.com/ai/gen-app-builder/client?hl=en_US',
+            async: true,
+          },
+        ]
+      : []),
   ],
 
   clientModules: [
@@ -297,6 +308,7 @@ const config: Config = {
 
   customFields: {
     gtmId: process.env.GTM_ID || '',
+    genSearchWidgetConfigId: process.env.GEN_SEARCH_WIDGET_ID || '',
     intercomAppId: 'e2rdidtm',
     intercomEnabled,
   },

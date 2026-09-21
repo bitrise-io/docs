@@ -107,6 +107,13 @@
   align-items: center;
 }
 
+/* The homepage (Docusaurus's "pages" plugin, flagged by the html.plugin-pages
+   class) has its own hero search box that proxies to this same DocSearch
+   modal — showing the navbar copy there too would be redundant. */
+html.plugin-pages .navbar__items--right > div:has(> .DocSearch-Button) {
+  display: none;
+}
+
 .navbar__items--right > div:has(> .DocSearch-Button) .DocSearch-Button {
   width: 320px;
   /* Matches the translucent white the old custom navbar search bar used on
@@ -303,6 +310,76 @@
    .DocSearch-HitsFooter a { color: inherit }, which can load after ours. */
 .DocSearch-HitsFooter a {
   color: var(--docsearch-highlight-color) !important;
+}
+
+/* "Ask AI" — hand-appended to .DocSearch-Footer (see useAskAiFooterButton),
+   the fixed bar below the scrollable results, so it's always visible
+   without scrolling regardless of hit count or the no-results/start
+   screens. Sits between the Algolia logo and the keyboard-hint list, which
+   are already laid out with justify-content: space-between — evenly
+   distributing all three keeps the button roughly centered. */
+.ask-ai-footer-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border: none;
+  border-radius: var(--docsearch-searchbox-border-radius, 6px);
+  background: var(--docsearch-highlight-color, var(--ifm-color-primary));
+  color: white;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ask-ai-footer-button:hover {
+  filter: brightness(1.1);
+}
+
+/* ---- Ask AI panel ----
+   Covers .DocSearch-Dropdown in place, inside the same .DocSearch-Modal
+   frame, while ask-ai mode is active (see useAskAiPanelHost/AskAiPanel in
+   the swizzled SearchBar) — same rounded card, same position on screen, no
+   separate overlay/window. 56px/51px match .DocSearch-SearchBar's and
+   .DocSearch-Footer's own fixed heights (DocSearch doesn't expose those as
+   CSS variables to reference instead); the 2px overlap on each edge covers
+   a hairline sub-pixel gap otherwise left at the exact boundary, letting a
+   sliver of the underlying results list show through. */
+.ask-ai-panel-host {
+  position: absolute;
+  inset: 54px 0 49px 0;
+  background: var(--docsearch-modal-background, var(--ifm-background-color));
+  overflow: auto;
+  z-index: 1;
+}
+
+.ask-ai-panel {
+  padding: 1rem;
+}
+
+.ask-ai-panel__back {
+  border: none;
+  background: none;
+  color: var(--docsearch-highlight-color, var(--ifm-color-primary));
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 1rem;
+}
+
+.ask-ai-panel__loading {
+  color: var(--docsearch-secondary-text-color);
+  font-size: 0.875rem;
+}
+
+.ask-ai-panel__summary {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.ask-ai-panel__widget-container gen-search-widget {
+  display: block;
 }
 
 /* ---- Footer ---- */
