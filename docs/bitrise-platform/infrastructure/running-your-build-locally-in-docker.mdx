@@ -33,7 +33,7 @@ The official Bitrise Docker images are quite large because they include a wide v
 
 :::
 
-If you’re not familiar with the [Bitrise CLI](https://www.bitrise.io/cli), you should try that first. You don’t have to master the CLI, if you know what `bitrise run WORKFLOW` does, that should be enough for this tutorial.
+If you’re not familiar with the [Bitrise CLI](https://www.bitrise.io/cli), you should try that first. You don’t have to master the CLI, if you know what `bitrise local run WORKFLOW` does, that should be enough for this tutorial.
 
 
 ## Downloading docker images
@@ -51,10 +51,10 @@ If you’re not familiar with the [Bitrise CLI](https://www.bitrise.io/cli), you
 1. Run the following command:
 
    ```bash
-   docker run --privileged --env CI=false --volume "$(pwd):/bitrise/src" --volume "/var/run/docker.sock:/var/run/docker.sock" --rm bitriseio/android-20.04:latest bitrise run WORKFLOW
+   docker run --privileged --env CI=false --volume "$(pwd):/bitrise/src" --volume "/var/run/docker.sock:/var/run/docker.sock" --rm bitriseio/android-20.04:latest bitrise local run WORKFLOW
    ```
 
-   If you want to just jump into the container and experiment inside, you can replace `--rm bitriseio/android-20.04:latest bitrise run WORKFLOW` with `-it bitriseio/android-20.04:latest bash` to start an interactive bash shell inside the container. For example:
+   If you want to just jump into the container and experiment inside, you can replace `--rm bitriseio/android-20.04:latest bitrise local run WORKFLOW` with `-it bitriseio/android-20.04:latest bash` to start an interactive bash shell inside the container. For example:
 
    ```bash
    docker run --privileged --env CI=false --volume "$(pwd):/bitrise/src" --volume "/var/run/docker.sock:/var/run/docker.sock" -it bitriseio/android-20.04:latest bash
@@ -81,10 +81,10 @@ If you try to reproduce an issue, you should `git clone` your repository into a 
 Run your build with the following command:
 
 ```bash
-docker run --privileged --env CI=false --volume "$(pwd):/bitrise/src" --volume "/var/run/docker.sock:/var/run/docker.sock" --rm bitriseio/android:latest bitrise run WORKFLOW
+docker run --privileged --env CI=false --volume "$(pwd):/bitrise/src" --volume "/var/run/docker.sock:/var/run/docker.sock" --rm bitriseio/android:latest bitrise local run WORKFLOW
 ```
 
-- `--rm bitriseio/android:latest bitrise run WORKFLOW`
+- `--rm bitriseio/android:latest bitrise local run WORKFLOW`
 
   with `-it bitriseio/android:latest bash` to start an interactive bash shell inside the container.
 
@@ -96,7 +96,7 @@ docker run --privileged --env CI=false --volume "$(pwd):/bitrise/src" --volume "
 
   This command will share the current directory (the directory of your repository) as a shared volume with the docker container, and will make it available inside the container at the path `/bitrise/src`.
 
-  After this, you can run `bitrise run WORKFLOW`, which will run the workflow inside the container. To exit from the container, just run `exit`.
+  After this, you can run `bitrise local run WORKFLOW`, which will run the workflow inside the container. To exit from the container, just run `exit`.
 - Don’t forget to replace `WORKFLOW` with the actual ID of your workflow in your `bitrise.yml`, with something like `primary`!
 
 - The `--env CI=false` flag sets the environment variable `CI` to `false` - this will make Bitrise CLI skip certain steps that only make sense to run in a CI environment. For example, our `Git Clone` <GlossTerm baseform="step">Step</GlossTerm> - you already have your code, so there’s no need to git clone it again inside the docker container (that’s why we shared the code directory as a `--volume`).
