@@ -46,7 +46,13 @@ export default function NavbarWrapper(props: Props): ReactNode {
   const {i18n: {currentLocale}} = useDocusaurusContext();
   // Each locale now has its own baseUrl (/en/, /ja/, ...) instead of a
   // hardcoded /en/, so this checks whichever locale is currently rendering.
-  const isDocPage = pathname.startsWith(`/${currentLocale}/`);
+  // Excludes internal-ai-summary-test: that page renders the new Algolia
+  // SearchBar (with the AI Summary panel) directly and on purpose — the
+  // rest of the site keeps this old Vertex-widget search until that new
+  // experience is ready to ship for real everywhere.
+  const isDocPage =
+    pathname.startsWith(`/${currentLocale}/`) &&
+    !pathname.includes('internal-ai-summary-test');
 
   return (
     <>

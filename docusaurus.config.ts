@@ -143,6 +143,12 @@ function injectApiSidebar(items: any[]): any[] {
   });
 }
 
+// Real support traffic only: on by default for production builds; set
+// ENABLE_INTERCOM=true to verify the Messenger (and the Ask Fin button that
+// opens it) on a local dev server.
+const intercomEnabled =
+  process.env.NODE_ENV === 'production' || process.env.ENABLE_INTERCOM === 'true';
+
 const config: Config = {
   title: 'Bitrise Docs',
   tagline: DEFAULT_DESCRIPTION,
@@ -283,6 +289,9 @@ const config: Config = {
           },
         ]
       : []),
+    // Loads the Vertex AI Search custom-element definition (<gen-search-widget>)
+    // that the "Ask AI" panel in the Algolia search modal creates on demand —
+    // see src/theme/SearchBar's AskAiPanel.
     ...(process.env.GEN_SEARCH_WIDGET_ID
       ? [
           {
@@ -294,6 +303,9 @@ const config: Config = {
   ],
 
   clientModules: [
+    // Powers the old Vertex-widget search restored for real pages (see
+    // src/theme/Navbar) — kept separate from AskAiPanel's own on-demand
+    // widget instances, used only on /internal-ai-summary-test.
     './src/clientModules/genSearchWidget.ts',
     './src/clientModules/intercomWidget.ts',
   ],
@@ -302,10 +314,7 @@ const config: Config = {
     gtmId: process.env.GTM_ID || '',
     genSearchWidgetConfigId: process.env.GEN_SEARCH_WIDGET_ID || '',
     intercomAppId: 'e2rdidtm',
-    // Real support traffic only: on by default for production builds; set
-    // ENABLE_INTERCOM=true to verify the widget on a local dev server.
-    intercomEnabled:
-      process.env.NODE_ENV === 'production' || process.env.ENABLE_INTERCOM === 'true',
+    intercomEnabled,
   },
 
   plugins: [
@@ -470,6 +479,20 @@ const config: Config = {
         href: '/',
       },
       items: [
+        // This has to stay registered even though its own SearchBar (see
+        // src/theme/SearchBar's default export) deliberately renders
+        // nothing: removing the item entirely triggers theme-classic's own
+        // fallback in Navbar/Content — `{!searchBarItem && <NavbarSearch>
+        // <SearchBar /></NavbarSearch>}` — which renders that exact same
+        // component anyway, just via a different path, with no config way
+        // to suppress it. Real pages get the old Vertex-widget search back
+        // via src/theme/Navbar instead; the new Algolia + AI Summary search
+        // is only reachable via AlgoliaSearchBar's own explicit use on the
+        // unlisted /internal-ai-summary-test page.
+        {
+          type: 'search',
+          position: 'right',
+        },
         {
           type: 'localeDropdown',
           position: 'right',
@@ -489,6 +512,19 @@ const config: Config = {
       ],
       hideOnScroll: false,
     },
+    // Omitted entirely (rather than passed with empty strings) when unset, so
+    // a build without Algolia credentials (most CI builds, most contributors'
+    // local dev servers) doesn't fail Docusaurus's themeConfig validation.
+    ...(process.env.ALGOLIA_APP_ID && process.env.ALGOLIA_SEARCH_API_KEY && process.env.ALGOLIA_INDEX_NAME
+      ? {
+          algolia: {
+            appId: process.env.ALGOLIA_APP_ID,
+            apiKey: process.env.ALGOLIA_SEARCH_API_KEY,
+            indexName: process.env.ALGOLIA_INDEX_NAME,
+            contextualSearch: true,
+          },
+        }
+      : {}),
     colorMode: {
       disableSwitch: true,
     },
