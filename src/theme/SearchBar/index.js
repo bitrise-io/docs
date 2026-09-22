@@ -228,24 +228,6 @@ function AskAiPanel({query, onBack}) {
       setStatus('unavailable');
     };
 
-    // The actual generated prose lives another three shadow-DOM levels
-    // below .summary-container, each just forwarding <slot>s to the next
-    // (confirmed live via a working query — .summary-container's own
-    // innerHTML is almost entirely chrome: a disclaimer, "Sources"/"Show
-    // more" buttons, an icon-font glyph that doesn't render outside the
-    // widget's own stylesheet — with an *empty* <ucs-text-streamer> where
-    // the text should be, since plain innerHTML can't reach into further
-    // shadow roots):
-    //   .summary-container
-    //     > ucs-text-streamer (light DOM child) .shadowRoot
-    //       > ucs-response-markdown (light DOM child) .shadowRoot
-    //         > ucs-fast-markdown (light DOM child) .shadowRoot
-    //           > .markdown-document  ← the real <p>/<code> markup
-    // Citation markers are left out (they're empty <slot>s this deep,
-    // fed from even further up the chain) — the prose and its inline
-    // code formatting is what actually matters here.
-    let lastSnapshot = null;
-
     const pollForSummary = () => {
       if (cancelled) return;
       const summary = widget.shadowRoot
@@ -253,24 +235,13 @@ function AskAiPanel({query, onBack}) {
         ?.shadowRoot?.querySelector('ucs-summary');
       const summaryContainer = summary?.shadowRoot?.querySelector('.summary-container');
       const stillLoading = summary?.shadowRoot?.querySelector('.loader-container');
-      const markdownDocument = summaryContainer
-        ?.querySelector('ucs-text-streamer')
-        ?.shadowRoot?.querySelector('ucs-response-markdown')
-        ?.shadowRoot?.querySelector('ucs-fast-markdown')
-        ?.shadowRoot?.querySelector('.markdown-document');
-      const snapshot = markdownDocument?.innerHTML.trim();
 
-      // Require two identical snapshots in a row: the content streams in
-      // token by token, so a single non-empty read is likely still mid-
-      // stream — this is a simple settle check rather than a real
-      // "streaming finished" signal, since the widget doesn't expose one.
-      if (snapshot && !stillLoading && snapshot === lastSnapshot) {
-        setSummaryHtml(snapshot);
+      if (summaryContainer && !stillLoading && summaryContainer.innerHTML.trim()) {
+        setSummaryHtml(summaryContainer.innerHTML);
         setStatus('summary');
         return;
       }
-      lastSnapshot = snapshot || null;
-      if (Date.now() < deadline) setTimeout(pollForSummary, 400);
+      if (Date.now() < deadline) setTimeout(pollForSummary, 200);
       else giveUp();
     };
 
@@ -280,17 +251,15 @@ function AskAiPanel({query, onBack}) {
       // a sibling of ucs-results, not nested inside it (confirmed live;
       // easy to get wrong since ucs-summary below *is* nested under
       // ucs-results).
-      const searchBar = widget.shadowRoot?.querySelector('ucs-search-bar');
-      const searchInput = searchBar?.shadowRoot?.querySelector('input');
-      const form = searchBar?.shadowRoot?.querySelector('form');
-      if (searchInput && form) {
+      const searchInput = widget.shadowRoot
+        ?.querySelector('ucs-search-bar')
+        ?.shadowRoot?.querySelector('input');
+      if (searchInput) {
         searchInput.value = query;
         searchInput.dispatchEvent(new Event('input', {bubbles: true}));
-        // A synthetic Enter keydown on the input is not reliable here —
-        // confirmed live: the widget's own state never advanced past its
-        // "zero-state" on repeated attempts. Submitting the underlying
-        // <form> directly (form.requestSubmit()) is what actually works.
-        form.requestSubmit();
+        searchInput.dispatchEvent(
+          new KeyboardEvent('keydown', {key: 'Enter', bubbles: true}),
+        );
         pollForSummary();
         return;
       }
@@ -314,22 +283,13 @@ function AskAiPanel({query, onBack}) {
         <div className="ask-ai-panel__loading">Asking AI…</div>
       )}
       {status === 'summary' && (
-        <>
-          <div
-            className="ask-ai-panel__summary"
-            // The widget's own generated markup — see the comment above for
-            // why this can't come from anywhere other than raw shadow-DOM
-            // content pulled out of Google's widget.
-            dangerouslySetInnerHTML={{__html: summaryHtml}}
-          />
-          {/* The widget shows this same notice itself, in the chrome we
-              deliberately don't extract (see the comment above) — repeated
-              here as our own static text instead. */}
-          <p className="ask-ai-panel__disclaimer">
-            Generative AI may display inaccurate information, including
-            about people, so double-check its responses.
-          </p>
-        </>
+        <div
+          className="ask-ai-panel__summary"
+          // The widget's own generated markup — see the comment above for
+          // why this can't come from anywhere other than raw shadow-DOM
+          // content pulled out of Google's widget.
+          dangerouslySetInnerHTML={{__html: summaryHtml}}
+        />
       )}
       {status === 'unavailable' && (
         <div className="ask-ai-panel__unavailable">
