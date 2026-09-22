@@ -213,7 +213,16 @@ export default function Home(): React.JSX.Element {
                 </p>
               </div>
               <div className={styles.heroSearch}>
-                <div className={styles.heroSearchField}>
+                <div
+                  className={styles.heroSearchField}
+                  onClick={() => {
+                    // The hero box is a decorative proxy for the real Algolia
+                    // search button Docusaurus renders in the navbar — this
+                    // keeps a single source of truth for the search modal
+                    // instead of a second, separately-wired one.
+                    document.querySelector<HTMLButtonElement>('.DocSearch-Button')?.click();
+                  }}
+                >
                   <svg className={styles.heroSearchIcon} width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <path fill="currentColor" fillRule="evenodd" d="M15.906 17.32a8 8 0 1 1 1.414-1.414l4.387 4.387-1.414 1.414zM17 11a6 6 0 1 1-12 0 6 6 0 0 1 12 0" clipRule="evenodd"/>
                   </svg>
@@ -221,7 +230,6 @@ export default function Home(): React.JSX.Element {
                     className={styles.heroSearchInput}
                     type="text"
                     placeholder="Search all documentation"
-                    id="searchWidgetTrigger"
                     readOnly
                   />
                 </div>
