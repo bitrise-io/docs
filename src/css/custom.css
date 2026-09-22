@@ -87,51 +87,6 @@
   flex-shrink: 0;
 }
 
-/* Pull the search bar out of the normal navbar flow and pin its left edge to
-   roughly where doc-page content starts (approximated from a representative
-   page with a right-side TOC: sidebar (300px) + a centered 1320px container
-   + the grid column's own padding — calc(50vw - 494px) — not exact on every
-   page/viewport, since the real offset also depends on whether a page has a
-   TOC and the sidebar's collapsed state, but close on the common case).
-   Clamped with a floor so it never collides with the logo on narrow screens. */
-.navbar__items--right:has(> div > .DocSearch-Button) {
-  position: relative;
-}
-
-.navbar__items--right > div:has(> .DocSearch-Button) {
-  position: fixed;
-  left: max(220px, calc(50vw - 494px));
-  top: 0;
-  height: var(--ifm-navbar-height);
-  display: flex;
-  align-items: center;
-}
-
-/* The homepage (Docusaurus's "pages" plugin, flagged by the html.plugin-pages
-   class) has its own hero search box that proxies to this same DocSearch
-   modal — showing the navbar copy there too would be redundant. */
-html.plugin-pages .navbar__items--right > div:has(> .DocSearch-Button) {
-  display: none;
-}
-
-.navbar__items--right > div:has(> .DocSearch-Button) .DocSearch-Button {
-  width: 320px;
-  /* Matches the translucent white the old custom navbar search bar used on
-     this same purple header, before it was replaced by Algolia's default
-     white button background. Text color drives the icon too (it's
-     `currentColor` in DocSearch's own CSS), matching the old
-     .navbar-search__icon/__input color. */
-  --docsearch-search-button-background: rgba(255, 255, 255, 0.1);
-  --docsearch-search-button-text-color: var(--pal-neutral-95);
-  /* The ⌘K hint "keys" pick up --docsearch-key-* for their fill/text and
-     --docsearch-subtle-color for their border-mix — same translucent/light
-     treatment as the rest of the button. */
-  --docsearch-key-background: rgba(255, 255, 255, 0.15);
-  --docsearch-key-color: var(--pal-neutral-95);
-  --docsearch-subtle-color: rgba(255, 255, 255, 0.3);
-  border: none;
-}
-
 /* Locale dropdown toggle sits directly on the purple header, so it needs the
    same white treatment as the rest of the navbar text — the dropdown menu
    popup itself keeps IFM's default light background/dark text, unaffected. */
@@ -191,248 +146,52 @@ html.plugin-pages .navbar__items--right > div:has(> .DocSearch-Button) {
   display: none;
 }
 
-/* ---- Search modal (DocSearch) ---- */
+/* Navbar search bar */
 
-/* The modal portals straight into document.body, outside our navbar markup,
-   so it needs its own top-level selector rather than the scoped
-   .navbar__items--right rules above. Most of DocSearch's own CSS already
-   inherits the ambient font (font: inherit), which would pick up Figtree
-   from <body> regardless — except the ⌘K key hints, which hardcode
-   system-ui. Setting it explicitly on the modal covers both cases. */
-.DocSearch-Modal {
-  font-family: var(--ifm-font-family-base);
-  /* DocSearch's own CSS sets these per-theme via :root/html[data-theme=dark],
-     loaded lazily (only once the modal first opens) — scoping our override
-     to .DocSearch-Modal itself outranks those on specificity, so it wins
-     regardless of load order, and tracks whichever theme is actually active
-     instead of Algolia's fixed default palette. */
-  --docsearch-modal-background: var(--ifm-background-color);
-  --docsearch-searchbox-background: var(--ifm-background-color);
-  --docsearch-searchbox-focus-background: var(--ifm-background-color);
-  --docsearch-hit-background: var(--ifm-background-color);
-  --docsearch-footer-background: var(--ifm-background-color);
-
-  /* Brand purple instead of Algolia's default blue — drives the search
-     icon, matched-text highlighting, and selected-hit accents. */
-  --docsearch-highlight-color: var(--ifm-color-primary);
-  --docsearch-primary-color: var(--ifm-color-primary);
-  --docsearch-soft-primary-color: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
-  /* The hovered/selected result row's background — a separate variable
-     from the two above. */
-  --docsearch-hit-highlight-color: color-mix(in srgb, var(--ifm-color-primary) 10%, transparent);
-
-  /* Plain properties (unlike the custom-property overrides above) don't get
-     the specificity escape hatch — DocSearch's own same-selector rule can
-     load after ours since its stylesheet is lazy-loaded, so this needs
-     !important to reliably win regardless of order. */
-  border-radius: 12px !important;
-}
-
-/* Swap DocSearch's own magnifying-glass SVG (rendered by React, not a
-   swappable background-image) for the repo's own icon — used both in the
-   collapsed search button and inside the modal's search box. Hide the
-   original vector and use ours as a mask instead of a background-image, so
-   it still picks up currentColor (--docsearch-highlight-color already set
-   above) rather than being locked to a fixed color. */
-.DocSearch-Search-Icon {
-  background-color: currentColor;
-  mask-image: url('/img/brand/navicons/magnifier.svg');
-  mask-repeat: no-repeat;
-  mask-position: center;
-  mask-size: contain;
-}
-
-/* Inside the modal, DocSearch's own default colors this icon with
-   --docsearch-highlight-color (our brand purple, since we tied that
-   variable to it too) — too loud for an input-field icon. Use the same
-   muted grey as the rest of the modal's secondary UI (the "Powered by"
-   label, etc.) instead. Scoped to the modal specifically so the collapsed
-   navbar button's own (already-right) near-white color is untouched. */
-.DocSearch-Modal .DocSearch-Search-Icon,
-/* DocSearch's own .DocSearch-Form:focus-within .DocSearch-MagnifierLabel svg
-   rule is more specific than the one above and re-applies the highlight
-   purple the moment the input is focused (i.e. as soon as the modal opens
-   — the "active" state), so it needs matching directly, not just the
-   general case. */
-.DocSearch-Form:focus-within .DocSearch-Search-Icon {
-  color: var(--docsearch-icon-color) !important;
-}
-
-.DocSearch-Search-Icon path {
-  display: none;
-}
-
-/* "Powered by Algolia" logo — match the "Powered by" label's own color
-   instead of Algolia's blue brand mark. The --docsearch-logo-color variable
-   doesn't reach it: the logo SVG hardcodes its fill via an internal
-   <style>.cls-1,.cls-2{fill:#003dff} block, bypassing currentColor
-   entirely, so it has to be overridden by targeting those classes directly. */
-.DocSearch-Logo .cls-1,
-.DocSearch-Logo .cls-2 {
-  fill: var(--docsearch-secondary-text-color) !important;
-}
-
-/* Each result row's icon — swap Algolia's default "lines" glyph for the
-   repo's own doc icon, same mask technique as the search icon above. */
-.DocSearch-Hit-icon {
-  background-color: currentColor;
-  mask-image: url('../images/icon-doc-24px.svg');
-  mask-repeat: no-repeat;
-  mask-position: center;
-  mask-size: contain;
-}
-
-.DocSearch-Hit-icon svg {
-  display: none;
-}
-
-/* Per-result breadcrumb (hierarchy.lvl0) — rendered by the swizzled
-   SearchBar's Hit component, since DocSearch's own default template only
-   shows this once as a group header, not per-result. */
-.DocSearch-Hit-breadcrumb {
-  color: var(--docsearch-secondary-text-color);
-  font-size: 0.75em;
-  /* Aligns with .DocSearch-Hit-title: this element is a sibling of
-     .DocSearch-Hit-Container (icon + content), not a child of it, so it
-     needs its own offset matching the icon's width + the content
-     wrapper's own margin, rather than reusing --docsearch-spacing alone. */
-  margin-inline-start: 28px;
-  padding-bottom: 4px;
-}
-
-.DocSearch-Button-Key {
-  font-family: var(--ifm-font-family-base);
-}
-
-/* ---- Search modal footer ("See all N results") ---- */
-
-/* !important: ties on specificity with DocSearch's own lazy-loaded
-   .DocSearch-HitsFooter a { color: inherit }, which can load after ours. */
-.DocSearch-HitsFooter a {
-  color: var(--docsearch-highlight-color) !important;
-}
-
-/* "AI Summary" — hand-appended to .DocSearch-Form (see
-   useAskAiSearchBarButton), right in the search input row itself, before
-   the clear/close icons — same placement Namespace uses for its own "Ask
-   Assistant" button. .DocSearch-Form is already display:flex with the
-   input taking the remaining space, so this just needs its own sizing;
-   the row's own align-items centers it vertically. */
-.ask-ai-searchbar-button {
+.navbar-search {
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
-  flex: none;
-  gap: 0.375rem;
-  margin-inline-end: 0.5rem;
-  padding: 0.375rem 0.75rem;
-  border: 1px solid var(--docsearch-muted-color, #d0d0e0);
-  border-radius: var(--docsearch-searchbox-border-radius, 6px);
-  background: transparent;
-  /* Matches the muted "Navigate"/"Select"/"Close" footer labels
-     (.DocSearch-Label) rather than full-strength body text, so it doesn't
-     read louder than the rest of the modal's chrome. */
-  color: var(--docsearch-secondary-text-color, #5a5e9a);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.ask-ai-searchbar-button svg {
-  width: 14px;
-  height: 14px;
-  flex: none;
-}
-
-.ask-ai-searchbar-button:hover {
-  background-color: #efebef;
-  border-color: #afa4b4;
-  color: #2b0e3f;
-}
-
-/* ---- Ask AI panel ----
-   Covers .DocSearch-Dropdown in place, inside the same .DocSearch-Modal
-   frame, while ask-ai mode is active (see useAskAiPanelHost/AskAiPanel in
-   the swizzled SearchBar) — same rounded card, same position on screen, no
-   separate overlay/window. 56px/51px match .DocSearch-SearchBar's and
-   .DocSearch-Footer's own fixed heights (DocSearch doesn't expose those as
-   CSS variables to reference instead); the 2px overlap on each edge covers
-   a hairline sub-pixel gap otherwise left at the exact boundary, letting a
-   sliver of the underlying results list show through. */
-.ask-ai-panel-host {
-  position: absolute;
-  inset: 54px 0 49px 0;
-  background: var(--docsearch-modal-background, var(--ifm-background-color));
-  overflow: auto;
-  z-index: 1;
-}
-
-.ask-ai-panel {
-  padding: 1rem;
-}
-
-.ask-ai-panel__back {
-  border: none;
-  background: none;
-  color: var(--docsearch-highlight-color, var(--ifm-color-primary));
-  font-size: 0.8125rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0;
-  margin-bottom: 1rem;
-}
-
-.ask-ai-panel__loading {
-  color: var(--docsearch-secondary-text-color);
-  font-size: 0.875rem;
-}
-
-.ask-ai-panel__summary {
-  font-size: 0.9375rem;
-  line-height: 1.6;
-}
-
-.ask-ai-panel__summary p {
-  margin: 0 0 1em;
-}
-
-.ask-ai-panel__summary p:last-child {
-  margin-bottom: 0;
-}
-
-/* Matches the class the widget's own markdown renderer already uses
-   (code.inline-code) — same markup we're extracting, just given the
-   site's own monospace treatment instead of the widget's. */
-.ask-ai-panel__summary code.inline-code {
-  font-family: var(--ifm-font-family-monospace);
-  font-size: 0.85em;
-  background: var(--docsearch-key-background, #f5f5fa);
+  gap: 0.5rem;
+  padding: 0.75rem 0.5rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  height: 32px;
   border-radius: 4px;
-  padding: 0.15em 0.4em;
+  position: relative;
+  margin-right: calc(1rem + 1px);
+  cursor: pointer;
 }
 
-.ask-ai-panel__disclaimer {
-  margin: 1.5rem 0 0;
-  color: var(--docsearch-muted-color);
-  font-size: 0.75rem;
-  line-height: 1.4;
-}
-
-.ask-ai-panel__unavailable {
-  color: var(--docsearch-secondary-text-color);
-  font-size: 0.875rem;
-  line-height: 1.5;
-}
-
-/* The widget instance that generates the summary is kept permanently
-   invisible (see AskAiPanel) — it's never meant to be shown, only mined
-   for .summary-container's content. */
-.ask-ai-panel__widget-container {
-  visibility: hidden;
+.navbar-search::after {
+  content: '';
+  display: block;
+  opacity: 0.5;
+  width: 1px;
+  background-color: white;
+  height: 1.5rem;
   position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
+  right: calc(-1rem - 2px);
+}
+
+.navbar-search__icon {
+  color: var(--pal-neutral-95);
+  flex-shrink: 0;
+}
+
+.navbar-search__input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--pal-neutral-95);
+  font-family: 'Figtree', sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.navbar-search__input::placeholder {
+  color: var(--pal-neutral-95);
 }
 
 /* ---- Footer ---- */
@@ -836,6 +595,10 @@ article:has([data-product-overview]) > .markdown {
 /* ---- Responsive overrides ---- */
 
 @media (max-width: 996px) {
+  .navbar-search {
+    display: none;
+  }
+
   .navbar-btn {
     display: none;
   }
@@ -865,6 +628,36 @@ article:has([data-product-overview]) > .markdown {
 
   body:not(:has(.theme-doc-sidebar-container)) .navbar__toggle {
     display: none !important;
+  }
+
+  .navbar-search {
+    display: flex !important;
+    flex: 0 0 auto;
+    order: 1;
+    width: auto;
+    padding: 0;
+    background: none;
+    margin-right: 0;
+    height: auto;
+    margin-right: 20px;
+  }
+
+  .navbar-search::after {
+    display: none;
+  }
+
+  .navbar-search__input {
+    width: 0;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    position: absolute;
+  }
+
+  .navbar-search__icon {
+    color: white;
+    width: 20px;
+    height: 20px;
   }
 
   .navbar-sidebar__back {
