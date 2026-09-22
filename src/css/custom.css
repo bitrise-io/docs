@@ -312,28 +312,42 @@ html.plugin-pages .navbar__items--right > div:has(> .DocSearch-Button) {
   color: var(--docsearch-highlight-color) !important;
 }
 
-/* "Ask AI" — hand-appended to .DocSearch-Footer (see useAskAiFooterButton),
-   the fixed bar below the scrollable results, so it's always visible
-   without scrolling regardless of hit count or the no-results/start
-   screens. Sits between the Algolia logo and the keyboard-hint list, which
-   are already laid out with justify-content: space-between — evenly
-   distributing all three keeps the button roughly centered. */
-.ask-ai-footer-button {
+/* "AI Summary" — hand-appended to .DocSearch-Form (see
+   useAskAiSearchBarButton), right in the search input row itself, before
+   the clear/close icons — same placement Namespace uses for its own "Ask
+   Assistant" button. .DocSearch-Form is already display:flex with the
+   input taking the remaining space, so this just needs its own sizing;
+   the row's own align-items centers it vertically. */
+.ask-ai-searchbar-button {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  flex: none;
+  gap: 0.375rem;
+  margin-inline-end: 0.5rem;
   padding: 0.375rem 0.75rem;
-  border: none;
+  border: 1px solid var(--docsearch-muted-color, #d0d0e0);
   border-radius: var(--docsearch-searchbox-border-radius, 6px);
-  background: var(--docsearch-highlight-color, var(--ifm-color-primary));
-  color: white;
+  background: transparent;
+  /* Matches the muted "Navigate"/"Select"/"Close" footer labels
+     (.DocSearch-Label) rather than full-strength body text, so it doesn't
+     read louder than the rest of the modal's chrome. */
+  color: var(--docsearch-secondary-text-color, #5a5e9a);
   font-size: 0.8125rem;
   font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
 }
 
-.ask-ai-footer-button:hover {
-  filter: brightness(1.1);
+.ask-ai-searchbar-button svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.ask-ai-searchbar-button:hover {
+  background-color: #efebef;
+  border-color: #afa4b4;
+  color: #2b0e3f;
 }
 
 /* ---- Ask AI panel ----
@@ -378,8 +392,21 @@ html.plugin-pages .navbar__items--right > div:has(> .DocSearch-Button) {
   line-height: 1.6;
 }
 
-.ask-ai-panel__widget-container gen-search-widget {
-  display: block;
+.ask-ai-panel__unavailable {
+  color: var(--docsearch-secondary-text-color);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* The widget instance that generates the summary is kept permanently
+   invisible (see AskAiPanel) — it's never meant to be shown, only mined
+   for .summary-container's content. */
+.ask-ai-panel__widget-container {
+  visibility: hidden;
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
 }
 
 /* ---- Footer ---- */

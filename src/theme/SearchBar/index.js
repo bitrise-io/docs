@@ -6,15 +6,13 @@
  *   a breadcrumb line, since DocSearch's own default hit template never
  *   shows it per-result — only once, as a group header above a batch of
  *   results in the same category.
- * - DocSearch() appends a persistent "Ask AI" button to .DocSearch-Footer
- *   (the always-visible bar at the bottom of the modal, not the scrollable
- *   results area — DocSearch has no render prop for that bar, so it's
- *   appended by hand via MutationObserver). Clicking it doesn't leave this
- *   modal: AskAiPanel() portals in over the results area and embeds the
- *   site's Vertex AI Search widget inline (google's `alwaysOpened` widget
- *   mode, not the default full-page overlay — see AskAiPanel's own comment
- *   for how it decides between showing just the generated summary or the
- *   whole widget).
+ * - DocSearch() appends a persistent "AI Summary" button to .DocSearch-Form
+ *   (the search input row itself — DocSearch has no render prop for it, so
+ *   it's appended by hand via MutationObserver). Clicking it never leaves
+ *   this modal: AskAiPanel() portals in over the results area and pulls
+ *   just the generated summary out of a hidden Vertex AI Search widget
+ *   instance, so the answer reads as a native part of this modal — see
+ *   AskAiPanel's own comment for why the widget itself is never shown.
  * Everything else is untouched stock behavior.
  */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
@@ -104,33 +102,38 @@ function useResultsFooterComponent({closeModal}) {
   );
 }
 
-// .DocSearch-Footer (the bar with the Algolia logo + keyboard hints) is the
-// one part of the modal that's outside .DocSearch-Dropdown's scroll area and
-// present on every screen (results, no-results, start) — unlike
-// resultsFooterComponent, which only renders with hits and scrolls out of
-// view with them. There's no render prop for this bar, so this appends the
-// "Ask AI" button to it once, by hand, and leaves it there for the modal's
-// lifetime. It reads the query straight from .DocSearch-Input at click time
-// (via onAskAi), so the button itself never needs updating as the user types.
-function useAskAiFooterButton({isOpen, searchContainer, onAskAi}) {
+// .DocSearch-Form (the input row itself, inside .DocSearch-SearchBar) is
+// present on every screen (results, no-results, start) for the modal's
+// entire lifetime — unlike resultsFooterComponent, which only renders with
+// hits. There's no render prop for this row, so this appends the "AI
+// Summary" button to it once, by hand, right before the clear/close icons
+// (.DocSearch-Actions) — same placement Namespace uses for its own "Ask
+// Assistant" button. It reads the query straight from .DocSearch-Input at
+// click time (via onAskAi), so the button itself never needs updating as
+// the user types.
+function useAskAiSearchBarButton({isOpen, searchContainer, onAskAi}) {
   useEffect(() => {
     if (!isOpen || !searchContainer.current) return undefined;
 
     const container = searchContainer.current;
     const injectButton = () => {
-      const footer = container.querySelector('.DocSearch-Footer');
-      if (!footer || footer.querySelector('#ask-ai-trigger')) return;
+      const form = container.querySelector('.DocSearch-Form');
+      const actions = form?.querySelector('.DocSearch-Actions');
+      if (!form || !actions || form.querySelector('#ask-ai-trigger')) return;
 
       const button = document.createElement('button');
       button.type = 'button';
       button.id = 'ask-ai-trigger';
-      button.className = 'ask-ai-footer-button';
-      button.textContent = 'Ask AI';
+      button.className = 'ask-ai-searchbar-button';
+      // Sparkle icon, same visual role as the "+" in a stock "+ Add
+      // trigger"-style secondary button — a small glyph ahead of the label.
+      button.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.54 11.54 4.884 13l3.654 1.46L10 18.115l1.46-3.653L15.115 13l-3.653-1.46L10 7.884zM18 13c0 .604-.368 1.147-.929 1.371L13 16l-1.629 4.071a1.477 1.477 0 0 1-2.696.104l-.046-.104L7 16l-4.071-1.629a1.477 1.477 0 0 1 0-2.742L7 10l1.629-4.071a1.477 1.477 0 0 1 2.742 0L13 10l4.071 1.629c.561.224.929.767.929 1.371M19.813 6.813l-.713 1.78a.646.646 0 0 1-1.157.089l-.043-.088-.712-1.781-1.782-.713a.646.646 0 0 1 0-1.2l1.781-.713.713-1.78a.646.646 0 0 1 1.2 0l.712 1.78 1.782.713a.646.646 0 0 1 0 1.2z"/></svg><span>AI Summary</span>';
       button.addEventListener('click', () => {
         const query = container.querySelector('.DocSearch-Input')?.value ?? '';
         if (query) onAskAi(query);
       });
-      footer.insertBefore(button, footer.querySelector('.DocSearch-Commands'));
+      form.insertBefore(button, actions);
     };
 
     injectButton();
@@ -176,31 +179,34 @@ function useAskAiPanelHost({isOpen, askAiQuery, searchContainer}) {
   return panelHost;
 }
 
-// Embeds the Vertex AI Search widget inline instead of the full-page
-// overlay its triggerId mode normally opens: created here fresh each time
-// with the `alwaysOpened` attribute (per Google's docs — "to always show
-// the widget without a trigger"), so it renders as a plain in-page panel
-// rather than a fixed backdrop+overlay we'd otherwise have no way to
-// restyle (its internals are shadow DOM, opaque to our CSS).
+// Extracts just the generated summary (.summary-container, inside
+// ucs-results > ucs-summary's shadow roots — the same nesting the old
+// genSearchWidget.ts already relied on) from a hidden Vertex widget
+// instance and renders it with the site's own styling, so it reads as a
+// native part of this modal — never the widget's own UI. The widget is
+// created fresh each time with the `alwaysOpened` attribute so it doesn't
+// need a trigger click to start working, but it's kept invisible for its
+// entire life here and torn down on unmount either way.
 //
-// Ideal outcome: extract just the generated summary (.summary-container,
-// inside ucs-results > ucs-summary's shadow roots — the same nesting the
-// old genSearchWidget.ts already relied on) and render it with the site's
-// own styling, so it reads as a native part of this modal. The widget stays
-// invisible while we wait for that. If no summary shows up within the
-// timeout — a real possibility even outside dev, since not every query gets
-// a generated answer, not only the local domain-allowlist 403 this was
-// actually tested against — the widget itself is revealed instead, so the
-// user still gets *something* rather than a dead end.
-function AskAiPanel({query, onBack, onFallbackToWidget}) {
+// The widget itself is deliberately never shown: its top-level shadow
+// element is `position: fixed; inset: 0` internally regardless of
+// alwaysOpened (confirmed live, contrary to what Google's docs implied),
+// so there's no way to contain it inside this panel — revealing it means
+// a jarring, hard-to-dismiss full-page takeover instead of a search
+// result. If no summary shows up in time (no generated answer for this
+// query, or — the only case reachable in local dev — the widget's domain
+// allowlist doesn't cover localhost), this shows a plain "no AI answer"
+// message and stays fully inside the modal.
+function AskAiPanel({query, onBack}) {
   const {siteConfig} = useDocusaurusContext();
   const configId = siteConfig.customFields?.genSearchWidgetConfigId;
   const containerRef = useRef(null);
-  const [status, setStatus] = useState('loading'); // 'loading' | 'summary' | 'widget'
+  const [status, setStatus] = useState('loading'); // 'loading' | 'summary' | 'unavailable'
   const [summaryHtml, setSummaryHtml] = useState('');
 
   useEffect(() => {
     if (!configId || !containerRef.current) return undefined;
+
     let cancelled = false;
     const deadline = Date.now() + 8000;
 
@@ -216,26 +222,10 @@ function AskAiPanel({query, onBack, onFallbackToWidget}) {
     widget.setAttribute('location', 'us');
     widget.setAttribute('alwaysOpened', '');
     containerRef.current.appendChild(widget);
-    let reparented = false;
 
-    // No summary materialized in time: the widget's own top-level element
-    // is `position: fixed; inset: 0` internally (confirmed live — its
-    // "opened" state forces a fullscreen layout regardless of the
-    // alwaysOpened attribute, contrary to what Google's own docs implied),
-    // so it can't actually be contained inside this panel. Rather than
-    // leave a half-visible widget stacked over a now-redundant panel, close
-    // the Algolia modal entirely and let the widget's fullscreen view take
-    // over on its own — the same shape the old triggerId+overlay flow had,
-    // just reached automatically instead of always. Reparent it to <body>
-    // first so it survives the modal (and this component) unmounting —
-    // otherwise this effect's own cleanup below would remove it the moment
-    // onFallbackToWidget closes the modal.
-    const revealWidget = () => {
+    const giveUp = () => {
       if (cancelled) return;
-      reparented = true;
-      document.body.appendChild(widget);
-      setStatus('widget');
-      onFallbackToWidget();
+      setStatus('unavailable');
     };
 
     const pollForSummary = () => {
@@ -252,7 +242,7 @@ function AskAiPanel({query, onBack, onFallbackToWidget}) {
         return;
       }
       if (Date.now() < deadline) setTimeout(pollForSummary, 200);
-      else revealWidget();
+      else giveUp();
     };
 
     const submitQuery = () => {
@@ -274,13 +264,13 @@ function AskAiPanel({query, onBack, onFallbackToWidget}) {
         return;
       }
       if (Date.now() < deadline) setTimeout(submitQuery, 100);
-      else revealWidget();
+      else giveUp();
     };
     setTimeout(submitQuery, 100);
 
     return () => {
       cancelled = true;
-      if (!reparented) widget.remove();
+      widget.remove();
     };
   }, [configId, query]);
 
@@ -300,6 +290,12 @@ function AskAiPanel({query, onBack, onFallbackToWidget}) {
           // content pulled out of Google's widget.
           dangerouslySetInnerHTML={{__html: summaryHtml}}
         />
+      )}
+      {status === 'unavailable' && (
+        <div className="ask-ai-panel__unavailable">
+          No AI summary is available for this search. Try rephrasing your
+          question, or go back and browse the regular results.
+        </div>
       )}
       <div ref={containerRef} className="ask-ai-panel__widget-container" />
     </div>
@@ -395,7 +391,7 @@ function DocSearch({externalUrlRegex, ...props}) {
     [openModal],
   );
   const resultsFooterComponent = useResultsFooterComponent({closeModal});
-  useAskAiFooterButton({isOpen, searchContainer, onAskAi: setAskAiQuery});
+  useAskAiSearchBarButton({isOpen, searchContainer, onAskAi: setAskAiQuery});
   const askAiPanelHost = useAskAiPanelHost({isOpen, askAiQuery, searchContainer});
   useDocSearchKeyboardEvents({
     isOpen,
@@ -451,11 +447,7 @@ function DocSearch({externalUrlRegex, ...props}) {
 
       {askAiPanelHost &&
         createPortal(
-          <AskAiPanel
-            query={askAiQuery}
-            onBack={() => setAskAiQuery('')}
-            onFallbackToWidget={closeModal}
-          />,
+          <AskAiPanel query={askAiQuery} onBack={() => setAskAiQuery('')} />,
           askAiPanelHost,
         )}
     </>
