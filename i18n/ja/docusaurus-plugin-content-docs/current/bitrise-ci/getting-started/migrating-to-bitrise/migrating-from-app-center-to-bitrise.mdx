@@ -1,0 +1,120 @@
+---
+title: "Migrating from App Center to Bitrise"
+description: "Visual Studio App Center will be taken offline on March 31, 2025. If you used App Center for our CI/CD needs, this is the perfect opportunity to migrate your projects to Bitrise."
+sidebar_position: 3
+slug: /bitrise-ci/getting-started/migrating-to-bitrise/migrating-from-app-center-to-bitrise
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Visual Studio App Centerは2025年3月31日にオフラインになりました。このガイドは、App CenterからBitriseへのプロジェクトの移行に役立つことを目的としています。
+
+[はじめに](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache)ガイドを参照することを強くお勧めします。[主要なBitrise概念](/bitrise-ci/getting-started/key-bitrise-concepts)ドキュメントも、Bitriseの仕組みを理解するのに役立ちます。
+
+このガイドでは、BitriseとApp Centerの類似点と相違点について説明します。
+
+
+## App Centerの組織とBitriseのWorkspaces
+
+App Centerでは、ユーザーアカウントがアプリを所有できます。組織の作成は任意です。App Centerでは、複数のコラボレーターが関わるアプリについては組織を作成することをお勧めします。
+
+[Bitrise Workspace](/bitrise-platform/workspaces/workspaces-overview)は少し異なります。初めてサインアップすると、最初のWorkspaceも自動的に作成されます。これは、Bitriseの<GlossTerm baseform="project">プロジェクト</GlossTerm>を所有できるのがWorkspacesのみだからです。プロジェクトはアカウントではなくWorkspacesに紐づいています。Workspaceは複数のプロジェクトを所有できますが、1つのプロジェクトを複数のWorkspacesに紐づけることはできません。
+
+Bitrise Workspaceには、主に4つのロールがあります。
+
+- <strong>Owner</strong>: Workspaceのオーナーです。制限なくWorkspaceを完全に管理できます。Workspaceには複数のオーナーを設定できます。デフォルトのオーナーは、Workspaceを作成したアカウントです。
+- <strong>Manager</strong>: 接続済みのサービスアカウントなど、Workspace settingsにアクセスして変更できます。メンバーの管理はできますが、請求情報へのアクセスやWorkspaceの削除はできません。
+- <strong>Contributor</strong>: 新しいCIプロジェクトを作成し、Release Managementアプリを追加できます。
+- <strong>Viewer</strong>: 選択したWorkspace settings（プロジェクトとインテグレーション）の表示のみ可能です。
+
+App Centerでは、組織内にチームを作成できます。Bitriseでは、WorkspaceメンバーをWorkspaceグループに追加できます。これにより、複数の担当者を同時にプロジェクトへ割り当てやすくなります。
+
+
+## ユーザーロールとコラボレーション
+
+App Centerでは、アプリへのアクセスを管理するために3種類のロールを提供しています。Bitriseでは、制御がもう少し細かくなっています。各プロジェクトのチームで5種類のロールを設定し、チームメンバーがプロジェクトに対して適切なアクセス権を持つようにできます。
+
+詳細については、[Bitrise CIのロールと権限](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)をご覧ください。
+
+
+## App CenterビルドサービスとBitriseビルド
+
+App Centerビルドサービスは、セキュアなクラウドインフラストラクチャを使用してアプリをビルドするのに役立ちます。Bitriseビルドも同様の仕組みです。[リポジトリを接続](/bitrise-platform/repository-access/repository-access-with-oauth)すると、リポジトリでコードイベントが発生するたびにプロジェクトがビルドされます。
+
+Bitriseは、iOS、Android、React Native、Flutter、Ionic、Cordovaなど、複数のモバイルフレームワークをサポートしています。[新規プロジェクトを追加](/bitrise-ci/getting-started/adding-a-new-project)すると、フレームワークが自動的に検出され、そのフレームワークに最適な設定が構成されます。
+
+### リポジトリ接続
+
+Bitriseは、複数のコードリポジトリサービスとの接続をサポートしています。
+
+- GitHub（GitHubアプリおよびGitHub Enterprise Serverを含む）
+- GitLab（セルフホストのGitLabを含む）
+- Bitbucket（Bitbucket Serverを含む）
+- 汎用のGit接続を使用したその他のGitリポジトリ
+
+ほとんどの場合、OAuth接続と[SSHキー](/bitrise-platform/repository-access/configuring-ssh-keys)を使用してリポジトリへのアクセスを設定できます。[HTTPS認証](/bitrise-platform/repository-access/configuring-https-authorization-credentials)もサポートされています。
+
+### GitHubアプリ
+
+App Centerと同様に、Bitriseでは、BitriseWorkspaceをGitHubアカウントまたは組織に連携させるための[GitHubアプリ](/bitrise-platform/repository-access/github-app-integration)を提供しています。GitHubアプリを使用すると、以下のことができます。
+
+- SSHキーを使用せずに、BitriseをGitHubに接続する。
+- コードのセキュリティを向上させる:このアプリは、アクセスに有効期限の短いワンタイムトークンを使用します。
+- [複数のリポジトリをリンク](/bitrise-platform/repository-access/github-app-integration#additional-linked-repositories-via-a-github-app)して同じプロジェクトに関連付ける。
+- ビルドのステータスをGitHubに報告する。
+
+### ビルドの設定
+
+App Centerでは、ビルド設定はリポジトリのブランチに紐づいています。Bitriseでは、これらは別々になっています。ビルド設定はリポジトリのブランチから独立しています。一般的な流れは次のとおりです。
+
+1. ビルド設定をセットアップします。[WorkflowsとPipelines](/bitrise-ci/workflows-and-pipelines/workflows/workflows-overview)を作成し、その中で<GlossTerm baseform="step">Steps</GlossTerm>を設定します。設定はYAML形式で保存されますが、グラフィカルな<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>を使用して作成・変更することもできます。また、プロジェクトレベルまたは<GlossTerm baseform="workflow">Workflow</GlossTerm>レベルで[Environment Variables](/bitrise-ci/configure-builds/environment-variables)を設定することもできます。
+1. [自動ビルドトリガー](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers)を作成します。Bitriseビルドを自動的に開始するコードイベントを定義します。単純なコードプッシュに加えて、プルリクエストやGitタグに対するトリガーも作成できます。さらに細かい制御も可能です。たとえば、プルリクエスト内の特定のファイルが変更された場合にのみビルドを開始するトリガーを設定できます。また、トリガーに1つまたは複数のブランチを指定し、指定したブランチでのコードイベントのみがビルドをトリガーするようにもできます。
+1. ビルドの[スタック](/bitrise-build-hub/infrastructure/build-stacks/about-build-stacks)と[マシンタイプ](/bitrise-build-hub/infrastructure/build-machine-types)を選択します。
+1. <strong>Project settings</strong>ページでは、ビルドに関する追加オプションを設定できます。
+
+   - Set up[ビルド通知](/bitrise-ci/configure-builds/configuring-build-settings/configuring-email-notifications)。
+   - Set up[rolling builds](/bitrise-ci/configure-builds/configuring-build-settings/rolling-builds)。
+   - ビルドが常にアクセスできるように、App Store ConnectやGoogle Playなどの[サービスへの接続](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)を設定する。
+   - ビルドに必要な[code signing](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)ファイルやその他のファイルをアップロードする。
+   - [build cache](/bitrise-ci/dependencies-and-caching/key-based-caching/accessing-key-based-cache-archives)を設定またはダウンロードする。
+
+### ビルドの実行
+
+App Centerと同様に、すべてのBitriseビルドはクリーンな仮想マシン上で実行され、ビルド終了後に破棄されますが、生成されたアーティファクトは弊社のサーバーに保存されます。Bitriseでは、ビルドスタックを選択することもできます。たとえば、Xcodeの複数の異なるバージョンから常に選択できます。また、新しいXcodeのバージョンをできるだけ早く利用可能にすることを常に目指しています。
+
+[ビルドを手動で開始](/bitrise-ci/run-and-analyze-builds/starting-builds/starting-builds-manually)したり、自動的にトリガーしたり、[スケジュール設定](/bitrise-ci/run-and-analyze-builds/starting-builds/scheduling-builds)したりできます。ビルドが実行されると、詳細な構造化された[ビルドログ](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/build-logs)を確認できます。
+
+
+## App CenterとBitriseでのテスト
+
+App Center Testは、モバイルアプリ向けのテスト自動化サービスです。アプリのバイナリとテストファイルをアップロードしてテストを実行できます。
+
+Bitriseは、CI/CDサービスにおいてApp Center Testが提供するすべての機能を備えています。プラットフォーム固有の専用テストStepsを複数備えており、コード内のテストを検出して実行できます。テストはシミュレーターや実機で実行できます。専用のテストStepsに加えて、任意のスクリプトを実行できるため、テストを完全にカスタマイズできます。
+
+ビルドやデプロイと同様に、テストも自動化できます。コードイベントによってテスト付きのビルドがトリガーされるよう、ビルドトリガーを設定してください。すべてを統合することも可能です。必要であれば、同じWorkflow内でアプリのビルド、テスト、デプロイを行うことができます。
+
+テスト結果と生成されたテストアーティファクトはすべて1か所で確認できます。[テスト結果のデプロイと表示](/bitrise-ci/testing/deploying-and-viewing-test-results)をご覧ください。
+
+:::note[テスト配布ソリューション]
+
+テスト配布機能を備えた強化されたRelease Managementソリューションが近日公開予定です。以下のことができるようになります。
+
+- IPA、APK、AABファイル用のディレクトリのようなページから、テスト用のさまざまなバージョンのアプリに簡単にアクセスして配布する。
+- パブリックまたはプライベートのインストールページを通じてアプリを共有する、またはプロダクション前の段階でテスターにビルドを早期に配布する。
+
+:::
+
+
+## App Center DistributeとBitriseRelease Management
+
+App Center Distributeサービスを使用すると、複数のプラットフォームにわたるアプリの配布を1か所で管理できます。Bitriseの[Release Management](/release-management)はまさにそれを実現します。リリース要件のワンストップソリューションです。以下のことができます。
+
+- すべてのリリースを自動化する。
+- 複数のプラットフォームに同時にアプリをリリースする。
+- Release Managementから離れることなく、release process全体を細かく完全に制御する。
+
+始めるには、[アプリを接続](/release-management/getting-started-with-release-management/connecting-an-app)するだけです。アプリの接続が完了すれば、リリースの管理にオンラインストアを利用する必要はありません。
+
+また、Release Managementを最大限に活用するための、[フル機能のREST API](/release-management/release-management-api)も提供しています。

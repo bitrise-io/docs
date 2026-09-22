@@ -1,0 +1,278 @@
+---
+title: "Getting started with Ionic/Cordova projects"
+description: "Get started on Bitrise by signing up via email or a Git provider, connecting a repository, and running the first build for your Ionic/Cordova app."
+sidebar_position: 5
+slug: /bitrise-ci/getting-started/quick-start-guides/getting-started-with-ionic-cordova-projects
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_InstallingJavaScriptDependenciesForReactNativeIonicCordovaAndExpo from '@site/src/partials/installing-javascript-dependencies-for-react-native-ionic-cordova-and-expo.mdx';
+import Partial_NOTEDoYouHaveABitriseAccount from '@site/src/partials/note-do-you-have-a-bitrise-account.mdx';
+import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
+
+CordovaとIonicのフレームワークを使用すると、クロスプラットフォームアプリを開発できます。Bitriseは自動テスト、code signing、デプロイの手順をサポートしているため、iOSアプリやAndroidアプリをすぐに各マーケットプレイスにリリースできます。<GlossTerm baseform="workspace">Workspace</GlossTerm>の同時実行数が1を超える場合は、AndroidビルドとiOSビルドを同時に実行できます。それでは、その手順をご案内します。
+
+<Partial_NOTEDoYouHaveABitriseAccount />
+
+
+## BitriseにIonic/Cordovaプロジェクトを追加する
+
+プロジェクトの追加方法は他の場合と同様です。ウィザードの完全な手順については、[新しいプロジェクトの追加](/bitrise-ci/getting-started/adding-a-new-project)をご覧ください。このセクションでは、IonicとCordovaに固有の内容について説明します。
+
+### スキャナーがIonicとCordovaを区別する方法
+
+<GlossTerm baseform="project scanner">プロジェクトスキャナー</GlossTerm>は、まず`ionic.config.json`ファイル、またはレガシーの`ionic.project`ファイルを確認します。いずれかが見つかった場合、プロジェクトをIonicとして登録し、`config.xml`はまったく確認しません。
+
+Ionicファイルがどちらも存在しない場合、スキャナーは`cordova.apache.org`名前空間を持つ`config.xml`ファイルを探し、プロジェクトをCordovaとして登録します。その`config.xml`と一緒にIonicの設定ファイルも見つかった場合は、代わりにIonicを優先します。
+
+### 設定できる項目
+
+<strong>CI configuration</strong>の段階では、ウィザードに以下が表示されます。
+
+- <strong>config.xmlファイルのディレクトリ</strong>: 設定ファイルがリポジトリのルートにない場合にのみ表示されます。
+- <strong>Platform</strong>: ビルド対象のプラットフォーム（Android、iOS、または両方）を指定します。
+
+<Partial_InstallingJavaScriptDependenciesForReactNativeIonicCordovaAndExpo />
+
+## Ionic/Cordovaアプリのテスト
+
+Bitrise上で<strong>Karma Jasmine Test Runner</strong>または<strong>Jasmine Test Runner</strong>の<GlossTerm baseform="step">Steps</GlossTerm>を使用して、Ionic/Cordovaアプリのユニットテストを実行できます。
+
+Cordova/Ionicプロジェクトの**package.json** ファイルにKarma Jasmineの依存関係があり、かつプロジェクトルートに`karma.conf.js`ファイルがある場合、アプリを追加する際にスキャナーがこれを検出し、該当するテストStepをWorkflowに自動的に挿入します。この依存関係がプロジェクトにない場合は、<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>を使用して、テストStepのいずれかをWorkflowに手動で挿入できます。
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. Workflowにテスト用のStepがあることを確認してください。
+
+   :::important[依存関係のインストール]
+
+   テストを実行する前に、[JavaScriptの依存関係のインストール](#installing-javascript-dependencies)を完了していることを確認してください。
+
+   :::
+
+   <strong>Karma Jasmine Test Runner</strong>と<strong>Jasmine Test Runner</strong>のStepsのいずれかを選択できます。
+
+<strong>Karma Jasmine Test Runnerを使用したCordovaアプリの設定</strong>
+
+この例では、<strong>primary</strong>というWorkflowを含む`bitrise.yml`の設定を確認できます。このWorkflowには<strong>Karma Jasmine Test Runner</strong>Stepが含まれています。
+
+```yaml
+primary:
+    steps:
+    - activate-ssh-key@4.0.3:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+    - git-clone@4.0.11: {}
+    - script@1.1.5:
+        title: Do anything with Script step
+    - npm@0.9.1:
+        inputs:
+        - command: install
+    - karma-jasmine-runner@0.9.1: {}
+    - deploy-to-bitrise-io@1.3.15: {}
+```
+
+
+## Code signing Ionic/Cordovaプロジェクト
+
+iOSまたはAndroid向けにアプリをビルドする場合は、<strong>Project settings</strong>ページでプラットフォーム固有のファイルをアップロードする必要があります。両方のプラットフォーム向けにビルドを生成することもできますが、その場合は各プラットフォームのcode signingファイルをすべてアップロードする必要があります。
+
+### IonicおよびCordovaプロジェクト向けのiOS code signing
+
+当然ながら、Bitriseは<strong>Ionic</strong>または<strong>Cordova</strong>のいずれかで構築されたiOSアプリケーションをサポートしています。ただし、code signingのプロセスはネイティブのXcodeプロジェクトと比べて若干異なります。
+
+BitriseはIonicおよびCordovaアプリについても手動および自動のプロビジョニングをサポートしていますが、この場合もプロセスはやや異なります。
+
+#### 手動でのcode signingアセット管理を使用したIonic/Cordova code signing
+
+1. `cordova platform add ios`または`ionic cordova platform add ios`を呼び出して、IonicまたはCordovaプロジェクトからローカルでネイティブのXcodeプロジェクトを生成します。
+1. ファイルを[bitrise.io](https://www.bitrise.io)にアップロードします。<strong>Project settings</strong>ページを開き、左側で<strong>Code signing</strong>を選択します。証明書とプロビジョニングプロファイルをアップロードします。
+
+   ![upload-code-signing.png](/img/_paligo/uuid-88a3d6bf-be6f-1811-a908-9072b4b88a9a.png)
+1. Workflowに<strong>Certificate and profile installer</strong>Stepがあることを確認してください。
+1. <strong>Generate cordova build configuration</strong>StepをWorkflowに追加します。これは<strong>Certificate and profile installer</strong>Stepの後に配置する必要があります。
+1. Stepに必要な入力項目を入力します。<strong>Code Signing Identity</strong>と<strong>Provisioning Profile</strong>は、そのように明記されていなくても、iOSアプリには必須の入力項目である点に注意してください。
+
+   - <strong>Build configuration</strong>: `debug`または`release`のいずれかに設定できます。
+   - <strong>Code Sign Identity</strong>: DeveloperまたはDistributionのIDを入力します。
+   - <strong>Provisioning Profile</strong>: 適切なプロビジョニングプロファイルを入力します。
+   - <strong>Packaging Type</strong>: Xcodeによって生成されるビルドの種類を制御します。必要なcode signingの種類を設定してください。
+
+     ![gen-cordova-build.png](/img/_paligo/uuid-bc068222-9d71-6b17-2d07-9bdca30fa368.png)
+1. <strong>Cordova archive</strong>または<strong>Ionic archive</strong>StepをWorkflowに追加します。
+1. 必要な入力項目を入力します。
+
+   - <strong>Platform</strong>の入力は`device`に設定する必要があります。
+   - <strong>Build command configuration</strong>の入力は、<strong>Generate cordova build configuration</strong>Stepの<strong>Build configuration</strong>入力と一致させる必要があります。
+
+   このStepは、Workflow内の<strong>Generate cordova build configuration</strong>Stepの後に配置する必要があります。
+1. ビルドを実行しましょう。
+
+#### automatic code signingアセット管理を使用したIonic/Cordova code signing
+
+1. .p12のsigning certificateが[bitrise.io](https://www.bitrise.io)にアップロードされていることを確認してください。
+1. <strong>Cordova prepare</strong>または<strong>Ionic prepare</strong>StepをWorkflowに追加します。これらのStepsは`platform rm`および`platform add`コマンドを呼び出します。
+1. <strong>[Manage iOS Code Signing](https://www.bitrise.io/integrations/steps/manage-ios-code-signing)</strong>StepをWorkflowに追加します。Workflowに<strong>Certificate and Profile Installer</strong>と<strong>Manage iOS Code Signing</strong>Stepsの両方がある場合、ビルドで予期しない問題が発生する可能性があります。
+
+   Stepは以下をエクスポートします。
+
+   - プロジェクトのDevelopment Team。
+   - インストールされているcodesign identityの名前。
+   - インストールされているプロビジョニングプロファイル。
+
+   :::caution[code signingStepは1つのみ]
+
+   Workflowに<strong>Certificate and profile installer</strong>と<strong>Manage iOS Code Signing</strong>Stepsの両方がある場合、ビルドで予期しない問題が発生する可能性があります。
+
+   :::
+1. (Bitriseで設定した[Appleサービスに基づく](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services))<strong>Apple service connection method</strong>と<strong>Distribution method</strong>を選択します。
+
+   ![manage-ios-code.png](/img/_paligo/uuid-de743a8c-7a79-dda4-b9de-e3c71f2ac32a.png)
+1. <strong>Generate cordova build configuration</strong>StepをWorkflowに追加します。
+1. <strong>Manage iOS Code Signing</strong>Stepによってエクスポートされたcode signing設定を使用するようにStepを設定します。
+
+   <strong>開発配布の例</strong>:
+
+   ```yaml
+   - generate-cordova-build-configuration:
+       inputs:
+       - development_team: $BITRISE_DEVELOPER_TEAM 
+       - package_type: development 
+       - code_sign_identity: iPhone Developer
+       - configuration: debug
+   ```
+
+   <strong>本番配布の例</strong>:
+
+   ```yaml
+   - generate-cordova-build-configuration:
+       inputs:
+       - development_team: $BITRISE_DEVELOPER_TEAM 
+       - package_type: app-store 
+       - code_sign_identity: iPhone Developer
+       - configuration: release
+   ```
+1. <strong>Cordova Archive</strong>または<strong>Ionic Archive</strong>StepをWorkflowに追加します。
+1. 必要な入力項目を入力します。
+
+   - <strong>Platform</strong>の入力は`device`に設定する必要があります。
+   - <strong>Build command configuration</strong>の入力は、<strong>Generate cordova build configuration</strong>Stepの<strong>Build configuration</strong>入力と一致させる必要があります。
+
+     ![gen-cordova-build.png](/img/_paligo/uuid-bc068222-9d71-6b17-2d07-9bdca30fa368.png)
+1. <strong>Should remove platforms as prepare step?</strong>を`false`に設定します。これは重要です。<strong>Cordova prepare</strong>または<strong>Ionic prepare</strong>Stepで生成されたネイティブプロジェクトのプラットフォームを、Stepが削除して再追加しないようにするためです。
+1. ビルドを実行しましょう。
+
+### Android Sign Stepを使用したAndroid code signing
+
+Bitrise Workflow内の<strong>Android Sign</strong>Stepを使用して、署名済みAPKを作成できます。このStepは、[キーストアファイル](https://developer.android.com/studio/publish/app-signing#generate-key)をすでにBitriseにアップロードしている場合に実行されるよう設定されています。
+
+プロジェクトの`build.gradle`ファイルで署名が設定されている場合、<strong>Android Sign</strong>Stepは不要です。その場合、<strong>Android Build</strong>Step（または<strong>Gradle Runner</strong>Step）を実行すると、出力（APKまたはAAB）が自動的に署名されます。とはいえ、簡単かつ安全にプロジェクトに署名するために、<strong>Android Sign</strong>Stepの使用をお勧めします。
+
+:::note[jarsignとapksigner]
+
+APKは`jarsigner`または`apksigner`のいずれかで署名できます。APKでapksignerを使用してプロジェクトに署名する場合は、まずAndroid Sign StepのEnables `apksigner`入力をtrueに設定し、APK Signature Scheme入力はautomaticのままにしておく必要があります。こうすることで、`apksigner`がAPKの最小および対象のSDKバージョンを確認し、必要なスキームを選択します。最小サポートバージョンが低い場合はV1スキームで署名し、より新しいシステム向けには他のスキームでも署名します。
+
+AABファイルはjarsignerでのみ署名できる点に注意してください。Stepは、`.aab`で終わるファイルを検出した場合に`jarsigner`を使用します。
+
+:::
+
+1. [キーストアファイルをBitriseにアップロードする](/bitrise-ci/code-signing/android-code-signing/uploading-android-keystore-files-to-bitrise)。
+1. APKまたはAABファイルをビルドするStepの後に、<strong>Android Sign</strong>StepをWorkflowに追加します。
+
+   Bitriseは上記のEnvironment Variablesを使用し、それらを<strong>Android Sign</strong>Stepの各フィールドの入力として設定します。Stepが実行されると、署名済みのAPKまたはAABが生成されます。署名済みのAPKまたはAABは、例えば<strong>Google Play Deploy</strong>Stepや<strong>Deploy to Bitrise.io</strong>StepといったデプロイStepsで使用されます。後者は、APK/AABを<strong>Artifacts</strong>タブにデプロイします。インストール可能なアーティファクトをビルドした後は、[Release Management](/release-management)を使用してアプリをデプロイすることもできます。
+
+:::note[キーストアファイルのダウンロード]
+
+<strong>[File Downloader](https://www.bitrise.io/integrations/steps/file-downloader)</strong>Stepを使用して、キーストアファイルをプロジェクトディレクトリにダウンロードできます。
+
+```yaml
+- file-downloader:
+   inputs:
+   - source: $BITRISEIO_ANDROID_KEYSTORE_URL
+   - destination: "$HOME/keystores/my_keystore.jks" #native android#
+```
+
+Stepでキーストアファイルが必要な場合は、そのStepを<strong>File Downloader</strong>Stepの後に必ず配置してください。
+
+このStepの後、`my_keystore.jks`が`$HOME/keystores/my_keystore.jks`で利用可能になります。
+
+:::
+
+
+## Ionic/Cordovaアプリのデプロイ
+
+BitriseでIonicまたはCordovaアプリをビルドしてデプロイするには、（両方をビルドする場合は）AndroidとiOSの両方のプロジェクトにデジタル署名し、その後Cordova ArchiveまたはIonic Archive Stepを使用してデプロイ前にアプリをビルドする必要があります。
+
+正常にビルドされたアプリは、以下にデプロイできます。
+
+- Google Play StoreやAppleのApp Storeなどのオンラインストア。
+- Bitrise.io: 生成されたバイナリは、ビルドページの<strong>Artifacts</strong>タブで利用できます。そこからダウンロードしたり、パブリックインストールページ経由で他のユーザーと共有したりできます。
+
+### クロスプラットフォームアプリをbitrise.ioにデプロイする
+
+<strong>Deploy to bitrise.io</strong>Stepは、ビルドに関連するすべてのアーティファクトを、Buildのページの[<strong>Artifacts</strong>](/bitrise-ci/run-and-analyze-builds/managing-build-files/build-artifacts-online)タブにアップロードします。
+
+生成されたバイナリファイル（Androidの場合はAPK、iOSの場合はIPAファイル）は、パブリックインストールページを使用してチームメンバーと共有できます。パブリックインストールページはURLであり、他のユーザーと共有することで、生成されたアプリバイナリをそれぞれのデバイスにインストールしてもらえます。また、APKまたはIPAファイルがビルドされたことを、ユーザーグループや個々のユーザーに通知することもできます。
+
+:::important[expo.ioへの公開]
+
+<strong>Deploy to Bitrise.io</strong>StepはExpoコマンドを使用せず、[expo.io](https://docs.expo.dev/workflow/publishing/)への公開も行いません。このStepはBitriseにアーティファクトを公開するものであり、特定のプラットフォームに限定されません。
+
+[expo.io](https://docs.expo.dev/workflow/publishing/)に公開する必要がある場合は、<strong>Expo Eject</strong>Stepの<strong>Run expo publish after eject?</strong>入力を`yes`に設定します。その場合、[expo.io](http://expo.io/)に公開するために、Expoアカウントのユーザー名とパスワードを入力する必要がある点に注意してください。
+
+:::
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. Workflowに<strong>Deploy to bitrise.io</strong>Stepがあることを確認してください。
+1. <strong>Notify: User Roles</strong>で、このロールが付与されているユーザーのみに通知が届くようにロールを追加します。または、通知したいユーザーのメールアドレスを<strong>Notify: Emails</strong>フィールドに入力します。
+
+   これらのメールアドレスは必ず[Secrets](/bitrise-ci/configure-builds/secrets)として設定してください。これらの詳細は、<strong>Artifacts</strong>タブで生成されたバイナリの横にある<strong>eye</strong>アイコンをクリックすると、<strong>Notifications</strong>の下でも変更できます。
+1. Stepにパブリックインストールページを生成させたい場合は、<strong>Enable public page for the App?</strong>入力を`true`に設定します。
+
+### AndroidプロジェクトをGoogle Playにデプロイする
+
+Workflowの<strong>Deploy to Google Play</strong>Stepを使用して、デジタル署名済みのAAB/APKをGoogle Play Storeにアップロードできます。
+
+1. <strong>Cordova archive</strong>または<strong>Ionic archive</strong>StepをWorkflowに追加します。
+
+   1つのプロジェクトでiOSとAndroidの両方向けにビルドしている場合、いずれかのアプリが失敗すると、<strong>Cordova archive/Ionic archive</strong>Step全体が失敗する点に注意してください。
+1. 必要な入力項目を入力します。
+
+   - <strong>Platform to use in cordova-cli commands</strong>（Cordova）または<strong>Platform to use in ionic-cli commands</strong>（Ionic）を<strong>android</strong>（両方のプラットフォーム向けにビルドする場合は<strong>ios,android</strong>）に設定します。
+   - <strong>Build command target</strong>を<strong>device</strong>に設定します。
+   - <strong>Build command configuration</strong>の入力は、<strong>Generate cordova build configuration</strong>Stepの<strong>Build configuration</strong>入力と一致させる必要があります。
+
+   archive Stepは、Workflow内の<strong>Generate cordova build configuration</strong>Stepの後に配置する必要があります。
+1. アプリ用に[code signingを設定します](/bitrise-ci/getting-started/quick-start-guides/getting-started-with-react-native-projects#signing-your-android-project)。
+1. [Google Playアクセスを設定します。](/bitrise-ci/deploying/android-deployment/generating-and-deploying-android-app-bundles#setting-up-google-play-deployment-for-the-first-time)
+
+   これは、アプリの初めてのGoogle Playデプロイの際にのみ必要です。
+1. Workflow内の<strong>Android Sign</strong>と<strong>Cordova Archive</strong>または<strong>Ionic Archive</strong>Stepの後に、<strong>Deploy to Google Play</strong>Stepがあることを確認してください。
+1. 必要な入力フィールドを以下のように入力します。
+
+   - <strong>Service Account JSON key file path</strong>: このフィールドはリモートのURLを受け付けるため、アップロード済みのサービスアカウントJSONキーを含む環境変数（Env Var）を指定する必要があります。例: `$BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL`。
+   - <strong>Package name</strong>: Androidアプリのpackage name。
+   - <strong>Track</strong>: APKをデプロイするトラック（例: alpha/beta/rollout/production、または設定した任意のカスタムトラック）。
+
+### iOSプロジェクトをApp Storeにデプロイする
+
+1. <strong>Cordova archive</strong>または<strong>Ionic archive</strong>StepをWorkflowに追加します。
+
+   1つのプロジェクトでiOSとAndroidの両方向けにビルドしている場合、いずれかのアプリが失敗すると、<strong>Cordova archive/Ionic archive</strong>Step全体が失敗する点に注意してください。
+1. 必要な入力項目を入力します。
+
+   - <strong>Platform</strong>の入力は<strong>device</strong>に設定する必要があります。
+   - <strong>Build command configuration</strong>の入力は、<strong>Generate cordova build configuration</strong>Stepの<strong>Build configuration</strong>入力と一致させる必要があります。
+
+   archive Stepは、Workflow内の<strong>Generate cordova build configuration</strong>Stepの後に配置する必要があります。
+1. iOSプロジェクト用に[iOSのcode signingを設定します](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)。
+1. <strong>Deploy to App Store Connect - Application Loader (formerly iTunes Connect)</strong>StepをWorkflowに追加します。<strong>Xcode Archive & Export for iOS</strong>Stepの後に配置しますが、<strong>Deploy to Bitrise.io</strong>Stepより前に配置することを推奨します。
+1. <strong>Deploy to App Store Connect - Application Loader (formerly iTunes Connect)</strong>StepにAppleの認証情報を入力します。
+
+   Stepには、以下が必要です。
+
+   - Apple ID。
+   - パスワード。App Store Connectで2要素認証を使用している場合はアプリケーションパスワード。
+
+   ご安心ください。パスワードはログに表示されたり、外部に公開されたりすることはありません。
+1. [ビルドを開始します。](/bitrise-ci/run-and-analyze-builds/starting-builds/approving-pull-request-builds)

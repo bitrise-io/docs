@@ -1,0 +1,219 @@
+---
+title: "Getting started with Flutter projects"
+description: "Get started on Bitrise by signing up via email or a Git provider, connecting a repository, and running the first build for your Flutter app."
+sidebar_position: 4
+slug: /bitrise-ci/getting-started/quick-start-guides/getting-started-with-flutter-projects
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
+
+Flutterは、開発者がiOSとAndroidの両方向けにネイティブアプリを作成できる、モバイルアプリSDKです。[Bitrise](https://app.bitrise.io/users/sign_in)はFlutterアプリをサポートしており、Flutterに関するあらゆるニーズに対応する専用の<GlossTerm baseform="Step">Steps</GlossTerm>を用意しています。このガイドでは、Bitrise上でシンプルなFlutter<GlossTerm baseform="Project">プロジェクト</GlossTerm>のセットアップ、テスト、ビルド、デプロイの手順を説明します。
+
+
+## BitriseへのFlutterプロジェクトの追加
+
+プロジェクトの追加方法は他のプロジェクトと同じです。ウィザードの詳しい手順については[新しいプロジェクトの追加](/bitrise-ci/getting-started/adding-a-new-project)を参照してください。このセクションでは、Flutterに固有の内容について説明します。
+
+### スキャナーによるFlutterプロジェクトの検出方法
+
+<GlossTerm baseform="project scanner">プロジェクトスキャナー</GlossTerm>は、`node_modules`を除くリポジトリ内のあらゆる場所で`pubspec.yaml`ファイルを検索します。このファイルが存在するディレクトリはすべて、Flutterプロジェクトの候補となります。
+
+各候補について、スキャナーは以下もチェックします。
+
+- テストを有効にするため、少なくとも1つの`*_test.dart`ファイルを含む`test/`ディレクトリ。
+- iOSビルドを有効にするための`ios/Runner.xcworkspace`ディレクトリ。
+- Androidビルドを有効にするための`android/build.gradle`または`android/build.gradle.kts`ファイル。
+- Webビルドを有効にするための`web/`ディレクトリ。
+
+生成されるFlutterのWorkflowがこれらのプラットフォームをすでに処理するため、同じプロジェクトに対する単独のiOS、macOS、Androidスキャナーは無効になります。
+
+### 設定できる項目
+
+<strong>CI configuration</strong>の段階では、ウィザードには1つのオプションのみが表示されます。それは<strong>Project location</strong>、つまり`pubspec.yaml`ファイルが含まれるディレクトリです。ビルドするプラットフォームを含め、それ以外はすべて自動的に検出され、生成されるWorkflowに組み込まれます。
+
+## Flutterアプリのテスト
+
+Flutterでは、ユニットテスト、ウィジェットテスト、統合テストを作成して実行できます。詳細については、[Flutterの公式ドキュメント](https://flutter.io/docs/testing)を参照してください。
+
+自動生成された<strong>primary</strong>Workflowを使用して、Flutterアプリをテストできます。これには、Flutterのテストを実行し、コードカバレッジレポートも生成できる<strong>Flutter Test</strong>Stepを含めることができます。
+
+:::note[テストレポート]
+
+<strong>Deploy to Bitrise.io</strong>Stepは、デフォルトで<strong>Flutter Test</strong>Stepの結果を<strong>Tests</strong>タブにエクスポートします。
+
+:::
+
+Flutterアプリでテストを実行するには、次の手順を行います。
+
+1. アプリの<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>を開き、<strong>primary</strong>Workflow、またはテストの実行に使用したい任意のWorkflowsを開きます。
+1. <strong>Flutter Install</strong>Stepで、<strong>Flutter SDK version or bundle URL</strong>入力欄を入力します。
+
+   FlutterのSDKのgitリポジトリのタグまたはブランチのいずれかを指定できます。default valueは`stable`です。これにより、Flutterの最新の安定版ブランチが使用されます。
+
+   - 利用可能なバージョンタグを確認するには、次を参照してください：[https://github.com/flutter/flutter/releases](https://github.com/flutter/flutter/releases)。
+   - 利用可能なブランチを確認するには、次を参照してください：[https://github.com/flutter/flutter/branches](https://github.com/flutter/flutter/branches)。
+1. <strong>Flutter Test</strong>Stepを追加します。<strong>Additional parameters</strong>入力欄に、使用したいフラグを入力します。
+
+   Stepは、指定されたフラグを付けて`flutter test`コマンドを実行します。利用可能なフラグを確認するには、自分のマシンでコマンドラインインターフェースを開き、`flutter test --help`を実行してください。
+
+   ![Getting_started_with_Flutter_apps.png](/img/_paligo/uuid-3c8c65d8-1de1-0a50-62cf-acf76dc76bf9.png)
+1. <strong>Flutter Test</strong>Stepの<strong>Project Location</strong>入力欄が正しいことを確認します。
+
+   default valueは、Flutterプロジェクトの場所用に作成された環境変数（Env Var）です。
+1. コードカバレッジレポートを生成する場合は、<strong>Generate code coverage files?</strong>入力欄を`yes`に設定します。
+
+   これにより、`--coverage`フラグを付けて`flutter test`コマンドが実行されます。
+1. テスト結果を<strong>Tests</strong>タブにエクスポートするには、Workflowの末尾に<strong>Deploy to Bitrise.io</strong>Stepを追加します。
+
+   詳細については、[Deploying and viewing test results](/bitrise-ci/testing/deploying-and-viewing-test-results)を参照してください。
+
+
+## Flutterアプリのデプロイ
+
+Flutterアプリをビルドしてデプロイするには、Workflowに次のFlutterStepsが含まれている必要があります。
+
+- <strong>Flutter Install</strong>
+- <strong>Flutter Build</strong>
+
+リポジトリでプラットフォームが指定されている場合、Bitriseでプロジェクトを追加する際にデプロイWorkflowが自動的に生成されます。このWorkflowの内容はプラットフォームによって異なります。たとえば、FlutterプロジェクトにiOSプロジェクトのみが含まれている場合、Workflowには<strong>Certificate and profile installer</strong>Stepが含まれます。
+
+iOSとAndroidの両方のプロジェクトを同時にビルドすることも、それぞれ独自のWorkflowを使用して個別にビルドすることもできます。これは、<strong>Flutter Build</strong>Stepの<strong>Platform</strong>入力欄でいつでも設定できます。デフォルトでは、Bitriseでアプリを追加した際にスキャナーが検出したプラットフォームに応じてStepが設定されます。
+
+以下は、この設定で使用するWorkflowの例で、必要なStepsがすべて含まれています。
+
+![Getting_started_with_Flutter_apps.jpg](/img/_paligo/uuid-f655a8a5-c151-d103-6de5-55a0b3355322.jpg)
+
+:::tip[並列化のためのPipelines]
+
+これらの例では、同じWorkflow内でアプリのiOS版とAndroid版の両方をビルドおよびデプロイし、必要な処理を順番に実行することを前提としています。ただし、Pipelinesを使用すれば、1つのビルド<GlossTerm baseform="trigger">トリガー</GlossTerm>で両方のバージョンを並列に実行することもできます。
+
+- [ビルドPipelines](/bitrise-ci/workflows-and-pipelines/build-pipelines/about-pipelines)
+- [BitrisePipelineの設定](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline)
+
+:::
+
+:::note[パッケージとライブラリ]
+
+Flutterのパッケージとライブラリのビルドもサポートしています。アプリの場合と異なり、ビルドするアーティファクトがないため、Workflowに<strong>Flutter Build</strong>Stepは必要ありません。
+
+:::
+
+### クロスプラットフォームアプリをbitrise.ioにデプロイする
+
+<strong>Deploy to bitrise.io</strong>Stepは、ビルドに関連するすべてのアーティファクトを、Buildのページにある[<strong>Artifacts</strong>](/bitrise-ci/run-and-analyze-builds/managing-build-files/build-artifacts-online)タブにアップロードします。
+
+生成されたバイナリファイル（Android用のAPK、またはiOS用のIPAファイル）は、公開インストールページを使用してチームメンバーと共有できます。公開インストールページはURLであり、他のユーザーと共有することで、生成されたアプリバイナリを各自のデバイスにインストールしてもらえます。また、APKまたはIPAファイルがビルドされたことを、ユーザーグループや個々のユーザーに通知することもできます。
+
+:::important[expo.ioへの公開]
+
+<strong>Deploy to Bitrise.io</strong>StepはExpoコマンドを使用せず、[expo.io](https://docs.expo.dev/workflow/publishing/)への公開も行いません。このStepは、アーティファクトをBitriseに公開するものであり、特定のプラットフォームに限定されません。
+
+[expo.io](https://docs.expo.dev/workflow/publishing/)に公開する必要がある場合は、<strong>Expo Eject</strong>Stepの<strong>Run expo publish after eject?</strong>入力欄を`yes`に設定します。この場合、[expo.io](http://expo.io/)に公開するためにExpoアカウントのユーザー名とパスワードを入力する必要があるので注意してください。
+
+:::
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. Workflowに<strong>Deploy to bitrise.io</strong>Stepがあることを確認します。
+1. <strong>Notify: User Roles</strong>で、このロールを付与されたユーザーのみに通知が届くようにロールを追加します。または、通知したいユーザーのメールアドレスを<strong>Notify: Emails</strong>フィールドに入力します。
+
+   これらのメールアドレスは必ず[Secrets](/bitrise-ci/configure-builds/secrets)として設定してください。この詳細情報は、<strong>Artifacts</strong>タブで生成されたバイナリの横にある<strong>eye</strong>アイコンをクリックすることで、<strong>Notifications</strong>でも変更できます。
+1. Stepに公開インストールページを生成させたい場合は、<strong>Enable public page for the App?</strong>入力欄を`true`に設定します。
+
+### FlutterアプリをApp Store Connectにデプロイする
+
+iOSのFlutterプロジェクトをApp Storeにデプロイするには、アプリをビルドし、IPAファイルをエクスポートして、App Storeに送信する必要があります。
+
+テストとは異なり、これにはcode signingファイルが必要です。
+
+- iOS Distribution Certificate（.p12ファイル）。
+- App Store Provisioning Profile。
+
+Flutterアプリケーションの場合、code signingではXcodeのproject settingsでTeam IDを設定する必要があります。
+
+#### FlutterアプリのTeam IDの設定
+
+iOSプロジェクトをローカルで作成したら、Xcodeでそのproject settingsを確認する必要があります。具体的には、有効なTeam IDを設定する必要があります。設定しないと、Bitriseでビルドが失敗します。
+
+1. Xcodeで、your appの<strong>ios</strong>フォルダにある<strong>Runner.xcworkspace</strong>を開きます。
+1. アプリの設定を表示するには、Xcodeのプロジェクトナビゲーターで<strong>Runner</strong>プロジェクトを選択します。次に、メインビューのサイドバーで<strong>Runner</strong>ターゲットを選択します。
+1. <strong>General</strong>タブを選択します。
+1. <strong>Signing</strong>セクションで<strong>Team</strong>メニューを見つけ、登録済みのApple Developerアカウントに関連付けられたチームに設定します。
+1. この変更をリポジトリにコミットしてください。
+
+   :::important[変更のコミットを忘れないでください]
+
+   Team IDをローカルでのみ設定した場合、Bitriseでビルドが失敗します。
+
+   :::
+
+#### BitriseでのApp StoreへのFlutterデプロイの設定
+
+アプリをApp Storeにデプロイするには、code signingファイルをアップロードする必要があります。次の2つの方法があります。
+
+- コードsigning certificateをBitriseにアップロードし、[Manage iOS Code signing](https://bitrise.io/integrations/steps/manage-ios-code-signing)Stepでautomatic code signingを使用する。
+- provisioning profileとコードsigning certificateをBitriseにアップロードし、[Certificate and profile installer](https://bitrise.io/integrations/steps/certificate-and-profile-installer)Stepで手動のcode signingを使用する。
+
+このガイドでは、2つ目の方法である手動のcode signingについて説明します。
+
+1. Workflowに<strong>Certificate and profile installer</strong>Stepがあることを確認します。
+1. 必要なcode signingファイルを[Bitrise](https://app.bitrise.io/users/sign_in)にアップロードします。
+1. <strong>Flutter Build</strong>Stepを開き、<strong>iOS Platform Configs</strong>の入力欄グループを見つけます。
+1. <strong>Additional parameters</strong>入力欄の値が`--release`になっていることを確認します。
+1. Stepの<strong>Platform</strong>入力欄を確認し、`iOS`または`both`のいずれかに設定されていることを確認します。
+1. <strong>iOS output artifact type</strong>入力欄を<strong>archive</strong>に設定します。
+
+   ![flutter-build-ios-config.png](/img/_paligo/uuid-821c4edf-e9a6-a85e-a6e5-8cce61ab5f42.png)
+1. <strong>Export iOS and tvOS Xcode archive</strong>StepをWorkflowに追加します。
+
+   これは<strong>Flutter Build</strong>Stepの後に配置します。
+1. Stepの<strong>Distribution method</strong>入力欄を<strong>app-store</strong>に設定します。
+1. <strong>Deploy to App Store Connect</strong>StepをWorkflowの末尾に追加します。
+1. それぞれの入力欄にAppleの認証情報を入力します。
+
+   - Apple ID。
+   - パスワード。App Store Connectで二要素認証を使用している場合は、アプリケーションパスワード。
+
+   ご安心ください。パスワードはログに表示されたり、外部に公開されたりすることはありません。
+1. ビルドを開始してください。
+
+問題がなければ、StepによってアプリがApp Store Connectに送信されます。App Store Connectページから、Testflight経由で外部テスターにアプリを配布したり、App Store自体にリリースしたりできます。
+
+### FlutterアプリをGoogle Playにデプロイする
+
+アプリをGoogle Playにデプロイするには、App Bundleファイルをエクスポートして署名する必要があります。次の2つの方法があります。
+
+- アプリの`build.gradle`ファイルで[code signingを設定](https://flutter.dev/docs/deployment/android#configure-signing-in-gradle)すると、Flutterがビルドフェーズ中にアプリに署名します。
+- 専用のStepを使用して、Bitrise上でAABまたはAPKファイルに署名する。
+
+このガイドでは、2つ目の方法である<strong>Android Sign</strong>Stepを使用したAAB/APKファイルへの署名について説明します。
+
+1. [キーストアファイルを生成する](https://flutter.io/docs/deployment/android#create-a-keystore)。
+
+   キーストアファイルはcode signingに必要です。
+1. Bitriseでアプリを開き、<strong>Workflow</strong> > <strong>Code signing</strong> > <strong>Android Code Signing</strong>に移動します。
+1. キーストアファイルをドラッグアンドドロップし、メタデータを入力します。
+1. [Google Playへのアクセスを設定します。](/bitrise-ci/deploying/android-deployment/generating-and-deploying-android-app-bundles#setting-up-google-play-deployment-for-the-first-time)
+
+   これは、アプリの最初のGoogle Playデプロイの場合にのみ必要です。
+1. <strong>Flutter Build</strong>Stepで<strong>Android Platform Configs</strong>入力欄グループを見つけ、<strong>Additional parameters</strong>入力欄の値が`--release`になっていることを確認します。
+1. <strong>Android output artifact type</strong>入力フィールドで、デプロイ要件に応じて<strong>APK</strong>または<strong>appbundle</strong>のいずれかを選択します。
+1. <strong>Output (.apk, .aab) pattern</strong>入力欄に、<strong>Deploy to Google Play</strong>Stepが生成されたバイナリにアクセスできるパスを設定します。
+
+   このパスは、BITRISE_SOURCE_DIR環境変数に保存されているproject sourceディレクトリからの相対パスにする必要があります。
+1. Workflow内の<strong>Android Sign</strong>Stepの後に<strong>Deploy to Google Play</strong>Stepがあることを確認します。
+1. 必要な入力フィールドに次のように入力します。
+
+   - <strong>Service Account JSON key file path</strong>：このフィールドはリモートのURLを受け付けるため、アップロード済みのサービスアカウントJSONキーを含む環境変数を指定する必要があります。例：`$BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL`。
+   - <strong>Package name</strong>：Androidアプリのpackage name。
+   - <strong>Track</strong>：APKをデプロイするトラック（例：alpha/beta/ロールアウト/production、または独自に設定したカスタムトラック）。
+
+
+## Flutter関連の追加コンテンツ
+
+- [Flutterモジュールを使ったAndroidアプリのビルド](https://support.bitrise.io/hc/en-us/articles/360015714357)
+- [Flutter TestStepが「Waiting for another flutter command to release the startup lock...」でフリーズする](https://support.bitrise.io/hc/en-us/articles/360015714217)
+- [Flutterアプリのビルド時間の短縮](https://support.bitrise.io/hc/en-us/articles/360020722937)
+- [Flutterでパッケージの依存関係を解決できない](https://support.bitrise.io/hc/en-us/articles/360019760178)
