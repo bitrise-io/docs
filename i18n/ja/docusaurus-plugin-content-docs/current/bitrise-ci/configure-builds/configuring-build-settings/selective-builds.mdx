@@ -1,0 +1,79 @@
+---
+title: "Selective builds"
+description: "The Selective builds setting provides change detection for your builds. Enabling it allows you to only trigger a build of an app if certain files or folders have been modified."
+sidebar_position: 4
+slug: /bitrise-ci/configure-builds/configuring-build-settings/selective-builds
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/src/partials/getting-to-the-project-settings-page.mdx';
+
+:::caution[代わりにビルドトリガーを使用する]
+
+これはレガシー機能です。
+
+この機能を使う代わりに、[ビルドトリガーを設定](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers)して、特定のファイルやフォルダが変更されたときにのみビルドをトリガーできます。設定するには、プッシュまたはプルリクエストイベント用の新しいトリガーを作成し、<strong>Files changed</strong> トリガー条件を選択します。Selective buildsの代わりにこのオプションの使用を強くおすすめします。
+
+:::
+
+<strong>Selective builds</strong> 設定は、ビルドの変更検知を行います。これを有効にすると、特定のファイルやフォルダが変更された場合にのみアプリのビルドをトリガーできます。
+
+次のような場合に、この設定の使用を検討してください。
+
+- You haveモノレポ、つまり単一のリポジトリから複数のアプリをビルドしている場合。
+- リポジトリ内で複数のアプリが共通ファイルを共有している場合。
+
+:::important[非GithubプロジェクトでのSelective Builds]
+
+現在のバージョンのSelective Builds機能は、GitHubプロジェクトでのみ動作します。リポジトリが別のGitホスティングサービスでホストされている場合、このオプションは利用できません。
+
+:::
+
+<strong>Selective builds機能の使用</strong>
+
+アプリのリポジトリへのコミットが、`develop`ブランチ上の`mycode.go`ファイルを変更した場合にのみBitriseビルドをトリガーするようにしたいとします。
+
+- この例では、`develop`というブランチがあるとします。
+- You have、`develop`ブランチへのコードプッシュのたびにビルドを開始するトリガーです。
+- selective builds機能で、入力フィールドに`mycode.go`ファイルを指定しました。
+
+`develop`ブランチで`mycode.go`ファイルを変更するコミットを行うと、Bitriseがビルドをトリガーします。コミットでファイルがまったく変更されない場合、Bitriseはビルドをトリガーしません。
+
+selective buildsを設定するには:
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. <strong>Integrations</strong> ページで、適切な[service credential user](/bitrise-platform/integrations/the-service-credential-user)が設定されていることを確認してください。
+
+   このユーザーには、プロジェクトのGitHubリポジトリに対する管理者権限が必要です。
+1. 左側で <strong>Builds</strong> を選択します。
+1. <strong>Selective builds</strong> セクションを見つけて、トグルをオンにします。
+
+   ![selectuve-builds.png](/img/_paligo/uuid-974582cb-d9c3-a954-0909-c78a76915d55.png)
+1. <strong>Add path</strong> をクリックします。
+
+   :::important[ボタンが見つからない場合]
+
+   上のスクリーンショットのようにボタンが見つからない場合、考えられる原因は2つあります。
+
+   - アプリのリポジトリがGitHubでホストされていない。
+   - [service credential user](/bitrise-platform/integrations/the-service-credential-user)が正しく設定されていないか、リポジトリへの管理者権限がない。
+
+   :::
+1. ポップアップウィンドウで、必要なパスを設定します。
+
+   一度に1つのパスを追加できます。
+
+## ファイル名またはファイルパスでのパターンの使用
+
+Selective builds機能では、正確なファイル名やファイルパスを設定する必要はありません。パターンを設定できます。正規表現の使用はサポートされていませんが、パターンには特定のメタ文字を含めることができます。
+
+- `*`: すべてのファイルに一致します。
+- `a*`: aで始まるすべてのファイルに一致します。
+- `*a`: aで終わるすべてのファイルに一致します。
+- `*a*`: 名前にaを含むすべてのファイルに一致します（先頭や末尾を含む）。
+- `**`: ディレクトリを再帰的に一致させます。
+- `?`: 任意の1文字に一致します。
+- `\`: 次のメタ文字をエスケープします。
+- `[set]`: 集合内の任意の1文字に一致します。

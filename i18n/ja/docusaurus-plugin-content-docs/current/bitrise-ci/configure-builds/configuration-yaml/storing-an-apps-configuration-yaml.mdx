@@ -1,0 +1,183 @@
+---
+title: "Storing an app's configuration YAML"
+description: "The heart of your build is the bitrise.yml file. You can configure the Steps you use, the project type, the trigger map, and specify the app- and Workflow-level Env Vars."
+sidebar_position: 2
+slug: /bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_IMPORTANTYAMLFilesSizeLimitation from '@site/src/partials/important-yaml-files-size-limitation.mdx';
+import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
+
+<Partial_IMPORTANTYAMLFilesSizeLimitation />
+
+プロジェクトの<GlossTerm baseform="configuration yaml">設定YAML</GlossTerm>ファイルを保存する方法は2つあります。
+
+- ファイルをGitリポジトリに保管する: この方法では、ファイルの管理とバージョン管理を完全にコントロールできます。
+- [bitrise.io](http://bitrise.io/)に保管する: Bitriseが設定を保存し、いつでもWebサイトからアクセスできます。この方法では、設定ファイルはリポジトリから完全に独立します。
+
+この2つの方法はいつでも切り替えられます。
+
+:::note[参照]
+
+設定YAML構文の完全なリファレンスについては、[設定YAMLリファレンス](/bitrise-ci/references/configuration-yaml-reference)を参照してください。
+
+:::
+
+
+## リポジトリにbitrise.ymlファイルを保存する
+
+設定YAMLファイルをリポジトリに保存すると、Bitriseのビルドプロセスはそのファイルを使ってビルドを実行します。つまり次のとおりです。
+
+- You have設定ファイルのバージョン管理を完全にコントロールできます。
+- Workflows/Pipelinesやトリガーを変更するたびに、その変更をリポジトリ内のファイルにコミットする必要があります。Workflow Editorを使えば直接コミットできますし、手動でファイルをコミットすることもできます。
+
+事前に独自の設定YAMLファイルを作成する必要はありません: [bitrise.io](https://www.bitrise.io/)に保存されているファイルを使用できます。
+
+この機能を使用するには、[サービス認証情報](/bitrise-platform/integrations/the-service-credential-user)連携、または[GitHubアプリ連携](/bitrise-platform/repository-access/github-app-integration)が必要です。どちらも利用できないプライベートホスト型リポジトリでYAファイルをホストする場合は、[回避策](#privately-hosted-repositories)が必要です。
+
+:::note
+
+設定ファイルをリポジトリに保存するには、初回は手動でコミットする必要があります。それ以降の変更については、GitHubまたはGitLabを使用している場合、[Workflow Editorを使ってファイルを直接リポジトリにコミットできます](/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml#updating-a-bitriseyml-stored-in-the-repository)。Bitbucket Cloudを使用している場合は、毎回手動でファイルをコミットする必要があります。
+
+:::
+
+1. Bitriseでプロジェクトを開き、<strong>Project settings</strong>ページに移動します。
+1. <strong>Collaboration</strong>を選択します。
+1. <strong>Service credential user</strong>セクションを確認します。service credential userは、リポジトリに少なくとも`read`アクセス権を持つBitriseユーザーである必要があります。
+
+   :::note[GitHubアプリ連携]
+
+   [GitHubアプリ連携](/bitrise-platform/repository-access/github-app-integration)を使用している場合、設定YAMLファイルをリポジトリに保存するためにservice credential userは必要ありません。
+
+   :::
+1. <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>を開きます。
+1. ヘッダーの<strong>Bitriseに保存</strong>（またはbranch name）の横にあるシェブロンをクリックし、<strong>Changeストレージ...</strong>を選択します。
+
+   ![Workflow Editorのストレージ変更ダイアログ](/img/configuration-yaml/2026-07-06-change-storage-dialog.png)
+1. プロジェクトのリポジトリに`bitrise.yml`を追加するよう求められたら、2つの選択肢があります。
+
+   - 現在の`bitrise.yml`ファイルの内容をクリップボードにコピーする。その後、自分でファイルを作成し、内容をコピーして貼り付けます。
+   - 現在の`bitrise.yml`ファイルをダウンロードする。
+1. リポジトリで`bitrise.yml`ファイルをコミットします。
+
+   次のいずれかを行います。
+
+   - リポジトリのルートにファイルをコミットする。
+   - 別の場所にファイルをコミットする。この場合、Bitriseでパスを指定する必要があります。
+
+   :::important[Default branch]
+
+   アプリのdefault branchには常に`bitrise.yml`ファイルが必要です。他のブランチには異なる`bitrise.yml`ファイルを保存でき、Workflow Editorでそれらを読み込むことができます: [リポジトリの複数のブランチにbitrise.ymlファイルを保存する](/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml#storing-a-bitriseyml-file-on-multiple-branches-in-the-repository)。
+
+   [bitrise.io](https://www.bitrise.io/)で<strong>Settings</strong>タブに移動し、<strong>DEFAULT BRANCH</strong>オプションを確認することで、Bitrise<GlossTerm baseform="project">プロジェクトの</GlossTerm>default branchを確認できます。
+
+   :::
+1. Bitriseに戻り、<strong>**Bitrise.ymlの場所</strong>フィールドに設定ファイルへのパスを設定します。
+
+   - 設定ファイルをリポジトリのルートに保存している場合は、フィールドを空のままにします。
+   - リポジトリの別の場所にファイルを保存している場合は、パスを指定します。
+1. <strong>Validate and save</strong>をクリックします。
+
+   :::caution[検証]
+
+   リポジトリ内の`bitrise.yml`ファイルは、常に有効な状態にしておく必要があります。構文が正しくないと、ビルドが失敗する可能性があります。
+
+   :::
+
+問題がなければ、`bitrise.yml`のストレージ設定が正常に変更されたことを示す確認メッセージが表示されます。
+
+:::tip[Bitrise websiteのIPアドレスを許可リストに追加する]
+
+コードの保存に何らかの自己ホスト型ソリューションを使用している場合、Bitrise websiteとそのバックグラウンドワーカーの静的IPアドレスを許可リストに追加する必要がある場合があります。これにより、`<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>`ファイルを自分のリポジトリに保存したり、Bitriseからビルドステータスの更新を受け取ったりといった機能を利用できます: [Bitrise websiteのIPアドレス](/bitrise-platform/infrastructure/build-machines/configuring-your-network-to-access-our-build-machines#ip-address-ranges-for-bitrise-backend-workers)。
+
+:::
+
+### プライベートホスト型リポジトリ
+
+残念ながら、この機能はservice credential user連携や[GitHubアプリ連携](/bitrise-platform/repository-access/github-app-integration)を利用できないユーザーにはまだ対応していません。たとえば、リポジトリがプライベートなIPサブネット内からしかアクセスできない場合などです。ただし、回避策はあります: [プライベートホスト型リポジトリでbitrise.ymlを保存する](https://support.bitrise.io/en/articles/9676637-storing-the-bitrise-yml-in-a-privately-hosted-repository)。
+
+GitHub Enterpriseの場合、`bitrise.yml`ファイルをGitHub Enterpriseリポジトリに保存できる連携機能を提供しています: [GitHub EnterpriseとBitriseの連携](/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise)。
+
+### 設定YAMLのカスタムパスを設定する
+
+デフォルトでは、ビルドの実行時にBitriseはリポジトリのルートにある設定YAMLを探しますが、ファイルをリポジトリ内の別の場所に保存することもできます。
+
+その方法は次のとおりです。
+
+1. 設定YAMLファイルをリポジトリにコミットします。
+1. <Partial_OpeningTheWorkflowEditor />
+1. ヘッダーの<strong>Bitriseに保存</strong>（またはbranch name）の横にあるシェブロンをクリックし、<strong>Changeストレージ...</strong>を選択します。
+1. <strong>**Bitrise.ymlの場所</strong>フィールドに、ファイルをコミットした場所のパスを設定します。
+
+   ![config-yaml-source.png](/img/_paligo/uuid-4908f90e-3721-b82f-2d79-937d6a9b14f3.png)
+
+
+## リポジトリに保存されたbitrise.ymlを更新する
+
+`bitrise.yml`がリポジトリに保存されている場合、Workflow Editorから直接変更をプッシュできます。コピー＆ペーストや手動でのコミットは不要です。
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. デフォルト以外のブランチを編集する場合は、ヘッダーのbranch nameの横にあるシェブロンをクリックし、<strong>Switch branch...</strong>を選択します。
+
+   ![Workflow EditorのConfiguration optionsメニュー（ブランチの切り替え、YAMLファイルのダウンロード、ストレージ変更オプションを表示）](/img/configuration-yaml/2026-07-06-configuration-options-menu.png)
+1. Workflow Editorで変更を行います。
+1. 右上にある<strong>Save changes</strong>をクリックします。
+1. 保存方法を選択します。
+   - <strong>Currentブランチ</strong>: 読み込み元のブランチに直接コミットしてプッシュします。
+   - <strong>Newブランチ</strong>: 任意の新しいブランチにプッシュします。コードレビューに便利です。
+   - <strong>Manual update</strong>: YAMLをダウンロードまたはコピーし、自分でコミットします。
+
+   :::note 
+
+   Workflow Editorから直接プッシュできるのは、GitHubまたはGitLabを使用している場合のみです。Bitbucket Cloudを使用している場合は、毎回手動でファイルをコミットする必要があります。
+
+   リポジトリにマージ前にプルリクエストを必須とするブランチ保護ルールが設定されている場合、<strong>Currentブランチ</strong>は一般的な`Failed to push changes. Please try again.`エラーで失敗することがあります。このような場合は、ブランチ保護が原因である可能性が高いため、代わりに<strong>Newブランチ</strong>を使用してください。これは変更を新しいブランチにコミットし、そこからプルリクエストを開くためのリンクを提供します。
+
+   :::
+1. コミットメッセージを入力し、<strong>Push changes</strong>をクリックします。
+
+
+## リポジトリの複数のブランチにbitrise.ymlファイルを保存する
+
+`bitrise.yml`を初めてリポジトリに追加する際は、[default branch](/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch#changing-the-default-branch)にコミットする必要があります。`bitrise.yml`ファイルをリポジトリに保存する場合、default branchには常に`bitrise.yml`が必要です。
+
+ただし、リポジトリから`bitrise.yml`を使用するための初期設定を一度行えば、他のブランチに`bitrise.yml`ファイルを保存し、そのいずれかを使ってビルドを実行できます。Bitriseでリポジトリのあるブランチをビルドしたい場合は、そのブランチに`bitrise.yml`ファイルが必要です。また、default branchには常に`bitrise.yml`ファイルを置いておく必要がある点を忘れないでください。
+
+:::tip[Workflow Editorでブランチを読み込む]
+
+Workflow Editorでは、任意のブランチから直接`bitrise.yml`を読み込めます。変更を行う前にエディタの上部でブランチを選択し、完了したらそのブランチに保存し直します。
+
+:::
+
+<strong>複数のブランチにbitrise.ymlファイルを配置したBitriseのセットアップ</strong>
+
+FantasticAppというアプリがあるとします。FantasticAppのGitリポジトリでは、default branchは`main`という名前です。また、`deploy`ブランチもあります。
+
+`main`へのコードプッシュまたはプルリクエストは、`main-workflow`というWorkflowをトリガーします。`deploy`へのコードプッシュまたはプルリクエストは、`deploy-workflow`というWorkflowをトリガーします。
+
+リポジトリ内には、`main`ブランチと`deploy`ブランチの両方に`bitrise.yml`ファイルがあり、両方のWorkflowsが含まれています。Workflowsを変更する際、FantasticAppチームは両方のブランチでWorkflowsが最新の状態になるよう、変更した`bitrise.yml`ファイルを両方のブランチにコミットします。
+
+
+## bitrise.ymlファイルをbitrise.ioに戻す
+
+デフォルトの設定では、`bitrise.yml`ファイルは[bitrise.io](http://bitrise.io/)に保存されます: 新しいアプリを追加すると、`bitrise.yml`ファイルが自動的に作成され、Bitriseのウェブサイトに保存されます。この設定で問題なければ、何も変更する必要はありません。
+
+ただし、設定ファイルをリポジトリに保存するようにストレージ設定を変更した場合でも、いつでも簡単に[bitrise.io](http://bitrise.io/)への保存に戻すことができます。
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. ヘッダーのbranch nameの横にあるシェブロンをクリックし、<strong>Changeストレージ...</strong>を選択します。
+
+   ![git-repo-source.png](/img/_paligo/uuid-2bda7822-cd88-2b01-ff4d-8f5eec392c66.png)
+1. これ以降[bitrise.io](http://bitrise.io/)で使用する`bitrise.yml`ファイルを選択します。
+
+   アプリのリポジトリに保存されている`bitrise.yml`ファイルの内容をコピーできます。
+
+   [bitrise.io](http://bitrise.io/)で使用していた`bitrise.yml`ファイルの最新バージョンをコピーできます。
+
+   ![yaml-source-switchback-dialog.png](/img/_paligo/uuid-82197654-17c3-6b98-320e-cf408f16c8c9.png)
+1. <strong>Validate and save</strong>をクリックします。
+
+問題がなければ、`bitrise.yml`のストレージ設定が正常に変更されたことを示す確認メッセージが表示されます。

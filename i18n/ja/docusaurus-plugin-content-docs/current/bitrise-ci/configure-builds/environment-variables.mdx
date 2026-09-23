@@ -1,0 +1,339 @@
+---
+title: "Environment Variables"
+description: "An Environment Variable (Env Var) is a key-value pair that holds data that you can use in your builds by inserting them into Step inputs."
+sidebar_position: 3
+slug: /bitrise-ci/configure-builds/environment-variables
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
+
+環境変数（Env Var）とは、ビルドで使用できるデータを保持するキーと値のペアです。たとえば、プロジェクトのリポジトリの作業ディレクトリは環境変数に格納されることが多いため、それを必要とするすべての<GlossTerm baseform="Step">Step</GlossTerm>の入力でパスを指定する必要がありません。
+
+プロジェクト全体、または特定の<GlossTerm baseform="pipeline">Pipelines</GlossTerm>や<GlossTerm baseform="Workflow">Workflows</GlossTerm>に対して環境変数を設定できます。プロジェクトレベルの環境変数は、アプリのすべてのWorkflowで使用できます。PipelineレベルおよびWorkflowレベルの環境変数は、該当するPipelineまたはWorkflowでのみ使用できます。
+
+:::note[環境変数リストのサイズ制限]
+
+デフォルトでは、環境変数リストのサイズは120 KBです。この[Script](https://github.com/bitrise-io/steps-script) Stepを使用すると、この[ナレッジベースの記事](https://support.bitrise.io/en/articles/9676692-envman-environment-list-too-large-error)で説明されているように、リストのサイズを簡単に増やすことができます。
+
+:::
+
+<GlossTerm baseform="secret">Secrets</GlossTerm>は特定の種類の環境変数で、情報を暗号化された形式で隠し、その値はビルドログに公開されません。
+
+:::warning[機密情報を保護する]
+
+Secretsとは異なり、環境変数はプルリクエストによってトリガーされたビルドで完全に公開されるため、環境変数に機密情報を追加しないでください。
+
+:::
+
+
+## Environment Variablesの範囲
+
+ユーザーはEnvironment Variablesを3つの異なるレベルで宣言できます。
+
+- アプリレベル。
+- Workflowレベル。
+- Stepレベル。
+
+ユーザーが宣言した環境変数に加えて、Bitrise CLIまたはbitrise.ioによって自動的に公開される環境変数もあります。これらは常にすべてのビルドで使用できます。これらのリストはこちらで確認できます。[利用可能なenvironment variables](/bitrise-ci/references/available-environment-variables)
+
+<strong>プロジェクトレベルの環境変数</strong>は、特定のアプリのすべてのビルドで使用できます。たとえば、新しいWorkflowを作成すると、すぐに自動的にすべてのプロジェクトレベルの環境変数にアクセスできるようになります。
+
+<strong>Workflowレベルの環境変数</strong>は、それが定義された特定のWorkflowでのみ使用できます。`primary` WorkflowにキーTEST_ENVを持つ環境変数がある場合、`deploy` Workflowはその環境変数にアクセスできません。
+
+:::note[Workflowsを連結する]
+
+`after_run`パラメータを使用して[Workflowsを連結する](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together)場合、Workflowsのいずれかで環境変数を定義すると、チェーン内の後続のすべてのWorkflowsがその環境変数にアクセスできるようになります。
+
+:::
+
+<strong>Stepレベルの環境変数</strong>は、ビルドの特定のStep内で定義されます。このような環境変数は、他のWorkflowsや、同じWorkflow内の先行するStepsでは使用できません。ただし、後続のStepsはアクセスできます。Stepの出力もEnvironment Variablesとして公開されます。
+
+レベルにかかわらず、<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>、アプリの`bitrise.yml`ファイル、またはビルド中にカスタムScriptで[envman](https://github.com/bitrise-io/envman/)ツールを使用して、Environment Variablesを設定できます。
+
+- [Workflow Editorでの環境変数の設定](/bitrise-ci/configure-builds/environment-variables#setting-an-env-var-in-the-workflow-editor)
+- [環境変数を公開して別のStepまたはWorkflowで使用する](/bitrise-ci/configure-builds/environment-variables#setting-and-managing-env-vars-during-a-build)
+
+Environment Variablesには、そのレベルに基づいた処理順序があります。[Environment Variablesの利用可能順序](/bitrise-ci/configure-builds/environment-variables#availability-order-of-environment-variables)
+
+
+## Environment Variablesの利用可能順序
+
+Environment Variables（Env Var）は、環境変数が処理された後に使用できるようになります。
+
+Bitrise CLIによって公開される環境変数があります。これらは最初から使用可能です。たとえば、`BITRISE_SOURCE_DIR`や`BITRISE_TRIGGERED_WORKFLOW_ID`です。
+
+他のすべての環境変数は、ビルドの進行に伴って処理され、使用可能になります。
+
+処理順序は次のとおりです。
+
+1. Bitrise CLIによって公開されるEnv Vars。
+1. [Secrets](/bitrise-ci/configure-builds/secrets): Workflowが開始する前に処理されます。
+1. APIを通じてビルドに指定された一回限りのEnvironment Variables。
+1. アプリのEnvironment Variables。
+1. Workflow Environment Variables: 指定されたWorkflowの処理が開始すると、そのWorkflowに指定された環境変数が使用可能になります。
+
+   WorkflowにWorkflowsが[前後にチェーンされている](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows)場合、チェーンされたワークフローのEnvironment Variablesは、Workflowの最初のStepが実行される直前に処理され、使用可能になります。
+1. Step inputs: Stepが開始する直前に、各Stepに対して公開されます。
+1. Stepの出力: 特定のStepによって公開されるため、Stepが終了した後、後続のStepsで使用できます。
+
+
+## Workflow Editorで環境変数を設定する
+
+:::note[環境変数の値はすべて文字列]
+
+環境変数またはSecretの値は文字列のみです。数値（たとえば7）を設定した場合でも、文字列として渡されます。
+
+:::
+
+:::important[$文字の使用]
+
+環境変数やSecretの値（たとえばパスワード）に`$`文字を使用できますが、その場合は必ず<strong>Replace variables in inputs</strong>オプションのチェックを外したままにしてください。入力で変数のキーをその値に置き換えると、`$`文字が原因でBitrise CLIはその値を別の環境変数として扱ってしまいます。
+
+:::
+
+環境変数は、<strong>Project</strong>（すべてのWorkflowで使用可能）または<strong>Workflows</strong>（特定のWorkflowに限定）の2つのレベルで設定できます。これらがどのように連動するかの詳細については、[Environment Variablesの利用可能順序](/bitrise-ci/configure-builds/environment-variables#availability-order-of-environment-variables)を参照してください。
+
+<Tabs>
+<TabItem value="project" label="Project" default>
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. 左側のナビゲーションメニューから<strong>Env Vars</strong>を選択します。
+1. <strong>Project</strong>タブを選択します。
+
+   ![Workflow Editor内のProject Environment Variablesタブ](/img/configure-builds/2026-07-08-env-vars-project-tab.png)
+1. <strong>Add new</strong>をクリックします。
+1. キーと値を追加します。
+1. 右上にある<strong>Save changes</strong>をクリックします。
+
+</TabItem>
+<TabItem value="workflows" label="Workflows">
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. 左側のナビゲーションメニューから<strong>Env Vars</strong>を選択します。
+1. <strong>Workflows</strong>タブを選択します。
+
+   ![Workflow Editor内のWorkflows Environment Variablesタブ](/img/configure-builds/2026-07-08-env-vars-workflows-tab.png)
+1. 環境変数を追加するWorkflowを選択します。
+1. <strong>Add new</strong>をクリックします。
+1. キーと値を追加します。
+1. 右上にある<strong>Save changes</strong>をクリックします。
+
+</TabItem>
+</Tabs>
+
+以上です。新しい環境変数が保存され、使用できるようになりました。
+
+
+## 入力での変数の置換
+
+入力での変数の置換を行うと、環境変数のキーではなく値がビルドに渡されるようになります。詳細については、[入力での変数の置換](/bitrise-ci/configure-builds/environment-variables#replacing-variables-in-inputs)を確認してください。
+
+このオプションを有効にすると、環境変数のキーではなく値がビルドに渡されるようになります。通常、これは必要ありません。
+
+`bitrise.yml`ファイルで直接新しい環境変数を追加し、`is_expand`プロパティを設定しない場合、default valueは`true`になる点にご注意ください。この場合は、明示的に`is_expand`を設定することをお勧めします。
+
+```yaml
+envs:
+  - opts:
+      is_expand: false
+      KEY: VALUE
+```
+
+
+## ビルド開始時にカスタム環境変数を設定する
+
+新しいビルドをスケジュールする場合や手動で開始する場合、カスタムEnvironment Variables（Env Var）を設定できます。これらの変数は、開始またはスケジュールしたビルドでのみ使用できます。
+
+:::caution[アプリの環境変数と同じキーを使用しないでください]
+
+アプリのEnvironment Variablesは、カスタムEnvironment Variablesよりも優先されます。つまり、アプリの環境変数と同じキーを持つカスタム環境変数を定義した場合、ビルドではアプリの環境変数の値が使用されます。
+
+:::
+
+1. your appの<strong>Bitrise CI</strong>ページで、<strong>Start build</strong>ボタンを見つけ、その隣にある時計アイコンのボタンをクリックします。
+
+   ![scheduling-builds.png](/img/_paligo/uuid-ea158f34-25dc-4585-c7a3-0961c5ef5472.png)
+1. <strong>Buildの設定</strong>のポップアップウィンドウで、<strong>Advanced</strong>タブを選択します。
+1. <strong>Custom Environment Variables</strong>セクションを見つけます。
+1. キーと値を入力します。
+
+   :::important[入力での変数の置換]
+
+   入力での変数の置換を行うと、環境変数のキーではなく値がビルドに渡されるようになります。詳細については、[入力での変数の置換](/bitrise-ci/configure-builds/environment-variables#replacing-variables-in-inputs)を確認してください。
+
+   :::
+1. <strong>+ Add Environment Variable</strong>ボタンを押します。
+1. ビルドの開始またはスケジュールを完了します。
+
+
+## Stepの入力で環境変数を使用する
+
+多くの[Step inputs](/bitrise-ci/workflows-and-pipelines/steps/step-versions)は、Environment Variables（Env Var）や[Secrets](/bitrise-ci/configure-builds/secrets)を入力値として受け入れます。
+
+:::important[機密性の高い入力]
+
+<strong>SENSITIVE</strong>とマークされた入力フィールドは、入力としてSecretsのみを受け付けます。通常、これらの入力の値を変更することはお勧めしません。
+
+:::
+
+環境変数またはSecretをStepの入力値として使用するには、次の手順に従います。
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. 左側のナビゲーションメニューから<strong>Env Vars</strong>を選択します。
+1. WorkflowからStepを選択します。たとえば、<strong>Git Clone Repository</strong> Stepです。
+1. Step入力を選択します。たとえば、<strong>Git Clone Repository</strong> Stepの<strong>Clone destination (local) directory path</strong>入力です。
+1. 入力名の横にある<strong>Insert variable</strong>をクリックします。
+1. リストから環境変数を見つけて選択します。
+
+   環境変数のキー（またはその一部）を<strong>Filter by key or source</strong>の検索フィールドに入力して検索できます。
+
+   :::note[Stepsによって生成される環境変数]
+
+   環境変数のインタラクティブなリストには、Workflow内の以前のStepsによって生成された環境変数が表示されます。たとえば、Workflow内の3番目のStepの入力の1つに環境変数を挿入したい場合、1番目と2番目のStepsによって生成された環境変数から選択できます。
+
+   :::
+
+以上です。次にそのWorkflowのビルドを実行すると、Step入力は挿入された環境変数の値をStepの入力値として使用します。
+
+
+## 環境変数の値の中で環境変数を使用する
+
+Environment Variables（Env Var）には通常、単純な文字列値が含まれます。ただし、他の環境変数を値として含む環境変数を設定することも可能です。
+
+:::note[変数の値としてのSecrets]
+
+ここで説明する方法は、[Secrets](/bitrise-ci/configure-builds/secrets)にも適用されます。環境変数の中にSecretを埋め込むこともできます。
+
+:::
+
+環境変数の値の中で、いつでも別の環境変数を使用できます。いわば環境変数を埋め込むということです。たとえば、$BITRISE_AUTH環境変数の値を、別の環境変数である$PERSONAL_ACCESS_TOKENに設定したいとします。
+
+これを行うには、$BITRISE_AUTHのキーがその値に置き換えられるようにする必要があります。これにより、埋め込まれた環境変数がWorkflowsおよびStepsに渡されます。
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. 左側のナビゲーションメニューから<strong>Env Vars</strong>を選択します。
+1. 必要な環境変数のキーの下にある<strong>Replace variables in inputs</strong>トグルを有効にします。
+
+
+## ビルド中に環境変数を設定・管理する
+
+ビルド中に環境変数を設定するには、Step（通常は<strong>Script</strong> Step）で定義します。これを行うには、[envman](https://github.com/bitrise-io/envman/)ツールを使用できます。
+
+:::important[新しい環境変数は次のStepから有効になります]
+
+`envman`ツールで作成した環境変数は、Workflow内の後続のStepから有効になります。つまり、新しく作成した環境変数を、それが作成されたのと同じStep内で使用することはできません。
+
+:::
+
+ここでは、`envman`を使用してキーMY_RELEASE_NOTEを持つ新しい環境変数を追加する簡単な例を紹介します。
+
+```bash
+envman add --key MY_RELEASE_NOTE --value "This is the release note"
+```
+
+`envman`は、<strong>Script</strong> Stepを含む任意のStep内で呼び出すことができます。また、`bitrise`ビルドから呼び出す場合は、（リポジトリに保存された）独自のスクリプト内でも呼び出せます。
+
+値は`--value`パラメータとして指定するか、パイプを使用して指定できます。
+
+```bash
+echo 'hi' | envman add --key MY_RELEASE_NOTE
+```
+
+ファイルから値を読み込むこともできます。
+
+```bash
+envman add --key MY_RELEASE_NOTE --valuefile ./some/file/path
+```
+
+環境変数が公開されると、他の環境変数と同様に使用できます。これらの公開された環境変数は、他のStepsの入力でも使用できます。
+
+リリースノートの環境変数を公開し、それを別の<strong>Script</strong> Stepおよび<strong>Send a Slack message</strong> Stepで使用する例を次に示します。
+
+```yaml
+workflows:
+  example:
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            envman add --key MY_RELEASE_NOTE --value "This is the release note"
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            echo "My Release Note: $MY_RELEASE_NOTE"
+    - slack:
+        inputs:
+        - channel: ...
+        - webhook_url: ...
+        - message: "Release Note: $MY_RELEASE_NOTE"
+```
+
+環境変数の値を、別の環境変数のキーを通じてアクセスできるように公開したい場合は、そのようにすることができます。
+
+たとえば、`BITRISE_BUILD_NUMBER`の値をキー`MY_BUILD_NUMBER`として公開するには、次のようにします。
+
+```bash
+envman add --key MY_BUILD_NUMBER --value "${BITRISE_BUILD_NUMBER}"
+```
+
+これ以降、後続のStepsは`MY_BUILD_NUMBER`環境変数から`BITRISE_BUILD_NUMBER`の値を取得できます。この後で`BITRISE_BUILD_NUMBER`の値を変更しても、`MY_BUILD_NUMBER`の値は変更されず、元の値のまま保持されます。
+
+カスタム環境変数が定義されているかどうかを確認する必要がある場合、簡単にチェックでき、その値を上書きすることもできます。
+
+```bash
+#!/bin/bash
+set -ex
+if [ ! -z "$API_PROJECT_SCHEME" ] ; then
+  envman add --key PROJECT_SCHEME --value "$API_PROJECT_SCHEME"
+fi
+```
+
+このスクリプトは、`API_PROJECT_SCHEME`環境変数が定義されているかどうかを確認し、定義されている場合はその値を`PROJECT_SCHEME`環境変数に割り当てて、`PROJECT_SCHEME`の元の値を上書きします。
+
+
+## 設定YAMLで環境変数を設定する
+
+アプリのYAML設定ファイルで直接環境変数を設定できます。アプリの設定ファイルでは、アプリレベルとWorkflowレベルの両方の環境変数を設定できます。
+
+この例では、TEST_KEYというアプリレベルの環境変数を持つ設定を使用しています。
+
+```yaml
+app:  
+  envs:  
+  - opts:      
+      is_expand: false    
+    TEST_KEY: test value
+```
+
+:::important[入力での変数の置換]
+
+入力での変数の置換を行うと、環境変数のキーではなく値がビルドに渡されるようになります。詳細については、[入力での変数の置換](/bitrise-ci/configure-builds/environment-variables#replacing-variables-in-inputs)を確認してください。
+
+:::
+
+この例では、`deploy-alpha` WorkflowがENV_TYPEという環境変数を定義し、その後、その環境変数を使用できる別のWorkflowを実行します。
+
+```yaml
+workflows:
+
+  deploy-alpha:
+    envs:
+    - ENV_TYPE: alpha
+    after_run:
+    - _deploy
+
+  _deploy:
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            echo "ENV_TYPE: $ENV_TYPE"
+```
+
+`deploy-alpha` Workflowを実行すると、`ENV_TYPE`環境変数が`alpha`に設定され、その後、その環境変数を使用できる`deploy` Workflowが実行されます。この例では、単にその値を出力するだけです（出力されるテキストは`ENV_TYPE: alpha`になります）。

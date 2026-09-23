@@ -1,0 +1,193 @@
+---
+title: "Build priority"
+description: "You can configure build priority on Bitrise: by setting a value between -100 and 100, you can determine the order in which queued builds should run."
+sidebar_position: 3
+slug: /bitrise-ci/configure-builds/configuring-build-settings/build-priority
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+デフォルトでは、ビルドは単純な時系列順で実行されます。つまり、最初にトリガーされたビルドが最初に実行されます。ただし、build priorityを設定することで、重要なビルドをキューの先頭に優先的に進めることができます。
+
+数値の優先度(-100から100の間の値)を割り当てることができます。値が高いほど、そのビルドの優先度は高くなります。優先度の高いビルドは、優先度の低いビルドよりも先に実行されます。デフォルトでは、すべてのビルドの優先度は0です。
+
+優先度は以下に対して設定できます:
+
+- <GlossTerm baseform="pipeline">Pipelines</GlossTerm>および<GlossTerm baseform="workflow">Workflows</GlossTerm>: 個々のWorkflowやPipelinesにも優先度を割り当てることができます。Pipelineに優先度を割り当てると、それを構成するすべてのWorkflowsに同じ優先度が割り当てられます
+- <GlossTerm baseform="trigger">トリガー</GlossTerm>: 各トリガー条件に優先度を設定できます。
+- 手動ビルド: UI上でビルドを開始する場合、またはBitriseAPI経由でビルドを開始する場合、キュー内での位置を決定する優先度を設定できます。
+
+:::note[利用可能なプラン]
+
+build priority機能は、Teams、Pro、およびEnterpriseプランの<GlossTerm baseform="workspace">Workspaces</GlossTerm>でのみご利用いただけます。これらのプランをご利用でない場合でも、この機能にご興味があれば、[お問い合わせください](https://bitrise.io/contact)。
+
+:::
+
+
+## 手動でビルドを開始する際の優先度の設定
+
+[手動でビルドを開始する](/bitrise-ci/run-and-analyze-builds/starting-builds/starting-builds-manually)場合、優先度を設定できます。この優先度は、ビルド開始時に他のビルドがキューに入っている場合にのみ有効です。
+
+手動でビルドを開始する際に設定した優先度は、他のすべての優先度より優先されます。
+
+1. Bitrise CIを開き、プロジェクトを選択します。
+1. プロジェクトのメインページで、<strong>Start build</strong>をクリックします。
+1. <strong>Advanced</strong>オプションを選択します。
+
+   ![manual-build-priority.png](/img/_paligo/uuid-9fdfc68c-9744-f7ae-fee6-b4cc984bdf3e.png)
+1. <strong>Priority</strong>フィールドを見つけ、-100から100の間の整数値を設定します。default valueは0です。
+
+
+## ビルドトリガーの優先度の設定
+
+<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>のGUI、および<GlossTerm baseform="configuration yaml">設定YAML</GlossTerm>ファイルで、ビルドトリガーの優先度を設定できます。トリガーの優先度は、PipelineおよびWorkflowの優先度よりも優先されます。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Workflow Editorを開きます。
+1. 必要なWorkflow or Pipelineを選択します。
+1. <strong>Triggers</strong>タブに移動します。
+1. 新しいトリガーを作成するか、既存のトリガーを編集し、<strong>Priority</strong>の入力項目を見つけます。
+
+   ![trigger-priority.png](/img/_paligo/uuid-02de5b3a-d9bd-5890-cfc3-52462a3c8ff2.png)
+1. -100から100の間の整数値を設定します。数値が大きいほど優先度が高くなります。default valueは0です。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. 設定YAMLファイルを開きます。
+1. PipelineまたはWorkflow内のトリガーを見つけます。
+1. -100から100の間の整数値を持つ<strong>priority</strong>入力項目を追加します。数値が大きいほど優先度が高くなります。default valueは0です。
+
+   ```yaml
+   workflows:
+     primary:
+       steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - deploy-to-bitrise-io: {}
+       triggers:
+         push:
+         - branch: main
+           priority: 10
+   ```
+
+</TabItem>
+</Tabs>
+
+
+## PipelinesおよびWorkflowsの優先度の設定
+
+任意のWorkflowまたはPipelineの<strong>Priority</strong>プロパティに-100から100の間の値を設定することで、優先度を設定できます。default valueは0です。
+
+Pipelineの優先度はWorkflowの優先度よりも優先されます。パイプラインがトリガーされて優先度が割り当てられると、それを構成するすべてのワークフローが同じ優先度でトリガーされます。
+
+### Pipelineの優先度の設定
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Workflow Editorを開きます。
+1. 左側で<strong>Pipelines</strong>を選択します。
+1. 必要なPipelineを選択し、<strong>Properties</strong>をクリックします。
+1. <strong>Properties</strong>タブを選択します。
+
+   ![pipeline-priority.png](/img/_paligo/uuid-c92f6dbc-0dee-4ec9-3680-53b83a30f2a2.png)
+1. <strong>Priority</strong>入力フィールドに、-100から100の間の整数を入力します。default valueは0です。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. ConfigurationYAMLファイルを開きます。
+1. 必要なPipelineを見つけ、-100から100の間の整数値を持つ`priority`入力項目を追加します。
+
+   `priority`入力項目が設定されていない場合、Pipelineのデフォルトの優先度は0になります。
+
+   ```yaml
+   pipelines:
+     best-pipeline:
+       priority: 10
+   ```
+
+</TabItem>
+</Tabs>
+
+### Workflowの優先度の設定
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Workflow Editorを開きます。
+1. 左側で<strong>Workflows</strong>を選択します。
+1. ドロップダウンメニューから必要なWorkflowを選択し、右側の<strong>Properties</strong>タブを選択します。
+
+   ![workflow-priority.png](/img/_paligo/uuid-19da748e-432f-46b4-353f-a426a92cdd75.png)
+1. <strong>Priority</strong>入力フィールドに、-100から100の間の整数を入力します。default valueは0です。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. ConfigurationYAMLファイルを開きます。
+1. 必要なWorkflowを見つけ、-100から100の間の整数値を持つ`priority`入力項目を追加します。
+
+   `priority`入力項目が設定されていない場合、Workflowのデフォルトの優先度は0になります。
+
+   ```yaml
+   workflows:
+     best-workflow:
+       priority: 10
+   ```
+
+</TabItem>
+</Tabs>
+
+
+## 優先度設定の優先順位
+
+優先度レベルは以下に対して設定できます:
+
+- PipelinesおよびWorkflows。
+- トリガー。
+- 手動でトリガーされたビルド。
+
+これらの優先度は競合することがあります。例えば、testという名前のWorkflowがあり、その優先度は10です。このWorkflowにはトリガーも設定されており、developmentブランチにコードがプッシュされるとトリガーされます。このトリガーの優先度は15です。
+
+このようなシナリオでは、Bitriseが優先順位に基づいてbuild priorityを決定します。
+
+1. 手動での上書き: 手動でビルドを開始すると、他のすべての優先度設定より優先されます。
+1. トリガー固有の優先度設定: トリガーの優先度設定は、それがトリガーするPipelinesまたはWorkflowsの優先度設定より優先されます。
+1. Pipelineレベルの優先度設定: Pipelineの優先度は、それを構成するWorkflowsの優先度設定より優先され、これらはすべてPipelineと同じ優先度が与えられます。
+1. Workflowレベルの設定: 他の設定要素に優先度設定が与えられていない場合、Workflowの優先度が全体のbuild priorityを決定します。
+
+以下は、さまざまなレベルで優先度を設定する方法を示すサンプルスニペットです:
+
+```yaml
+workflows:
+  A:
+    steps: []
+  B:
+    steps: []
+    priority: 4
+    triggers:
+      push:
+      - branch: release
+        priority: 2
+      - branch: development
+
+pipelines:
+  P:
+    priority: 3
+    workflows:
+      A: {}
+      B: {}
+```
+
+この例では:
+
+- WorkflowAが単独のビルドとして実行される場合、その優先度は0です(デフォルトの優先度値)。
+- WorkflowBが単独のビルドとして実行される場合(例えば、`development`ブランチにコードがプッシュされた場合)、その優先度は4です。
+- `release`ブランチにコードがプッシュされると、WorkflowBが優先度2でトリガーされます。
+- PipelinePがトリガーされると、AとBの両方のWorkflowsが優先度3で実行されます。

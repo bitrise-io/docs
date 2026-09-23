@@ -1,0 +1,288 @@
+---
+title: "Configuring tool versions"
+description: "Bitrise can automatically set up any tools with the right version for your CI project. For example, most CI workflows often start with installing the right version of Ruby or Node.js that is compatible with the project."
+sidebar_position: 2
+slug: /bitrise-ci/configure-builds/configuring-build-settings/configuring-tool-versions
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitriseは、CIプロジェクトに適したバージョンのツールを自動的にセットアップできます。たとえば、ほとんどのCIワークフローは、プロジェクトと互換性のあるRubyまたはNode.jsの適切なバージョンをインストールすることから始まります。
+
+ツールをセットアップする方法は2つあります。
+
+- 宣言的なYAMLベースの方法: ツールとそのバージョンを、<GlossTerm baseform="configuration yaml">設定YAML</GlossTerm>ファイルの最上位にある`tools`プロパティに追加します。まずはこの方法から始めることをお勧めします。[宣言的なツールセットアップ](#declarative-tool-setup)
+- <GlossTerm baseform="workflow">Workflow</GlossTerm>の実行中にインストールする方法: 専用のBitrise <GlossTerm baseform="step">Step</GlossTerm>を使うか、CLIサブコマンドを実行するスクリプトを使います。[Workflow実行中のツールセットアップ](#tool-setup-during-workflow-execution)
+
+適切な方法を選択できるように、各方法の違いと制限事項を確認してください。
+
+| Declarative config | Workflow実行 |
+| --- | --- |
+| Workflowの最初のStepの前に自動的に実行されます。 | Workflow内で手動で実行されます。Workflowの途中で実行することもできます。 |
+| バージョンファイルから設定を読み取ることはできません。ツールのセットアップは[<strong>Git Clone</strong>](https://github.com/bitrise-steplib/steps-git-clone)Stepの前に実行されます。ツールのバージョンは2つのファイル（バージョンファイルと設定YAMLファイル）で定義されます。 | [<strong>Git Clone</strong>](https://github.com/bitrise-steplib/steps-git-clone)Stepの後にコマンドを実行すれば、バージョンファイルから設定を読み取れます。再利用のため、`step bundle`](/bitrise-ci/workflows-and-pipelines/steps/step-bundles)を作成し、すべてのWorkflowsでそれを参照することをお勧めします。 |
+| 追加設定は不要です。ツールはWorkflowStepsの`$PATH`で自動的に使用できるようになります。 | 専用のStepには追加設定は不要です。独自のスクリプトを使う場合は、現在のシェルまたはスクリプトステップでツールを有効にする前に、シェルのソースが必要です（詳細は以下を参照）。 |
+| ローカルの開発環境は設定されません（`bitrise local run workflow_name`経由でローカルでWorkflowsを実行する場合を除きます）。 | ツールのバージョンがバージョンファイル（たとえば`.ruby-version`）で定義されており、チームの全員がツールバージョンマネージャー（たとえば`Mise`）をセットアップしている場合は、ローカルの開発環境が設定されます。 |
+
+
+## 宣言的なツールセットアップ
+
+ツールとそのバージョンを、設定YAMLファイルの最上位にある`tools`プロパティに追加します。
+
+```yaml
+tools:
+  nodejs: 22:latest
+  ruby: 3.3:installed
+  golang: 1.24.5
+
+workflows:
+# ...
+```
+
+ビルドの実行時、ツールのセットアップはWorkflowの最初のStepの前に実行されます。ビルドログで確認できます。
+
+![20250808-build-log-tool-setup.png](/img/_paligo/uuid-b80417cb-80b7-3d51-5609-11f078c68a79.png)
+
+ビルド開始時にセットアップするツールのバージョン番号を定義する方法は3つあります。
+
+- [正確なバージョン番号を設定する](#setting-exact-version-numbers)
+- [部分的なバージョン番号を設定する](#setting-partial-version-numbers)
+- [特別なエイリアスを使用する](#using-other-aliases)
+
+### 正確なバージョン番号を設定する
+
+`tools`プロパティに正確なバージョン番号を定義できます。
+
+```yaml
+tools:
+  nodejs: 22.1.0
+```
+
+これにより、最も決定的な動作と再現性のあるビルドが得られますが、インストールに時間がかかる場合があります。
+
+### 部分的なバージョン番号を設定する
+
+プロジェクトで正確なツールバージョンが必要ない場合は、部分的なバージョン番号を定義できます。部分的なバージョン番号を使用すると、BitriseはBitrisebuild machinesにプリインストールされているバージョン、または利用可能な最新のリリースバージョンのいずれかを確認します。
+
+ツールのプリインストールされたバージョンを使用するには、`x.y:installed`構文を使用します。
+
+```yaml
+tools:
+  ruby: 3.3:installed
+```
+
+これは、Bitrisebuild machinesにプリインストールされているRubyの3.3パッチバージョンを確認し、そのバージョンを使用します。部分的なバージョンに一致するプリインストール済みのバージョンがない場合は、一致する最も新しいバージョンが実行時にダウンロードおよびインストールされます。これによってビルドが失敗することはありません。
+
+ツールの最新リリースバージョンを使用するには、`x.y:latest`構文を使用します。
+
+```yaml
+tools:
+  ruby: 3.3:latest
+```
+
+これにより、Bitrisebuild machinesに何がプリインストールされているかに関係なく、Rubyの最新の3.3パッチバージョンがインストールされます。
+
+### Workflow固有の定義
+
+ツールバージョンの定義は、グローバルに、または1つ以上のWorkflowsに対して個別に定義できます。設定の最上位で`tools`プロパティを定義する代わりに、1つ以上のWorkflowsの下にネストします。
+
+特定のWorkflowsに対しては、キーワード`unset`を使用して一部のツールを未設定にすることもできます。未設定にすると、そのツールはそのWorkflowではインストールされなくなります。未設定はグローバルコンテキストでは効果がありません。
+
+Workflow固有の定義を使用する場合は、次の3つの一般的なパターンのいずれかを使用することをお勧めします。
+
+- Workflow固有の定義のみを使用する場合:
+
+  ```yaml
+  workflows:
+    test:
+      tools:
+        nodejs: 22:installed
+  ```
+
+  この例では、`test`WorkflowはNode.js v22のプリインストールされている最も新しいバージョンを使用します。グローバルなツール定義は設定されていません。
+- 1つ以上のWorkflowsでグローバルな定義を上書きする場合:
+
+  ```yaml
+  tools:
+    nodejs: 22:installed
+    ruby: 3.3:installed
+
+  workflows:
+    test-latest-node:
+      tools:
+        nodejs: "24.7.0"
+  ```
+
+  この例では、グローバル設定はNode.js v22のプリインストールされている最も新しいバージョンです。ただし、Workflow`test-latest-node`はNode.jsのバージョン24.7.0を使用します。
+- 1つ以上のWorkflowsでグローバルなツールバージョンを未設定にする場合:
+
+  ```yaml
+  tools:
+    nodejs: 22:installed
+    ruby: 3.3:installed
+
+  workflows:
+    lint:
+      tools:
+        ruby: unset # this workflow only needs Node.js
+  ```
+
+  この例では、`lint`というWorkflowにはRubyがインストールされません。
+
+### その他のエイリアスを使用する
+
+特別なバージョン文字列である`latest`と`installed`を使用して、ツールの最も新しいリリースバージョンまたはインストール済みバージョンを選択することもできます。
+
+`installed`の値は、ビルド時点でインストールされている最も新しいバージョンを使用することを意味します。
+
+```yaml
+tools:
+  ruby: installed
+```
+
+`latest`の値は、ビルド時点でリリースされている最も新しいバージョンを使用することを意味します。
+
+```yaml
+tools:
+  nodejs: latest
+```
+
+
+## Workflow実行中のツールセットアップ
+
+Workflowの実行中にツールのセットアップを行うには、専用の依存関係インストーラーであるStepを使用するか、独自のスクリプトから呼び出すCLIサブコマンドを使用します。
+
+### CLIサブコマンドを使用したツールセットアップ
+
+Workflowから`bitrise local tools setup`を呼び出します。このツールは設定ファイルまたはバージョンファイルのパスを探します。パスを指定しない場合、ツールは作業ディレクトリ内のファイルを検出します。
+
+この例では、<strong>Script</strong> Stepから、`.tool-versions`ファイルを検出する`--config`フラグを付けてコマンドを呼び出しています。
+
+```yaml
+workflows:
+  build-and-test:
+    steps:
+      # Project stores tool config in a .tool-versions file committed to the repo
+      - git-clone: {}
+      - script:
+          title: Set up environment
+          inputs:
+            # Set up tools based on the .tool-versions file in the repo
+            - content: bitrise local tools setup --config .tool-versions
+      
+      # Rest of the workflow has access to the right tools and versions in $PATH
+```
+
+設定ファイルなしで特定のツールをインストールすることもできます。
+
+```bash
+bitrise local tools install [--provider PROVIDER] [--format FORMAT] <TOOL> <VERSION>[:SUFFIX]
+
+# Examples:
+bitrise local tools install nodejs 20.10.0
+bitrise local tools install nodejs 22:latest
+eval "$(bitrise local tools install ruby 3.2.0 --format bash)"  # activate in shell
+```
+
+デフォルトでは、`bitrise local tools setup`を実行しても、同じシェルセッション内でツールの変更が有効になりません（たとえば、ツールのセットアップとツールの使用が同じ<strong>Script</strong> Step内で行われる場合）。この例では、新しいRubyのバージョンをインストールしています。
+
+```bash
+#! /bin/bash
+
+bitrise local tools setup --config .ruby-version
+
+ruby --version
+```
+
+このコマンドを<strong>Script</strong> Step内で実行しても、`PATH`は引き続き以前のRubyのバージョンを指します。
+
+`eval`を使用すると、同じシェルセッション内でツールをインストールして有効化できます。
+
+```bash
+eval "$(bitrise local tools setup --config .ruby-version --format bash)"
+
+ruby --version # $PATH is updated with the newly set up ruby version
+```
+
+あるいは、別のStepで`bitrise local tools setup`を実行することもできます。
+
+```yaml
+workflows:
+  build-and-test:
+    steps:
+      - git-clone: {}
+      - script:
+          title: Set up environment
+          inputs:
+            # Set up tools based on the .tool-versions file in the repo
+            - content: bitrise local tools setup --config .tool-versions
+      
+      # Rest of the workflow has access to the right tools and versions in $PATH
+      - cocoapods-install: {}
+```
+
+### 依存関係インストーラーStepを使用したツールセットアップ
+
+<strong>[Dependency installer](https://bitrise.io/integrations/steps/dependency-installer)</strong> Stepは、ツールのインストールを実行するCLIサブコマンドのラッパーです。複数の種類のツールバージョンファイルを受け付けます。完全なリストはStepの説明を参照してください。
+
+Stepを使用するには、ツールを必要とするStepsの前に、Workflowに追加します。
+
+```yaml
+steps:
+ - activate-ssh-key@4: {}
+ - git-clone@8: {}
+ - dependency-installer@1:
+     inputs:
+     - tool_version_file: ".tool-versions"
+```
+
+
+## サポートされているツール
+
+このシステムは、対応するツールや言語のリストを今後も拡大していけるように設計されていますが、Bitriseでは、記載されている最も一般的なツールについてのみ安定性を検証およびテストしています。ここに記載されていないツールが必要な場合は、how to use community pluginsを参照してください。
+
+:::tip[その他のツール]
+
+このページに記載されていないツールがある場合は、コミュニティプラグインを使用してツールのセットアップを行えます。対象のツールにコミュニティ`asdf`プラグインが存在する場合は、設定内でそのツールプラグインの`git clone`URLを指定できます。たとえば、Denoの`asdf`プラグインを使用して適切なバージョンをセットアップする方法は次のとおりです。
+
+```yaml
+tools:
+  deno: 2.4.3
+
+tool_config:
+  extra_plugins:
+    deno: https://github.com/asdf-community/asdf-deno.git
+```
+
+:::
+
+| ツール名 | YAMLの例 | 補足 |
+| --- | --- | --- |
+| <strong>Ruby</strong> | 3.3.xバージョンを使用し、インストール時間を節約するためにプリインストールされたバージョンを優先する場合:  ``` tools:   ruby: 3.3:installed ``` | 現時点では、Rubyのバージョンは[ruby-buildプロジェクト](https://github.com/rbenv/ruby-build)を使用してソースからビルドする必要があるため、インストールのたびにビルド時間が数分増加します。[Bitriseスタック](https://bitrise.io/stacks/)には常に複数のRubyのバージョンがプリインストールされているため、プリインストールされているRuby（利用可能な場合）を使用する部分的なバージョンを使用すれば、インストール時間を回避できます。 |
+| <strong>Go</strong> | 1.24.0バージョンをインストールする場合:  ``` tools:   golang: 1.24.0 ``` |  |
+| <strong>Python</strong> | 3.12.xバージョンを使用し、インストール時間を節約するためにプリインストールされたバージョンを優先する場合:  ``` tools:   python: 3.12:installed ``` | 現時点では、Pythonのバージョンはソースからビルドする必要があるため、インストールのたびにビルド時間が数分増加します。[Bitriseスタック](https://bitrise.io/stacks/)には常にプリインストールされたPythonのバージョンが含まれているため、プリインストールされているPython（利用可能な場合）を使用する部分的なバージョンを使用すれば、インストール時間を回避できます。 |
+| <strong>Node.js</strong> | 22.x.yバージョンを使用し、インストール時間を節約するためにプリインストールされたバージョンを優先する場合:  ``` tools:   nodejs: 22:installed ``` |  |
+| <strong>Java</strong> | Java 25をインストールする場合:  ``` tools:   java: openjdk-25.0.0 ``` |  |
+| <strong>Flutter</strong> | Flutterのバージョンには、サフィックスとしてリリースチャンネルを含める必要があります:  ``` tools:   flutter: 3.32.5-stable ``` |  |
+| <strong>Tuist</strong> | 4.54.0バージョンをインストールする場合:  ``` tools:   tuist: 4.54.0 ``` |  |
+
+
+## ツールバージョンマネージャーの変更
+
+Bitriseは、実行時に必要なツールをインストールして提供するために、ツールバージョンマネージャーを使用します。主要なマネージャーは[mise](https://mise.jdx.dev/)ですが、[asdf](https://asdf-vm.com/)もサポートされており、同じように動作します。何らかの理由で実装を切り替えたい場合は、次の方法で切り替えられます。
+
+```yaml
+tool_config:
+  provider: asdf
+```
+
+
+## 制限事項と代替手段
+
+- <strong>ビジュアルエディタなし</strong>: この機能は、現時点では設定YAMLでのみ設定できます。
+- <strong>専用のバージョンマネージャーツール</strong>: ツールのインストールには、このページで説明されている方法を使用することをお勧めします。
+
+  `mise`や他のツールを直接使用する必要がある場合は、それらがスタックにインストールされていないことに注意してください。公式の手順に従ってインストールする必要があります。
+
+  `asdf`はデフォルトでスタックにインストールされています。特にエッジスタックにおいて、特定のバージョンに固定することは保証していません。`asdf`は将来のエッジスタックで削除される可能性があります。
