@@ -102,6 +102,8 @@ function useResultsFooterComponent({closeModal}) {
   );
 }
 
+let warnedUnconfigured = false;
+
 // .DocSearch-Form (the input row itself, inside .DocSearch-SearchBar) is
 // present on every screen (results, no-results, start) for the modal's
 // entire lifetime — unlike resultsFooterComponent, which only renders with
@@ -111,9 +113,20 @@ function useResultsFooterComponent({closeModal}) {
 // Assistant" button. It reads the query straight from .DocSearch-Input at
 // click time (via onAskAi), so the button itself never needs updating as
 // the user types.
-function useAskAiSearchBarButton({isOpen, searchContainer, onAskAi}) {
+function useAskAiSearchBarButton({isOpen, enabled, searchContainer, onAskAi}) {
   useEffect(() => {
     if (!isOpen || !searchContainer.current) return undefined;
+    if (!enabled) {
+      // No GEN_SEARCH_WIDGET_ID in this build: AskAiPanel would have nothing
+      // to query, so don't offer the button at all.
+      if (process.env.NODE_ENV !== 'production' && !warnedUnconfigured) {
+        warnedUnconfigured = true;
+        console.warn(
+          '[SearchBar] GEN_SEARCH_WIDGET_ID is not set — the "AI Summary" button is hidden.',
+        );
+      }
+      return undefined;
+    }
 
     const container = searchContainer.current;
     const injectButton = () => {
@@ -231,7 +244,13 @@ function AskAiPanel({query, onBack}) {
   }, [status]);
 
   useEffect(() => {
-    if (!configId || !containerRef.current) return undefined;
+    if (!containerRef.current) return undefined;
+    if (!configId) {
+      // Not reachable while the button is only injected when configured (see
+      // useAskAiSearchBarButton) — but never leave the loading state up forever.
+      setStatus('unavailable');
+      return undefined;
+    }
 
     let cancelled = false;
     // 8s wasn't enough headroom once the double-submit fix below adds its
@@ -457,6 +476,8 @@ function useSearchParameters({contextualSearch, ...props}) {
 }
 
 function DocSearch({externalUrlRegex, ...props}) {
+  const {siteConfig} = useDocusaurusContext();
+  const askAiEnabled = Boolean(siteConfig.customFields?.genSearchWidgetConfigId);
   const navigator = useNavigator({externalUrlRegex});
   const searchParameters = useSearchParameters({...props});
   const transformItems = useTransformItems(props);
@@ -498,7 +519,12 @@ function DocSearch({externalUrlRegex, ...props}) {
     [openModal],
   );
   const resultsFooterComponent = useResultsFooterComponent({closeModal});
-  useAskAiSearchBarButton({isOpen, searchContainer, onAskAi: setAskAiQuery});
+  useAskAiSearchBarButton({
+    isOpen,
+    enabled: askAiEnabled,
+    searchContainer,
+    onAskAi: setAskAiQuery,
+  });
   const askAiPanelHost = useAskAiPanelHost({isOpen, askAiQuery, searchContainer});
   useDocSearchKeyboardEvents({
     isOpen,
