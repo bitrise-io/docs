@@ -1,0 +1,113 @@
+---
+title: "Detecting and aborting hanging Steps"
+sidebar_position: 10
+slug: /bitrise-ci/workflows-and-pipelines/steps/detecting-and-aborting-hanging-steps
+sidebar_label: Detecting and aborting hanging Steps without output
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
+
+一定時間ログ出力がないハングした<GlossTerm baseform="Step">Steps</GlossTerm>を、<strong>No Output Timeout</strong>機能を使って検出し、中止できます。この機能を使うと、設定可能なタイムアウト期間の経過後にハングしたビルドを自動的に中止し、クレジットを節約するとともに、Bitriseがハングしたビルドに関するデータを収集できるようにします。
+
+<strong>No Output Timeout</strong>機能は、次の2つの方法で使用できます。
+
+- [すべてのStepsに対してグローバルに有効にする](#enabling-the-no-output-timeout-function-globally-for-all-steps)。
+- [特定のStepsのみで有効にする](#enabling-the-no-output-timeout-function-for-specific-steps)。
+
+<strong>No Output Timeout</strong>機能は、[M1ハングしたビルドの問題ガイド](https://devcenter.bitrise.io/en/infrastructure/build-stacks/apple-silicon-m1-stacks.html#hanging-builds-issue)で説明されている機能や、[Stepsの時間制限の設定](/bitrise-ci/workflows-and-pipelines/steps/setting-a-time-limit-for-steps)などの他のタイムアウト機能と併用できます。
+
+
+## すべてのStepsに対してNo Output Timeout機能をグローバルに有効にする
+
+:::important[Bitrise 1.50.0以降が必要です]
+
+<strong>No Output Timeout</strong>機能を使用するには、Bitrise 1.50.0以降のバージョンを使用する必要があります。
+
+:::
+
+すべてのStepsに対して<strong>No Output Timeout</strong>をグローバルに有効にするには:
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. <strong><GlossTerm baseform="secret">Secrets</GlossTerm></strong>タブに移動します。
+1. 新しいシークレット環境変数`BITRISE_NO_OUTPUT_TIMEOUT`を追加し、出力ログを待ってからビルドを中止するまでの秒数を値に設定します。
+
+   600秒(10分)に設定することをお勧めします。
+
+   ![app-level-secret.png](/img/_paligo/uuid-7d34c319-a1a2-05a1-90b0-ded10c048482.png)
+
+   :::note[ハングしたビルドを自動的に中止する]
+
+   [Stepsの時間制限の設定](/bitrise-ci/workflows-and-pipelines/steps/setting-a-time-limit-for-steps)と比較すると、<strong>No Output Timeout</strong>機能は、設定した時間出力ログが生成されなかった場合にのみビルドを中止します。
+
+   ログ出力があるとタイムアウトはリセットされます。そのため、`BITRISE_NO_OUTPUT_TIMEOUT`で設定した値よりもStepの実行時間が長くなる場合があります。
+
+   :::
+1. <strong>Save</strong>をクリックします。機能が有効になっているかどうかは、ビルドのビルドログで確認できます。
+
+   ![step-force-output.png](/img/_paligo/uuid-dc3bfafa-9720-8935-557a-97c317a8a624.png)
+
+これで設定は完了です。今後、Stepが`BITRISE_NO_OUTPUT_TIMEOUT`で設定した秒数の間出力ログを生成しなかった場合、ビルドは次のメッセージとともに自動的に中止されます: `Abort via Bitrise CLI (no output timeout)`。
+
+:::tip[特定のStepに対してNo Output Timeout機能を無効にする]
+
+<strong>No Output Timeout</strong>機能をグローバルに有効にしていて、特定のStepsに対して無効にしたい場合は、`bitrise.yml`内で選択したStepの`inputs:`部分の直前に`no_output_timeout: 0` Stepプロパティを追加します。
+
+例:
+
+```yaml
+steps:    
+    - virtual-device-testing-for-ios@1:
+        no_output_timeout: 0
+        inputs:
+        - zip_path: "$BITRISE_PROJECT_PATH"
+```
+
+:::
+
+
+## 特定のStepsに対してNo Output Timeout機能を有効にする
+
+:::important[Bitrise 1.50.0以降が必要です]
+
+<strong>No Output Timeout</strong>機能を使用するには、Bitrise 1.50.0以降のバージョンを使用する必要があります。
+
+:::
+
+<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>ファイル内のStepの下に`no_output_timeout` Stepプロパティを追加することで、特定のStepsに対して<strong>No Output Timeout</strong>機能を有効にできます。
+
+<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>を使用してこれを行うには:
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. **bitrise.yml**タブに移動します。
+1. 機能を使用したいStepを検索します。
+1. 選択したStepの`inputs:`部分の直前に`no_output_timeout: 12` Stepプロパティと値を挿入すると、Stepが12秒間出力ログを生成しなかった場合にビルドを自動的に中止できます。
+
+   :::tip[`no_output_timeout` Stepプロパティを0に設定する]
+
+   `no_output_timeout` Stepプロパティを0に設定すると、Stepに対して<strong>No Output Timeout</strong>機能を無効にできます。
+
+   :::
+
+   常に自動的に中止されるScript Stepの例を見てみましょう:
+
+   ```ruby
+   output_slows_down:
+       steps:
+       - script@1:
+           title: Output is slower and slower
+           no_output_timeout: 12
+           inputs:
+           - content: |-
+               #!/usr/bin/env bash
+               for i in {1..5}
+               do
+                 DURATION=$((5*i))
+                 echo "🏃‍step output (sleeping ${DURATION}s)"
+                 sleep $DURATION
+               done
+   ```
+
+これで設定は完了です。Stepがハングし、`no_output_timeout` Stepプロパティで指定した秒数の間、出力ログが1件も生成されない場合、ビルドは自動的に中止されます。

@@ -1,0 +1,359 @@
+---
+title: "Enabling or disabling a Step conditionally"
+description: "You can enable or disable a Step in any given Workflow, and you can also set conditions for Steps. You can do so either on your own computer with the Bitrise CLI, or by using the YAML editor in the Workflow Editor."
+sidebar_position: 6
+slug: /bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
+
+任意の<GlossTerm baseform="Workflow">Workflow</GlossTerm>内で<GlossTerm baseform="Step">Step</GlossTerm>を有効または無効にでき、Stepsの条件を設定することもできます。これは、お使いのコンピューター上でBitrise CLIを使うか、<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>内のYAMLエディターを使うことで行えます。
+
+これらの操作には主に`run_if`式を使用します。使用可能なテンプレート式の例については、[run_if式の例](#examples-of-run_if-expressions)を確認してください。
+
+GitHubでも例を確認できます: [テンプレート式の例](https://github.com/bitrise-io/bitrise/blob/master/_examples/experimentals/templates/bitrise.yml)。
+
+:::note[`run_if`は任意の有効なGoテンプレートで構いません]
+
+`run_if`は、`true`または`false`と評価される限り（あるいは文字列表現、例えば`True`、`t`、`yes`、`y`はすべて`true`とみなされます）、任意の有効な[Go template](https://golang.org/pkg/text/template/)で構いません。テンプレートが`true`と評価された場合、Stepが実行されます。そうでない場合は実行されません。
+
+:::
+
+カスタムの[環境変数](/bitrise-ci/configure-builds/environment-variables)を確認する`run_if`の例:
+
+```yaml
+run_if: |-
+ 	{{enveq "CUSTOM_ENV_VAR_KEY" "test value to test against"}}
+```
+
+この`run_if`は、`CUSTOM_ENV_VAR_KEY`の値が`test value to test against`でない場合、Stepをスキップします。
+
+
+## Stepを無効にする
+
+WorkflowからStepを削除したくないが実行はさせたくない場合、`run_if`式を使用して無効にできます。
+
+:::tip[Workflowsを試す]
+
+Stepsを削除または無効にすることなくWorkflowのさまざまな設定を試すには、Workflowを複製することをお勧めします。複製したWorkflowは、元の設定を変更することなく自由に編集できます。
+
+:::
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. 必要なWorkflowを開きます。
+1. 無効にしたいStepを見つけます。
+1. <strong>Additional run conditions</strong>の入力欄に<strong>false</strong>と入力します。
+
+   :::tip[条件]
+
+   falseと評価される条件であれば、どのようなものでも機能します。
+
+   :::
+
+</TabItem>
+<TabItem value="bitriseyml" label="Configuration YAML">
+
+1. プロジェクトの設定YAMLファイルを開きます。
+1. 無効にしたいStepを見つけます。
+1. そこに`run_if: false`を追加します。
+
+   :::tip[条件]
+
+   falseと評価される条件であれば、どのようなものでも機能します。
+
+   :::
+
+   ```yaml
+   - script:
+       run_if: false
+       inputs:
+       - content: |-
+           #!/bin/bash
+           echo "This will never run, because of run_if:false"
+   ```
+
+</TabItem>
+</Tabs>
+
+
+## CI環境でのみStepを実行する
+
+CI環境でのみStepを実行するということは、ローカルビルドではその特定のStepをスキップすることを意味します。Stepsを無効にする場合と同様に、`run_if`式を使ってこれを行えます。ローカルでビルドをデバッグする際に使用してください。
+
+:::tip[ローカルでCIモードを有効にする]
+
+CIモードは、お使いのMac/PCで`CI`環境を`true`に設定するか（例えば、Bashターミナルで`export CI=true`を実行します）、`--ci`フラグを付けて`bitrise local run`を実行することで有効にできます: `bitrise --ci local run ...`。
+
+:::
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. 必要なWorkflowを開きます。
+1. 必要なStepを見つけます。
+1. <strong>Additional run conditions</strong>の入力欄に`.IsCI`と入力します。
+
+</TabItem>
+<TabItem value="bitriseyml" label="Configuration YAML">
+
+1. プロジェクトの設定YAMLファイルを開きます。
+1. 必要なStepを見つけます。
+1. そのプロパティに`run_if: .IsCI`を追加します:
+
+   ```yaml
+   - script:
+       run_if: .IsCI
+       inputs:
+       - content: |-
+           #!/bin/bash
+           echo "This will only ever run in a CI environment because run_if: IsCI"
+   ```
+
+</TabItem>
+</Tabs>
+
+
+## ビルドが失敗した場合にのみStepを実行する
+
+ビルドがその特定のStepに到達する前に失敗した場合にのみ、Stepを実行することが可能です。`run_if`に加えて、`is_always_run`プロパティも使用する必要があります。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. 必要なWorkflowを開きます。
+1. 無効にしたいStepを見つけます。
+1. <strong>Additional run conditions</strong>の入力欄に`.IsBuildFailed`と入力します。
+1. <strong>Run even if previous Step(s) failed</strong>オプションがオンになっていることを確認します。
+
+</TabItem>
+<TabItem value="bitriseyml" label="Configuration YAML">
+
+1. プロジェクトの設定YAMLファイルを開きます。
+1. 無効にしたいStepを見つけます。
+1. そこに`run_if: .IsBuildFailed`を追加します。
+1. そこに`is_always_run: true`を追加します。
+
+   これにより、以前のStepが失敗した場合でもStepを実行できるようになります。
+
+   ```yaml
+   - script:
+       is_always_run: true
+       run_if: .IsBuildFailed
+       inputs:
+       - content: |-
+           #!/bin/bash
+           echo "Build Failed!"
+   ```
+
+</TabItem>
+</Tabs>
+
+
+## ビルドを失敗させずに失敗したStepを無視する
+
+通常、ビルド中にStepが失敗すると、ビルド自体も失敗します。キャッシュ、通知、ステータスレポート用のSteps（例えば<strong>Save Cache</strong>や<strong>Slack</strong>など）は、失敗してもビルドを続行できるように、デフォルトで設定されていることがよくあります。他のStepについても、失敗してもビルドが失敗しないように設定できます。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. 設定したいStepをクリックします。
+1. <strong>When to run</strong>の下にある<strong>Continue build even if this Step fails</strong>トグルをenable theします。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. Workflow Editorの上部にある<strong>YAML</strong>に切り替えます。
+1. 必要なStepを見つけます。
+1. `is_skippable`フラグを追加し、`true`に設定します:
+
+   ```yaml
+   - script:
+       is_skippable: true
+       inputs:
+       - content: |-
+           #!/bin/bash
+           echo "Failing Step."
+           exit 1
+           # exit 1 would mark this step as Failed, but it won't break the Build
+           # because of the is_skippable: true flag / property
+   ```
+
+</TabItem>
+</Tabs>
+
+
+## ScriptStepsを使ったrun_if条件の設定
+
+Stepを実行するかどうかを判断するために必要な条件が、複雑で多層にわたる場合があります。その場合、`run_if`式の中で複雑なGoテンプレートの連鎖を使用するのは、特にGo以外の言語を好む場合、大変になることがあります。
+
+このような場合は、回避策として、Workflow内に<strong>Script</strong>Stepを追加し、特定の値に評価されるスクリプトを記述することをお勧めします。その値を環境変数に保存すれば、条件式を持つStepはその値を確認するだけで済みます。
+
+<strong>run_if式でGo以外のスクリプトを使用する</strong>
+
+この例では、簡単なBashスクリプトを作成してその値を保存し、あらかじめ設定した値と一致するかどうかを確認します。
+
+まず、ScriptStepを追加し、script content内で値を定義します。値を定義したら、`[envman](https://github.com/bitrise-io/envman/)`を使用してその値を環境変数に保存します。この例では、Bash内で変数を定義し、その変数をEnv Varの値として使用します:
+
+```yaml
+workflows:    
+    example:      
+      steps:     
+      - script@1:
+          title: Do anything with Script step          
+          inputs:          
+          - content: |-              
+              #!/usr/bin/env bash
+              # fail if any commands fails              
+              set -e
+              # debug log
+              set -x
+              # creating the variable and storing it as an Env Var                
+              my_variable='This is the value we need!'          
+              envman add --key OUR_CONDITION --value "$my_variable"
+```
+
+次に、条件が必要なStepに対して、簡単な`run_if`式を作成します。この場合、Stepは<strong>Save cache</strong>Stepであり、OUR_CONDITION変数の値が前のBash変数に保存された値と一致するかどうかを確認します:
+
+```yaml
+- save-cache@1:        
+        run_if: |-          
+          {{getenv "OUR_CONDITION" | eq "This is the value we need!"}}
+```
+
+値が一致するため、<strong>Save cache</strong>Stepが実行されます。
+
+
+## run_if式の例
+
+`run_if`式の使い方にはさまざまな方法があります。以下のWorkflowには、それらのほとんどの例が、コメントによる説明付きで含まれています。これらの式は、正常に実行されると使用した式がtrueであったことを出力する<strong>Script</strong>Stepsで使用されています。
+
+すべての式は有効なGoテンプレートです。Goテンプレートについて詳しくは、ドキュメントをご確認ください: [Go template docs](https://pkg.go.dev/text/template)。
+
+```yaml
+workflows:
+  primary:
+    steps:
+    #
+    # Check if an Environment Variable's value is equal to a given string
+    - script:
+        title: Run-If expression
+        run_if: |-
+          {{getenv "TEST_KEY" | eq "test value"}}
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+    #
+    # Use the enveq function to check if an Env Var's value is equal to a given string
+    - script:
+        title: Run-If expression
+        run_if: '{{enveq "TEST_KEY" "test value"}}'
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+    # Use envcontain to check if the value of an Env Var contains a given string. It works on the level of Pipelines, too
+    - script:
+        title: Run-If expression
+        run_if: '{{envcontain "TEST_KEY" "test value"}}'
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+    #
+    # Check if a given Env Var is NOT empty
+    - script:
+        title: Run-If expression
+        run_if: '{{getenv "TEST_KEY" | ne ""}}'
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+    #
+    # Check if two Env Vars have the same value
+    - script:
+        title: Run-If expression
+        run_if: '{{getenv "TEST_KEY_1" | eq (getenv "TEST_KEY_2")}}'
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+    #
+    # Use the available expression data properties
+    #  like IsCI (checks if the build runs in a CI environment) or IsBuildFailed (checks if the build has failed) directly
+    - script:
+        title: Run-If expression
+        run_if: |-
+          {{.IsCI}}
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+    #
+    # You don't have to wrap the expression in {{...}} if it's a simple
+    # oneliner
+    - script:
+        title: Run-If expression
+        run_if: $.IsCI
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+    #
+    # You can even remove the $ sign, it's optional in a simple
+    # expression like this
+    - script:
+        title: Run-If expression
+        run_if: .IsCI
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+    #
+    # If-Else condition, in this example the Step will run if the build runs in a CI environment
+    - script:
+        title: Run-If expression
+        run_if: |-
+          {{if .IsCI}}
+          true
+          {{else}}
+          false
+          {{end}}
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+    #
+    # You can use multiple conditions
+    - script:
+        title: CI and Not Failed
+        run_if: |-
+          {{.IsCI | and (not .IsBuildFailed)}}
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+    #
+    # Check if the build is a pull request or not
+    - script:
+        title: Only if NOT a pull request
+        run_if: not .IsPR
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "RunIf expression was true"
+    - script:
+        title: Only if it was a Pull Request
+        run_if: .IsPR
+        inputs:
+        - content: |-
+            #!/bin/bash
+            echo "Pull Request ID: ${PULL_REQUEST_ID}"
+```

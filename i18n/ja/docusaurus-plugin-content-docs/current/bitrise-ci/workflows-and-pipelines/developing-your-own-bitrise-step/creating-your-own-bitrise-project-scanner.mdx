@@ -1,0 +1,241 @@
+---
+title: "Creating your own Bitrise project scanner"
+description: "A Bitrise project scanner must have a scan result model. Every platform scanner writes its possible options, configurations, and warnings into this model. These will be translated into Step input values by choosing the desired values for the given options."
+sidebar_position: 4
+slug: /bitrise-ci/workflows-and-pipelines/developing-your-own-bitrise-step/creating-your-own-bitrise-project-scanner
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+<GlossTerm baseform="project scanner">プロジェクトスキャナー</GlossTerm>は、指定されたプロジェクトのタイプを識別し、基本的なBitrise設定を生成するツールです。サポートされている各プロジェクトタイプには専用のスキャナーがあり、これらのスキャナーは個別のパッケージとして保存されます。
+
+プロジェクトタイプのスキャナーは、少なくとも2つの<GlossTerm baseform="Workflow">Workflows</GlossTerm>を定義します。1つはテスト用(`primary`)、もう1つはビルド用(`deploy`)です。これらを正常に実行するために必要な最小限の<GlossTerm baseform="step">Steps</GlossTerm>が含まれています。
+
+:::important[ビルドとテストのSteps]
+
+ビルドStepsとテストStepsには特有の要件があります:
+
+- ビルドStepは、アプリをデプロイ可能な状態になるようにビルドし、出力ファイルを指す環境変数を出力する必要があります。たとえば、iOSアプリをビルドするビルドStepは、(たとえば`.xcodearchive`ではなく).ipaファイルを出力し、この.ipaファイルへのパスを出力する必要があります。
+- テストStepは、bitrise.ioのビルドページで閲覧できるように、テスト結果を出力する必要があります。
+
+:::
+
+ウェブサイトで新しいプロジェクトを追加する場合、または自分のマシンでプロジェクトを初期化する場合、[bitrise-init](https://github.com/bitrise-io/bitrise-init)ツールはすべてのスキャナーを繰り返し処理し、それぞれに対してスキャナーインターフェースのメソッドを呼び出して、その出力を収集します。これらの出力に基づいて、基本的な設定が生成されます。
+
+考えられるWorkflowsは、スキャン結果モデルに記述されます。このモデルは、次の要素で構成されます:
+
+- options
+- configs
+- warnings
+
+モデルの基本的な構造は、YAMLで次のとおりです:
+
+```yaml
+options:
+  DETECTED_PLATFORM_1: OptionNode
+  DETECTED_PLATFORM_2: OptionNode
+  ...
+
+configs:
+  DETECTED_PLATFORM_1:
+    CONFIG_NAME_1: ConfigModel
+    CONFIG_NAME_2: ConfigModel
+    ...
+  DETECTED_PLATFORM_2:
+    CONFIG_NAME_1: ConfigModel
+    CONFIG_NAME_2: ConfigModel
+    ...
+  ...
+
+warnings:
+  DETECTED_PLATFORM_1:
+  - "warning message 1"
+  - "warning message 2"
+  ...
+  DETECTED_PLATFORM_2:
+  - "warning message 1"
+  - "warning message 2"
+  ...
+```
+
+- 各プラットフォームのスキャナーは、可能なオプション、設定、警告をこのモデルに書き込みます。これらは、指定されたオプションに対して目的の値を選択することで、Stepの入力値に変換されます。
+- 各オプションチェーンの最後のオプションが設定を選択します。
+- 警告には、指定されたプロジェクト設定の問題が表示されます。
+
+
+## Options
+
+`Options`は、質問とその質問に対する回答の候補を表します。例:
+
+- 質問: iOSプロジェクトファイルへのパスは何ですか
+- 考えられる回答: 確認するパスの候補リスト
+
+これらの質問と回答はStep inputsに変換されます。スキャナーは、入力値を自動的に決定するか、ユーザーに値を選択または入力させる必要があります。
+
+たとえば、`Xcode Archive & Export for iOS` Stepにはexport-methodという入力があります。これは、エクスポートしたい.ipaの種類をStepに伝えます。この値はソースコードから判断できないため、スキャナーは考えられるすべての値を収集し、選択できるリストの形式でユーザーに提示します。
+
+オプションを選択すると、チェーンが開始されることがあります。これにより、その後に異なるオプションが提示される場合があります。たとえば、関連するテストターゲットを持つXcodeスキームを選択すると、異なる「質問」につながります。同様に、特定のオプションを選択すると、その後に生成されるワークフローが変わることがあります。
+
+### The option model
+
+`OptionNode`は入力オプションを表します。Goでは次のようになります:
+
+```go
+// OptionNode ...
+type OptionNode struct {
+    Title   string
+    Summary string
+    EnvKey  string
+
+    ChildOptionMap map[string]*OptionNode
+
+    Icons      []string
+    Components []string
+    Head       *OptionNode
+}
+```
+
+- Title: 入力の人間が読める名前。
+- Summary: オプションの簡単な説明。
+- EnvKey: Stepモデルにおける入力のキーを表します。
+- ChildOptionMap: ユーザーがfor theオプションに特定の値を選択した場合の後続オプションのマップです。
+
+たとえば、Scheme入力の値を選択するシナリオを見てみましょう。`options`にvalue_mapがあります。考えられる値は次のとおりです:
+
+- SchemeWithTest
+- SchemeWithoutTest
+
+`SchemeWithTest`を選択すると、次のオプションはテストの実行に使用するシミュレーターに関連するものになります。
+
+`SchemeWithoutTest`を選択すると、次のオプションは.ipaファイルのエクスポート方法に関するものになります。
+
+```json
+{
+    "title": "Scheme",
+    "env_key": "scheme",
+    "value_map": {
+        "SchemeWithTest": {
+            "title": "Simulator name",
+            "env_key": "simulator_name",
+            ...
+        },
+        "SchemeWithoutTest": {
+            "title": "Export method",
+            "env_key": "export_method",
+            ...
+        }
+    }
+}
+```
+
+各オプションチェーンには最初のオプションがあり、これは`head`と呼ばれます。オプションの値によって、オプションチェーンが分岐することがあります。
+
+各オプションブランチの最後の`options`には、configプロパティを設定する必要があります。configには、生成されたBitrise設定のIDが保持されます。
+
+オプションチェーンの最後の`options`には、value_mapを設定できません。
+
+```json
+{
+    "title": "Scheme",
+    "env_key": "scheme",
+    "value_map": {
+        "SchemeWithTest": {
+            "title": "Simulator name",
+            "env_key": "simulator_name",
+            "value_map": {
+                "-": {
+                    "config": "bitrise_config_with_test",
+                }
+            }
+        },
+        "SchemeWithoutTest": {
+            "title": "Export method",
+            "env_key": "export_method",
+            "value_map": {
+                "development": {
+                    "config": "bitrise_config_without_test",
+                },
+                "app-store": {
+                    "config": "bitrise_config_without_test",
+                },
+                "ad-hoc": {
+                    "config": "bitrise_config_without_test",
+                }
+            }
+        }
+    }
+}
+```
+
+
+## Scanners
+
+スキャナーは、プロジェクトタイプごとに、考えられる`options`チェーンと考えられるワークフローを`options`向けに生成します。スキャナーは`ProjectScanners()`関数と`AutomationToolScanners()`関数によって返されます。個々のスキャナーはそれぞれ`ScannerInterface`を実装します。
+
+```go
+// ScannerInterface ...
+type ScannerInterface interface {
+    Name() string
+    DetectPlatform(string) (bool, error)
+
+    Options() (models.OptionNode, models.Warnings, models.Icons, error)
+    Configs(sshKeyActivation models.SSHKeyActivation) (models.BitriseConfigMap, error)
+
+    DefaultOptions() models.OptionNode
+    DefaultConfigs() (models.BitriseConfigMap, error)
+
+    ExcludedScannerNames() []string
+}
+```
+
+- `Name() string`: このメソッドは、スキャナーの出力(警告、オプション、設定)のログ記録と保存に使用されます。スキャナーの出力は`map[SCANNER_NAME]OUTPUT`に保存されます。たとえば、iOSプロジェクトの`options`は`optionsMap[ios]options`に保存されます。
+- `DetectPlatform(string) (bool, error)`: このメソッドは、指定された検索ディレクトリに該当のプロジェクトタイプが含まれているかどうかを判定するために使用されます。
+- `Options() (models.OptionNode, models.Warnings, models.Icons, error)`: このメソッドは、プロジェクトのオプションブランチを生成するために使用されます。各ブランチは、最終的なbitrise設定モデルをビルドするための、完全で有効なオプションセットを定義する必要があります。各オプションブランチの最後の`Options`には設定IDを保存する必要があり、これは選択されたオプションで埋められます。
+- `Configs(sshKeyActivation models.SSHKeyActivation) (models.BitriseConfigMap, error)`: このメソッドは、考えられる設定を生成するために使用されます。BitriseConfigMapの各要素はbitrise設定のテンプレートであり、ユーザーが選択したオプションの値で埋められます。
+- `DefaultOptions() models.OptionNode`および`DefaultConfigs() (models.BitriseConfigMap, error)`: これらのメソッドは、指定されたプロジェクトをスキャンせずにオプションと設定を生成するために使用されます。この場合、必要なStepの入力値はすべてユーザーが指定します。これにより、スキャナーが失敗した場合でも、ユーザーには開始するための手段が用意されます。
+
+### Testing a scanner
+
+スキャナーをテストするには、ユニットテストと統合テストの両方が必要です。
+
+ユニットテストは、Goの標準テストライブラリを使用して記述します。
+
+統合テストでは、プロジェクトタイプのスキャナーが、そのプロジェクトタイプのインスタンスに対して目的のBitrise設定を生成することを検証します。これを行うために、新しいスキャナーを使用して指定されたサンプルプロジェクトをスキャンし、生成されたスキャン結果を統合テストに合わせて変更します。
+
+この変更が必要な理由は、スキャナーが生成された設定にStepsを追加する一方で、Stepのバージョンが随時更新されるためです。Stepのバージョン定義は`steps/const.go`にあります。
+
+そこで、サンプルプロジェクトのルートディレクトリで`bitrise-init --ci config`を呼び出し、生成された`scan_result.yml`ファイル内のStepのバージョンを`%s`に置き換え、`fmt.Sprintf`を使用して定義済みの最新のStepのバージョンを設定に注入します。
+
+統合テストでは、スキャナーによって生成された`scan_result.yml`ファイルを、以前に生成された参照用の`scan_result`の内容と照合します。
+
+### Submitting your own scanner
+
+独自のスキャナーはBitriseに提出できます。承認され次第、内容を確認したうえでbitrise-initツールに統合します。
+
+新しいスキャナーの開発の流れは、独自のサンプルプロジェクトから始まり、対象のプロジェクトタイプの既存のStepsを更新して終わります。順を追って見ていきましょう。
+
+1. 対象のプロジェクトタイプの典型的なインスタンスを示す、オープンソースのサンプルアプリを見つけるか作成します。
+
+   次の内容を含める必要があります:
+
+   - readmeファイル(このプロジェクトの更新、ビルド、テストに必要なツールのバージョンを含む)
+   - スキャナーによって生成される`bitrise.yml`ファイル
+1. 既存のStepsまたはカスタムスクリプトを使用して、サンプルアプリをビルドおよびテストします。
+1. 新しいプロジェクトタイプに必要な、不足しているStepsを作成します。
+
+   これらのStepsのPRは、スキャナーを作成した後に、そのスキャナーPRにリンクする必要があります。
+1. 対象のプロジェクトタイプ用のスキャナーを作成します。
+1. 必要なユニットテストと統合テストを実行します。
+1. bitrise-initプロジェクトにスキャナーのプルリクエストを送信します。
+
+   次を満たす必要があります:
+
+   - 新しいプロジェクトタイプのサンプルアプリにリンクします。
+   - 新しいプロジェクトタイプのテストおよびビルド用ガイドにリンクします。
+   - 新しいプロジェクトタイプのアイコンを含めます。含めない場合は、代わりに作成します。
+   - 新しいプロジェクトタイプのビルドとテストに必要なツールを列挙して、デフォルトの<GlossTerm baseform="stack">スタック</GlossTerm>を推奨します。
+1. 必要に応じて、既存のStepsに新しいプロジェクトタイプを追加して更新します。
+
+   これらのStepsのPRは、スキャナーPRにリンクする必要があります。

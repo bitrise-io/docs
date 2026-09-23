@@ -1,0 +1,349 @@
+---
+title: "Developing a new Step"
+description: "To develop a Bitrise Step and get it integrated in our Step library, you need to write a code, create the description, and submit everything for review."
+sidebar_position: 1
+slug: /bitrise-ci/workflows-and-pipelines/developing-your-own-bitrise-step/developing-a-new-step
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Stepは、より大きなCI/CDワークフローの中の1つのタスクです。たとえば、[<strong>Git Clone Repository</strong>](https://github.com/bitrise-steplib/steps-git-clone) Stepはビルドの開始時にGitリポジトリをクローンし、[<strong>Manage iOS Code Signing</strong>](https://github.com/bitrise-steplib/bitrise-step-manage-ios-code-signing) StepはiOSアプリのcode signingを実行します。
+
+:::tip[Stepsの共有]
+
+チームのカスタムStepsを共有するかどうかは任意です。Stepで解決している問題がチームや会社に固有のものである場合は、共有する必要はないかもしれません。Stepは自分のマシンや任意のGitリポジトリから実行できるため、カスタムStepsはBitrise Step Libraryに含まれている必要はありません。ただし、Stepが一般的な問題を解決するものであれば、コミュニティと共有する価値があります。
+
+他のユーザーとStepsを共有する方法について詳しくは、[Stepsの共有](/bitrise-ci/workflows-and-pipelines/developing-your-own-bitrise-step/sharing-steps-with-all-bitrise-users)ガイドをご覧ください。
+
+:::
+
+:::important[重複したSteps]
+
+新しいStepを作成する前に、既存の(ファーストパーティまたはサードパーティの)Stepsがすでにユースケースをカバーしていないか[確認](https://www.bitrise.io/integrations/steps)することを忘れないでください。まったく新しいStepを作成するよりも、既存のStepsに新しい動作を追加する方が常に望ましいです。
+
+:::
+
+Stepには、ビルドタスクを実行するコードが含まれています。タスクを定義する入力やパラメータを設定し、Stepが生成する出力を確認して再利用できます。出力を再利用するとは、ワークフロー内の後続のStepがその出力を入力として使用できることを意味します。
+
+ファーストパーティのBitrise Stepsは[Go](https://golang.org/)で記述されていますが、Bash Stepでラップしてエントリーポイントを設定すれば、任意の言語やフレームワークを使用できます。各Stepには、コードと`step.yml`メタデータファイルを含む専用のgitリポジトリがあります。Stepを他のユーザーが利用できるようにしたい場合は、`<GlossTerm baseform="step.yml">step.yml</GlossTerm>`ファイルをBitrise Step Library(`bitrise-steplib`リポジトリ)に提出し、<GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>で発見・再利用できるようにする必要があります。
+
+## Stepの作成
+
+まずStepの基本構造をスキャフォールドすることから始めます。特定のプロパティと入力は自動的に生成・割り当てられます。これらは後で変更できます。このプロセスの終了時には、リポジトリ内に`step.yml`ファイル、`README.md`ファイル、そして`main.go`または`step.sh`のいずれかのファイルが作成されます。
+
+:::important[開始する前に]
+
+Stepの作成プロセス中に、いくつかのオプションを設定するよう求められます。StepをレビューのためにBitriseに提出する前であれば、これらの設定はいつでも変更できます。設定したデータは生成される`step.yml`ファイルに含まれ、後で自由に編集できます。最初のStep作成プロセス中は、必要であればプレースホルダーを使用しても構いません。
+
+:::
+
+1. 必ず[Bitrise CLIをインストール](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli)してください。
+1. 新しいディレクトリを作成し、その中で`bitrise :step create`を実行します。
+1. プロンプトに従ってStepを設定します。
+
+これで完了です。`step.yml`、`README.md`ファイル、そして`main.go`または`main.sh`のいずれかのファイルが作成されているはずです。
+
+
+## step.ymlファイル
+
+`step.yml`ファイルには、BitriseシステムがStepについて知る必要のあるすべてのメタデータが含まれています。ここでStepの入力と出力、そしてStepが機能するために必要な依存関係を定義します。
+
+`step.yml`ファイルの完全なリファレンスについては、[Stepコードについて](/bitrise-ci/references/steps-reference/about-step-code)をご覧ください。
+
+
+## Stepの命名と説明
+
+すべてのStepには、`step.yml`ファイルにタイトルと概要を少なくとも1つ定義する必要があります。これらは[Integrations](https://www.bitrise.io/integrations/)ページと[Workflow Editor](/bitrise-ci/references/glossary#workflow-editor)に表示されます。
+
+:::tip[Markdown]
+
+すべてのテキストプロパティはMarkdownとしてレンダリングされるため、外部リンクなどのMarkdown機能を積極的に活用することをお勧めします。
+
+:::
+
+### タイトル
+
+短く分かりやすいものにしてください。<strong>Git Clone Repository</strong>のように、サービス名とその機能を含めます。 
+
+タイトルは一意のStep IDとは異なります。IDは設定YAMLファイル内でStepを参照するために使用されます。たとえば、`git-clone`は<strong>Git Clone Repository</strong> StepのIDです。
+
+その他、以下のガイドラインにも従ってください。
+
+- 「Step」という単語は使用しないでください。
+- 可能な限り、名詞ではなく命令形の動詞を使用します。たとえば、<strong>Script Runner</strong>ではなく<strong>Run Script</strong>とします。
+- サービスやツールの名前は正しいものを使用してください。たとえば、GithubではなくGitHubとします。
+- 実装の詳細は含めないでください。
+
+### 概要
+
+Stepに関する最も重要な情報を1行にまとめます。100文字以内に収めてください。
+
+概要はWorkflow Editor上でデフォルトで表示されます。ユーザーが概要を展開すると、Stepの説明が表示されます。
+
+### 説明
+
+Stepについての詳細な説明です。`description`プロパティには、他のユーザーがStepの動作をより理解できるよう、より長く詳細な説明を記載します。また、ユーザーがWorkflow EditorでStepsを検索する際の検索順位にも影響します。
+
+以下の内容を含めるようにしてください。
+
+- Stepが何を行うか。
+- Stepが連携する外部サービス(ある場合)。
+- 最も重要な入力を含む設定。
+- トラブルシューティング情報:考えられる問題とその解決策。
+
+デフォルトでは、Stepの説明は<GlossTerm baseform="workflow">Workflow</GlossTerm> Editorで折りたたまれており、概要のみが表示されます。
+
+
+## Stepのカテゴリ
+
+Stepについて知りたいことがもう1つあります。それはどのような種類のStepかということです。IntegrationsページやWorkflow Editorで確認できるように、Stepsは利用可能なプラットフォームと機能という2つの要素に基づいて、さまざまなカテゴリに分類されます。
+
+### プラットフォーム
+
+関連するプラットフォームは`project_type_tags`属性によって制御されます。Stepがすべてのプラットフォームまたはプロジェクトタイプで利用可能な場合は、`project_type_tags`を指定しないでください。それ以外の場合は、Stepが関連し、完全にサポートされているすべてのプラットフォームタイプを選択します。
+
+使用可能な値は次のとおりです。
+
+- `ios`
+- `macos`
+- `android`
+- `react-native`
+- `cordova`
+- `ionic`
+- `flutter`
+- `web`
+- `kotlin-multiplatform`
+
+### カテゴリ
+
+機能カテゴリは、`step.yml`内の`type_tags`属性によって制御されます。1つのStepには、タイプタグを1つだけ割り当てるようにしてください。他のどのタイプもStepに当てはまらないと思われる場合にのみ、`utility`を使用してください。
+
+使用可能な値は次のとおりです。
+
+- `build`
+- `code-sign`
+- `test`
+- `deploy`
+- `notification`
+- `access-control`
+- `artifact-info`
+- `installer`
+- `dependency`
+- `utility`
+- `security`
+
+
+## Step inputs
+
+入力は、ユーザーがStepを設定するための主な方法です。たとえば、<strong>Git Clone</strong> Stepには、チェックアウトするブランチを制御する`branch`という入力があります。
+
+```yaml
+title: Git Clone Repository
+summary: Clone a repository to the specified path on the VM
+inputs:
+- branch: $BITRISE_GIT_BRANCH
+```
+
+実装上、Step inputsは追加のメタデータと検証ルールを備えた[Environment Variables](/bitrise-ci/configure-builds/environment-variables)です。
+
+Step inputsはWorkflow Editor上に表示され、`step.yml`内での記載順に表示されます。そのため、必須の入力や頻繁に使用する入力は上部に配置してください。
+
+最小限の入力定義は次のとおりです。
+
+```yaml
+- install_defaults: "yes"
+  opts:
+    title: Installs default Codesign Files
+    value_options:
+    - "no"
+    - "yes"
+```
+
+上記の入力は`install_defaults`として定義されており、そのdefault valueは`yes`です。有効な2つの入力値については、追加の検証が行われます。
+
+入力キーには小文字の[snake case](https://en.wikipedia.org/wiki/Snake_case)形式を使用してください(`ProjectPath`や`PROJECT_PATH`ではなく`project_path`など)。
+
+入力は、その単一のStepプロセスの実行時にのみ公開されるため、入力キーにドメイン固有のプレフィックスを追加する必要はありません。つまり、`project_path`入力が後続のStepsの`project_path`入力と重複することはありません。
+
+Stepの入力値は文字列ですが、値に対して追加の検証ルールを定義することもできます(詳細は以下を参照してください)。
+
+可能であれば(かつ意味がある場合)、Step inputsにdefault valueを用意してください。そうすることで、BitriseユーザーにとってStepの設定が容易になります。
+
+Environment Variablesは、次の場合を除きdefault valueとして使用しないでください。
+
+- [Bitrise CLIまたはbitrise.io](/bitrise-ci/configure-builds/environment-variables)によって公開されている場合。
+- 別のStepの出力として生成される場合(例:`$BITRISE_IPA_PATH`、`$BITRISE_AAB_PATH`)。
+
+これは、Workflow Editorが値の設定されていない必須入力を強調表示することで、該当の入力に有効な値を設定しない限りStepが動作しないことを示すためです。自動的に値が割り当てられないEnv Varを入力のdefault valueとして設定すると、Workflow Editorはその必須入力に有効な値が設定されていると認識してしまいます(デフォルトのEnv Varにまだ値が設定されていない場合でも)。
+
+また、このような方法で特定の名前の環境変数を示唆する理由もありません。ユーザーは、異なる名前のEnv Varに同じ値を割り当てている可能性があるためです。
+
+キーと値に加えて、Step inputsには`opts`プロパティが必須です。このプロパティには、入力がStepのコードにどのように渡されるか、またWorkflow Editorでどのように表示されるかを定義するさまざまなオプションが含まれています。入力の値の候補も`opts`内で設定できます。例を見てみましょう。
+
+### Step inputsの命名と説明
+
+Stepの入力には、Step自体と同様に、名前、概要、説明を設定できます。これらを定義するには:
+
+1. Stepの入力に`opts`プロパティを含めます。
+1. `opts`の下に、`title`、`summary`、`description`オプションを設定します。
+
+:::tip[説明と概要]
+
+`description`と`summary`はどちらもMarkdown形式に対応しています。
+
+:::
+
+- `title`:入力の分かりやすい名前です。入力キーと大きく異なるべきではありませんが、生のYMLキーよりも柔軟性があります。たとえば、`apk_signature_scheme`と`APK Signature Scheme`。
+- `summary`:説明の短縮版で、入力の概要をすばやく把握できます。Bitrise Workflow Editorでは、Stepをクリックすると、デフォルトで入力の概要が表示されます。
+- `description`:入力についてのより深く詳細な説明を記載します。デフォルトではWorkflow Editorに表示されず、ユーザーが該当の入力をクリックした場合にのみ表示されます。
+
+以下に例を示します。
+
+```yaml
+- track: alpha
+  opts:
+    title: Track
+    summary: The distribution track you want to assign the uploaded app to.
+    description: |-
+      The distribution track you want to assign the uploaded app to.
+
+      Can be one of the built-in tracks (internal, alpha, beta, production), or a custom track name you added in Google Play Developer Console.
+    is_required: true
+```
+
+### 必須の入力
+
+入力が必須としてマークされている場合(かつdefault valueが定義されていない場合)、ユーザーは静的な文字列、または空でない文字列に解決される環境変数のいずれかの値を指定する必要があります。
+
+必須の入力は、Workflow Editor上で<strong>REQUIRED</strong>としても表示され、変更の保存時に検証されます。
+
+Stepの入力を必須としてマークするには、`opts`プロパティのis_requiredオプションを使用します。
+
+```yaml
+- keychain_password: $BITRISE_KEYCHAIN_PASSWORD
+  opts:
+    title: "Keychain password"
+    is_required: true
+```
+
+### 入力値としてのEnv Varの使用(is_expand)
+
+前述のとおり、任意の入力の値としてEnvironment Variablesを使用できます。デフォルトでは、Step inputs内のEnv Varは、そのEnv Varが指す値に展開されます。これは`opts`プロパティの`is_expand`オプションによって制御されます。
+
+```yaml
+- project_path: $BITRISE_PROJECT_PATH
+  opts:
+    is_expand: true
+```
+
+`true`に設定すると、`$BITRISE_PROJECT_PATH`の値が展開され、`project_path`の文字列入力として使用されます。`false`に設定すると、文字列値`$BITRISE_PROJECT_PATH`が展開されずにそのまま使用されます(この場合、project locationが見つからないため、このStepは失敗します)。
+
+:::warning[Step CodeでのEnv Varの読み取り]
+
+可能であれば、`step.yml`を通じてStep inputsとして公開せずにEnvironment Variablesを読み取ることは避けてください。これにより、ユーザーがStepの動作を設定・理解しやすくなるだけでなく、入力の検証(必須入力、default value、値のオプションなど)を手動で記述する必要もなくなります。
+
+:::
+
+### 機密の入力
+
+Step inputsを機密としてマークすることで、ビルドログやUIへの漏えいを防ぐことができます。機密の入力は、値として[Secrets](/bitrise-ci/configure-builds/secrets)のみを受け付けます。
+
+Stepの入力を機密としてマークするには、`opts`プロパティの`is_sensitive`オプションを使用します。`true`に設定すると、入力はWorkflow Editor上で<strong>SENSITIVE</strong>として表示され、ビルド中にログに記録された場合でも、ビルドログ内の値は`[REDACTED]`に置き換えられます。
+
+:::important[`is_expand`オプション]
+
+入力を機密としてマークする場合、入力の`is_expand`オプションもtrueに設定する必要がありますが、これはデフォルトの設定です。
+
+:::
+
+```yaml
+inputs:
+  - certificate_urls: $BITRISE_CERTIFICATE_URL
+    opts:
+      title: "Certificate URL"
+      is_sensitive: true
+```
+
+### 入力のグループ化
+
+`category`プロパティは、関連する入力をグループ化するために使用します。カテゴリが設定された入力は、Workflow Editor内でデフォルトで折りたたまれ、カテゴリ名のみが表示されます。
+
+```yaml
+- default_certificate_passphrase: $BITRISE_DEFAULT_CERTIFICATE_PASSPHRASE
+  opts:
+    category: Default code signing files
+    description: |
+      Certificate passphrase of the default certificate.
+    is_sensitive: true
+    title: Default certificate passphrase
+```
+
+Stepに関連する入力が多い場合や、使用頻度の低い入力がある場合に、カテゴリを使用するとよいでしょう。1つのグループまたはルートに含める入力数は、6個までを目安にしてください。
+
+Stepのカテゴリを設計する際は、以下の点に注意してください。
+
+- 必須の入力は、Stepを設定する際に見落としやすくなるため、グループ化しないでください。
+- グループ化された入力は、カテゴリのない入力の後に定義してください。
+
+### リストとしての入力値
+
+現時点では、文字列のリストはStepの入力タイプとしてサポートされていません。リストのような入力には、以下の規則が使用されます。
+
+- 入力のキーには`list`サフィックスを付けることを強く推奨します(例:`input_path_list`)。
+- Stepのコードは、改行文字(\n)で分割して入力値を解析する必要があります(例:`first value\nsecond value`)。分割後は、空の項目を除外することを忘れないでください。
+- 入力の`summary`と`description`には、その入力が値のリストであることと、そのフォーマット方法を明確に記載してください。
+
+
+## Stepの出力
+
+Stepsは出力を生成でき、その出力は他のStepsの入力として使用できます。つまり、Stepがアーティファクトを生成した場合、そのアーティファクトのパスをビルド内の別のStepの入力として使用できるということです。たとえば、<strong>Xcode Archive & Export for iOS</strong> Stepは`$BITRISE_IPA_PATH`出力を公開しており、これを<strong>Deploy to Bitrise.io</strong> Stepの入力値として使用できます。
+
+出力は`step.yml`ファイル内の`outputs`プロパティで定義します。出力はStep inputsと同じ構造を持ち、上記のガイドラインが同様に適用されます。
+
+
+### リストとしての出力値
+
+Stepの出力にもStep inputsと同じ制限が適用されます。詳細は上記の[リストとしての入力値](#lists-as-input-values)セクションを参照してください。
+
+
+## Stepの実行条件の設定
+
+特定のWorkflow内でStepを実行するかどうかを定義するプロパティは、`is_always_run`、`is_skippable`、`run_if`の3つです。
+
+これらのプロパティは`step.yml`ファイルで設定でき、Stepのデフォルトの動作を制御します。`bitrise.yml`ファイル内でユーザーが指定した値は、これらのデフォルト設定を上書きします。
+
+`is_always_run`:デフォルトでは、Workflow内の前のStepが失敗した場合、Stepsは実行されません。ただし、`is_always_run`プロパティが`true`に設定されている場合、Workflow内の前のStepsのステータスに関わらずStepが実行されます。これは、Stepの失敗後に通知を送信したり、リソースをクリーンアップしたりする際に役立ちます。
+
+`is_skippable`:Stepの`is_skippable`プロパティが`true`に設定されている場合、このStepが失敗してもビルドは失敗とならず、後続のStepsが実行されます。失敗してもビルドをブロックすべきではない、任意のタスクに役立ちます。
+
+`run_if`:`run_if`プロパティを使用すると、Stepの実行を特定の条件に依存させることができます。たとえば、PRによってトリガーされたビルドでのみ実行されるようにStepを設定できます。考えられるユースケースについては、[Stepの条件付き有効化・無効化](/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally)ガイドで詳しく説明しています。
+
+
+## Stepの依存関係
+
+Stepのコードは、ローカルのCLIツールに依存したり、外部のAPIとやり取りしたりすることがよくあります。Stepsはさまざまな環境(macOSやLinux、異なるOSバージョンでプリインストールされているツールも異なる環境)で実行されるため、Stepがそれらすべての環境で動作することを確認することが重要です。
+
+OSの依存関係マネージャー(APTおよびHomebrew)からの依存関係を宣言できます。Stepの依存関係は、Stepが実行される前にBitrise CLIによってインストールされます。Bitriseの<GlossTerm baseform="stack">スタック</GlossTerm>にプリインストールされていることがわかっている場合でも、将来のスタックでは当てはまらない可能性があるため、すべての依存関係をリストしてください。
+
+```yaml
+deps:
+  brew:
+  - name: cmake
+  apt_get:
+  - name: cmake
+```
+
+Stepの依存関係がOSの依存関係マネージャーにパッケージ化されていない場合、次に良い方法は実行時にインストールすることです。以下のガイドラインに従ってください。
+
+- `curl`の`--retry --connect-timeout 10 --max-time 30`フラグなど、信頼性の高いダウンロードのためにネットワークのリトライを追加します。
+- 可能な限り、チェックサムと署名の検証を使用します。
+- 信頼して管理しているドメイン(または依存関係の公式ソースとして記載されているドメイン)からのみダウンロードするようにしてください。
+- 依存関係管理の手段としてgit submoduleを使用しないでください:Stepの実行時にクローンされません。 
+
+### Env Varを使用したStepリポジトリ内のファイルへのアクセス
+
+Stepに必要なバイナリ、アセット、その他のファイルをStepリポジトリにバンドルして保持する必要がある場合は、`step.yml`ファイルやStepのコードと一緒に含めることができます。Bitrise CLIは、これらのファイルにいつでもアクセスできるようにする`$BITRISE_STEP_SOURCE_DIR`という環境変数を自動的にエクスポートします。
+
+たとえば、Stepのリポジトリのルートにある`.jar`ファイルには、次のようにアクセスできます:`$BITRISE_STEP_SOURCE_DIR/mytool.jar`

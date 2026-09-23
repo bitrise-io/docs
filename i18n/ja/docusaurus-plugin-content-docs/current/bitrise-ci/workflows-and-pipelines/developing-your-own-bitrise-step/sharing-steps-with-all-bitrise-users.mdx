@@ -1,0 +1,143 @@
+---
+title: "Sharing Steps with all Bitrise users"
+description: "If you think your Bitrise Step can be of use to others, you can share it via a CLI command or a Bitrise Workflow. Shared Steps must be actively maintained and they must be open to contributors."
+sidebar_position: 2
+slug: /bitrise-ci/workflows-and-pipelines/developing-your-own-bitrise-step/sharing-steps-with-all-bitrise-users
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+<GlossTerm baseform="Step">Step</GlossTerm>が他の人の役に立つと思われる場合は、共有できます。ただし、共有する前に、同じ問題を解決する他のStepsがないことを確認してください。以下を確認できます。
+
+- [リリース済みのSteps](https://www.bitrise.io/integrations/steps)の一覧。
+- StepLibの[オープンなプルリクエスト](https://github.com/bitrise-io/bitrise-steplib/pulls)の一覧。
+- StepLibの[クローズ済みのプルリクエスト](https://github.com/bitrise-io/bitrise-steplib/pulls?q=is%3Apr+is%3Aclosed)の一覧。
+
+特定の機能が不足しているStepを見つけた場合は、その機能のために新しいStepを開発または共有する前に、既存のものへの貢献を試みてください。[Integrationsページ](https://www.bitrise.io/integrations/steps)を使用すると、Bitrise StepLib内のStepsを検索できます。特定のStepのページにあるGitHub sourceボタンをクリックすると、Stepのリポジトリに移動し、そこで機能リクエストの送信やプルリクエストのオープンができます。
+
+また、共有されたStepsは積極的にメンテナンスされ、コントリビューターに対してオープンである必要がある点にご注意ください。
+
+
+## 新しいStepを共有する
+
+共有プロセスは比較的シンプルですが、新しいStepを共有する際は、手順を注意深く確認するようにしてください。
+
+:::note[bitrise step shareコマンド]
+
+Stepの開発中は、bitrise step shareを実行するだけで、いつでもヘルプを確認できます。これにより、共有に関する簡単なガイドが表示されます。
+
+:::
+
+Stepを共有する方法は2つあります。
+
+- `bitrise step share`コマンドを使用して手動で行う方法。
+- StepプラグインでStepを作成した場合は、Stepのディレクトリで`share-this-step` <GlossTerm baseform="workflow">Workflow</GlossTerm>を実行する方法。
+
+### 開始する前に
+
+開始する前に、以下を確認してください。
+
+- Stepが公開Gitリポジトリにあること。
+- <GlossTerm baseform="step.yml">step.yml</GlossTerm>ファイルに、有効なIssueトラッカー(たとえばStepのGitHubリポジトリの<strong>Issues</strong>ページなど)を指すsupport_urlプロパティが含まれていること。
+- step.ymlファイルに、リポジトリの正しいGit URLを指すsource_code_urlプロパティが含まれていること。
+
+:::important[複数のStepを共有する]
+
+複数のStepを共有する場合、つまりBitrise StepLibに複数の新しいstep.ymlファイルを追加する場合は、それぞれ別のプルリクエストで行う必要があります。1つのプルリクエストに複数の新しいStepを含めることはできません。
+
+:::
+
+準備ができたら、お好みの共有方法を進めてください。
+
+### bitrise step shareコマンドで共有する
+
+1. [Bitrise StepLib](https://github.com/bitrise-io/bitrise-steplib.git)リポジトリをフォークします。
+1. 共有のために、フォークしたStepLibをローカルで準備します。
+
+   ```bash
+   $ bitrise step share start -c <https://github.com/[your-username]/bitrise-steplib.git>
+   ```
+1. StepのリポジトリにStepのバージョンタグを追加します。
+1. フォークしたStepLibリポジトリにStepを追加します。
+
+   ```bash
+   $ bitrise step share create --tag [step-version-tag] --git [step-git-uri].git --stepid [step-id]
+   ```
+1. 必要に応じて、フォークしたStepLibの完全なヘルスチェックを実行します。
+
+   ```bash
+   $ bitrise step share audit -c <https://github.com/[your-username]/bitrise-steplib.git>
+   ```
+1. Stepのstep.ymlファイルを確認し、問題がなければ共有プロセスを完了します。これにより、step.ymlファイルがフォークしたStepLibリポジトリにコミットおよびプッシュされます。
+
+   ```bash
+   $ bitrise step share finish
+   ```
+
+   これにより、step.ymlファイルがフォークしたStepLibリポジトリにコミットおよびプッシュされます。
+1. 公式の[Bitrise StepLib](https://github.com/bitrise-io/bitrise-steplib.git)リポジトリでプルリクエストを開きます。
+
+### share-this-step Workflowで共有する
+
+share-this-step Workflowは、Stepプラグインを使用して新しいStepを作成する際に自動生成される<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>ファイルに含まれています。これを使用すると、Stepの共有が非常に簡単になります。
+
+1. [Bitrise StepLib](https://github.com/bitrise-io/bitrise-steplib.git)リポジトリをフォークします。
+1. bitrise.ymlファイルで、必要なWorkflow Environment VariablesをアプリレベルのEnvironment Variablesとして設定します。
+
+   ```yaml
+   app:
+     envs:
+     - BITRISE_STEP_ID:
+     - BITRISE_STEP_VERSION:
+     - BITRISE_STEP_GIT_CLONE_URL:
+     - MY_STEPLIB_REPO_FORK_GIT_URL:
+   ```
+1. Bitrise CLIでshare-this-step Workflowを実行します。
+
+   ```bash
+   $ bitrise local run share-this-step
+   ```
+
+### StepLibのプルリクエストで問題を修正する
+
+StepのバージョンをStepLibに送信したら、Bitriseチームによるレビューをお待ちください。変更を依頼された場合は、以下の手順に従ってください。
+
+1. プルリクエストをクローズします。
+1. フォークしたBitrise StepLibからshareブランチを削除します。
+1. Stepリポジトリで問題を修正します。
+1. Stepリポジトリで、修正内容を含むコミットに新しいバージョンタグを追加します。
+1. [共有プロセス](/bitrise-ci/workflows-and-pipelines/developing-your-own-bitrise-step/sharing-steps-with-all-bitrise-users#sharing-a-new-step)をもう一度実行します。
+
+問題を修正していただければ、プルリクエストをマージし、Stepを一般公開できるようになるはずです。
+
+## Stepアイコンを追加する
+
+StepにStepアイコンを追加できます。追加すると、Workflow Editorおよび[Integrations](https://www.bitrise.io/integrations/)ページに表示されます。これは任意です。Stepを公式のBitrise Step Libraryに追加したい場合にのみ、アイコンが必要になります。以下の要件があります。
+
+- 背景色を透明にしないでください。
+- サイズ: 256x256 px。
+- マージン: 60 px。
+- 形式: SVG。
+
+Stepのアイコンを送信するには:
+
+- フォークしたStepLibリポジトリの`STEPLIB_FORK_ROOT/steps/YOUR_STEP_ID/assets/icon.svg`に.svgファイルを追加します。
+- [StepLibリポジトリ](https://github.com/bitrise-io/bitrise-steplib)に新しいプルリクエストを作成します。
+
+
+## 放棄されたSteps
+
+Stepのメンテナーである場合、Stepに対してissueやプルリクエストが送信された際は、妥当な期間内に対応できるようにしてください。Stepの重要な修正や更新に関して複数回連絡を試みても数週間にわたって返答がない場合、コレクション内のStepを非推奨にしたり、削除または置き換えたりすることがあります。放棄されたStepsは、それを利用するユーザーにとって脅威となる可能性があるため、Stepを他の人と共有する際はこの点にご注意ください。
+
+Bitrise StepLib内のstep.ymlには、リポジトリとissueトラッカーへの恒久的なリンクが含まれているため、これらを削除しないでください。削除された場合でも、共有プロセス中にBitriseが管理するファイルホスティングサービスにも共有されているため、既に共有されたStepのバージョンは引き続き機能します。Bitriseが管理する新しいバージョンのステップがリリースされる場合があります。
+
+Stepを共有したものの、メンテナンスを継続できない、または継続する意思がなくなった場合は、次のリポジトリでGitHubissueを作成してください: [Bitrise StepLib](https://github.com/bitrise-io/bitrise-steplib)
+
+
+## Stepの問題を報告する
+
+重大な(セキュリティまたは機能面の)問題があるStepを使用している場合は、StepのIssue Trackerでチケットを作成してください。すべてのStepは、`support_url`属性で問題報告の推奨方法を宣言しています。
+
+Stepのメンテナーから長期間(数週間以上)返答がない場合は、次のリポジトリでGitHubissueを作成してください: [https://github.com/bitrise-io/bitrise-steplib](https://github.com/bitrise-io/bitrise-steplib)。問題は「放棄されたStep」ポリシーに従って解決を試みます。このコレクションに貢献するすべての人は、利用可能なStepを提供することであなたを助けようとしていることをご理解の上、しばらくお待ちください。

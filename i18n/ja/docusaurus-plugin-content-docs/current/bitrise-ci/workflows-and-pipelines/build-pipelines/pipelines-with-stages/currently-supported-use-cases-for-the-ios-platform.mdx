@@ -1,0 +1,96 @@
+---
+title: "Currently supported use cases for the iOS platform"
+sidebar_position: 2
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+一般的なiOSのユースケースに基づいて、いくつかの<GlossTerm baseform="Pipeline">Pipeline</GlossTerm>レシピを用意しています。これらには、ユーザーが実行する必要のある最も頻繁なタスクの一部が含まれています。
+
+
+## (iOS) 複数のシミュレーターでテストを並列実行する
+
+### 説明
+
+この例では、[sample-swift-project-with-parallel-ui-test](https://github.com/bitrise-io/sample-swift-project-with-parallel-ui-test) iOSオープンソースサンプルアプリを使用します。このアプリには、UnitテストとUIテストの例がいくつか含まれており、Test Plansを使用してテストをグループ化しています。
+
+この例のPipeline設定では、プロジェクトのすべてのテストケースを異なるiOSシミュレーターで実行する方法を示しています。
+
+`run_tests_on_simulators` Pipelineは、2つのStageを順番に実行します。
+
+1. `build_tests` <GlossTerm baseform="workflow">Workflow</GlossTerm>を実行する`build_tests stage`。このWorkflowは、サンプルプロジェクトをgit cloneし、ターゲットと関連するテストをビルドするために`xcode-build-for-test` <GlossTerm baseform="step">Step</GlossTerm>を実行します。ビルドされたテストバンドルは、`deploy-to-bitrise-io` Stepを介して次のStage(`run_tests_on_simulators`)に転送されます。
+
+   :::note[ビルドテストバンドルが圧縮されます]
+
+   `xcode-build-for-test` Stepは、ビルドされたテストバンドルを圧縮し、生成されたzipを$BITRISE_DEPLOY_DIRに移動します。そのディレクトリの内容は、`deploy-to-bitrise-io` Stepを介してデフォルトでWorkflowアーティファクトにデプロイされます。
+
+   :::
+
+   :::important[アーティファクトファイルサイズの制限]
+
+   1ビルドあたり、<strong>Artifacts</strong>にデプロイされるファイル数に制限はありません。ただし、ファイルサイズには1ファイルあたり2GBの制限があります。
+
+   :::
+1. `run_tests_on_simulators` Stageは、`run_tests_iPad`、`run_tests_iPhone`、`run_tests_iPod`という3つのWorkflowsを並列実行します。これら3つのWorkflowsはすべて、新しい`xcode-test-without-building` Stepを使用しており、これは前のstageでビルドされたテストバンドルに基づいてテストを実行します。事前ビルドされたテストバンドルは、`_pull_test_bundle`ユーティリティ Workflowによって取得されます。
+
+   ![iOS_example_modified.png](/img/_paligo/uuid-5b325bb0-a98a-bd3d-943f-c7d26897e362.png)
+
+### 手順
+
+新しいBitriseのサンプルプロジェクトで設定をテストするには、以下の手順に従います。
+
+1. 新しいアプリを作成するには、[Create New Appページ](https://app.bitrise.io/apps/add)にアクセスします。
+1. gitリポジトリの選択を求められたら、<strong>Other/Manual</strong>を選択し、<strong>Git repository (clone) URL</strong>フィールドにサンプルプロジェクトのリポジトリURL(`https://github.com/bitrise-io/sample-swift-project-with-parallel-ui-test`)を貼り付けます。
+1. 表示されるポップアップで、これがパブリックリポジトリであることを確認します。
+1. スキャンする`master`ブランチを選択します。
+1. <GlossTerm baseform="project scanner">プロジェクトスキャナー</GlossTerm>が完了するまで待ちます。
+1. 提示されたDistribution methodのいずれかを選択します(例:<strong>development</strong>。今はテストに焦点を当てているため、実際にはどれでも構いません)。
+1. 提示された<GlossTerm baseform="stack">スタック</GlossTerm>を確認し、アプリアイコンの選択とwebhookの登録をスキップして、最初のビルドを開始します。
+1. 新しいBitrise <GlossTerm baseform="project">プロジェクト</GlossTerm>の<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>を開きます。
+1. <strong><GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm></strong>タブに移動し、既存の`bitrise.yml`をサンプルの`[bitrise.yml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/ios-run-tests-in-parallel-on-multiple-simulators.md#bitriseyml)`ファイルの内容に置き換えます。
+1. <strong>Start/Schedule a Build</strong>ボタンをクリックし、ポップアップ下部の「<strong>Workflow, Pipeline</strong>」ドロップダウンメニューで<strong>run_tests_on_simulators</strong>オプションを選択します。
+
+### bitrise.yml
+
+GitHubリンク: [https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/ios-run-tests-in-parallel-on-multiple-simulators.md#bitriseyml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/ios-run-tests-in-parallel-on-multiple-simulators.md#bitriseyml)
+
+
+## (iOS) テストグループを並列実行する
+
+### 説明
+
+この例では、[sample-swift-project-with-parallel-ui-test](https://github.com/bitrise-io/sample-swift-project-with-parallel-ui-test) iOSオープンソースサンプルアプリを使用します。このアプリには、UnitテストとUIテストの例がいくつか含まれており、Test Plansを使用してテストをグループ化しています。
+
+:::tip[XCodeテストプラン]
+
+Xcode Test Plansは、異なるテスト設定で一連のテストを実行する方法を提供します。raywenderlich.comには、[Xcode Test Plansの使い方に関する優れたチュートリアル](https://www.raywenderlich.com/10212963-xcode-test-plans-for-ios-getting-started)があります。
+
+:::
+
+この例のPipeline設定では、異なるテストグループを並列実行する方法を示しています。
+
+`run_tests_groups` Pipelineは、2つのStageを順番に実行します。
+
+1. `build_tests` Workflowを実行する`build_tests` Stage。このWorkflowは、サンプルプロジェクトをgit cloneし、ターゲットと関連するテストをビルドするために`xcode-build-for-test` Stepを実行します。ビルドされたテストバンドルは、`deploy-to-bitrise-io` Stepを介して次のStage(`run_tests_groups`)に転送されます。
+1. `run_tests_groups` Stageは、`run_ui_tests`と`run_unit_tests`という2つのWorkflowsを並列実行します。これら2つのWorkflowsはどちらも、新しい`xcode-test-without-building` Stepを使用しており、これは前のStageでビルドされたテストバンドルに基づいてテストを実行します。事前ビルドされたテストバンドルは、`_pull_test_bundle`ユーティリティ Workflowによって取得されます。
+
+   ![iOS_example_2.png](/img/_paligo/uuid-789ed335-aeab-b87c-6045-270c5e87a641.png)
+
+### 手順
+
+1. 新しいアプリを作成するには、[Create New Appページ](https://app.bitrise.io/apps/add)にアクセスします。
+1. gitリポジトリの選択を求められたら、<strong>Other/Manual</strong>を選択し、<strong>Git repository (clone) URL</strong>フィールドにサンプルプロジェクトのリポジトリURL(`https://github.com/bitrise-io/sample-swift-project-with-parallel-ui-test`)を貼り付けます。
+1. 表示されるポップアップで、これがパブリックリポジトリであることを確認します。
+1. スキャンする`master`ブランチを選択します。
+1. プロジェクトスキャナーが完了するまで待ちます。
+1. 提示されたDistribution methodのいずれかを選択します(例:<strong>development</strong>。今はテストに焦点を当てているため、実際にはどれでも構いません)。
+1. 提示されたスタックを確認し、アプリアイコンの選択とwebhookの登録をスキップして、最初のビルドを開始します。
+1. 新しいBitrise projectのWorkflow Editorを開きます。
+1. **bitrise.yml**タブに移動し、既存の`bitrise.yml`をサンプルの`[bitrise.yml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/ios-run-test-groups-in-parallel.md#bitriseyml)`ファイルの内容に置き換えます。
+1. <strong>Start/Schedule a Build</strong>ボタンをクリックし、ポップアップ下部の「<strong>Workflow, Pipeline</strong>」ドロップダウンメニューで`run_tests_groups`オプションを選択します。
+
+### bitrise.yml
+
+GitHubリンク: [https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/ios-run-test-groups-in-parallel.md#bitriseyml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/ios-run-test-groups-in-parallel.md#bitriseyml)

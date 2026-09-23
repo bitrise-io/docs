@@ -1,0 +1,449 @@
+---
+title: "Configuring a Bitrise Pipeline"
+description: "Configure a Bitrise Pipeline by adding Workflows and optionally, defining dependencies between the Workflows."
+sidebar_position: 2
+slug: /bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline
+sidebar_label: Configuring Pipelines
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_WorkflowPropertiesInPipelines from '@site/src/partials/workflow-properties-in-pipelines.mdx';
+
+:::important[Pipelines with stages]
+
+Pipelineの設定を2024年12月より前から使用している場合、Pipelineにステージが含まれている可能性があります。ステージの使用を中止し、<GlossTerm baseform="workflow">Workflows</GlossTerm>間の依存関係を設定することに注力することを強くお勧めします。これらの依存関係により、Pipeline内の実行順序が決まります。これにより、ステージによる不要な待ち時間がなくなり、より柔軟なCIの設定が可能になります。
+
+引き続きステージを使用したPipelinesを使用できますが、今後アップデートは提供されません。同じ<GlossTerm baseform="configuration yaml">設定YAML</GlossTerm>ファイル内に両方のタイプのPipelinesを含めることができますが、2つのタイプを混在させることはできません。つまり、同じPipeline内にステージとWorkflowの依存関係の両方を含めることはできません。
+
+ステージを使用したPipelinesのドキュメントはこちらでご確認いただけます。[Pipelines with stages](/bitrise-ci/workflows-and-pipelines/build-pipelines/pipelines-with-stages/configuring-a-pipeline-with-stages)。
+
+ステージを使用したPipelineは新しい形式に変換できます。[Converting a Pipeline with stages into a graph Pipeline](/bitrise-ci/workflows-and-pipelines/build-pipelines/converting-a-pipeline-with-stages-into-a-graph-pipeline)。
+
+:::
+
+設定YAMLファイル内の`pipelines`要素の下でPipelinesを定義できます。Pipelineを設定するには、以下の要素を使用します。
+
+- Pipeline名: Pipelineの人が読める識別子。
+- `workflows`要素: Pipelineに含まれるWorkflowsのリストを含みます。
+- `depends_on`プロパティ: これは`workflows element`のプロパティで、Workflow名の配列を受け入れます。Workflows間の依存関係を定義します。
+
+例として、シンプルなPipelineの設定を示します。
+
+![pipeline-example.png](/img/_paligo/uuid-e85b689a-0101-6664-7f58-6e9ae5c851a7.png)
+
+このPipelineでは、4つのWorkflowsがあります。
+
+1. Workflow Aが最初に実行されます。
+1. Workflow Aが完了すると、Workflows BとCが同時に開始します。
+1. Workflow Dは、Workflows BとCの両方が正常に完了した場合にのみ開始します。
+
+## Pipelineの作成
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+Workflow Editorを開き、左側の<strong>Pipelines</strong>を選択します。<strong>Create Pipeline</strong>をクリックして名前を設定し、もう一度<strong>Create Pipeline</strong>をクリックします。
+
+最初のWorkflowを追加するには、<strong>Workflows</strong>をクリックします。
+
+![add-workflow-pipeline.png](/img/_paligo/uuid-6f5bdb24-c8e6-3923-723f-07a33eae84bc.png)
+
+この方法でWorkflowsを追加し続けることができます。この方法ではWorkflows間に依存関係は作成されず、すべて同時に実行されます。
+
+![basic-pipeline.png](/img/_paligo/uuid-13e965a3-cef3-17c5-970b-b4308460ae26.png)
+
+Workflowは1つ以上のWorkflowsに依存させることができます。依存先のWorkflowsのいずれかが失敗すると、Workflowは実行されません。Workflowの依存関係を作成するには、Workflowの右端にカーソルを合わせてプラス記号をクリックします。
+
+![add-dependent-workflow.png](/img/_paligo/uuid-cc676406-6eb6-010a-1daa-9a687d3902ea.png)
+
+この方法で、同じWorkflowに複数の依存Workflowsを追加できます。
+
+![multiple-dependent-flows.png](/img/_paligo/uuid-9e8845d9-aa8e-6c98-642a-4e13fddf93ea.png)
+
+同じWorkflowを2つ以上の異なるWorkflowsに依存させることもできます。プラス記号からPipeline内にすでにある別のWorkflowまでドラッグすることで、パスを作成できます。
+
+![drag-and-drop-dep.png](/img/_paligo/uuid-636d0224-45fb-307d-a1d5-69a7d8e84d9f.png)
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+必要最小限のPipelineの設定は、単一のWorkflowで構成されます。
+
+```yaml
+pipelines:
+  example:
+    workflows:
+      A: {}
+```
+
+すべて並行して実行される複数のWorkflowsを持つこともできます。
+
+```yaml
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B: {}
+      C: {}
+```
+
+Workflowは1つ以上のWorkflowsに依存させることができます。依存先のWorkflowsのいずれかが失敗すると、Workflowは実行されません。Workflowの依存関係を作成するには、`depends_on`プロパティを使用する必要があります。
+
+```yaml
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        depends_on:
+        - A
+      C:
+        depends_on:
+        - A
+      D:
+        depends_on:
+        - B
+        - C
+```
+
+Workflowが複数のWorkflowsに依存する場合、YAMLの配列構文はどちらも使用できます。
+
+```yaml
+# Option 1
+D:
+  depends_on:
+  - B
+  - C
+# Option 2
+D:
+  depends_on: [A, B]
+```
+
+</TabItem>
+</Tabs>
+
+## 設定の制限
+
+- Pipelineに含めることができるWorkflowsは最大200個です。それぞれがルートレベルの`workflows`要素の下に存在するWorkflowである必要があります。
+- [ユーティリティWorkflows](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#utility-workflows)はPipelineに追加できません。ユーティリティWorkflowsを使用したい場合は、通常のWorkflowの一部として含めてください。
+- 各Workflowは同じPipelineに一度だけ追加できます。同じWorkflowをPipelineの複数の異なる部分に含めることはできません。
+- 依存関係リストで定義されたWorkflowは、すべて同じPipelineに含まれている必要があります。
+- 設定から生成される依存グラフに、循環やループを含めることはできません。無効なPipelineの設定でビルドを開始することはできません。
+
+## Pipeline内でのWorkflowの条件付き実行
+
+`run_if`式を使用してWorkflowの実行を制御できます。Workflowを実行するかどうかの条件を設定できます。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. <Partial_WorkflowPropertiesInPipelines />
+1. <strong>Additional running conditions</strong>入力に、有効な[Go template](https://pkg.go.dev/text/template)を追加します。
+
+   この入力は3つのヘルパー関数を受け入れます。
+
+   - `getenv`: 環境変数の値にアクセスします。
+   - `enveq`: 環境変数を指定した値と比較します。
+   - `envcontain`: 環境変数に指定した文字列が含まれているかどうかを確認します。
+
+   ![run-if-template.png](/img/_paligo/uuid-4ababac0-1bb5-1f86-165a-f31d14fa9f28.png)
+1. Edit Workflowダイアログを閉じ、<strong>Save changes</strong>をクリックします。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+Pipelinesでは、`run_if`プロパティに[Go template](https://pkg.go.dev/text/template)を含む`expression`フィールドが必要です。
+
+```yaml
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        run_if:
+          expression: {{ enveq "EXAMPLE_KEY" "example value" }}
+        depends_on: [A]
+```
+
+`expression`フィールドは3つのヘルパー関数を受け入れます。
+
+- `getenv`: 環境変数の値にアクセスします。
+- `enveq`: 環境変数を指定した値と比較します。
+- `envcontain`: 環境変数に指定した文字列が含まれているかどうかを確認します。
+
+Bitrise CLIは実行時に式を評価します。Workflowは、その`run_if`式が`true`と評価された場合にのみ実行されます。`run_if`式によってスキップされたWorkflowは成功したWorkflowとしてカウントされるため、依存するWorkflowsは実行されます。
+
+この例では、BはEXAMPLE_KEY環境変数が`example value`の値を持つ場合にのみ実行されます。
+
+</TabItem>
+</Tabs>
+
+スキップされたWorkflowは成功としてカウントされるため、すべてのWorkflowがスキップされたPipelineは正常に完了し、Gitプロバイダーに緑のステータスを報告します。ドキュメントのみの変更など、ビルドをトリガーすべきでないプルリクエストで必須のステータスチェックに合格させるために、スキップされたWorkflowを使用できます。これを確実に設定する方法については、[Passing a required check on documentation-only pull requests](/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#passing-a-required-check-on-documentation-only-pull-requests)をご覧ください。
+
+## Pipeline内で常にWorkflowを実行する
+
+依存先のWorkflowが失敗した場合でも必ず実行されるように、Workflowをマークできます。
+
+:::important[Transitive dependency]
+
+Workflowが常に実行されるように設定されていても、依存するWorkflowsが実行されない場合があります。親のWorkflowsのいずれかが失敗した場合、対象のWorkflow自体は実行されますが、依存するWorkflowsは実行されない場合があります。
+
+例えば、Workflow Bに依存するWorkflow Cがあるとします。Workflow BはWorkflow Aに依存しています。3つのWorkflowsのうち、常に実行するよう設定されているのはBのみです。
+
+- Aが失敗した場合、Bは実行されますが、その結果に関わらず、Bに依存することでAにも依存しているため、Cは実行されません。
+- Cは、AとBの両方が成功した場合にのみ実行されます。
+
+:::
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. <Partial_WorkflowPropertiesInPipelines />
+1. <strong>Always run</strong>入力を<strong>Workflow</strong>に設定します。
+
+   この設定は、1つ以上の親のWorkflowsが失敗した場合でもWorkflowが実行されることを意味します。ただし、依存するWorkflowsは実行されない場合があります。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+`should_always_run`プロパティを使用します。これには設定の範囲を指定する文字列が必要です。使用できる値は2つあります。
+
+- `none`: 親のWorkflowが失敗した場合、Workflowは実行されません。これがdefault valueです。
+- `workflow`: 親のWorkflowが失敗した場合でも、Workflowは実行されます。
+
+```yaml
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        depends_on: [ A ]
+        should_always_run: workflow
+      C:
+        depends_on: [ B ]
+      D:
+        depends_on: [ C ]
+        should_always_run: workflow
+```
+
+この例では、以下のようになります。
+
+- Aが失敗した場合、Bは引き続き実行されます。
+- AまたはBのいずれかが失敗した場合、Cは実行されません。
+- Cが実行されない、または実行されても失敗した場合、Dは引き続き実行されます。
+
+</TabItem>
+</Tabs>
+
+## Workflowの失敗時にPipelineを中止する
+
+指定したWorkflowが失敗した際にPipelineをすぐに終了するように設定できます。デフォルトでは、Pipelineは終了しません
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. <Partial_WorkflowPropertiesInPipelines />
+1. <strong>Abort Pipeline on failure</strong>入力をオンに切り替えます。
+
+   対象のWorkflowが失敗すると、Pipelineはすぐに実行を停止します。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+選択したWorkflowsに、`true`に設定した`abort_on_fail`フィールドを追加します。
+
+```yaml
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        abort_on_fail: true
+```
+
+この例では、Workflow Bが失敗するとPipelineの実行が停止します。Workflow Aは中止され、以降のWorkflowsは実行されません。
+
+</TabItem>
+</Tabs>
+
+
+## Pipelineの優先度
+
+各Pipelineに優先度を設定できます。優先度の設定は、build queue内でのPipelineビルドの位置を決定します。優先度が高いほど、Pipelineビルドの実行が早くなります。
+
+優先度はWorkflow Editor、またはプロジェクトの設定YAMLファイルのいずれかで割り当てることができます。優先度は常に-100から100までの整数です。数字が大きいほど優先度が高くなります。デフォルトの優先度は0です。
+
+build priorityの詳細、および異なるタイプの優先度間の優先順位については、[Build priority](/bitrise-ci/configure-builds/configuring-build-settings/build-priority)をご覧ください。
+
+
+## Pipeline内でWorkflows間のファイルを共有する
+
+Pipeline内のWorkflows間でファイルを共有するには、<strong>Deploy to Bitrise.io</strong><GlossTerm baseform="step">Step</GlossTerm>と<strong>Pull Pipeline intermediate files</strong>Stepを使用します。StepはPipelineの中間ファイルをローカルフォルダにダウンロードします。
+
+ファイル共有を設定するには、以下の手順に従います。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. 必要なファイルを生成するWorkflowに<strong>Deploy to Bitrise.io</strong>Stepを追加します。
+1. <strong>Pipeline Intermediate File Sharing</strong>の入力グループで、<strong>Files to share between Pipeline Workflows</strong>の入力を見つけ、以下の構造を使ったコロン区切り項目の改行区切りリストとしてファイルを追加します。`<file_or_directory_path>:<environment_variable_key>`。
+
+   ファイルパスとして別の環境変数を使用することもできます。例えば、iOSプロジェクトの場合、`$BITRISE_IPA_PATH:BITRISE_IPA_PATH`は生成されたIPAを他のWorkflowsと共有する有効な方法です。
+1. 生成されたファイルを必要とする任意のWorkflowに<strong>[Pull Pipeline intermediate files](https://www.bitrise.io/integrations/steps/pull-intermediate-files)</strong>Stepを追加します。
+1. <strong>Intermediate file source</strong>の入力を使用して、ファイルが必要なWorkflowsのセットを指定します。
+
+   ![pipeline-intermediate.png](/img/_paligo/uuid-5d9fd00b-0507-1ae7-80a2-b42a4377343e.png)
+
+   入力にはワイルドカードを使用できます。上記の例では、名前が`workflow`で始まるすべてのWorkflowsから中間ファイルをすべて取得しています。
+1. Stepが完了すると、<strong>[Deploy to Bitrise.io - Apps, Logs, Artifacts](https://www.bitrise.io/integrations/steps/deploy-to-bitrise-io)</strong>Step経由で指定されたファイルとディレクトリが利用可能になります。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. 必要なファイルを生成するWorkflowに<strong>Deploy to Bitrise.io</strong>Stepを追加します。
+1. 以下の構造を使ったコロン区切り項目の改行区切りリストとして、`pipeline_intermediate_files`の入力にファイルを追加します。`<file_or_directory_path>:<environment_variable_key>`。
+
+   ファイルパスとして別の環境変数を使用することもできます。例えば、iOSプロジェクトの場合、`$BITRISE_IPA_PATH:BITRISE_IPA_PATH`は生成されたIPAを他のWorkflowsと共有する有効な方法です。
+
+   ```yaml
+   steps:
+     - deploy-to-bitrise-io: {
+         inputs:        
+         - pipeline_intermediate_files: "$BITRISE_IPA_PATH:BITRISE_IPA_PATH"
+   ```
+1. 生成されたファイルを必要とする任意のWorkflowに<strong>[Pull Pipeline intermediate files](https://www.bitrise.io/integrations/steps/pull-intermediate-files)</strong>Stepを追加します。
+
+   ```yaml
+   steps:
+     - pull-intermediate-files: {}
+   ```
+1. `artifact_sources`の入力を使用して、ファイルが必要なWorkflowsのセットを指定します。
+
+   ```yaml
+   steps:
+     - pull-intermediate-files@1:
+         inputs:
+           - artifact_sources: workflow.*
+   ```
+
+   入力にはワイルドカードを使用できます。上記の例では、名前が`workflow`で始まるすべてのWorkflowsから中間ファイルをすべて取得しています。
+1. Stepが完了すると、<strong>[Deploy to Bitrise.io - Apps, Logs, Artifacts](https://www.bitrise.io/integrations/steps/deploy-to-bitrise-io)</strong>Step経由で指定されたファイルとディレクトリが利用可能になります。
+
+</TabItem>
+</Tabs>
+
+詳細については、[Step repository](https://www.bitrise.io/integrations/steps/pull-intermediate-files)をご覧ください。
+
+## Workflows間で環境変数を共有する
+
+[Share Pipeline variables](https://github.com/bitrise-steplib/bitrise-step-share-pipeline-variable)Stepを使用して、Workflowの環境変数を再利用し、以降のWorkflowsで再利用できます。
+
+:::tip[Optional Workflows using run_if conditions]
+
+[<strong>Share Pipeline variables</strong>](https://github.com/bitrise-steplib/bitrise-step-share-pipeline-variable)Stepを`run_if`式と組み合わせることで、オプションのWorkflowsを持つPipelinesを簡単に作成できます。詳細については、[Enabling or disabling a Step conditionally](/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally)をご覧ください。
+
+:::
+
+これを行うには、以下の手順に従います。
+
+1. [<strong>Share Pipeline variables</strong>](https://github.com/bitrise-steplib/bitrise-step-share-pipeline-variable)StepをWorkflowに追加します。
+1. 必要に応じて、<strong>Additional run conditions</strong>入力でadditional run conditionsを定義できます。Stepは、ここで指定した条件が真の場合にのみ実行されます。
+1. 以降のWorkflowsで使用したい環境変数を、<strong>Variables to share between Pipeline Workflows</strong>入力に追加します。
+
+   :::tip[Using environment variable keys]
+
+   環境変数は`{key}={value}`の構文を使用して定義できます。例えば、`MY_ENV_KEY=value`、または`INSTALL_PAGE_URL=$BITRISE_PUBLIC_PAGE_URL`のように指定します。
+
+   デフォルトの環境変数キーを使用したい場合は、省略構文を使用できます。例えば、`EXISTING_ENV_KEY`のように指定します。
+
+   このStepを使用した環境変数の共有では、アプリで定義済みの既存の環境変数は上書きされません。
+
+   :::
+
+
+## 同じWorkflowのバリエーションの実行
+
+並列実行(Parallelism)を使うと、1つの指示でPipeline内の単一のWorkflowの実行を多数のランナーに分割できます。これはテストシャーディングに特に有用です。各シャードごとに定型コードを指定する必要なく、1つのテストWorkflowを複数回再利用できます。実行時、Bitriseは自動的に並列のWorkflowsのセットを作成し、シャード番号とシャードの合計数をenvironment variablesとして提供します。
+
+並列設定を使用して、同じコードベースから複数のホワイトラベルアプリをビルド・テストしたり、同じCIジョブを複数回実行する必要があるその他の目的を達成したりすることもできます。
+
+### 並列実行の概要
+
+:::important[Graph pipelines only]
+
+並列実行は、ステージを含むPipelinesでは利用できません。この機能を利用するには、ステージベースのPipelinesをグラフPipelinesに変換してください。[Converting a Pipeline with stages into a graph Pipeline](/bitrise-ci/workflows-and-pipelines/build-pipelines/converting-a-pipeline-with-stages-into-a-graph-pipeline)。
+
+:::
+
+`parallel`プロパティを使用して、Workflowの並列設定を作成できます。Pipelineには、並列設定を持つ複数のWorkflowsを含めることができます。これらのWorkflowsは他のWorkflowsに依存させることができます。Workflowが並列設定を持つWorkflowに依存する場合、Workflowのすべてのコピーの実行に依存することになります。
+
+`parallel`プロパティは値として整数を取ります。例えば、値が5の場合、Workflowのコピーが5つ実行されます。各コピーは2つの新しいenvironment variablesを受け取ります。
+
+- $BITRISE_IO_PARALLEL_INDEX: Workflowの各コピーに対するゼロベースのインデックス。
+- $BITRISE_IO_PARALLEL_TOTAL: コピーの総数。
+
+### 並列実行の設定
+
+設定するには、以下の手順に従います。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Workflow Editorを開きます。
+1. Pipelineグラフで対象のWorkflowを見つけ、歯車アイコンをクリックしてWorkflowの設定にアクセスします。
+1. <strong>Configuration</strong>タブで<strong>Parallel copies</strong>入力を見つけ、値を設定します。
+
+   :::important[Value limitations]
+
+   値は固定数でなければなりません。使用できるのは整数のみです。受け入れられる最大値は200です。
+
+   値として環境変数を使用することもできます。これにより、ビルド中にparallel copiesの最適な数を動的に計算できます。
+
+   :::
+
+   並列設定を持つWorkflowに別のWorkflowが依存している場合、Workflowのすべてのコピーが成功した場合にのみ実行されます。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. [設定YAML](/bitrise-ci/configure-builds/configuration-yaml/accessing-a-build-s-bitrise-yml-file)ファイルを開きます。
+1. Pipelineの`workflows`プロパティ内で、必要なWorkflowを見つけます。
+1. それに`parallel`プロパティを追加し、値を設定します。
+
+   :::important[Value limitations]
+
+   値は固定数でなければなりません。使用できるのは整数のみです。受け入れられる最大値は200です。値として環境変数を使用することもできます。
+
+   値として環境変数を使用することもできます。これにより、ビルド中にparallel copiesの最適な数を動的に計算できます。
+
+   :::
+
+   この例では、`run-tests` Workflowは並列で5回実行されます。`report-results` Workflowは`run-tests`に依存しているため、5つのコピーすべてが成功した場合にのみ実行されます。
+
+   ```yaml
+   pipelines:
+     my-ci-pipeline:
+       workflows:
+         build-without-testing: {}
+         run-tests:
+           depends_on: [build-without-testing]
+           parallel: 5
+         report-results:
+           depends_on: [run-tests]
+   ```
+
+</TabItem>
+</Tabs>
+
+## Pipelinesでサポートされるユースケース
+
+一般的なiOSとAndroidのユースケースに基づいたPipelineのレシピを用意しています。これらには、ユーザーが実行する必要がある最も頻繁なタスクの一部が含まれています。これらは[GitHub repository](https://github.com/bitrise-io/workflow-recipes/tree/main/recipes)でご確認いただけます。
+
+## Pipelineのトラブルシューティング
+
+Pipelineビルドが失敗した場合、主に2つの選択肢があります。
+
+- [Pipelineをリビルドする](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/rebuilding-a-failed-build#rebuilding-a-failed-pipeline)。Pipeline全体、または失敗したWorkflowsのいずれかをリビルドできます。
+- [リモートアクセス](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/remote-access)を使用してリビルドすると、ビルドの実行中にbuild machineにアクセスできます。
