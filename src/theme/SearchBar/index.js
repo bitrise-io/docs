@@ -234,10 +234,25 @@ function AskAiPanel({query, onBack}) {
     if (!configId || !containerRef.current) return undefined;
 
     let cancelled = false;
-    // 8s wasn't enough headroom once the double-submit fix below adds its
-    // own 500ms delay on top of real generation latency — confirmed live,
-    // repeatedly, taking up to ~8s on its own for some queries.
+    // How long submitQuery below keeps looking for the widget's own form
+    // before giving up (the widget mounts lazily, after its script loads).
     const deadline = Date.now() + 18000;
+    // Once submitted, the wait is bounded by progress instead of a fixed
+    // clock: generation alone takes up to ~8s for some queries (confirmed
+    // live), and the widget then reveals the text with a typewriter
+    // animation (~9s regardless of length in local measurements), so a
+    // flat 18s deadline was showing "no AI summary" while the answer was
+    // still streaming in. "Progress" is the widget visibly working — its
+    // loader showing, or the streamed text having changed since the last
+    // poll. Background tabs get throttled timers (this poll and the
+    // widget's streaming both slow to ~1/s), so hidden time counts toward
+    // neither budget; the answer is picked up on the next poll after the
+    // tab is visible again.
+    const STALL_MS = 18000; // give up after this long without progress...
+    const MAX_VISIBLE_MS = 90000; // ...or after this much visible time in total
+    let visibleMs = 0;
+    let stalledMs = 0;
+    let lastPollAt = Date.now();
 
     // Hide via the wrapper, not the widget's own inline style: the widget
     // resets its own visibility almost immediately after connecting (part
@@ -303,7 +318,7 @@ function AskAiPanel({query, onBack}) {
         ?.shadowRoot?.querySelector('ucs-response-markdown')
         ?.shadowRoot?.querySelector('ucs-fast-markdown')
         ?.shadowRoot?.querySelector('.markdown-document');
-      const snapshot = markdownDocument?.innerHTML.trim();
+      const snapshot = markdownDocument?.innerHTML.trim() || null;
 
       // Require two identical snapshots in a row: the content streams in
       // token by token, so a single non-empty read is likely still mid-
@@ -318,10 +333,21 @@ function AskAiPanel({query, onBack}) {
         setStatus('summary');
         return;
       }
-      lastSnapshot = snapshot || null;
+      const progressed = Boolean(stillLoading) || snapshot !== lastSnapshot;
+      lastSnapshot = snapshot;
       if (stillZeroState) resubmit();
-      if (Date.now() < deadline) setTimeout(pollForSummary, 400);
-      else giveUp();
+
+      const now = Date.now();
+      if (document.visibilityState === 'visible') {
+        visibleMs += now - lastPollAt;
+        stalledMs = progressed ? 0 : stalledMs + (now - lastPollAt);
+      }
+      lastPollAt = now;
+      if (stalledMs < STALL_MS && visibleMs < MAX_VISIBLE_MS) {
+        setTimeout(pollForSummary, 400);
+      } else {
+        giveUp();
+      }
     };
 
     const submitQuery = () => {
