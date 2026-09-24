@@ -336,6 +336,42 @@ const sidebar: SidebarsConfig = {
         },
       ],
     },
+    {
+      type: "category",
+      label: "Warm Pools",
+      items: [
+        {
+          type: "doc",
+          id: "bitrise-rde-api/api-reference/codespaces-service-list-warm-pools",
+          label: "List warm pools",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "bitrise-rde-api/api-reference/codespaces-service-create-warm-pool",
+          label: "Create warm pool",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "bitrise-rde-api/api-reference/codespaces-service-delete-warm-pool",
+          label: "Delete warm pool",
+          className: "api-method delete",
+        },
+        {
+          type: "doc",
+          id: "bitrise-rde-api/api-reference/codespaces-service-get-warm-pool",
+          label: "Get warm pool",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "bitrise-rde-api/api-reference/codespaces-service-update-warm-pool",
+          label: "Update warm pool",
+          className: "api-method patch",
+        },
+      ],
+    },
   ],
 };
 
