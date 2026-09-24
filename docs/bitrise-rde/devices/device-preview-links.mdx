@@ -73,7 +73,7 @@ workflows:
 
 The Step detects the platform from the `app_path` input: a `.zip` for iOS, an `.apk` for Android, as in the examples above. `app_path` is a local file on the CI build machine. If the [Deploy to Bitrise.io](https://bitrise.io/integrations/steps/deploy-to-bitrise-io) Step already uploaded that file earlier in the Workflow, the Device Preview Step reuses its URL to create the preview link. Otherwise, it uploads the file itself and creates the link from that.
 
-Its other inputs map to the [link options](#link-options) below: `device_model`, `os_version`, `system_image`, `link_ttl_hours`, `auto_terminate_minutes`, `stack`, `machine_type`, and the Android emulator sizing inputs. The [Step's README](https://github.com/bitrise-steplib/steps-device-preview#readme) documents every input and output.
+Its other inputs map to the [link options](#link-options) below: `device_model`, `os_version`, `system_image`, `link_ttl_hours`, `auto_terminate_minutes`, `stack`, `machine_type`, and the Android emulator sizing inputs. `warm_pool_id` serves the link's opens from a [warm pool](#serving-links-from-a-warm-pool). The [Step's README](https://github.com/bitrise-steplib/steps-device-preview#readme) documents every input and output.
 
 The Step exports `BITRISE_DEVICE_PREVIEW_URL` and `BITRISE_DEVICE_PREVIEW_EXPIRES_AT` for later Steps: post the URL to Slack, attach it to a check, or drop it into release notes. The Step fails the build when it can't create a link; set `is_skippable: true` on it if a preview problem shouldn't stop the build.
 
@@ -140,6 +140,40 @@ The link-specific options:
 | Link lifetime | How long the link can be opened. Defaults to 24 hours, 72 hours is the maximum. |
 | Auto-terminate | How long a device stays up after its last viewer disconnects. Defaults to 60 minutes, at least 10. |
 | Stack and machine type | Where the devices run. Leave empty for the platform default. A value that doesn't fit the platform is rejected when the link is minted. |
+
+## Serving links from a warm pool
+
+Every open of a link normally boots a device, which is most of the one to three minutes a reviewer waits. A [warm pool](/bitrise-rde/configuration/warm-pools) removes that wait: mint the link against a pool of a template that boots the app's device, and every open claims one of the pool's warm devices, so the click-to-app time is the app download. When the pool has no warm device at that moment, the open creates one from the pool's configuration, so the link still works, just slower.
+
+The pool must be workspace-owned, because a link is shared with people outside Bitrise, and its configuration must boot a device of the app's platform. The pool fixes the device and the machine: leave the device model, OS version, system image, emulator sizing, stack, and machine type unset when minting against a pool. The app's platform is still checked, so an Android build can't be minted against an iOS pool.
+
+In the Device Preview Step, name the pool in `warm_pool_id`:
+
+```yaml
+workflows:
+  pr-preview:
+    steps:
+    - android-build@1:
+        inputs:
+        - variant: debug
+    - deploy-to-bitrise-io@2: {}
+    - device-preview@1:
+        inputs:
+        - app_path: $BITRISE_APK_PATH
+        - warm_pool_id: android-reviewers
+        - post_pr_comment: "true"
+```
+
+From the CLI, pass `--warm-pool`; from an AI assistant, the tool takes `warm_pool_id`; with the API, set `warm_pool_id` on the create preview link request:
+
+```bash
+bitrise-cli rde preview-link create --warm-pool android-reviewers --artifact-url https://…/app.apk
+```
+
+Two things change for a pool-backed link:
+
+- Deleting the pool invalidates the link: later opens fail the way an expired link does. To stop paying for idle devices while keeping the link working, set the pool's size to 0 instead.
+- The sessions the link opens run the pool's template, including its scripts and stored inputs, rather than a bare device. Whoever sets up the pool chooses what a viewer's device runs.
 
 ## What the recipient sees
 

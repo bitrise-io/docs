@@ -121,6 +121,21 @@ The CLI covers both ways to use [virtual devices](/bitrise-rde/devices/virtual-d
 - `bitrise-cli rde device-guide [ios|android]`: print the guide for waiting for, connecting to, and driving a device.
 - `bitrise-cli rde preview-link create --device-platform ios|android --artifact-url URL`: mint a [device preview link](/bitrise-rde/devices/device-preview-links).
 
+## Warm pools
+
+`bitrise-cli rde warm-pool` manages [warm pools](/bitrise-rde/configuration/warm-pools), and the session and preview link commands claim from them. Commands that take a `WARM_POOL_ID` also accept the pool's name.
+
+| Command | What it does |
+| --- | --- |
+| `bitrise-cli rde warm-pool create NAME --template TEMPLATE --size N` | Create a pool. Add `--owner workspace` for a shared pool, `--input`, `--secret-input`, and `--saved-input` for the template's inputs, and the `--stack`, `--machine-type`, and `--device-*` flags to override the template. |
+| `bitrise-cli rde warm-pool list` | List your pools and the workspace's, with their size and how many sessions are ready. `--all` shows every pool in the workspace, read-only. |
+| `bitrise-cli rde warm-pool view WARM_POOL_ID` | Show a pool's status, configuration, and warm sessions. |
+| `bitrise-cli rde warm-pool set-size WARM_POOL_ID N` | Change how many sessions the pool keeps booted. `0` drains it but keeps the configuration. |
+| `bitrise-cli rde warm-pool update WARM_POOL_ID` | Rename a pool or change its configuration. A configuration change replaces the warm sessions. |
+| `bitrise-cli rde warm-pool delete WARM_POOL_ID` | Delete a pool and its warm sessions. |
+| `bitrise-cli rde session create NAME --warm-pool WARM_POOL_ID` | Claim a session from a pool. |
+| `bitrise-cli rde preview-link create --warm-pool WARM_POOL_ID --artifact-url URL` | Mint a device preview link whose opens are served from a workspace pool. |
+
 ## Templates, saved inputs, and machine options
 
 The CLI also manages the configuration objects behind your sessions:
