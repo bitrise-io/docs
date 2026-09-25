@@ -138,6 +138,9 @@ function useAskAiSearchBarButton({isOpen, enabled, searchContainer, onAskAi}) {
       button.type = 'button';
       button.id = 'ask-ai-trigger';
       button.className = 'ask-ai-searchbar-button';
+      // The visible label is hidden on narrow viewports (see custom.css), so
+      // the name has to live on the button itself.
+      button.setAttribute('aria-label', 'AI Summary');
       // Sparkle icon, same visual role as the "+" in a stock "+ Add
       // trigger"-style secondary button — a small glyph ahead of the label.
       button.innerHTML =
