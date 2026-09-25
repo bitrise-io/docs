@@ -147,7 +147,7 @@ Without a pool, every open of a link starts a new session from scratch: a machin
 
 The pool must be workspace-owned, because a link is shared with people outside Bitrise, and its configuration must boot a device of the app's platform. The pool fixes the device and the machine: leave the device model, OS version, system image, emulator sizing, stack, and machine type unset when minting against a pool. The app's platform is still checked, so an Android build can't be minted against an iOS pool.
 
-In the Device Preview Step, name the pool in `warm_pool_id`:
+In the Device Preview Step, set `warm_pool_id` to the pool's ID. Copy it from the pool's page in the RDE UI, or from `bitrise-cli rde warm-pool view`:
 
 ```yaml
 workflows:
@@ -160,15 +160,15 @@ workflows:
     - device-preview@1:
         inputs:
         - app_path: $BITRISE_APK_PATH
-        - warm_pool_id: android-reviewers
+        - warm_pool_id: 571eff49-368b-400c-86c3-f4ce49be9159
         - post_pr_comment: "true"
 ```
 
-From the CLI, pass `--warm-pool`; from an AI assistant, the tool takes `warm_pool_id`; with the API, set `warm_pool_id` on the create preview link request:
+The other clients take the same pool reference:
 
-```bash
-bitrise-cli rde preview-link create --warm-pool android-reviewers --artifact-url https://…/app.apk
-```
+- CLI: `bitrise-cli rde preview-link create --warm-pool POOL --artifact-url URL`, where `POOL` is the pool's ID or name.
+- AI assistant: `warm_pool_id` on the `bitrise_devenv_create_preview_link` tool.
+- API: `warm_pool_id` on the create preview link request.
 
 Two things change for a pool-backed link:
 
