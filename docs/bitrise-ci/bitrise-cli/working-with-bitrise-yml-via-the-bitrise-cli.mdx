@@ -1,0 +1,132 @@
+---
+title: "Working with bitrise.yml via the Bitrise CLI"
+description: "Download, upload, validate, and merge bitrise.yml files with the Bitrise CLI, and look up the stack IDs you can use in them."
+sidebar_position: 11
+slug: /bitrise-ci/bitrise-cli/working-with-bitrise-yml-via-the-bitrise-cli
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+The `bitrise yml` commands work with <GlossTerm baseform="bitrise.yml">`bitrise.yml`</GlossTerm> files: they download and upload the CI configuration of a <GlossTerm baseform="project">project</GlossTerm> on Bitrise, validate a file before you use it, and merge a modular configuration into a single file.
+
+:::important[Bitrise CLI 3.0.0 or newer]
+
+The `bitrise yml get`, `bitrise yml update`, and `bitrise stack list` commands, and online validation, need Bitrise CLI 3.0.0 or newer, and an access token: see [Authenticating with the Bitrise CLI](/bitrise-ci/bitrise-cli/authenticating-with-the-bitrise-cli).
+
+:::
+
+The CLI has more tools for a `bitrise.yml` on your own computer:
+
+- To generate a `bitrise.yml` for your project, run `bitrise local init`: [Initializing a Bitrise project locally](/bitrise-ci/bitrise-cli/initializing-a-bitrise-project-locally).
+- To edit a `bitrise.yml` in a graphical editor, run the offline <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>: [Installing and upgrading the offline Workflow Editor](/bitrise-ci/bitrise-cli/installing-and-upgrading-the-offline-workflow-editor).
+- To run a <GlossTerm baseform="workflow">Workflow</GlossTerm> from a `bitrise.yml`, run `bitrise local run`: [Running your first local build with the CLI](/bitrise-ci/bitrise-cli/running-your-first-local-build-with-the-cli).
+
+## Downloading the bitrise.yml file
+
+`bitrise yml get` prints the `bitrise.yml` that Bitrise stores for a project. Save it to a file to edit or run it locally:
+
+```bash
+bitrise yml get --app my-app-id > bitrise.yml
+```
+
+To get the `bitrise.yml` that a specific build ran with, add `--build` with the build's ID. `bitrise build yml` does the same:
+
+```bash
+bitrise yml get --app my-app-id --build abc123
+bitrise build yml abc123 --app my-app-id
+```
+
+With `--format json` or `--format yml`, the CLI prints an object with the project's ID, the build's ID, if you set one, and the configuration as a single string in the `content` field. To save the file itself, use the default `raw` format.
+
+## Uploading a bitrise.yml file
+
+`bitrise yml update` replaces the `bitrise.yml` that Bitrise stores for a project. Pass the file with `--file`, or send it to the standard input:
+
+```bash
+bitrise yml update --app my-app-id --file bitrise.yml
+bitrise yml update --app my-app-id < bitrise.yml
+```
+
+:::warning[bitrise.yml stored in the repository]
+
+If the project [stores its `bitrise.yml` in the repository](/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml), the command succeeds but builds keep using the file in the repository. Commit your changes to the repository instead.
+
+:::
+
+Bitrise stores the configuration as structured data, not as the file you upload. Comments, key order, and YAML anchors are lost: a later `bitrise yml get` returns an equivalent, reformatted file.
+
+Inside a Bitrise build, the command updates the project the build runs for if you don't pass `--app`. Always pass `--app` when you update a different project from a build.
+
+To catch mistakes before you upload, [validate the file](#validating-a-bitriseyml-file) first.
+
+## Validating a bitrise.yml file
+
+`bitrise yml validate` checks the `bitrise.yml` in the current directory:
+
+```bash
+bitrise yml validate
+```
+
+If you're logged in, the CLI validates the file with the Bitrise API. With `--app`, the API also checks settings that depend on the project, such as <GlossTerm baseform="stack">stacks</GlossTerm>, machine types, and license pools:
+
+```bash
+bitrise yml validate --app my-app-id
+```
+
+If you're not logged in, you add `--offline`, or the online check can't complete, the CLI only checks the file against the `bitrise.yml` schema on your computer.
+
+To validate a different file, use these flags:
+
+| Flag | What it takes |
+| --- | --- |
+| `--config` | The path of the file, or `-` to read it from the standard input. |
+| `--config-base64` | The file's content, encoded in Base64. |
+| `--inventory` | The path of a [Secrets file](/bitrise-ci/bitrise-cli/managing-secrets-locally) to validate with the configuration. |
+| `--inventory-base64` | The Secrets file's content, encoded in Base64. |
+
+```bash
+bitrise yml validate --config ./ci/bitrise.yml
+```
+
+To print the result as JSON or YAML, add `--format json` or `--format yml`. The command doesn't use the [default output format](/bitrise-ci/bitrise-cli/bitrise-cli-overview#output-formats) from your configuration.
+
+## Merging a modular configuration
+
+A [modular configuration](/bitrise-ci/configure-builds/configuration-yaml/modular-yaml-configuration) splits a `bitrise.yml` into several files with `include` statements. `bitrise yml merge` resolves the includes and prints a single `bitrise.yml`, followed by the tree of the included files.
+
+By default, the command merges the `bitrise.yml` in the current directory. To merge a different file, pass its path:
+
+```bash
+bitrise yml merge
+bitrise yml merge ./ci/bitrise.yml
+```
+
+To write the result to files instead, pass a directory with `--output`. The CLI writes the merged configuration to `bitrise.yml` and the file tree to `config_tree.json` in that directory:
+
+```bash
+bitrise yml merge --output ./merged
+```
+
+## Finding stack IDs
+
+To [set the stack](/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds#setting-the-stack-in-the-configuration-yaml) of a build in `bitrise.yml`, you need the stack's ID. `bitrise stack list` lists the available stacks with their IDs, operating systems, and statuses:
+
+```bash
+bitrise stack list
+```
+
+If the CLI finds a <GlossTerm baseform="workspace">Workspace</GlossTerm>, from `--workspace`, `BITRISE_WORKSPACE_ID`, or `default_workspace_id`, it lists the stacks available to that Workspace, including its custom stacks. Otherwise, it lists the stacks available to everyone.
+
+```bash
+bitrise stack list --workspace my-workspace-id
+```
+
+Use the ID in the `meta` section of your `bitrise.yml`:
+
+```yaml
+meta:
+  bitrise.io:
+    stack: osx-xcode-latest-stable
+```

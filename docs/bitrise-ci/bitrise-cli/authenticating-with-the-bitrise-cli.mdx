@@ -1,0 +1,103 @@
+---
+title: "Authenticating with the Bitrise CLI"
+description: "Log in to Bitrise from the Bitrise CLI with your browser, an access token, your email and password, or use the BITRISE_TOKEN Environment Variable in CI."
+sidebar_position: 3
+slug: /bitrise-ci/bitrise-cli/authenticating-with-the-bitrise-cli
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+The Bitrise CLI needs an access token for every command that works with your Bitrise account, such as `bitrise build` or `bitrise app`. Commands that only run on your computer, such as `bitrise local run`, don't need one.
+
+The CLI accepts two types of token:
+
+- A [personal access token](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token), which acts as your user account.
+- A [Workspace API token](/bitrise-platform/workspaces/workspace-api-token#creating-a-workspace-api-token), which acts as a <GlossTerm baseform="workspace">Workspace</GlossTerm>.
+
+You can log in with your browser, with a token you created, or with your email and password. In CI, set the `BITRISE_TOKEN` Environment Variable instead.
+
+:::important[Bitrise CLI 3.0.0 or newer]
+
+The `bitrise auth` commands need Bitrise CLI 3.0.0 or newer. To update, run `bitrise update`.
+
+:::
+
+## Logging in with your browser
+
+In an interactive terminal, `bitrise auth login` opens your browser so you can log in to Bitrise:
+
+```bash
+bitrise auth login
+```
+
+After you log in, the CLI saves a personal access token and refreshes it automatically, so you rarely have to log in again. If the session expires, the CLI asks you to run `bitrise auth login --oauth` again.
+
+The browser must run on the same computer as the CLI, because the browser returns the login to the CLI over a local address. On a remote computer you reach over SSH, [log in with a token](#logging-in-with-a-token) instead.
+
+## Logging in with a token
+
+1. Create a [personal access token](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token) or a [Workspace API token](/bitrise-platform/workspaces/workspace-api-token#creating-a-workspace-api-token).
+1. Run `bitrise auth login --with-token` and paste the token when the CLI asks for it.
+
+   The CLI hides the token as you type it. To pass the token from a script, send it to the standard input:
+
+   ```bash
+   echo "$BITRISE_PAT" | bitrise auth login --with-token
+   ```
+
+   When the standard input isn't a terminal, `bitrise auth login` reads the token from it even without the `--with-token` flag.
+
+The CLI doesn't refresh a token you paste: when it expires, log in again with a new one.
+
+## Logging in with your email and password
+
+`bitrise auth login --email` logs in to Bitrise with your account's email address and password, and creates a new personal access token for the CLI. Your email address must be verified.
+
+```bash
+bitrise auth login --email alice@example.com
+```
+
+The CLI asks for your password. To pass it from a script instead, add `--password-stdin` and send the password to the standard input:
+
+```bash
+printf '%s' "$PASSWORD" | bitrise auth login --email alice@example.com --password-stdin
+```
+
+The CLI only uses your password to create the token, and doesn't save it. Like a pasted token, the CLI doesn't refresh this one.
+
+:::note[Where the CLI sends your password]
+
+The CLI sends your email and password to the host in the `web_base_url` setting, `app.bitrise.io` by default. You can only change it in the global config file or with an Environment Variable, not in a `.bitrise-cli.yml` file. This way, a repository you clone can't send your password to another server. See [Base URLs](/bitrise-ci/bitrise-cli/configuring-the-bitrise-cli#base-urls).
+
+:::
+
+## Using the BITRISE_TOKEN Environment Variable
+
+If the `BITRISE_TOKEN` Environment Variable is set, the CLI uses it instead of the saved token. Use it in CI, where nobody can log in interactively.
+
+Bitrise doesn't set `BITRISE_TOKEN` in your builds. To use the CLI in a build:
+
+1. Create a [personal access token](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token) or a [Workspace API token](/bitrise-platform/workspaces/workspace-api-token#creating-a-workspace-api-token).
+1. Add it to your <GlossTerm baseform="project">project</GlossTerm> as a <GlossTerm baseform="secret">Secret</GlossTerm> with the key `BITRISE_TOKEN`. See [Secrets](/bitrise-ci/configure-builds/secrets).
+1. Call the CLI in a Script <GlossTerm baseform="step">Step</GlossTerm>:
+
+   ```bash
+   bitrise build list --status failed
+   ```
+
+   Inside a build, commands without an `--app` flag act on the project the build runs for.
+
+## Checking and removing the saved token
+
+`bitrise auth status` shows whether the CLI has a token and where it comes from: the `BITRISE_TOKEN` Environment Variable or the saved token. It also shows the token's type and, for a browser login, when it expires. It never prints the token itself.
+
+```bash
+bitrise auth status
+bitrise auth status --format json
+```
+
+`bitrise auth logout` deletes the saved token. It doesn't affect a token you set with `BITRISE_TOKEN`.
+
+The CLI saves the token to `~/.config/bitrise/cli/auth.yaml` (or `$XDG_CONFIG_HOME/bitrise/cli/auth.yaml`), readable only by your user. A new login replaces the previous token. The file is separate from the [CLI's configuration files](/bitrise-ci/bitrise-cli/configuring-the-bitrise-cli), so you can share a configuration without sharing your token.

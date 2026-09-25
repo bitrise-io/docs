@@ -1,0 +1,100 @@
+---
+title: "Configuring the Bitrise CLI"
+description: "Save default values for the Bitrise CLI, such as the project, Workspace, and output format, in a global config file or a per-directory .bitrise-cli.yml file, and manage them with the bitrise config commands."
+sidebar_position: 4
+slug: /bitrise-ci/bitrise-cli/configuring-the-bitrise-cli
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+The Bitrise CLI reads default values from config files, so you don't have to pass the same flags to every command. For example, you can save the <GlossTerm baseform="project">project</GlossTerm> a repository belongs to, or make every command print JSON.
+
+:::important[Bitrise CLI 3.0.0 or newer]
+
+The `bitrise config` commands and the config keys on this page need Bitrise CLI 3.0.0 or newer. To update, run `bitrise update`.
+
+:::
+
+## Configuration file locations
+
+The CLI reads configuration from up to three files, in order of precedence from highest to lowest:
+
+1. The legacy config file, `~/.bitrise/config.json`. See [The legacy config file](#the-legacy-config-file).
+1. A per-directory config file, `.bitrise-cli.yml`. The CLI looks for it in the current directory, then in each parent directory, and uses the first one it finds.
+1. The global config file, `~/.config/bitrise/cli/config.yml`. Set `$XDG_CONFIG_HOME` to read it from somewhere other than `~/.config`. Run `bitrise config path` to print its location.
+
+If none of the files set a value, the CLI falls back to its built-in default.
+
+Flags and Environment Variables override every config file. For example, the CLI picks the project for a command in this order:
+
+1. The `--app` flag.
+1. The `BITRISE_APP_ID` Environment Variable, then `BITRISE_APP_SLUG`.
+1. The `app_id` key in a `.bitrise-cli.yml` file.
+1. The `app_id` key in the global config file.
+
+Make sure `~/.config` (or `$XDG_CONFIG_HOME`, if you set it) is writable. Otherwise, `bitrise local setup` and plugin commands can fail.
+
+## Config keys
+
+| Key | What it sets | Environment Variable | Default |
+| --- | --- | --- | --- |
+| `app_id` | The project that commands act on when you don't pass `--app`. | `BITRISE_APP_ID`, `BITRISE_APP_SLUG` | None |
+| `default_workspace_id` | The <GlossTerm baseform="workspace">Workspace</GlossTerm> that commands act on when you don't pass `--workspace`. | `BITRISE_WORKSPACE_ID` | Your only Workspace, if you have one |
+| `output` | The [output format](/bitrise-ci/bitrise-cli/bitrise-cli-overview#output-formats): `raw`, `json`, or `yml`. | `BITRISE_OUTPUT` | `raw` |
+| `theme` | The color theme: `auto`, `dark`, `light`, or `none`. | `BITRISE_CLI_THEME` | `auto` |
+| `api_base_url` | The Bitrise API host. | `BITRISE_API_BASE_URL` | `https://api.bitrise.io/v0.1` |
+| `web_base_url` | The Bitrise website host, used for logging in with your email and password, and for opening a project with `bitrise app view --web`. | `BITRISE_WEB_BASE_URL` | `https://app.bitrise.io` |
+| `rde_api_base_url` | The Remote Dev Environment API host. | `BITRISE_RDE_API_BASE_URL` | `https://api.bitrise.io/rde` |
+
+Inside a Bitrise build, `BITRISE_APP_SLUG` and `BITRISE_WORKSPACE_ID` are always set, so commands act on the build's own project and Workspace unless you pass a flag.
+
+Your access token isn't a config key: it's saved to a separate file. See [Authenticating with the Bitrise CLI](/bitrise-ci/bitrise-cli/authenticating-with-the-bitrise-cli).
+
+### Base URLs
+
+The `api_base_url`, `web_base_url`, and `rde_api_base_url` keys are an exception to the order above: only the global config file can set them, and the `BITRISE_API_BASE_URL`, `BITRISE_WEB_BASE_URL`, and `BITRISE_RDE_API_BASE_URL` Environment Variables override even that. The CLI ignores these keys in a `.bitrise-cli.yml` file.
+
+All three set a host that the CLI sends your credentials to, and the CLI reads a `.bitrise-cli.yml` from any parent directory without asking you first. If it read these keys from there, a repository you only cloned could redirect your login to a server you don't control.
+
+## Managing the global config file
+
+Use the `bitrise config` commands to read and write the global config file:
+
+| Command | What it does |
+| --- | --- |
+| `bitrise config set KEY VALUE` | Set a key. |
+| `bitrise config get KEY` | Print the value of a key. |
+| `bitrise config unset KEY` | Remove a key. |
+| `bitrise config list` | Print every key saved in the file. Takes `--format json` or `--format yml`. |
+| `bitrise config path` | Print the location of the file. |
+
+For example, to make `my-app-id` the default project:
+
+```bash
+bitrise config set app_id my-app-id
+```
+
+`bitrise app create` also saves the ID of the new project as `app_id`.
+
+`bitrise config list` only shows what's saved in the global config file. When a command runs, flags, Environment Variables, and a `.bitrise-cli.yml` file can override those values.
+
+## Pinning a repository to a project
+
+Add a `.bitrise-cli.yml` file to the root of a repository to set the project and Workspace for every command you run inside it. The `bitrise config` commands don't write this file, so create it by hand:
+
+```yaml
+app_id: my-app-id
+default_workspace_id: my-workspace-id
+```
+
+Now `bitrise build list` or `bitrise yml get`, run anywhere in the repository, act on `my-app-id` without the `--app` flag.
+
+Besides `app_id` and `default_workspace_id`, the file can set `output` and `theme`. It can't set the [base URLs](#base-urls).
+
+## The legacy config file
+
+Bitrise CLI versions before 3.0.0 saved their settings to `~/.bitrise/config.json`. The file only contains internal state: the version of the last `bitrise local setup` and when the CLI last checked for updates of itself and its plugins. You don't have to edit it.
+
+If the file exists, the CLI keeps reading it and its values take precedence. When the CLI updates one of these values, it writes both `config.json` and `config.yml`. A new installation doesn't create `config.json`.
