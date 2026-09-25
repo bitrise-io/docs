@@ -1,0 +1,70 @@
+---
+title: "Migrating from branch-based caching to key-based caching"
+description: "As of May 2025, Bitrise is starting to deprecate its branch-based caching in favor of the more efficient and flexible [key-based caching system](/bitrise-ci/dependencies-and-caching/key-based-caching/accessing-key-based-cache-archives)."
+sidebar_position: 7
+slug: /bitrise-ci/dependencies-and-caching/migrating-from-branch-based-caching-to-key-based-caching
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+ブランチベースキャッシュはレガシーテクノロジーであり、Bitriseは非推奨としています。より効率的で柔軟なキーベースキャッシュを使用してください。
+
+ビルドで使用するキャッシュアーカイブが15 GB未満の場合、ブランチベースキャッシュ<GlossTerm baseform="step">Steps</GlossTerm>は引き続き動作しますが、ほとんどの場合でキャッシュのパフォーマンスが向上するため、キーベースキャッシュへの移行を推奨します。
+
+このガイドでは、プロジェクトをキーベースキャッシュインフラストラクチャに移行する方法を説明します。
+
+
+## キャッシュシステムの違い
+
+キーベースキャッシュは、一般的にブランチベースキャッシュよりも効率的で、はるかに強力です。次の表では、両方のキャッシュ方式を機能セットに基づいて比較します。
+
+| 機能 | ブランチベースキャッシュ | キーベースキャッシュ |
+| --- | --- | --- |
+| <strong>キャッシュのスコープ</strong> | ブランチごとに1つのキャッシュ | キーで識別される複数のキャッシュ |
+| <strong>ビルド間でのキャッシュ共有</strong> | 同じブランチおよび<GlossTerm baseform="stack">スタック</GlossTerm>に限定 | <GlossTerm baseform="workflow">Workflows</GlossTerm>、ブランチ、スタック間で共有可能 |
+| <strong>使用するSteps</strong> | [Cache:Pull](https://bitrise.io/integrations/steps/cache-pull) と [Cache:Push](https://bitrise.io/integrations/steps/cache-push) | - 汎用の[Restore Cache](https://bitrise.io/integrations/steps/restore-cache)と[Save Cache](https://bitrise.io/integrations/steps/save-cache)Steps - [6つの依存関係マネージャー向けの専用キャッシュステップ](/bitrise-ci/dependencies-and-caching/key-based-caching/dedicated-caching-steps-for-dependency-managers) |
+| <strong>Expiration</strong> | ブランチで新しいビルドがない状態が7日間続いた場合 | 最後の使用から7日間 |
+| <strong>フォールバックの仕組み</strong> | フォールバックとしてDefault branchキャッシュを使用 | 複数のフォールバックキーを設定可能 |
+| <strong>キャッシュアーカイブの最大サイズ</strong> | 制限なし（移行が発表されるまで） | 15 GB |
+| <strong>キャッシュアーカイブへのファイル/パスの追加</strong> | 手動で設定するか、キャッシュに対応するその他のBitrise stepsで設定 | 手動で設定するか、専用キャッシュSteps経由で設定 |
+| <strong>ファイルの除外</strong> | `Ignore paths`パラメーター | 個別の除外リストなし |
+| <strong>パフォーマンス/速度</strong> | 低速（gzipアーカイブが大きく、ストレージバックエンドが遅い） | 高速（最先端の[zstd](https://github.com/facebook/zstd)圧縮と高速なストレージバックエンド） |
+| <strong>依存関係マネージャー向けの専用キャッシュSteps</strong> | 利用不可 | [ほとんどの依存関係マネージャーで利用可能](/bitrise-ci/dependencies-and-caching/key-based-caching/dedicated-caching-steps-for-dependency-managers) |
+
+
+## ブランチベースキャッシュStepsの置き換え
+
+キーベースキャッシュを使用する方法は2つあります。汎用の<strong>Restore Cache</strong>と<strong>Save Cache</strong>Stepsを使用する方法、または特定の依存関係マネージャー向けの専用キャッシュStepsを使用する方法です。依存関係マネージャーがサポートされていない場合や特別な設定が必要な場合を除き、専用のStepsを使用することを強くお勧めします。
+
+### 専用キャッシュStepsの使用
+
+専用キャッシュStepsは、特定の依存関係マネージャーの依存関係をキャッシュします。
+
+たとえば、ビルドでGradleを実行する場合、専用のStepsを使用してGradleの依存関係をキャッシュできます。専用のStepsは通常、追加の設定を必要とせず、Workflowに追加するだけです。
+
+:::tip[専用のStepsの全一覧]
+
+以下の手順は、専用のキーベースキャッシュStepsを使用する場合の一例にすぎません。この例ではGradleを使用していますが、専用のStepsは複数用意されています。Stepsの詳細な一覧については、[依存関係マネージャー向けの専用キャッシュSteps](/bitrise-ci/dependencies-and-caching/key-based-caching/dedicated-caching-steps-for-dependency-managers)を参照してください。
+
+:::
+
+1. Workflow内の<strong>Cache:Pull</strong>Stepを<strong>Restore Gradle Cache</strong>Stepに置き換えます。このStepはGradleのキャッシュをダウンロードします。
+1. <strong>Cache:Push</strong>Stepを<strong>Save Gradle Cache</strong>Stepに置き換えます。このStepはGradleのキャッシュを更新します。
+
+すべてのキーベースキャッシュStepsは同様の命名規則に従っています。Restore Stepsはキャッシュをダウンロードし、Save Stepsはキャッシュを更新します。キーベースの設定で少なくとも2回ビルドを実行すると、<strong>Project settings</strong>ページからキャッシュアーカイブを見つけてダウンロードできます。[キーベースキャッシュアーカイブへのアクセス](/bitrise-ci/dependencies-and-caching/key-based-caching/accessing-key-based-cache-archives)。
+
+### 汎用のキーベースキャッシュStepsの使用
+
+専用キャッシュStepsで望ましい結果が得られない場合は、汎用の<strong>Restore Cache</strong>と<strong>Save Cache</strong>Stepsの使用を検討してください。これらのStepsは、ニーズに合わせて自由に設定できます。次のようなことが可能です。
+
+- [キーベースキャッシュのテンプレートと関数を使用する](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-based-caching-templates-and-functions)。
+- [キャッシュアーカイブに一致する複数のキーを定義する](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-matching-for-cache-archives)。
+- [動的キーを使用した条件付きキャッシュを利用する](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#using-conditional-caching-with-dynamic-keys)。
+
+:::tip[汎用のStepsを使用したキャッシュのレシピ]
+
+汎用のStepsを利用したキーベースキャッシュのレシピをご確認ください。[高度なキーベースキャッシュのレシピ](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/key-cache-advanced.md)。
+
+:::

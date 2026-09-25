@@ -1,0 +1,39 @@
+---
+title: "Managing dependencies with SPM"
+description: "On Bitrise, every Xcode Step can handle Swift package dependencies without any extra configuration. You can install and cache SPM packages easily."
+sidebar_position: 1
+slug: /bitrise-ci/dependencies-and-caching/ios-dependencies/managing-dependencies-with-spm
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Swiftパッケージは、開発者がプロジェクトで使用できる、Swift、Objective-C、Objective-C++、C、C++コードの再利用可能なコンポーネントです。Xcodeは、Swiftパッケージの作成と公開、および依存関係の管理をサポートするために、組み込みのSwift Package Manager(SPM)を使用します。
+
+Bitriseでは、すべてのXcode<GlossTerm baseform="Step">Step</GlossTerm>が、追加設定なしでSwiftパッケージの依存関係を処理できます。たとえば、iOSアプリをビルドしてApp Storeにデプロイしたい場合、[<strong>Xcode Archive & Export for iOS</strong>](https://github.com/bitrise-steplib/steps-xcode-archive)StepがアプリへのSwift依存関係のインストールを処理します。
+
+## Swiftパッケージのインストール
+
+Bitriseビルド中に、iOSアプリ用のSwiftパッケージを簡単にインストールできます。
+
+1. XcodeでSwiftパッケージが正しく設定されていることを確認してください。
+1. <GlossTerm baseform="Workflow">Workflow</GlossTerm>に、公式のXcodeStepsのいずれかを追加します。使用できるStepsは次のとおりです。
+
+   - [<strong>Xcode Archive & Export for iOS</strong>](https://github.com/bitrise-steplib/steps-xcode-archive)
+   - [<strong>Xcode Test for iOS</strong>](https://github.com/bitrise-steplib/steps-xcode-test)
+   - [<strong>Xcode Build for testing for iOS</strong>](https://github.com/bitrise-steplib/steps-xcode-build-for-test)
+   - [<strong>Xcode Build for Simulator</strong>](https://github.com/bitrise-steplib/steps-xcode-build-for-simulator)
+
+   これらのStepsはいずれも、Swiftパッケージの依存関係を処理できます。
+
+## Swiftパッケージのキャッシュ
+
+キーベースのキャッシュを使用する場合、Swiftパッケージをキャッシュするには、[<strong>Restore SPM cache</strong>](https://github.com/bitrise-steplib/bitrise-step-restore-spm-cache)と[<strong>Save SPM cache</strong>](https://github.com/bitrise-steplib/bitrise-step-save-spm-cache)Stepsのみが必要です。これらのStepsは、依存関係に必要なcache keysを自動的に設定するため、設定は不要です。
+
+1. [<strong>Restore SPM cache</strong>](https://github.com/bitrise-steplib/bitrise-step-restore-spm-cache)StepをWorkflowに追加します。
+
+   ![restore_spm-cache.png](/img/_paligo/uuid-e51ea807-fef9-bfc9-8666-2092740c7a52.png)
+
+   これは、[<strong>Xcode Archive & Export for iOS</strong>](https://github.com/bitrise-steplib/steps-xcode-archive)など、何らかの形でSPMパッケージを処理するStepより前に配置する必要があります。
+1. [<strong>Save SPM cache</strong>](https://github.com/bitrise-steplib/bitrise-step-save-spm-cache)StepをWorkflowの最後に追加します。

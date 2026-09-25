@@ -1,0 +1,99 @@
+---
+title: "Managing dependencies with Carthage"
+description: "You can use Bitrise's official Carthage Steps to install and cache your iOS dependencies. Carthage doesn't alter your Xcode project in any way and managing it requires very little configuration on Bitrise."
+sidebar_position: 3
+slug: /bitrise-ci/dependencies-and-caching/ios-dependencies/managing-dependencies-with-carthage
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+[Carthage](https://github.com/Carthage/Carthage)は、iOSおよびmacOS向けの依存関係マネージャーです。分散型の依存関係マネージャーであり、Xcodeプロジェクトを一切変更しません。Bitriseでも使用でき、iOSアプリの依存関係を管理できます。
+
+## Carthageの依存関係をインストールする
+
+Carthageで依存関係をインストールするには、次の操作を行います。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. プロジェクトに[Cartfile](https://github.com/Carthage/Carthage/blob/master/Documentation/Artifacts.md#cartfile)が含まれていることを確認してください。
+1. <GlossTerm baseform="Workflow">Workflow</GlossTerm>に<strong>Carthage</strong><GlossTerm baseform="Step">Step</GlossTerm>を追加してください。
+
+   これは、キャッシュから復元するStepの後に配置する必要があります。キャッシュStepsがない場合は、[<strong>Git Clone Repository</strong>](https://github.com/bitrise-steplib/steps-git-clone)Stepの直後にStepを追加してください。
+1. <strong>Carthage command to run</strong>の入力欄で、実行したいコマンドを選択します。
+
+   ![carthage-command.png](/img/_paligo/uuid-71148b6a-fbf8-6a5f-5423-a5ac2817e866.png)
+
+   default valueは`bootstrap`です。
+
+   使用可能なコマンドの一覧については、Carthageがインストールされたデバイスで`carthage help`を実行してください。
+1. <strong>Additional options for carthage command</strong>の入力欄で、Carthage呼び出しにオプションを追加できます。
+
+   例えば、`--platform ios`フラグを指定すると、iOS版のフレームワークのみがインストールされるようになります。
+
+</TabItem>
+<TabItem value="bitriseyml" label="Configuration YAML">
+
+1. プロジェクトに[Cartfile](https://github.com/Carthage/Carthage/blob/master/Documentation/Artifacts.md#cartfile)が含まれていることを確認してください。
+1. Workflowに`carthage`Stepを追加してください。
+
+   これは、キャッシュから復元するStepの後に配置する必要があります。キャッシュStepsがない場合は、`git-clone`Stepの直後にStepを追加してください。
+
+   ```yml
+   my-workflow:
+     steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - restore-carthage-cache: {}
+       - carthage:
+       - save-carthage-cache: {}
+   ```
+1. `carthage_command`の入力欄で、実行したいコマンドを選択してください。
+
+   default valueは`bootstrap`です。
+
+   使用可能なコマンドの一覧については、Carthageがインストールされたデバイスで`carthage help`を実行してください。
+
+   ```yml
+   my-workflow:
+     steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - restore-carthage-cache: {}
+       - carthage:
+           inputs:
+             - carthage_command: bootstrap
+       - save-carthage-cache: {}
+   ```
+1. `carthage_options`の入力欄で、Carthage呼び出しにオプションを追加できます。
+
+   例えば、`--platform ios`フラグを指定すると、iOS版のフレームワークのみがインストールされるようになります。
+
+   ```yml
+   my-workflow:
+     steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - restore-carthage-cache: {}
+       - carthage:
+           inputs:
+             - carthage_command: bootstrap
+             - carthage_options: "--platform ios"
+       - save-carthage-cache: {}
+   ```
+
+</TabItem>
+</Tabs>
+
+## Carthageの依存関係をキャッシュする
+
+キー方式のキャッシュを使用する場合、依存関係をキャッシュするには[<strong>Restore Carthage cache</strong>](https://github.com/bitrise-steplib/bitrise-step-restore-carthage-cache)と[<strong>Save Carthage cache</strong>](https://github.com/bitrise-steplib/bitrise-step-save-carthage-cache)Stepsのみが必要です。これらのStepsはcache keysとキャッシュパスを自動的に設定するため、設定は不要です。
+
+1. Workflowに[<strong>Restore Carthage cache</strong>](https://github.com/bitrise-steplib/bitrise-step-restore-carthage-cache)Stepを追加してください
+
+   ![carthage-command.png](/img/_paligo/uuid-71148b6a-fbf8-6a5f-5423-a5ac2817e866.png)
+
+   これは、[<strong>Carthage</strong>](https://github.com/bitrise-steplib/steps-carthage)Stepや、[<strong>Xcode Archive & Export for iOS</strong>](https://github.com/bitrise-steplib/steps-xcode-archive)のようにアプリのビルドに依存関係を必要とするStepよりも前に配置する必要があります。
+1. Workflowの最後に[<strong>Save Carthage cache</strong>](https://github.com/bitrise-steplib/bitrise-step-save-carthage-cache)Stepを追加してください。
