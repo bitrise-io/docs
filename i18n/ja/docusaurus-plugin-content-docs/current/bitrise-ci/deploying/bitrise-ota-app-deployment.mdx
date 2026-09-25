@@ -1,0 +1,90 @@
+---
+title: "Bitrise OTA app deployment"
+description: "Bitrise has an integrated app deployment system you can use to distribute your apps and other build artifacts. You can distribute your apps over the air for your app’s team members or any stakeholder, even if they don't have a Bitrise account."
+sidebar_position: 3
+slug: /bitrise-ci/deploying/bitrise-ota-app-deployment
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitriseには、アプリやその他のビルドアーティファクトを配布するために使用できる統合デプロイシステムがあります。
+
+Bitriseアカウントを持っていない相手でも、アプリのチームメンバーや関係者に対してアプリをOTA配布できます。また、これを使用してアプリやその他のビルドアーティファクトファイルをアーカイブすることもでき、これらはBitriseの<GlossTerm baseform="project">プロジェクト</GlossTerm>の<strong>Builds</strong>ページで閲覧・ダウンロードできるようになります。
+
+プラットフォームごとに異なるビルド<GlossTerm baseform="step">Steps</GlossTerm>について簡単に確認しましょう。
+
+| Platform | Build Step | Deploy Step to Bitrise |
+| --- | --- | --- |
+| iOS | [<strong>Xcode Archive & Export for iOS</strong>](https://github.com/bitrise-steplib/steps-xcode-archive) | <strong>Deploy to Bitrise.io - Apps, Logs, Artifacts</strong> |
+| Android | [<strong>Gradle Runner</strong>](https://github.com/bitrise-io/steps-gradle-runner) または [<strong>Android Build</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build) | <strong>Deploy to Bitrise.io - Apps, Logs, Artifacts</strong> |
+| React Native | [<strong>Android Build</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build) および/または [<strong>Xcode Archive & Export for iOS</strong>](https://github.com/bitrise-steplib/steps-xcode-archive) | <strong>Deploy to Bitrise.io - Apps, Logs, Artifacts</strong> |
+| Ionic | [<strong>Ionic Archive</strong>](https://github.com/bitrise-steplib/steps-ionic-archive) | <strong>Deploy to Bitrise.io - Apps, Logs, Artifacts</strong> |
+| Cordova | [<strong>Cordova Archive</strong>](https://github.com/bitrise-steplib/steps-cordova-archive) | <strong>Deploy to Bitrise.io - Apps, Logs, Artifacts</strong> |
+| MacOS | [<strong>Xcode Archive for Mac</strong>](https://github.com/bitrise-steplib/steps-xcode-archive-mac) および/または [<strong>Export macOS Xcode Archive</strong>](https://github.com/bitrise-steplib/steps-export-xcarchive-mac) | <strong>Deploy to Bitrise.io - Apps, Logs, Artifacts</strong> |
+
+
+## Deploy to Bitrise.io Stepを使ったデプロイ
+
+<strong>Deploy to Bitrise.io</strong> Stepでは、いくつかの異なる機能を実行できます。
+
+- アプリの公開インストールページを作成・配布し、アプリの新しいビルドについてユーザーに通知できます。
+- アプリのバイナリやその他のビルドアーティファクトを、ビルドページの<strong>Artifacts</strong>タブにアップロードします。
+- テスト結果やログを[テストレポート](/bitrise-ci/testing/deploying-and-viewing-test-results)に送信できます。
+
+このガイドでは、Stepを使用してアプリバイナリ（IPA/APK/AABファイル）をデプロイし、公開インストールページへのリンクを配布する方法について説明します。
+
+![Bitrise_OTA_app_Deployment.png](/img/_paligo/uuid-23eca453-8f3c-1bbf-e189-eae6a638e144.png)
+
+### デプロイディレクトリ
+
+<strong>Deploy directory or file path</strong>入力は、Stepがデプロイするファイルを確認するパスを定義します。入力値がファイルパスの場合はそのファイルをデプロイし、ディレクトリの場合はディレクトリ内のすべてのファイルをデプロイします。
+
+default valueはBITRISE_DEPLOY_DIRの[環境変数](/bitrise-ci/configure-builds/environment-variables)（Env Var）です。ほとんどの場合、これを変更したり気にしたりする必要はありません。公式のBitrise Stepsを使用してアプリをビルドする場合、必要なファイルはすべて自動的にこのディレクトリにエクスポートされます。デプロイ用に正しい場所にファイルが配置されているかどうかを確認する価値がある場合もあります。
+
+- アプリのビルドに<strong>Script</strong> Stepを使用する場合は、Stepを設定してファイルをBITRISE_DEPLOY_DIR Env Varにエクスポートするのがベストプラクティスです。
+- Bitriseが管理していないStepを使用する場合は、Stepが生成するファイルのエクスポート先を確認してください。それがBITRISE_DEPLOY_DIRでない場合は、入力にその場所を指定してください。
+
+:::tip[すべてのファイルを1つのzipに圧縮する]
+
+デプロイディレクトリ内で見つかったすべてのファイルを1つの.zipファイルに圧縮したい場合は、<strong>Compress artifacts into one file?</strong>入力を<strong>true</strong>に設定してください。
+
+:::
+
+### 公開インストールページ
+
+<strong>Enable public page for the App?</strong>入力は、公開されているWebページにアクセスすることでアプリをインストールできるかどうかを決定します。このページへのリンクを持っている人は誰でも、自分のデバイスにアプリをインストールできます。
+
+:::note[テストデバイスの登録]
+
+Androidアプリの場合、Androidアプリにはデバイスごとのインストール制限がないため、アプリをインストールするためにテストデバイスを登録する必要はありません。ただし、Google Play Store以外からAPK/AABをインストールできるようにするには、Androidで<strong>Unknown Sources</strong>オプションを有効にする必要があります。
+
+iOSアプリの場合、[テストデバイスを登録してプロビジョニングする必要があります](/bitrise-ci/deploying/ios-deployment/installing-an-ipa-file-from-the-public-install-page)。そうしないと、公開インストールページからアプリをインストールできません。
+
+:::
+
+このページには、ファイル名、サイズ、バージョンコード、最小SDKバージョン、ビルド番号など、ビルドの重要な詳細情報がすべて含まれています。公開インストールページが有効な場合、<strong>Notify: Emails</strong>および<strong>Notify: User Roles</strong>入力で定義されたユーザーにページへのリンクが送信されます。
+
+デフォルトでは、この入力値は<strong>true</strong>に設定されています。このオプションを無効にすると、アプリのBitriseチームのメンバーのみが自分のデバイスにアプリをインストールできるようになります。インストール可能なバイナリは、ビルドページの<strong>Artifacts</strong>タブで確認できます。
+
+### ユーザーへの通知
+
+<strong>Deploy to Bitrise.io Step</strong>は、指定したユーザーにメール通知を送信できます。通知にはビルドURLと公開インストールページへのリンクを含めることができます。Stepは、次の2つの方法でユーザーに通知できます。
+
+- <strong>Notify: User Groups</strong>入力を使用すると、アプリのBitriseチームのユーザーに通知できます。<strong>Enable Public page for the App?</strong>入力が<strong>true</strong>に設定されている場合、通知には公開インストールページへのリンクが含まれます。<strong>false</strong>に設定されている場合は、指定したユーザーグループがビルドURLを代わりに受け取ります。
+
+  default valueは<strong>everyone</strong>です。つまり、アプリのBitriseチームの全員に通知が送信されます。他のロールを選択することもでき、その場合はそのロールを持つユーザーのみに通知が送信されます。
+- <strong>Notify: Email</strong>入力を使用すると、メールで誰にでも通知できます。これにはBitriseアカウントを持っていない人も含まれます。これにより、公開インストールページを誰にでも送信し、アプリのインストールを案内できます。
+
+  :::important[公開インストールページが必要です]
+
+  <strong>Enable public page for the App?</strong>入力が<strong>false</strong>に設定されている場合、<strong>Notify: Email</strong>入力は無視されます。
+
+  :::
+
+  :::caution[シークレットを使用する]
+
+  この入力には、値として[Secrets](/bitrise-ci/configure-builds/secrets)のみを指定できます。Secretを作成し、そのSecretの値にメールアドレスを指定する必要があります。
+
+  :::
