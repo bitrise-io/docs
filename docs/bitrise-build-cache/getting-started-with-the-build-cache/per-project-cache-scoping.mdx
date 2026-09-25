@@ -1,6 +1,6 @@
 ---
 title: "Per-project cache scoping"
-description: "Turn Build Cache activation into a per-project opt-in by marking the projects that should use the cache and gating the rest."
+description: "Turn Build Cache activation into a per-project opt-in by marking the projects that should use the cache. Other projects will skip the cache entirely."
 sidebar_position: 8
 slug: /bitrise-build-cache/getting-started-with-the-build-cache/per-project-cache-scoping
 sidebar_label: Per-project scoping
@@ -10,7 +10,7 @@ By default, once you activate the Bitrise Build Cache on your machine, every pro
 
 Scoping is a local-dev feature. On Bitrise CI, GitHub Actions runners, and other CI environments the CLI activates once per job for a single checkout, so the default `always` mode is what you want there.
 
-## How it works
+## Overview
 
 Two settings decide whether a build uses the cache:
 
@@ -21,7 +21,7 @@ When the mode is `always`, the marker is ignored and every build uses the cache.
 
 ## Switching your machine to opt-in
 
-Re-run the interactive wizard and pick opt-in at the **Cache for all projects, or only opted-in ones?** step:
+Run the interactive wizard and pick opt-in at the **Cache for all projects, or only opted-in ones?** step:
 
 ```bash
 bitrise-build-cache activate --interactive
@@ -44,11 +44,13 @@ bitrise-build-cache activate gradle --project-mode always
 
 :::note[Reactivation applies the change]
 
-Each build tool bakes the mode into its activation artifact — the Gradle init script, the `xcodebuild` wrapper's config, the `.bazelrc` block, and the `ccache` helper's config. After changing the mode, re-run `bitrise-build-cache activate` for every tool you use so the new setting lands in each artifact. The `ccache` helper restarts automatically when it detects the change.
+Each build tool bakes the mode into its activation artifact: the Gradle init script, the `xcodebuild` wrapper's config, the `.bazelrc` block, and the `ccache` helper's config. After changing the mode, re-run `bitrise-build-cache activate` for every tool you use so the new setting lands in each artifact. The `ccache` helper restarts automatically when it detects the change.
 
 :::
 
 ## Opting a project in
+
+Use the `project enable` command to opt a project in. 
 
 From the project root, run:
 
@@ -73,7 +75,7 @@ If the directory is already covered by a marker in an ancestor, `project enable`
 
 ## Checking a directory's scope
 
-`bitrise-build-cache doctor` reports the effective mode and whether the current directory would be gated:
+`bitrise-build-cache doctor` reports the effective mode and whether builds in the current directory would skip the cache:
 
 ```bash
 bitrise-build-cache doctor
@@ -91,7 +93,7 @@ And like this in `opt-in` mode with a marker somewhere up the tree:
 ✓ project-scope           mode=opt-in; cache_push=true (machine config); marker at /Users/you/projects/one/.bitrise-build-cache.json; would gate this directory: no
 ```
 
-## Per-tool gate behavior
+## Build tool behavior
 
 | Build tool | What happens when the mode is `opt-in` and no marker is found |
 |---|---|
