@@ -1,0 +1,231 @@
+---
+title: "Managing files in Generic File Storage"
+description: "You can upload, delete, update, and list any project files to the Generic File Storage on Bitrise. You can access the files either via the API or in the Workflow Editor."
+sidebar_position: 12
+slug: /bitrise-ci/api/managing-files-in-generic-file-storage
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitriseの`GENERIC FILE STORAGE`セクションでは、プロジェクトファイルのアップロード、削除、更新、一覧表示ができます。
+
+| エンドポイント | 機能 | アプリのチームで必要なロール |
+| --- | --- | --- |
+| [POST/apps/\{app-slug\}/generic-project-files](/bitrise-api/api-reference/bitrise-api) | 汎用プロジェクトファイルを作成する | OwnerまたはAdmin |
+| [POST/apps/\{app-slug\}/generic-project-files/\{generic-project-file-slug\}/uploaded](/bitrise-api/api-reference/bitrise-api) | アップロード処理を確認する | OwnerまたはAdmin |
+| [PATCH/apps/\{app-slug\}/generic-project-files/\{generic-project-file-slug\}](/bitrise-api/api-reference/bitrise-api) | アップロード済みのプロジェクトファイルを更新する | OwnerまたはAdmin |
+| [GET/apps/\{app-slug\}/generic-project-files](/bitrise-api/api-reference/bitrise-api) | アップロード済みのプロジェクトファイルの一覧を取得する | OwnerまたはAdmin |
+| [GET/apps/\{app-slug\}/generic-project-files/\{generic-project-file-slug\}](/bitrise-api/api-reference/bitrise-api) | 特定のプロジェクトファイルのデータを取得する | OwnerまたはAdmin |
+| [DELETE/apps/\{app-slug\}/generic-project-files/\{generic-project-file-slug\}](/bitrise-api/api-reference/bitrise-api) | アップロード済みのプロジェクトファイルを削除する | OwnerまたはAdmin |
+
+
+## Generic File Storageへのファイルの作成とアップロード
+
+:::note[必要なロール]
+
+BitriseのAPIを使用してGeneric File Storage内のファイルを管理するには、アプリのチームでadminまたはownerのロールを持っている必要があります。
+
+ユーザーロールの完全な一覧とロールのチートシートについては、[Bitrise CIのロールと権限](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)をご確認ください。
+
+:::
+
+アプリケーションに新しいファイルを追加し、`GENERIC FILE STORAGE`に保存できます。該当するAPIエンドポイントを呼び出すと、新しい一時的な署名付きアップロードURLが作成され、これを使用してファイルを`GENERIC FILE STORAGE`にアップロードします。(この署名付きURLには有効期限があり、10分後に失効するのでご注意ください。)
+
+以下の手順が必要です。
+
+1. `generic-project-files`エンドポイントのPOSTメソッドを呼び出します。
+
+   この呼び出しにより、後で必要になるファイルスラッグを含む一時的な署名付きアップロードURLが作成されます。必須パラメータは次のとおりです。
+
+   - slug: Bitriseアプリのアプリスラッグです。Bitriseでアプリを開き、メインページのURLからコピーするか、`GET /apps`エンドポイントを呼び出して一覧からアプリを見つけることで取得できます。
+   - upload_file_name: 拡張子を含むファイル名です。例:`MyFile.txt`。ファイルはコマンドを実行するフォルダと同じ場所に置いてください。
+   - upload_file_size: バイト単位のファイルサイズです。macOSでは、`stat -f%z <filename>`コマンドを実行するとファイルサイズを取得できます。
+   - user_env_key: ユーザー環境変数キーには任意の名前を指定できます。
+1. 署名付きアップロードURLを使用して、ファイルをAWSにアップロードします。
+1. 署名付きアップロードURLを含むレスポンスのスラッグを使用して、`generic-project-files/GENERIC-PROJECT-FILES-SLUG/uploaded`エンドポイントのPOSTメソッドでファイルのアップロードを確認します。
+
+   これにより`processed`フラグが`true`に設定され、ファイルがBitriseで利用可能になります。このフラグは、その後変更できません。
+
+<strong>ファイルの作成とアップロード</strong>
+
+一時的な署名付きアップロードURLの作成:
+
+```bash
+curl -X POST "https://api.bitrise.io/v0.1/apps/<APP-SLUG>/generic-project-files" -H "accept: application/json" -H "Authorization: <ACCESS-TOKEN>" -H "Content-Type: application/json" -d "{ \"upload_file_name\": \"Test_File.md\", \"upload_file_size\": 4865, \"user_env_key\": \"Test_File\"}"
+```
+
+レスポンス:
+
+```json
+{
+  "data": {
+    "upload_file_name": "Test_File.md",
+    "upload_file_size": 4865,
+    "slug": "<GENERIC-PROJECT-FILE-SLUG>",
+    "processed": false,
+    "is_expose": true,
+    "is_protected": false,
+    "upload_url": "https://concrete-userfiles-production.s3.us-west-2.amazonaws.com/project_file_storage_documents/uploads/24043/original/Test-File?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAIV2YZWMVCNWNR2HA%2F20190402%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20190402T125827Z&X-Amz-Expires=600&X-Amz-SignedHeaders=content-length%3Bhost&X-Amz-Signature=e1557901d5a07b1b3578d9ffdf84a9b0188b742bfff9c8175a3e87f12c7e2c4e",
+    "user_env_key": "Test_File",
+    "exposed_meta_datastore": null
+  }
+}
+```
+
+ファイルをAWSにアップロードする:
+
+```bash
+curl -T Test_File.md "<UPLOAD_URL>"
+```
+
+ファイルアップロードの確認:
+
+```bash
+curl -X POST -H 'Authorization: <ACCESS-TOKEN>' 'https://api.bitrise.io/v0.1/apps/<APP-SLUG>/generic-project-files/<GENERIC-PROJECT-FILES-SLUG>/uploaded'
+```
+
+レスポンス:
+
+```json
+{
+  "data": {
+    "upload_file_name": "Test_File.md",
+    "upload_file_size": 4865,
+    "slug": "<GENERIC-PROJECT-FILE-SLUG>",
+    "processed": true,
+    "is_expose": true,
+    "is_protected": false,
+    "user_env_key": "Test_File",
+    "exposed_meta_datastore": null
+  }
+}
+```
+
+
+## 特定のファイルのデータを取得する
+
+:::note[必要なロール]
+
+BitriseのAPIを使用してGeneric File Storage内のファイルを管理するには、アプリのチームでadminまたはownerのロールを持っている必要があります。
+
+ユーザーロールの完全な一覧とロールのチートシートについては、[Bitrise CIのロールと権限](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)をご確認ください。
+
+:::
+
+`generic-project-files`エンドポイントのGETメソッドを使用して、Generic File Storageから特定のファイルのデータを取得します。返されるデータには、ファイル名、サイズ、ダウンロードURL、現在のステータスなどが含まれます。
+
+必須パラメータは次のとおりです。
+
+- アプリスラッグ
+- 汎用プロジェクトファイルのスラッグ
+
+<strong>ファイルを取得する</strong>
+
+リクエスト:
+
+```bash
+curl -X GET -H  'Authorization: <ACCESS-TOKEN>' 'https://api.bitrise.io/v0.1/apps/<APP-SLUG>/generic-project-files/<GENERIC-PROJECT-FILE-SLUG>'
+```
+
+レスポンス:
+
+```json
+{
+  "data": {
+    "upload_file_name": "Test_File.md",
+    "upload_file_size": 4865,
+    "slug": "01D7F228E7N8Q8WQJKJM8FV3XM",
+    "processed": true,
+    "is_expose": true,
+    "is_protected": false,
+    "download_url": "https://concrete-userfiles-production.s3.us-west-2.amazonaws.com/project_file_storage_documents/uploads/24043/original/Test-File?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAIV2YZWMVCNWNR2HA%2F20190402%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20190402T132712Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host&X-Amz-Signature=241be52184b63867262360743931c546c166a99719787ce417e3be11bc12bbed",
+    "user_env_key": "Test_File",
+    "exposed_meta_datastore": null
+  }
+}
+```
+
+:::note[`download_url`の利用可否]
+
+`download_url`は、ファイルの`is_protected`属性がfalseの場合にのみ生成される点にご注意ください。
+
+:::
+
+
+## プロジェクトのアップロード済みファイルを一覧表示する
+
+:::note[必要なロール]
+
+BitriseのAPIを使用してGeneric File Storage内のファイルを管理するには、アプリのチームでadminまたはownerのロールを持っている必要があります。
+
+ユーザーロールの完全な一覧とロールのチートシートについては、[Bitrise CIのロールと権限](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)をご確認ください。
+
+:::
+
+`GET`メソッドを使用して、[Generic File Storageにアップロードされた](/bitrise-ci/run-and-analyze-builds/managing-build-files/artifact-retention-policy)プロジェクトファイルの一覧を取得します。ファイルの<strong>最大数は50件</strong>である点にご注意ください。
+
+必須パラメータは次のとおりです。
+
+- アプリスラッグ
+
+オプションパラメータは次のとおりです。
+
+- `next`: レスポンス内の最初のファイルのスラッグ(文字列)
+- `limit`: 1ページあたりの最大要素数(整数)
+
+<strong>アプリを一覧表示する</strong>
+
+リクエスト:
+
+```bash
+curl -X GET -H 'Authorization: <ACCESS-TOKEN>' 'https://api.bitrise.io/v0.1/apps/<APP-SLUG>/generic-project-files'
+```
+
+レスポンス:
+
+```json
+{
+  "data": [
+    {
+      "upload_file_name": "Test_File.md",
+      "upload_file_size": 4865,
+      "slug": "01D7F228E7N8Q8WQJKJM8FV3XM",
+      "processed": true,
+      "is_expose": true,
+      "is_protected": false,
+      "user_env_key": "Test_File",
+      "exposed_meta_datastore": null
+    }
+  ],
+  "paging": {
+    "total_item_count": 2,
+    "page_item_limit": 50
+  }
+}
+```
+
+ご覧のとおり、このレスポンス例には特定のプロジェクトに紐づくファイルの一覧が表示されます。
+
+
+## Generic File Storageからファイルを削除する
+
+`DELETE`メソッドを使用して、Generic File Storageからアップロード済みのファイルを削除できます。
+
+:::note[必要なロール]
+
+BitriseのAPIを使用してGeneric File Storage内のファイルを管理するには、アプリのチームでadminまたはownerのロールを持っている必要があります。
+
+ユーザーロールの完全な一覧とロールのチートシートについては、[Bitrise CIのロールと権限](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)をご確認ください。
+
+:::
+
+必須パラメータは次のとおりです。
+
+- アプリスラッグ
+- 汎用プロジェクトファイルのスラッグ
+
+```bash
+curl -X DELETE -H "Authorization:<ACCESS-TOKEN>" "https://api.bitrise.io/v0.1/apps/<APP-SLUG>/generic-project-files/<GENERIC-PROJECT-FILES-SLUG>"
+```

@@ -1,0 +1,212 @@
+---
+title: "Managing build artifacts"
+description: "You can list, retrieve, update, and delete any build artifacts with the Bitrise API."
+sidebar_position: 13
+slug: /bitrise-ci/api/managing-build-artifacts
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_IMPORTANTArtifactRetentionPolicy from '@site/src/partials/important-artifact-retention-policy.mdx';
+
+`Deploy to bitrise.io` <GlossTerm baseform="Step">Step</GlossTerm>を<GlossTerm baseform="Workflow">Workflow</GlossTerm>に追加すると、ビルド実行後にbitrise.ioのビルドの<strong>Artifacts</strong>タブでビルドアーティファクトにアクセスできます。
+
+生成されたアーティファクトは、Bitrise APIでも管理できます。
+
+<Partial_IMPORTANTArtifactRetentionPolicy />
+
+| エンドポイント | 機能 | アプリのチームで必要なロール |
+| --- | --- | --- |
+| [GET/apps/\{app-slug\}/builds/\{build-slug\}/artifacts](/bitrise-api/api-reference/bitrise-api) | ビルドアーティファクトの一覧表示 | 任意 |
+| [GET/apps/\{app-slug\}/builds/\{build-slug\}/artifacts/\{artifact-slug\}](/bitrise-api/api-reference/bitrise-api) | 特定のビルドアーティファクトのデータを取得 | 任意 |
+| [PATCH/apps/\{app-slug\}/builds/\{build-slug\}/artifacts/\{artifact-slug\}](/bitrise-api/api-reference/bitrise-api) | ビルドアーティファクトの更新 | Owner、Admin、またはDeveloper |
+| [DELETE/apps/\{app-slug\}/builds/\{build-slug\}/artifacts/\{artifact-slug\}](/bitrise-api/api-reference/bitrise-api) | ビルドアーティファクトの削除 | Owner、Admin、またはDeveloper |
+
+
+## ビルドアーティファクトの一覧表示
+
+:::note[必要なロール]
+
+ビルドアーティファクトを一覧表示するには、APIを使用してアプリのチームでtester/QA、developer、admin、またはownerロールを持っている必要があります。
+
+ユーザーロールの完全な一覧とロールチートシートについては、[Bitrise CIのロールと権限](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)を確認してください。
+
+:::
+
+ビルドアーティファクトエンドポイントを使用するには、まずアプリのビルドに属するすべてのアーティファクトを一覧表示する必要があります。レスポンスには、後で必要になるslugとともにすべてのアーティファクトが一覧表示されます。
+
+必須のパラメーターは次のとおりです。
+
+- アプリのslug
+- ビルドのslug
+
+レスポンス出力から生成されたビルドアーティファクトのslugは、ビルドアーティファクトのslugが必須パラメーターとなる他のビルドアーティファクトエンドポイントで使用できます。
+
+<strong>アプリのアーティファクトの一覧表示</strong>
+
+Request:
+
+```bash
+curl -X GET "https://api.bitrise.io/v0.1/apps/87a5991e180d91a9/builds/b234f959745082e0/artifacts" -H "accept: application/json" -H "Authorization: THE-ACCESS-TOKEN"
+```
+
+Response:
+
+```json
+{
+  "data": [
+    {
+      "title": "another_app-debug.apk",
+      "artifact_type": "android-apk",
+      "is_public_page_enabled": true,
+      "slug": "92e0b6ecae87b832",
+      "file_size_bytes": 1574799
+    },
+    {
+      "title": "app-debug.apk",
+      "artifact_type": "android-apk",
+      "is_public_page_enabled": true,
+      "slug": "54ae701761c4f956",
+      "file_size_bytes": 1574793
+    }
+  ],
+  "paging": {
+    "total_item_count": 2,
+    "page_item_limit": 50
+  }
+}
+```
+
+
+## 特定のビルドアーティファクトのデータを取得
+
+:::note[必要なロール]
+
+特定のビルドのアーティファクトデータを取得するには、APIを使用してアプリのチームでtester/QA、developer、admin、またはownerロールを持っている必要があります。
+
+ユーザーロールの完全な一覧とロールチートシートについては、[Bitrise CIのロールと権限](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)を確認してください。
+
+:::
+
+artifactsエンドポイントを使用すると、特定のビルドのアーティファクトの詳細データを取得できます。レスポンスには、ファイル名、アーティファクトの種類、ダウンロードURL、およびファイルサイズが表示されます。
+
+必須のパラメーターは次のとおりです。
+
+- アプリのslug
+- ビルドのslug
+- アーティファクトのslug
+
+<strong>特定のアーティファクトのデータを取得</strong>
+
+Request:
+
+```bash
+curl -X GET "https://api.bitrise.io/v0.1/apps/87a5991e180d91a9/builds/b234f959745082e0/artifacts/92e0b6ecae87b832" -H "accept: application/json" -H "Authorization: THE-ACCESS-TOKEN"
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "title": "another_app-debug.apk",
+    "artifact_type": "android-apk",
+    "expiring_download_url": "https://bitrise-prod-build-storage.s3.amazonaws.com/builds/b234f959745082e0/artifacts/7626902/another_app-debug.apk?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAIV2YZWMVCNWNR2HA%2F20190426%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20190426T131627Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host&X-Amz-Signature=9f1af26787f34b5cf0cbc18b2372313607b1e3c0203a9ce7e42da884a6ddf70f",
+    "is_public_page_enabled": true,
+    "slug": "92e0b6ecae87b832",
+    "public_install_page_url": "https://www.bitrise.io/artifact/7626902/p/8e5b2c62abe28fecef09b271de767920",
+    "file_size_bytes": 1574799
+  }
+}
+```
+
+デフォルトでは、`is_public_page_enabled`入力の値は`true`に設定されています。これにより`public_install_page_url`が利用可能になり、このURLでアーティファクトに関する基本的な情報を確認できます。また、レスポンス出力のダウンロードURLを使用してアーティファクトをダウンロードすることもできます。
+
+
+## アーティファクトの公開インストールページを無効にする
+
+:::note[必要なロール]
+
+アーティファクトの公開インストールページを無効にするには、APIを使用してアプリのチームでdeveloper、admin、またはownerロールを持っている必要があります。
+
+ユーザーロールの完全な一覧とロールチートシートについては、[Bitrise CIのロールと権限](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)を確認してください。
+
+:::
+
+APKおよびIPAファイルの`is_public_page_enabled`パラメーターを更新できます。このパラメーターの値はデフォルトで`true`に設定されているため、このエンドポイントでは無効にすることのみ可能な点にご注意ください。
+
+必須のパラメーターは次のとおりです。
+
+- アプリのslug
+- ビルドのslug
+- アーティファクトのslug
+
+<strong>APKファイルの公開インストールページを無効にする</strong>
+
+Request:
+
+```bash
+curl -X PATCH "https://api.bitrise.io/v0.1/apps/87a5991e180d91a9/builds/b234f959745082e0/artifacts/54ae701761c4f956" -H "accept: application/json" -H "Authorization: THE-ACCESS-TOKEN" -H "Content-Type: application/json" -d "{ \"is_public_page_enabled\": false}"
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "title": "app-debug.apk",
+    "artifact_type": "android-apk",
+    "expiring_download_url": "https://bitrise-prod-build-storage.s3.amazonaws.com/builds/b234f959745082e0/artifacts/7626904/app-debug.apk?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAIV2YZWMVCNWNR2HA%2F20190503%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20190503T082800Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host&X-Amz-Signature=7251fcbc0574ffac60b3f1d4a8c398658e49f0b86fb3cfec1500bde125738abc",
+    "is_public_page_enabled": false,
+    "slug": "54ae701761c4f956",
+    "public_install_page_url": "",
+    "file_size_bytes": 1574793
+  }
+}
+```
+
+ビルドの`Artifacts`タブを確認すると、`Public install page`トグルが無効になっていることがわかります。
+
+
+## ビルドアーティファクトの削除
+
+:::note[必要なロール]
+
+ビルドアーティファクトを削除するには、APIを使用してアプリのチームでdeveloper、admin、またはownerロールを持っている必要があります。
+
+ユーザーロールの完全な一覧とロールチートシートについては、[Bitrise CIのロールと権限](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)を確認してください。
+
+:::
+
+アプリの特定のビルドアーティファクトを削除できます。
+
+必須のパラメーターは次のとおりです。
+
+- アプリのslug
+- ビルドのslug
+- アーティファクトのslug
+
+<strong>APKファイルの削除</strong>
+
+Request:
+
+```bash
+curl -X DELETE "https://api.bitrise.io/v0.1/apps/87a5991e180d91a9/builds/b234f959745082e0/artifacts/54ae701761c4f956" -H "accept: application/json" -H "Authorization: THE-ACCESS-TOKEN"
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "title": "app-debug.apk",
+    "artifact_type": "android-apk",
+    "expiring_download_url": null,
+    "is_public_page_enabled": true,
+    "slug": "54ae701761c4f956",
+    "public_install_page_url": "",
+    "file_size_bytes": 1574793
+  }
+}
+```

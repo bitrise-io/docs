@@ -1,0 +1,142 @@
+---
+title: "Incoming and outgoing webhooks"
+description: "Both incoming and outgoing webhooks can be set up with the Bitrise API. They are important for automatic build triggering and the reporting of build events to other services."
+sidebar_position: 9
+slug: /bitrise-ci/api/incoming-and-outgoing-webhooks
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+受信Webhookと送信Webhookはどちらも、Bitrise APIを使って設定できます。これらは、自動的な<GlossTerm baseform="trigger">トリガー</GlossTerm>によるビルドの実行や、ビルドイベントを他のサービスに報告する上で重要です。
+
+| Endpoints | Function | Required role on the app's team |
+| --- | --- | --- |
+| POST /apps/\{app-slug\}/register-webhook | 特定のアプリケーション用に受信Webhookを登録します。 | オーナーまたは管理者 |
+| GET /apps/\{app-slug\}/outgoing-webhooks | アプリの送信Webhookの一覧を取得します。 | オーナーまたは管理者 |
+| POST /apps/\{app-slug\}/outgoing-webhooks | アプリの送信Webhookを作成します。 | オーナーまたは管理者 |
+| PUT /apps/\{app-slug\}/outgoing-webhooks/\{app-webhook-slug\} | アプリの送信Webhookを更新します。 | オーナーまたは管理者 |
+| DELETE /apps/\{app-slug\}/outgoing-webhooks/\{app-webhook-slug\} | アプリの送信Webhookを削除します。 | オーナーまたは管理者 |
+
+
+## APIを使った受信Webhookの登録
+
+受信Webhookを使うと、ユーザーはBitrise上でアプリの自動トリガーを設定できます。たとえば、GitHubに登録されたBitriseWebhookは、コードがGitHubリポジトリにプッシュされたときに、ビルドを自動的にトリガーできます。
+
+:::note[必要なロール]
+
+受信または送信のWebhookをAPIを使って管理するには、アプリのチームで管理者またはオーナーのロールが必要です。
+
+ユーザーロールの完全な一覧とロールのチートシートについては、[Bitrise CIのロールと権限](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)をご確認ください。
+
+:::
+
+Webhookを設定するには、[BitriseアカウントをGitプロバイダーのアカウントに接続する](/bitrise-platform/repository-access/repository-access-with-oauth)必要があります。これにより、Bitriseが自動的にWebhookを登録できるようになります。
+
+既存のアプリスラッグを指定して`register-webhook`エンドポイントを呼び出すことで、Webhookを登録します。
+
+```bash
+curl -X POST -H 'Authorization: ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/APP-SLUG/register-webhook'
+```
+
+これにより、アプリのGitプロバイダーにWebhookが登録されます。その後、ウェブサイト上で、またはアプリの`bitrise.yml`ファイル内のトリガーマップを使って、[自動トリガー](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers)を設定できます。
+
+
+## APIを使った送信Webhookの作成
+
+送信Webhookを使うと、他のサービスとの連携が可能になります。具体的には、他のサービスへの通知に使用します。現在サポートされているのはビルドイベントの通知のみです。サポートされているビルドイベントは、ビルドのトリガーとビルドの完了の2つです。
+
+:::note[ビルドステータスのレポート]
+
+ビルドステータスをGitプロバイダーに通知する場合、送信Webhookは不要です。
+
+:::
+
+アプリケーション用に送信Webhookを設定するには、アプリ自体と、作成パラメーターのうち少なくとも2つを指定する必要があります。
+
+- webhook URL: これは、連携先のサービスから取得できますBitrise。
+- Webhookをトリガーするイベント。現在、指定可能な値は`all`、`build`、`pipeline`の3つです。
+
+:::note[必要なロール]
+
+受信または送信のWebhookをAPIを使って管理するには、アプリのチームで管理者またはオーナーのロールが必要です。
+
+ユーザーロールの完全な一覧とロールのチートシートについては、[Bitrise CIのロールと権限](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)をご確認ください。
+
+:::
+
+リクエスト内でキーと値のペアを指定することで、カスタムヘッダーを設定することもできます。
+
+<strong>URL「example.webhook.com」を使った新しい送信Webhook</strong>
+
+リクエスト:
+
+```bash
+curl -X POST "https://api.bitrise.io/v0.1/apps/APP-SLUG/outgoing-webhooks" -H "accept: application/json" -H "Authorization: ACCESS-TOKEN" -H "Content-Type: application/json" -d "{ \"events\": [ \"build\" ], \"url\": \"example.webhook.com\", \"headers\": { \"KEY\": \"value\" }}"
+```
+
+レスポンス:
+
+```json
+{
+  "slug": "01D72ARNH4KR7KMW3DG3NBKXRK",
+  "url": "example.webhook.com",
+  "events": [
+    "build"
+  ],
+  "headers": {
+    "KEY": "value"
+  },
+  "registered_by_addon":false,
+  "created_at": "2019-03-28T14:20:22.436825Z",
+  "updated_at": "2019-03-28T14:20:22.436825Z"
+}
+```
+
+
+## APIを使った送信Webhookの変更と削除
+
+既存のWebhookを変更するには、リクエスト内にすべての必須パラメーターを指定する必要があります。つまり、URLのみを変更したい場合でも、リクエストには`events`パラメーターの有効な値を含める必要があります。
+
+:::note[必要なロール]
+
+受信または送信のWebhookをAPIを使って管理するには、アプリのチームで管理者またはオーナーのロールが必要です。
+
+ユーザーロールの完全な一覧とロールのチートシートについては、[Bitrise CIのロールと権限](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)をご確認ください。
+
+:::
+
+<strong>送信Webhookの変更</strong>
+
+リクエスト:
+
+```bash
+curl -X PUT "https://api.bitrise.io/v0.1/apps/APP-SLUG/outgoing-webhooks/WEBHOOK-SLUG" -H "accept: application/json" -H "Authorization: ACCESS-TOKEN" -H "Content-Type: application/json" -d" { \"events\": [ \"all\" ], \"headers\": { \"Modified\": \"1212\" }, \"url\": \"example2.webhook.com\"}"
+```
+
+レスポンス:
+
+```json
+{
+  "data": {
+    "slug": "WEBHOOK-SLUG",
+    "url": "example2.webhook.com",
+    "events": [
+      "all"
+    ],
+    "headers": {
+      "Modified": "1212"
+    },
+    "registered_by_addon": false,
+    "created_at": "2019-03-28T14:20:22.436825Z",
+    "updated_at": "2019-03-28T14:20:22.436825Z"
+  }
+}
+```
+
+送信Webhookを削除するには、リクエストにアプリスラッグとWebhookスラッグを指定するだけです。
+
+```bash
+curl -X DELETE "https://api.bitrise.io/v0.1/apps/APP-SLUG/outgoing-webhooks/WEBHOOK-SLUG" -H "accept: application/json" -H "Authorization: ACCESS-TOKEN"
+```

@@ -1,0 +1,51 @@
+---
+title: "Pagination of API calls"
+description: "With the Bitrise API, you can use pagination to iterate through list of items in the responses of certain endpoints. You can configure the properties of pagination."
+sidebar_position: 3
+slug: /bitrise-ci/api/pagination-of-api-calls
+---
+
+項目のリストを返すエンドポイントを呼び出す場合、1回のレスポンスですべてのリストを取得できないことがあります。すべての項目を取得するには、ページを順に処理する必要があります。
+
+このようなエンドポイントのレスポンスには、`total_item_count`と`page_item_limit`プロパティを持つ`paging`オブジェクトが含まれます。「次」のページが利用可能な場合、`next`「アンカー」項目も含まれます。たとえば、レスポンスには次のページの最初のアプリのアプリスラッグが表示されます。
+
+```json
+{
+  "data": [ ... ],
+  "paging": {
+    "total_item_count": 3,
+    "page_item_limit": 2,
+    "next": "518e869d56f2adfd"
+  }
+}
+```
+
+:::note[`paging`オブジェクトの`next`プロパティ]
+
+`paging`オブジェクトの`next`プロパティは、次のページが1つ以上ある場合にのみ含まれます。`paging`内に`next`プロパティがない場合、それ以上取得できるページがないことを意味します。
+
+:::
+
+`limit`パラメーターを使用して、レスポンスのページ数を制限します。
+
+```
+https://api.bitrise.io/v0.1/apps?limit=10
+```
+
+この呼び出しでは、`page_item_limit`プロパティを10に設定します。パラメーターのデフォルト値（および最大値）は50です。
+
+レスポンス項目を順に処理する:
+
+1. パラメーターを指定せずにエンドポイントを呼び出します。
+1. レスポンスから`paging`オブジェクトを処理します。
+1. `paging`オブジェクトに`next`項目が含まれている場合は、`next=`クエリパラメーターを追加して同じエンドポイントを呼び出し、レスポンスで取得した値を`next`パラメーターの値として渡します。
+
+<strong>登録済みのすべてのアプリを順に処理する</strong>
+
+1. `https://api.bitrise.io/v0.1/apps`を呼び出します。
+1. 項目（`data`プロパティ）を処理します。
+1. `paging`（ルート）プロパティを確認します。
+1. `paging`内に`next`プロパティがある場合は、`next`クエリパラメーターを指定してエンドポイントを再度呼び出します
+
+   - 例: `https://api.bitrise.io/v0.1/apps?next=NEXTVALUE`。ここで`NEXTVALUE`は、直前のレスポンスで取得した`next`プロパティの値です。
+1. `paging`オブジェクトに`next`プロパティが含まれなくなるまでこれを繰り返します。含まれなくなった時点で、受け取ったページが最後のページであることを意味します。

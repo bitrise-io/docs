@@ -1,0 +1,446 @@
+---
+title: "Adding and managing apps"
+description: "You can add new apps on Bitrise with the API: add the app, generate SSH keys, and set up the app’s initial configuration."
+sidebar_position: 4
+slug: /bitrise-ci/api/adding-and-managing-apps
+sidebar_label: Adding and managing projects
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitriseでは、APIを使って新しいプロジェクトを追加できます。プロジェクトの追加、SSHキーの生成、プロジェクトの初期設定のセットアップを行います。
+
+また、たとえば1人のユーザーや特定の<GlossTerm baseform="Workspace">Workspace</GlossTerm>に属するすべてのプロジェクトを一覧表示することもできます。
+
+
+## APIで新しいアプリを追加する
+
+| エンドポイント | 機能 | アプリのチームで必要なロール |
+| --- | --- | --- |
+| POST /apps/register | 新しいアプリを追加します。 | 該当なし |
+| POST /apps/\{app-slug\}/register-ssh-key | 特定のアプリにSSHキーを追加します。 | OwnerまたはAdmin |
+| POST /apps/\{app-slug\}/finish | アプリ追加プロセスの最後にアプリケーションを保存します。 | 該当なし |
+| POST /apps/\{app-slug\}/<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm> | アプリケーション用の新しいbitrise.ymlをアップロードします。 | OwnerまたはAdmin |
+
+:::note[HTTPS GitのURLを使用するアプリ]
+
+この手順と例は、SSHのGitURLを使ってプライベートなアプリを追加することを想定しています。HTTPSのGitURLを使ってアプリを追加する場合は、SSHキーの追加を省略できます。
+
+:::
+
+1. `register`エンドポイントを呼び出し、必要なパラメータをすべて設定して、アプリを登録します。
+
+   Gitプロバイダー、リポジトリのURL、プロバイダー上に表示されるリポジトリのslugを設定する必要があります。また、アプリを所有するWorkspaceのslugも追加する必要があります。これは、レガシーな命名規則により`organization_slug`パラメータが必要になるためです。
+
+   ```yaml
+   curl -X POST -H 'Authorization: ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/register' -d \
+   '{
+         "provider": "github",
+         "is_public": false,
+         "organization_slug": "$ORG_SLUG"
+         "repo_url": "git@github.com:api_demo/example-repository.git",
+         "type": "git",
+         "git_repo_slug": "example-repository",
+         "git_owner": "api_demo"
+    }'
+   ```
+
+   :::tip[アプリの名前を変更する]
+
+   デフォルトでは、アプリを登録すると、Gitリポジトリの名前が引き継がれます。
+
+   別の名前でアプリを追加したい場合は、次の構文を使ってPOSTリクエストに「title」パラメータを追加できます。
+
+   ```yaml
+   curl -X POST -H 'Authorization: ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/register' -d \
+   '{
+       ...
+       ...
+       "title": "string"
+    }'
+   ```
+
+   アプリを作成した後で名前を変更する場合は、PATCHリクエストを送信して`apps`エンドポイントを呼び出すこともできます。詳しくは、[既存のアプリを管理する](/bitrise-ci/api/adding-and-managing-apps#managing-an-existing-app)を参照してください。
+
+   :::
+1. 完了したら、`register-ssh-key`エンドポイントを呼び出して、作成したSSHキーを設定します。これにより、ビルドの実行時にBitriseがリポジトリをクローンできるようになります。
+
+   秘密鍵と公開鍵の両方のSSHキーを指定する必要があります。なお、秘密鍵を手動でコピーする場合は、すべての改行を`\n`でエスケープする必要があります。
+
+   Gitプロバイダーに公開鍵を自動的に登録するかどうかも設定できます。`is_register_key_into_provider_service`パラメータをtrueまたはfalseに設定してください。
+
+   ```yaml
+   curl -X POST -H 'Authorization: ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/APP-SLUG/register-ssh-key' -d \
+   '{
+       "auth_ssh_private_key": "your-private-ssh-key",
+       "auth_ssh_public_key": "your-public-ssh-key",
+       "is_register_key_into_provider_service": false
+    }'
+   ```
+1. `finish`エンドポイントを呼び出して、アプリの登録プロセスを完了します。
+
+   このエンドポイントでは、アプリの設定を行えます。プロジェクトタイプ、ビルドの実行対象となる<GlossTerm baseform="stack">stack</GlossTerm>（アプリによって異なる場合があります）、初期設定を設定します。
+
+   Environment Variablesを設定したり、アプリケーションの所有者となるWorkspaceをすぐに指定したりすることもできます。なお、`mode`パラメータは`manual`の値に設定する必要があります。
+
+   ```yaml
+   curl -X POST -H 'Authorization: ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/APP-SLUG/finish' -d \
+   '{
+        "project_type": "ios",
+        "stack_id": "osx-xcode-13.2.x",
+        "config": "default-ios-config",
+        "mode": "manual",
+        "envs": {
+              "env1": "val1",
+              "env2": "val2"
+        },
+        "organization_slug": "e1ec3dea540bcf21"
+    }'
+   ```
+
+
+## 既存のアプリを管理する
+
+| エンドポイント | 機能 | アプリのチームで必要なロール |
+| --- | --- | --- |
+| GET /apps | アプリの一覧を取得します。 | 任意 |
+| GET /apps/\{app-slug\} | 特定のアプリを取得します。 | 任意 |
+| GET /apps/\{app-slug\}/bitrise.yml | 特定のアプリのbitrise.ymlを取得します。 | OwnerまたはAdmin |
+| GET /apps/\{app-slug\}/branches | アプリのリポジトリのブランチを一覧表示します。 | 任意 |
+| GET /organizations/\{org-slug\}/apps | Workspaceのアプリの一覧を取得します。 | 任意 |
+| GET /users/\{user-slug\}/apps | ユーザーのアプリの一覧を取得します。 | 任意 |
+| PATCH /apps/\{app-slug\} | 既存のアプリのパラメータを更新します | OwnerまたはAdmin |
+
+1つまたは複数のアプリに関するGETリクエストへのレスポンスには、アプリのslug、プロジェクトタイプ、Gitプロバイダー、リポジトリのオーナー、URLが含まれます。
+
+```json
+{
+  "data": [
+    {
+      "slug": "eeeeefffff00000",
+      "title": "sample-app",
+      "project_type": "android",
+      "provider": "github",
+      "repo_owner": "example-user",
+      "repo_url": "git@github.com:example-user/sample-app.git",
+      "repo_slug": "android-gradle-kotlin-dsl",
+      "is_disabled": false,
+      "status": -1,
+      "is_public": false,
+      "owner": {
+        "account_type": "organization",
+        "name": "Test Org",
+        "slug": "fffffeeeee00000"
+      },
+      "avatar_url": null
+    },
+    {
+```
+
+また、任意のアプリの既存のbitrise.ymlファイルをダウンロードすることもできます。レスポンスにはYAML設定全体が含まれます。
+
+既存のアプリのタイトルやデフォルトのGitブランチを変更したいですか？`apps`エンドポイントのPATCHメソッドを呼び出すことで、既存のアプリのパラメータを更新できます。
+
+:::important[必要なロール]
+
+BitriseAPIを使って既存のアプリのパラメータを更新するには、アプリのチームでadminまたはownerロールを持っている必要があります。
+
+ユーザーロールとロールのチートシートの全一覧については、[アプリチームのユーザーロール](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)を確認してください。
+
+:::
+
+必須パラメータは次のとおりです。
+
+- slug
+
+オプションパラメータは次のとおりです。
+
+- apple_api_credential_slug: 新しいAppleAPIキーのslug（推奨: 設定にはUIを使用してください）
+- apple_credential_user_id: 新しいapple credentialのユーザーID（推奨: 設定にはUIを使用してください）
+- apple_credential_user_slug: 新しいapple credentialのuser slug（推奨: 設定にはUIを使用してください）
+- default_branch: アプリケーションの新しいdefault branch。
+- is_public: アプリケーションを公開表示するかどうかの新しい値。
+- repository_url: アプリケーションの新しいリポジトリURL。
+- services_credential_user_id: 新しいservice credential userID（推奨: 設定にはUIを使用してください）。
+- title: アプリケーションの新しいタイトル。
+
+<strong>既存のアプリの名前とdefault branchを変更する</strong>
+
+リクエスト:
+
+```bash
+curl -X 'PATCH' 'https://api.bitrise.io/v0.1/apps/THE-APP-SLUG' -H 'accept: application/json' -H 'Authorization: ACCESS-TOKEN' -H 'Content-Type: application/json' -d '{"default_branch": "main", "title": "Example_app_title_3"}'
+```
+
+
+## Workspaceグループのアプリアクセスロールを管理する
+
+[Workspaceグループ](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/workspace-groups#creating-groups-for-workspaces)に、Bitrise上のアプリケーションチームへのアクセス権を付与できます。つまり、グループのすべてのメンバーが[グループに割り当てられたロール](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)でアプリを操作できるようになります。
+
+`GET /apps/{app-slug}/roles/{role-name}`エンドポイントを使用すると、アプリのチームで特定のロールを付与されているすべてのグループを一覧表示できます。role-nameパラメータには次の値を指定できます。
+
+- `owner`
+- `admin`
+- `manager`
+- `member`
+- `release_manager`
+- `platform_engineer`
+
+この例では、特定のアプリにAdminロールを付与されているWorkspaceグループの一覧を照会しています。
+
+```bash
+curl -X 'GET' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/roles/admin' \
+  -H 'accept: application/json' \
+  -H 'Authorization: ACCESS-TOKEN'
+```
+
+`PUT /apps/{app-slug}/roles/{role-name}`エンドポイントを使用すると、既存のWorkspaceグループにアクセス権を付与できます。このエンドポイントには、指定したロールでアクセス権を付与するすべてのグループのslugを含む`groups`オブジェクトが必要です。
+
+:::important[すべてのグループを指定する]
+
+このエンドポイントは、アプリのチームで指定したロールを持っていたそれまでのすべてのグループを置き換えます。たとえば、アプリのチームでグループAlphaとBetaにAdminロールを付与するようエンドポイントを呼び出した場合、その後はAlphaとBetaのみがアプリへのAdminアクセス権を持つことになります。それ以前にチームでAdminロールを持っていた別のグループ（ここではDeltaとします）があった場合、そのロールは削除されます。
+
+:::
+
+:::tip[グループのslugを取得する]
+
+Workspaceのグループのslugを取得するには、`[GET /organizations/{org-slug}/groups](https://api-docs.bitrise.io/#/organizations/organzation-groups-list)`エンドポイントを使用してください。
+
+:::
+
+次の例では、複数のグループにAdminアクセス権を付与します。
+
+```bash
+curl -X 'PUT' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/roles/admin' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "groups": [
+    "GROUP-SLUG-1", "GROUP-SLUG-2"
+  ]
+}'
+```
+
+
+## APIを使ってアプリを削除する
+
+:::warning[削除は取り消せません]
+
+アプリの削除は取り消せないことに注意してください。一度削除すると、アプリを復元する方法はありません。
+
+:::
+
+BitriseAPIを使ってアプリを削除できます。必須パラメータは、削除するアプリのアプリslugのみです。
+
+```bash
+curl -X DELETE -H 'Authorization: ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/THE-APP-SLUG'
+```
+
+
+## 新しいbitrise.ymlファイルをアップロードする
+
+:::note[必要なロール]
+
+新しい`bitrise.yml`ファイルをアップロードするには、アプリのチームでadminまたはownerロールを持っている必要があります。
+
+ユーザーロールとロールのチートシートの全一覧については、[Bitrise CIのロールと権限](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)を確認してください。
+
+:::
+
+bitrise.ymlファイルには、ビルドの設定が含まれています。YAML設定全体をPOSTすることで、APIを通じて現在のファイルを変更できます。以下の例では、次のことを行います。
+
+- フォーマットバージョン11の`bitrise.yml`を作成します。
+- デフォルトのStepソースとしてBitrise<GlossTerm baseform="step">Step</GlossTerm>ライブラリを設定します。
+- stackをXcode 14に設定します。
+- BITRISE_PROJECT_PATH環境変数が`build.gradle`ファイルを指すように設定します。
+- <strong>Script</strong>Stepを追加します。
+- アプリのリポジトリの任意のブランチにコードがプッシュされた場合にプライマリ<GlossTerm baseform="workflow">Workflow</GlossTerm>をトリガーする<GlossTerm baseform="trigger">トリガー</GlossTerm>マップを作成します。
+
+```bash
+curl --fail -X POST -H "Authorization: $ACCESS_TOKEN" "https://api.bitrise.io/v0.1/apps/$APP_SLUG/bitrise.yml" -d \
+'{
+  "app_config_datastore_yaml": {
+    "format_version": 11,
+    "default_step_lib_source": "https://github.com/bitrise-io/bitrise-steplib.git",
+    "meta": {
+      "bitrise.io": {
+        "stack": "osx-xcode-14.0.x"
+      }
+    },
+    "app": {
+      "envs": [
+        {
+          "BITRISE_PROJECT_PATH": "build.gradle",
+          "opts": {
+            "is_expand": false
+          }
+        }
+      ]
+    },
+    "workflows": {
+      "primary": {
+        "steps": [
+          {
+          "script@1": {}
+          }
+        ]
+      }
+    },
+    "trigger_map": [
+      {
+        "push_branch": "*",
+        "workflow": "primary"
+      }
+    ]
+  }
+}'
+```
+
+このエンドポイントを呼び出すと、アプリの現在の`bitrise.yml`ファイルが置き換えられます。もちろん、アップロードした`bitrise.yml`はAPI経由でも、Webサイト上でも変更できます。
+
+
+## アプリのbitrise.ymlファイルの場所を変更する
+
+アプリの`bitrise.yml`設定ファイルは、次の2つの場所に保存できます。
+
+- bitrise.io上。これはすべてのアプリのデフォルト設定です。
+- [アプリのリポジトリ内。](/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml#storing-the-bitriseyml-file-in-your-repository) この方法では、設定ファイルのバージョン管理とメンテナンスを完全に自分で管理できます。bitrise.io上のグラフィカルな<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>を使って設定を変更することもできますが、変更をリポジトリにコミットする必要があります。
+
+APIを使って、ファイルの場所を取得したり変更したりできます。
+
+:::important[管理者アクセスが必要]
+
+`bitrise.yml`ファイルの場所に関する両方のエンドポイントは、アプリへの管理者レベルのアクセス権が必要です。
+
+:::
+
+`GET/apps/{app-slug}/bitrise.yml/config`エンドポイントを使うと、ファイルの場所を取得できます。ここでの場所とは、このエンドポイントを呼び出すことで、ファイルがbitrise.io上とリポジトリ内のどちらに保存されているかがわかるという意味です。このエンドポイントはパラメータを取らず、レスポンスとして次の2つの値のいずれかを返します。
+
+- `"location": "bitrise.io"`
+- `"location": "repository"`
+
+```bash
+curl -X 'GET' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/bitrise.yml/config' \
+  -H 'accept: application/json' \
+  -H 'Authorization: ACCESS-TOKEN'
+```
+
+`PUT/apps/{app-slug}/bitrise.yml/config`エンドポイントを使うと、ファイルの場所を変更できます。つまり、設定ファイルをbitrise.io上とリポジトリ内のどちらで探すかをBitriseに伝えられます。このエンドポイントは、JSONオブジェクトで次の2つの値のいずれかを受け取ります。
+
+- 設定ファイルをbitrise.io上に保存する場合は`"location": "bitrise.io"`。
+- 設定ファイルをリポジトリ内に保存する場合は`"location": "repository"`。
+
+:::important[設定ファイルをリポジトリにコミットする]
+
+場所を`repository`に変更しても、単にBitriseに対してアプリのリポジトリ内で`bitrise.yml`ファイルを探すよう指示するだけである点に注意してください。ファイルがリポジトリ内に存在しない場合、このエンドポイントはエラーを返しませんが、Bitriseが設定ファイルを見つけられないため、ビルドを実行できなくなります。
+
+:::
+
+```bash
+curl -X 'PUT' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/bitrise.yml/config' \
+  -H 'accept: application/json' \
+  -H 'Authorization: ACCESS-TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "location": "bitrise.io"
+}'
+```
+
+
+## すべてのアプリのマシンタイプを一括で変更する
+
+| エンドポイント | 機能 | 必要なロール |
+| --- | --- | --- |
+| PATCH /users/\{user-slug\}/apps/machine_types | 同じユーザーが所有するすべてのアプリで、指定したマシンタイプを別のタイプに移行します。 | 該当なし |
+| PATCH /organizations/\{org-slug\}/apps/machine_types | 同じWorkspaceが所有するすべてのアプリで、指定したマシンタイプを別のタイプに移行します。 | Workspaceのowner |
+
+BitriseAPIには、ユーザーまたは[Workspace](/bitrise-platform/workspaces/workspaces-overview)のいずれかが所有するすべてのアプリについて、ある[マシンタイプ](/bitrise-platform/infrastructure/build-machines/about-build-machines)から別のマシンタイプに切り替えられる2つのエンドポイントが用意されています。これらのエンドポイントは各アプリの`bitrise.yml`ファイルを解析し、指定したマシンタイプの出現箇所をすべて探して、別のタイプに置き換えます。たとえば、このエンドポイントを使うと、すべてのアプリでM1 MediumからM1 Largeに切り替えられます。
+
+両方のエンドポイントは、2つのパラメータを取ります。
+
+- from_machine: 切り替え元のマシンタイプ。
+
+- to_machine: 切り替え先のマシンタイプ。
+
+利用可能なマシンタイプの一覧はこちらで確認できます: [Build machineタイプ](/bitrise-build-hub/infrastructure/build-machine-types)。
+
+エンドポイントがfrom_machineパラメータで指定されたマシンタイプを見つけられない場合でも、空の`migrated_apps`オブジェクトを含む200レスポンスが返されます。
+
+:::note[デフォルトおよびWorkflow固有のstack]
+
+これらのエンドポイントでは、デフォルトのstackとWorkflow固有のstackの両方でマシンタイプを変更できます。
+
+:::
+
+<strong>ユーザーが所有するすべてのアプリをM1 MediumマシンからM1 Largeマシンに移行する:</strong>
+
+```bash
+curl -X 'PATCH' \
+  'https://api.bitrise.io/v0.1/users/USER-SLUG/apps/machine_types' \
+  -H 'accept: application/json' \
+  -H 'Authorization: PERSONAL-ACCESS-TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "from_machine": "g2-m1.4core",
+  "to_machine": "g2-m1.8core"
+}'
+```
+
+<strong>Workspaceが所有するすべてのアプリをM4 Pro LargeマシンからM4 Pro X Largeマシンに移行する:</strong>
+
+```bash
+curl -X 'PATCH' \
+  'https://api.bitrise.io/v0.1/organizations/WORKSPACE-SLUG/apps/machine_types' \
+  -H 'accept: application/json' \
+  -H 'Authorization: PERSONAL-ACCESS-TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "from_machine": "g2.mac.4large",
+  "to_machine": "g2.mac.4x-large"
+}'
+```
+
+<strong>Successfulレスポンス</strong>
+
+```json
+{
+  "message": "The migration was successful.",
+  "migrated_apps": [
+    "android-sample (8f41200-e5a5eee17)",
+    "sample-swift-project (c291b04-784ca8773)",
+  ]
+}
+```
+
+
+## アプリの通知を管理する
+
+`PATCH/apps/{app-slug}/update-email-notifications`エンドポイントを使用すると、API呼び出しによっていつでもアプリの[メール通知設定](/bitrise-ci/configure-builds/configuring-build-settings/configuring-email-notifications#changing-your-email-notification-settings)を変更できます。このエンドポイントは2つのパラメータを取ります。
+
+- on_failure: 失敗したビルドのメール通知設定。
+- on_success: 成功したビルドのメール通知設定。
+
+両方のパラメータは、次の3つの値のいずれかを取ります。
+
+- `always`: 常に通知を送信します。
+- `never`: 通知を送信しません。失敗したビルドと成功したビルドの両方でdefault valueです。
+- `change`: 同じブランチの前回のビルドと比較して[ビルドステータス](/bitrise-ci/run-and-analyze-builds/build-statuses)が変化した場合にのみ通知を送信します。
+
+たとえば、前回のビルドが成功していた場合にのみ失敗したビルドの通知を受け取りたい場合は、on_failureパラメータの値を`change`に設定する必要があります（例のAPP-SLUGはアプリのslugに、ACCESS-TOKENは[個人用アクセストークン](/bitrise-platform/accounts/personal-access-tokens)に置き換えてください）。
+
+```bash
+curl -X 'PATCH' \
+  'https://api.bitrise.io/v0.1/apps/APP-SLUG/update-email-notifications' \
+  -H 'accept: application/json' \
+  -H 'Authorization: ACCESS-TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "on_failure": "change",
+}'
+```
