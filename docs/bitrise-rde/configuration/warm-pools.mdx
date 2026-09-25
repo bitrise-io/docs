@@ -9,9 +9,9 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 
-A <GlossTerm baseform="warm pool">warm pool</GlossTerm> keeps a number of <GlossTerm baseform="rde session">sessions</GlossTerm> booted and idle, so that creating a session takes seconds instead of the minutes a fresh machine needs to boot and run its setup. You describe the session once, the way you would when creating one, and set a pool size. Bitrise keeps that many sessions warm, and hands one out the moment someone asks for it.
+A <GlossTerm baseform="warm pool">warm pool</GlossTerm> keeps a number of <GlossTerm baseform="rde session">RDE sessions</GlossTerm> booted and idle, so that creating a session takes seconds instead of the minutes a fresh machine needs to boot and run its setup. You describe the session once, the way you would when creating one, and set a pool size. Bitrise keeps that many sessions warm, and hands one out when someone asks for it.
 
-Warm pools are made for the moments when waiting hurts: an AI agent that needs a machine now, a team that starts many similar sessions a day, and [device preview links](/bitrise-rde/devices/device-preview-links) where a reviewer clicks and expects the app on screen.
+Warm pools are useful when a pool is needed immediately: an AI agent that needs a machine now, a team that starts many similar sessions a day, and [device preview links](/bitrise-rde/devices/device-preview-links) where a reviewer clicks and expects the app on screen.
 
 ## How a warm pool works
 
@@ -21,7 +21,7 @@ A warm pool is a stored session configuration plus an owner and a pool size:
 - The pool size is how many sessions the pool keeps booted. Bitrise creates them, runs the template's warmup and startup scripts on them, and keeps them ready. When one is claimed, a replacement boots to take its place.
 - A pool with a size of 0 keeps no sessions but stays around as a configuration preset: claiming from it creates a session from the stored configuration.
 
-Claiming a session from a pool gives you one of its warm sessions, renamed and stamped with your name, labels, and auto-terminate window, already running. If no warm session is available at that moment, a session is created from the pool's configuration instead, so a claim always succeeds. Every session records where it came from: a claimed session's warm state is `claimed`, a session created on demand from the pool is `cold`.
+Claiming a session from a pool gives you one of its warm sessions, renamed and stamped with your name, labels, and auto-terminate window. If none is ready yet, you get one that's still warming up, and it finishes starting under your name. If no warm session is available at that moment, a session is created from the pool's configuration instead. Every session records where it came from: a claimed session's warm state is `claimed`, a session created on demand from the pool is `cold`. In the RDE UI, the session list shows these as **Claimed** and **Built cold** badges.
 
 Warm sessions are ordinary sessions underneath, and they cost machine time while they wait. They don't appear in anyone's session list, and until someone claims one it can't be connected to, changed, or terminated; you can read its logs from the pool page to check that the setup scripts do what you expect. A warm session has no auto-terminate timer of its own: it either gets claimed or is retired when the pool shrinks or its configuration changes.
 
@@ -32,7 +32,9 @@ A pool belongs either to you or to the <GlossTerm baseform="workspace">workspace
 - A **personal pool** is private to you. Only you see it, claim from it, and manage it. Its inputs can reference your [saved inputs](/bitrise-rde/configuration/saved-inputs), so a rotated credential flows into the next warm sessions without editing the pool.
 - A **workspace pool** is shared with every member of the workspace. Anyone with RDE access can claim from it and manage it, and a [Workspace API token](/bitrise-platform/workspaces/workspace-api-token) can reach it from CI. Its inputs are stored as plain values, encrypted at rest when marked secret, because there is no single person whose saved inputs it could use. Only workspace pools can serve device preview links.
 
-A session claimed from a personal pool is owned by you, like a session you create yourself. A session claimed from a workspace pool is owned by the workspace: every member sees and manages it under **Workspace sessions**, and you're recorded as its creator.
+A session claimed from a personal pool is owned by you, like a session you create yourself.
+
+A session claimed from a workspace pool is owned by the workspace: every member sees and manages it under **Workspace sessions**, and you're recorded as its creator.
 
 Warm pools aren't available on free-trial workspaces.
 
@@ -42,10 +44,10 @@ Warm pools aren't available on free-trial workspaces.
 <TabItem value="ui" label="RDE UI" default>
 
 1. In the Remote Dev Environments section, open **Warm pools** and click **New warm pool**. From a template's page, **Create warm pool** opens the same form with the template already selected.
-1. Give the pool a name and choose the owner: **Me** for a personal pool or **Workspace** for a shared one.
 1. Choose the template. The form then shows only what the template calls for: session inputs, feature flags, a device section when the template boots one, and the same **Override machine configuration** switch the session form has.
+1. Enter a **Pool name** and choose the owner: **Me** for a personal pool or **Workspace** for a shared one.
 1. Set the **Pool size**.
-1. Click **Create**.
+1. Click **Create warm pool**.
 
 The pool page shows how many sessions are ready and how many are still warming up, the warm sessions by name, and lifetime counts of claimed and cold sessions.
 
@@ -118,7 +120,7 @@ The pool fixes the configuration, so a claim can't also pass a template, inputs,
 
 Bitrise checks every pool regularly and keeps it at its size. A few things to know:
 
-- **Editing the configuration replaces the warm sessions.** Changing the template, the inputs, the flags, or the machine or device settings retires the sessions that were warmed with the old configuration and boots new ones. The UI warns you before saving such a change. Renaming the pool or changing its size doesn't touch the warm sessions.
+- **Editing the configuration replaces the warm sessions.** Changing the inputs, the flags, or the machine or device settings retires the sessions that were warmed with the old configuration and boots new ones. The UI warns you before saving such a change. Renaming the pool or changing its size doesn't touch the warm sessions.
 - **A template edit does the same.** The pool follows its template, so editing the template's scripts or variables replaces the pool's warm sessions too. Rotating a saved input a personal pool references has the same effect.
 - **A configuration that stops working pauses the pool.** If a template edit adds a required input the pool doesn't have, or removes a feature flag it enables, the pool shows a configuration error and stops creating sessions until you fix it. The warm sessions it already has stay claimable.
 - **Repeated failures pause the pool** for a while before it retries, so a broken setup script doesn't burn machines in a loop. The pool page shows the last error.
