@@ -536,6 +536,13 @@ function DocSearch({externalUrlRegex, ...props}) {
     setAskAiQuery('');
     onAskAiToggle(false);
   }, [onAskAiToggle]);
+  const closeAskAiPanel = useCallback(() => {
+    setAskAiQuery('');
+    // "Back to results" unmounts along with the panel, which would drop
+    // focus to <body>; put it back on the query so typing and the arrow-key
+    // navigation keep working.
+    searchContainer.current?.querySelector('.DocSearch-Input')?.focus();
+  }, []);
   const handleInput = useCallback(
     (event) => {
       if (event.key === 'f' && (event.metaKey || event.ctrlKey)) {
@@ -609,7 +616,7 @@ function DocSearch({externalUrlRegex, ...props}) {
 
       {askAiPanelHost &&
         createPortal(
-          <AskAiPanel query={askAiQuery} onBack={() => setAskAiQuery('')} />,
+          <AskAiPanel query={askAiQuery} onBack={closeAskAiPanel} />,
           askAiPanelHost,
         )}
     </>
