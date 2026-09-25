@@ -1,0 +1,63 @@
+---
+title: "Running unit and UI tests for React Native apps"
+description: "You can run all kinds of tests for your React Native app on Bitrise: unit tests, integration tests, or component tests. You can use [Jest](https://jestjs.io/), for example, to write all your tests and then run them during the build process with either [npm](https://www.npmjs.com/) or [Yarn](https://yarnpkg.com/)."
+sidebar_position: 1
+slug: /bitrise-ci/testing/testing-react-native-apps/running-unit-and-ui-tests-for-react-native-apps
+sidebar_label: Running tests for React Native apps
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+React Nativeアプリでは、Bitrise上でユニットテスト、統合テスト、コンポーネントテストなど、あらゆる種類のテストを実行できます。たとえば[Jest](https://jestjs.io/)を使ってテストを記述し、[npm](https://www.npmjs.com/)または[Yarn](https://yarnpkg.com/)を使ってビルドプロセス中に実行できます。
+
+:::tip[E2Eテスト]
+
+エンドツーエンドテストについては、[BitriseでDetoxテストを実行する](/bitrise-ci/testing/testing-react-native-apps/running-detox-tests-on-bitrise)を参照してください。
+
+:::
+
+
+<Tabs>
+  <TabItem value="workflow-editor" label="Workflow Editor">
+
+  1. テストを記述し、React Nativeプロジェクトに追加します。
+  1. Bitriseで、使用しているパッケージマネージャーに応じて、[<strong>Run npm command</strong>](https://github.com/bitrise-steplib/steps-npm)または[<strong>Run yarn command</strong>](https://github.com/bitrise-community/steps-yarn)<GlossTerm baseform="Step">Step</GlossTerm>を<GlossTerm baseform="Workflow">Workflow</GlossTerm>に追加します。
+  1. `test`コマンドを実行するようにStepを設定します:
+
+     - Yarnの場合は、<strong>Arguments for running yarn commands</strong>入力を見つけて`test`を追加します。
+
+     - npmの場合は、<strong>The npm command with arguments to run</strong>入力を見つけて`test`を追加します。
+
+     ![npm-test.png](/img/_paligo/uuid-195577ac-fbba-5fe4-810b-3749e614682c.png)
+
+     いずれの場合も、Stepは、パッケージの`scripts`オブジェクト内の`test`スクリプトを実行します。
+
+  </TabItem>
+  <TabItem value="yaml" label="Configuration YAML">
+
+  1. テストを記述し、React Nativeプロジェクトに追加します。
+  1. <GlossTerm baseform="configuration yaml">設定YAML</GlossTerm>ファイルで、使用しているパッケージマネージャーに応じて、`npm`または`yarn`StepをWorkflowに追加します。
+  1. `test`コマンドを実行するように、お好みのStepを設定します。いずれのStepでも、`command`入力を`test`に設定します。
+
+     ```yaml
+     empty:
+       steps:
+         - git-clone: {}
+         - npm:
+             inputs:
+             - command: test
+         - yarn@0:
+             inputs:
+             - command: test
+         - deploy-to-bitrise-io: {}
+     ```
+
+     いずれのStepも、パッケージの`scripts`オブジェクト内の`test`スクリプトを実行します。
+
+  </TabItem>
+</Tabs>
+
+
+テストを実行して結果を表示するには、[テスト結果のデプロイと表示](/bitrise-ci/testing/deploying-and-viewing-test-results)を参照してください。

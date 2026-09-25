@@ -1,0 +1,142 @@
+---
+title: "Building an iOS app for a simulator"
+sidebar_position: 3
+slug: /bitrise-ci/testing/testing-ios-apps/building-an-ios-app-for-a-simulator
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+iOSアプリは、iOSまたはtvOSシミュレータープラットフォーム向けにビルドできます。
+
+これには、<strong>Xcode Build for Simulator</strong> Stepが必要です。Stepは`.app`ファイルを作成し、任意のmacOSデバイスにインストールしたり、テスターなどに送付したりできます。code signingはまったく必要ないため、iOSアプリの配布可能なバージョンを簡単に作成する方法です。
+
+Stepは`.xctestrun`ファイルも作成し、これを使ってテストを実行できます。`.app`ファイルと`.xctestrun`ファイルはどちらも、その出力変数を参照する後続のStepsからアクセスでき、[ビルドアーティファクトとしてダウンロード](/bitrise-ci/run-and-analyze-builds/managing-build-files/build-artifacts-online)することもできます。
+
+シミュレーター向けにアプリをビルドするには：
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Workflowに必要な依存関係をすべてインストールしていることを確認してください。
+
+   さまざまな依存関係マネージャー向けに専用のStepsを用意しています。例：
+
+   - [Carthage](https://bitrise.io/integrations/steps/carthage)
+   - [CocoaPods](https://bitrise.io/integrations/steps/cocoapods-install)
+   - [Homebrew](https://bitrise.io/integrations/steps/brew-install)
+1. 依存関係をインストールするStepの後に、<strong>Xcode Build for Simulator</strong> StepをWorkflowに追加してください。
+1. <strong>Project path</strong>の入力が、`.xcodeproj`ファイルまたは`.xcworkspace`ファイルのいずれかを指していることを確認してください。
+
+   この入力は、`xcodebuild`コマンドの`-project`オプションまたは`-workspace`オプションを設定します。ほとんどの場合、[アプリの追加プロセス](/bitrise-ci/getting-started/adding-a-new-project)でプロジェクトスキャナーによってアプリが自動的に設定されていれば、default valueを変更する必要はありません。
+1. <strong>Scheme</strong>の入力には、アプリのビルドに使用する[Xcodeスキーム](https://developer.apple.com/documentation/xcode/customizing-the-build-schemes-for-a-project/)の名前を設定してください。
+
+   ![scheme-input.png](/img/_paligo/uuid-2700f022-4822-82fe-77e4-1a0995b41ab6.png)
+
+   この入力は、`xcodebuild`コマンドの`-scheme`オプションを設定します。default valueは、アプリを追加して初回設定を行う際に作成される環境変数です。別のスキームを使用する場合は、ここにその名前を入力できます。
+
+   :::tip[ビルド設定]
+
+   デフォルトでは、Stepはスキームで指定されたビルド設定を使用します。ただし、これを上書きして別のビルド設定を使用することもできます。その場合は、目的のビルド設定の名前を<strong>Configuration name</strong>入力に追加してください。この入力は任意で、選択したスキームで指定されたビルド設定を使用したくない場合にのみ必要です。
+
+   Xcodeプロジェクトでは、いつでも新しいビルド設定を作成できます。[プロジェクトへのビルド設定ファイルの追加](https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project)を参照してください。
+
+   :::
+1. <strong>Device destination specifier</strong>の入力で、<strong>generic/platform=iOS Simulator</strong>を選択してください。
+
+   ![ios-simulator-destination.png](/img/_paligo/uuid-7235d345-4190-c1be-6ee3-fc25e1eb183e.png)
+1. 必要に応じて、<strong>Build settings (xcconfig), allow code signing</strong>の入力を<strong>CODE_SIGNING_ALLOWED=YES</strong>に設定してください。これにより、ビルド中にcode signingファイルをインストールできるようになります。
+
+   通常、シミュレーター向けにビルドしたアプリにはcode signingは必要ありません。ただし、特定のテストケースやサードパーティの依存関係では必要になる場合があります。code signingの設定方法については、[iOS code signing](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)を参照してください。
+1. アプリをビルドアーティファクトとして利用できるようにするには、<strong>Deploy to Bitrise.io</strong> StepをWorkflowの最後に追加してください。デフォルトでは、Stepの設定を変更する必要はありません。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. Workflowに必要な依存関係をすべてインストールしていることを確認してください。
+
+   さまざまな依存関係マネージャー向けに専用のStepsを用意しています。例：
+
+   - [Carthage](https://bitrise.io/integrations/steps/carthage)
+   - [CocoaPods](https://bitrise.io/integrations/steps/cocoapods-install)
+   - [Homebrew](https://bitrise.io/integrations/steps/brew-install)
+1. 依存関係をインストールするStepの後に、`xcode-build-for-simulator` StepをWorkflowに追加してください。
+
+   ```yaml
+   workflows:    
+     primary:
+       steps:
+         - cocoapods-install
+         - xcode-build-for-simulator:
+             inputs:
+   ```
+1. `project_path`の入力が、`.xcodeproj`ファイルまたは`.xcworkspace`ファイルのいずれかを指していることを確認してください。
+
+   この入力は、`xcodebuild`コマンドの`-project`オプションまたは`-workspace`オプションを設定します。ほとんどの場合、[アプリの追加プロセス](/bitrise-ci/getting-started/adding-a-new-project)でプロジェクトスキャナーによってアプリが自動的に設定されていれば、default valueを変更する必要はありません。
+
+   ```yaml
+   - xcode-build-for-simulator:
+       inputs:
+         - project_path: $BITRISE_PROJECT_PATH
+   ```
+1. `scheme`の入力には、アプリのビルドに使用する[Xcodeスキーム](https://developer.apple.com/documentation/xcode/customizing-the-build-schemes-for-a-project/)の名前を設定してください。
+
+   この入力は、`xcodebuild`コマンドの`-scheme`オプションを設定します。default valueは、アプリを追加して初回設定を行う際に作成される環境変数です。別のスキームを使用する場合は、スキーム名を正しく入力するようにしてください。
+
+   ```yaml
+   - xcode-build-for-simulator:
+       inputs:
+         - scheme: $BITRISE_SCHEME
+         - project_path: $BITRISE_PROJECT_PATH
+   ```
+
+   :::tip[ビルド設定]
+
+   デフォルトでは、Stepはスキームで指定されたビルド設定を使用します。ただし、これを上書きして別のビルド設定を使用することもできます。その場合は、目的のビルド設定の名前を`configuration`の入力に追加してください。この入力は任意で、選択したスキームで指定されたビルド設定を使用したくない場合にのみ必要です。
+
+   Xcodeプロジェクトでは、いつでも新しいビルド設定を作成できます。[プロジェクトへのビルド設定ファイルの追加](https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project)を参照してください。
+
+   :::
+1. `destination`の入力を`generic/platform=iOS Simulator`に設定してください。
+
+   ```yaml
+   - xcode-build-for-simulator:
+       inputs:
+         - scheme: $BITRISE_SCHEME
+         - destination: generic/platform=iOS Simulator
+         - project_path: $BITRISE_PROJECT_PATH
+   ```
+1. 必要に応じて、`xcconfig_content`の入力に値`CODE_SIGNING_ALLOWED=YES`を設定してください。これにより、ビルド中にcode signingファイルをインストールできるようになります。
+
+   通常、シミュレーター向けにビルドしたアプリにはcode signingは必要ありません。ただし、特定のテストケースやサードパーティの依存関係では必要になる場合があります。code signingの設定方法については、[iOS code signing](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)を参照してください。
+
+   ```yaml
+   - xcode-build-for-simulator:
+       inputs:
+         - scheme: $BITRISE_SCHEME
+         - destination: generic/platform=iOS Simulator
+         - xcconfig_content: |-
+             CODE_SIGNING_ALLOWED=YES            
+             COMPILER_INDEX_STORE_ENABLE = NO
+         - project_path: $BITRISE_PROJECT_PATH
+   ```
+1. アプリをビルドアーティファクトとして利用できるようにするには、`deploy-to-bitrise-io` StepをWorkflowの最後に追加してください。デフォルトでは、Stepの設定を変更する必要はありません。
+
+   ```yaml
+   workflows:
+     primary:
+       steps:
+         - cocoapods-install: {}
+         - xcode-build-for-simulator:
+             inputs:
+               - scheme: $BITRISE_SCHEME
+               - destination: generic/platform=iOS Simulator
+               - xcconfig_content: |-
+                   CODE_SIGNING_ALLOWED=YES
+                   COMPILER_INDEX_STORE_ENABLE = NO
+               - project_path: $BITRISE_PROJECT_PATH
+         - deploy-to-bitrise-io: {}
+   ```
+
+</TabItem>
+</Tabs>

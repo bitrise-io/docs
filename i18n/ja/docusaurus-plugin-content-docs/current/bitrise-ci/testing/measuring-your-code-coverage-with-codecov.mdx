@@ -1,0 +1,66 @@
+---
+title: "Measuring your code coverage with Codecov"
+sidebar_position: 9
+slug: /bitrise-ci/testing/measuring-your-code-coverage-with-codecov
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+[Codecov](https://about.codecov.io/product/features/)はCI/CDパイプライン向けの主要なコードカバレッジソリューションであり、カバレッジ指標をワークフローに直接届けます。Bitriseと直接統合することで、コード品質に関する有益なインサイトを提供し、ユーザーがリスクを抑えながらより健全なコードをリリースできるようにします。
+
+Codecovには、テストカバレッジをより利用しやすく実用的なものにする数多くの機能があり、開発プロセスの高速化と高品質なアプリケーションの提供を支援します。
+
+これらの機能には、以下のようなものがあります。
+
+- カバレッジの変化をソースコードに重ねて表示することで、テストが必要な箇所をさらに簡単に特定できます。
+- [多言語対応](https://about.codecov.io/product/features/#multi-lang-multi-ci-cd)により、Codecovをそのまま使い始めることができます。
+- <GlossTerm baseform="workflow">Workflow</GlossTerm>内にカバレッジ情報の概要が直接表示されるため、テストを迅速かつ効果的に追加・更新できます。
+- [ステータスチェック](https://docs.codecov.com/docs/commit-status)により、基準を満たさないプルリクエストのマージをブロックします。
+- 複数のジョブにまたがって複数のレポートをアップロードするWorkflows向けに、シームレスなカバレッジ[レポートのマージ](https://docs.codecov.com/docs/merging-reports)を提供します。
+- [Codecov Flags](https://docs.codecov.com/docs/flags)を使ったグループ分けに基づくカスタムカバレッジ情報。
+
+
+## BitriseとCodecovを統合する
+
+Codecovの利用を開始するには、お好みのカバレッジツール(例:XcodeやGradle)でカバレッジレポートを生成している必要があります。
+
+1. [https://codecov.io](https://codecov.io)でアカウントを作成します。
+1. Codecov上でリポジトリの<strong>Settings</strong>タブに移動し、リポジトリのアップロードトークンをコピーします。
+
+   ![pic1.jpg](/img/_paligo/uuid-c8804850-f923-c194-e029-59d1d39e50d7.jpg)
+1. <strong>Codecov</strong>の<GlossTerm baseform="step">Step</GlossTerm>をBitrise上のWorkflowに追加します。テストとカバレッジの収集を行うStepsの後にStepを追加するようにしてください。
+
+   ![pic2.jpg](/img/_paligo/uuid-a0f5c42f-1f2c-8d2b-a381-5c37bb4fe37c.jpg)
+1. Codecovのアップロードトークンをシークレット変数`CODECOV_TOKEN`として追加し、<strong>Expose for Pull Requests</strong>オプションを`true`に設定します。<strong>Add new</strong>をクリックします。
+
+   ![pic3.jpg](/img/_paligo/uuid-cc9dfa1f-9277-fe9e-7d4a-92d5fb04d5d6.jpg)
+1. <strong>Save</strong>をクリックし、新しいビルドを開始してカバレッジ指標を取得します。
+
+   :::tip[追加オプション]
+
+   Codecov Stepは、CodecovのCLIをラップします。追加のCLIオプションはStep inputsとして直接公開されます。全一覧については[CodecovのCLIオプション](https://docs.codecov.com/docs/cli-options)をご覧ください。
+
+   :::
+
+
+## Codecovでカバレッジレポートを表示する
+
+Codecovでカバレッジを確認するには、以下の方法があります。
+
+- BitriseのCodecovStepに表示されるURLを確認します。
+
+  ![pic4.png](/img/_paligo/uuid-d981eb34-fe27-6796-ff24-0e9206369758.png)
+- [https://codecov.io](https://about.codecov.io/)に移動し、該当するプルリクエストまたはコミットに直接アクセスします。
+- コードホストのステータスチェックやプルリクエストのコメントに表示されるCodecovのリンクをクリックします。
+
+
+## 次のステップ
+
+コードカバレッジレポートを取得できたので、以下の提案でさらに一歩進めることができます。
+
+- [非ブロッキングのステータスチェック](https://docs.codecov.com/docs/common-recipe-list#set-non-blocking-status-checks)を設定して、開発者がコードカバレッジを意識する習慣を身につけられるようにします。
+- すべてのプルリクエストでステータスチェックを設定し、[全体のカバレッジを向上させる](https://docs.codecov.com/docs/common-recipe-list#increase-overall-coverage-on-each-pull-request)ことでコードカバレッジの改善に取り組み始めます。
+- [Flags](https://docs.codecov.com/docs/flags)を使用して、テストの種類やシステムの部分ごとにカバレッジレポートを分離し、重要な項目を測定します。
+- すでにflagsを使用していて、Bitrise CIを実行するたびにテストスイート全体を実行したくない場合は、[Carryforward Flags](https://docs.codecov.com/docs/carryforward-flags)を試して、変更された部分だけを測定してください。

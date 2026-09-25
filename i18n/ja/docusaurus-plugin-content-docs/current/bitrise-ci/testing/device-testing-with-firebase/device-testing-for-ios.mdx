@@ -1,0 +1,218 @@
+---
+title: "Device testing for iOS"
+description: "With Bitrise’s iOS device testing solution, you can run iOS tests on physical devices without having to set up and register your own devices."
+sidebar_position: 1
+slug: /bitrise-ci/testing/device-testing-with-firebase/device-testing-for-ios
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+BitriseのiOSデバイステストソリューションを使うと、実機を用意して登録することなく、物理デバイス上でiOSアプリのUIテストを実行できます。必要なのは、専用の<GlossTerm baseform="Step">Steps</GlossTerm>を使用し、アプリをテストしたいデバイスの種類を設定することだけです。Stepの利用に制限はなく、制限されるのは全体のビルド時間の上限のみです。また、FlutterやReact Nativeなど、他のフレームワークで開発されたiOSアプリでも動作します。
+
+本デバイステストソリューションは[Firebase Test Lab](https://firebase.google.com/docs/test-lab/)をベースにしています。Googleのデータセンターで稼働する実際の本番デバイスを使用してアプリをテストします。デバイスには最新のAPIが書き込まれており、ロケール設定をカスタマイズできます。テスト結果のログ、動画、スクリーンショットはBitriseで確認できます。
+
+iOSアプリの場合、Firebase Test Labは[XCTest](https://developer.apple.com/documentation/xctest)テストを実行します。利用可能なデバイスの一覧は[こちら](https://firebase.google.com/docs/test-lab/ios/available-testing-devices)から確認できます。
+
+:::note[制限事項]
+
+全体のビルド時間によって制限される場合があります。また、1回のビルドに含められる[<strong>iOS Device Testing</strong>](https://github.com/bitrise-steplib/steps-virtual-device-testing-for-ios)Stepは1つのみで、実行できるテストの種類も1つだけである点にご注意ください。これは、BitriseがビルドスラッグをFirebase Test Labに送信するためです。同じビルドスラッグを送信すると`Build already exists`エラーが発生します。
+
+:::
+
+
+## iOSアプリでFirebaseを使ってデバイステストを実行する
+
+Firebase Test Labソリューションを使ってiOSアプリのデバイステストを実行するには、<GlossTerm baseform="workflow">Workflow</GlossTerm>に2つのStepsを追加する必要があります。
+
+- <strong>Xcode Build for testing for iOS</strong>。
+- <strong>iOS Device Testing</strong>。
+
+:::note[マルチプラットフォームアプリ]
+
+Stepは、FlutterやReact Nativeなど、他のフレームワークで構築されたiOSアプリのデバイステストも実行できます。<strong>Xcode Build for testing for iOS</strong>Stepがアプリの`.xcodeproj`または`.xcworkspace`ファイルにアクセスできるようにするだけです。
+
+:::
+
+<strong>[Xcode Build for testing for iOS](https://www.bitrise.io/integrations/steps/xcode-build-for-test)</strong>Stepは、`xcodebuild`コマンドの`build-for-testing`アクションを実行します。これにより、iOSアプリの[Xcodeスキーム](https://developer.apple.com/library/archive/featuredarticles/XcodeConcepts/Concept-Schemes.html)で定義されたテストがビルドされます。Stepは、テストディレクトリ(デフォルトでは`Debug-iphoneos`)と`xctestrun`ファイルを含む.zipファイルをエクスポートします。
+
+このStepを使用するには、テストアプリ用の[code signing](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)ファイルが必要です。自動プロビジョニングと手動プロビジョニングのどちらかを選択できます。
+
+<strong>[iOS Device Testing](https://github.com/bitrise-steplib/steps-virtual-device-testing-for-ios)</strong>Stepは、この.zipファイルのパス(環境変数としてエクスポートされたもの)を入力として受け取ってテストを実行し、テスト結果をBitriseにエクスポートします。
+
+:::important[自動と手動のcode signingアセット管理]
+
+<strong>Xcode Build for testing for iOS</strong>Stepは、プロビジョニングプロファイルを手動で管理する必要なく、code signingアセットを管理できます。必要なのは、Step(後述)で該当する入力項目を選択し、正しい証明書を<strong>Code Signing</strong>タブにアップロードすることだけです。これが[automatic code signingアセット管理](/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning)方式です。
+
+[手動のcode signingアセット管理](/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---manual-provisioning)を選択する場合は、<strong>Xcode Build for testing for iOS</strong>Stepの前に<strong>Certificate and Profile Installer</strong>Stepを追加してください。前者がcode signingアセット管理を担当し、後者がプロジェクトをビルドします。<strong>Xcode Build for testing for iOS</strong>Stepの<strong>Automatic code signing method</strong>入力が`off`に設定されていることを確認してください。
+
+以下の手順では、<strong>Xcode Build for testing for iOS</strong>Stepを使用してBitriseでautomatic code signingアセット管理を設定する方法を詳しく説明します。
+
+:::
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. <strong>Xcode Build for testing for iOS</strong>StepをWorkflowに追加します。
+
+   :::tip[テスト用にビルドする]
+
+   本ガイドでは、デバイステスト用にアプリを設定する際に最も重要な入力項目のみを説明します。Stepの詳細については、[Xcode Build for testing for iOS](https://bitrise.io/integrations/steps/xcode-build-for-test)を参照してください。
+
+   :::
+1. <strong>Scheme name</strong>入力で、使用するXcodeスキームを設定します。デフォルトでは、この入力の値はアプリの作成時に保存される`$BITRISE_SCHEME`[環境変数](/bitrise-ci/configure-builds/environment-variables)です。
+1. <strong>Build Configuration</strong>入力で、使用する[Xcodeビルド構成](https://developer.apple.com/documentation/xcode/configuring-the-build-settings-of-a-target)の名前を追加します。
+
+   構成が指定されていない場合は、Xcodeプロジェクトのデフォルトのビルド構成が使用されます。
+1. Stepの<strong>Device destination specifier</strong>入力で、`xcodebuild`の宛先オプションを設定します。
+
+   default valueは`generic/platform=ios`です。つまり、テストは任意のiOSデバイスで実行できます。
+1. <strong>Automatic code signing method</strong>入力を、code signingに使用するApple service connectionに設定します。使用できるオプションは次のとおりです。
+
+   - automatic code signingを行わない場合は`off`。
+   - [APIキー認証](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)を使用する場合は`api-key`。
+   - [Apple ID認証](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)を使用する場合は`apple-id`。
+1. <strong>iOS Device Testing</strong>StepをWorkflowに追加します。Stepは<strong>Xcode Build for testing for iOS</strong>Stepの後に配置する必要があります。
+
+   :::important[APIの設定入力項目]
+
+   Test APIに関連する入力項目(<strong>Test APIのベースURL</strong>および<strong>APIトークン</strong>)は、グラフィカルなUI上では変更できません。これらの値を変更しないでください。
+
+   :::
+1. <strong>Test devices</strong>入力フィールドで、アプリをテストするデバイスを指定します。
+
+   利用可能なデバイスの一覧は[こちら](https://firebase.google.com/docs/test-lab/ios/available-testing-devices)から確認できます。複数のデバイスを次の形式で入力に追加できます。`deviceID,version,language,orientation`
+1. Workflowに、バージョン1.4.1以降の<strong>Deploy to Bitrise.io</strong>Stepが含まれていることを確認してください。Stepの古いバージョンでは、<strong>Tests</strong>タブで結果を確認できません。
+1. [ビルドを開始する](/bitrise-ci/run-and-analyze-builds/starting-builds/approving-pull-request-builds)。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. `xcode-build-for-test`StepをWorkflowに追加します。
+
+   :::tip[テスト用にビルドする]
+
+   本ガイドでは、デバイステスト用にアプリを設定する際に最も重要な入力項目のみを説明します。Stepの詳細については、[Xcode Build for testing for iOS](https://bitrise.io/integrations/steps/xcode-build-for-test)を参照してください。
+
+   :::
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+   ```
+1. `scheme`入力で、使用するXcodeスキームを設定します。デフォルトでは、この入力の値はアプリの作成時に保存される`$BITRISE_SCHEME`環境変数です。
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+           - scheme: $BITRISE_SCHEME
+   ```
+1. `configuration`入力で、使用する[Xcodeビルド構成](https://developer.apple.com/documentation/xcode/configuring-the-build-settings-of-a-target)の名前を追加します。
+
+   構成が指定されていない場合は、Xcodeプロジェクトのデフォルトのビルド構成が使用されます。
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+           - scheme: $BITRISE_SCHEME
+           - configuration: Debug
+   ```
+1. Stepの`destination`入力で、`xcodebuild`の宛先オプションを設定します。
+
+   default valueは`generic/platform=ios`です。つまり、テストは任意のiOSデバイスで実行できます。
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+           - scheme: $BITRISE_SCHEME
+           - configuration: Debug
+           - destination: generic/platform=iOS
+   ```
+1. `automatic_code_signing`入力を、code signingに使用するApple service connectionに設定します。使用できるオプションは次のとおりです。
+
+   - automatic code signingを行わない場合は`off`。
+   - [APIキー認証](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)を使用する場合は`api-key`。
+   - [Apple ID認証](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)を使用する場合は`apple-id`。
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+           - scheme: $BITRISE_SCHEME
+           - configuration: Debug
+           - destination: generic/platform=iOS
+           - automatic_code_signing: api-key
+   ```
+1. `virtual-device-testing-for-ios`StepをWorkflowに追加します。Stepは`xcode-build-for-test`Stepの後に配置する必要があります。
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+           - scheme: $BITRISE_SCHEME
+           - configuration: Debug
+           - destination: generic/platform=iOS
+           - automatic_code_signing: api-key
+       - virtual-device-testing-for-ios:
+           inputs:
+   ```
+1. `test_devices`入力フィールドで、アプリをテストするデバイスを指定します。
+
+   利用可能なデバイスの一覧は[こちら](https://firebase.google.com/docs/test-lab/ios/available-testing-devices)から確認できます。複数のデバイスを次の形式で入力に追加できます。`deviceID,version,language,orientation`
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+           - scheme: $BITRISE_SCHEME
+           - configuration: Debug
+           - destination: generic/platform=iOS
+           - automatic_code_signing: api-key
+       - virtual-device-testing-for-ios:
+           inputs:
+           - test_devices: 'iphone8,14.7,en,portrait
+   ```
+1. Workflowに、バージョン1.4.1以降の`deploy-to-bitrise-io`Stepが含まれていることを確認してください。Stepの古いバージョンでは、<strong>Tests</strong>タブで結果を確認できません。
+
+   ```yaml
+   fmy-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-build-for-test:
+           inputs:
+           - scheme: $BITRISE_SCHEME
+           - configuration: Debug
+           - destination: generic/platform=iOS
+           - test_plan: test
+           - automatic_code_signing: api-key
+           - project_path: $BITRISE_PROJECT_PATH
+       - virtual-device-testing-for-ios:
+           inputs:
+           - test_devices: 'iphone8,14.7,en,portrait'
+       - deploy-to-bitrise-io: {}
+   ```
+1. [ビルドを開始する](/bitrise-ci/run-and-analyze-builds/starting-builds/approving-pull-request-builds)。
+
+</TabItem>
+</Tabs>
+
+すべてうまくいけば、[ビルドアーティファクト](/bitrise-ci/run-and-analyze-builds/managing-build-files/build-artifacts-online)の中、またはTestsタブで結果を確認できるはずです。

@@ -1,0 +1,275 @@
+---
+title: "Building an iOS app for testing"
+description: "You can build an iOS app specifically for testing: our dedicated Step builds your app and its associated tests and also exports an `.xctestrun` file. Once built, you can upload the app to a third-party testing service or install it on a simulator or a physical device. You can also use this Step to set up [virtual device testing with Firebase](/bitrise-ci/testing/device-testing-with-firebase/device-testing-for-ios)."
+sidebar_position: 2
+slug: /bitrise-ci/testing/testing-ios-apps/building-an-ios-app-for-testing
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+テストの目的で専用にiOSアプリをビルドすることもできます。専用の<GlossTerm baseform="Step">Step</GlossTerm>が、アプリと関連するテストをビルドし、`.xctestrun`ファイルもエクスポートします。ビルド後は、アプリをサードパーティのテストサービスにアップロードするか、シミュレーターまたは実機にインストールできます。また、このStepを使用して、[Firebaseを使用した仮想デバイステスト](/bitrise-ci/testing/device-testing-with-firebase/device-testing-for-ios)を設定することもできます。
+
+Stepは`xcodebuild`の`build-for-testing`アクションを使用します。詳細については、[How do I implement the Build For Testing and Test Without Building features from the command line?](https://developer.apple.com/library/archive/technotes/tn2339/_index.html#//apple_ref/doc/uid/DTS40014588-CH1-PRODUCT)を参照してください。
+
+:::important[Code signing]
+
+テストデバイスへのアプリのインストールには、[code signing](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)が必要です。[<strong>Xcode Build for testing for iOS</strong>](https://github.com/bitrise-steplib/steps-xcode-build-for-test)のStepには組み込みのcode signing設定があり、[code signingの自動プロビジョニングでの利用](/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning)が可能です。ほとんどの場合、テスト用にアプリへコード署名するために他のStepは必要ありません。
+
+:::
+
+iOSアプリをテスト用にビルドするには:
+
+
+<Tabs>
+  <TabItem value="workflow-editor" label="Workflow Editor">
+
+  1. code signingの場合は、[Appleサービスアカウント](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)をBitriseに接続していることを確認してください。
+
+     Stepは、automatic code signingに対してApple IDおよびAPIキー認証をサポートしています。APIキー認証の使用を推奨します。
+
+     :::tip[手動code signing]
+
+     [手動code signing](/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---manual-provisioning)も使用できます。その場合は、Stepのautomatic code signingオプションを設定しないでください。
+
+     :::
+  1. <GlossTerm baseform="workflow">Workflow</GlossTerm>で[you install all of the app's dependencies](/bitrise-ci/dependencies-and-caching/ios-dependencies/managing-dependencies-with-carthage)ことを確認してください。
+  1. 依存関係のStepまたはStepsの後に、[<strong>Xcode Build for testing for iOS</strong>](https://github.com/bitrise-steplib/steps-xcode-build-for-test) StepをWorkflowに追加してください。
+  1. <strong>Project path</strong>入力が正しい場所を指していることを確認してください。
+
+     入力欄では、`.xcodeproj`または`.xcworkspace`ファイルへのパスを指定します。ほとんどの場合、この入力を変更する必要はありません。新しいアプリを追加すると、<GlossTerm baseform="project scanner">プロジェクトスキャナー</GlossTerm>が自動的に該当するファイルを見つけ、その場所を入力のdefault valueである[環境変数](/bitrise-ci/configure-builds/environment-variables)に保存します。
+
+     :::note[default valueの確認]
+
+     <strong>Project path</strong>入力のdefault valueが正しい場所を指しているか不明な場合は、<strong>Env Vars</strong>タブに移動し、$BITRISE_PROJECT_PATH変数の値が`.xcodeproj`または`.xcworkspace`ファイルへの正しいパスになっていることを確認してください。
+
+     :::
+
+     :::important[CocoaPods]
+
+     依存関係管理にCocoaPodsを使用している場合は、<strong>Project path</strong>入力が`.xcworkspace`ファイルを指している必要があります。
+
+     :::
+  1. <strong>Scheme</strong>入力が、アプリのビルドに使用したいスキームを指していることを確認してください。
+
+     default valueは、アプリの初期設定時に設定したスキームを保存する環境変数です。別のスキームを使用する場合は、入力欄にその名前を入力してください。
+  1. ビルドしたい[ビルド構成](https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project)を、<strong>Build Configuration</strong>入力で設定してください。
+
+     default valueは`Debug`です。
+
+     ![build-for-testing-step.png](/img/_paligo/uuid-2a3bef35-3d78-72e7-102b-8aa11def397f.png)
+  1. <strong>Device destination specifier</strong>入力でデバイスの宛先を設定します。この入力にはカンマ区切りのキーと値のペアを指定します。
+
+     `build-for-testing`アクションは特定の実機がなくても実行できるため、プラットフォームを汎用的に指定することを推奨します。
+
+     ```yaml
+     // building for physical iOS devices
+     generic/platform=iOS
+
+     // building for simulators
+     generic/platform=iOS Simulator
+     ```
+
+     この入力は、`xcodebuild`の`-destination`オプションを設定します。指定可能なオプションの詳細については、[コマンドラインからユニットテストを実行するにはどうすればよいですか?](https://developer.apple.com/library/archive/technotes/tn2339/_index.html#//apple_ref/doc/uid/DTS40014588-CH1-UNIT)を参照してください。
+  1. 必要に応じて、<strong>Test plan</strong>入力で特定の[テストプラン](https://developer.apple.com/documentation/xcode/organizing-tests-to-improve-feedback?changes=_8)を設定してください。
+
+     この入力は、`xcodebuild`の`build-for-testing`アクションの`-testPlan`オプションを設定します。空欄のままにした場合は、Xcodeスキームで指定されたテストプランが使用されます。
+  1. code signingが必要な場合は、[automatic code signing](/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning)オプションの使用を推奨します。<strong>Automatic code signing</strong>入力グループを見つけ、<strong>Automatic code signing method</strong>入力のドロップダウンメニューから方法を選択してください。
+
+     ![auto-code-signing-input.png](/img/_paligo/uuid-cae7939a-c5e3-917f-5121-e7ef852362d5.png)
+
+     :::note[コードsigning certificate]
+
+     アプリに正しく署名するには、[コードsigning certificate](/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning#uploading-ios-code-signing-certificates-to-bitrise)をBitriseにアップロードする必要があることに注意してください。
+
+     :::
+
+     [APIキー認証](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key#adding-api-key-authentication-data-on-bitrise)の使用を推奨します。これは、<strong>App settings</strong>ページで設定するBitrise管理の認証方式です。
+
+     代わりにStepレベルでAPI認証を制御したい場合は、<strong>App Store Connect connection override</strong>入力グループ内で別のAPIキー認証を定義する3つの入力すべてを設定することで、デフォルトのBitrise管理接続を上書きできます。
+
+     ![api-connect-override.png](/img/_paligo/uuid-a41c4d89-eb5f-0913-ac80-a0af31f99b54.png)
+  1. 生成されたアーティファクトに[<strong>Artifacts</strong>タブ](/bitrise-ci/run-and-analyze-builds/managing-build-files/build-artifacts-online)または<strong>Tests</strong>タブでアクセスできるようにするには、[<strong>Deploy to Bitrise.io</strong>](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) StepをWorkflowの最後に追加してください。
+
+  </TabItem>
+  <TabItem value="yaml" label="Configuration YAML">
+
+  1. code signingの場合は、[Appleサービスアカウント](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)をBitriseに接続していることを確認してください。
+
+     Stepは、automatic code signingに対してApple IDおよびAPIキー認証をサポートしています。APIキー認証の使用を推奨します。
+
+     :::tip[手動code signing]
+
+     [手動code signing](/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---manual-provisioning)も使用できます。その場合は、Stepのautomatic code signingオプションを設定しないでください。
+
+     :::
+  1. Workflowで[you install all of the app's dependencies](/bitrise-ci/dependencies-and-caching/ios-dependencies/managing-dependencies-with-carthage)ことを確認してください。
+  1. 依存関係のStepまたはStepsの後に、`xcode-build-for-test` StepをWorkflowに追加してください。
+
+     ```yaml
+     your-workflow:
+       steps:
+         - git-clone: {}
+         - xcode-build-for-test: {}
+     ```
+  1. `project_path`入力が正しい場所を指していることを確認してください。
+
+     入力欄では、`.xcodeproj`または`.xcworkspace`ファイルへのパスを指定します。ほとんどの場合、この入力を変更する必要はありません。新しいアプリを追加すると、プロジェクトスキャナーが自動的に該当するファイルを見つけ、その場所を入力のdefault valueである[環境変数](/bitrise-ci/configure-builds/environment-variables)に保存します。
+
+     ```yaml
+     your-workflow:
+       steps:
+         - git-clone: {}
+         - xcode-build-for-test: {}
+             inputs:        
+             - project_path: "$BITRISE_PROJECT_PATH"
+     ```
+
+     :::note[default valueの確認]
+
+     <strong>Project path</strong>入力のdefault valueが正しい場所を指しているか不明な場合は、<strong>Env Vars</strong>タブに移動し、$BITRISE_PROJECT_PATH変数の値が`.xcodeproj`または`.xcworkspace`ファイルへの正しいパスになっていることを確認してください。
+
+     :::
+
+     :::important[CocoaPods]
+
+     依存関係管理にCocoaPodsを使用している場合は、<strong>Project path</strong>入力が`.xcworkspace`ファイルを指している必要があります。
+
+     :::
+  1. `scheme`入力が、アプリのビルドに使用したいスキームを指していることを確認してください。
+
+     default valueは、アプリの初期設定時に設定したスキームを保存する環境変数です。別のスキームを使用する場合は、入力欄にその名前を入力してください。
+
+     ```yaml
+     your-workflow:
+       steps:
+         - git-clone: {}
+         - xcode-build-for-test:
+             inputs:
+               - scheme: $BITRISE_SCHEME
+               - project_path: $BITRISE_PROJECT_PATH
+     ```
+  1. ビルドしたい[ビルド構成](https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project)を、`configuration`入力で設定してください。
+
+     default valueは`Debug`です。入力に値を設定しない場合、ビルドは<strong>Debug</strong>構成を対象とします。
+
+     ```yaml
+     your-workflow:
+       steps:
+         - git-clone: {}
+         - xcode-build-for-test:
+             inputs:
+               - scheme: $BITRISE_SCHEME
+               - configuration: Debug
+               - project_path: $BITRISE_PROJECT_PATH
+     ```
+  1. `destination`入力でデバイスの宛先を設定します。この入力にはカンマ区切りのキーと値のペアを指定します。
+
+     `build-for-testing`アクションは特定の実機がなくても実行できるため、プラットフォームを汎用的に指定することを推奨します。
+
+     ```yaml
+     // building for physical iOS devices
+     - destination: generic/platform=iOS
+
+     // building for simulators
+     - destination: generic/platform=iOS Simulator
+     ```
+
+     この入力は、`xcodebuild`の`-destination`オプションを設定します。指定可能なオプションの詳細については、[コマンドラインからユニットテストを実行するにはどうすればよいですか?](https://developer.apple.com/library/archive/technotes/tn2339/_index.html#//apple_ref/doc/uid/DTS40014588-CH1-UNIT)を参照してください。
+
+     ```yaml
+     your-workflow:
+       steps:
+         - git-clone: {}
+         - xcode-build-for-test:
+             inputs:
+               - scheme: $BITRISE_SCHEME
+               - configuration: Debug
+               - destination: generic/platform=iOS Simulator
+               - project_path: $BITRISE_PROJECT_PATH
+     ```
+  1. 必要に応じて、`test_plan`入力で特定の[テストプラン](https://developer.apple.com/documentation/xcode/organizing-tests-to-improve-feedback?changes=_8)を設定してください。
+
+     この入力は、`xcodebuild`の`build-for-testing`アクションの`-testPlan`オプションを設定します。空欄のままにした場合は、Xcodeスキームで指定されたテストプランが使用されます。
+
+     ```yaml
+     your-workflow:
+       steps:
+         - git-clone: {}
+         - xcode-build-for-test:
+             inputs:
+               - scheme: $BITRISE_SCHEME
+               - configuration: Debug
+               - destination: generic/platform=iOS Simulator
+               - test_plan: my_plan
+               - project_path: $BITRISE_PROJECT_PATH
+     ```
+  1. code signingが必要な場合は、[automatic code signing](/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning)オプションの使用を推奨します。`automatic-code-signing`入力に次の2つの値のいずれかを設定してください。
+
+     `apple-id`: [Apple ID認証](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id)を使用してcode signingを管理します。
+
+     `api-key`: [APIキー認証](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key)を使用してcode signingを管理します。
+
+     :::note[コードsigning certificate]
+
+     アプリに正しく署名するには、[コードsigning certificate](/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning#uploading-ios-code-signing-certificates-to-bitrise)をBitriseにアップロードする必要があることに注意してください。
+
+     :::
+
+     ```yaml
+     your-workflow:
+       steps:
+         - git-clone: {}
+         - xcode-build-for-test:
+             inputs:
+               - scheme: $BITRISE_SCHEME
+               - configuration: Debug
+               - destination: generic/platform=iOS Simulator
+               - test_plan: my_plan
+               - automatic_code_signing: api-key
+               - project_path: $BITRISE_PROJECT_PATH
+     ```
+
+     [APIキー認証](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key#adding-api-key-authentication-data-on-bitrise)の使用を推奨します。これは、<strong>App settings</strong>ページで設定するBitrise管理の認証方式です。
+
+     代わりにStepレベルでAPI認証を制御したい場合は、別のAPIキー認証を定義する3つの入力を設定することで、デフォルトのBitrise管理接続を上書きできます。
+
+     - `api_key_path`: App Store Connect APIの秘密鍵（.p8 ファイル）へのローカルパスまたはリモートURL。
+     - `api_key_id`: App Store Connect認証に使用するプライベートkey ID。
+     - `api_key_issuer_id`: App Store Connect認証に使用する秘密鍵issuer ID。
+
+     :::important[すべての入力が必須]
+
+     認証のオーバーライドを機能させるには、3つの入力すべてを設定する必要があります!
+
+     :::
+
+     ```yaml
+     your-workflow:
+       steps:
+         - git-clone: {}
+         - xcode-build-for-test:
+             inputs:
+               - api_key_path: path/to/p8        
+               - api_key_id: key_id        
+               - api_key_issuer_id: issuer_id
+     ```
+  1. 生成されたアーティファクトに[<strong>Artifacts</strong>タブ](/bitrise-ci/run-and-analyze-builds/managing-build-files/build-artifacts-online)または<strong>Tests</strong>タブでアクセスできるようにするには、`deploy-to-bitrise-io` StepをWorkflowの最後に追加してください。
+
+     ```yaml
+     your-workflow:
+       steps:
+         - git-clone: {}
+         - xcode-build-for-test:
+             inputs:
+               - scheme: $BITRISE_SCHEME
+               - configuration: Debug
+               - destination: generic/platform=iOS Simulator
+               - test_plan: my_plan
+               - automatic_code_signing: api-key
+               - project_path: $BITRISE_PROJECT_PATH
+         - deploy-to-bitrise-io: {}
+     ```
+
+  </TabItem>
+</Tabs>

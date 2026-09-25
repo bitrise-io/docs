@@ -1,0 +1,103 @@
+---
+title: "Running lint for your Android apps"
+description: "On Bitrise, you can run lint checks with our dedicated Step called Android Lint. It runs the same lint function that is built into Android Studio. To perform lint checks, you don't need to write test cases or execute your app."
+sidebar_position: 3
+slug: /bitrise-ci/testing/testing-android-apps/running-lint-for-your-android-apps
+sidebar_label: Running lint checks for your Android apps
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Android Studio は、コードの構造的な品質に関する問題を特定して修正するのに役立つ、[lintと呼ばれるコードスキャンツール](https://developer.android.com/studio/write/lint)を提供します。Android Studio を使用する場合、設定済みのlintチェックはアプリのビルド時に自動的に実行されます。lintチェックにはテストケースは必要ありません。
+
+Bitriseでは、専用の<GlossTerm baseform="Step">Step</GlossTerm>である[<strong>Android Lint</strong>](https://github.com/bitrise-steplib/bitrise-step-android-lint)を使ってlintチェックを実行できます。方法は次のとおりです。
+
+
+<Tabs>
+  <TabItem value="workflow-editor" label="Workflow Editor">
+
+  1. [<strong>Android Lint</strong>](https://github.com/bitrise-steplib/bitrise-step-android-lint) StepをAndroidアプリの<GlossTerm baseform="Workflow">Workflow</GlossTerm>に追加します。
+
+     Workflow内にアプリをビルドするStep（例: [<strong>Android Build</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build)）がある場合、そのStepより前に配置してください。
+  1. <strong>Project Location</strong>の入力項目が、トップレベルの`build.gradle`ファイルが配置されているAndroidプロジェクトのルートディレクトリを指していることを確認してください。
+  1. <strong>Module</strong>と<strong>Variant</strong>の入力項目で、チェックしたいアプリのモジュールとバリアントを指定します。
+
+     ![android-lint.png](/img/_paligo/uuid-624b318c-ddc6-58e7-4c58-e426c2f3db50.png)
+
+     プロジェクト内のモジュールとバリアントの正確な名前がわからない場合は、[Android Studio のプロジェクトビュー](https://developer.android.com/studio/projects)で確認できます。
+  1. <strong>Options</strong>の入力グループにある<strong>Report location pattern</strong>の入力項目では、Stepの実行後にlintレポートが出力される場所を指定できます。
+
+     この入力項目ではアスタリスクをワイルドカードとして使用できます。結果をhtmlまたはxmlのいずれかで返すように設定できます。
+  1. <strong>Options</strong>の入力グループにある<strong>Additional Gradle Arguments</strong>の入力項目では、Gradleタスクに引数を渡すことができます。
+
+  </TabItem>
+  <TabItem value="yaml" label="Configuration YAML">
+
+  1. <GlossTerm baseform="configuration yaml">Configuration YAML</GlossTerm>ファイルで、`android-lint` StepをAndroidアプリのWorkflowに追加します。
+
+     Workflow内にアプリをビルドするStep（例: [<strong>Android Build</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build)）がある場合、そのStepより前に配置してください。
+
+     ```yaml
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-lint:
+     ```
+  1. `project_location`の入力項目が、トップレベルの`build.gradle`または`build.gradle.kts`ファイルが配置されているAndroidプロジェクトのルートディレクトリを指していることを確認してください。
+
+     ```yaml
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-lint:
+             inputs:
+             - project_location: $BITRISE_SOURCE_DIR
+     ```
+  1. `module`と`variant`の入力項目で、チェックしたいアプリのモジュールとバリアントを指定します。
+
+     プロジェクト内のモジュールとバリアントの正確な名前がわからない場合は、[Android Studio のプロジェクトビュー](https://developer.android.com/studio/projects)で確認できます。
+
+     ```yaml
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-lint:
+             inputs:
+             - module: module
+             - variant: variant
+             - project_location: $BITRISE_SOURCE_DIR
+     ```
+  1. `report_path_pattern`の入力項目では、Stepの実行後にlintレポートが出力される場所を指定できます。
+
+     この入力項目ではアスタリスクをワイルドカードとして使用できます。結果をhtmlまたはxmlのいずれかで返すように設定できます。
+
+     ```yaml
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-lint:
+             inputs:
+             - module: module
+             - variant: variant
+             - report_path_pattern: '*/build/reports/lint-results*.xml'
+             - project_location: $BITRISE_SOURCE_DIR
+     ```
+  1. `arguments`の入力項目では、Gradleタスクに引数を渡すことができます。
+
+     ```yaml
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-lint:
+             inputs:
+             - module: module
+             - variant: variant
+             - report_path_pattern: '*/build/reports/lint-results*.xml'
+             - arguments: arg
+             - project_location: $BITRISE_SOURCE_DIR
+     ```
+
+  </TabItem>
+</Tabs>

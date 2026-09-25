@@ -1,0 +1,338 @@
+---
+title: "Device testing for Android"
+description: "With Bitrise’s Android virtual device testing solution, you can run UI tests on emulators without having to set up and register your own devices."
+sidebar_position: 2
+slug: /bitrise-ci/testing/device-testing-with-firebase/device-testing-for-android
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+BitriseのAndroid仮想デバイステストソリューションを使用すると、独自のデバイスをセットアップして登録することなく、エミュレーターでUIテストを実行できます。
+
+:::note[制限事項]
+
+仮想デバイステストの最大実行時間は60分です。<strong>Test timeout</strong>入力でこの値を設定できます。デフォルトは15分です。
+
+1つのビルドには、<strong>Virtual Device Testing</strong> <GlossTerm baseform="step">Step</GlossTerm>を1つだけ含めることができ、これは`instrumentation`、`robo`、または`gameloop`のいずれか1種類のテストを実行します。
+
+:::
+
+このデバイステストソリューションは[Firebase Test Lab](https://firebase.google.com/docs/test-lab/)をベースにしています。生成されたログ、動画、スクリーンショットはBitriseで確認できます。
+
+
+## テストの実行
+
+Bitriseでは、3種類のテストタイプから選択できます。
+
+- robo(Bitriseのデフォルトのテストタイプ)。
+- instrumentation。
+- gameloop。
+
+これらのテストタイプの違いについて詳しく知りたい場合は、[Firebaseのドキュメントを参照してください。](https://firebase.google.com/docs/test-lab/android/get-started)
+
+roboテストとinstrumentationテストでは<GlossTerm baseform="Workflow">Workflow</GlossTerm>の設定方法が少し異なるため、それぞれ別々に見ていきましょう。
+
+### roboテストの実行
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. 使用するWorkflowを<GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>で開きます。
+1. APKをエクスポートするために、<strong>Android Build</strong> StepをWorkflowに追加します。
+
+   StepはAPKのパスを[Env Var](/bitrise-ci/configure-builds/environment-variables)に保存します。このEnv Varは後で必要になります。
+1. `Debug`タスクを<strong>Variant</strong> Step入力フィールドに追加します。
+1. <strong>Virtual Device Testing for Android</strong> Stepを<strong>Android Build</strong> Stepの後に追加します。
+1. `App path`入力フィールドを設定します。
+1. <strong>Test type</strong>入力を<strong>robo</strong>に設定します。
+1. <strong>Test devices</strong>入力フィールドにテストデバイスの種類を追加します。
+
+   デフォルト以外のデバイスを選択する場合、入力は`deviceID`、`version`、`language`、`orientation`を`,`で区切った形式にする必要があります。使用可能なデバイスの一覧は[こちら](https://firebase.google.com/docs/test-lab/android/available-testing-devices)で確認できます。
+1. 必要に応じて、テストの実行が自動的にキャンセルされるまでの時間を制御する<strong>Test timeout</strong>入力を設定します。デフォルトは15分、最大は60分です。
+1. ビルドを開始し、[テスト結果を確認します](/bitrise-ci/testing/deploying-and-viewing-test-results)。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. <GlossTerm baseform="configuration yaml">Configuration YAML</GlossTerm>ファイルで、使用するWorkflowを見つけるか、新規作成します。
+1. `android-build` StepをWorkflowに追加します。
+
+   StepはAPKのパスを[Env Var](/bitrise-ci/configure-builds/environment-variables)に保存します。このEnv Varは後で必要になります。
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - android-build:
+           inputs:
+   ```
+1. `variant`入力を`Debug`に設定します。
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - android-build:
+           inputs:
+           - variant: Debug
+   ```
+1. `virtual-device-testing-for-android` Stepを追加します。
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - android-build:
+           inputs:
+           - variant: Debug
+       - virtual-device-testing-for-android:
+           inputs:
+   ```
+1. `app_path`入力フィールドを設定します。デフォルトでは、値は$BITRISE_APK_PATH Env Varです。このEnv Varは`android-build` Stepによってエクスポートされます。
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - android-build:
+           inputs:
+           - variant: Debug
+       - virtual-device-testing-for-android:
+           inputs:
+           - app_path: $BITRISE_APK_PATH
+   ```
+1. `test_type`入力を`robo`に設定します。
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - android-build:
+           inputs:
+           - variant: Debug
+       - virtual-device-testing-for-android:
+           inputs:
+           - test_type: robo
+           - app_path: $BITRISE_APK_PATH
+   ```
+1. `test_devices`入力フィールドにテストデバイスの種類を追加します。
+
+   入力は`device ID`、`version`、`language`、`orientation`を`,`で区切った形式にする必要があります。
+
+   :::tip[サポートされているモデル]
+
+   サポートされているデバイスモデルは、`gcloud firebase test android models list --filter=virtualgcloud firebase test android models list --filter=virtual`コマンドをGoogle Cloud CLIで実行すると確認できます。
+
+   :::
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - android-build:
+           inputs:
+           - variant: Debug
+       - virtual-device-testing-for-android:
+           inputs:
+           - test_type: robo
+           - app_path: $BITRISE_APK_PATH
+           - test_devices: 'Nexus9,24,en,portrait'
+   ```
+1. 必要に応じて、テストの実行が自動的にキャンセルされるまでの時間(秒単位)を制御する`test_timeout`入力を設定します。デフォルトは900(15分)、最大は3600(60分)です。
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - android-build:
+           inputs:
+           - variant: Debug
+       - virtual-device-testing-for-android:
+           inputs:
+           - test_type: robo
+           - app_path: $BITRISE_APK_PATH
+           - test_devices: 'Nexus9,24,en,portrait'
+           - test_timeout: '3600'
+   ```
+1. ビルドを開始し、テスト結果を確認します。
+
+</TabItem>
+</Tabs>
+
+#### roboテストを成功させるためのRobo directivesによるユーザー入力の設定
+
+アプリでroboテストを成功させるために特定のユーザー操作が必要な場合は、Robo directives入力フィールドを使用して必要な入力を設定できます。たとえば、アプリの特定のUI要素は、ログインに必要なユーザー入力(ユーザー名とメールアドレス)が入力されている場合にのみ、roboテストでアクセスできます。
+
+1. Workflow内のVirtual Device Testing for Android Stepをクリックします。
+1. Robo Testセクションをクリックします。
+1. Robo directives入力フィールドを見つけて、必要なユーザー入力ディレクティブを設定します。
+
+   - provide aカンマ区切りのキーと値のペアのリストです。キーはAndroidリソース名(対象となるUI要素のもの)、値はテキスト文字列です。EditTextフィールドはサポートされていますが、WebView UI要素内のテキストフィールドはサポートされていません。たとえば、カスタムログインには次のパラメーターを使用できます。
+
+     ```text
+     username_resource,username,ENTER_TEXT
+     password_resource,password,ENTER_TEXT
+     loginbtn_resource,,SINGLE_CLICK
+     ```
+   - 1行につき1つのディレクティブを記述し、パラメーターは,(カンマ)で区切ります。例:ResourceName,InputText,ActionType。
+
+   ![Device_testing_for_Android.png](/img/_paligo/uuid-c9f67a4a-32c5-6ea8-fd0a-e1da4dccebf2.png)
+
+指定した入力に基づいて、(特定のユーザー入力でのみアクセスできるページであっても)roboテストを正常に実行し、テスト結果をTestsタブ(Buildページ)で確認できます。テスト結果には、たとえば次のものがあります。
+
+- スクリーンショット。
+
+  録画された動画。
+
+  ログ。
+
+  ファイル。
+
+以下は、成功したroboテストのスクリーンショットです。Robo directivesで事前定義されたディレクティブによってメールアドレスとパスワードのフィールドが最初に入力され、roboテストがMy applicationまで到達しています。
+
+![Device_testing_for_Android.jpg](/img/_paligo/uuid-9b533252-b690-2350-8a3d-5929fcd79ffb.jpg)
+
+
+## instrumentationテストの実行
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. 使用するWorkflowをWorkflow Editorで開きます。
+1. <strong>Android Build</strong>(UIテスト用)StepをWorkflowに追加します。
+1. APKとTest APKをエクスポートするには、<strong>Android Build</strong>(UIテスト用)Stepで次の入力フィールドを設定する必要があります。
+
+   - <strong>Project Location</strong>:Androidプロジェクトのルートディレクトリ。
+   - <strong>Module</strong>:ビルドするモジュールを設定します。
+   - <strong>Variant</strong>:ビルドするバリアントを設定します(通常は`Debug`)。
+
+   ![Device_testing_for_Android.png](/img/2026-07-16-android-build-for-ui-testing-step.png)
+
+   Stepの出力は、`BITRISE_APK_PATH`(フィルタリング後に生成されたAPKのパス)と`BITRISE_TEST_APK_PATH`(フィルタリング後に生成されたテストAPKのパス)になります。
+1. <strong>Virtual Device Testing for Android</strong> Stepを<strong>Android Build</strong>(UIテスト用)Stepの直後に追加します。
+1. <strong>Test type</strong>入力を`instrumentation`に設定します。
+
+   <strong>Android Build for UI Testing</strong> StepはAPKとTest APKをエクスポートし、それらのパスは<strong>App path</strong>および<strong>Test APK path</strong>入力フィールド(<strong>Virtual Device Testing for Android</strong> Step)に自動的に設定されます。
+1. <strong>Test devices</strong>入力フィールドにテストデバイスの種類を追加します。
+
+   デフォルト以外のデバイスを選択する場合、入力は`device ID`、`version`、`language`、`orientation`を`,`で区切った形式にする必要があります。
+
+   ![Device_testing_for_Android.png](/img/2026-07-16-virtual-device-testing-for-android-test-devices.png)
+1. 必要に応じて、テストの実行が自動的にキャンセルされるまでの時間を制御する<strong>Test timeout</strong>入力を設定します。デフォルトは15分、最大は60分です。
+1. ビルドを開始し、テスト結果を確認します。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. Configuration YAMLファイルで、使用するWorkflowを見つけるか、新規作成します。
+1. `android-build-for-ui-testing` StepをWorkflowに追加します。
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - android-build-for-ui-testing:
+           inputs:
+   ```
+1. APKとTest APKをエクスポートするには、<strong>Android Build</strong>(UIテスト用)Stepで次の入力フィールドを設定する必要があります。
+
+   - `project_location`:Androidプロジェクトのルートディレクトリ。
+   - `module`:ビルドするモジュールを設定します。
+   - `variant`:ビルドするバリアントを設定します(通常はdebug)。
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - android-build-for-ui-testing:
+           inputs:
+           - module: module
+           - variant: variant
+           - project_location: $BITRISE_SOURCE_DIR
+   ```
+
+   Stepの出力は、`BITRISE_APK_PATH`(フィルタリング後に生成されたAPKのパス)と`BITRISE_TEST_APK_PATH`(フィルタリング後に生成されたテストAPKのパス)になります。
+1. `virtual-device-testing-for-android` Stepを<strong>Android Build</strong>(UIテスト用)Stepの直後に追加します。
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone@8: {}
+       - android-build-for-ui-testing:
+           inputs:
+           - module: module
+           - variant: variant
+           - project_location: $BITRISE_SOURCE_DIR
+       - virtual-device-testing-for-android:
+           inputs:
+   ```
+1. `test_type`入力を`instrumentation`に設定します。
+
+   `android-build-for-ui-testing` StepはAPKとTest APKをエクスポートし、それらのパスは`app_path`および`test_apk_path`入力フィールド(`virtual-device-testing-for-android` Step)に自動的に設定されます。
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - android-build-for-ui-testing:
+           inputs:
+           - module: module
+           - variant: variant
+           - apk_path_pattern: '*/build/outputs/apk/*.apk'
+           - arguments: arg
+           - project_location: $BITRISE_SOURCE_DIR
+       - virtual-device-testing-for-android:
+           inputs:
+           - test_type: instrumentation
+           - app_path: $BITRISE_APK_PATH
+           - test_apk_path: $BITRISE_TEST_APK_PATH
+   ```
+1. `test_devices`入力フィールドにテストデバイスの種類を追加します。
+
+   入力は`device ID`、`version`、`language`、`orientation`を`,`で区切った形式にする必要があります。
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - android-build-for-ui-testing:
+           inputs:
+           - module: module
+           - variant: variant
+           - apk_path_pattern: '*/build/outputs/apk/*.apk'
+           - arguments: arg
+           - project_location: $BITRISE_SOURCE_DIR
+       - virtual-device-testing-for-android:
+           inputs:
+           - test_devices: 'Nexus9,24,en,portrait'
+           - test_type: instrumentation
+           - test_apk_path: $BITRISE_TEST_APK_PATH
+           - app_path: $BITRISE_APK_PATH
+   ```
+1. 必要に応じて、テストの実行が自動的にキャンセルされるまでの時間(秒単位)を制御する`test_timeout`入力を設定します。デフォルトは900(15分)、最大は3600(60分)です。
+
+   ```yaml
+   my-workflow:
+     steps:
+       - git-clone: {}
+       - android-build-for-ui-testing:
+           inputs:
+           - module: module
+           - variant: variant
+           - apk_path_pattern: '*/build/outputs/apk/*.apk'
+           - arguments: arg
+           - project_location: $BITRISE_SOURCE_DIR
+       - virtual-device-testing-for-android:
+           inputs:
+           - test_devices: 'Nexus9,24,en,portrait'
+           - test_type: instrumentation
+           - test_apk_path: $BITRISE_TEST_APK_PATH
+           - app_path: $BITRISE_APK_PATH
+           - test_timeout: '3600'
+   ```
+1. ビルドを開始し、テスト結果を確認します。
+
+</TabItem>
+</Tabs>

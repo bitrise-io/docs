@@ -1,0 +1,466 @@
+---
+title: "Detecting and quarantining flaky tests"
+sidebar_position: 8
+slug: /bitrise-ci/testing/detecting-and-quarantining-flaky-tests
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+不安定なテスト（Flaky Test）は、コードに問題がない場合でもPRをブロックします。一時的な失敗が1件発生するだけで、ログを調べたり、再実行したり、待機したりする必要が生じ、マージが遅くなり、実際のリグレッションが見えなくなります。
+
+
+## 不安定なテストの検出
+
+特定のビルドの<GlossTerm baseform="step">Steps</GlossTerm>を設定すると、失敗したテストが自動的に再実行されます。再試行でテストが成功すればビルドをグリーンにでき、そのテストは不安定（flaky）としてマークされるため、後で修正できます。[Enterprise](https://bitrise.io/solutions/enterprise)プランをご利用の場合は、[隔離](/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#quarantining-flaky-tests)することもできます。
+
+### 失敗したテストの自動再実行を許可するSteps
+
+これらのテスト用Stepsの入力欄では、失敗したテストの再試行回数を指定できます。実行中にテストが失敗すると、Stepが自動的にテストを再試行します。
+
+後続の試行でテストが成功した場合、そのテストは不安定（flaky）としてマークされますが、Step自体は成功として扱われるため、ビルドとPRチェックをグリーンにできます。
+
+これにより、変更のマージがブロックされることなく、後で不安定なテストを特定して修正するために必要なデータも得られます。
+
+- [Xcode Test for iOS](https://bitrise.io/integrations/steps/xcode-test)
+- [Xcode Test without building](https://bitrise.io/integrations/steps/xcode-test-without-building)
+- [iOS Device Testing](https://bitrise.io/integrations/steps/virtual-device-testing-for-ios)
+- [Virtual Device Testing for Android](https://bitrise.io/integrations/steps/virtual-device-testing-for-android)
+- [Android ユニットテスト](https://bitrise.io/integrations/steps/android-unit-test)（[Gradle プラグイン](https://github.com/gradle/test-retry-gradle-plugin)経由）
+
+たとえば、UIテストは、ネットワークリクエストがタイムアウトしたり、アニメーションが完了していなかったりすることが原因で、時々失敗することがあります。この場合、ビルド全体を失敗させる代わりに、失敗したテストを最大3回まで再試行するように設定できます。2回目の試行で成功すれば、PRのブロックが解除され、テストレポートでこの特定のテストが不安定だったことを確認できます。
+
+<strong>iOS Device Testing</strong> Stepまたは<strong>Virtual Device Testing for Android</strong> Stepを使用する場合、失敗したテストだけでなく、テストスイート全体が再実行される点に注意してください。
+
+### 不安定なテスト検出の設定
+
+これらのテスト用Stepsの入力フィールドで、不安定なテスト検出を設定します。
+
+#### Xcode Test for iOSとXcode Test without building
+
+Stepの<strong>Test repetition</strong>セクションで、以下の入力フィールドを設定します。
+
+- <strong>Test Repetition Mode</strong>：繰り返しモードを定義します。たとえば、`retry_on_failure`を選択すると、失敗したテストのみが再実行されます。
+- <strong>Maximum Test Repetitions</strong>：テストを繰り返す最大回数です。
+- <strong>Relaunch Tests For Each Repetition</strong>：繰り返しごとにアプリを再起動するかどうかを制御します。
+
+#### iOSデバイステストおよびAndroid向けVirtual device testing
+
+Stepで以下の入力フィールドを設定します。
+
+- <strong>Number of times a test execution is reattempted</strong>：失敗したテスト実行を再試行する回数を指定します。最初は失敗しても再試行で成功した実行は、不安定（flaky）として報告されます。最大値は10で、デフォルトは0（再実行なし）です。
+
+  ![iosdevicetesting-flakytests.png](/img/_paligo/uuid-acd14919-6069-8806-9834-df5d53a539a5.png)
+
+  :::note[<strong>Virtual Device Testing for Android</strong>と<strong>iOS Device Testing</strong>Stepsでのテストの実行]
+
+  Stepsはどちらも、入力で設定された回数だけ、すべてのテスト（成功・失敗を問わず）を常に再実行します。
+
+  :::
+
+#### Android Unit Test
+
+この機能は、[Gradle プラグイン](https://github.com/gradle/test-retry-gradle-plugin)から直接設定します。プロジェクトの`build.gradle`ファイル内で、失敗したテストの再試行を有効にできます。
+
+:::note[不安定なテストの隔離]
+
+ビルドを妨げる不安定なテストは、問題を修正するまでの間、[隔離](/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#quarantining-flaky-tests)することができます。隔離の詳細を指定すると、前述のStepsが隔離済みのテストを自動的にスキップします。
+
+:::
+
+### 不安定なテスト検出用の環境変数
+
+テスト用のStepsは、再試行が有効になっていると、どのテストが不安定な挙動を示しているかを特定するために、自動的にBITRISE_FLAKY_TEST_CASESへ値を設定するようになりました。
+
+これらのStepsのいずれかを再試行を有効にして実行すると、個々のテスト結果が自動的に追跡されます。
+
+- Xcode Test for iOS (ID: xcode-test)
+- Android Unit Test (ID: android-unit-test)
+- iOS Device Testing (ID: virtual-device-testing-for-ios)
+- Virtual Device Testing for Android (ID: virtual-device-testing-for-android)
+
+:::note[デバイステスト用Stepsの追加条件]
+
+<strong>iOS Device Testing</strong>と<strong>Virtual Device Testing for Android</strong>では、再試行を有効にするだけでは不十分です。<strong>Download files</strong>入力を`true`に設定する必要もあります。この入力はデフォルトで`false`になっており、設定しないと、これら2つのStepsはBITRISE_FLAKY_TEST_CASESに値を設定しません。
+
+:::
+
+これらのStepsは、再試行の過程で少なくとも1回失敗し、かつ少なくとも1回成功したテストをBITRISE_FLAKY_TEST_CASES Env Varに設定します。
+
+BITRISE_FLAKY_TEST_CASES Env Varには、不安定なテストの識別子が改行区切りのリストとして格納されます。
+
+```yaml
+- TestTarget_1.TestClass_1.TestMethod_1
+- TestTarget_1.TestClass_1.TestMethod_2  
+- TestTarget_1.TestClass_2.TestMethod_1
+- TestTarget_2.TestClass_1.TestMethod_1
+```
+
+#### 不安定なテスト用Env Varの活用例
+
+このEnv Varが役立つユースケースをいくつか紹介します。
+
+1. 不安定なテストが検出された場合にテストを失敗させる。
+
+   ```yaml
+   steps:
+   ...
+   - script:    
+       run_if: '{{getenv "BITRISE_FLAKY_TEST_CASES" | ne ""}}'    
+       inputs:    
+        - content: |-        
+        #!/bin/env bash        
+        echo "Build failed due to flaky tests:"        
+        echo "$BITRISE_FLAKY_TEST_CASES"       
+        exit 1
+   ```
+1. 不安定なテストが検出された場合にSlack通知を送信する。
+
+   ```yaml
+   steps:
+   ...
+   - slack:    
+       run_if: '{{getenv "BITRISE_FLAKY_TEST_CASES" | ne ""}}'    
+       inputs:    
+       - webhook_url: $SLACK_WEBHOOK_URL    
+       - text: |-        
+           ⚠️ Flaky tests detected in build $BITRISE_BUILD_NUMBER:       
+           $BITRISE_FLAKY_TEST_CASES
+   ```
+1. GitHubの課題を自動的に作成する。
+
+   ```yaml
+   steps:
+   ...
+   - script:    
+       run_if: '{{getenv "BITRISE_FLAKY_TEST_CASES" | ne ""}}'    
+       inputs:    
+       - content: |-       
+         #!/bin/env bash        
+         ISSUE_BODY="Flaky tests detected in build 
+   $BITRISE_BUILD_NUMBER:\n\n\`\`\`\n$BITRISE_FLAKY_TEST_CASES\n\`\`\`"        
+         curl -X POST \          
+          -H "Authorization: token $GITHUB_TOKEN" \          
+          -H "Accept: application/vnd.github.v3+json" \         
+          https://api.github.com/repos/owner/repo/issues \          
+          -d "{\"title\":\"Flaky tests - Build $BITRISE_BUILD_NUMBER\",\"body\":\"$ISSUE_BODY\"}"
+   ```
+
+分析サービスへのログ記録、ビルドアーティファクトへの保存、テストターゲット別の集計と分類、後続のSteps向けの環境変数の設定なども可能です。
+
+### 再試行後のテスト結果と結果の扱い
+
+テストが失敗すると、Stepは設定された上限まで再試行します。以前に失敗していたテストが再試行で成功した場合、Bitriseの<strong>Tests</strong>タブで不安定（flaky）としてマークされます。再試行後もテストが失敗し続ける場合、Stepは通常どおり失敗します。
+
+再試行後にすべてのテストが成功すると、ビルドは成功し、不安定なテストは新しいテストレポートでハイライト表示されます。再試行後にいずれかのテストが失敗すると、Stepは失敗し、ビルドステータスはFAILEDになります。
+
+:::note[失敗と成功の両方の実行があるテストケース]
+
+テストケースに成功と失敗の両方の実行結果がある場合、そのテストは不安定としてマークされます。ステータスの回数や順序は関係ありません。たとえば、失敗1回・成功1回・失敗1回という結果も、成功1回・失敗2回（この順序）という結果も、いずれも不安定としてマークされます。
+
+:::
+
+
+## 不安定なテストの隔離
+
+この機能を使うと、テストスイート全体に影響を与えることなく、問題のあるテストを一時的に切り離すことができます。[不安定なテスト](/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#detecting-flaky-tests)を隔離済みとしてマークすると、以降のビルドでBitriseがそれらをスキップするようになります。
+
+隔離済みのテストは別の<strong>Test Quarantine</strong>タブで管理され、隔離を解除するまでビルドから除外され続けます。
+
+:::note[Test Quarantineの利用には制限があります]
+
+この機能は[Enterpriseプラン](https://bitrise.io/solutions/enterprise)でのみ利用できる点にご注意ください。また、隔離済みのテストへの読み取り・書き込み・編集のフルアクセス権を持つのは、Admin、Platform Engineer、Developerのみです。TesterおよびQA担当者は読み取り専用アクセスとなります。
+
+:::
+
+たとえば、次のような場合にテストを隔離することをお勧めします。
+
+- テストがローカルでは成功するのに、CIでは断続的に失敗する。
+- 不安定なテストを特定したものの、すぐに修正する時間がない。
+- テストの安定性の問題を調査している間も、ビルドをグリーンに保ちたい。
+- 既知の問題のあるテストで自動再実行がビルド時間を消費するのを防ぎたい。
+
+### テストの隔離への追加
+
+予期しないビルドの失敗を防ぐため、<strong>Tests</strong>タブまたは<strong>Insights</strong>からテストを隔離できます。
+
+<Tabs>
+  <TabItem value="tests-tab" label="Tests tab">
+
+  1. <strong>Tests</strong>タブの<strong>Flaky</strong>タブに移動します。
+
+     ![pipelinebuild-quarantine.png](/img/_paligo/uuid-917bf276-d9f8-706a-9bb8-6b9e4d1bba39.png)
+
+  1. 不安定なテストの横にある<strong>Add to quarantine</strong>をクリックします。
+  1. <strong>[Edit quarantine scope](/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#defining-the-scope-of-quarantine)</strong>をクリックして、隔離の範囲（Workflow、Pipeline、ブランチ）を定義します。
+  1. 今後の参照用に、任意でコメントを追加します。
+
+  ![editscope-quarantine.png](/img/_paligo/uuid-01568ffa-736b-b7a0-a692-03cf3784fd65.png)
+
+  </TabItem>
+  <TabItem value="insights" label="Insights">
+
+  1. <strong>Insights</strong> → <strong>Tests</strong> → <strong>Flaky tests</strong> → <strong>Test cases</strong>に移動します。
+  1. <strong>Project filter</strong>を適用します。
+  1. 内訳ビューで、任意のテストの横にある<strong>Add to quarantine</strong>をクリックします。
+  1. <strong>[Edit quarantine scope](/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#defining-the-scope-of-quarantine)</strong>をクリックして、隔離の範囲と条件を設定します。
+  1. 送信して、以降の実行からテストを除外します。
+
+  ![insights-quarantine.png](/img/_paligo/uuid-722f22f9-7a85-48f3-69b6-78a16b9df4f0.png)
+
+  </TabItem>
+</Tabs>
+
+### scope of quarantineの定義
+
+デフォルトでは、特に指定しない限り、隔離はプロジェクトのすべてのビルドに適用されます。フィールドを空欄にすると、すべてのブランチとすべてのターゲット（WorkflowとPipeline）でテストがスキップされます。
+
+ブランチとターゲットで範囲を制限できます。
+
+- Branch（任意）：ワイルドカード（*）に対応したブランチパターンをスペース区切りで入力します。例：`main`、`release-*`、`feature/auth-*`
+- Targets（任意）：WorkflowおよびPipelineの名前をスペース区切りで入力します。例：`ci`、`nightly-tests`、`release-pipeline`
+
+:::note[ブランチとターゲットを組み合わせて範囲を絞り込む]
+
+ブランチとターゲットの両方を設定した場合、テストが隔離されるのは、ブランチとターゲットの両方が一致したときだけです。過剰に対象を除外しないよう、パターンは絞り込んで指定してください。`*`よりも`release-*`を優先し、不安定なテストを実行する特定のWorkflowを対象にしてください。
+
+:::
+
+<strong>Comment</strong>フィールドを使うと、隔離した理由を記録したり、後で理由を思い出せるようにチケットへのリンクを含めたりできます。
+
+範囲は、隔離ダッシュボードから後で編集または削除できます。
+
+### 隔離済みテストの管理
+
+CIのホームページにある<strong>Test Quarantine</strong>タブから、隔離ダッシュボードにアクセスします。
+
+:::note[隔離済みテストへのアクセス]
+
+隔離済みのテストへの読み取り・書き込み・編集のフルアクセス権を持つのは、Admin、Platform Engineer、Developerのみである点にご注意ください。TesterおよびQA担当者は読み取り専用アクセスとなります。
+
+:::
+
+ダッシュボードには、以下が表示されます。
+
+- テスト名とモジュールパス。
+- テストが隔離されたビルド。
+- 隔離した日時とユーザー。
+- 各テストのInsightsへの直接リンク。
+
+![managingquarantinedtests.png](/img/_paligo/uuid-f06ef542-d72d-5bed-0c22-4d729b330691.png)
+
+ビルドで実行されなかった隔離済みテストは、<strong>Tests</strong>タブには表示されません。隔離済みテストは、隔離を解除するまでダッシュボードに残ります。
+
+範囲は狭く設定し、不安定な挙動が発生しているブランチやWorkflowのみを隔離することをお勧めします。将来のクリーンアップのためにコメントを残し、長期間隔離されているテストや修正済みのテストを定期的にレビューする仕組みを設けておくことも役立ちます。
+
+### 隔離済みテスト用の環境変数
+
+ビルド中、Bitriseは範囲指定された隔離済みテストのリストを$BITRISE_QUARANTINED_TESTS_JSON環境変数に挿入します。対応するStepsはこの変数を読み取り、該当のテストをスキップして自動再試行の対象からも除外します。カスタムのStepsを使用している場合や、テストランナーを直接呼び出している場合は、$BITRISE_QUARANTINED_TESTS_JSONを解析して、テストランナーの引数をそれに応じてフィルタリングしてください。Env Varの値の例を次に示します。
+
+```yaml
+BITRISE_QUARANTINED_TESTS_JSON = "[
+  {
+     testCaseName: 'EnableQuarantiningDisabledByPlan',
+     testSuiteName: ['UITests', 'CI', 'Settings'],
+     className: 'BuildSettings'
+  },
+  {
+     testCaseName: 'EnableQuarantiningDisabledByLDFlag',
+     testSuiteName: ['UITests', 'CI', 'Settings'],
+     className: 'BuildSettings'
+  }
+  ...
+]"
+```
+
+:::note[隔離済みテストに対応するSteps]
+
+以下のStepは、指定された範囲内の隔離済みテストを自動的にスキップします。カスタムStepを使用している場合や、テストランナーを直接呼び出している場合は、$BITRISE_QUARANTINED_TESTS_JSONを解析して、テストランナーの引数をそれに応じてフィルタリングしてください。
+
+- [Xcode Test for iOS](https://bitrise.io/integrations/steps/xcode-test)
+- [Xcode Test Without Building](https://bitrise.io/integrations/steps/xcode-test-without-building)
+- [iOS Device Testing](https://bitrise.io/integrations/steps/virtual-device-testing-for-ios)
+- [Android Unit Test](https://bitrise.io/integrations/steps/android-unit-test)
+- [Virtual Device Testing for Android](https://bitrise.io/integrations/steps/virtual-device-testing-for-android)
+
+:::
+
+#### カスタムStepsでのQuarantineサポート
+
+その他のStepsでは、BITRISE_QUARANTINED_TESTS_JSONのデータをテストランナーが指定されたテストをスキップできる形式に変換できます。たとえば、fastlaneの`scan`アクションやGradleのInitスクリプトを設定して、隔離済みテストをスキップできます。
+
+以下はsome examplesです。
+
+<strong>Fastlane - scanアクションの実行</strong>
+
+Bitriseの<GlossTerm baseform="workflow">Workflow</GlossTerm>では、公式のBitrise<strong>Fastlane</strong>Stepを使うか、<strong>Script</strong>Stepを使うことで、fastlaneのlaneを実行できます。
+
+どちらの方法でも、まずJSONのデータをカンマ区切りの`TestTarget/TestClass/TestMethod`項目のリストに変換する必要があります。
+
+JSONのデータは、<GlossTerm baseform="configuration yaml">configuration YAML</GlossTerm>ファイルまたはfastlaneの設定ファイル（`Fastfile`）のいずれかで変換できます。
+
+<Tabs>
+  <TabItem value="yaml" label="Configuration YAML">
+
+  1. この例では、<strong>Script</strong>Stepが隔離済みテストのJSONデータをカンマ区切りの`TestTarget/TestClass/TestMethod`項目のリストに変換し、そのリストをBITRISE_QUARANTINED_TESTS_LIST環境変数として公開します。
+
+     ```yaml
+     workflows:
+       test:
+         steps:
+         ...
+         - script:
+             title: Convert BITRISE_QUARANTINED_TESTS_JSON
+             inputs:
+             - content: |-
+                 #!/usr/bin/env bash
+                 set -e
+
+                 # Read JSON from environment variable
+                 json="$BITRISE_QUARANTINED_TESTS_JSON"
+
+                 # Convert to array of TestTarget/TestClass/TestMethod
+                 test_array=($(echo "$json" | jq -r '.[] | "\(.testSuiteName[0])/\(.className)/\(.testCaseName)"'))
+
+                 # Join the array elements with a comma
+                 skip_testing_list=$(IFS=, ; echo "${test_array[*]}")
+
+                 # Export the comma-separated string as an environment variable to be used by following Fastlane Steps
+                 envman add --key BITRISE_QUARANTINED_TESTS_LIST --value "$skip_testing_list"
+         - fastlane:
+             inputs:
+             - lane: test
+         ...
+     ```
+  1. その後、BITRISE_QUARANTINED_TESTS_LIST変数を使って、fastlaneの`scan`アクションの`skip testing`オプションを設定できます。
+
+     ```ruby
+     lane :test do
+       ...
+       scan(skip_testing: ENV['BITRISE_QUARANTINED_TESTS_LIST'].split(','))
+       ...
+     end
+     ```
+
+  </TabItem>
+  <TabItem value="fastfile" label="Fastfile">
+
+  - Fastfile内でデータを変換する場合も、BITRISE_QUARANTINED_TESTS_JSON変数が必要です。以下の例では、fastlaneのlaneが隔離済みテストのリストをテスト識別子に解析し、`skip_testing`としてscanに渡します。
+
+    ```ruby
+    lane :test do
+      ...
+      skip_testing = JSON.parse(ENV['BITRISE_QUARANTINED_TESTS_JSON']).map do |item|
+        "#{item['testSuiteName'][0]}/#{item['className']}/#{item['testCaseName']}"
+      end unless ENV['BITRISE_QUARANTINED_TESTS_JSON'].to_s.empty?
+      scan(skip_testing: skip_testing)
+      ...
+    end
+    ```
+
+  </TabItem>
+</Tabs>
+
+<strong>Script Step - xcodebuild testまたはtest-without-buildingの実行</strong>
+
+この例では、BITRISE_QUARANTINED_TESTS_JSON変数の値をxcodebuildの`test`コマンドまたは`test-without-building`コマンド用の`skip-testing`オプションに変換します。
+
+```yaml
+workflows:
+  test:
+    steps:
+    - script:
+        title: Convert BITRISE_QUARANTINED_TESTS_JSON
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            set -e
+
+            # Read JSON from environment variable
+            json="$BITRISE_QUARANTINED_TESTS_JSON"
+
+            # Convert to array of -skip-testing:TestTarget/TestClass/TestMethod
+            test_array=($(echo "$json" | jq -r '.[] | "-skip-testing:\(.testSuiteName[0])/\(.className)/\(.testCaseName)"'))
+
+            # Join the array elements with a space
+            skip_testing_list="${test_array[*]}"
+            
+            # Export the space-separated string as an environment variable to be used by following Fastlane Steps
+            envman add --key XCODEBUILD_SKIP_TESTING_OPTION --value "$skip_testing_list"
+    - script:
+        inputs:
+        - content: xcodebuild test -scheme <SCHEME> -destination <DESTINATION> $XCODEBUILD_SKIP_TESTING_OPTION
+```
+
+<strong>Script Step - Gradleのユニットテストの実行</strong>
+
+Gradle（`/gradlew testUnitTest)`経由でAndroidのローカルユニットテストを実行する場合、GradleのInitスクリプトを使って隔離済みのテストケースをスキップできます。
+
+```yaml
+workflows:
+  test:
+    steps:
+    - script:
+        title: Create skip testing init script
+        inputs:
+        - content: |-
+            #!/bin/bash
+
+            # Script to generate Gradle init script for quarantined tests
+            # Reads BITRISE_QUARANTINED_TESTS_JSON environment variable and generates
+            # a Gradle init script that excludes the specified tests
+
+            set -ex
+
+            # Check if BITRISE_QUARANTINED_TESTS_JSON is set
+            if [[ -z "${BITRISE_QUARANTINED_TESTS_JSON:-}" ]]; then
+                echo "Error: BITRISE_QUARANTINED_TESTS_JSON environment variable is not set" >&2
+                exit 1
+            fi
+
+            # Parse JSON and extract test patterns
+            # Each test will be excluded using the pattern: className.testCaseName
+            excluded_tests=$(echo "$BITRISE_QUARANTINED_TESTS_JSON" | jq -r '.[] | .className + "." + .testCaseName')
+
+            # Generate the Gradle init script
+            init_script_file=./gradle_quarantine_init.gradle.kts
+            cat << 'EOF' > "$init_script_file"
+            allprojects {
+                tasks.withType<Test>().configureEach {
+            EOF
+
+            # Add filter.excludeTestsMatching lines for each excluded test
+            while IFS= read -r test_pattern; do
+                if [[ -n "$test_pattern" ]]; then
+                    echo "        filter.excludeTestsMatching(\"$test_pattern\")" >> "$init_script_file"
+                fi
+            done <<< "$excluded_tests"
+
+            cat << 'EOF' >> "$init_script_file"
+                }
+            }
+            EOF
+
+            # Output the path to the generated init script file
+            envman add --key GRADLE_INIT_SCRIPT_FILE --value "$init_script_file"
+    - script:
+        title: Run tests
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+            ./gradlew :app:testDebugUnitTest "--init-script" "$GRADLE_INIT_SCRIPT_FILE"
+```
+
+`Create skip testing init script` Stepは、以下のGradleinitスクリプトを作成します。
+
+```groovy
+allprojects {
+    tasks.withType<Test>().configureEach {
+        filter.excludeTestsMatching("<package_name>.<test_class>.<test_method_1>")
+        filter.excludeTestsMatching("<package_name>.<test_class>.<test_method_2>")
+        ...
+    }
+}
+```

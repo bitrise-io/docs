@@ -1,0 +1,267 @@
+---
+title: "Deploying and viewing test results"
+description: "View your test results in one place after a Bitrise CI build. All tests will be available on the build page, even if you have multiple testing Steps in your Workflows."
+sidebar_position: 7
+slug: /bitrise-ci/testing/deploying-and-viewing-test-results
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
+
+Bitrise CIビルドの後、テスト結果を一か所で確認できます。<GlossTerm baseform="workflow">Workflows</GlossTerm>内に複数のテスト<GlossTerm baseform="step">Steps</GlossTerm>がある場合でも、すべてのテストはビルドページで確認できます。Bitrise上でアクセスしやすく`actionable`なテスト結果を提供し、テストの失敗からより早く復旧でき、開発者体験全体を向上させることが目標です。
+
+
+## テスト結果のデプロイ
+
+最小限の設定で、テスト結果をビルドページにデプロイできます。必要な設定は環境によって異なります。
+
+- テストの実行に公式のBitriseテストStepsを使用する場合
+- テストの実行にその他のStepsを使用する場合
+
+### 公式のBitriseテストStepsからの結果のデプロイ
+
+サポートされているテストStepsは次のとおりです。
+
+- <strong>Android Unit Test</strong>: [Androidのユニットテストの実行](/bitrise-ci/testing/testing-android-apps/android-unit-tests)。
+- <strong>Android Instrumented Test</strong>: [Androidアプリのインストルメンテーションテストの実行](/bitrise-ci/testing/testing-android-apps/running-instrumented-tests-for-android-apps)。
+- <strong>Xcode Test for iOS</strong>: [iOSアプリのユニットテストおよびUIテストの実行](/bitrise-ci/testing/testing-ios-apps/running-unit-and-ui-tests-for-ios-apps)。
+- <strong>iOS Device Testing</strong>: [iOS向けデバイステスト](/bitrise-ci/testing/device-testing-with-firebase/device-testing-for-ios)。
+- <strong>Virtual Device Testing for Android</strong>: [Android向けデバイステスト](/bitrise-ci/testing/device-testing-with-firebase/device-testing-for-android)。
+- <strong>Flutter Test</strong>: [Flutterアプリのテスト](/bitrise-ci/testing/testing-flutter-apps/running-the-dart-analyzer-on-bitrise)。
+
+これらのStepsのいずれかを使用している場合は、Workflowに<strong>Deploy to Bitrise.io</strong> Stepが含まれていることを確認してください。Bitriseが自動的にテスト結果をビルドページにデプロイします。
+
+:::important[添付ファイルと不安定なテスト]
+
+テストが添付ファイルを生成する場合や、Bitriseに不安定なテストを表示させたい場合は、<strong>Deploy to Bitrise.io</strong> Stepのバージョンが2.19.1以降である必要があります。
+
+:::
+
+### その他のStepsからの結果のデプロイ
+
+その他のStepsを使用してテストを実行する場合（たとえば、完全にカスタムなテストソリューションには[Script](https://bitrise.io/integrations/steps/script) Stepsを使用できます）、追加の設定が必要です。
+
+1. テストを実行するStepをWorkflowに追加します。
+1. <strong>Export test results to the Test Reports</strong> StepをWorkflowに追加します。
+1. Stepを設定します。[Export test results to the Test Reports Stepの使い方](/bitrise-ci/testing/deploying-and-viewing-test-results#using-the-export-test-results-to-test-reports-step)。
+1. Workflowに<strong>Deploy to Bitrise.io</strong> Stepが含まれていることを確認してください。
+
+   :::important[添付ファイルと不安定なテスト]
+
+   テストが添付ファイルを生成する場合や、Bitriseに不安定なテストを表示させたい場合は、<strong>Deploy to Bitrise.io</strong> Stepのバージョンが2.19.1以降である必要があります。
+
+   :::
+
+
+## テスト結果の表示
+
+:::note[リッチHTMLレポート]
+
+[リッチHTMLテストレポート](/bitrise-ci/testing/testing-ios-apps/viewing-xcode-test-results-in-rich-html-format)を使用している場合でも、<strong>Artifacts</strong>タブでそれらを確認できます。
+
+:::
+
+結果を表示するには、ビルドページを開き、<strong>Tests</strong>タブを選択します。テストはステータスに応じて異なるタブに分類されます。
+
+- 失敗
+- 合格
+- スキップ
+- エラー
+- 不安定
+
+デフォルトでは、Bitriseに失敗したテストの一覧が表示されます。各カテゴリ内でテスト実行の詳細を確認できます。
+
+任意のテストをクリックすると、テストの所要時間、出力、生成された添付ファイルなどの詳細を確認できます。失敗のデバッグを容易にするため、テストレポートは添付された画像ファイルを関連するテストケースと並べて表示します。
+
+:::note[サポートされているファイル形式]
+
+現在、添付ファイルについては次のファイル形式をサポートしています。
+
+`.jpg, .jpeg, .png, .txt, .log, .mp4, .webm, .ogg`
+
+:::
+
+不安定なテストは<strong>Flaky</strong>タブで確認できます。不安定なテストとは、コードに変更がなくても失敗したり成功したりするテストのことです。テストが失敗した後に[自動リトライ](/bitrise-ci/testing/testing-ios-apps/running-unit-and-ui-tests-for-ios-apps#test-repetitions)で成功した場合、Bitriseはそのテストを不安定としてマークし、<strong>Flaky</strong>タブで確認できます。また、テストの各リトライの詳細と添付ファイルも表示されます。不安定なテストの検出方法や、必要に応じてそれらを隔離する方法については、[Detecting and quarantining flaky tests](/bitrise-ci/testing/detecting-and-quarantining-flaky-tests)で詳しく説明しています。
+
+![test-run.png](/img/_paligo/uuid-53eba539-6b4d-b4cf-c33d-6168fca79640.png)
+
+テストレポートは、JUnitにおける`system-out`タグの使用もサポートしています。テストケースにこのタグが含まれている場合、その内容が<strong>Test output</strong>タブに表示されます。テストケースに`system-out`タグがあり、かつエラーメッセージも生成される場合は、両方が表示されます。
+
+
+## テストの添付ファイルとテスト結果の照合
+
+多くのテストは画像ファイルを生成します（スクリーンショットテスト、XCUITestsなど）。Bitriseのテストレポートは、Xcodeテストについて、画像ファイルを関連するテストケースと自動的に照合します（`xcresult`ファイルを使用）。
+
+:::note[サポートされているファイル形式]
+
+現在、添付ファイルについては次のファイル形式をサポートしています。
+
+`.jpg, .jpeg, .png, .txt, .log, .mp4, .webm, .ogg`
+
+:::
+
+ただし、テストが`xcresult`ファイルを生成しない場合でも、JUnit XMLファイルを生成してBitrise Stepsを使用することで、同様の結果を得られます。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. テストから`JUnit.xml`ファイルを生成します。
+
+   一般的なファイル構造は次のようになります。
+
+   ```xml
+   <?xml version="1.0" encoding="UTF-8"?>
+   <testsuites time="15.682687">
+       <testsuite name="Tests.Registration" time="6.605871">
+           <testcase name="testCase1" classname="Tests.Registration" time="2.113871" />
+       </testsuite>
+   </testsuites>
+   ```
+1. 添付ファイルを`testcase`に関連付けるために`<properties>`要素を追加します。
+
+   要素の`name`属性には`attachment_#`という値を設定する必要があります。ここで`#`は添付ファイルの順序を示すインデックスで、値はファイル名です。Bitriseは、添付ファイルのプロパティを持つすべてのテストで添付ファイルを表示しますが、最も一般的なのは失敗したテストにのみスクリーンショットを添付することです。テストを失敗としてマークするには`<failure>`要素を使用します。
+
+   ```xml
+   <testcase name="testCase1" classname="Tests.Registration" time="2.113871" />
+     <failure message="Assertion error message" type="AssertionError">
+       Call stack printed here
+     </failure>
+     <properties>
+       <property name="attachment_1" value="pp1.jpg" />
+       <property name="attachment_2" value="pp2.jpg" />
+     </properties>            
+   </testcase>
+   ```
+1. <strong>Export test results to Test Reports</strong> StepをBitrise Workflowに追加します。バージョンは1.1.0以上である必要があります。
+1. <strong>The name of the test</strong>インプットにテスト名を設定します。
+1. <strong>Test result search pattern</strong>インプットにJUnit XMLファイルへのパスを設定します。
+1. <strong>Deploy to Bitrise.io</strong> StepをWorkflowの末尾に追加します。
+
+   デフォルトのインプット値を変更する必要はありません。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. テストから`JUnit.xml`ファイルを生成します。
+
+   一般的なファイル構造は次のようになります。
+
+   ```xml
+   <?xml version="1.0" encoding="UTF-8"?>
+   <testsuites time="15.682687">
+       <testsuite name="Tests.Registration" time="6.605871">
+           <testcase name="testCase1" classname="Tests.Registration" time="2.113871" />
+       </testsuite>
+   </testsuites>
+   ```
+1. 添付ファイルを`testcase`に関連付けるために`<properties>`要素を追加します。
+
+   要素の`name`属性には`attachment_#`という値を設定する必要があります。ここで`#`は添付ファイルの順序を示すインデックスで、値はファイル名です。Bitriseは、添付ファイルのプロパティを持つすべてのテストで添付ファイルを表示しますが、最も一般的なのは失敗したテストにのみスクリーンショットを添付することです。テストを失敗としてマークするには`<failure>`要素を使用します。
+
+   ```xml
+   <testcase name="testCase1" classname="Tests.Registration" time="2.113871" />
+     <failure message="Assertion error message" type="AssertionError">
+       Call stack printed here
+     </failure>
+     <properties>
+       <property name="attachment_1" value="pp1.jpg" />
+       <property name="attachment_2" value="pp2.jpg" />
+     </properties>            
+   </testcase>
+   ```
+1. JUnit XMLファイルを生成した後、`custom-test-results-export` StepをBitrise Workflowに追加します。バージョンは1.1.0以上である必要があります。
+
+   ```yaml
+   workflows:
+     inline_attachment:
+       steps:
+       - generate-text-file:
+           inputs:
+           - file_name: junit.xml
+           - file_content: "xml content with references to image files here"
+       - custom-test-results-export:
+   ```
+1. `test_name`インプットにテスト名を設定します。
+
+   ```yaml
+   - custom-test-results-export@1:
+       inputs:
+       - test_name: example_tests
+   ```
+1. `search_pattern`インプットにJUnit XMLファイルへのパスを設定します。
+
+   ```yaml
+   - custom-test-results-export@1:
+       inputs:
+       - test_name: example_tests
+       - search_pattern: junit.xml
+   ```
+1. `deploy-to-bitrise-io` StepをWorkflowの末尾に追加します。
+
+   デフォルトのインプット値を変更する必要はありません。<GlossTerm baseform="configuration yaml">設定YAML</GlossTerm>ファイル内の完全なWorkflowは、次のようになります。
+
+   ```yaml
+   workflows:
+     inline_attachment:
+       steps:
+       - generate-text-file@0:
+           inputs:
+           - file_name: junit.xml
+           - file_content: "xml content with references to image files here"
+       - custom-test-results-export@1:
+           inputs:
+           - test_name: example_tests
+           - base_path: "."
+           - search_pattern: junit.xml
+       - script@1:
+           inputs:
+           - content: |
+               #!/usr/bin/env bash
+               set -ex
+               set -o pipefail
+
+               TEST_RESULTS_DIR=$(find "$BITRISE_TEST_DEPLOY_DIR" -type d -name "example_tests" -print -quit)
+               cp ~/*.jpg $TEST_RESULTS_DIR
+           title: Copy image files to test directory
+       - deploy-to-bitrise-io@2: {}
+   ```
+
+</TabItem>
+</Tabs>
+
+
+## Export test results to Test Reports Stepの使用
+
+結果を自動的にエクスポートしないStepsを使用している場合でも、<strong>Export test results to Test Reports</strong> Stepを使用することで、テスト結果を<strong>Tests</strong>タブに表示できるようになります。
+
+正しく設定すると、Stepはプロジェクトのリポジトリ内のテスト結果を見つけ、エクスポートディレクトリに格納します。
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. テストを実行するStepの後に、<strong>Export test results to Test Reports</strong> StepをWorkflowに追加します。
+1. <strong>The name of the test</strong>インプットに、the name of the testの実行を設定します。
+1. <strong>Test result base path</strong>インプットに、テスト結果が格納されているパスを設定します。
+
+   ![Managing_an_app_s_bitrise.png](/img/_paligo/uuid-fd13332e-571f-e706-88ed-a20a29db7aea.png)
+
+   ここにはフォルダーを設定することを推奨しますが、特定のファイルパスを設定することもできます。default valueはプロジェクトのソースディレクトリです。パターンの例:
+
+   - プロジェクトのルートディレクトリが`app`の場合: `app/build/test-results/testDemoDebugUnitTest/`
+   - テスト結果がプロジェクトフォルダー内にあるが、`app`がルートディレクトリではない場合: ./app/build/test-results/testDemoDebugUnitTest/
+1. <strong>Test result search pattern</strong>インプットに、テスト結果ファイルに一致するパターンを設定します。
+
+   この検索パターンは、<strong>Path where custom test results reside</strong>インプットに設定されたパス内のすべてのファイルとフォルダーを検索するために使用されます。
+
+   一致する項目が複数ある場合、Stepは最初に一致したものをエクスポートし、ログに警告を出力します。前のインプットに特定のファイルパスを設定した場合は、ここには*を設定するだけで構いません。
+
+   パターンの例:
+
+   - ベースパス内のすべてのファイルに一致させる場合: `*`
+   - ベースパス内の特定のディレクトリ内のすべてのファイルに一致させる場合: `*/build/test-results/testDemoDebugUnitTest/*`
+1. <strong>Stepの test result directory</strong>インプットで、パスが正しいことを確認します。
+
+   このインプットの値は変更しないでください。これは、<strong>Deploy to Bitrise.io</strong> Stepがエクスポートするテスト結果を探すフォルダーです。`$BITRISE_TEST_RESULT_DIR`環境変数を設定する必要があります。
+1. Workflowに<strong>Deploy to Bitrise.io</strong> Stepが含まれていることを確認してください。
+
+   テストが添付ファイルを生成する場合は、Stepのバージョンが2.19.x以降であることを確認してください。
