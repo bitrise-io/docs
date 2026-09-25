@@ -128,11 +128,10 @@ function injectApiSidebar(items: any[]): any[] {
     }
     if (item.type === 'category' && Array.isArray(item.items)) {
       const children = injectApiSidebar(item.items);
-      // Append an "API reference" hub link as the last child of this category
       if (item.customProps?.appendApiHubLink) {
         children.push({
           type: 'link',
-          label: 'API reference',
+          label: item.customProps.appendApiHubLinkLabel ?? 'API reference',
           href: item.customProps.appendApiHubLink,
           customProps: {newTab: true},
         });

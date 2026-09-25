@@ -1,0 +1,183 @@
+---
+title: "Managing builds with the Bitrise CLI"
+description: "Trigger, watch, list, view, and abort Bitrise builds from the Bitrise CLI, and use the build result in scripts."
+sidebar_position: 10
+slug: /bitrise-ci/bitrise-cli/managing-builds-with-the-bitrise-cli
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+The `bitrise build` commands trigger builds on Bitrise, follow them until they finish, and list, inspect, and abort them. They work from your own computer, from scripts, and from inside other builds.
+
+:::important[Bitrise CLI 3.0.0 or newer]
+
+The `bitrise build` commands need Bitrise CLI 3.0.0 or newer, and an access token: see [Authenticating with the Bitrise CLI](/bitrise-ci/bitrise-cli/authenticating-with-the-bitrise-cli).
+
+:::
+
+Every command acts on one app. Pass it with `--app`, or save a default: see [Selecting the Workspace and the app](/bitrise-ci/bitrise-cli/bitrise-cli-overview#selecting-the-workspace-and-the-app). The examples on this page pass `--app` every time.
+
+| Command | Function | Required role on the app's team |
+| --- | --- | --- |
+| `bitrise build trigger` | Trigger a new build. | Owner, Admin, or Developer |
+| `bitrise build watch` | Follow a build until it finishes. | Developer |
+| `bitrise build list` | List the builds of an app. | Tester/QA |
+| `bitrise build view` | Show the details of a build. | Tester/QA |
+| `bitrise build log` | Print the log of a build. | Developer |
+| `bitrise build yml` | Print the <GlossTerm baseform="bitrise.yml">`bitrise.yml`</GlossTerm> a build ran with. | Developer |
+| `bitrise build abort` | Abort a running or queued build. | Owner, Admin, or Developer |
+
+For the full list of roles, see [Roles and permissions for Bitrise CI](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci).
+
+## Triggering a build
+
+`bitrise build trigger` starts a new build and prints its details:
+
+```bash
+bitrise build trigger --app my-app-id --workflow primary
+```
+
+Choose what to run with `--workflow` and the ID of a <GlossTerm baseform="workflow">Workflow</GlossTerm>, or `--pipeline` and the ID of a <GlossTerm baseform="pipeline">Pipeline</GlossTerm>. You can't use both. If you use neither, Bitrise selects the Workflow or Pipeline from the app's <GlossTerm baseform="trigger">triggers</GlossTerm>, as it does for webhook builds. See [YAML syntax for build triggers](/bitrise-ci/run-and-analyze-builds/build-triggers/yaml-syntax-for-build-triggers).
+
+### Setting a branch, commit, or tag
+
+Choose the code to build with these flags:
+
+| Flag | What it sets |
+| --- | --- |
+| `--branch` | The branch to build. If you don't set a branch or a tag, the CLI builds `main`. |
+| `--commit-hash` | A specific commit to build. |
+| `--tag` | A Git tag to build. |
+| `--commit-message` | The commit message to show for the build. |
+
+```bash
+bitrise build trigger --app my-app-id --workflow deploy --branch release/1.2
+bitrise build trigger --app my-app-id --workflow primary --tag v1.2.3
+```
+
+If you set more than one of `--commit-hash`, `--tag`, and `--branch`, the Git Clone <GlossTerm baseform="step">Step</GlossTerm> checks out the most specific one: the commit first, then the tag, then the branch.
+
+### Setting parameters for pull request builds
+
+To build a pull request, set its source branch with `--branch`, its target branch with `--branch-dest`, and its number with `--pull-request-id`:
+
+```bash
+bitrise build trigger --app my-app-id --workflow primary --branch my-feature --branch-dest main --pull-request-id 42
+```
+
+### Setting Environment Variables and priority
+
+Pass extra [Environment Variables](/bitrise-ci/configure-builds/environment-variables) to the build as a JSON object with `--env`:
+
+```bash
+bitrise build trigger --app my-app-id --workflow primary --env '{"MY_VAR":"hello","OTHER":"world"}'
+```
+
+These variables can override <GlossTerm baseform="secret">Secrets</GlossTerm>, but not the Environment Variables defined in your configuration.
+
+Set the build's position in the queue with `--priority`. See [Build priority](/bitrise-ci/configure-builds/configuring-build-settings/build-priority).
+
+## Waiting for a build to finish
+
+By default, `bitrise build trigger` returns as soon as Bitrise accepts the build. To wait for the result, add one of these flags:
+
+| Flag | What the CLI shows while it waits |
+| --- | --- |
+| `--wait` | Nothing. |
+| `--watch` | The build's progress: a status display in an interactive terminal, and the build log as plain text otherwise. |
+
+```bash
+bitrise build trigger --app my-app-id --workflow primary --watch
+```
+
+With either flag, the CLI exits with code 0 if the build succeeds or is aborted with success, and with code 1 otherwise. This lets a script, or another build, stop when the triggered build fails.
+
+To follow a build that's already running, use `bitrise build watch` with the build's ID:
+
+```bash
+bitrise build watch abc123 --app my-app-id
+```
+
+It works like `--watch`, and exits with the same codes.
+
+When the CLI waits for a build:
+
+- With `--format json` or `--format yml`, the CLI writes the final details of the build to the standard output when the build finishes. `--watch` and `bitrise build watch` print the build log to the standard error output (stderr) instead, so you can still pipe the result into another tool.
+- `--interval` sets how often the CLI checks the build. The default is `3s`.
+- Pressing Ctrl+C stops the CLI, but not the build.
+
+## Listing builds
+
+`bitrise build list` lists the builds of an app, the newest first:
+
+```bash
+bitrise build list --app my-app-id
+```
+
+Filter the list with these flags:
+
+| Flag | Filter |
+| --- | --- |
+| `--branch` | The branch of the build. |
+| `--workflow` | The Workflow of the build. |
+| `--status` | The build status: `in-progress`, `success`, `failed`, `aborted`, or `aborted-with-success`. |
+| `--trigger-event-type` | What triggered the build: `push`, `pull-request`, or `tag`. |
+| `--pull-request-id` | The pull request's number. |
+| `--build-number` | The build number. |
+| `--commit-message` | The commit message. |
+| `--pipeline-build` | Whether the build is part of a Pipeline. |
+| `--after`, `--before` | When the build was triggered, as an RFC 3339 timestamp, such as `2026-09-01T00:00:00Z`. |
+
+For example, to list the failed builds of the `main` branch:
+
+```bash
+bitrise build list --app my-app-id --branch main --status failed
+```
+
+To list running builds first, add `--sort-by running_first`.
+
+The list is paginated: use `--limit`, `--cursor`, and `--all` to get more results. See [Pagination](/bitrise-ci/bitrise-cli/bitrise-cli-overview#pagination).
+
+:::note[Build retention for 200 days]
+
+Like the **Builds** page of your app, `bitrise build list` only returns builds from the last 200 days. If you know a build's ID, you can still view an older build.
+
+:::
+
+## Viewing a build
+
+To show the details of a build, pass its ID to `bitrise build view`. Add `--web` to open the build's page in your browser instead:
+
+```bash
+bitrise build view abc123 --app my-app-id
+bitrise build view abc123 --app my-app-id --web
+```
+
+To print the build log, use `bitrise build log`. If the build is still running, add `--wait` to print the log once the build finishes. The log is plain text, so you can save it to a file:
+
+```bash
+bitrise build log abc123 --app my-app-id --wait > build.log
+```
+
+To print the `bitrise.yml` the build ran with, use `bitrise build yml`. The file can be different from the app's current configuration if someone changed it since the build ran. See [Working with bitrise.yml via the Bitrise CLI](/bitrise-ci/bitrise-cli/working-with-bitrise-yml-via-the-bitrise-cli#downloading-the-bitriseyml-file).
+
+```bash
+bitrise build yml abc123 --app my-app-id > bitrise.yml
+```
+
+## Aborting a build
+
+`bitrise build abort` aborts a running or queued build:
+
+```bash
+bitrise build abort abc123 --app my-app-id --reason "no longer needed"
+```
+
+| Flag | What it does |
+| --- | --- |
+| `--reason` | Records the reason for aborting. It shows up on the build's page. |
+| `--abort-with-success` | Counts the aborted build as successful. The status report sent to your Git provider shows the build as successful, while Bitrise shows it as [Aborted with success](/bitrise-ci/run-and-analyze-builds/build-statuses). |
+| `--skip-notifications` | Doesn't send notifications about the aborted build. |
+| `--skip-git-status-report` | Doesn't report the abort to your Git provider. |
