@@ -1,0 +1,153 @@
+---
+title: "Available environment variables"
+description: "Environment Variables (Env Vars) consist of a key and a value, as well as optional attributes. They can be defined on the level of apps, Workflows or Steps."
+sidebar_position: 3
+slug: /bitrise-ci/references/available-environment-variables
+sidebar_label: Available Environment Variables
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+[Environment Variables](/bitrise-ci/configure-builds/environment-variables)（Env Var）はキーと値で構成されます。オプションの属性を含めることもできます。アプリ、<GlossTerm baseform="Workflow">Workflows</GlossTerm>、または<GlossTerm baseform="Step">Steps</GlossTerm>のレベルで定義できます。
+
+独自の Env Var を設定できますが、Bitrise CLIまたは[bitrise.io](https://www.bitrise.io)によって自動的に公開される Env Var も一部存在します。
+
+- [Bitrise CLIによって公開される Env Var](#env-vars-exposed-by-the-bitrise-cli)は、自分のコンピューターでビルドを実行する場合でも、どこでも利用できます。
+- [bitrise.io によって公開される Env Var](#env-vars-exposed-by-bitriseio)は、[bitrise.io](https://www.bitrise.io)の仮想マシンで実行されるビルドで利用できます。
+- [Pipeline bitrise.io によって公開される Env Var](#pipeline-env-vars-exposed-by-bitriseio)は、[bitrise.io](https://www.bitrise.io)の仮想マシンで実行されるPipelineビルドでのみ利用できます。
+
+さらに、多くのBitrise Stepsが出力変数をエクスポートします。これらの変数は、ビルド中の後続のStepsで利用できます。各StepのStep設定で確認できます。
+
+- <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>では、Stepの<strong>Output properties</strong>セクションで確認できます。
+- Stepの`step.yml`では、`outputs`の下で確認できます。
+
+Release Managementは、Bitriseビルドにも多数の Env Var を渡します。[Release Management Env Var](#release-management-env-vars)を参照してください。
+
+Environment Variablesには利用可能になる順序が決まっています。これは、ビルドが進行するにつれて利用可能になる順序です。[Environment Variablesの利用可能順序](/bitrise-ci/configure-builds/environment-variables#availability-order-of-environment-variables)を参照してください。
+
+:::tip[Step Env Var として公開される出力]
+
+Stepsも、Stepの出力を Env Var として公開できます。たとえば、バイナリをビルドするStepは、そのバイナリを他のStepsに Env Var として公開できます。基本的にどのBitrise Stepも同様に出力を公開できるため、ここではすべてを列挙しませんが、git クローン処理に関連するEnvironment Variablesはすべて[Git clone Env Var](#git-clone-env-vars)で確認できます。
+
+:::
+
+## Bitrise CLIによって公開される Env Var {#env-vars-exposed-by-the-bitrise-cli}
+
+| Env Var | 説明 |
+| --- | --- |
+| $BITRISE_TRIGGERED_WORKFLOW_ID | <GlossTerm baseform="Trigger">トリガーされた</GlossTerm>Workflowの ID です。この Env Var は、Workflowが手動でトリガーされたか自動でトリガーされたかにかかわらず公開されます。 |
+| $BITRISE_TRIGGERED_WORKFLOW_TITLE | トリガーされたWorkflowのタイトルです。この Env Var は、Workflowが手動でトリガーされたか自動でトリガーされたかにかかわらず公開されます。 |
+| $BITRISE_BUILD_STATUS | ビルドの現在のステータスです。指定できる値は次のとおりです。  - 0: 成功。 - 1: 失敗。  現在のステータスが成功の場合、ビルド内のそれまでのStepsはいずれも失敗していないことを意味します。 |
+| $BITRISE_SOURCE_DIR | 基本の作業ディレクトリへのパスです。デフォルトでは、別の値を指定しない限り、Bitriseが実行されるディレクトリになります。この値はビルド中に上書きでき、その場合はビルド内の後続のStepsの作業ディレクトリが変更されます。 |
+| $BITRISE_DEPLOY_DIR | デプロイ用のアーティファクトとファイルを保存するディレクトリへのパスです。デフォルトではBitrise CLIによって作成される一時ディレクトリで、Bitrise CLIを開始する前に上書きできます。[<strong>Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files</strong>](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io)Stepは、アプリのIPAや APK などのビルドアーティファクト、テスト結果、その他のファイルをこのディレクトリから探します。 |
+| $BITRISE_TEST_DEPLOY_DIR | Bitrise CLIによって作成されるすべてのテスト結果のルートディレクトリです。このディレクトリに配置されたテスト結果は、他のすべてのテスト結果とあわせて表示できます。[テスト結果のデプロイと表示](/bitrise-ci/testing/deploying-and-viewing-test-results)を参照してください。 |
+| $BITRISE_TEST_RESULT_DIR | 各Stepには、この変数の固有の値があります。これにより、各Stepがテスト結果を保存するための$BITRISE_TEST_DEPLOY_DIR配下の一意のサブディレクトリが提供されます。 |
+| $BITRISE_FAILED_STEP_TITLE | ビルド内で最初に失敗したStepのタイトルです。つまり、ビルドステータスを<strong>Failed</strong>に設定したStepです。 |
+| $BITRISE_FAILED_STEP_ERROR_MESSAGE | ビルド内で最初に失敗したStepのエラーメッセージです。 |
+| $CI | Bitrise CLIが継続的インテグレーション（Continuous Integration）モードで実行されているかどうかを示します。指定できる値は次のとおりです。  - `true` - `false` |
+| $PR | Bitrise CLIがPR（プルリクエスト）モードで実行されているかどうかを示します。プルリクエストモードで実行するということは、プルリクエストがすでにマージされた状態としてコードをBitriseがビルドすることを意味します。指定できる値は次のとおりです。  - `true` - `false` |
+
+## bitrise.io によって公開される Env Var {#env-vars-exposed-by-bitriseio}
+
+| Env Var | 説明 |
+| --- | --- |
+| $BITRISE_BUILD_NUMBER | [bitrise.io](https://www.bitrise.io)上のビルドのビルド番号です。 |
+| $BITRISE_APP_TITLE | [bitrise.io](https://www.bitrise.io)上のプロジェクトのタイトルです。プロジェクトの<strong>Project settings</strong>ページでいつでも変更できます。 |
+| $BITRISE_APP_URL | [bitrise.io](https://www.bitrise.io)上のプロジェクトのURLです。これは Git リポジトリのURLとは異なります。プロジェクトのURLは次の形式です。  `app.bitrise.io/app/APP-SLUG`  例: https://app.bitrise.io/app/31e481ce08e0xfd9. |
+| $BITRISE_APP_SLUG | [bitrise.io](https://www.bitrise.io)上でプロジェクトを一意に識別するスラッグです。プロジェクトのURLの一部にもなっています。 |
+| $BITRISE_BUILD_URL | [bitrise.io](https://www.bitrise.io)上のビルドのURLです。 |
+| $BITRISE_BUILD_SLUG | [bitrise.io](https://www.bitrise.io)上でビルドを一意に識別するスラッグです。ビルドのURLの一部にもなっています。  たとえば、次のビルドURLを見てみましょう。https://app.bitrise.io/app/31e481ce08e0xfd9/build/d75abbebxfc9ca4e. この例では、ビルドスラッグは`d75abbebxfc9ca4e`です。 |
+| $BITRISE_BUILD_TRIGGER_TIMESTAMP | ビルドがトリガーされた日時です。 |
+| $GIT_REPOSITORY_URL | プロジェクトをホストしている Git リポジトリのURLです。これは、<strong>Project settings</strong>ページの<strong>Repository</strong>セクションで変更できます。SSHまたはHTTPSのいずれかの形式で指定できます。 |
+| $BITRISE_GIT_BRANCH | Bitriseによってビルドされる git ブランチです。例: `main`。 |
+| $BITRISEIO_GIT_BRANCH_DEST | プルリクエストによってトリガーされたビルドでのみ使用され、ビルドをトリガーしたプルリクエストのマージ先／ターゲットブランチを示します。  たとえば、あるプルリクエストがブランチの内容をブランチ`main`にマージしようとしているとします。この場合、この Env Var の値は`main`になります。[GitHubスタック](https://docs.github.com/en/pull-requests/get-started/about-stacked-prs)内のプルリクエストの場合、値はプルリクエストが直接ターゲットとするブランチではなく、スタックのベースブランチになります。 |
+| $BITRISE_GIT_TAG | ビルドがGit Tagによってトリガーされた場合、この Env Var には使用されたタグが格納されます。 |
+| $BITRISE_GIT_COMMIT | 該当する場合、ビルドをトリガーした Git コミットのコミットハッシュです。 |
+| $BITRISE_GIT_MESSAGE | コミットメッセージ、プルリクエストのタイトル、またはビルドを手動でトリガーした場合に指定したメッセージです。 |
+| $BITRISEIO_GIT_REPOSITORY_OWNER | プロジェクトの Git リポジトリの所有者です。 |
+| $BITRISEIO_GIT_REPOSITORY_SLUG | プロジェクトの Git リポジトリのスラッグです。 |
+| $BITRISE_PULL_REQUEST | ビルドをトリガーしたプルリクエストの ID です。 |
+| $BITRISEIO_PULL_REQUEST_REPOSITORY_URL | ビルドをトリガーしたプルリクエストの送信元リポジトリのURLです。 |
+| $BITRISEIO_PULL_REQUEST_MERGE_BRANCH | プリマージブランチです。Git ホスティングプロバイダーが、特別なマージブランチ上でプルリクエストのマージ前の状態をサポートし、提供している場合に使用されます。 |
+| $BITRISEIO_PULL_REQUEST_HEAD_BRANCH | Git ホスティングプロバイダーのシステムがサポートし、提供している場合の、プルリクエストのヘッドブランチです。この特別な git ref は、プルリクエストの送信元を指す必要があります。 |
+| $GITHUB_PR_IS_DRAFT | GitHubでホストされているプロジェクトの場合のみ、ビルドが[ドラフトプルリクエスト](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests#draft-pull-requests)によってトリガーされた場合に`true`に設定されます。 |
+| $BITRISE_PROVISION_URL | [bitrise.io](https://www.bitrise.io)にアップロードされたAppleプロビジョニングプロファイルのURLです。プロジェクトに複数のプロビジョニングプロファイルがアップロードされている場合、リスト内のURLはパイプ文字（`|`）で区切られます。  これは iOS プロジェクト、および iOS バージョンを含むクロスプラットフォームプロジェクトにのみ関連します。 |
+| $BITRISE_CERTIFICATE_URL | [bitrise.io](https://www.bitrise.io)にアップロードされたApple証明書のURLです。プロジェクトに複数の証明書がアップロードされている場合、リスト内のURLはパイプ文字（`|`）で区切られます。  これは iOS プロジェクト、および iOS バージョンを含むクロスプラットフォームプロジェクトにのみ関連します。 |
+| $BITRISE_CERTIFICATE_PASSPHRASE | プロジェクトの<strong>Code signing</strong>タブでアップロードしたApple証明書に設定したパスフレーズです。パスフレーズが設定された証明書が複数ある場合、リスト内のパスフレーズはパイプ文字（`|`）で区切られます。  これは iOS プロジェクト、および iOS バージョンを含むクロスプラットフォームプロジェクトにのみ関連します。 |
+| $BITRISE_IO | ビルドが bitrise.io 環境で実行されていることを示します。Bitriseがビルドを開始するときに値が true に設定されます。 |
+| `$BITRISE_TRIGGER_BY` | ビルドをトリガーしたエンティティを識別します。値は次のいずれかになります。  - ビルドが[Git プロバイダーによってトリガーされた](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers)場合の Git ユーザーの名前。 - ビルドがBitriseの Web UIから手動でトリガーされた場合のBitriseユーザーの名前。 - ビルドがそれ以外の方法（[スケジュールビルド](/bitrise-ci/run-and-analyze-builds/starting-builds/scheduling-builds)や[API](/bitrise-ci/api/api-overview)によってトリガーされたビルドなど）でトリガーされた場合に`triggered_by`ビルドパラメーターで指定された値。 |
+| `$BITRISE_TRIGGER_METHOD` | ビルドがトリガーされた方法です。  - `schedule`: ビルドがスケジューラーによってトリガーされた場合。 - `webhook`: ビルドが Git プロバイダーの Webhook によって自動的にトリガーされた場合。 - `manual`: APIを含む、その他のトリガーによってビルドがトリガーされた場合。 |
+| `$BITRISE_GIT_PULL_REQUEST_COMMENT` | プルリクエスト（GitLabの場合はマージリクエスト）のコメントメッセージと、それに対応する ID です。  ビルドがPRコメントによってトリガーされた場合にのみ利用でき、ビルドトリガーには`pr_comment`の値が必要です。 |
+| `$BITRISE_GIT_PULL_REQUEST_COMMENT_ID` | プルリクエストのコメント ID です。ビルドがPRコメントによってトリガーされた場合にのみ利用できます。 |
+| `$BITRISE_GIT_PULL_REQUEST_LABELS` | プルリクエストに追加された新しいラベルと既存のラベルを含む複数行のリストです。プルリクエストへのラベル追加によってビルドがトリガーされた場合、または既存のラベルを持つPRイベントによってトリガーされた場合にのみ利用できます。  GitHubおよびGitLabでのみサポートされます。 |
+| `$BITRISE_GIT_CHANGED_FILES` | コードプッシュまたはプルリクエストによって変更されたファイルパスを一覧表示します。1 イベントあたり最大 3000 ファイルを含みます。次の場合に利用できます。  - プッシュイベントによってビルドがトリガーされる場合。GitHubおよびGitLabでのみサポートされます。 - PRイベントによってビルドがトリガーされ、トリガーに`changed_files`または`commit_message`の条件が設定されている場合。主要な 3 つの Git プロバイダーすべてでサポートされます。  注: この env var は、ビルドによっては非常に大きくなることがあります。この env var を解析するカスタムスクリプトを作成する場合は、以下の env var のサイズ制限に関するセクションを参照してください。 |
+| `$BITRISE_GIT_COMMIT_MESSAGES` | コードプッシュまたはプルリクエストのコミットメッセージです。最初の最大 2048 件のコミットを含み、各メッセージは最大 1000 文字です。次の場合に利用できます。  - プッシュイベントによってビルドがトリガーされる場合。GitHubおよびGitLabでのみサポートされます。 - PRイベントによってビルドがトリガーされ、トリガーに`commit_message`の条件が設定されている場合。主要な 3 つの Git プロバイダーすべてでサポートされます。  注: この env var は、ビルドによっては非常に大きくなることがあります。この env var を解析するカスタムスクリプトを作成する場合は、以下の env var のサイズ制限に関するセクションを参照してください。 |
+| $BITRISE_WORKSPACE_ID | プロジェクトを所有するworkspaceの[workspaceスラッグ](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs)です。 |
+
+:::note[GitHubのスタックされたプルリクエストと差分]
+
+GitHubスタック内のプルリクエストの場合、`$BITRISEIO_GIT_BRANCH_DEST`にはスタックのベースブランチが保持されます。たとえば`git diff origin/$BITRISEIO_GIT_BRANCH_DEST...HEAD`のように、これに対して差分を取るスクリプトは、このプルリクエスト単体の変更ではなく、このプルリクエストまでを含むスタック全体の変更を返します。
+
+:::
+
+:::warning[Env Var のサイズ制限]
+
+上記のenvironment variablesの一部は、ビルドによっては非常に大きくなることがあります（たとえば、git コミットのコミットメッセージが非常に長い場合や、プルリクエストが数千件のファイルを変更する場合など）。すべての env var の合計サイズがOSの制限に達すると、Bitriseはランタイム環境からいくつかの env var を削除し、完全な値をディスク上のファイルに書き込みます。
+
+ビルドによっては大きくなる可能性がある env var に依存するカスタムスクリプトがある場合は、代わりにこの env ファイルから値を読み取る必要があります。この env var は、macOS とLinuxの<GlossTerm baseform="stack">スタック</GlossTerm>の両方で$BITRISEIO_ENVFILE_PATHにあります。形式は次のとおりです。
+
+```yaml
+envs:
+  # Every env var from the build trigger and git event.
+  BITRISE_GIT_CHANGED_FILES: ...
+  BITRISE_GIT_COMMIT_MESSAGES: ...
+  CI: true
+  PR: true
+  [...]
+
+# List of env var KEYS that had to be erased. You should read the original value from the map above, this is just for debugging.
+erased_envs:
+- BITRISE_GIT_CHANGED_FILES
+```
+
+:::
+
+## Pipeline bitrise.io によって公開される Env Var {#pipeline-env-vars-exposed-by-bitriseio}
+
+| Env Var | 説明 |
+| --- | --- |
+| $BITRISEIO_PIPELINE_ID | 実行中のPipelineビルドの ID です。この Env Var は、Pipelineが手動でトリガーされたか自動でトリガーされたかにかかわらず公開されます。 |
+| $BITRISEIO_PIPELINE_TITLE | 実行中のPipelineビルドの名前です。この Env Var は、Pipelineが手動でトリガーされたか自動でトリガーされたかにかかわらず公開されます。 |
+| $BITRISEIO_FINISHED_STAGES | ビルド内で以前に完了した Stage およびWorkflowsのステータスです。この Env Var の値は将来変更される可能性がありますのでご注意ください。 |
+| $BITRISEIO_PIPELINE_BUILD_STATUS | Pipelineビルドの現在のステータスです。この Env Var の値は、`succeeded`、`succeeded_with_abort`、`failed`、`aborted`のいずれかになります。Pipelineの実行中、この Env Var のステータスは以前に完了した Stage に基づきます。 |
+| $BITRISEIO_PIPELINE_BUILD_URL | PipelineビルドのURLです。 |
+
+## Release Management Env Var {#release-management-env-vars}
+
+| Env Var | 説明 |
+| --- | --- |
+| $RM_RELEASE_ID | bitrise.io 上のリリースの一意の識別子です。リリースのURLの一部にもなっています。 |
+| $RM_RELEASE_VERSION | Release Managementにおける、リリース名（Google Playリリースの場合）またはバージョン（App Store リリースの場合）です。 |
+| $RM_RELEASE_CANDIDATE_VERSION | リリース候補ビルドによって生成されたバイナリ（APK/AAB またはIPAファイル）のバージョンです。 |
+| $RM_RELEASE_CANDIDATE_DOWNLOAD_URL | リリース候補ビルドによって生成されたバイナリ（APK/AAB またはIPAファイル）のダウンロードURLです。 |
+| $RM_RELEASE_CANDIDATE_SLUG | リリース候補ビルドによって生成されたバイナリ（APK/AAB またはIPAファイル）の一意の識別子です。 |
+| $RM_RELEASE_CANDIDATE_BUILD_SLUG | リリースのリリース候補として選択されたビルドのビルドスラッグです。 |
+| $RM_CONNECTED_APP_ID | bitrise.io 上の連携アプリの一意の識別子です。 |
+| $RM_PROJECT_ID | bitrise.io 上のプロジェクトの一意の識別子です。プロジェクトのURLの一部にもなっています。 |
+| $RM_WORKSPACE_ID | bitrise.io 上のworkspaceの一意の識別子です。 |
+| $RM_EVENT_ID | Bitrise CI Workflow を開始するトリガーを識別します。イベントとその ID の一覧については、[リリース自動化の設定](/release-management/releases/configuring-a-release/release-automation#automation-events)ページを参照してください。 |
+
+## Git clone Env Var {#git-clone-env-vars}
+
+| Env Var | 説明 |
+| --- | --- |
+| $GIT_CLONE_COMMIT_HASH | ビルドが使用するコミット（クローンされたコミット）のハッシュです。 |
+| $GIT_CLONE_COMMIT_MESSAGE_SUBJECT | クローンされたコミットのコミットメッセージの件名です。 |
+| $GIT_CLONE_COMMIT_MESSAGE_BODY | クローンされたコミットのコミットメッセージの本文（内容）です。 |
+| $GIT_CLONE_COMMIT_COUNT | クローンされたコミットのコミット数です。この Env Var は、`clone_depth`のStep入力の影響を受けます。詳細については、[Git CloneのStepの説明](https://github.com/bitrise-steplib/steps-git-clone)を参照してください。 |
+| $GIT_CLONE_COMMIT_AUTHOR_NAME | クローンされたコミットの作成者の名前です。 |
+| $GIT_CLONE_COMMIT_AUTHOR_EMAIL | クローンされたコミットの作成者のメールアドレスです。 |
+| $GIT_CLONE_COMMIT_COMMITTER_NAME | クローンされたコミットのコミッターの名前です。 |
+| $GIT_CLONE_COMMIT_COMMITTER_EMAIL | クローンされたコミットのコミッターのメールアドレスです。 |

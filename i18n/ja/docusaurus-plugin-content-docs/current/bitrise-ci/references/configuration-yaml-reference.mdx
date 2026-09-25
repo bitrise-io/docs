@@ -1,0 +1,1595 @@
+---
+title: "Configuration YAML reference"
+description: "This document lists the configuration options for the configuration YAML file where you define your CI/CD configuration on Bitrise."
+sidebar_position: 1
+slug: /bitrise-ci/references/configuration-yaml-reference
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+このドキュメントでは、BitriseでCI/CDの設定を定義する<GlossTerm baseform="configuration yaml">設定YAML</GlossTerm>ファイルの設定オプションについて説明します。
+
+- 設定YAMLファイルの基本原則については、概要をご確認ください: [設定YAMLの概要](/bitrise-ci/configure-builds/configuration-yaml/configuration-yaml-overview)。
+- 設定YAMLファイルの保存場所についてRead more: [プロジェクトの設定YAMLファイルの管理](/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml)。
+- 高度なモジュール式設定を作成する: [モジュール式YAML設定](/bitrise-ci/configure-builds/configuration-yaml/modular-yaml-configuration)。
+
+
+## プロジェクトレベルのプロパティ
+
+### `format_version`
+
+<strong>Required</strong>: 設定YAMLファイルには、これがないと無効になります。
+
+Bitrise設定フォーマットのバージョンです。
+
+Bitrise CLIは、設定ファイルとCLIのバージョン間の互換性を確認するためにこれをチェックします。これはローカルで実行するビルドに関係します。Bitrise website上ではCLIが常に最新の状態であるため、トリガーされたビルドに対して`format_version`プロパティは影響しません。
+
+<strong>`format_version`のExample</strong>
+
+```yaml
+format_version: '25'
+```
+
+### `default_step_lib_source`
+
+設定内で使用するStepsのデフォルトの<GlossTerm baseform="step">Step</GlossTerm>ライブラリです。特定のStepにソースが指定されていない場合、Bitriseはこのソースを使用します。
+
+default valueはhttps://github.com/bitrise-io/bitrise-steplib.git.このリポジトリの独自のフォークをStepのソースとして使用することも、正確なソースリポジトリを指定してStepsを参照することもできます: [Stepのリファレンス/ID形式](/bitrise-ci/references/steps-reference/step-reference-id-format)。
+
+<strong>`default_step_lib_source`のExample</strong>
+
+```yaml
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+```
+
+### `project_type`
+
+`ios`、`android`、`flutter`など、Bitrise<GlossTerm baseform="project">プロジェクト</GlossTerm>の種類です。
+
+プロジェクトタイプはいつでも変更できますが、初期セットアップ後は特に意味を持ちません。
+
+<strong>`project_type`のExample</strong>
+
+```yaml
+project_type: flutter
+```
+
+### `title`
+
+Bitrise設定のタイトルです。
+
+<strong>`title`のExample</strong>
+
+```yaml
+title: My Bitrise project
+```
+
+### `summary`
+
+Bitrise設定の簡単な概要です。
+
+<strong>`summary`のExample</strong>
+
+```yaml
+summary: This project runs tests for my app.
+```
+
+### `description`
+
+Bitrise設定の詳細な説明です。
+
+<strong>`description`のExample</strong>
+
+```yaml
+description: This project runs unit and UI tests when a pull request is opened to the dev branch.
+```
+
+### `services`
+
+Linuxホスト上でサービスコンテナとしてStepsが使用するDockerコンテナの定義です。
+
+:::note[Linuxのみ]
+
+これはLinux<GlossTerm baseform="stack">stacks</GlossTerm>でのみサポートされています。macOSスタックでは、このプロパティは機能しません。
+
+:::
+
+Stepsのグループに対して1つ以上のサービスを設定でき、高度な統合テストのためにDockerコンテナをサービスとして実行できます。これらは`with`グループのライフサイクルに紐付いており、バックグラウンドでそのグループとともに実行されます。グループ内のStepsがすべて終了すると、クリーンアップされます。
+
+以下を定義する必要があります:
+
+- with group内でサービスを参照するために使用する、サービスのID。
+- サービスのイメージ名。
+- サービスのイメージバージョン。
+
+詳細: [サービスコンテナ](/bitrise-platform/infrastructure/docker-containers-on-bitrise/service-containers)。
+
+<strong>`services`のExample</strong>
+
+```yaml
+services:
+ postgres:
+   image: postgres:16
+   envs: 
+   - POSTGRES_USER: postgres
+   - POSTGRES_DB: bitrise 
+   ports:
+   - 5432:5432 
+   options: >-
+     --health-cmd pg_isready
+     --health-interval 10s
+     --health-timeout 5s
+     --health-retries 5
+ redis: 
+   image: redis:7
+   ports:
+   - 6379:6379
+   options: >-
+     --health-cmd "redis-cli ping"
+     --health-interval 10s
+     --health-timeout 5s
+     --health-retries 5
+```
+
+### `containers`
+
+Stepsが実行コンテナとして使用するDockerコンテナの定義です。
+
+Dockerコンテナは、設定YAMLファイル内の任意のBitriseprojectに対して定義できます。コンテナはファイルのトップレベルで定義し、<GlossTerm baseform="workflow">Workflow</GlossTerm>設定内の`with`グループから参照します。以下を定義する必要があります:
+
+- コンテナのID。このコンテナを参照する際に使用します。
+- 使用するDockerイメージの名前。
+- イメージのバージョン。
+
+`containers reference`: [Dockerコンテナのプロパティ](/bitrise-ci/references/configuration-yaml-reference#docker-container-properties)。
+
+詳細: [実行コンテナ](/bitrise-platform/infrastructure/docker-containers-on-bitrise/execution-containers)。
+
+<strong>`containers`のExample</strong>
+
+```yaml
+containers:
+  node-21:
+    image: node:21.6
+```
+
+### `app`
+
+このプロパティには、[Environment Variables](/bitrise-ci/configure-builds/environment-variables)など、プロジェクトレベルの設定情報が含まれます。
+
+ビルドスタックなどのメタ情報はここではなく、`meta`プロパティに属します。
+
+<strong>`app`のExample</strong>
+
+```yaml
+app:
+  envs:
+  - TEST: '' 
+    opts:
+      is_expand: false
+```
+
+### `meta`
+
+Bitrise設定に関連するプロジェクトメタデータのキーと値のペアを保存します。特に、プロジェクトのデフォルトスタックとbuild machineタイプを定義します。
+
+詳細: [bitrise.ymlファイルでのスタックの設定](/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds#setting-the-stack-in-the-configuration-yaml)。
+
+<strong>`meta`のExample</strong>
+
+```yaml
+meta:
+  bitrise.io:
+    stack: linux-docker-android-22.04
+    machine_type_id: g2.linux.2medium
+```
+
+### `trigger_map`
+
+プロジェクトレベルでビルド<GlossTerm baseform="trigger">トリガー</GlossTerm>を定義します。これはトリガーを設定するレガシーな方法です。<GlossTerm baseform="pipeline">Pipeline</GlossTerm>またはWorkflow内で定義されたターゲットベースのトリガーを使用することをお勧めします。
+
+詳細: [レガシーなプロジェクトベースのトリガー](/bitrise-ci/run-and-analyze-builds/build-triggers/legacy-project-based-triggers)。
+
+<strong>`trigger_map`のExample</strong>
+
+```yaml
+trigger_map:
+- pull_request_source_branch: "*"
+  type: pull_request
+  workflow: primary
+```
+
+### `pipelines`
+
+プロジェクトの設定内でPipelinesを定義します。Pipelinesを使用すると、CI/CDプロセス全体を整理し、複数の異なるタスクを並列や順次で実行する高度な設定をセットアップできます。
+
+`pipelines`リファレンス: [Pipelineレベルのプロパティ](/bitrise-ci/references/configuration-yaml-reference#pipeline-level-properties)。
+
+詳細: [Pipelinesについて](/bitrise-ci/workflows-and-pipelines/build-pipelines/about-pipelines)。
+
+<strong>`pipelines`のExample</strong>
+
+```yaml
+pipelines:
+  test:
+  title: Test Pipeline
+  summary: This Pipeline runs unit tests.
+  workflows:
+    primary: {}
+```
+
+### `workflows`
+
+設定に含まれるWorkflowsです。Workflowは再利用可能で設定可能な作業単位であるStepsの集合です。StepsはWorkflow内で順次実行されます。
+
+`workflows`リファレンス: [Workflowレベルのプロパティ](/bitrise-ci/references/configuration-yaml-reference#workflow-level-properties)。
+
+<strong>`workflows`のExample</strong>
+
+```yaml
+workflows: 
+  primary:
+    steps: 
+    - script: {}
+```
+
+### `step_bundles`
+
+Step bundlesを使用すると、複数のStepsを1つの単位にまとめられます。Step bundlesを使用すると、Stepsや一連のStepsを再利用できます。
+
+Step bundlesは任意のWorkflowに挿入できます。ユーティリティWorkflowsやWorkflowチェーンとは異なり、Step BundlesはWorkflow内のどこにでも配置できます。
+
+`step_bundles`リファレンス: [Step bundleのプロパティ](/bitrise-ci/references/configuration-yaml-reference#step-bundle-properties)。
+
+詳細: [Step bundles](/bitrise-ci/workflows-and-pipelines/steps/step-bundles)。
+
+<strong>`step_bundles`のExample</strong>
+
+```yaml
+step_bundles:
+  primary:
+    steps:
+    - git-clone: {}
+    - restore-cache: {}
+```
+
+### `include`
+
+`include`プロパティを使用すると、Bitrise設定内で他の設定YAMLファイルを使用し、大規模で複雑なYAMLファイルをより小さくモジュール化されたコンポーネントに分割できます。
+
+モジュール式のYAML設定には、以下が含まれます:
+
+- リポジトリのルートにある`bitrise.yml`ファイル。
+- 同じまたは別のリポジトリにある他のYAMLファイル。別のリポジトリからファイルをインクルードするには、そのリポジトリがプライマリリポジトリと同じGitアカウントまたは組織に属している必要があります。
+- <GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>ファイル内の1つ以上の`include`キーワード。これらは他のYAMLファイルを指し示し、そのファイルの設定をメインのプロジェクト設定に取り込みます。
+
+詳細: [モジュール式YAML設定](/bitrise-ci/configure-builds/configuration-yaml/modular-yaml-configuration)。
+
+<strong>`include`のExample</strong>
+
+```yaml
+include:
+  - path: path/to/config_module.yml
+```
+
+### `tools`
+
+セットアップするツールのバージョンです。バージョンの構文は以下をサポートします:
+
+- 正確なバージョン: 例、`'1.2.3'`。
+- 最新リリースへの部分一致: 例、`'22:latest'`。
+- インストール済みバージョンへの部分一致: 例、`'1.2:installed'`。
+- 最新バージョンまたはインストール済みの最上位バージョンを選択する特別なエイリアス`'latest'`と`'installed'`。
+
+詳細: [ツールバージョンの設定](/bitrise-ci/configure-builds/configuring-build-settings/configuring-tool-versions)。
+
+<strong>`tools`のExample</strong>
+
+```yaml
+tools:
+  nodejs: 22:installed
+  ruby: 3.3:latest
+```
+
+
+## Pipelineレベルのプロパティ
+
+### `pipelines:<pipeline-ID>:title`
+
+Pipelineのタイトルです。
+
+これはPipelineのIDとは異なります。IDはPipelineの作成時に設定します。IDとは異なり、タイトルは一意である必要はありません。<strong>Pipelines</strong>セクションの<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>UIに表示されます。Pipelineセレクターのドロップダウンメニューを開いた場合です。
+
+<strong>`pipelines:<pipeline-ID>:title`のExample</strong>
+
+```yaml
+pipelines:
+  test:
+    title: Test pipeline
+```
+
+### `pipelines:<pipeline-ID>:summary`
+
+Pipelineの簡単な概要です。省略可能です。
+
+<strong>`pipelines:<pipeline-ID>:summary`のExample</strong>
+
+```yaml
+pipelines:
+  test:
+    summary: This Pipeline runs unit tests.
+```
+
+### `pipelines:<pipeline-ID>:description`
+
+Pipelineの詳細な説明です。省略可能です。
+
+<strong>`pipelines:<pipeline-ID>:description`のExample</strong>
+
+```yaml
+pipelines:
+  test:
+    description: 'This Pipeline runs unit tests in parallel, using test sharding.'
+```
+
+### `pipelines:<pipeline-ID>:triggers`
+
+Pipelineに対して定義されたターゲットベースのトリガーです。コードイベントがトリガーで定義された条件に一致すると、BitriseはPipelineでビルドをトリガーします。
+
+`triggers`プロパティの詳細な構文と使用可能なオプションについては、以下をご確認ください:
+
+詳細: [ビルドトリガーのYAML構文](/bitrise-ci/run-and-analyze-builds/build-triggers/yaml-syntax-for-build-triggers)。
+
+<strong>`pipelines:<pipeline-ID>:triggers`のExample</strong>
+
+この例では、`main`ブランチにプッシュされたコミットがPipelineのビルドをトリガーします。
+
+```yaml
+pipelines:
+  test:
+    triggers:
+      push:
+      - branch: main
+```
+
+### `pipelines:<pipeline-ID>:status_report_name`
+
+ビルドが終了した後に、接続されたサービス(GitHub、GitLab、Bitbucketなど)に送信されるステータスレポートに表示される名前です。
+
+静的な値と動的な値の両方を設定でき、両方のタイプを組み合わせることもできます。
+
+<strong>Supportedの文字と変数</strong>:
+
+- `A-Za-z,.():/-_0-9 []|<>`
+- `<project_slug>`: プロジェクトの一意の識別子。
+- `<project_title>`: プロジェクトの省略可能なタイトル。
+- `<target_id>`: トリガーされたWorkflowまたはPipelineのID。
+- `<event_type>`: ビルドをトリガーしたコードイベント: `PR/push/tag`。
+
+最大長は100文字です。
+
+<strong>`pipelines:<pipeline-ID>:status_report_name`のExample</strong>
+
+```yaml
+pipelines:
+  test:
+    status_report_name: ci/bitrise/510526/push
+```
+
+### `pipelines:<pipeline-ID>:workflows`
+
+Pipeline設定の一部であるWorkflowsです。
+
+`depends_on`プロパティを使用して、Workflows間の依存関係を作成できます。
+
+<strong>`pipelines:<pipeline-ID>:workflows`のExample</strong>
+
+```yaml
+pipelines:
+  test:
+    workflows:
+      primary:
+```
+
+### `pipelines:<pipeline-ID>:priority`
+
+優先度の設定により、build queue内でのPipelineビルドの位置が決まります。優先度が高いほど、Pipelineのビルドは早く実行されます。
+
+<strong>Supported values:</strong>
+
+- -100から100までの整数。
+
+<strong>Read more:</strong>
+
+- [Pipelineの優先度](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#pipeline-priority)
+- [Build priority](/bitrise-ci/configure-builds/configuring-build-settings/build-priority)
+
+<strong>`pipelines:<pipeline-ID>:priority`のExample</strong>
+
+```yaml
+pipelines:
+  test:
+    priority: 10
+```
+
+
+## Pipelines内のWorkflowsのプロパティ
+
+### `workflows:depends_on`
+
+このプロパティは、このWorkflowが依存するWorkflowsを定義します。リスト内のWorkflowsのいずれかが失敗した場合、このWorkflowは実行されません。
+
+依存するWorkflowsをリストするには、YAML配列構文の両方のタイプ(ブロックシーケンスとフローシーケンス)を使用できます。依存関係リストに現れるWorkflowは、すべて同じPipelineに属している必要があります。
+
+:::caution[循環や無限ループの設定は不可]
+
+設定から生成される依存関係グラフに、循環や無限ループを含めることはできません。無効なPipeline設定でビルドを開始することはできません。
+
+:::
+
+<strong>Supported values</strong>: YAML配列構文を使用したWorkflowの名前。
+
+詳細: [BitrisePipelineの設定](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline)。
+
+<strong>`workflows:depends_on`のExample</strong>
+
+ブロックシーケンス配列構文:
+
+```yaml
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        depends_on:
+        - A
+      C:
+        depends_on:
+        - A
+      D:
+        depends_on:
+        - B
+        - C
+```
+
+フローシーケンス配列構文:
+
+```yaml
+D:
+  depends_on: [B, C]
+```
+
+### `workflows:abort_on_fail`
+
+このプロパティが`true`の場合、このWorkflowが失敗するとPipelineおよび他の実行中のWorkflowsは中断されます。
+
+<strong>Supported values</strong>: ブール値
+
+詳細: [BitrisePipelineの設定](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline)。
+
+<strong>`workflows:abort_on_fail`のExample</strong>
+
+この例では、AとBの両方が並列で実行されています。Bが失敗すると、WorkflowAを含むPipeline全体が直ちに中断されます。
+
+```yaml
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        abort_on_fail: true
+```
+
+### `workflows:should_always_run`
+
+このプロパティは、前のWorkflowが失敗した場合にWorkflowを実行するかどうかを定義します。
+
+推移的な依存関係に注意してください。常に実行するよう設定されたWorkflowに、失敗する親Workflowがある場合でも、それは実行されます。ただし、それに依存するWorkflowsは実行されません。例えば、WorkflowBに依存するWorkflowCがあるとします。WorkflowBはWorkflowAに依存しています。3つのWorkflowsのうち、常に実行するよう設定されているのはBのみです。
+
+- Aが失敗した場合、Bは実行されますが、その結果に関わらず、Cは実行されません。CはBに依存することで、Aにも依存しているためです。
+- Cは、AとBの両方が成功した場合にのみ実行されます。
+
+<strong>Supported values:</strong>
+
+- `off`: 親Workflowが失敗すると、Workflowは実行されません。これがdefault valueです。
+- `workflow`: 親Workflowが失敗しても、Workflowは実行されます。
+
+詳細: [BitrisePipelineの設定](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline)
+
+<strong>`workflows:should_always_run`のExample</strong>
+
+```yaml
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        depends_on: [ A ]
+        should_always_run: workflow
+      C:
+        depends_on: [ B ]
+      D:
+        depends_on: [ C ]
+        should_always_run: workflow
+```
+
+### `workflows:run_if`
+
+Workflowを実行する条件を定義するGoテンプレート式です。
+
+このプロパティには、3つのヘルパー関数を含むGoテンプレートを格納する`expression`フィールドが必要です:
+
+- `getenv`: 環境変数の値にアクセスします。
+- `enveq`: 環境変数を指定した値と比較します。
+- `envcontain`: 環境変数に指定した文字列が含まれているかどうかを確認します。
+
+Bitrise CLIは、実行時にこの式を評価します。`run_if`式によってWorkflowがスキップされた場合、それは成功したWorkflowとしてカウントされ、それに依存するWorkflowsが実行されます。
+
+詳細: [run_if式の例](/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally#examples-of-run_if-expressions)。
+
+<strong>`workflows:run_if`のExample</strong>
+
+この例では、BはEXAMPLE_KEY環境変数の値がexample valueの場合にのみ実行されます。
+
+```yaml
+pipelines:
+  example:
+    workflows:
+      A: {}
+      B:
+        run_if:
+          expression: {{ enveq "EXAMPLE_KEY" "example value" }}
+        depends_on: [A]
+```
+
+### `workflows:parallel`
+
+`parallel`プロパティを使用すると、1つの命令で同じWorkflowのコピーを並列で実行できます。これはテストシャーディングに特に役立ちます。
+
+このプロパティは、並列で実行するコピーの数を決定します。各コピーは2つの新しいenvironment variablesを受け取ります:
+
+- $BITRISE_IO_PARALLEL_INDEX: Workflowの各コピーに対する0から始まるインデックス。
+- $BITRISE_IO_PARALLEL_TOTAL: コピーの総数。
+
+<strong>Supported values</strong>: 1から200までの整数。
+
+詳細: [Pipelinesの並列実行](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow)。
+
+
+## Workflowレベルのプロパティ
+
+### `workflows:<workflow-id>:title`
+
+Workflowのタイトルです。
+
+これはWorkflow EditorのUIに表示されます。
+
+<strong>`workflows:<workflow-id>:title`のExample</strong>
+
+```yaml
+workflows:
+  primary:
+    title: Primary Workflow
+```
+
+### `workflows:<workflow-id>:summary`
+
+Workflowの簡単な概要です。
+
+<strong>`workflows:<workflow-id>:summary`のExample</strong>
+
+```yaml
+workflows:
+  primary:
+    summary: This Workflow runs unit tests.
+```
+
+### `workflows:<workflow-id>:description`
+
+Workflowの詳細な説明です。
+
+<strong>`workflows:<workflow-id>:description`のExample</strong>
+
+```yaml
+workflows:
+  primary:
+    description: This Workflow runs unit tests with test sharding, and exports the test results to the test reports page.
+```
+
+### `workflows:<workflow-id>:triggers`
+
+Workflowに対して定義されたターゲットベースのトリガーです。コードイベントがトリガーで定義された条件に一致すると、BitriseはWorkflowでビルドをトリガーします。
+
+各トリガーは、コードイベントと少なくとも1つの条件を定義します。1つのトリガーに複数の条件を定義した場合、ビルドをトリガーするにはそのすべてが一致する必要があります。
+
+`triggers`プロパティの詳細な構文と使用可能なオプションについては、以下をご確認ください:
+
+詳細: [ビルドトリガーのYAML構文](/bitrise-ci/run-and-analyze-builds/build-triggers/yaml-syntax-for-build-triggers)。
+
+<strong>`workflows:<workflow-id>:triggers`のExample</strong>
+
+この例では、以下の場合にビルドがトリガーされます:
+
+- `main`ブランチにコミットがプッシュされた場合。
+- 任意のブランチからプルリクエストが作成された場合。
+
+```yaml
+workflows:
+  primary:
+    triggers:
+      push:
+      - branch: main
+      pull_request:
+      - source_branch: "*"
+```
+
+### `workflows:<workflow-id>:status_report_name`
+
+ビルドが終了した後に、接続されたサービス(GitHub、GitLab、Bitbucketなど)に送信されるステータスレポートに表示される名前です。
+
+静的な値と動的な値の両方を設定でき、両方のタイプを組み合わせることもできます。
+
+<strong>Supportedの文字と変数</strong>:
+
+- `A-Za-z,.():/-_0-9 []|<>`
+- `<project_slug>`: プロジェクトの一意の識別子。
+- `<project_title>`: プロジェクトの省略可能なタイトル。
+- `<target_id>`: トリガーされたWorkflowまたはPipelineのID。
+- `<event_type>`: ビルドをトリガーしたコードイベント: `PR/push/tag`。
+
+最大長は100文字です。
+
+<strong>`workflows:<workflow-id>:status_report_name`のExample</strong>
+
+```yaml
+workflows:
+  test:
+    status_report_name: ci/bitrise/510526/push
+```
+
+### `workflows:<workflow-id>:before_run`
+
+:::tip[Step bundles]
+
+これはレガシー機能です。代わりにStep bundlesを使用することをお勧めします: [Step bundles](/bitrise-ci/workflows-and-pipelines/steps/step-bundles)。
+
+:::
+
+このWorkflowが開始する前に実行されるWorkflowsです。
+
+このプロパティと`after_run`を使用して、Workflowsのチェーンを作成します。
+
+詳細: [Workflows同士のチェーン](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together)。
+
+<strong>`workflows:<workflow-id>:before_run`のExample</strong>
+
+この例では、`deploy`Workflowの前に`test`Workflowが実行される設定を作成します。
+
+```yaml
+workflows:
+  test:
+    steps:
+    # test Steps
+
+  deploy:
+    before_run:
+    - test
+    steps:
+    # deploy Steps
+```
+
+### `workflows:<workflow-id>:after_run`
+
+:::tip[Step bundles]
+
+これはレガシー機能です。代わりにStep bundlesを使用することをお勧めします: [Step bundles](/bitrise-ci/workflows-and-pipelines/steps/step-bundles)。
+
+:::
+
+このWorkflowが正常に終了した後に実行されるWorkflowsです。
+
+このプロパティと`before_run`を使用して、Workflowsのチェーンを作成します。
+
+詳細: [Workflows同士のチェーン](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together)。
+
+<strong>`workflows:<workflow-id>:after_run`のExample</strong>
+
+この例では、`ci`Workflowの後に`deploy`Workflowが実行される設定を作成します。
+
+```yaml
+workflows:
+  deploy:
+    steps:
+    # deploy Steps
+
+  ci:
+    after_run:
+    - deploy
+    steps:
+    # CI Steps
+```
+
+### `workflows:<workflow-id>:envs`
+
+Workflowに対して定義されたEnvironment Variablesです。
+
+各環境変数はキーと値のペアです。Environment Variablesは値として他のEnvironment Variablesを使用できます: [環境変数の値で環境変数を使用する](/bitrise-ci/configure-builds/environment-variables#using-env-vars-in-the-value-of-an-env-var)。
+
+これらの変数は、選択したWorkflowでのみ使用できます。同じ設定YAMLファイル内で定義された他のWorkflowsからはアクセスできません。プロジェクトレベルのEnvironment variablesの方が優先度が高くなります: [Environment Variablesの使用可能順序](/bitrise-ci/configure-builds/environment-variables#availability-order-of-environment-variables)。
+
+詳細: [Environment Variables](/bitrise-ci/configure-builds/environment-variables)。
+
+<strong>`workflows:<workflow-id>:envs`のExample</strong>
+
+```yaml
+workflows:
+  primary:
+    envs:
+    - TEST: test
+    - ENV_LABEL: dev
+      opts:
+        is_expand: false
+```
+
+### `workflows:<workflow-id>:steps`
+
+Workflow内のStepsのリストです。
+
+Step参照の基本構文は`<step_lib_source>::<step-id>@<version>:`です。Step IDは常に必須で、ソースとバージョンは省略可能です。
+
+- ソースを設定しない場合は、`default_step_lib_source`が使用されます: [プロジェクトレベルのプロパティ](/bitrise-ci/references/configuration-yaml-reference#project-level-properties)。
+- バージョンを設定しない場合は、latest versionが使用されます。
+
+詳細:
+
+- [Stepのリファレンス/ID形式](/bitrise-ci/references/steps-reference/step-reference-id-format)
+- [Stepのバージョン](/bitrise-ci/workflows-and-pipelines/steps/step-versions)
+
+<strong>`workflows:<workflow-id>:steps`のExample</strong>
+
+この例では、正確なソースを指定せず、メジャーバージョン1のlatest versionを使用しています。
+
+```yaml
+workflows:
+    steps:
+    - script: {}
+```
+
+この例では、Stepのソースを指定しています。
+
+```yaml
+workflows:
+    steps:
+    - https://github.com/bitrise-io/bitrise-steplib.git::script@1: {}
+```
+
+### `workflows:<workflow-id>:priority`
+
+優先度の設定により、build queue内でのWorkflowビルドの位置が決まります。優先度が高いほど、Workflowのビルドは早く実行されます。
+
+<strong>Supported values</strong>: -100から100までの整数。
+
+詳細: [Build priority](/bitrise-ci/configure-builds/configuring-build-settings/build-priority)。
+
+<strong>`workflows:<workflow-id>:priority`のExample</strong>
+
+```yaml
+workflows:
+  primary:
+    priority: 10
+```
+
+### `workflows:<workflow-id>:tools`
+
+ビルドで使用するツールバージョンの宣言的な設定です。
+
+特定のWorkflowsに対してツールバージョンを定義できます。設定のトップレベルでtoolsプロパティを定義する代わりに、1つ以上のWorkflowsの下にネストして定義します。
+
+バージョンの構文は以下をサポートします:
+
+- 正確なバージョン: 例、`'1.2.3'`。
+- 最新リリースへの部分一致: 例、`'22:latest'`。
+- インストール済みバージョンへの部分一致: 例、`'1.2:installed'`。
+- 最新バージョンまたはインストール済みの最上位バージョンを選択する特別なエイリアス`'latest'`と`'installed'`。
+
+詳細: [ツールバージョンの設定](/bitrise-ci/configure-builds/configuring-build-settings/configuring-tool-versions)。
+
+<strong>`workflows:<workflow-id>:tools`のExample</strong>
+
+```yaml
+workflows:
+  primary:
+    tools:
+      nodejs: 22:installed
+```
+
+### `workflows:<workflow-id>:meta`
+
+プロジェクトメタデータのキーと値のペアを保存します。特に、Workflowのスタックとマシンタイプを定義します。
+
+詳細: [bitrise.ymlファイルでのスタックの設定](/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds#setting-the-stack-in-the-configuration-yaml)。
+
+<strong>`workflows:<workflow-id>:meta`のExample</strong>
+
+```yaml
+workflows:
+  deploy:  
+    meta:      
+      bitrise.io:       
+        stack: linux-docker-android-22.04
+        machine_type_id: g2.linux.2medium
+```
+
+
+## Step bundleのプロパティ
+
+### `step_bundles:<step-bundle-id>:title`
+
+Step bundleのタイトルです。Step bundleのIDによってバンドルが一意に識別されるため、これは省略可能なプロパティです。
+
+<strong>`step_bundles:<step-bundle-id>:title`のExample</strong>
+
+```yaml
+step_bundles:
+  test:
+    title: Test bundle
+```
+
+### `step_bundles:<step-bundle-id>:summary`
+
+Step bundleの簡単な概要です。省略可能です。
+
+<strong>`step_bundles:<step-bundle-id>:summary`のExample</strong>
+
+```yaml
+step_bundles:
+  test:
+    summary: "It's a bundle to test Step bundles."
+```
+
+### `step_bundles:<step-bundle-id>:description`
+
+Step bundleの詳細な説明です。
+
+<strong>`step_bundles:<step-bundle-id>:description`のExample</strong>
+
+```yaml
+step_bundles:
+  test:
+    description: "This Step bundle allows users to try out Step bundles on Bitrise. It includes a Git Clone Repository Step and a Script Step."
+```
+
+### `step_bundles:<step-bundle-id>:envs`
+
+Step bundleでのみ使用できるEnvironment Variablesです。バンドル外のStepsからは、ここで定義した変数にアクセスできません。すべての環境変数と同様に、キーと値を指定します。
+
+<strong>`step_bundles:<step-bundle-id>:envs`のExample</strong>
+
+```yaml
+step_bundles:
+  test:
+    envs:
+    - MY_ENV: "value"
+```
+
+### `step_bundles:<step-bundle-id>:inputs`
+
+Step bundleに対して定義された入力です。これらはStep bundleがWorkflowに追加される際に設定できる値です。
+
+詳細: [Step bundles](/bitrise-ci/workflows-and-pipelines/steps/step-bundles)。
+
+<strong>`step_bundles:<step-bundle-id>:inputs`のExample</strong>
+
+```yaml
+step_bundles:
+  test:
+    inputs:
+    - my_input: my_value
+```
+
+### `step_bundles:<step-bundle-id>:execution_container`
+
+このバンドル内のすべてのStepsのデフォルトの実行コンテナです。呼び出し元や個々のStepsによって上書きできます。
+
+詳細: [Bitrise上のDockerコンテナについて](/bitrise-platform/infrastructure/docker-containers-on-bitrise/about-docker-containers-on-bitrise)。
+
+<strong>`step_bundles:<step-bundle-id>:execution_container`のExample</strong>
+
+```yaml
+step_bundles:
+  test:
+    execution_container: 
+        test-container: {}
+```
+
+### `step_bundles:<step-bundle-id>:service_containers`
+
+このバンドル内のすべてのStepsのデフォルトのサービスコンテナです。呼び出し元で上書きできます。
+
+<strong>Supported values</strong>:
+
+詳細: [サービスコンテナ](/bitrise-platform/infrastructure/docker-containers-on-bitrise/service-containers)。
+
+<strong>`step_bundles:<step-bundle-id>:service_containers`のExample</strong>
+
+```yaml
+step_bundles:
+  test:
+    service_containers:
+        test-container: {}
+```
+
+### `step_bundles:<step-bundle-id>:steps`
+
+Step bundleに含まれるStepsです。
+
+<strong>`step_bundles:<step-bundle-id>:steps`のExample</strong>
+
+```yaml
+step_bundles:
+  test:
+    steps:
+      - git-clone: {}
+      - script: {}
+```
+
+
+## Stepレベルのプロパティ
+
+### `steps:<step-id>:title`
+
+Stepのタイトルです。
+
+これはWorkflow Editorに表示され、Step IDの代わりに使用されます。
+
+<strong>`steps:<step-id>:title`のExample</strong>
+
+```yaml
+workflows:
+    steps:
+    - script@1:
+        title: Test sharding script
+```
+
+### `steps:<step-id>:summary`
+
+Stepの簡単な概要です。
+
+<strong>`steps:<step-id>:summary`のExample</strong>
+
+```yaml
+workflows:
+    steps:
+    - script@1:
+        summary: Custom script for sharding.
+```
+
+### `steps:<step-id>:description`
+
+Stepの詳細な説明です。
+
+<strong>`steps:<step-id>:description`のExample</strong>
+
+```yaml
+workflows:
+    steps:
+    - script@1:
+        summary: A custom script for setting up test sharding for Flutter unit tests.
+```
+
+### `steps:<step-id>:is_always_run`
+
+このプロパティがtrueの場合、Workflow内の前のStepが失敗しても、Stepは常に実行されます。
+
+デフォルトでは、Workflow内の前のStepが失敗すると、それ以降のStepsは実行されません。Stepは、このプロパティが`true`に設定されている場合にのみ実行されます。
+
+<strong>Supported values</strong>: ブール値
+
+詳細: [Stepsのスキップ](/bitrise-ci/workflows-and-pipelines/steps/skipping-steps)。
+
+<strong>`steps:<step-id>:is_always_run`のExample</strong>
+
+```yaml
+workflows:
+  primary:
+    steps:
+    - script:
+        is_always_run: true
+```
+
+### `steps:<step-id>:is_skippable`
+
+このプロパティがtrueの場合、このStepが失敗してもビルドは失敗しません。
+
+デフォルトでは、Stepが失敗すると、それ以降のStepsは実行されません。最初に失敗したステップにこのプロパティが`true`に設定されている場合、ビルドは失敗しません。それ以降のStepsはそのまま実行され、ビルドは正常に終了できます。
+
+<strong>Supported values</strong>: ブール値
+
+<strong>`steps:<step-id>:is_skippable`のExample</strong>
+
+```yaml
+workflows:
+  primary:
+    steps:
+    - script:
+        is_skippable: true
+```
+
+### `steps:<step-id>:run_if`
+
+このプロパティは、Stepを実行する条件を設定します。有効なGoテンプレート式が必要です。
+
+`run_if`は、trueまたはfalseに評価される限り、任意の有効なGoテンプレートを使用できます(文字列表現、例えば`True`、`t`、`yes`、`y`なども、すべてtrueとみなされます)。テンプレートが`true`と評価された場合、Stepは実行され、そうでない場合は実行されません。
+
+詳細:
+
+- [Stepを条件付きで有効化または無効化する](/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally)。
+- [run_if式の例](/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally#examples-of-run_if-expressions)。
+
+<strong>`steps:<step-id>:run_if`のExample</strong>
+
+この例では、CUSTOM_ENV_VAR_KEYの値が`test value to test against`でない場合、ビルドはStepをスキップします。
+
+```yaml
+run_if: |-
+        {{enveq "CUSTOM_ENV_VAR_KEY" "test value to test against"}}
+```
+
+### `steps:<step-id>:timeout`
+
+このプロパティは、Stepのタイムリミットを定義します。Stepの実行が定義された時間より長くかかると、Stepは失敗します。リミットは秒単位で定義します。
+
+これは、例えばビルドが明確でない理由でハングする場合に役立ちます。原因と思われるStepやStepsにタイムアウトを設定できます。
+
+詳細: [Stepsのタイムリミットの設定](/bitrise-ci/workflows-and-pipelines/steps/setting-a-time-limit-for-steps)。
+
+<strong>`steps:<step-id>:timeout`のExample</strong>
+
+```yaml
+- xcode-test:
+     timeout: 120
+```
+
+### `steps:<step-id>:no_output_timeout`
+
+このプロパティは、ステップのタイムリミットを定義します。Stepsが定義された時間より長く出力を生成せずに実行されると、Stepは失敗します。リミットは秒単位で定義します。
+
+詳細: [ハングしているStepsの検出と中断](/bitrise-ci/workflows-and-pipelines/steps/detecting-and-aborting-hanging-steps)。
+
+<strong>`steps:<step-id>:no_output_timeout`のExample</strong>
+
+```yaml
+output_slows_down:
+    steps:
+    - script:
+        no_output_timeout: 12
+```
+
+### `steps:<step-id>:inputs`
+
+Stepに対して定義された入力です。これらはStepがWorkflowに追加される際に設定できる値です。
+
+Stepの入力構文は`KEY: value`のペアで構成されます。
+
+詳細: [Step inputsのリファレンス](/bitrise-ci/references/steps-reference/step-inputs-reference)。
+
+<strong>`steps:<step-id>:inputs`のExample</strong>
+
+```yaml
+inputs:
+- my_key_for_the_env: "default value"
+```
+
+### `steps:<step-id>:outputs`
+
+Stepに対して定義された出力です。これらはStepが実行中に設定できる値で、Workflow内の他のStepsが使用できます。
+
+bitrise.ioのWorkflow Editor内、またはStepの`step.yml`ファイルで、Stepのデフォルトの出力を確認できます。`outputs`属性を設定することで、プロジェクトの`step.yml`ファイルにStepの出力を定義できます。Stepの出力構文は、`KEY: value`のペアと`opts`フィールドの2つの主要な部分で構成されます。キーと値は必須で、`opts`フィールドは省略可能です。
+
+詳細: [Stepの出力リファレンス](/bitrise-ci/references/steps-reference/step-outputs-reference)。
+
+<strong>`steps:<step-id>:outputs`のExample</strong>
+
+```yaml
+workflows:
+  primary:
+  steps:
+  - gradle-runner:
+      outputs:
+      - BITRISE_APK_PATH: ALIAS_APK_PATH
+```
+
+
+## トリガーのプロパティ
+
+### `triggers:enabled`
+
+このプロパティは、定義したトリガーが有効かどうかを決定します。default valueは`true`です。トリガーを無効にする場合は、`false`に設定してください。
+
+<strong>Supported values</strong>: ブール値
+
+<strong>`triggers:enabled`のExample</strong>
+
+この例では、トリガーが無効になっています。
+
+```yaml
+workflows:
+  primary:
+    triggers:
+      enabled: false
+```
+
+### `triggers:priority`
+
+個々のトリガー条件に優先度を設定し、それがトリガーするWorkflowまたはPipelineの優先度を上書きします。
+
+<strong>Supported values</strong>: -100から100までの整数。値が高いほど優先度が高くなります。default valueは0です。
+
+詳細: [Build priority](/bitrise-ci/configure-builds/configuring-build-settings/build-priority)。
+
+<strong>`triggers:priority`のExample</strong>
+
+```yaml
+workflows:
+  primary:
+    triggers:
+      push:
+      - branch: main
+        priority: 10
+```
+
+### `triggers:push`
+
+コードプッシュトリガーは、プロジェクトのリポジトリにコードがプッシュされたときにBitriseのビルドをトリガーする条件を定義します。
+
+例えば、プロジェクトのリポジトリの指定したブランチへのコミットがビルドをトリガーします。
+
+<strong>`triggers:push`のExample</strong>
+
+この例では、`main`ブランチへのコードプッシュがビルドをトリガーします。
+
+```yaml
+workflows:
+  primary:
+    triggers:
+      push:
+      - branch: main
+```
+
+#### `triggers:push:branch`
+
+指定したブランチにコードがプッシュされたときにビルドをトリガーします。
+
+<strong>Supported values</strong>:
+
+- 文字列。
+- すべてのタイプのトリガーで単純なテキストマッチングを可能にする`pattern`プロパティ。
+- トリガー条件として正規表現を使用できる`regex`プロパティ。
+
+:::important[使用できるのは1つのタイプのみ]
+
+文字列、パターン、正規表現のいずれか1つだけを使用してください。同じトリガー内で複数を使用することはできません。
+
+:::
+
+<strong>`triggers:push:branch`のExample</strong>
+
+```yaml
+workflows:
+  primary:
+    triggers:
+      push:
+      - branch: main
+```
+
+##### `triggers:push:commit_message`
+
+指定したコミットメッセージでコードがプッシュされたときにビルドをトリガーします。
+
+<strong>Supported values</strong>:
+
+- 文字列。
+- すべてのタイプのトリガーで単純なテキストマッチングを可能にする`pattern`プロパティ。
+- トリガー条件として正規表現を使用できる`regex`プロパティ。
+- Bitriseが、コードプッシュ内のすべてのコミットメッセージや変更されたファイルを評価するか、最新のコミットに属するものだけを評価するかを定義する`last_commit`プロパティ。そのdefault valueは`false`です。
+
+:::important[使用できるのは1つのタイプのみ]
+
+文字列、パターン、正規表現のいずれか1つだけを使用してください。同じトリガー内で複数を使用することはできません。
+
+:::
+
+<strong>`triggers:push:commit_message`のExample</strong>
+
+この例では、`[workflow: deploy]`という文字列を含むコミットメッセージがビルドをトリガーします。
+
+```yaml
+primary
+  triggers:
+    push:
+    - commit_message:
+        regex: '.*\[workflow: deploy\].*'
+```
+
+##### `triggers:push:changed_files`
+
+コードプッシュによって指定したファイルまたは複数のファイルに変更が生じたときにビルドをトリガーします。
+
+ファイルまたはフォルダを指定できます。
+
+<strong>Supported values</strong>:
+
+- 文字列。
+- すべてのタイプのトリガーで単純なテキストマッチングを可能にする`pattern`プロパティ。
+- トリガー条件として正規表現を使用できる`regex`プロパティ。
+- Bitriseが、コードプッシュ内のすべてのコミットメッセージや変更されたファイルを評価するか、最新のコミットに属するものだけを評価するかを定義する`last_commit`プロパティ。そのdefault valueは`false`です。
+
+:::important[使用できるのは1つのタイプのみ]
+
+文字列、パターン、正規表現のいずれか1つだけを使用してください。同じトリガー内で複数を使用することはできません。
+
+:::
+
+<strong>`triggers:push:changed_files`のExample</strong>
+
+```yaml
+primary
+  triggers:
+    push:
+    - changed_files: 
+        pattern: "myfile.txt"
+```
+
+### `triggers:pull_request`
+
+プルリクエストトリガー: プロジェクトのリポジトリでプルリクエストが作成されたときにBitriseのビルドをトリガーする条件を定義します。
+
+<strong>`triggers:pull_request`のExample</strong>
+
+```yaml
+primary
+  triggers:
+    pull_request:
+    - source_branch: *
+```
+
+#### `triggers:pull_request:source_branch`
+
+プルリクエストの作成元のブランチです。
+
+<strong>Supported values</strong>:
+
+- 文字列。
+- トリガー条件として正規表現を使用できる`regex`プロパティ。
+
+:::important[使用できるのは1つのタイプのみ]
+
+文字列または正規表現のいずれか1つだけを使用してください。同じトリガー内で複数を使用することはできません。
+
+:::
+
+<strong>`triggers:pull_request:source_branch`のExample</strong>
+
+```yaml
+primary
+  triggers:
+    pull_request:
+    - source_branch: main
+```
+
+#### `triggers:pull_request:target_branch`
+
+プルリクエストのマージ先となるブランチです。GitHubスタック内のプルリクエストの場合、Bitriseはこれをスタックのベースブランチと照合します。
+
+<strong>Supported values</strong>:
+
+- 文字列。
+- トリガー条件として正規表現を使用できる`regex`プロパティ。
+
+:::important[使用できるのは1つのタイプのみ]
+
+文字列または正規表現のいずれか1つだけを使用してください。同じトリガー内で複数を使用することはできません。
+
+:::
+
+<strong>`triggers:pull_request:target_branch`のExample</strong>
+
+```yaml
+primary
+  triggers:
+    pull_request:
+    - target_branch: main
+```
+
+#### `triggers:pull_request:label`
+
+プルリクエストのラベルです。ラベルが追加されたときと、このラベルが付いた開いているプルリクエストにコードがプッシュされたときにビルドがトリガーされます。
+
+<strong>Supported values</strong>:
+
+- 文字列。
+- トリガー条件として正規表現を使用できる`regex`プロパティ。
+
+:::important[使用できるのは1つのタイプのみ]
+
+文字列または正規表現のいずれか1つだけを使用してください。同じトリガー内で複数を使用することはできません。
+
+:::
+
+<strong>`triggers:pull_request:label`のExample</strong>
+
+```yaml
+primary
+  triggers:
+    pull_request:
+    - label: bugfix
+```
+
+#### `triggers:pull_request:draft_enabled`
+
+このプロパティは、ドラフトプルリクエストがビルドをトリガーするかどうかを定義します。
+
+<strong>Supported values</strong>: ブール値。
+
+詳細: [ドラフトPRからのビルドの無効化](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers#disabling-builds-from-a-draft-pr)。
+
+<strong>`triggers:pull_request:draft_enabled`のExample</strong>
+
+```yaml
+primary
+  triggers:
+    pull_request:
+    - draft_enabled: false
+```
+
+#### `triggers:pull_request:comment`
+
+プルリクエストに投稿されたコメントです。
+
+<strong>Supported values</strong>:
+
+- 文字列。
+- トリガー条件として正規表現を使用できる`regex`プロパティ。
+
+:::important[使用できるのは1つのタイプのみ]
+
+文字列または正規表現のいずれか1つだけを使用してください。同じトリガー内で複数を使用することはできません。
+
+:::
+
+<strong>`triggers:pull_request:comment`のExample</strong>
+
+```yaml
+primary
+  triggers:
+    pull_request:
+    - comment: approved
+```
+
+#### `triggers:pull_request:commit_message`
+
+プルリクエストへのプッシュにおける特定のコミットメッセージです。
+
+<strong>Supported values</strong>:
+
+- 文字列。
+- トリガー条件として正規表現を使用できる`regex`プロパティ。
+
+:::important[使用できるのは1つのタイプのみ]
+
+文字列または正規表現のいずれか1つだけを使用してください。同じトリガー内で複数を使用することはできません。
+
+:::
+
+<strong>`triggers:pull_request:commit_message`のExample</strong>
+
+```yaml
+primary
+  triggers:
+    pull_request:
+    - commit_message: "fix for issue"
+```
+
+#### `triggers:pull_request:changed_files`
+
+プルリクエストで変更された特定のファイルです。
+
+<strong>Supported values</strong>:
+
+- 文字列。
+- トリガー条件として正規表現を使用できる`regex`プロパティ。
+
+:::important[使用できるのは1つのタイプのみ]
+
+文字列または正規表現のいずれか1つだけを使用してください。同じトリガー内で複数を使用することはできません。
+
+:::
+
+<strong>`triggers:pull_request:changed_files`のExample</strong>
+
+```yaml
+primary
+  triggers:
+    pull_request:
+    - changed_files: ./path/to/file
+```
+
+### `triggers:tag`
+
+Gitタグトリガーは、プロジェクトのリポジトリにGitタグがプッシュされたときにBitriseのビルドをトリガーする条件を定義します。
+
+<strong>`triggers:tag`のExample</strong>
+
+```yaml
+primary
+  triggers:
+    tag:
+    - name: *
+```
+
+#### `triggers:tag:name`
+
+ビルドをトリガーするタグの値です。
+
+<strong>Supported values</strong>:
+
+- 文字列。
+- トリガー条件として正規表現を使用できる`regex`プロパティ。
+
+:::important[使用できるのは1つのタイプのみ]
+
+文字列または正規表現のいずれか1つだけを使用してください。同じトリガー内で複数を使用することはできません。
+
+:::
+
+<strong>`triggers:tag:name`のExample</strong>
+
+```yaml
+primary
+  triggers:
+    tag:
+    - name: 1.0
+```
+
+
+## Dockerコンテナのプロパティ
+
+### `containers:<container-id>:type`
+
+コンテナのタイプです。
+
+<strong>Supported values</strong>:
+
+- `execution`: StepまたはStep bundleを実行するコンテナ。
+- `service`: StepやStep bundleと並行して実行され、`postgres`などのバックグラウンドサービスを実行するコンテナ。
+
+詳細: [Bitrise上のDockerコンテナについて](/bitrise-platform/infrastructure/docker-containers-on-bitrise/about-docker-containers-on-bitrise)。
+
+<strong>`containers:<container-id>:type`のExample</strong>
+
+```yaml
+containers:
+  node-18:
+    type: execution
+```
+
+### `containers:<container-id>:image`
+
+このプロパティは、コンテナで使用するDockerイメージを`name:tag`形式で定義します。DockerHubの任意の公開イメージを使用できます。
+
+<strong>`containers:<container-id>:image`のExample</strong>
+
+```yaml
+containers:
+  node-18:
+    image: node:18
+```
+
+### `containers:<container-id>:credentials`
+
+この認証情報により、`docker login`コマンドに渡すパラメーターを制御できます。docker loginの使用方法については、使用しているレジストリのドキュメントを確認してください。
+
+以下のプロパティがサポートされています:
+
+- `username`
+- `password`
+- `server`
+
+<strong>`containers:<container-id>:credentials`のExample</strong>
+
+```yaml
+containers:
+  node-18:
+    credentials:
+      username: user
+      password: pass
+```
+
+#### `containers:<container-id>:credentials:username`
+
+`docker login`コマンドで使用されるユーザー名です。
+
+<strong>`containers:<container-id>:credentials:username`のExample</strong>
+
+```yaml
+containers:
+  node-18:
+    credentials:
+      username: _json_key_base64
+```
+
+#### `containers:<container-id>:credentials:password`
+
+`docker login`コマンドで使用されるパスワードです。
+
+<strong>`containers:<container-id>:credentials:password`のExample</strong>
+
+```yaml
+containers:
+  node-18:
+    credentials:
+      password: $GCP_SERVICE_ACCOUNT
+```
+
+#### `containers:<container-id>:credentials:server`
+
+`docker login`コマンド用の完全修飾レジストリサーバーURLです。サーバーがすでにイメージ参照の一部になっている場合は、これは省略可能です。
+
+<strong>`containers:<container-id>:credentials:server`のExample</strong>
+
+```yaml
+containers:
+  node-18:
+    credentials:
+      server: ghcr.io
+```
+
+### `containers:<container-id>:ports`
+
+このプロパティは、サービスへのアクセスに使用するポートの配列を定義します。ポートは`[HostPort]:[ContainerPort]`の形式で定義します。
+
+<strong>`containers:<container-id>:ports`のExample</strong>
+
+```yaml
+containers:
+  ports:
+  - 3000:3000
+  - 2000:2000
+```
+
+### `containers:<container-id>:envs`
+
+Dockerコンテナ用のEnvironment Variablesの配列を定義します。各環境変数について、キーと値を定義します。
+
+詳細: [Environment Variables](/bitrise-ci/configure-builds/environment-variables)。
+
+<strong>`containers:<container-id>:envs`のExample</strong>
+
+```yaml
+containers:
+  node-18:
+    envs:
+    - VARIABLE_KEY: variable_value
+```
+
+### `containers:<container-id>:options`
+
+追加のDockerコンテナリソースオプションを定義します。これらは`docker create`コマンドに渡されるパラメーターです。
+
+使用可能なオプションの詳細: [docker service create](https://docs.docker.com/reference/cli/docker/service/create/)。
+
+:::important[サポートされていないオプション]
+
+`--network`、`--volume (-v)`、`--entrypoint`はサポートされていません。
+
+:::
+
+<strong>`containers:<container-id>:options`のExample</strong>
+
+```yaml
+containers:
+  node-18:
+    options: "--privileged --health-interval 1s"
+```

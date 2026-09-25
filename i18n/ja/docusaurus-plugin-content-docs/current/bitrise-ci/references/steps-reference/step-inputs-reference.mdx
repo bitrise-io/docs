@@ -1,0 +1,79 @@
+---
+title: "Step inputs reference"
+description: "Step inputs are environment items that tell the Bitrise CLI how to run a given Step. The inputs of a Step are defined in the `step.yml` file of every Step by setting the `inputs` property.."
+sidebar_position: 5
+slug: /bitrise-ci/references/steps-reference/step-inputs-reference
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+<GlossTerm baseform="Step">Step</GlossTerm>の入力は、[Bitrise CLI](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli)が特定のStepをどのように実行するかを伝える環境項目です。Stepの入力は、すべてのStepの`step.yml`ファイルで`inputs`プロパティを設定することによって定義されます。
+
+Step inputsは、すべての環境プロパティと同じ構文を持ちます。これは、`KEY: value`のペアと`opts`フィールドという2つの主要な部分で構成されます。
+
+```yaml
+inputs:
+- my_key_for_the_env: "default value" 
+  opts: 
+    title: An example env var item 
+    is_dont_change_value: false 
+    category: example
+```
+
+- `my_key_for_the_env`: 入力のキー(必須)。
+- `default value`: 入力のdefault value。default valueを必ず指定する必要はありません。
+- `opts`: 任意のプロパティ。
+
+
+## Step input properties
+
+- `title`、`summary`、`description`: コメント、ツール、GUI用のメタデータ。
+
+  :::tip[永続的なコメントとしてのメタプロパティ]
+
+  これらのメタプロパティは、永続的なコメントとして使用できます。標準のYMLコメントは、YMLが正規化されたり、JSONに変換されたり、その他の方法で生成・変換されたりする際に保持されませんが、これらのメタプロパティは保持されます。
+
+  :::
+- `is_expand`: `true`または`false`に設定できます。default valueは`true`であるため、Bitrise CLIはStepに渡す前にEnvironment Variables(環境変数)を展開します。つまり、Stepの入力値が環境変数である場合、Bitrise CLIはその変数の値をStepに渡します。`false`に設定されている場合、CLIは環境変数のキーを文字列として渡します。
+- `skip_if_empty`: `true`または`false`に設定できます。`true`に設定した場合、値が空であればその入力は使用されません。
+- `category`: 入力を分類するために使用します。同じ`category`を持つ入力は、利便性のためウェブサイトのUI上で1つのメニューにまとめて表示されます。
+- `value_options`: 使用可能な値のリスト。
+- `is_required`: `true`または`false`に設定できます。`true`に設定した場合、そのステップでは入力に空でない値を設定する必要があります。
+- `is_dont_change_value`: `true`または`false`に設定できます。`true`に設定すると、入力の値は変更されない、またはUI上で非表示になります。主にデバッグ用の入力や、このStepを別のものと接続するために他のStepsの出力に設定する「<strong>connection</strong>」入力に使用されます。
+- `is_template`: `true`または`false`に設定できます。`true`に設定すると
+
+  、
+
+  入力の値はGoテンプレートとして評価されます。
+- `is_sensitive`: 入力をsensitiveとしてマークすると、その値として<GlossTerm baseform="secret">Secret</GlossTerm>環境変数のみを受け付けるようになります。パスワード、APIキー、トークンなどの機密情報に最もよく使用されますが、どの入力もsensitiveとしてマークできます。
+
+
+## Step inputsにテンプレート式を使用する
+
+特定の状況でのみStepに特定の値を使用させたい場合は、Step inputsとしてテンプレート式を使用します。テンプレート式は、Stepが入力を使用する前に評価されます。これらは[Goのテンプレート言語](https://golang.org/pkg/text/template/)で記述します。
+
+テンプレート式を使用するには、プロジェクトの`step.yml`ファイルで`is_template`プロパティを設定します。
+
+1. プロジェクトの`step.yml`ファイルを開きます。
+1. テンプレート式を使用したいStepを見つけます。
+1. Stepの`content`に`opts`フィールドを追加します。
+1. `opts`に`is_template`プロパティを追加し、その値を`true`に設定します。
+1. Stepの`content`にテンプレート式を追加します。
+
+<strong>Bitrise CLIがCIモードかどうかを確認する</strong>
+
+```yaml
+- script:
+  title: Template example
+  inputs:
+  - content: |-
+      {{if .IsCI}}
+      echo "CI mode"
+      {{else}}
+      echo "not CI mode"
+      {{end}}
+    opts:
+      is_template: true
+```
