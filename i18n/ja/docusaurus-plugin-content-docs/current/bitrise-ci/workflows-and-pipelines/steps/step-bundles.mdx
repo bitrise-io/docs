@@ -1,0 +1,365 @@
+---
+title: "Step bundles"
+description: "Step bundles allow you to reuse Steps and sequences of Steps in any Workflow in a convenient way, without having to manually copy and paste Steps from a YAML file."
+sidebar_position: 8
+slug: /bitrise-ci/workflows-and-pipelines/steps/step-bundles
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+<GlossTerm baseform="Step">Step</GlossTerm>バンドルを使用すると、複数のStepsを1つの単位にグループ化できます。Step bundlesを使用すると、YAML設定ファイルから手動でコピー&ペーストすることなく、StepsやStepsのシーケンスを再利用できます。
+
+Step bundlesは、`step_bundles`と呼ばれるルートレベルのエンティティで設定します。Step bundlesは任意の<GlossTerm baseform="Workflow">Workflow</GlossTerm>に挿入できます。ユーティリティWorkflowsや[Workflowチェイニング](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together)とは異なり、Step BundlesはWorkflow内の任意の場所に配置できます。
+
+ビルドを実行すると、バンドル内の各Stepは、バンドルが挿入された位置で実行されます。
+
+## Step bundleを作成する
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>を開きます。
+1. 左側で<strong>Step bundles</strong>を選択します。
+1. バンドルがない場合は<strong>Create Step bundle</strong>をクリックします。
+
+   すでにStep bundleが1つ以上ある場合は、中央のドロップダウンメニューを開き、<strong>Create Step bundle</strong>をクリックします。
+
+   ![create-step-bundle.png](/img/_paligo/uuid-955d7e00-c03b-fa26-f239-dcf2f2b2708a.png)
+1. ダイアログでバンドルのIDを入力します。
+
+   ![Create Step bundleダイアログ](/img/workflows-and-pipelines/2026-07-06-create-step-bundle-dialog.png)
+1. 既存のStep bundlesがある場合は、ドロップダウンメニューから選択できます。新しいStep bundleは既存のもののコピーになります。
+1. 完了したら<strong>Create Step bundle</strong>をクリックします。
+1. <strong>Add Step or Step bundle</strong>をクリックして、最初のStepを追加します。
+
+   あるStep bundleの中にStep bundleを追加することをネスト(入れ子)と呼びます:[ネストされたStep bundles](/bitrise-ci/workflows-and-pipelines/steps/step-bundles#nested-step-bundles)を参照してください。
+1. すでに追加されているStepまたはバンドルの上または下にカーソルを合わせ、プラス記号をクリックして、Stepsやバンドルを追加します。
+1. <strong>+ Add input</strong>をクリックして、<strong>Configuration</strong>タブで新しいバンドル入力を設定します。<strong>Newバンドル入力</strong>ダイアログでは、バンドル内の複数のStepsを管理する入力変数を定義できます。それらのキーをSteps内で参照し、Workflowごとにカスタム値を割り当てます。
+
+   ![bundleinput.png](/img/_paligo/uuid-b51f2636-2f9d-89c2-595e-db6ab80d5416.png)
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. [プロジェクトの設定YAMLを開きます](/bitrise-ci/configure-builds/configuration-yaml/editing-an-app-s-bitrise-yml-file)。
+1. YAMLファイルのトップレベルに`step_bundles`エンティティを追加し、名前を付けます。このバンドルはこの名前で参照します。
+
+   ```yaml
+   format_version: 11
+   step_bundles:
+     install_deps:
+   ```
+1. バンドルの下に`steps`プロパティを追加し、実行したいStepsを追加します。ここではWorkflowと同じ方法で[Stepsを参照](/bitrise-ci/references/steps-reference/step-reference-id-format)できます。
+
+   この例では、*restore-cache* Stepと`npm` Stepを追加します。
+
+   ```yaml
+   format_version: 11
+   step_bundles:
+     install_deps:
+       steps:
+       - restore-cache@1: {}
+       - npm@1: {}
+   ```
+1. 既存のWorkflowにStep bundleを追加します。構文は次のようになります:`bundle::<bundle-name>`。
+
+   ```yaml
+   workflows:
+     ci:
+       steps:
+       - git-clone@8.1: {}
+       - bundle::install_deps: {}
+       - deploy-to-bitrise-io@2: {}
+   ```
+
+</TabItem>
+</Tabs>
+
+## ユーティリティWorkflowをもとにStep bundleを作成する
+
+[ユーティリティWorkflow](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#utility-workflows)をもとにStep bundleを作成できます。このバンドルには、そのユーティリティWorkflowに含まれていたすべてのStepsが含まれます。ただし、ユーティリティWorkflowとは異なり、Step bundleは別のWorkflow内の任意の場所に配置できます。
+
+1. Workflow Editorを開きます。
+1. 左側で<strong>Step bundles</strong>を選択します。
+1. <strong>Based on</strong>ドロップダウンメニューから、ユーティリティWorkflowを選択します。
+
+   ![Screenshot_2025-03-25_at_09_59_54.png](/img/_paligo/uuid-8b6d8a17-8028-3064-a48d-9a43b0328391.png)
+1. <strong>Create Step bundle</strong>をクリックします。
+
+## Step bundleインスタンスに名前を付ける
+
+Step bundleインスタンスにオプションのメタデータフィールドを追加すると、Workflows内でWorkflowの設定やビルドログを読みやすくできます。
+
+:::note[Step bundleインスタンス]
+
+Step bundlesは再利用可能な設定ブロックです。一度定義すれば、Workflows間や同じWorkflow内で使い回す(インスタンス化する)ことができます。
+
+:::
+
+Step bundleでは、<strong>title</strong>、<strong>summary</strong>、<strong>description</strong>という3つのオプションのメタデータフィールドを設定できます。これらの属性は、その特定のインスタンスに限り、バンドルの定義から得られる汎用的な情報を上書きし、特定のWorkflowでの表示方法をきめ細かく制御できます。これらの属性を使用すれば、2つのインスタンスを区別するためにStep bundlesにコメントを追加する必要はありません。
+
+Step bundleインスタンスには、次を含めることができます。
+
+- <strong>title</strong>: この特定の用途を表す、人が読みやすい名前。
+- <strong>summary</strong>: 簡単な説明。
+- <strong>description</strong>: このインスタンスが行うことについての詳細な情報。
+
+![stepbundleinstance.png](/img/_paligo/uuid-9cf7ca34-d643-d13c-d241-42cefd6dc847.png)
+
+これらのフィールドはBitriseUIやビルドログに表示され、各インスタンスが何をしているのかが一目でわかるようになります。
+
+```yaml
+- step-bundle-id:
+    title: "A clear, human-readable title for this instance"
+    summary: "A short summary of what this instance does."
+    description: "A more detailed markdown-supported description if needed."
+    inputs:
+      - ...
+```
+
+<strong>Step bundleインスタンスの追加属性</strong>
+
+特定のスキームをビルドおよびテストする、ID `run-my-tests`で定義されたStep bundleがあるとします。これをメインのWorkflow内で2回使用したいとします。1回目はiPhoneシミュレーターでのユニットテスト用、2回目はiPadシミュレーターでのUIテスト用です。
+
+```yaml
+workflows:
+  primary:
+    steps:
+    - run-my-tests:
+        title: "Run unit tests on iPhone"
+        summary: Runs the UnitTests test plan.
+        inputs:
+        - scheme: "MyApp"
+        - destination: "platform=iOS Simulator,name=iPhone 14"
+        - test_plan: "UnitTests"
+    - run-my-tests:
+        title: "Run UI tests on iPad"
+        summary: Runs the UITests test plan.
+        inputs:
+        - scheme: "MyApp"
+        - destination: "platform=iOS Simulator,name=iPad Pro (12.9-inch)"
+        - test_plan: "UITests"
+```
+
+これで、ビルドログとWorkflow editorには、Stepのタイトルとして`"Run unit tests on iPhone"`と`"Run UI tests on iPad"`が表示されます。UIテストが失敗した場合、ログを調べなくてもすぐにわかります。
+
+
+## ネストされたStep bundles
+
+Step bundlesはネストが可能です。つまり、あるStep bundleの中に別のStep bundleを追加できます。これにより、部品を簡単に交換できる大規模で複雑な設定を作成できます。Step bundlesの中には、好きなだけStep bundlesを追加できます。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Workflow Editorを開きます。
+1. 左側で<strong>Step bundles</strong>を選択します。
+1. 中央のドロップダウンメニューからStep bundleを選択します。
+1. 空のバンドルの場合は、<strong>Add Step or Step bundle</strong>をクリックします。
+
+   バンドルにすでにStepsが含まれている場合は、Stepsの間にカーソルを合わせ、プラス記号をクリックします。
+
+   ![add-bundle-to-bundle.png](/img/_paligo/uuid-e4db471e-3219-872f-8c6f-7aa194b7f156.png)
+1. ダイアログで<strong>Step bundle</strong>タブに移動します。
+
+   ![bundle-tab.png](/img/_paligo/uuid-68c17140-7ed7-eae8-4101-12d403bee8e4.png)
+1. バンドルを選択して、元のバンドルに追加します。
+1. ドラッグアンドドロップでバンドル内を移動します。
+1. 完了したら<strong>Save changes</strong>をクリックします
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. <GlossTerm baseform="configuration yaml">設定YAML</GlossTerm>ファイルで、ネストしたいStep bundleを`step_bundles`プロパティ内に定義します。
+
+   ```yaml
+   step_bundles:
+     initialize:
+       steps:
+         - activate-ssh-key: {}
+         - git-clone: {}
+   ```
+1. `bundles`プロパティを使用して、このバンドルを別のバンドルの中にネストします。
+
+   ```yaml
+   step_bundles:
+     initialize:
+       steps:
+         - activate-ssh-key: {}
+         - git-clone: {}
+     deploy_bundle:
+       steps:
+         - bundle::initialize: {}
+         - deploy-to-bitrise-io: {}
+   ```
+
+</TabItem>
+</Tabs>
+
+## Step bundleの入力
+
+Step bundleでは、`inputs`キーの下に入力のリストを定義できます。これらはStep bundleに設定できる唯一の入力であり、バンドルの定義の外で追加の入力を定義することはできません。
+
+ただし、Step bundleの事前定義された入力の値は、バンドルの定義の外で設定できます:[Step bundleの入力を設定する](#configuring-step-bundle-inputs)。
+
+Step bundleの入力はStep inputsと同じモデルを共有します。Step inputsとそのフォーマットについて詳しくは、[Step inputsリファレンス](/bitrise-ci/references/steps-reference/step-inputs-reference)を参照してください。
+
+1. 設定YAMLファイルで、Step bundleに`inputs`プロパティを追加します。
+
+   ```yaml
+   format_version: 11
+   step_bundles:
+     install_deps:
+       inputs:
+   ```
+1. `inputs`の下に、Step inputsで使用するキーと値のペアを追加します。
+
+   ```yaml
+   format_version: 11
+   step_bundles:
+     install_deps:
+       inputs:     
+       - cache_key: "npm-cache-{{ checksum "package-lock.json" }}"
+       - npm_command: install
+   ```
+1. 適切なStep inputsにキーを追加します。
+
+   この例では、`restore-cache`Stepの`key`入力と、`npm`Stepの`command`入力に対してデフォルト値を設定しました。
+
+   ```yaml
+   format_version: 11
+   step_bundles:
+     install_deps:
+       inputs:     
+       - cache_key: "npm-cache-{{ checksum "package-lock.json" }}"
+       - npm_command: install
+       steps:
+       - restore-cache@1:
+           inputs:
+           - key: $cache_key
+       - npm@1: {}
+           inputs: 
+           - command: $npm_command
+   ```
+
+## Step bundleの入力を設定する
+
+Step bundleの入力はStep bundleの定義内で定義するもので、定義の外にnew inputsを追加することはできません。
+
+WorkflowのStepリストにあるStep bundleで定義されたStep bundleの入力には、新しい値を設定できます:
+
+1. 設定YAMLファイルで、Workflowと、その`steps`リスト内のStep bundleを見つけます。
+1. Step bundleが参照されている箇所に`inputs`プロパティを追加し、キーと値のペアを追加します。
+
+   この例では、Step bundleで定義されたdefault valueの代わりに、`cache_key`入力の新しい値を設定しています。Workflowが実行されると、`restore-cache`Stepは`npm-cache-{{ checksum "package-lock.json" }}`の代わりに`npm-cache`の値を使用します。
+
+   ```yaml
+   format_version: 11
+   step_bundles:
+     install_deps:
+       inputs:     
+       - cache_key: "npm-cache-{{ checksum "package-lock.json" }}"
+       - npm_command: install
+       steps:
+       - restore-cache@1:
+           inputs:
+           - key: $cache_key
+       - npm@1:
+           inputs: 
+           - command: $npm_command
+   workflows:
+     ci:
+       steps:
+       - git-clone@8: {}
+       - bundle::install_deps:
+           inputs:
+           - cache_key: "npm-cache"
+       - deploy-to-bitrise-io@2: {}
+   ```
+
+## Step bundleの出力
+
+Stepsは出力変数を生成できます。StepsがStep bundleに含まれている場合、その出力変数はStep bundle以降のWorkflow内のすべてのStepsで利用できます。
+
+たとえば、Workflowで使用されているStep bundleが`xcode-archive`Stepを使用している場合、バンドルの後の次のStepsは、Stepによって公開されるBITRISE_IPA_PATH出力変数にアクセスできます。
+
+## run_ifを使用したStep Bundleの条件付き実行
+
+Step bundlesで`run_if`条件を使用すると、Environment Variablesやその他の条件に基づいてバンドル全体を条件付きで実行できます。Workflow内のStep bundle呼び出しに`run_if`を直接適用すると、バンドルが実行される前にその条件が評価されます。評価結果がfalseの場合、バンドル全体とそのすべてのStepsはスキップされます。
+
+`run_if`の構文は、個々のStepsと同じように機能します。`getenv`、`enveq`、`envcontain`など、すべての`run_if`[テンプレート式とカスタムテンプレート関数](/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally#examples-of-run_if-expressions)は、Stepsでもサポートされています。
+
+<strong>ドラフトPRに対するSkipデプロイバンドル</strong>
+
+この例では、PRがドラフトPRでない場合にのみ`deploy-to-staging`バンドルが実行されます。同様に、`notify-slack`バンドルはビルドが成功した場合にのみ実行されます。
+
+```yaml
+workflows:
+  deploy:
+    steps:
+      - bundle::build-and-test: {}
+      - bundle::deploy-to-staging:
+          run_if: '{{ not (envcontain "BITRISE_GIT_MESSAGE" "[draft]") }}'
+      - bundle::notify-slack:
+          run_if: '{{ not .IsBuildFailed }}'
+```
+
+1. プロジェクトのWorkflow Editorを開きます。
+1. 左側の<strong>Step bundles</strong>をクリックします。
+1. <strong>Configuration</strong>タブを選択し、<strong>Additional run conditions</strong>の下に値を入力します。
+
+   ![2025_08_15_step_bundle_conditional_execution_runif.png](/img/_paligo/uuid-d84d9f1d-68d7-2706-a7cb-b2023ffe96a5.png)
+
+`run_if`は、定義でもStep bundleのインスタンスでも指定できます:
+
+- `run_if`が定義にある場合、それがすべてのインスタンスのデフォルトのrun_ifとして機能します。
+- `run_if`がインスタンスにある場合、それが定義を上書きし、そのインスタンスのみが`run_if`を持つことになります。
+
+  Step bundleが通常は条件付きで実行される場合は、定義で`run_if`を定義しておくとよいでしょう。そうすれば、すべてのインスタンスに適切なデフォルトの`run_if`が設定されます。たとえば、リポジトリのクローンとセットアップを行うバンドルは、通常CI環境でのみ意味を持ちます(そのため、git-clone Step自体に`run_if: .IsCI`があります)。
+
+`run_if`式を使用して[Stepを有効/無効にし、条件を設定する方法](/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally#examples-of-run_if-expressions)について詳しくはこちらを参照してください。
+
+### 移行
+
+バンドル内の複数のStepsに同一の`run_if`条件を設定している場合、Step bundlesに`run_if`を使用してWorkflowを効率化する方法を紹介します。
+
+変更前:
+
+```yaml
+workflows:
+  test:
+    steps:
+      - bundle::my-test-suite: {}
+step_bundles:
+  my-test-suite:
+    steps:
+      - script:
+          run_if: '{{ enveq "RUN_TESTS" "true" }}'
+          # ...
+      - gradle-runner:
+          run_if: '{{ enveq "RUN_TESTS" "true" }}'
+          # ...
+      - deploy-to-bitrise-io:
+          run_if: '{{ enveq "RUN_TESTS" "true" }}'
+          # ...
+```
+
+変更後:
+
+```yaml
+workflows:
+  test:
+    steps:
+      - bundle::my-test-suite:
+          run_if: '{{ enveq "RUN_TESTS" "true" }}'
+step_bundles:
+  my-test-suite:
+    steps:
+      - script:
+          # ...
+      - gradle-runner:
+          # ...
+      - deploy-to-bitrise-io:
+          # ...
+```
