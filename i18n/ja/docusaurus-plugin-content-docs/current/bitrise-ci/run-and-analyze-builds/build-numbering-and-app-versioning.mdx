@@ -1,0 +1,136 @@
+---
+title: "Build numbering and app versioning"
+description: "All Bitrise builds have a build number. The first build of your app is, by default, number 1, and the build number gets incremented with each build. You can also change your build number manually."
+sidebar_position: 6
+slug: /bitrise-ci/run-and-analyze-builds/build-numbering-and-app-versioning
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/src/partials/getting-to-the-project-settings-page.mdx';
+
+すべてのBitriseビルドにはビルド番号があります。プロジェクトの最初のビルドはデフォルトで番号1となり、ビルドのたびにビルド番号が増分されます。ビルドのBitrise build numberはウェブサイトで確認できるほか、`$BITRISE_BUILD_NUMBER`環境変数からも取得できます。この変数は、必要に応じて<GlossTerm baseform="step">Step</GlossTerm>やスクリプトでBitrise build numberを使用する際に利用できます。
+
+ビルド番号はウェブのUIで手動で変更することもできます。詳細については、[ウェブUIでのビルド番号の変更](/bitrise-ci/run-and-analyze-builds/build-numbering-and-app-versioning#changing-the-build-number-on-the-web-ui)。
+
+Bitriseは、Bitriseを使用してモバイルアプリのバージョニングを自動的に管理する機能も提供します。これを行うためのStepsが2つ用意されており、1つはiOS用、もう1つはAndroid用です。詳細については、[Bitriseでのアプリバージョニングの自動設定](/bitrise-ci/run-and-analyze-builds/build-numbering-and-app-versioning#setting-up-app-versioning-automatically-on-bitrise)。
+
+
+## ウェブUIでのビルド番号の変更 
+
+ビルド番号はビルドを実行するたびに自動的に増分されますが、Bitriseprojectの<strong>Project settings</strong>ページで手動で設定することもできます。
+
+:::note[ビルド番号のマイナス値]
+
+ビルド番号は正の整数である必要があります。0または負の数は使用できません。ただし、すでに使用したことのある番号であれば設定できます。
+
+:::
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で<strong>Builds</strong>を選択します。
+1. <strong>Next build number</strong>を見つけて、<strong>Edit</strong>をクリックします。
+
+   ![Project settingsのBuildsページのNext build numberセクション](/img/run-and-analyze-builds/2026-07-13-next-build-number-project-settings.png)
+1. 希望のビルド番号を入力し、<strong>Save</strong>をクリックします。
+
+
+## Bitriseでのアプリバージョニングの自動設定
+
+アプリに関する重要な情報を含むファイル(例えば、iOSアプリの場合は`Info.plist`ファイル、Androidアプリの場合は`build.gradle`ファイルまたは`AndroidManifest.xml`ファイル)を変更することで、Gitリポジトリ内でモバイルアプリのバージョンを管理できます。
+
+Bitriseには、これを行うためのStepsが2つ用意されています。これら2つのStepsは、それぞれのファイルにBitrise build numberまたは指定した他の番号を挿入できます。
+
+- Androidアプリ向けの<strong>Change Android versionCode and versionName</strong>。
+- iOSアプリ向けの<strong>Set Xcode Project Build Number</strong>。
+
+どちらのStepsも、該当する入力欄に数値(整数および/または数値文字列)またはenvironment variablesのいずれかを指定できます。デフォルトでは、どちらもビルド番号のdefault valueとして$BITRISE_BUILD_NUMBER環境変数を使用します。
+
+### AndroidアプリのversionCodeとversionNameの設定
+
+Androidアプリでは、この設定はビルドが別のビルドより新しいかどうかを判定するための内部バージョン番号として使用されます。`versionName`設定は、ユーザーに表示されるバージョン番号として使用される文字列です。
+
+Androidのバージョニングについて詳しくは、[この件に関するAndroidの開発者ガイド](https://developer.android.com/studio/publish/versioning)を参照してください。
+
+:::note[マニフェストファイル内のバージョン情報]
+
+このガイドでは、`build.gradle`ファイルでバージョン情報を設定します。これが推奨される方法です。`AndroidManifest.xml`ファイルで直接設定することもできますが、ビルド前にマニフェストファイルに設定されたバージョン情報は、ビルド時に`build.gradle`ファイルの設定によって上書きされる点に注意してください。
+
+:::
+
+Androidのバージョニングを設定するには:
+
+1. <strong>[Change Android versionCode and versionName](https://bitrise.io/integrations/steps/change-android-versioncode-and-versionname)</strong> Stepを<GlossTerm baseform="workflow">Workflow</GlossTerm>に追加します。
+1. <strong>build.gradleファイルへのPath</strong>入力欄に`build.gradle`ファイルのパスを設定します。
+
+   ![change-android-version.png](/img/_paligo/uuid-fb7fb260-5679-1832-9448-228a048e2b80.png)
+1. <strong>New versionCode</strong>入力欄に値を追加します。
+
+   default valueは$BITRISE_BUILD_NUMBER環境変数です。
+1. <strong>New versionName</strong>入力欄に値を追加します。
+
+### iOSアプリのCFBundleVersionとCFBundleShortVersionStringの設定
+
+iOSアプリの場合、`CFBundleVersion`キーの値(Xcodeでは「Bundle version」)がアプリのビルド番号であり、`CFBundleShortVersionString`キーの値(Xcodeでは「Bundle versions string, short」)がアプリのバージョン番号です。
+
+iOSのバージョニング、および`CFBundleVersion`キーと`CFBundleShortVersionString`キーの機能について詳しくは、[このAppleのテクニカルノート](https://developer.apple.com/library/archive/technotes/tn2420/_index.html)を参照してください。また、[主要なキーの概要](https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html)も確認できます。
+
+:::important[Xcode 13以降を使用するアプリのiOSバージョニングの設定]
+
+Xcode 13以降を使用するBitriseでiOSバージョニングを設定するには、Xcodeで以下を更新します:
+
+- <strong>Build Settings</strong>タブの<strong>PROJECT</strong>と<strong>TARGETS</strong>で、<strong>Generate Info.plist File</strong>を`No`に設定します。
+- `Info.plist`ファイルに必要なキーがすべて定義されていることを確認してください。
+
+:::
+
+1. <strong>Set Xcode Project Build Number</strong> StepをWorkflowに追加します。
+1. <strong>Project path、スキームおよびTarget</strong>入力欄に`Info.plist`ファイルへのファイルパスを設定します。
+1. <strong>Build Number</strong>入力欄に値を追加します。これにより、`Info.plist`ファイル内の`CFBundleVersion`キーが指定した値に設定されます。default valueは$BITRISE_BUILD_NUMBER環境変数です。
+1. 必要に応じて、<strong>Version Number</strong>入力欄に値を追加します。これにより、`Info.plist`ファイル内の`CFBundleShortVersionString`キーが指定した値に設定されます。この入力欄は必須ではありません。
+
+
+## ビルドバージョンのオフセット
+
+Bitriseを使用する前に別の方法でバージョンを管理していた場合、アプリのビルドバージョン番号をオフセットできます。例えば、Bitriseの使用を開始する前にすでに6回ビルドしていた場合、versionCodeをオフセットすることで、1から再スタートするのではなく、それまでの続きから採番できます。
+
+<Tabs>
+<TabItem value="android" label="Android" default>
+
+1. <strong>Change Android versionCode and versionName</strong> StepをWorkflowに追加します。
+1. <strong>New versionCode</strong>入力欄で`$BITRISE_BUILD_NUMBER`を使用します(これは入力欄のdefault valueです)。
+1. <strong>versionCode Offset</strong>入力欄で、ビルド番号に加算する値を設定します。これは固定の整数でも環境変数でも構いません。
+
+:::tip[Androidアプリのバージョンをオフセットする例]
+
+Bitriseでアプリの5回目のビルドを実行しようとしていて、Bitriseの使用を開始する前にすでに6回ビルドしていたとします。versionCodeの採番を連続させるには:
+
+- 新しいversionCode: `$BITRISE_BUILD_NUMBER`
+- versionCode Offset: `6`
+- 新しいversionName: `1.0.5`
+
+`$BITRISE_BUILD_NUMBER`(この例では5)がversionCode Offset(6)に加算されるため、versionCodeは11に設定されます。versionNameはオフセットの影響を受けず1.0.5のままです。つまり、このビルドはversionName 1.0.5、versionCode 11(バージョン1.0.5の11回目のビルド)になります。
+
+:::
+
+</TabItem>
+<TabItem value="ios" label="iOS">
+
+1. <strong>Set Xcode Project Build Number</strong> StepをWorkflowに追加します。
+1. <strong>Build Number</strong>入力欄で`$BITRISE_BUILD_NUMBER`を使用します(これは入力欄のdefault valueです)。
+1. <strong>Build Number Offset</strong>入力欄で、ビルド番号に加算する値を設定します。これは固定の整数でも環境変数でも構いません。
+
+:::tip[iOSアプリのバージョンをオフセットする例]
+
+Bitriseでアプリの5回目のビルドを実行しようとしていて、Bitriseの使用を開始する前にすでに6回ビルドしていたとします。ビルド番号を連続させるには:
+
+- Build Number: `$BITRISE_BUILD_NUMBER`
+- Build Number Offset: `6`
+- バージョン番号: `1.1`
+
+`$BITRISE_BUILD_NUMBER`(この例では5)がBuild Number Offset(6)に加算されるため、CFBundleVersionは11に設定されます。CFBundleShortVersionStringはオフセットの影響を受けず1.1のままです。つまり、このビルドはバージョン1.1、ビルド11になります。
+
+:::
+
+</TabItem>
+</Tabs>

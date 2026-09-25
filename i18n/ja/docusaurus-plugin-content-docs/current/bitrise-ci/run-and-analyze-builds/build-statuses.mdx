@@ -1,0 +1,31 @@
+---
+title: "Build statuses"
+description: "On the Builds page, you can track the current status of all your builds. There are six different build statuses: on hold, starting, running, aborted, failed, and success."
+sidebar_position: 4
+slug: /bitrise-ci/run-and-analyze-builds/build-statuses
+---
+
+プロジェクトの <strong>Builds</strong> ページでは、すべてのビルドの現在のステータスを確認できます。ビルドステータスには6種類あります。
+
+- <strong>保留中</strong>: your current planで許可されている数より多くのビルドが開始されています。ほとんどの場合、これはレガシーな同時実行数ベースのプランにのみ関係し、新しいビルドを開始するための同時実行数が不足していることを意味します。
+
+  :::note[制限時間]
+
+  ビルドが永久に停止した状態にならないよう、保留中のビルドはすべて30日後に中止されます。
+
+  :::
+- <strong>開始中</strong>: ビルドがトリガーされると、Bitriseが実行用の仮想マシンを作成します。コンピューティングリソースがすぐに利用できない場合、ビルドはキューに配置されます。ワーカーが利用可能になると、仮想マシンの作成を割り当てられたワーカーがビルドリクエストを処理します。
+- <strong>Running</strong>: 仮想マシンの準備が整うと、ビルドの実行が開始されます。つまり、BitriseがWorkflowで定義されているすべてのStepsを実行している状態です。
+- <strong>Aborted</strong>: ビルドは、ユーザーが手動で中止することも、[Rolling builds機能](/bitrise-ci/configure-builds/configuring-build-settings/rolling-builds)によって自動的に中止することも、ビルド時間が終了したために中止されることもあります。
+
+  :::note[成功として中止]
+
+  「成功として中止」という特定のステータスがあります。これは、APIによってビルドが中止されたものの、gitホスティングプロバイダーには成功として報告されることを意味します。
+
+  abort_with_successパラメーターを[ビルドを中止するBitriseのAPI呼び出し](/bitrise-ci/api/triggering-and-aborting-builds#aborting-a-build)とともに使用すると、そのビルドは成功としてカウントされます。
+
+  :::
+- <strong>Failed</strong>: ほとんどの場合、Stepsのいずれかが失敗するとビルドは失敗します。ただし、[キャッシュのSteps](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching)のような例外もあり、[Stepsをスキップ可能としてマーク](https://support.bitrise.io/hc/en-us/articles/4405252562577)することもできます。これにより、失敗してもビルドの実行が継続されます。
+- <strong>Success</strong>: Bitriseがスキップ可能としてマークされていないすべてのStepsを正常に実行すると、ビルドは成功としてマークされます。
+
+ビルドステータスは、プロジェクトの <strong>Builds</strong> ページでいつでも確認でき、ステータスレポートを送信することもできます。[Gitホスティングプロバイダーへのビルドステータスの報告](/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider)

@@ -1,0 +1,106 @@
+---
+title: "Build logs"
+description: "On Bitrise, build logs are easily accessible: they can be viewed on the website in their entirety or they can be downloaded to view them on your own device."
+sidebar_position: 1
+slug: /bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/build-logs
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_NOTEBuildRetentionFor200Days from '@site/src/partials/note-build-retention-for-200-days.mdx';
+
+ビルドログを使うと、ユーザーは自分のビルドを解析して、何が問題だったのか、そして何がうまくいったのかを確認できます。Bitriseでは、ビルドログに簡単にアクセスできます。ウェブサイト上で全文を確認することも、ダウンロードして自分のデバイスで確認することもできます。
+
+<Partial_NOTEBuildRetentionFor200Days />
+
+
+## ビルドログを見つける
+
+ビルドを実行すると、ビルドログが自動的に生成されます。すべてのビルドには、それぞれ固有のビルドログURLを持つ専用のログがあります。ビルドログURLには、特定のビルドを識別する16進数のビルドスラッグが含まれています。
+
+:::note[Bitrise サポートへの対応]
+
+Bitrise サポートからビルドログの提供を求められた場合は、ビルドURLを送信するのが最善です。
+
+:::
+
+1. [Bitrise CI](https://app.bitrise.io/ci)ページを開き、プロジェクト一覧から対象のプロジェクトを選択します。
+1. 確認したいビルドを選択します。
+1. <strong>Log</strong>タブが選択されていることを確認します。
+1. <strong>Log</strong>タブでは、<GlossTerm baseform="workflow">Workflow</GlossTerm>の<GlossTerm baseform="step">Steps</GlossTerm>とそのステータスを確認できます。失敗したStepsはデフォルトですべて展開されています。
+
+   ![Build logタブに表示されたStepsとそのステータス](/img/run-and-analyze-builds/2026-07-14-build-log-step-list.png)
+1. Stepの右側にある下向き矢印をクリックすると、Stepの情報を展開できます。ビルドログの該当部分が表示されます。
+
+
+## build logページ
+
+build logページには、ビルドに含まれていたすべてのStepsとそのステータスが表示されます。失敗したStepsはデフォルトで展開され、トラブルシューティングをしやすいようにエラーメッセージがハイライト表示されます。Stepを展開すると、次の情報も確認できます。
+
+:::note
+
+ログのヘッダーにある<strong>Duration</strong>フィールドの値は、すべてのStepsの所要時間の合計と一致しない場合があります。この差異が生じる原因としては、次の2つが考えられます。
+
+- 所要時間の値には、Workflow/<GlossTerm baseform="pipeline">Pipeline</GlossTerm>の一回限りの初期化時間に加え、Stepの所要時間の合計が含まれます。
+- [リモートアクセス](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/remote-access)を使用している場合、すべてのステップが完了した後も、ログの確認・ダウンロードができるようにVMは10分間開いたままになります。
+
+:::
+
+- Stepの実行開始時刻。
+- Step ID。これは、`bitrise.yml`の設定ファイルがStepを識別する方法です。詳しくは、[Step reference/ID format](/bitrise-ci/references/steps-reference/step-reference-id-format)をご覧ください。
+- Stepの現在のバージョン。バージョン番号の下には、Stepのリリースノートを確認できます。ビルドがStepのlatest versionで実行されなかった場合は、<strong>Update</strong>をクリックして<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>を開き、Stepを別のバージョンに更新することもできます。
+- <strong>Step resources</strong>の下では、[Integrations](http://bitrise.io/integrations)ページでStepのドキュメントを確認できるほか、GitHubでソースコードや課題管理を確認できます。
+
+ビルドログの内容を1つのファイルで全文確認するには、[ログをダウンロード](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/build-logs#downloading-a-build-log)してください。
+
+
+## ビルドログをライブで確認する
+
+ビルドの実行中に、そのログをライブで確認できます。さらに、ビルドの進行に合わせてログを自動的に追従表示させることも可能です。つまり、ビルドが進むにつれて、新しいセクションが表示されるとログが自動的にスクロールします。
+
+その方法は次のとおりです。
+
+1. ビルドを開始します。
+1. ビルドのページに移動します。
+1. ログまでスクロールします。
+1. <strong>Follow</strong>をクリックします。
+
+   ![実行中のビルドのログにあるFollowボタン](/img/run-and-analyze-builds/2026-07-14-build-log-follow-button.png)
+
+追従表示を停止するには、ログ内の任意の場所へ手動で移動するだけです。追従表示はいつでも再開できます。
+
+
+## ビルドログをダウンロードする
+
+Bitrise上のアプリにアクセスできない人にビルドログを送付する必要がある場合や、ログを自分のアーカイブに保存しておきたい場合は、Bitriseからログファイルを簡単にダウンロードできます。
+
+:::important[ログのセキュリティ]
+
+ビルドログには機密情報が含まれる場合があるため、ご注意ください。ログファイルをダウンロードして誰かに送付する前に、必ず内容を確認してください。ビルドログに機密情報が表示されないようにするには、[Secrets](/bitrise-ci/configure-builds/environment-variables)の使用をおすすめします。
+
+:::
+
+1. [Bitrise CI](https://app.bitrise.io/ci)ページを開き、プロジェクト一覧から対象のプロジェクトを選択します。
+1. 確認したいビルドを選択します。
+1. <strong>Logs</strong>ドロップダウンメニューを開き、<strong>Download logs</strong>ボタンをクリックします。
+
+
+## ビルドログを削除する
+
+必要に応じて、Bitrise上の任意のビルドのログを削除できます。たとえば、新しいチームメンバーに過去のログに表示されている可能性のある機密情報を見られたくない場合などに役立ちます。
+
+すべてのチームメンバーがログを削除できるわけではありません。チーム内で<strong>Admin</strong>または<strong>Owner</strong>のロールを持つメンバーのみが削除できます。
+
+:::warning[削除は取り消せません]
+
+ログの削除は元に戻せないことにご注意ください。一度削除すると、ログファイルを復元する方法はありません。
+
+:::
+
+1. [Bitrise CI](https://app.bitrise.io/ci)ページを開き、プロジェクト一覧から対象のプロジェクトを選択します。
+1. 確認したいビルドを選択します。
+1. <strong>Logs</strong>ドロップダウンメニューを開き、<strong>Delete Logs</strong>ボタンをクリックします。
+
+   ![Download logsとDelete logsのオプションがあるLogsドロップダウンメニュー](/img/run-and-analyze-builds/2026-07-14-logs-dropdown-delete-logs.png)
+1. ポップアップウィンドウで<strong>Delete logs</strong>をクリックします。

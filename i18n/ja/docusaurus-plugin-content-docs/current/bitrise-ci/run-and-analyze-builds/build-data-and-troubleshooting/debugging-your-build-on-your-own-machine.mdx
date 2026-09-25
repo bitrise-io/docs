@@ -1,0 +1,61 @@
+---
+title: "Debugging your build on your own machine"
+description: "If your build fails on Bitrise, we often recommend to try and run it locally. To debug: use a full clean git clone, and run the build on your machine with the Bitrise CLI."
+sidebar_position: 3
+slug: /bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/debugging-your-build-on-your-own-machine
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+ビルドがBitriseで失敗する場合は、ローカル環境、つまりご自身のマシン上で実行してみることをお勧めします。その方法は次のとおりです。
+
+- プロジェクトのオンラインリポジトリの完全にクリーンなgit cloneを実行します。
+- Bitrise CLIを使用してマシン上でビルドを実行します。
+
+これにより、特によくある問題、つまり作業ディレクトリ内にコミットされていない、または.gitignoreで除外されたファイルがあるためにオンラインのgitリポジトリにコミットされておらず、その結果Bitriseがビルド実行のためにリポジトリをクローンする際にそれらのファイルを利用できない、という問題を解消できます。その他に考えられる問題には、次のようなものがあります。
+
+- Code signingファイルがローカルマシン上には存在するものの、Bitriseにアップロードされていない。
+- ビルドに使用するツールのバージョンに差異がある。
+
+
+## 完全にクリーンなgit cloneでテストする
+
+1. マシン上でターミナル/コマンドラインインターフェースを開きます。
+1. 次のように入力します: `cd /tmp`
+1. 次のコマンドでリポジトリをクローンします: `git clone REPOURL ./quick-repo-test --branch BRANCH-YOU-WANT-TO-TEST`:
+
+   ```bash
+   git clone https://github.com/bitrise-io/bitrise.git ./quick-repo-test --branch master
+   ```
+1. `cd ./quick-repo-test.`と入力します。
+
+テストしたいコマンドを実行して、プロジェクトをビルドするか、このディレクトリからプロジェクトファイルを開きます。
+
+
+## Bitrise CLIでテストする
+
+完全にクリーンなgit cloneを実行した後、[Bitrise CLI](https://www.bitrise.io/cli)を使用してローカルでビルドを実行します。
+
+1. [Bitrise CLIをインストールします](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli)。
+1. [bitrise.io](https://www.bitrise.io/)からアプリの`bitrise.yml`ファイルをダウンロードします。
+1. 次のコマンドでビルドを実行します: `bitrise local run <workflow-name>`(例: `bitrise local run primary`)。
+
+ほとんどの場合、これによって問題を再現しやすくなり、ご自身のマシン上でデバッグを試みることができます。
+
+これらの条件下でビルドが成功するものの、Bitriseでは依然として失敗する場合は、[サポートまでお問い合わせください。](https://www.bitrise.io/requests/new)
+
+:::tip[Androidプロジェクト]
+
+それでもローカルで問題を再現できない場合は、Gradleキャッシュをクリアするために`$HOME/.gradle`(隠しディレクトリ)を削除することもご検討ください。(クイックなターミナル/コマンドラインコマンド: `rm -rf $HOME/.gradle`)。
+
+:::
+
+:::tip[クリーンなgit cloneからdockerを実行する]
+
+プロジェクトがAndroid/Linux環境を使用している場合は、[bitrise.io](https://www.bitrise.io/)上でビルドが実行されているものとまったく同じ環境をダウンロードして使用できます。
+
+理想的には、まずクリーンなgit cloneを行い、そこから`docker`を実行することで、`.gitignore`内のファイルがビルドに影響を与えないようにし、[bitrise.io](https://www.bitrise.io/)と同じ方法でビルドを実行できるようにすることをお勧めします。
+
+:::

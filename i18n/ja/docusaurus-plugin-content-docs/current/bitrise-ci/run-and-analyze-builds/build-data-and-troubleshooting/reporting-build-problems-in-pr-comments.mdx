@@ -1,0 +1,89 @@
+---
+title: "Reporting build problems in PR comments"
+sidebar_position: 6
+slug: /bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/reporting-build-problems-in-pr-comments
+---
+
+Bitriseのビルドに関するデバッグ情報を、プルリクエスト(PR)のコメントで受け取れます。これにより、ビルドに関する知見がPRのタイムラインに直接表示されるため、問題の解決を迅速化し、コンテキストスイッチを減らせます。
+
+:::note[Service Credential UserおよびPRのコメント]
+
+PRのコメントは、個人アカウントではなく[service credential userアカウント](/bitrise-platform/integrations/the-service-credential-user)、または使用している場合は[Bitrise GitHub App](/bitrise-platform/repository-access/github-app-integration)を使用して投稿される点にご注意ください。
+
+:::
+
+## BitriseでのPRコメントの設定
+
+数回のクリックだけでPRコメントを設定できます:
+
+1. プロジェクトで<strong>Admin</strong>ロールまたは<strong>Owner</strong>ロールを持つユーザーで、Bitriseのプロジェクトを開きます。
+1. プロジェクトのメインページで、<strong>Project settings</strong>ボタンをクリックします。
+1. 左側にある<strong>Repository</strong>をクリックします。
+1. <strong>Build reporting</strong>までスクロールし、<strong>PR comments</strong>のenable theトグルを切り替えます。
+
+   ![PR CommentsトグルのあるBuild reportingセクション](/img/run-and-analyze-builds/2026-07-14-build-reporting-pr-comments-toggle.png)
+1. <strong>Configure PR comments</strong>ウィンドウでは、information blockはデフォルトですべてオフになっています。PRコメントに含めたい項目を選択してください。information blockは次のとおりです:
+
+   - <strong>Build summary</strong>: コメントの先頭に表示されるビルドの概要。AIが有効な場合は、ビルドが失敗した理由と最初に確認すべき点も表示されます。
+   - <strong>Step failures</strong>: 失敗したStepsとエラーの詳細を表示します。すべてのStepsが成功した場合は非表示になります。
+   - <strong>Test failures</strong>: 失敗したテストとエラーの詳細を表示します。すべてのテストが成功した場合は非表示になります。
+   - <strong>Flaky tests</strong>: 不安定なテストと再実行情報を表示します。不安定なテストがない場合は非表示になります。
+
+     ![information blockとComment modeオプションが表示されたConfigure PR commentsダイアログ](/img/run-and-analyze-builds/2026-07-14-configure-pr-comments-dialog.png)
+1. <strong>Comment mode</strong>では、single commentまたは複数のコメントのどちらを受け取るかをcomment modeで選択できます。
+
+   - <strong>Single comment</strong>: PR上の各ビルドは、以前のビルドによる既存のコメントを置き換えるため、PRには最新のビルドのコメントのみが表示されます。
+   - <strong>Multiple comments</strong>: PR上の各ビルドで新しいコメントが追加され、PRのタイムラインに履歴が蓄積されます。
+
+     :::note[Comment modeの詳細]
+
+     PRのビルドが1つの場合、コメントも1つになります。ただし、同じPR上で異なるWorkflowsが複数ある場合は、選択した<strong>Comment mode</strong>に関わらず複数のコメントになります。同じWorkflowが再トリガーされた場合は、選択した<strong>Comment mode</strong>に応じて、PRに新しいコメントが追加されるか、既存のコメントが更新されます。
+
+     :::
+1. 準備ができたら、<strong>Save changes</strong>をクリックします。
+
+## 失敗したビルドのみコメントを受け取る
+
+information blockをすべてチェックした場合、成功したビルドと失敗したビルドの両方でコメントを受け取ります。この場合、成功したビルドのコメントにはビルドの概要が含まれます。以下に例を示します:
+
+![reportingbuildproblemsfirstpic.png](/img/_paligo/uuid-91fa95b8-0325-7201-68ee-ddb01087718a.png)
+
+![reportingbuildproblemssecondpic.png](/img/_paligo/uuid-33093867-a2c4-50e5-79ca-cf8fba179e41.png)
+
+Bitriseからの成功したビルドに関するコメントを受け取らないようにするには、「Build Summary」ブロックのチェックを外し、必要に応じて他のボックスを選択してください。こうすることで、ビルドに問題がある場合にのみ、以下のようなコメントを受け取るようになります。
+
+![reportingbuildproblemsthirdpic.png](/img/_paligo/uuid-74995bb5-af37-b70b-03e0-218fc8e978f7.png)
+
+## PRのコミットへのデバッグ情報の埋め込みに関するFAQ
+
+<strong>これらのPRコメントの投稿者は誰ですか?</strong>
+
+これは認証の種類によって異なります。[OAuthの方法で認証](/bitrise-platform/repository-access/repository-access-with-oauth)している場合は、[Service Credential User](/bitrise-platform/integrations/the-service-credential-user)アカウントがコメントを投稿します。これはすべてのGitプロバイダー(例: Github、Gitlab、Bitbucket)に適用されます。
+
+[Bitrise GitHubアプリ](/bitrise-platform/repository-access/github-app-integration)を使用している場合は、関連付けられたBitrise botがコメントを投稿します。
+
+<strong>サポートされているGit providersは?</strong>
+
+主要なGitプロバイダー(GitHub、GitLab、Bitbucket)はすべてサポートされています。
+
+<strong>これらのコメントはすべてのPRに表示されますか?</strong>
+
+これはプロジェクトごとのオプトイン機能です。コメントは、プロジェクトでこの機能を有効にした場合にのみ投稿されます。
+
+<strong>PR commentsには完全なログが含まれますか?</strong>
+
+いいえ。コメントには簡潔なエラーのスニペットと、Bitrise上の完全なビルドおよびStepログへのリンクが含まれます。詳細な内容を確認するには、リンクからBitrise dashboardを開いてください。
+
+<strong>多数のワークフローを含むパイプラインビルドの場合はどうなりますか?失敗したStepやテストがどのWorkflowに属しているかがコメントに表示されますか?</strong>
+
+有効にすると、パイプラインビルドに対して1件のPRコメントが届きます。情報はWorkflowごとにグループ化されます。
+
+<strong>Workflow/Pipelineごとにchange settingsできますか?</strong>
+
+いいえ。これはプロジェクトレベルの設定であり、Workflow/Pipelineごとにカスタマイズすることはできません。
+
+<strong>同じPRから複数のビルドをトリガーした場合はどうなりますか?コメントは1件になりますか、それとも複数になりますか?</strong>
+
+異なる複数のビルドをトリガーした場合(例: PRが3つの異なるパイプラインA、B、Cをトリガーした場合)、複数のコメントを受け取ります。
+
+同じビルドを複数回トリガーした場合(例: PRが同じパイプラインを連続して2回トリガーした場合)、<strong>Single comment</strong>モードを選択していれば1件のコメントを受け取り、<strong>Multiple comments</strong>モードを選択していればmultiple commentsを受け取ります。

@@ -1,0 +1,142 @@
+---
+title: "Scheduling builds"
+description: "You can schedule your builds to run automatically at a specific time of the week."
+sidebar_position: 2
+slug: /bitrise-ci/run-and-analyze-builds/starting-builds/scheduling-builds
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+ビルドを毎週決まった時間に自動的に実行するようにスケジュールしておくと、都合の良いタイミングでログを確認できます。
+
+ビルドをスケジュールする際に、カスタム[Environment Variables](/bitrise-ci/configure-builds/environment-variables)を定義できます。Git TagやGitのコミットハッシュに対して高度なフィルターを設定することもできます。
+
+定期的にスケジュールされたビルドが1つ以上ある場合は、次のことができます。
+
+- 設定を編集する。
+- いつでも手動で<GlossTerm baseform="trigger">トリガー</GlossTerm>する。
+- 一時的に無効にする。
+- 完全に削除する。
+
+
+## ビルドをスケジュールする
+
+Bitriseで基本設定オプションを使用してビルドをスケジュールする方法:
+
+1. your appの<strong>Bitrise CI</strong>ページで、<strong>Start build</strong>ボタンを見つけて、その隣にある時計アイコンのボタンをクリックします。
+
+   ![scheduling-builds.png](/img/_paligo/uuid-ea158f34-25dc-4585-c7a3-0961c5ef5472.png)
+1. <strong>Schedule build</strong>ダイアログで、スケジュールの頻度をset upしてください。<strong>Basic</strong>設定と<strong>Cron</strong>設定のいずれかを選択できます。
+
+   - <strong>Basic</strong>設定では、開始日、24時間形式の開始時刻、タイムゾーンを設定する必要があります。
+   - <strong>Cron</strong>設定では、`cron`[スケジュール式](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/crontab.html)を設定できます。ダイアログが入力した式を解析し、設定された時刻を人間が読める形式で表示します。
+1. <strong>Basic</strong>を選択した場合は、<strong>Repetition</strong>トグルで繰り返しを有効または無効にします。繰り返しを有効にした場合は、分単位から年単位までの頻度を設定します。
+
+   ビルドは、スケジュールの頻度によって決まる、常に同じ時刻に、設定した頻度でトリガーされます。たとえば、毎週月曜日と木曜日にビルドを実行するように設定できます。
+
+   ![repetition.png](/img/_paligo/uuid-e5013e56-2f65-12a8-c6c7-ba34733cde57.png)
+1. 準備ができたら、<strong>Next</strong>をクリックしてビルド設定に進みます。
+1. <strong>Basic</strong>設定と<strong>Advanced</strong>設定のいずれかを選択します。
+
+   基本設定には3つのオプションがあります。
+
+   - branch name。これは必須フィールドです。
+   - <strong>Message</strong>フィールドのメッセージ。これはGitのコミットメッセージとはまったく関係ありません。ビルドに関する任意の情報を入力するための場所です。
+   - <GlossTerm baseform="workflow">Workflow</GlossTerm>または<GlossTerm baseform="pipeline">Pipeline</GlossTerm>。特定のものを選択することも、アプリの`bitrise.yml`設定ファイル内の[トリガーマップ](/bitrise-ci/run-and-analyze-builds/build-triggers/yaml-syntax-for-build-triggers)を使用して選択する<strong>Based on trigger map</strong>オプションを使用することもできます。
+
+   :::note[プルリクエストのブランチ]
+
+   プルリクエストのブランチのビルドを開始することは、プルリクエストビルドとは異なります。プルリクエストのブランチを手動で開始したビルドは、そのブランチ上のコードの状態のみをビルドします。一方、自動的にトリガーされたプルリクエストビルドは、プルリクエストをマージした後のコードの状態をビルドします。
+
+   :::
+
+   詳細な設定オプションについては、[ビルドの開始/スケジュール設定の詳細オプション](#advanced-configuration-options-for-startingscheduling-builds)セクションを参照してください。
+
+   ![schedule-basic.png](/img/_paligo/uuid-9e21a75a-a3ed-54f2-9b07-53a46d9a3d2d.png)
+1. 完了したら、<strong>Schedule build</strong>をクリックします。
+
+### ビルドの開始/スケジュール設定の詳細オプション
+
+<strong>Build設定</strong>ウィンドウで<strong>Advanced</strong>を選択すると、<strong>Basic</strong>で使用できるすべてのオプションに加えて、さらにいくつかのオプションをyou haveできます。
+
+<strong>Source</strong>ドロップダウンメニューでソースタイプを選択できます。デフォルトの<strong>Branch</strong>オプションに加えて、次も選択できます。
+
+- <strong>Git Tag</strong>: 入力したタグでタグ付けされた特定のブランチまたはコミットをビルドします。これを設定すると、コミットハッシュは設定できません。
+
+  :::important[Git Tagとコミットハッシュは競合するオプションです]
+
+  Git Tagとコミットハッシュの両方を指定することはできません。一方を設定すると、もう一方は表示されなくなります。これにより、競合する入力値を入力できないようになっています。
+
+  :::
+- <strong>Commit Hash</strong>: 特定のコミットのハッシュをここにコピーすると、そのコミットをビルドできます。このオプションでは、Gitホスティングサービスにビルドステータスの更新を送信することもできます。これを設定すると、Git Tagは設定できません。
+
+  :::note[コミットハッシュはBranchオプションより優先されます]
+
+  <strong>Branch</strong>オプションで指定されたブランチに、選択したコミットハッシュが存在しない場合、Bitriseが指定されたコミットを含むブランチを見つけ、そのブランチでビルドを実行します。
+
+  :::
+
+![start-build-advanced.png](/img/_paligo/uuid-67f3a4f0-9315-bec3-0ea7-cca80d77b103.png)
+
+さまざまなソースに加えて、次も追加できます。
+
+- <strong>Priority</strong>: build queue内でのビルドの優先度を決定します。数値が大きいほど、ビルドは早く実行されます。優先度は-100から100までの整数で指定する必要があります。default valueは0です。詳細については、[Build priority](/bitrise-ci/configure-builds/configuring-build-settings/build-priority)を参照してください。
+- <strong>Custom Environment Variables</strong>: ビルドで使用するカスタム環境変数を作成します。[ビルド開始時にカスタムEnv Varを設定する](/bitrise-ci/configure-builds/environment-variables#setting-a-custom-env-var-when-starting-a-build)を参照してください。
+
+
+## スケジュールされたビルドを編集する
+
+定期的にスケジュールされたビルドの設定を変更するには:
+
+1. アプリの<strong>Builds</strong>ページに移動します。
+1. <strong>Scheduled builds</strong>セクションを見つけて開き、スケジュールされたビルドを表示します。
+
+   ![scheduled-build.png](/img/_paligo/uuid-1f797261-860a-f2b2-42c0-a7817b7e07f5.png)
+1. オプションメニュー(⋮)をクリックします。
+1. <strong>Edit configuration</strong>を選択します。
+
+   ![edit-config.png](/img/_paligo/uuid-fd64fe74-fbea-b6f4-8445-406398a41ead.png)
+1. 必要な変更を行い、<strong>Save</strong>をクリックします。
+
+
+## スケジュールされたビルドを手動でトリガーする
+
+スケジュールされたビルドをすぐにトリガーするには:
+
+1. アプリの<strong>Builds</strong>ページに移動します。
+1. <strong>Scheduled builds</strong>セクションを見つけて開き、スケジュールされたビルドを表示します。
+
+   ![scheduled-build.png](/img/_paligo/uuid-1f797261-860a-f2b2-42c0-a7817b7e07f5.png)
+1. <strong>Trigger now</strong>をクリックします。
+
+
+## スケジュールされたビルドを一時停止する
+
+定期的にスケジュールされたビルドを一時的に一時停止するには:
+
+1. アプリの<strong>Builds</strong>ページに移動します。
+1. <strong>Scheduled builds</strong>セクションを見つけて開き、スケジュールされたビルドを表示します。
+
+   ![scheduled-build.png](/img/_paligo/uuid-1f797261-860a-f2b2-42c0-a7817b7e07f5.png)
+1. オプションメニュー(⋮)をクリックします。
+1. <strong>Pauseスケジュール</strong>を選択します。
+
+   有効にし直すまで、ビルドは実行されません。
+
+   ![edit-config.png](/img/_paligo/uuid-fd64fe74-fbea-b6f4-8445-406398a41ead.png)
+
+
+## スケジュールされたビルドを削除する
+
+定期的にスケジュールされたビルドを完全に削除するには:
+
+1. アプリの<strong>Builds</strong>ページに移動します。
+1. <strong>Scheduled builds</strong>セクションを見つけて開き、スケジュールされたビルドを表示します。
+
+   ![scheduled-build.png](/img/_paligo/uuid-1f797261-860a-f2b2-42c0-a7817b7e07f5.png)
+1. オプションメニュー(⋮)をクリックします。
+1. <strong>Delete</strong>を選択し、確認を求められたら再度<strong>Delete</strong>をクリックします。
+
+   ![edit-config.png](/img/_paligo/uuid-fd64fe74-fbea-b6f4-8445-406398a41ead.png)

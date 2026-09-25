@@ -1,0 +1,46 @@
+---
+title: "Approving Pull Request builds"
+description: "You have the option of requiring manual approval for Bitrise builds started by pull requests if the project contains exposed Secrets. This option cannot be deactivated for public projects."
+sidebar_position: 3
+slug: /bitrise-ci/run-and-analyze-builds/starting-builds/approving-pull-request-builds
+sidebar_label: Approving pull request builds
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/src/partials/getting-to-the-project-settings-page.mdx';
+
+すべてのプルリクエストをビルドする必要があるわけではありません。そもそも、ほとんどのプロジェクトでは、誰でもリポジトリをフォークしてプルリクエストを送信できます。ただし、Bitrise上のプロジェクトが、プルリクエストのビルドに公開される[Secrets](/bitrise-ci/configure-builds/secrets)のような設定になっている場合、その秘密情報に誰でもアクセスできる状態は避けたいはずです。
+
+そのため、[プルリクエストのビルド](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers)を開始する前に承認を必須にするオプションが用意されています。この機能は、公開プロジェクトと非公開プロジェクトで多少動作が異なります:
+
+- Private project: デフォルトでは、フォークから送信されたプルリクエストは承認が必要です。この設定は変更できます。シークレットがPRに公開されていない場合、ビルドは承認を求められることなく実行されます。
+- Public project: フォークから送信されたプルリクエストはデフォルトで承認が必要であり、この設定は変更できません。公開プロジェクトはこの機能を無効にすることはできません。
+
+## 非公開プロジェクトでの手動承認の設定
+
+手動承認を有効または無効にするには、プロジェクトの<strong>管理者</strong>または<strong>Owner</strong>である必要があります。あるいは、<strong>Edit workflow</strong>権限を持つ[カスタムロール](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/custom-roles/custom-roles-overview)を保持している必要があります。プロジェクトは非公開である必要があります。公開プロジェクトはこの機能を無効にすることはできません。
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で<strong>Builds</strong>を選択します。
+1. <strong>Manual approval</strong>までスクロールします。
+
+   ![Builds設定ページのManual approvalトグルスイッチ](/img/run-and-analyze-builds/2026-07-14-manual-approval-toggle.png)
+
+   なお、この設定を変更できるのは非公開プロジェクトのみです。公開プロジェクトでは常に有効になっています。
+1. スイッチを切り替えて、有効または無効にします。
+
+## PRビルドの承認
+
+:::important[PRビルドの承認]
+
+PRビルドを承認するとは、Bitrise上で承認することを意味する点にご注意ください。たとえば、GitHub上でプルリクエストを承認しても、Bitrise上でビルドを開始するには十分ではありません。Bitrise自体で、<strong>Approve build requests</strong>権限を持つユーザーがビルドを承認する必要があります。手動承認を有効にするには、<strong>Edit workflow</strong>権限が必要です。手動承認が有効になっている場合は、<strong>Approve build requests</strong>権限があればビルドを承認できます。
+
+:::
+
+プルリクエストがフォークから送信されると、PRビルドが承認待ちであることが通知されます:
+
+- プロジェクト名に加えて、リポジトリ自体へのリンクと、Bitrise上のプロジェクトの<strong>Builds</strong>ページへのリンクを記載した通知メールが送信されます。
+- Gitプロバイダー上では、CIチェックのステータスが<strong>Pending - Waiting for approval</strong>と表示されます。
+- プロジェクトの<strong>Builds</strong>ページに確認ボックスが表示されます。ビルドを承認して実行するには、<strong>Approve and run Build</strong>ボタンをクリックします。<strong>Review PR</strong>をクリックすると、Gitプロバイダーのウェブサイトでプルリクエストが開きます。

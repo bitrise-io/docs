@@ -1,0 +1,116 @@
+---
+title: "Skipping a given commit or pull request"
+description: "Depending on your settings, every code change in your repository can trigger Bitrise builds. However, if you need to, you can skip a specific commit or pull request."
+sidebar_position: 6
+slug: /bitrise-ci/run-and-analyze-builds/build-triggers/skipping-a-given-commit-or-pull-request
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+設定によっては、リポジトリ内のすべてのコード変更がBitriseビルドを<GlossTerm baseform="Trigger">トリガー</GlossTerm>できます。ただし、必要に応じて特定のコミットやプルリクエストをスキップできます。ここでいうスキップとは、トリガーがそのように設定されていても、コード変更がBitriseでビルドをトリガーしないことを意味します。
+
+:::caution[スキップされたビルドと必須チェック]
+
+ビルドをスキップすると、BitriseはGitプロバイダーにステータスを報告しなくなります。ブランチ保護ルールに必須のステータスチェックが設定されている場合、スキップされたビルドはそのチェックを保留状態のままにし、プルリクエストをマージできなくなります。ドキュメントのみの変更など、ビルドをトリガーすべきでないプルリクエストで必須チェックを通過させるには、ビルドを実行せずに必須チェックを報告するPipelineにルーティングしてください。詳細については、[ドキュメントのみのプルリクエストで必須チェックを通過させる](/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#passing-a-required-check-on-documentation-only-pull-requests)をご覧ください。
+
+:::
+
+
+## コミットによるビルドのトリガーを防ぐ
+
+特定のコミットがビルドをトリガーしないようにするには、コミットメッセージに`[skip ci]`または`[ci skip]`のいずれかを含めます。
+
+```text
+This is not important, please [skip ci]
+```
+
+または:
+
+```text
+I just changed the README 
+
+[ci skip]
+```
+
+:::warning[チェックされるのは先頭（最後）のコミットメッセージのみです]
+
+複数のコミットをプッシュした場合、`skip ci`パターンがチェックされるのは最後（先頭）のコミットのメッセージのみです。
+
+:::
+
+それでもビルドを開始したい場合は、次の2つの方法があります。
+
+- コミットをリベースする（コミットメッセージを変更する）。
+- 別のコミットをプッシュする。
+
+:::tip[空のコミットをプッシュする]
+
+Gitでは、空のコミットを作成してプッシュできます。スキップされたビルドを実行したい場合は、対象のブランチで`git commit --allow-empty -m "I decided to run this"`を実行し、コミットをプッシュしてください。
+
+:::
+
+
+## プルリクエストによるビルドのトリガーを防ぐ
+
+プルリクエストはそれ自体が（仮想的な）コミットとして扱われ、そのコミットメッセージはプルリクエストのタイトルと説明になります。プルリクエストを構成する個々のコミットのコミットメッセージ*ではありません*。
+
+プルリクエストをスキップするには、プルリクエストのタイトルまたは説明に`[skip ci]`パターンを含めます。
+
+:::important[個々のコミットメッセージはチェックされません]
+
+プルリクエストを構成する個々のコミットのコミットメッセージに`[skip ci]`パターンを含めても機能しません。適切なトリガーが設定されていれば、プルリクエストはビルドをトリガーします。
+
+:::
+
+プルリクエストをスキップしないことにした場合は、プルリクエストのタイトルまたは説明から`[skip ci]`パターンを削除するだけで済みます。これにより、最新のコミットで新しいビルドが自動的にトリガーされ、（再度`[skip ci]`パターンを追加しない限り）以降のプルリクエストのコミットもすべてビルドされます。
+
+
+## ドラフトPRによってトリガーされるStepsのスキップ
+
+[GitHubのドラフトPR機能](https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests#draft-pull-requests)を使用すると、Bitriseはビルドの環境変数リストに`GITHUB_PR_IS_DRAFT`という環境変数を挿入します。この環境変数がビルドの環境変数リストに存在する場合、その値は常に`true`に設定されます。
+
+この`GITHUB_PR_IS_DRAFT`環境変数は、ビルド内で条件分岐の一部として使用できます。たとえば、ドラフトPRによってトリガーされたビルドで特定のStepsをスキップできます。
+
+```yaml
+workflow1:
+    steps:
+    - script:
+        run_if: '{{enveq "GITHUB_PR_IS_DRAFT" ""}}'   
+        inputs:
+        - content: |-
+            #!/usr/bin/env bash
+            # fail if any commands fails
+            set -e
+            # debug log
+            set -x
+```
+
+この例では、`run_if`という条件は、ビルドがドラフトPRによってトリガーされていない場合にのみStepが実行されることを意味します。
+
+Stepsをスキップするために、<GlossTerm baseform="workflow">Workflow</GlossTerm>内の各Stepに以下の`run_if`コマンドを挿入することをお勧めします。
+
+:::note[ドラフトPRの後で新しいビルドを開始する]
+
+GitHubで<strong>Ready for review</strong>ボタンをクリックすると、ドラフトプルリクエストからのビルドが無効になっている場合に限り、Bitriseで新しいビルドがトリガーされます。
+
+ドラフトプルリクエストがビルドをトリガーするように設定されており、特定のドラフトプルリクエストがすでにビルドをトリガーしている場合、レビュー用に送信しても新しいビルドはトリガーされません。それ以前のビルドにも、ドラフトPR関連の環境変数が含まれます。この場合は、ウェブサイトから手動で新しいビルドを開始するか、新しいコミットでCIをトリガーすることをお勧めします。
+
+:::
+
+
+## Bitrise CIのスキップ
+
+マルチベンダーまたはマルチプラットフォームのCIワークフローを管理している場合、複数のシステムでビルドをスキップしたい場合や、Bitriseのみでスキップしたい場合があります。
+
+複数のベンダーでビルドをスキップするには、`skip ci`または`ci skip`キーワードを使用します。
+
+Bitriseのみでビルドをスキップするには、コミットメッセージに`skip bitrise`または`bitrise skip`キーワードを使用して、Bitriseビルドのトリガーを防ぎます。これらのBitrise固有のスキップキーワードを使用すると、より細かい制御が可能になり、CIパイプラインの他の部分でビルドが意図せずスキップされるのを防げます。
+
+
+## コメントのスキップ
+
+PRコメントはビルドをトリガーできますが、これを防ぎたい場合は、ビルドのPRコメントに`[skip ci]` / `[ci skip]`または`[skip bitrise]` /`[bitrise skip]`を追加することでビルドをスキップできます。
+
+PRに自動でコメントしてビルドを開始するツールを使用している場合は、そのツールがコメントにスキップコマンドを含めるように設定してください。

@@ -1,0 +1,204 @@
+---
+title: "Using files in your builds"
+description: "To use a file in your builds, you can download it using a Step like File Downloader in your Workflow, or you can use the file's automatically generated Env Var as a Step input."
+sidebar_position: 2
+slug: /bitrise-ci/run-and-analyze-builds/managing-build-files/using-files-in-your-builds
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
+
+Bitriseのビルドでファイルを使用する方法は複数あります。
+
+- ファイルを生成するほとんどの<GlossTerm baseform="step">Steps</GlossTerm>は、出力の環境変数（Env Var）にファイルパスを保存します。同じ<GlossTerm baseform="workflow">Workflow</GlossTerm>内の以降のStepsでは、その環境変数を再利用してファイルにアクセスできます。
+- [Generic File Storageにファイルをアップロードする](/bitrise-ci/run-and-analyze-builds/managing-build-files/uploading-files-for-your-builds)と、自動生成された環境変数を、URLを入力として受け付けるStepsのStep入力値として使用できます。
+- [Generic File Storageにファイルをアップロードする](/bitrise-ci/run-and-analyze-builds/managing-build-files/uploading-files-for-your-builds)と、Stepsの1つ（たとえば[<strong>File Downloader</strong>](https://github.com/bitrise-steplib/steps-file-downloader) Step）を使用して、ビルド用にファイルをダウンロードできます。これは、ローカルファイルパスを必要とし、入力値としてURLを直接サポートしないStepsで機能します。
+
+
+## File DownloaderStepを使用したファイルのダウンロード
+
+ビルドでファイルにアクセスする方法の1つは、<strong>File Downloader</strong> Stepを使用することです。このStepは、値としてローカルパスのみを受け付けるStep入力でファイルを使用する必要がある場合に便利です。
+
+Stepは指定した場所にファイルをダウンロードし、以降のすべてのStepはその場所でファイルにアクセスできます。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>を開きます。
+1. Workflowに<strong>File Downloader</strong> Stepを追加します。
+1. <strong>Download ソースURL</strong>入力に、ファイルの場所を追加します。
+
+   :::note[アップロードしたファイルのダウンロードURLを確認する]
+
+   [Bitrise](/bitrise-ci/run-and-analyze-builds/managing-build-files/uploading-files-for-your-builds)にファイルをアップロードした場合、<strong>App settings</strong>ページの<strong>Files</strong>セクションでそのダウンロードURLを確認できます。
+
+   :::
+1. <strong>Download 保存先パス</strong>入力に、ファイルのダウンロード先のパスを指定します。これはリポジトリのルートからの相対パスにする必要があります。
+
+   :::tip[入力値として環境変数を使用する]
+
+   入力に直接パスを指定する代わりに、App Env Varにファイルパスを保存することもできます。これにより、他のStepsでは環境変数を通じてファイルを参照できるため、毎回パスを指定する必要がなくなります。
+
+   たとえば、パスを`BITRISEIO_MY_FILE_LOCAL_PATH`環境変数に保存した場合、それを入力のパスとして使用できるだけでなく、以降のすべてのStepでファイルにアクセスする際にも使用できます。
+
+   :::
+1. 右上にある<strong>Save changes</strong>をクリックします。
+
+</TabItem>
+<TabItem value="bitriseyml" label="Configuration YAML">
+
+1. アプリの`bitrise.yml`ファイルを開きます。
+1. Workflowに`file-downloader`Stepを追加します。
+
+   ```yaml
+   workflows:
+     download:
+       steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - file-downloader:
+           inputs:
+   ```
+1. `source`入力に、ファイルの場所を追加します。
+
+   ```yaml
+   workflows:
+     download:
+       steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - file-downloader:
+           inputs:
+           - source: "$BITRISEIO_BITRISE_TEST_URL"
+   ```
+1. `destination`入力に、ファイルのダウンロード先のパスを指定します。これはリポジトリのルートからの相対パスにする必要があります。
+
+   ```yaml
+   workflows:
+     download:
+       steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - file-downloader:
+           inputs:
+           - destination: "/"
+           - source: "$BITRISEIO_BITRISE_TEST_URL"
+       - deploy-to-bitrise-io: {}
+   ```
+
+   :::tip[入力値として環境変数を使用する]
+
+   入力に直接パスを指定する代わりに、App Env Varにファイルパスを保存することもできます。これにより、他のStepsでは環境変数を通じてファイルを参照できるため、毎回パスを指定する必要がなくなります。
+
+   たとえば、パスを`BITRISEIO_MY_FILE_LOCAL_PATH`環境変数に保存した場合、それを入力のパスとして使用できるだけでなく、以降のすべてのStepでファイルにアクセスする際にも使用できます。
+
+   :::
+
+</TabItem>
+</Tabs>
+
+
+## カスタムScriptStepを使用したファイルのダウンロード
+
+<strong>File Downloader</strong> Stepを使用せずにビルドでアップロード済みファイルをダウンロード・アクセスしたい場合は、独自のカスタムScriptStepを使用することもできます。必要な作業は、ダウンロードURLを取得し、build machine上に存在する完全なダウンロードパスを指定してファイルをダウンロードすることだけです。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. Workflowに<strong>Script</strong> Stepを追加します。
+1. Stepの<strong>Script content</strong>入力を見つけます。
+1. ファイルをダウンロードし、保存先のパスを環境変数に保存するスクリプトを追加します。
+
+   :::tip[Bitriseへのファイルのアップロード]
+
+   [Bitrise](/bitrise-ci/run-and-analyze-builds/managing-build-files/uploading-files-for-your-builds)にファイルをアップロードすると、スクリプト内でファイルのダウンロードURLを使用できます。
+
+   :::
+
+   以下の例では、ダウンロードURLはBITRISE_IO_MY_FILE_ID_URL環境変数に保存されています。envmanを使用して、保存先のパスをBITRISEIO_MY_FILE_LOCAL_PATH環境変数に保存しています。以降のStepsは、この環境変数を使用してファイルにアクセスできます。
+
+   ```bash
+   #!/bin/bash
+   set -ex
+
+   # specify local download path
+   export file_local_path=download/path/to/my/file
+
+   # download the file
+   wget -O "$file_local_path" "$BITRISEIO_MY_FILE_ID_URL"
+   echo "file downloaded to: $file_local_path"
+
+   # OPTIONALLY: export the file's local path, to be able to use it in subsequent steps as an input value
+   envman add --key BITRISEIO_MY_FILE_LOCAL_PATH --value "$file_local_path"
+   ```
+
+   あるいは、たとえば場所をApp Env Varとして設定し、ScriptStep内でパスを定義する代わりに、単にそのパスにダウンロードすることもできます。
+
+</TabItem>
+<TabItem value="bitriseyml" label="Configuration YAML">
+
+1. アプリの`bitrise.yml`ファイルを開きます。
+1. Workflowに`script`Stepを追加します。
+
+   ```yaml
+   my-workflow:
+     steps:
+       script:
+         inputs:
+         - content:
+   ```
+1. `content`入力に、ファイルをダウンロードして保存先のパスを環境変数に保存するスクリプトを追加します。
+
+   :::tip[Bitriseへのファイルのアップロード]
+
+   [Bitrise](/bitrise-ci/run-and-analyze-builds/managing-build-files/uploading-files-for-your-builds)にファイルをアップロードすると、スクリプト内でファイルのダウンロードURLを使用できます。
+
+   :::
+
+   以下の例では、ダウンロードURLはBITRISE_IO_MY_FILE_ID_URL環境変数に保存されています。envmanを使用して、保存先のパスをBITRISEIO_MY_FILE_LOCAL_PATH環境変数に保存しています。以降のStepsは、この環境変数を使用してファイルにアクセスできます。
+
+   ```yaml
+   my-workflow:
+     steps:
+       - script:
+           inputs:
+           - content:
+           #!/bin/bash
+           set -ex
+
+           # specify local download path
+           export file_local_path=download/path/to/my/file
+
+           # download the file
+           wget -O "$file_local_path" "$BITRISEIO_MY_FILE_ID_URL"
+           echo "file downloaded to: $file_local_path"
+   ```
+
+   あるいは、たとえば場所をApp Env Varとして設定し、ScriptStep内でパスを定義する代わりに、単にそのパスにダウンロードすることもできます。
+1. 必要に応じて、ファイルのローカルパスをエクスポートし、同じWorkflow内の以降のStepsで使用できるようにします。
+
+   ```yaml
+   my-workflow:
+     steps:
+       - script:
+           inputs:
+           - content:
+           #!/bin/bash
+           set -ex
+
+           # specify local download path
+           export file_local_path=download/path/to/my/file
+
+           # download the file
+           wget -O "$file_local_path" "$BITRISEIO_MY_FILE_ID_URL"
+           echo "file downloaded to: $file_local_path"
+
+           # export the file path for subsequent steps
+           envman add --key BITRISEIO_MY_FILE_LOCAL_PATH --value "$file_local_path"
+   ```
+
+</TabItem>
+</Tabs>

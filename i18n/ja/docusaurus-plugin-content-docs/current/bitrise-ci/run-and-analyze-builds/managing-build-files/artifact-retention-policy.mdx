@@ -1,0 +1,54 @@
+---
+title: "Artifact retention policy"
+description: "Bitrise stores both build artifacts and build logs for a limited amount of time. The retention period varies by artifact type to balance storage costs with typical usage patterns."
+sidebar_position: 5
+slug: /bitrise-ci/run-and-analyze-builds/managing-build-files/artifact-retention-policy
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitriseは、ビルドアーティファクトとビルドログの両方を一定期間保存します。保持期間はアーティファクトの種類によって異なり、ストレージコストと一般的な使用パターンのバランスを取っています。
+
+アーティファクトを保存するために、Bitrise API経由でビルドアーティファクトをダウンロードできます。詳しくは[ビルドアーティファクトの管理](/bitrise-ci/api/managing-build-artifacts)をご覧ください。
+
+アーティファクトが削除されると、復元する方法はなく完全に削除されます。
+
+:::note[以前のアーティファクト]
+
+2026年3月31日より前に作成されたアーティファクトには、従来の保持ポリシーが適用されます。標準アーティファクト、インストール可能アーティファクト、およびパイプラインの中間ファイルは365日間、HTML reportsは7日間保持されます。
+
+:::
+
+| アーティファクトの種類 | 保持期間 | カスタム保持期間 |
+| --- | --- | --- |
+| ビルドと[ビルドログ](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/build-logs) | 200日間  200日を超えたビルドには、Bitrise API経由で引き続きアクセスできます。 | 利用不可 |
+| [テスト結果およびすべての非インストール可能アーティファクト](/bitrise-ci/testing/deploying-and-viewing-test-results) | 90日間 | Enterpriseのお客様は利用可能 |
+| インストール可能アーティファクト（.ipa、.akp、.aabファイル） | 150日間 | Enterpriseのお客様は利用可能 |
+| [HTML reports](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/viewing-html-reports) | 7日間 | 利用不可 |
+| Pipelineの中間ファイル | 7日間 | 利用不可 |
+| [CodePush](/release-management/codepush/about-codepush)パッケージ | 保持の上限は経過日数ではなくサイズに基づいており、サブスクリプションプランによって利用できるストレージ容量が決まります。 | 利用不可 |
+
+## アーティファクトを自分のストレージにアーカイブする
+
+保持期間を超えてアーティファクトを保持するには、Bitrise APIを使用してアーカイブしてください。
+
+1. アーカイブするビルドアーティファクトのリストを作成します。`/apps/{app-slug}/builds`を使用して、1つのプロジェクト内のすべてのビルドのリストを生成します。
+1. 各ビルドについて、`/apps/{app-slug}/builds/{buildslug}/artifacts`を使用して該当ビルドのすべてのアーティファクトを一覧表示します。
+1. 各アーティファクトについて、`/apps/{app-slug}/builds/{buildslug}/artifacts/{artifact-slug}`経由でダウンロードURLを取得します。
+1. ダウンロードURLのリストを使用して、各アーティファクトをダウンロードします。
+1. すべてのアーティファクトを任意のストレージに保存します。
+
+## カスタム保持ポリシー
+
+カスタム保持ポリシーはEnterpriseのお客様にご利用いただけます。詳しくはCustomer Success Managerまでお問い合わせください。
+
+- 短縮された保持期間: 追加費用なしでご利用いただけます（ストレージのオーバーヘッド削減に役立ちます）。
+- 延長された保持期間: 追加料金でご利用いただけます。
+
+:::note[標準アーティファクトおよびインストール可能アーティファクトのみ]
+
+カスタム保持期間は、標準アーティファクトおよびインストール可能アーティファクトにのみ適用されます（HTML reportsやパイプラインの中間ファイルには適用されません）。複数の<GlossTerm baseform="workspace">workspaces</GlossTerm>をお持ちの場合、そのすべてに同じカスタム保持期間を適用することも、それぞれに異なる保持期間を設定することもできます。
+
+:::
