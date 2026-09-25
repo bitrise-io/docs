@@ -1,0 +1,47 @@
+---
+title: "Running your first local build with the CLI"
+description: "Run a Bitrise build locally with the Bitrise CLI and a bitrise.yml file. To do so, use the bitrise local run command once you have the correct YAML configuration."
+sidebar_position: 5
+slug: /bitrise-ci/bitrise-cli/running-your-first-local-build-with-the-cli
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+ローカルでBitriseビルドを実行するには、次のものが必要です：
+
+1. [Bitrise CLIをインストールしてください](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli)。
+1. ビルド設定、つまり`<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>`ファイル。
+
+[bitrise.io](https://www.bitrise.io)を使用している場合は、そこからアプリの`bitrise.yml`をダウンロードできます。[bitrise.io](https://www.bitrise.io)でアプリの<GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>を開き、`bitrise.yml`セクションを確認してください。
+
+`bitrise.yml`を自分で作成する場合は、プロジェクトのルートに`bitrise.yml`ファイルを作成するだけです。これを`bitrise.yml`の基本内容として使用できます：
+
+```yaml
+format_version: '26'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+app:
+  envs:
+  - MY_NAME: My Name
+
+workflows:
+  test:
+    steps:
+    - script@1.1.3:
+        inputs:
+        - content: echo "Hello ${MY_NAME}!"
+```
+
+これは、名前を格納する[環境変数](/bitrise-ci/configure-builds/environment-variables)と、`test`という名前の<GlossTerm baseform="workflow">Workflow</GlossTerm>を定義します。このビルドを実行するには：
+
+1. ターミナルまたはその他のCLIアプリを開きます。
+1. `bitrise.yml`ファイルを保存したディレクトリに移動します。
+1. ファイルで定義したWorkflowの名前を指定して`bitrise local run`を実行します。
+
+   ```bash
+   bitrise local run test
+   ```
+
+以上です。これで、Bitrise CLIを使用して最初のビルドが実行されます。

@@ -1,0 +1,104 @@
+---
+title: "Adding a new project from a CLI"
+description: "You can register a Bitrise project from a command line interface and start building. You can create a bitrise.yml file in advance and use that, or have our project scanner scan your project and generate one for you."
+sidebar_position: 2
+slug: /bitrise-ci/bitrise-cli/adding-a-new-project-from-a-cli
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+コマンドラインインターフェースから、新しいBitrise <GlossTerm baseform="Project">プロジェクト</GlossTerm>を簡単に登録できます。プロセスはガイドに従うだけで、簡単です。しかも高速です。たとえば、プロジェクトで使用したい`<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>`ファイルが既にある場合、<GlossTerm baseform="project scanner">プロジェクトスキャナー</GlossTerm>がプロジェクトの種類を検出して`bitrise.yml`ファイルを生成するのを待つ必要はありません。既存のファイルを指定するだけで準備完了です。
+
+:::tip[APIを使用したプロジェクトの追加]
+
+新しいプロジェクトの追加には、Bitrise APIを使うこともできます。詳細は[アプリの追加と管理](/bitrise-ci/api/adding-and-managing-apps)をご覧ください。
+
+:::
+
+
+## プロジェクトの準備
+
+CLI経由でBitriseに新しいプロジェクトを追加する前に、次の点を確認してください。
+
+- Gitプロバイダーが連携されたBitriseアカウントが必要です。
+- プロジェクトには、マシン上のローカルGitリポジトリと、Gitプロバイダー上のリモートリポジトリが必要です。リポジトリへのアクセスにSSHキーを使用する場合は、[リモートリポジトリのURLがSSH URLである必要があります](https://help.github.com/en/articles/which-remote-url-should-i-use)。たとえば`git@github.com:example-user/example.git`のようになります。
+
+`bitrise.yml`を事前に作成しておき、作成プロセス中にそれをプロジェクトに追加することもできます。これは任意です。ウェブサイトの場合と同様に、プロセス中にプロジェクトスキャナーで生成してもらうこともできます。
+
+この手順では、BitriseがSSHキーでアクセスするプロジェクトの追加方法を説明します。これには、プロジェクトのリモートリポジトリが`git@github.com:example-user/example.git`のようなSSH URLを持っている必要があります。
+
+もちろん、リモートリポジトリへのアクセスにHTTPS URLを使用することもできます。その場合、プロジェクトにSSHキーは設定しません。HTTPS URLの使用は、パブリックプロジェクト(オープンソースプロジェクト)にのみ推奨しています。
+
+これで完了です。新しいプロジェクトへのURLが出力され、[Bitrise CIページ](https://app.bitrise.io/ci)でもプロジェクトを確認できます。
+
+
+## プロジェクトを追加する
+
+1. [CLIからの新しいCIプロジェクト](https://app.bitrise.io/apps/add/cli)ページに移動します。
+
+   このページには[Bitrise CIページ](https://app.bitrise.io/ci)からもアクセスできます。右側の<strong>New CI project</strong>ボタンをクリックし、<strong>CLIからNew CI project</strong>を選択してください。
+
+   ![2025-12-10-adding-project-with-cli.png](/img/_paligo/uuid-a6c8e931-615c-8697-8cf6-ab8d5269420b.png)
+1. プロジェクトを所有するアカウントと、プロジェクトの公開範囲を設定します。
+1. そこに表示されているcurlコマンドをコピーします。
+
+   ![2025-12-10-cli-project-choice.png](/img/_paligo/uuid-8ca5abc9-91d0-2f49-c804-dd8b60f92c39.png)
+1. コマンドラインインターフェースを開きます。
+1. ディレクトリをプロジェクトの場所に移動します。
+1. curlコマンドを貼り付けて、Enterキーを押します。
+1. repository URLを選択します。`SSH`オプションを選んでください。
+
+   このプロンプトは、ローカルリポジトリのリモートがSSH URLを持つ場合にのみ表示されます。リモートリポジトリがHTTPS URLを持つ場合は、このプロンプトは表示されません。
+
+   ```yaml
+   Remote URL: git@github.com:example-user/example.git
+
+   ? Select repository URL::
+       https://github.com/example-user/example.git
+     > ssh://git@github.com:example-user/example.git
+   ```
+1. SSHキーを登録します。
+
+   ```yaml
+   Specify how Bitrise will be able to access the source code: 
+    > Automatic
+      Add own SSH
+   ```
+
+   自動登録を選択するか、独自のキーを追加するかを選べます。
+
+   - 自動を選択すると、Bitriseが自動的にキーペアを生成します。追加のプライベートリポジトリやサブモジュールを使用する必要がある場合は、プロンプトが表示されたら「I need to」オプションを選び、指示に従ってください。必要ない場合は「No, auto-add SSH key」オプションを選択します。これにより、公開鍵がリポジトリに自動的に追加されます。
+   - 独自のキーを追加する場合は、SSHキーファイルのパスを指定する必要があります。手動で入力するか、ファイルをドラッグ&ドロップするとパスが自動的に入力されます。
+1. アップロードする`bitrise.yml`ファイルを決定します。
+
+   ```text
+   ? What bitrise.yml do you want to upload? 
+     > Run the scanner to generate a new bitrise.yml
+       Use the bitrise.yml found in the current directory or specify manually
+   ```
+
+   プロジェクトファイルをもとにスキャナーで生成することも、ファイルを指定することもできます。リポジトリに既に`bitrise.yml`ファイルが含まれている場合は、そのパスが自動的に入力されます。
+1. 使用するブランチを選択します。
+
+   デフォルトのオプションは、現在アクティブなブランチです。
+
+   ```yaml
+   The current branch is: master (tracking: origin master),
+
+   ? Do you want to run the scanner for this branch?
+     > Yes
+       No
+   ```
+
+   `No`を選択すると、使用したいブランチをチェックアウトするよう求められます。その後、もう一度Enterキーを押すとスキャナーが開始します。
+
+   スキャナーが完了すると、プロジェクトの種類を検出するか、手動設定に切り替わります。手動設定の場合は、プロジェクトの種類(iOS、Android、React Native、Flutterなど)を選択し、該当する設定ファイルのパスを指定する必要があります。たとえば、Ionicプロジェクトの場合は`config.xml`です。このガイドでは、自動検出で進めます。
+1. 使用する<GlossTerm baseform="stack">スタック</GlossTerm>を選択します。
+
+   スキャナーがプロジェクトの種類を検出すると、スタックが自動的に推奨されますが、必要に応じてCLIで変更できます。前述のように手動設定を行った場合は、スタックも選択する必要があります。
+1. Webhookの設定とcode signingファイルのアップロードでプロセスを完了します。
+
+   - Webhookの登録はスキップできますが、Bitriseでビルドを自動的に<GlossTerm baseform="trigger">トリガー</GlossTerm>するには必要です。詳細は[Webhook](/bitrise-platform/integrations/webhooks/adding-incoming-webhooks)をご覧ください。
+   - code signingファイルをアップロードできます。プロジェクトの種類によっては、iOSのcode signingファイルやAndroidキーストアファイルをアップロードするかどうかを尋ねられます。これらのファイルは、ウェブサイト上でいつでもアップロードできます。
