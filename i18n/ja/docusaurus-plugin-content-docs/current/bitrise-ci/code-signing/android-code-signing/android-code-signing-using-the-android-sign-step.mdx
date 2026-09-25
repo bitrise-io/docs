@@ -1,0 +1,46 @@
+---
+title: "Android code signing using the Android Sign Step"
+description: "Create a signed APK or AAB using the Android Sign Step in your Bitrise Workflow."
+sidebar_position: 3
+slug: /bitrise-ci/code-signing/android-code-signing/android-code-signing-using-the-android-sign-step
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitriseの<GlossTerm baseform="Workflow">Workflow</GlossTerm>で、[<strong>Android Sign</strong>](https://github.com/bitrise-steplib/steps-sign-apk) <GlossTerm baseform="Step">Step</GlossTerm>を使用して、署名済みのAPKまたはAABを作成できます。
+
+プロジェクトの`build.gradle`ファイルで署名が設定されている場合、<strong>Android Sign</strong> Stepは不要です。その場合、[<strong>Android Build</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build) Step(または[<strong>Gradle Runner</strong>](https://github.com/bitrise-io/steps-gradle-runner) Step)を実行すると、出力(APKまたはAAB)が自動的に署名されます。とはいえ、簡単かつ安全にプロジェクトに署名するために、<strong>Android Sign</strong> Stepを使用することをお勧めします。
+
+Android Sign Stepでアプリに署名するには:
+
+1. [キーストアファイルをBitriseにアップロードします](/bitrise-ci/code-signing/android-code-signing/uploading-android-keystore-files-to-bitrise)。これにより、キーストアの認証情報から次のEnvironment Variablesが作成されます: 
+- `$BITRISEIO_ANDROID_KEYSTORE_URL`
+- `$BITRISEIO_ANDROID_KEYSTORE_PASSWORD`
+- `$BITRISEIO_ANDROID_KEYSTORE_ALIAS`
+- `$BITRISEIO_ANDROID_KEYSTORE_PRIVATE_KEY_PASSWORD` 
+1. APKまたはAABファイルをビルドするStepの後に、[<strong>Android Sign</strong>](https://github.com/bitrise-steplib/steps-sign-apk) StepをWorkflowに追加します。
+
+   Stepの<strong>Keystore url</strong>、<strong>Keystore password</strong>、<strong>Key alias</strong>、<strong>Key パスワード</strong>の各入力は、デフォルトでキーストアの認証情報から生成されたEnvironment Variablesになるため、単一のキーストアファイルをアップロードした場合は設定する必要はありません。複数のキーストアファイルをアップロードした場合やcustom keystore IDを設定した場合は、これらの入力に対応するEnvironment Variablesを指定してください(「[BitriseへのAndroidキーストアファイルのアップロード](/bitrise-ci/code-signing/android-code-signing/uploading-android-keystore-files-to-bitrise)」を参照)。
+1. オプション: <strong>Signer tool</strong> 入力で、Stepが`apksigner`、`jarsigner`のどちらで署名するか、または自動的に決定するか(デフォルト: APKの場合は`apksigner`、AABの場合は`jarsigner`)を選択します。AABファイルは、この設定に関係なく`jarsigner`でのみ署名できます。
+1. オプション: <strong>APK Signature Scheme</strong> 入力で、`apksigner`が適用する署名スキームを選択するか、自動(デフォルト)のままにして、アプリの最小および対象のSDKバージョンに基づいて決定させます。
+
+Stepを実行すると、署名済みのAPKまたはAABが生成されます。署名済みの出力は、デプロイStep、たとえば[<strong>Google Play Deploy</strong>](https://github.com/bitrise-io/steps-google-play-deploy) Stepや<strong>Deploy to Bitrise.io</strong> Stepで使用します。これらは<strong>Artifacts</strong>タブでアーティファクトを公開します。署名済みアーティファクトをビルドした後、[Release Management](/release-management)を使ってアプリをデプロイすることもできます。
+
+:::note[キーストアファイルのダウンロード]
+
+<strong>[File Downloader](https://github.com/bitrise-steplib/steps-file-downloader)</strong> Stepを使用して、キーストアファイルをプロジェクトディレクトリにダウンロードできます:
+
+```yaml
+- file-downloader:
+   inputs:
+   - source: $BITRISEIO_ANDROID_KEYSTORE_URL
+   - destination: "$HOME/keystores/my_keystore.jks" #native android#
+```
+
+Stepでキーストアファイルが必要な場合は、必ず[<strong>File Downloader</strong>](https://github.com/bitrise-steplib/steps-file-downloader) Stepの後にそのStepを含めてください。
+
+このStepの後、`my_keystore.jks`は`$HOME/keystores/my_keystore.jks`で利用できるようになります。
+
+:::

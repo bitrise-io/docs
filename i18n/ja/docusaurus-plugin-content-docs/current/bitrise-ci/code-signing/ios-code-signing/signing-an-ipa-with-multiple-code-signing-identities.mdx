@@ -1,0 +1,137 @@
+---
+title: "Signing an IPA with multiple code signing identities"
+description: "You can create multiple IPA files with different code signing identities within a single Bitrise build. You just need to make sure the required code signing files are available and use the Export iOS and tvOS Xcode archive Step."
+sidebar_position: 5
+slug: /bitrise-ci/code-signing/ios-code-signing/signing-an-ipa-with-multiple-code-signing-identities
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+:::note
+
+iOS code signingアセット管理の概要
+
+code signingアセット管理でどのようなStepsを利用できるかについての詳しい概要は、[iOS code signing ページ](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)をご覧ください。
+
+:::
+
+1回のBitriseビルドで、異なるcode signingのIDを持つ複数のIPAファイルを作成できます。
+
+iOSアプリの開発中は、社内テストやApp Storeへのデプロイなど、目的に応じて複数の種類の配布が必要になります。うれしいことに、[bitrise.io](https://www.bitrise.io)で2つの別々のワークフローを設定する必要はありません。
+
+この例では、`development`のエクスポート方法と`app-store`のエクスポート方法で、それぞれ署名済みのIPAファイルを1つずつ作成するWorkflowを設定します。
+
+:::tip[詳細設定オプション]
+
+この手順では、Xcode archiveをエクスポートするためにStepsを設定するための必要最低限の要件のみを記載しています。Bitrise管理のautomatic code signingオプションの上書き、bitcodeを含めた再コンパイル、エクスポート設定用の特定の`.plist`ファイルの使用など、考えられるすべての設定オプションについては、Workflow Editor内のStep、またはGitHubにあるStepの`step.yml`を確認してください。
+
+:::
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. [必要なcode signingファイル](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)がすべてビルドで利用可能であることを確認します。
+1. Workflowに<strong>[Xcode Archive & Export for iOS](https://www.bitrise.io/integrations/steps/xcode-archive)</strong> Stepがあることを確認します。
+1. 入力変数の一覧で<strong>Distribution method</strong>に移動し、ドロップダウンメニューから<strong>development</strong>を選択します。
+
+   ![multipleexport.png](/img/_paligo/uuid-1e2babf9-a88c-0bd8-653d-9b5c7e8217a5.png)
+1. <strong>Automatic code signing method</strong>の入力に、code signingに使用するApple service connectionを設定します。使用できるオプションは次のとおりです。
+
+   - automatic code signingを行わない場合は`off`。
+   - [if you use API key authorization](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)の場合は`api-key`。
+   - [if you use Apple ID authorization](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)の場合は`apple-id`。
+1. <strong>[Export iOS and tvOS Xcode archive](https://www.bitrise.io/integrations/steps/export-xcarchive)</strong> StepをWorkflowに追加します。このStepは、<strong>Xcode Archive & Export for iOS</strong> Stepによって生成されたアーカイブを再利用し、そのアーカイブから2回目のエクスポートを行います。
+1. <strong>Automatic code signing method</strong>の入力に、code signingに使用するApple service connectionを設定します。使用できるオプションは次のとおりです。
+
+   - automatic code signingを行わない場合は`off`。
+   - `api-key` if you use API key authorization。
+   - `apple-id` if you use Apple ID authorization。
+1. 入力変数の一覧で<strong>Distribution method</strong>に移動し、ドロップダウンメニューから<strong>app-store</strong>を選択します。
+
+   ![app-store-method.png](/img/_paligo/uuid-734ff7ef-99f2-2ad4-e962-6fb90c3f936a.png)
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. [必要なcode signingファイル](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)がすべてビルドで利用可能であることを確認します。
+1. アプリの設定YAMLを開きます。
+1. Workflowに`xcode-archive` Stepがあることを確認します。
+
+   ```yaml
+   my-workflow:
+     steps:
+     - xcode-archive:
+         inputs:
+   ```
+1. `distribution_method`の入力を`development`に設定します。
+
+   ```yaml
+   my-workflow:
+     steps:
+     - xcode-archive:
+         inputs:
+         - distribution_method: development
+   ```
+1. `automatic_code_signing`の入力に、code signingに使用するApple service connectionを設定します。使用できるオプションは次のとおりです。
+
+   - automatic code signingを行わない場合は`off`。
+   - [if you use API key authorization](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)の場合は`api-key`。
+   - [if you use Apple ID authorization](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)の場合は`apple-id`。
+
+   ```yaml
+   my-workflow:
+     steps:
+     - xcode-archive:
+         inputs:
+         - automatic_code_signing: api-key
+         - distribution_method: development
+   ```
+1. `export-xcarchive` StepをWorkflowに追加します。このStepは、`xcode-archive` Stepによって生成されたアーカイブを再利用し、そのアーカイブから2回目のエクスポートを行います。
+
+   ```yaml
+   my-workflow:
+     steps:
+     - xcode-archive:
+         inputs:
+         - automatic_code_signing: api-key
+         - distribution_method: development
+     - export-xcarchive:
+         inputs:
+   ```
+1. `automatic_code_signing`の入力に、code signingに使用するApple service connectionを設定します。使用できるオプションは次のとおりです。
+
+   - automatic code signingを行わない場合は`off`。
+   - `api-key` if you use API key authorization。
+   - `apple-id` if you use Apple ID authorization。
+
+   ```yaml
+   my-workflow:
+     steps:
+     - xcode-archive:
+         inputs:
+         - automatic_code_signing: api-key
+         - distribution_method: development
+     - export-xcarchive:
+         inputs:
+         - automatic_code_signing: api-key
+   ```
+1. `distribution_method`の入力を`app-store`に設定します。
+
+   ```yaml
+   my-workflow:
+     steps:
+     - xcode-archive:
+         inputs:
+         - automatic_code_signing: api-key
+         - distribution_method: development
+     - export-xcarchive:
+         inputs:
+         - automatic_code_signing: api-key
+         - distribution_method: app-store
+   ```
+
+</TabItem>
+</Tabs>
+
+以上で完了です。必要に応じて、複数の異なる署名済み.ipaファイルを作成するために、<strong>Export iOS and tvOS Xcode archive</strong> StepsをWorkflowsに自由に追加してください。

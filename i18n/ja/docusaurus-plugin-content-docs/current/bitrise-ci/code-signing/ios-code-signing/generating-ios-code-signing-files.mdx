@@ -1,0 +1,103 @@
+---
+title: "Generating iOS code signing files"
+description: "You can generate iOS code signing files either with Xcode or on the Apple Developer Portal."
+sidebar_position: 8
+slug: /bitrise-ci/code-signing/ios-code-signing/generating-ios-code-signing-files
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+アプリにコード署名するには、証明書とプロビジョニングプロファイルという2種類のファイルが必要です。
+
+証明書(開発用または配布用)は、名前が記載されたデベロッパーがこのコードをビルドしたこと、そのデベロッパーがデベロッパープログラムのメンバーであること、そしてAppleがそのために証明書を発行したことを保証するものです。
+
+証明書を取得するには、キーチェーンアクセスで証明書署名要求を生成し、Appleに送信する必要があります。これにより、公開鍵と秘密鍵のペアをまだ持っていない場合は新たに作成されます。その後、Appleが情報を検証し、証明書を作成します。
+
+プロビジョニングとは、アプリをデバイス上で起動し、アプリサービスを利用できるように準備・設定するプロセスです。開発用プロビジョニングプロファイルには、アプリの実行を許可されたデバイス識別子(UUID)が保持されます。配布用プロビジョニングプロファイルには、App Storeでアプリを配布できるApp Storeプロファイルを含めることができます。アドホックプロファイルは、テスターへの配布に適しています。
+
+
+## Xcodeでコードsigning certificateを生成する
+
+まず、AppleアカウントをXcodeに追加します。すでに完了している場合は、証明書の作成に進んでください。
+
+1. Xcodeを起動します。
+1. <strong>Xcode > Settings</strong>を選択します。
+1. ツールバーで<strong>Account</strong>をクリックします。
+1. 左下隅の<strong>+</strong>ボタンをクリックし、<strong>Add Apple ID…</strong>を選択します。
+1. 表示されるダイアログでAppleアカウントの認証情報を入力し、<strong>Sign in</strong>を選択します。アカウントをまだお持ちでない場合は、<strong>Create Apple ID</strong>を選択してください。
+1. リストからAppleアカウントとチームを選択し、<strong>Manage Certificates</strong>をクリックします。
+1. signing certificateシートで、左下隅の<strong>+</strong>ボタンをクリックし、ポップアップメニューから<strong>Apple Development</strong>や<strong>Apple Distribution</strong>などの証明書タイプを選択します。Xcodeが証明書を生成してインストールします。
+1. <strong>Done</strong>をクリックします。
+
+:::note[証明書の削除]
+
+証明書を削除するには、signing certificateシートでControlキーを押しながらクリックし、<strong>Delete Certificate</strong>を選択します。削除できるのは、自分またはチームメンバーがデベロッパーアカウントで失効させた証明書のみです。
+
+:::
+
+
+## コードsigning certificateを手動で生成する
+
+1. macOSで<strong>Keychain Access</strong>アプリを開きます。
+1. <strong>Keychain Access > Certificate Assistant > Request a Certificate From a Certificate Authority…</strong>を選択します。
+1. <strong>User Email Address</strong>と<strong>Common Name</strong>を入力し、<strong>Saved to disk</strong>を選択します。
+1. <strong>Continue</strong>をクリックし、生成された`.certSigningRequest`ファイルをローカルに保存します。
+1. [developer.apple.com](https://developer.apple.com)にアクセスし、アカウントにログインします。
+1. 左側のサイドバーから<strong>Certificates, Identifiers & Profiles</strong>を選択します。
+1. <strong>Certificates</strong>に移動し、右上隅の<strong>+</strong>ボタンをクリックします。
+1. 開発用には<strong>Apple Development</strong>、配布用には<strong>Apple Distribution</strong>などの証明書タイプを選択し、<strong>Continue</strong>をクリックします。
+1. 作成した`.certSigningRequest`ファイルをアップロードし、<strong>Continue</strong>をクリックします。Appleがコードsigning certificateを生成します。
+1. 証明書をダウンロードし、ダブルクリックして<strong>Keychain Access</strong>にインストールします。
+
+
+## Xcodeでプロビジョニングプロファイルを生成する
+
+Xcodeは、プロジェクトの一意のバンドルIDと一致するApp IDを自動的に生成します。App IDは1つ以上のアプリを識別するもので、1つのバンドル識別子のみに一致する明示的なApp ID、または複数のバンドル識別子に一致するワイルドカードApp IDのいずれかになります。
+
+自動署名が有効になっている場合、Xcodeはプロジェクトのプロビジョニングプロファイルも自動的に作成・管理します(Xcode管理プロファイルと呼ばれることもあります)。そのため、手動での操作なしにデバイスへのデプロイを開始できます。
+
+問題が発生した場合は、デバイスが対象条件を満たしていること(たとえば、デバイスがデプロイターゲットと一致しない場合はエラーが発生します)、およびアプリが正しいチームに接続されていることを確認してください。
+
+Xcodeを使用してプロビジョニングプロファイルを生成するには、次の手順に従います。
+
+1. Xcodeのプロジェクトナビゲーターからプロジェクトファイルを選択します。
+1. <strong>Signing & Capabilities</strong>タブに移動し、<strong>Team</strong>メニューから正しいチームを選択します。
+1. Xcodeでプロジェクトをビルドします。
+
+Xcodeからプロビジョニングプロファイルをダウンロードするには、次の手順に従います。
+
+1. Xcodeを起動します。
+1. <strong>Xcode > Settings</strong>を選択します。
+1. ツールバーで<strong>Account</strong>をクリックします。
+1. Appleアカウントとチームを選択し、<strong>Download Manual Profiles</strong>をクリックします。
+1. プロファイルは`~/Library/MobileDevice/Provisioning Profiles/`にダウンロードされます。
+
+
+## プロビジョニングプロファイルを手動で生成する
+
+プロビジョニングプロファイルを手動で生成するには、有効なApple Developerアカウントが必要であり、プロジェクトのApp IDを設定する必要があります。
+
+### App IDを設定する
+
+1. プロジェクトのApp IDをまだ作成していない場合は、[developer.apple.com](https://developer.apple.com)にアクセスしてログインします。
+1. 左側のサイドバーから<strong>Certificates, Identifiers & Profiles</strong>を選択します。
+1. <strong>Identifiers > App IDs</strong>に移動します。
+1. <strong>App ID Description</strong>に、App IDの分かりやすい名前を入力します。
+1. <strong>Explicit App ID</strong>を選択し、フィールドにバンドル識別子を入力します。
+1. 必要な追加の<strong>App Service</strong>を選択します。
+1. <strong>Continue</strong>をクリックします。
+
+### プロビジョニングプロファイルを生成する
+
+1. [developer.apple.com](https://developer.apple.com)にアクセスしてログインします。
+1. 左側のサイドバーから<strong>Certificates, Identifiers & Profiles</strong>を選択します。
+1. <strong>Profile</strong>に移動します。
+1. 右上隅の<strong>+</strong>を選択します。
+1. 開発用の場合は`Development`の下から正しいプロジェクトタイプを、配布用の場合は`Distribution`の下から正しいものを選択し、<strong>Continue</strong>をクリックします。
+1. 使用するApp IDを選択し、<strong>Continue</strong>をクリックします。
+1. プロビジョニングプロファイルに含める証明書を選択します。これらの証明書は、このプロファイルでビルドできるようになります。<strong>Continue</strong>をクリックします。
+1. このプロファイルで使用するすべてのデバイスを選択し、<strong>Continue</strong>をクリックします。
+1. プロビジョニングプロファイルに名前を付け、<strong>Generate</strong>をクリックします。
+1. プロファイルが生成されます。ダウンロードしてダブルクリックし、Macにインストールします。

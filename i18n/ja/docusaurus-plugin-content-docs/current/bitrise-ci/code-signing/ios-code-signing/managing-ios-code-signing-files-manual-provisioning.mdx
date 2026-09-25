@@ -1,0 +1,42 @@
+---
+title: "Managing iOS code signing files - manual provisioning"
+description: "To manage your code signing files manually, you need to upload your .p12 signing certificates and the app's provisioning profiles to Bitrise. There are multiple ways to do this."
+sidebar_position: 3
+slug: "/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---manual-provisioning"
+sidebar_label: iOS code signing with manual provisioning
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/src/partials/getting-to-the-project-settings-page.mdx';
+
+code signingファイルを手動で管理するには、.p12signing certificateとアプリのプロビジョニングプロファイルをBitriseにアップロードする必要があります。
+
+常に少なくとも1つのDeveloper証明書とDevelopment用のプロビジョニングプロファイルをアップロードする必要があります。これは、Xcodeの<GlossTerm baseform="step">Steps</GlossTerm>がアプリを正しくテストおよびビルドできるようにするために必要です。
+
+:::tip[code signingファイルの生成]
+
+必要なcode signingファイルがない場合は、新しいファイルを生成できます。[iOSのcode signingファイルの生成](/bitrise-ci/code-signing/ios-code-signing/generating-ios-code-signing-files)
+
+:::
+
+code signingファイルをBitriseにアップロードするには、まずファイルを.p12ファイル形式でエクスポートする必要があります。ファイルのエクスポートが完了したら、Bitriseにアップロードします。方法は2つあります。
+
+- [API呼び出し経由](/bitrise-ci/api/managing-ios-code-signing-files#uploading-an-ios-code-signing-file)。
+- Bitriseに手動でアップロードする方法。このガイドではこちらの方法について説明します。
+
+code signingファイルをBitriseに手動でアップロードするには、次の手順を行います。
+
+1. .p12証明書とプロビジョニングプロファイルをエクスポートして準備しておきます。詳細については、[iOSのcode signingファイルのエクスポート](/bitrise-ci/code-signing/ios-code-signing/exporting-ios-code-signing-files-without-codesigndoc)を参照してください。
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側のメニューから<strong>Code signing</strong>を選択します。
+1. ファイルを追加します。
+
+   - 証明書を追加するには、<strong>Add .p12 file</strong>ボタンをクリックします。ダイアログボックスでファイルをアップロードし、必要に応じて証明書のパスワードを入力します。
+   - プロビジョニングプロファイルを追加するには、<strong>Add プロファイル</strong>ボタンをクリックします。ダイアログボックスでファイルをアップロードします。
+1. アプリの<GlossTerm baseform="Workflow">Workflow</GlossTerm>に[<strong>Certificate and profile installer</strong>](https://github.com/bitrise-steplib/steps-certificate-and-profile-installer)のStepがあることを確認してください。これは、<GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>の<strong>Workflow</strong>タブで確認できます。
+
+   これらのStepsは、Workflow内でアプリをアーカイブおよびエクスポートするSteps（例:[<strong>Xcode Archive & Export for iOS</strong>](https://github.com/bitrise-steplib/steps-xcode-archive)）よりも<strong>前に</strong>配置する必要があるのでご注意ください。
+
+   ![certificate_and_profile_installer.png](/img/_paligo/uuid-fda915ec-d2ed-00a0-707c-b8a120221095.png)

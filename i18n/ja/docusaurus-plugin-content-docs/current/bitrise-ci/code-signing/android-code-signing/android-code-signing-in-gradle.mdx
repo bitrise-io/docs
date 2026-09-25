@@ -1,0 +1,92 @@
+---
+title: "Android code signing in Gradle"
+description: "You can manually specify the code signing configuration in your Gradle configuration so that your app gets signed during the build process on Bitrise."
+sidebar_position: 5
+slug: /bitrise-ci/code-signing/android-code-signing/android-code-signing-in-gradle
+---
+
+ビルドプロセス中にアプリが署名されるように、Gradleの設定内でcode signingの設定を手動で指定できます。
+
+1. モジュールレベルの`build.gradle`ファイルを開きます。
+1. コードに`signingConfigs`のコードブロックを追加し、プロジェクト固有の以下の項目を定義します。
+
+   - `storeFiled`
+   - `storePassword`
+   - `keyAlias`
+   - `keyPassword`
+1. 署名設定をビルドタイプに関連付けます。
+1. Bitriseでアプリをビルドします。
+
+詳細については、[アプリに署名するためのGradleの設定方法](https://developer.android.com/studio/publish/app-signing)をご確認ください。
+
+<strong>build.gradleファイルでの署名設定</strong>
+
+この例では、ビルドがキーストアファイルを使用できるように、キーストアパスはローカルと[bitrise.io](https://www.bitrise.io)上で同じパスにする必要があります。
+
+```
+android {
+   // Make sure signingConfigs is defined before buildTypes.
+   signingConfigs { 
+   	   release { 
+       	 keyAlias 'MyAndroidKey' 
+         keyPassword '***' 
+         storeFile file("/path/to/my/keystore.jks") 
+         storePassword '***' 
+       } 
+   } 
+  
+
+  buildTypes {
+      release {
+          // Use signing config for build type
+          signingConfig signingConfigs.release
+          // ...
+      }
+  }
+  // ...
+```
+
+<strong>build.gradleファイルでのEnvironment Variablesの使用</strong>
+
+キーストアパス（`storeFile`）とkeystore password内で設定値とEnvironment Variablesを使用することで、ローカルと[bitrise.io](https://www.bitrise.io)で同じキーストアパスにする必要がなくなります。
+
+`System.getenv("ENV_KEY")`ファイルを使用すると、`build.gradle`ファイル内でEnvironment Variablesにアクセスできます。`build.gradle`ファイルで使用するEnvironment Variablesを、[bitrise.io](https://www.bitrise.io)上でも必ず定義してください。
+
+キーストアパスが`$HOME/keystores/my_keystore.jks`の場合、`build.gradle`ファイルは次のようになります。
+
+```
+android { 
+   signingConfigs { 
+   	   release { 
+       	 keyAlias 'MyAndroidKey' 
+         keyPassword '***' 
+         storeFile file(System.getenv("HOME") + "/keystores/my_keystore.jks")
+         storePassword '***' 
+       } 
+   } ...
+```
+
+その後、[File DownloaderのStep](/bitrise-ci/run-and-analyze-builds/managing-build-files/using-files-in-your-builds#downloading-a-file-using-the-file-downloader-step)を使用して、`$HOME/keystores/my_keystore.jks`を宛先パスとしてキーストアファイルをダウンロードできます。
+
+<strong>Code signing</strong>タブでEnvironment Variablesを`keyPassword`として使用し、`storePassword`を使用する場合、`build.gradle`は次のようになります。
+
+```
+android {
+   signingConfigs {
+       release {
+         keyAlias System.getenv("BITRISEIO_ANDROID_KEYSTORE_ALIAS")
+         keyPassword System.getenv("BITRISEIO_ANDROID_KEYSTORE_PRIVATE_KEY_PASSWORD")
+         storeFile file(System.getenv("HOME") + "/keystores/my_keystore.jks")
+         storePassword System.getenv("BITRISEIO_ANDROID_KEYSTORE_PASSWORD")
+       }
+   }
+   
+   buildTypes {
+      release {
+          // Use signing config for build type
+          signingConfig signingConfigs.release
+          // ...
+      }
+   }
+   ...
+```

@@ -1,0 +1,170 @@
+---
+title: "Managing iOS code signing files - automatic provisioning"
+description: "Automatic code signing means automatically managing the provisioning profiles that are available on your Apple Developer Portal account. If you set up some form of authentication to your Apple account, Bitrise can download and install the provisioning profile for your app during the build process."
+sidebar_position: 2
+slug: "/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning"
+sidebar_label: iOS code signing with automatic provisioning
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/src/partials/getting-to-the-project-settings-page.mdx';
+
+Bitriseでは、iOSのcode signingをできるだけシンプルにすることを目指しています。そのため、プロセスの多くを自動化するよう努めています。<GlossTerm baseform="Step">Steps</GlossTerm>の一部には、automatic code signing管理のビルトインオプションが搭載されており、設定がより効率化されています。
+
+この文脈におけるAutomatic code signingとは、Apple Developer Portalアカウントで利用可能なプロビジョニングプロファイルを自動的に管理することを意味します。Appleアカウントへの何らかの認証を設定すると、ビルドプロセス中にBitriseがアプリ用のプロビジョニングプロファイルをダウンロードしてインストールできます。
+
+この機能を使用するには、次の操作が必要です。
+
+1. [コードsigning certificateをBitriseにアップロードします。](#uploading-ios-code-signing-certificates-to-bitrise)
+1. [Apple ID](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id)または[App Store Connect API](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key)のいずれかを使用して、Apple Developer PortalアカウントをBitriseに接続します。
+1. [code signingアセットの自動管理をサポートするStepsのいずれかを使用します。](#configuring-the-steps-for-automatic-provisioning)
+
+
+## iOSコードsigning certificateをBitriseにアップロードする
+
+iOSのcode signing方法はすべて、iOSコードsigning certificateをエクスポートしてBitriseにアップロードする必要があります。
+
+:::tip[code signingファイルの生成]
+
+必要なcode signingファイルが用意されていない場合は、新しいファイルを生成できます。[iOSのcode signingファイルを生成する](/bitrise-ci/code-signing/ios-code-signing/generating-ios-code-signing-files)
+
+:::
+
+証明書をBitriseにアップロードするには、まずファイルを.p12ファイル形式でエクスポートする必要があります。ファイルのエクスポートに成功したら、それらをBitriseにアップロードします。次の2つのオプションがあります。
+
+- [API呼び出し経由](/bitrise-ci/api/managing-ios-code-signing-files#uploading-an-ios-code-signing-file)
+- 手動でアップロードする。このガイドではこちらの方法について説明します。
+
+:::important[配布用と開発用の両方のsigning certificateをアップロードする]
+
+プロジェクトの開発用と配布用の両方のsigning certificateをアップロードすることを強くおすすめします。開発用のsigning certificateがアップロードされていない場合、自動プロビジョニングオプションを備えたStepsは、ビルドを開始するたびにその場で新しいものを生成します。これにより、最終的に証明書の最大数に達し、新しいビルドを開始できなくなる可能性があります。
+
+:::
+
+証明書をエクスポートし、<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>でBitriseにアップロードするには、次の操作を行います。
+
+1. .p12証明書がエクスポートされ、準備できていることを確認します。
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で、<strong>Code signing</strong>メニューオプションを選択します。
+1. 証明書を追加するには、<strong>Add .p12 file</strong>をクリックします。
+1. ダイアログボックスで、証明書ファイルをフィールドにドラッグ&ドロップするか、フィールドをクリックしてファイルを参照します。
+
+   ![Add .p12 fileダイアログ](/img/code-signing/ios-code-signing/2026-07-14-add-p12-file.png)
+
+   :::important[Certificate password]
+
+   証明書がパスワードで保護されている場合は、ここでもパスワードを設定する必要があります。
+
+   :::
+1. 完了したら、<strong>Continue</strong>をクリックします。
+1. サマリーを確認し、問題がなければ<strong>Add証明書</strong>をクリックします。
+
+
+## 自動プロビジョニングのためのAppleサービス認証
+
+ビルトインの自動化されたiOScode signingオプションを提供するBitrise Stepsを活用するには、[Appleサービス認証](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)を設定する必要があります。これらのStepsには、2つのオプションがあります。
+
+| 認証方法 | 仕組み | 使用するタイミング |
+| --- | --- | --- |
+| [APIキー認証](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key)(推奨) | APIキーを使用して、App Store ConnectアカウントをBitriseに接続します。 | Apple Developer Enterprise Programのアカウントを使用している場合を除き、このオプションの使用をおすすめします。APIキーを作成するオプションが表示されず、アクセスのリクエストがグレーアウトしている場合は、アカウント保有者に連絡してAPI認証を使用するためのAppleとのライセンス契約に同意してもらう必要があります。 |
+| [Apple ID認証](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id) | Apple IDをBitriseに接続します。Appleアカウントで二要素認証が有効になっている場合は、この過程でApp-specific passwordを入力する必要があります。認証の有効期限は30日で、接続を更新する必要があります。 | 次の場合にのみ、この方法を使用してください。  - 何らかの理由でAPIキーにアクセスできない。 - Apple Developer Enterprise Programのアカウントを使用している。  [手動プロビジョニング](/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---manual-provisioning)の使用も検討できます。 |
+
+
+## 自動プロビジョニング用のStepsの設定
+
+Bitriseで自動プロビジョニングを処理する方法は2つあります。
+
+- code signingファイルの管理とアプリのビルドの両方を行える、公式のXcodeStepsを使用する。
+- <strong>Manage iOS Code Signing</strong>Stepを使用する。
+
+次の表は、2つの方法のユースケースを説明しています。必要なStepsを設定するには、以下のいずれかを確認してください。
+
+- [XcodeStepsを使用する](#using-the-xcode-steps)
+- [Manage iOS Code SigningStepを使用する](#using-the-manage-ios-code-signing-step)
+
+:::important[Certificate and profile installerStepを使用しないでください]
+
+自動プロビジョニングを使用する場合、<strong>Certificate and profile installer</strong>Stepを使用する必要は一切ありません。
+
+:::
+
+| Steps | 仕組み | 使用するタイミング |
+| --- | --- | --- |
+| XcodeSteps:  - <strong>Xcode Archive & Export for iOS</strong> - <strong>Export iOS and tvOS Xcode Archive</strong> - <strong>XcodeのiOS向けテストビルド</strong> | これらのStepsは、ほぼ設定不要でXcodeプロジェクトにcode signingを自動的に設定します。 | ほとんどのシナリオでは、これらのStepsを使用することをおすすめします。 |
+| <strong>Manage iOS Code Signing</strong>Step | このStepは、ビルドの実行前にXcodeプロジェクトにcode signingを設定します。 | 次の場合、この専用のStepを使用できます。  - スクリプトまたはfastlaneからアプリをビルドしている。 - クロスプラットフォームプロジェクトを使用している(例:React Native、Flutter、Ionic、Cordovaなど)。 - macOSアプリをビルドしている。 |
+
+### XcodeStepsを使用する
+
+code signingアセットのビルトイン自動管理機能を備えたXcodeStepsのいずれかを使用できます。
+
+1. AppleサービスへのSet up接続。
+
+   [APIキー認証](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key)または[Apple ID認証](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id)のいずれかを選択できます。一般的にはAPIキー認証をおすすめします。
+1. 必要に応じて、次のStepsのいずれかを<GlossTerm baseform="workflow">Workflow</GlossTerm>に追加します。
+
+   - <strong>Xcode Archive & Export for iOS</strong>: Xcodeアプリをビルドし、選択したタイプのIPAをエクスポートします。
+   - <strong>Export iOS and tvOS Xcode Archive</strong>: 既存のアーカイブからIPAをエクスポートします。
+   - <strong>XcodeのiOS向けテストビルド</strong>: `build-for-testing`アクションを使用してXcodeアプリをビルドします。
+1. <strong>Automatic code signing method</strong>の入力を、設定したAppleサービス認証タイプに設定します。
+
+   たとえば、APIキー認証を選択した場合は、<strong>api-key</strong>オプションを選択します。
+
+<strong>code signing方式を設定するYAMLの例</strong>
+
+この例では、<strong>Xcode Archive & Export for iOS</strong>StepがAPIキー認証を使用するように設定されています。
+
+```yaml
+- xcode-archive@4:        
+    inputs:        
+    - automatic_code_signing: api-key
+```
+
+ほとんどの場合、Apple接続を正しく設定していれば、他のすべての入力についてはdefault valueで十分です。
+
+### Manage iOS Code SigningStepを使用する
+
+iOSアプリのビルドにXcodeStepsのいずれも使用しない場合、またはクロスプラットフォームアプリを使用している場合は、code signingアセットを自動的に管理するための専用のStepを使用してください。
+
+1. <strong>Run CocoaPods install</strong>や<strong>Carthage</strong>など、Workflow内の依存関係インストーラーStepの後に<strong>Manage iOS Code Signing</strong>Stepを追加します。
+
+   ![manage-ios-code.png](/img/_paligo/uuid-1b7bc413-da80-4910-5b25-f2a057bbf4d0.png)
+1. <strong>Apple service connection method</strong>の入力を、使用したいApple service connectionに設定します。
+
+   [APIキー認証](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-step-inputs#authenticating-in-a-step-with-api-key)または[Apple ID認証](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-step-inputs#authenticating-in-a-step-with-apple-id-and-password)のいずれかを選択できます。
+1. Apple ID認証を使用する場合は、<strong>The Developer Portal team ID</strong>の入力にチームIDも入力する必要があります。
+1. このStepの後にXcodeプロジェクトを変更しないようにしてください。
+
+   たとえば、バンドルIDを変更しないでください。
+1. <strong>fastlane</strong>Stepなど、アプリをビルドしてアーカイブするStepを追加します。
+
+
+## エクスポートオプションのplistを生成する
+
+`ExportOptions.plist`ファイルは、[iOS向けのXcode Archive](https://bitrise.io/integrations/steps/xcode-archive)Step inputsに基づいて自動的に生成されます。ただし、これらの入力を上書きして、<strong>Xcode Archive & Export for iOS</strong>Stepで使用することもできます。
+
+1. ローカルの開発マシンXcodeでプロジェクトを開きます。
+1. プロジェクトをアーカイブします。
+1. Organizerで、新しく作成された`.xcarchive`ファイルを選択します。<strong>Distribute App</strong>をクリックしてIPAファイルにエクスポートします。Xcodeは、使用された`ExportOptions.plist`ファイルを、生成されたIPAファイルの隣にコピーします。
+1. お好みのテキストエディタでこの`ExportOptions.plist`ファイルを開き、その内容をコピーします。
+1. その内容を、<strong>Xcode Archive & Export for iOS</strong>Stepの<strong>Export options plist</strong>コンテンツ入力に貼り付けます。
+
+<strong>plistファイルの例:</strong>
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>destination</key>
+	<string>export</string>
+	<key>method</key>
+	<string>debugging</string>
+	<key>signingStyle</key>
+	<string>automatic</string>
+	<key>stripSwiftSymbols</key>
+	<true/>
+</dict>
+</plist>
+```

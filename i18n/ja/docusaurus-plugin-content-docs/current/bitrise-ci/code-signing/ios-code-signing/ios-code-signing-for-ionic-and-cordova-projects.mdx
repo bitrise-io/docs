@@ -1,0 +1,86 @@
+---
+title: "iOS code signing for Ionic and Cordova projects"
+description: "Bitrise supports both manual and automatic provisioning for the iOS code signing of Ionic and Cordova apps as well."
+sidebar_position: 6
+slug: /bitrise-ci/code-signing/ios-code-signing/ios-code-signing-for-ionic-and-cordova-projects
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+当然、Bitriseは<strong>Ionic</strong>または<strong>Cordova</strong>でビルドされたiOSアプリケーションをサポートしています。ただし、code signingのプロセスはネイティブのXcodeプロジェクトとは少し異なります。
+
+BitriseはIonicアプリとCordovaアプリについても手動および自動のプロビジョニングをサポートしています。この場合も、プロセスはやや異なります。
+
+
+## 手動のcode signingアセット管理を使用したIonic/Cordovaのcode signing
+
+1. `cordova platform add ios`または`ionic cordova platform add ios`を呼び出して、IonicまたはCordovaプロジェクトからローカルでネイティブのXcodeプロジェクトを生成します。
+1. ファイルを[bitrise.io](https://www.bitrise.io)にアップロードします。<strong>Project settings</strong>ページを開き、左側の<strong>Code signing</strong>を選択します。証明書とプロビジョニングプロファイルをアップロードしてください。
+1. <GlossTerm baseform="workflow">Workflow</GlossTerm>に<strong>Certificate and profile installer</strong> <GlossTerm baseform="step">Step</GlossTerm>があることを確認してください。
+1. <strong>Generate cordova build configuration</strong> StepをWorkflowに追加します。これは<strong>Certificate and profile installer</strong> Stepの後に配置する必要があります。
+1. Stepに必要な入力項目を入力します。<strong>Code Signing Identity</strong>と<strong>Provisioning Profile</strong>は、そのように表示されていなくても、iOSアプリでは必須の入力項目である点に注意してください。
+
+   - <strong>Build configuration</strong>: `debug`または`release`のいずれかに設定できます。
+   - <strong>Code Sign Identity</strong>: DeveloperまたはDistributionのIDを入力します。
+   - <strong>Provisioning Profile</strong>: 適切なプロビジョニングプロファイルを入力します。
+   - <strong>Packaging Type</strong>: Xcodeによって生成されるビルドの種類を制御します。必要なcode signingの種類を設定してください。
+1. <strong>Cordova archive</strong>または<strong>Ionic archive</strong> StepをWorkflowに追加します。
+1. 必要な入力項目を入力します。
+
+   - <strong>Platform</strong>の入力は次のように設定する必要があります: `device`
+   - <strong>Build command configuration</strong>の入力は、<strong>Generate cordova build configuration</strong> Stepの<strong>Build configuration</strong>の入力と一致させる必要があります。
+
+   このStepは、Workflow内で<strong>Generate cordova build configuration</strong> Stepの後に配置する必要があります。
+1. ビルドを実行しましょう。
+
+
+## automatic code signingアセット管理を使用したIonic/Cordovaのcode signing
+
+1. .p12のsigning certificateが[bitrise.io](https://www.bitrise.io)にアップロードされていることを確認してください。
+1. <strong>Cordova prepare</strong>または<strong>Ionic prepare</strong> StepをWorkflowに追加します。これらのStepsは`platform rm`および`platform add`コマンドを呼び出します。
+1. <strong>[Manage iOS Code Signing](https://www.bitrise.io/integrations/steps/manage-ios-code-signing)</strong> StepをWorkflowに追加します。Workflowに<strong>Certificate and Profile Installer</strong>と<strong>Manage iOS Code Signing</strong> Stepsの両方がある場合、ビルドで予期しない問題が発生する可能性があります。
+
+   Stepは次の情報をエクスポートします:
+
+   - プロジェクトの開発チーム。
+   - インストールされているコード署名IDの名前。
+   - インストールされているプロビジョニングプロファイル。
+
+   :::caution[1つのcode signingStepのみ]
+
+   Workflowに<strong>Certificate and profile installer</strong>と<strong>Manage iOS Code Signing</strong> Stepsの両方がある場合、ビルドで予期しない問題が発生する可能性があります。
+
+   :::
+1. （Bitrise](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)で設定した[Appleサービスに基づき）<strong>Apple service connection method</strong>と<strong>Distribution method</strong>を選択します。
+1. <strong>Generate cordova build configuration</strong> StepをWorkflowに追加します。
+1. <strong>Manage iOS Code Signing</strong> Stepによってエクスポートされたcode signing設定を使用するようにStepを設定します:
+
+   <strong>開発用ディストリビューションの例</strong>:
+
+   ```yaml
+   - generate-cordova-build-configuration:
+       inputs:
+       - development_team: $BITRISE_DEVELOPER_TEAM 
+       - package_type: development 
+       - code_sign_identity: iPhone Developer
+       - configuration: debug
+   ```
+
+   <strong>本番用ディストリビューションの例</strong>:
+
+   ```yaml
+   - generate-cordova-build-configuration:
+       inputs:
+       - development_team: $BITRISE_DEVELOPER_TEAM 
+       - package_type: app-store 
+       - code_sign_identity: iPhone Developer
+       - configuration: release
+   ```
+1. <strong>Cordova Archive</strong>または<strong>Ionic Archive</strong> StepをWorkflowに追加します。
+1. 必要な入力項目を入力します。
+
+   - <strong>Platform</strong>の入力は次のように設定する必要があります: `device`
+   - <strong>Build command configuration</strong>の入力は、<strong>Generate cordova build configuration</strong> Stepの<strong>Build configuration</strong>の入力と一致させる必要があります。
+1. ビルドを実行しましょう。
