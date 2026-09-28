@@ -1,0 +1,68 @@
+---
+title: "Permissions reference"
+description: "What each custom-role permission actually lets someone do, organized by scope, and which built-in system roles already include it by default."
+sidebar_position: 3
+slug: /bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/custom-roles/permissions-reference
+---
+
+カスタムロールを作成する際は、まずスコープを選択し、そのスコープ内で付与する権限を選びます。各権限は単純なオン/オフのスイッチであり、オンにするとその機能を完全に利用できるようになります。権限を個別に閲覧専用として付与するオプションはありません。
+
+## Workspaceスコープの権限
+
+| Category | Permission | What it grants |
+|---|---|---|
+| 全般 | workspace settingsを変更 | workspaceの名前と設定を編集します。 |
+| 全般 | 新規プロジェクトの作成 | workspace内に新規プロジェクトを作成します。 |
+| プランと請求 | プランと請求の管理 | 請求書の閲覧、製品プラン、アドオン、請求情報の変更を行います。 |
+| コラボレーション | コラボレーション設定の管理 | メンバーの招待と削除、グループの管理、ロールと権限の割り当てを行います。 |
+| セキュリティ | SSO設定の管理 | workspaceのSAMLsingle sign-onを設定します。 |
+| セキュリティ | サードパーティ連携の管理 | サードパーティ連携の接続と管理を行います。 |
+| Self-hosted infrastructure | インフラストラクチャの管理 | セルフホストランナープールと、AWSコントローラーおよびmachine pools上のBitriseを管理します。 |
+| APIアクセス | APIアクセスの管理 | workspaceAPIトークン（WAT、OIDC）の閲覧と管理を行います。 |
+
+## Bitrise CIスコープの権限
+
+| Category | Permission | What it grants |
+|---|---|---|
+| ビルド | ビルドログの表示 | ビルド出力とステップログを閲覧します。 |
+| ビルド | ビルドの実行 | 新規ビルドの開始と既存ビルドの再実行を行います。 |
+| ビルド | ビルドリクエストの承認 | 手動承認待ちの個々のプルリクエストビルドを承認します。手動承認を有効にするには<strong>Edit workflow</strong>権限が必要です。手動承認が有効になっている場合、ビルドを承認するには<strong>ビルドリクエストの承認</strong>で十分です。現在、AdminとOwnerには暗黙的に付与されています。[プルリクエストビルドの承認](/bitrise-ci/run-and-analyze-builds/starting-builds/approving-pull-request-builds)を参照してください。 |
+| ビルド | リモートアクセス付きで再ビルド | SSHのリモートアクセスを使ってビルドを開始します。 |
+| Workflows | 設定YAMLの表示 | プロジェクトの設定ファイルを閲覧およびエクスポートします。 |
+| Workflows | ワークフローの編集 | アプリの`bitrise.yml`、シークレット、code signing、project settings、Webhookを編集します。ワークフロー設定のみより広い範囲です。 |
+| Build Cache | プロジェクトのbuild cacheの管理 | プロジェクトのbuild cacheを設定・クリアします。 |
+
+## デフォルトでこれらを持つ組み込みシステムロール
+
+簡易参照用のマトリクスです。行が権限、列が現在存在するロールを表します。カスタムロールはこれらと同じ行から自由に選択できます。以下のチェックマークは「デフォルトで付与されている」ことを意味するだけで、「そのロール専用」という意味ではありません。
+
+### Workspaceスコープ
+
+| Permission | Owner | Manager | Contributor | Viewer |
+|---|---|---|---|---|
+| workspace settingsを変更 | ✓ | ✓ | — | — |
+| 新規プロジェクトの作成 | ✓ | ✓ | ✓ | — |
+| プランと請求の管理 | ✓ | — | — | — |
+| コラボレーション設定の管理 | ✓ | ✓ | — | — |
+| SSO設定の管理 | ✓ | ✓ | — | — |
+| サードパーティ連携の管理 | ✓ | ✓ | — | — |
+| インフラストラクチャの管理 | ✓ | — | — | — |
+| APIアクセスの管理 | ✓ | ✓ | — | — |
+
+### Bitrise CIスコープ
+
+| Permission | Admin | Platform Engineer | Developer | Tester/QA |
+|---|---|---|---|---|
+| ビルドログの表示 | ✓ | ✓ | ✓ | — |
+| ビルドの実行 | ✓ | ✓ | ✓ | — |
+| ビルドリクエストの承認 | ✓ | — | — | — |
+| リモートアクセス付きで再ビルド | ✓ | ✓ | ✓ | — |
+| 設定YAMLの表示 | ✓ | ✓ | — | — |
+| ワークフローの編集 | ✓ | ✓ | — | — |
+| プロジェクトのbuild cacheの管理 | ✓ | ✓ | ✓ | — |
+
+:::note
+
+workspaceOwnerは、Ownerロールが全プロジェクトへのフルアクセスを含むため、workspace内のすべてのプロジェクトに対してBitrise CIスコープのあらゆる権限も持ちます。上記のBitrise CIマトリクスは、4つのプロジェクトレベルのロールのみを比較しています。
+
+:::
