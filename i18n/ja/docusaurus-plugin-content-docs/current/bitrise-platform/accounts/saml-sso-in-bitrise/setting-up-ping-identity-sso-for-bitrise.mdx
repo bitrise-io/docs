@@ -1,0 +1,56 @@
+---
+title: "Ping Identity SSO"
+description: "Add SAML SSO to your Bitrise Workspace using Ping Identity."
+sidebar_position: 11
+slug: /bitrise-platform/accounts/saml-sso-in-bitrise/setting-up-ping-identity-sso-for-bitrise
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_SAMLSSOBeforeYouStart from '@site/src/partials/saml-sso-before-you-start.mdx';
+import Partial_CAUTIONSAMLSSORestrictions from '@site/src/partials/caution-saml-sso-restrictions.mdx';
+
+このガイドでは、[Ping Identity](https://www.pingidentity.com/en.html)でBitriseをSAMLSSOアプリケーションとして設定する手順を説明します。
+
+<Partial_CAUTIONSAMLSSORestrictions />
+
+SAML SSOを<GlossTerm baseform="workspace">Workspace</GlossTerm>に接続する前に、次のものが必要です。
+
+- [PingOne](https://admin.pingone.com/web-portal/login)にログインしているPingOne管理者。
+- <Partial_SAMLSSOBeforeYouStart />
+
+Ping IdentityにBitriseを追加するには:
+
+1. [PingOne](https://admin.pingone.com/web-portal/login)の上部バーで<strong>APPLICATIONS</strong>をクリックします。
+1. <strong>My Applications</strong>タブで、<strong>SAML</strong>が選択されていることを確認します。<strong>Add Application</strong>ドロップダウンをクリックし、<strong>New SAML Application</strong>を選択します。
+
+   ![Setting_up_Ping_Identity_SSO_for_Bitrise.jpg](/img/_paligo/uuid-ba20e7c6-49cf-1ec0-ca6a-5630eb89c357.jpg)
+1. <strong>Application Details</strong>で必須項目を入力し、<strong>Continue to Next <GlossTerm baseform="step">Step</GlossTerm></strong>をクリックします。
+
+   ![Setting_up_Ping_Identity_SSO_for_Bitrise.jpg](/img/_paligo/uuid-6ebb926e-6275-81b7-fdb8-559128c87944.jpg)
+1. <strong>Application Configuration</strong>で、<strong>I have the SAML configuration</strong>を選択したままにします。以下を入力します。
+
+   - <strong>Assertion Consumer Service (ACS)</strong>フィールド: Bitrise Workspaceの<strong>Single Sign-On</strong>タブにある<strong>Assertion Consumer Service URL (ACS URL)</strong>リンクをここに挿入します。
+   - <strong>Entity ID field</strong>: `Bitrise`と入力します。
+   - <strong>Signing</strong>: <strong>Sign Response</strong>オプションをクリックします。
+
+     上記の設定の概要は次のとおりです。![Setting_up_Ping_Identity_SSO_for_Bitrise.jpg](/img/_paligo/uuid-b3f12826-15e7-22c6-5688-9f3be3f519fd.jpg)
+1. 次の手順に進みます。
+1. <strong>SSO Attribute Mapping</strong>では、何も変更する必要はありません。次の手順に進みます。
+1. <strong>Group Access</strong>で、アプリケーションにグループを追加します。これらのグループはSAML SSOを通じてBitriseにアクセスできるようになります。次の手順に進みます。
+
+   ![Setting_up_Ping_Identity_SSO_for_Bitrise.jpg](/img/_paligo/uuid-cfafb8d7-1a0e-d967-5609-385cc5db90e2.jpg)
+1. <strong>Review Setup</strong>ページでは、前の手順で入力した詳細を再確認できます。このレビューページから必ず次のファイルをダウンロードしてください。
+
+   - <strong>Download</strong>をクリックして、<strong>Signing Certificate</strong>と<strong>SAML Metadata</strong>のファイルを取得します。
+
+     ![Setting_up_Ping_Identity_SSO_for_Bitrise.jpg](/img/_paligo/uuid-d626ceb8-0cf3-d459-5cd7-9e59e0fef81a.jpg)
+1. <strong>Finish</strong>をクリックします。
+1. 2つのファイルを開きましょう。
+
+   - <strong>SAML Metadata</strong>ファイルの内容をすべてコピーし、Bitriseの<strong>Single Sign-On</strong>ページにある<strong>SAML SSO provider</strong>の<strong>certificate</strong>フィールドに貼り付けます。
+   - <strong>Signing Certificate</strong>ファイルを開き、`HTTP-POST` `SingleSignOnService Location`のリンクをコピーして、Bitriseの<strong>SAML SSO provider Single Sign-On URL (SSO URL)</strong>フィールドに貼り付けます。
+1. Bitriseで<strong>Configure SSO</strong>をクリックします。
+
+これで、Bitrise WorkspaceにSAML SSOを設定できました。

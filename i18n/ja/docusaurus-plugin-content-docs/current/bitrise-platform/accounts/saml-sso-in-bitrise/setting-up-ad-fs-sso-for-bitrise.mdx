@@ -1,0 +1,167 @@
+---
+title: "AD FS SSO"
+description: "Add SAML SSO to your Bitrise Workspace using Microsoft Active Directory Federation Services."
+sidebar_position: 4
+slug: /bitrise-platform/accounts/saml-sso-in-bitrise/setting-up-ad-fs-sso-for-bitrise
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_SAMLSSOBeforeYouStart from '@site/src/partials/saml-sso-before-you-start.mdx';
+import Partial_CAUTIONSAMLSSORestrictions from '@site/src/partials/caution-saml-sso-restrictions.mdx';
+import Partial_OpeningTheWorkspaceSettingsPage from '@site/src/partials/opening-the-workspace-settings-page.mdx';
+
+このガイドでは、[Microsoft Active Directory Federation Services](https://docs.microsoft.com/en-us/windows-server/identity/active-directory-federation-services)(AD FS)を使用してSAML SSOを設定する手順を説明します。
+
+<Partial_CAUTIONSAMLSSORestrictions />
+
+SAML SSOを<GlossTerm baseform="workspace">Workspace</GlossTerm>に接続する前に:
+
+- SAML SSOの設定作業中は、AD FSの管理者がすぐに対応できるようにしてください。
+- <Partial_SAMLSSOBeforeYouStart />
+
+このチュートリアルではBitriseとAD FSを行き来するため、この作業中は両方のツールを使用できる状態にしておくことをお勧めします。
+
+AD FSを使ってSAML SSOを設定するには、以下の作業が必要です。
+
+1. [BitriseでAD FSから<strong>Identity provider sign-on URL</strong>を追加する](#adding-the-identity-provider-sign-on-url)
+1. [AD FSで生成された証明書をエクスポートし、Bitriseに追加する](#exporting-an-ad-fs-certificate)
+1. [BitriseをAD FSにrelying party trustとして追加する](#adding-bitrise-as-a-relying-party-trust-to-ad-fs)
+1. [クレームルールを設定する](#configuring-claim-rules)
+
+
+## Identity provider sign-on URLの追加
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. <strong>Single Sign-on</strong>タブに移動します。
+1. <strong>SSO URL</strong>フィールドに、AD FSの<strong>Identity provider sign-on URL</strong>を追加します。
+
+   有効な値の例として`https://<AD FS URL>.com/adfs/ls`が挙げられます。
+
+
+## AD FS証明書のエクスポート
+
+1. Bitriseの<strong>Single Sign-On</strong>ページにある<strong>SAML SSO provider certificate</strong>フィールドにAD FSで生成された証明書を追加するには、You have。AD FSですでに証明書を作成している場合は、AD FSサーバーからPEM形式でエクスポートできます。まだ作成していない場合は、[AD FS用のTSおよびTD証明書の取得と設定](https://docs.microsoft.com/en-us/windows-server/identity/ad-fs/operations/configure-ts-td-certs-ad-fs#:\~:text=Open%20the%20AD%20FS%20Management,certificates%2C%20and%20then%20click%20OK.)の手順に従ってください。
+1. <strong>Server Manager</strong>で<strong>Tools</strong>をクリックし、<strong>AD FS Management</strong>を選択します。
+1. 左側のメニューペインで<strong>Certificates</strong>フォルダを選択します。
+1. <strong>Token-signing</strong>の下にある証明書をクリックします。<strong>Certificates</strong>ウィンドウが表示されます。
+
+   ![certtoken-1.jpg](/img/_paligo/uuid-cfe05e2a-2027-50fb-e4a8-56ef4164907f.jpg)
+1. <strong>Certificate</strong>ページで<strong>Details</strong>タブをクリックします。
+
+   ![certificate-1.jpg](/img/_paligo/uuid-e960a587-dfa0-3b5d-aad8-6d03208a3ad6.jpg)
+1. <strong>Certificate Export Wizard</strong>ウィンドウで<strong>Next</strong>をクリックします。
+
+   ![certwizard.jpg](/img/_paligo/uuid-0ba8034b-4784-e042-02b9-32087bcde8d4.jpg)
+1. エクスポートファイル形式として<strong>Base-64 encoded X.509 (.CER)</strong>を選択します。<strong>Next</strong>をクリックします。
+
+   ![baseencoded.jpg](/img/_paligo/uuid-9a300011-7818-826c-5874-c7ba6ade8176.jpg)
+1. <strong>File name</strong>フィールドに名前を入力し、<strong>Save</strong>をクリックします。
+
+   ![filenamesave.jpg](/img/_paligo/uuid-4510e204-8973-1a9a-0c2e-7ffc0c073aad.jpg)
+1. 証明書の設定内容を最終確認します。変更が必要な場合は、<strong>Certificate Export Wizard</strong>の横にある戻る矢印をクリックしてください。問題なければ<strong>Finish</strong>をクリックします。この後すぐに必要になるため、AD FSウィンドウは開いたままにしておいてください。
+
+   ![completewizard.jpg](/img/_paligo/uuid-eaa066c4-99be-c8a5-9990-fe4a08a4154c.jpg)
+1. エクスポートした証明書をテキストエディタで開き、その内容を<strong>SAML SSO provider certificate</strong>フィールドにコピー&ペーストするか、ローカルコンピューターからファイル自体をアップロードします。
+1. Bitriseで<strong>Configure SSO</strong>をクリックして設定を保存します。
+
+   ![saml_sso_setup.png](/img/_paligo/uuid-26ad84be-65c7-1916-f079-6b553b4c436d.png)
+
+   続いて、AD FSでBitriseを追加し、SAML SSOの設定を続けましょう。
+
+
+## BitriseをAD FSにrelying party trustとして追加
+
+証明書のエクスポートが完了したら、次は[relying party trustをAD FSに](https://docs.microsoft.com/en-us/windows-server/identity/ad-fs/operations/create-a-relying-party-trust)Bitriseとして追加します。Add Relying Party Trust Wizardが手順を案内してくれます。
+
+1. AD FSで、左側のメニューバーの<strong>Relying Party Trust</strong>をクリックし、続いて<strong>Relying Party Trust</strong>をクリックします。
+1. <strong>Actions</strong>の下にある<strong>Add Relying Party Trust</strong>を選択します。
+
+   ![addreplyingpartytrust.jpg](/img/_paligo/uuid-2e8a2cfc-6fe9-cf2b-9b4a-b4ec2f051568.jpg)
+1. <strong>Welcome</strong>ページで<strong>Claims aware</strong>オプションを選択し、<strong>Start</strong>をクリックします。
+
+   ![claimsaware.jpg](/img/_paligo/uuid-d5eac9a8-1c74-efd6-459a-aaa24af4877a.jpg)
+1. <strong>Select Data Source</strong>ページで、ページ下部にある<strong>Enter data about the relying party manually</strong>オプションをクリックします。<strong>Next</strong>をクリックします。
+
+   ![selectdatasource.jpg](/img/_paligo/uuid-7e451b81-22e3-0f16-af91-380ad8026de1.jpg)
+1. <strong>Specify Display Name</strong>ページで<strong>Display name</strong>を追加します(例:`MyCorp`)。<strong>Next</strong>をクリックします。
+
+   ![specifydisplayname.jpg](/img/_paligo/uuid-a8509ed5-9cc9-8851-c8df-9d298c5ae3bc.jpg)
+1. <strong>Configure Certificate</strong>ページでトークン暗号化証明書を指定するかどうかは任意です。<strong>Next</strong>をクリックします。
+
+   ![optionalconfigure.jpg](/img/_paligo/uuid-1042aa27-f21e-16e5-4065-4088112ae116.jpg)
+1. <strong>Configure UR</strong>Lページで、<strong>SAML 2.0 WebSSOプロトコルのEnableサポート</strong>を選択し、Bitriseの<strong>Assertion Consumer Service URL (ACS URL)</strong>をAD FSの<strong>Relying party SAML 2.0 SSO service URL</strong>フィールドにコピー&ペーストします。<strong>Next</strong>をクリックします。
+
+   ![configureurl-1.jpg](/img/_paligo/uuid-a40d7228-e976-458e-0508-99ded152069c.jpg)
+1. <strong>Configure Identifiers</strong>ページで、<strong>Relying party trust identifier</strong>フィールドに`Bitrise`を追加します。<strong>Add</strong>をクリックし、続いて<strong>Next</strong>をクリックします。
+
+   ![replyingidentifiers2.jpg](/img/_paligo/uuid-c920feb2-3a96-88d7-710a-27d3d4fcba1c.jpg)
+1. <strong>Choose Access Control Policy</strong>ページでは、このSAML SSO接続に誰でもアクセスできるよう、デフォルトのアクセス制御ポリシーを変更しないでください。<strong>Next</strong>をクリックします。
+
+   ![permiteveryone.jpg](/img/_paligo/uuid-d6600b5b-3ad8-aee2-a28b-62f4ca2b1394.jpg)
+1. <strong>Ready to Add Trust</strong>ページで設定内容を確認し、<strong>Next</strong>をクリックします。
+
+   ![readytoaddtrust.jpg](/img/_paligo/uuid-4033d0af-df38-8e77-9963-4812d259f9ad.jpg)
+1. <strong>Finish</strong>ページで、Bitriseのクレーム発行ポリシーを編集するチェックボックスをオンにします。<strong>Close</strong>をクリックします。
+
+   ![finish.jpg](/img/_paligo/uuid-974f5427-db6a-201d-a112-9bb8fee4ae7f.jpg)
+
+1. AD FSで、左側のメニューバーの<strong>Relying Party Trust</strong>をクリックし、続いて<strong>Relying Party Trust</strong>をクリックします。
+1. <strong>Actions</strong>の下にある<strong>Add Relying Party Trust</strong>を選択します。
+
+   ![addreplyingpartytrust.jpg](/img/_paligo/uuid-2e8a2cfc-6fe9-cf2b-9b4a-b4ec2f051568.jpg)
+1. <strong>Welcome</strong>ページで<strong>Claims aware</strong>オプションを選択し、<strong>Start</strong>をクリックします。
+
+   ![claimsaware.jpg](/img/_paligo/uuid-d5eac9a8-1c74-efd6-459a-aaa24af4877a.jpg)
+1. <strong>Select Data Source</strong>ページで、ページ下部にある<strong>Enter data about the relying party manually</strong>オプションをクリックします。<strong>Next</strong>をクリックします。
+
+   ![selectdatasource.jpg](/img/_paligo/uuid-7e451b81-22e3-0f16-af91-380ad8026de1.jpg)
+1. <strong>Specify Display Name</strong>ページで<strong>Display name</strong>を追加します(例:`MyCorp`)。<strong>Next</strong>をクリックします。
+
+   ![specifydisplayname.jpg](/img/_paligo/uuid-a8509ed5-9cc9-8851-c8df-9d298c5ae3bc.jpg)
+1. <strong>Configure Certificate</strong>ページでトークン暗号化証明書を指定するかどうかは任意です。<strong>Next</strong>をクリックします。
+
+   ![optionalconfigure.jpg](/img/_paligo/uuid-1042aa27-f21e-16e5-4065-4088112ae116.jpg)
+1. <strong>Configure UR</strong>Lページで、<strong>SAML 2.0 WebSSOプロトコルのEnableサポート</strong>を選択し、Bitriseの<strong>Assertion Consumer Service URL (ACS URL)</strong>をAD FSの<strong>Relying party SAML 2.0 SSO service URL</strong>フィールドにコピー&ペーストします。<strong>Next</strong>をクリックします。
+
+   ![configureurl-1.jpg](/img/_paligo/uuid-a40d7228-e976-458e-0508-99ded152069c.jpg)
+1. <strong>Configure Identifiers</strong>ページで、<strong>Relying party trust identifier</strong>フィールドに`Bitrise`を追加します。<strong>Add</strong>をクリックし、続いて<strong>Next</strong>をクリックします。
+
+   ![replyingidentifiers2.jpg](/img/_paligo/uuid-c920feb2-3a96-88d7-710a-27d3d4fcba1c.jpg)
+1. <strong>Choose Access Control Policy</strong>ページでは、このSAML SSO接続に誰でもアクセスできるよう、デフォルトのアクセス制御ポリシーを変更しないでください。<strong>Next</strong>をクリックします。
+
+   ![permiteveryone.jpg](/img/_paligo/uuid-d6600b5b-3ad8-aee2-a28b-62f4ca2b1394.jpg)
+1. <strong>Ready to Add Trust</strong>ページで設定内容を確認し、<strong>Next</strong>をクリックします。
+
+   ![readytoaddtrust.jpg](/img/_paligo/uuid-4033d0af-df38-8e77-9963-4812d259f9ad.jpg)
+1. <strong>Finish</strong>ページで、Bitriseのクレーム発行ポリシーを編集するチェックボックスをオンにします。<strong>Close</strong>をクリックします。
+
+   ![finish.jpg](/img/_paligo/uuid-974f5427-db6a-201d-a112-9bb8fee4ae7f.jpg)
+
+
+## クレームルールの設定
+
+1. <strong>Edit Claim</strong> <strong>Issuance Policy</strong>ページで<strong>Add Rule</strong>ボタンをクリックし、<strong>OK</strong>を押します。
+
+   ![editclaims.jpg](/img/_paligo/uuid-0a57f576-6cbd-5055-e09e-078920e410ce.jpg)
+1. <strong>Send LDAP Attributes as Claims</strong>クレームルールを作成し、<strong>Next</strong>をクリックします。
+1. <strong>Configure Claim Rule</strong>ページで:
+
+   - <strong>Claim rule name</strong>フィールドにルール名を入力します(例:Send E-mail)。
+   - <strong>Attribute Store</strong>を選択します。多くの場合Active Directoryになります。
+   - <strong>Mapping of LDAP attributes to outgoing claim types</strong>フィールドでE-mail Addressesを選択します。
+1. <strong>Finish</strong>をクリックします。
+
+   ![configureclaimrule.jpg](/img/_paligo/uuid-73afe848-4767-6771-43fb-4675ecc1a189.jpg)
+1. E-mailをフォーマット済みのNameIDに変換する新しいルールを追加します。そのためには、<strong>Edit Claim</strong> <strong>Issuance Policy</strong>ページで再度<strong>Add rule</strong>をクリックします。
+1. <strong>Select Rule Template</strong>で、<strong>Claim rule template</strong>ドロップダウンから<strong>Transform an Incoming Claim</strong>オプションを選択します。<strong>Next</strong>をクリックします。
+
+   ![chooseruletype.jpg](/img/_paligo/uuid-0ef22e95-4303-25ce-b8e9-69884bbe7cf7.jpg)
+1. 新しいルールに名前を付けます(例:`Transform E-mail`)。
+1. <strong>Incoming Claim Type</strong>として<strong>E-Mail Address</strong>を選択します。
+1. <strong>Outgoing claim type</strong>として<strong>NameId</strong>を選択します。
+1. <strong>Outgoing name ID format</strong>として<strong>Email</strong>を選択します。
+1. <strong>OK</strong>を押して処理を完了します。
+
+   ![newrule.jpg](/img/_paligo/uuid-ce7f8183-941b-0b73-92c2-185e235442ee.jpg)

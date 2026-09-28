@@ -1,0 +1,72 @@
+---
+title: "Google SSO"
+description: "Add SAML SSO to your Bitrise Workspace using Google Workspace."
+sidebar_position: 7
+slug: /bitrise-platform/accounts/saml-sso-in-bitrise/setting-up-google-sso-for-bitrise
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_SAMLSSOBeforeYouStart from '@site/src/partials/saml-sso-before-you-start.mdx';
+import Partial_CAUTIONSAMLSSORestrictions from '@site/src/partials/caution-saml-sso-restrictions.mdx';
+
+このガイドでは、Google <GlossTerm baseform="workspace">Workspace</GlossTerm>でBitriseをSAMLアプリケーションとして設定する手順を説明します。
+
+<Partial_CAUTIONSAMLSSORestrictions />
+
+WorkspaceにSAML SSOを接続する前に、以下を確認してください。
+
+- BitriseをSAMLアプリとして追加できるGoogle管理者アカウントを用意してください。Google Workspace管理者はGoogle Workspace上でのSAML SSOの設定を支援できます。
+- <Partial_SAMLSSOBeforeYouStart />
+
+以下の作業が必要です。
+
+1. [Google WorkspaceおよびBitriseから設定情報を取得します。](#getting-configuration-information-from-google-workspace-and-bitrise)
+1. [グループまたは組織部門でBitriseアプリを有効にします。](#enabling-bitrise-app-for-a-group-or-an-organizational-unit)
+
+
+## Google WorkspaceとBitriseから設定情報を取得する
+
+1. Google 管理コンソールにサインインします。
+1. <strong>Admin Console</strong> ページで <strong>Apps</strong> を選択します。
+
+   ![googleadmin-apps.jpg](/img/_paligo/uuid-d00d79a9-94d7-7bf0-fa17-b6e3adab0619.jpg)
+1. Appsページで <strong>SAML apps</strong> をクリックします。
+
+   ![appsamlapp.jpg](/img/_paligo/uuid-6cf46631-6ee5-1108-8957-9da55ebd564b.jpg)
+1. <strong>Web and mobile apps</strong> ページで <strong>Add apps</strong> ボタンをクリックし、ドロップダウンから <strong>Add custom SAML app</strong> オプションを選択します。
+
+   ![addappsaml.jpg](/img/_paligo/uuid-bcfdf2cb-0157-100c-44ed-25e040d82e6b.jpg)
+1. App details ページで、アプリ名として `Bitrise` を追加します。`Bitrise`以外の形式は受け付けられないため、必ずこの形式にしてください。<strong>Continue</strong> をクリックします。
+
+   ![addappname.jpg](/img/_paligo/uuid-1a730b40-ecbe-d3dd-58a4-c46a0854f63a.jpg)
+1. <strong>Getting Identity Provider details</strong> ページで:
+
+   - <strong>SSO URL</strong> をコピーし、Bitriseの <strong>SSO URL</strong> フィールドに貼り付けます。
+   - <strong>Certificate</strong> フィールドの内容をすべてコピーし、Bitriseの <strong>SAML SSO provider certificate</strong> フィールドに貼り付けます。ローカルコンピューターから <strong>Certificate</strong> をアップロードすることもできます。
+
+     ![identityproviderdetails.jpg](/img/_paligo/uuid-21e11866-5b32-ba61-b232-0336d27e75e9.jpg)
+1. Bitriseにいる間に、<strong>Copy</strong> ボタンをクリックして <strong>Assertion Consumer Service URL (ACS URL)</strong> をコピーします。これは後ほどGoogle Workspaceで必要になります。ここでは <strong>Configure SSO</strong> ボタンはまだクリックしないでください。
+1. Google Workspaceの <strong>Getting Identity Provider details</strong> ページに戻ります。<strong>Continue</strong> をクリックします。
+1. <strong>Service provider details</strong> ページで:
+
+   - Bitriseの <strong>Assertion Consumer Service URL (ACS URL)</strong> を、Google Workspaceの <strong>ACS URL</strong> フィールドに貼り付けます。(このリンクは<GlossTerm baseform="step">Step</GlossTerm> 7で取得したことを思い出してください。)
+   - <strong>Entity ID</strong> フィールドに `Bitrise` と入力します。`Bitrise`以外の形式は受け付けられないため、必ずこの形式にしてください。
+   - <strong>START URL (optional)</strong> の下にある <strong>Signed response</strong> チェックボックスをオンにします。
+   - <strong>CONTINUE</strong> をクリックします。
+
+     ![serviceproviderdetails.jpg](/img/_paligo/uuid-dca4e3b0-8c11-d444-23c9-b5ae0f21990d.jpg)
+1. Bitriseの <strong>Configure SSO</strong> ボタンをクリックします。
+1. Google Workspaceの <strong>Attribute mapping</strong> ページで <strong>Finish</strong> をクリックします。ここでは特に設定する必要はありません。
+
+
+## グループまたは組織部門でBitriseアプリを有効にする
+
+G Suiteで残っている作業は、新しく作成したBitriseアプリを、任意のグループまたは組織で有効にすることだけです。
+
+1. G Suiteの <strong>Web and mobile apps</strong> ページに移動し、<strong>Apps</strong> リストから <strong>Bitrise</strong> を選択します。
+1. <strong>User access</strong> をクリックして <strong>Service status</strong> ページに移動します。
+1. <strong>ON for everyone</strong> を選択し、<strong>Save</strong> を押します。
+
+   ![useraccess.jpg](/img/_paligo/uuid-ed1aa9a4-7926-3cfe-bf98-ac0f98a44237.jpg)

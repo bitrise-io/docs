@@ -1,0 +1,132 @@
+---
+title: "Configuring SCIM"
+description: "The System for Cross-domain Identity Management (SCIM) specification is designed to make managing user identities in cloud-based applications and services easier. On Bitrise, SCIM provisioning is supported for [Okta](https://www.okta.com/) and [Microsoft Entra ID](https://learn.microsoft.com/en-us/entra/identity/)."
+sidebar_position: 3
+slug: /bitrise-platform/accounts/saml-sso-in-bitrise/configuring-scim
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkspaceSettingsPage from '@site/src/partials/opening-the-workspace-settings-page.mdx';
+
+System for Cross-domain Identity Management（SCIM）仕様は、クラウドベースのアプリケーションおよびサービスにおけるユーザーIDの管理を容易にすることを目的としています。
+
+Bitriseでは、[Okta](https://www.okta.com/)および[Microsoft Entra ID](https://learn.microsoft.com/en-us/entra/identity/)向けにSCIMプロビジョニングをサポートしています。
+
+SCIMプロビジョニングには、検証済みドメインとSCIMの認証情報（SCIMのベースURLと認証トークン）が必要です。Bitriseでこれらを設定する手順は、OktaとEntra IDのどちらでも同じです。
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. 左側で<strong>Single sign-on</strong>を選択します。
+1. [検証済みドメインを設定する](/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-saml-sso-on-bitrise#verifying-your-domain)。
+1. <strong>SCIM</strong>タブを選択します。
+1. <strong>SCIM credentials</strong>セクションで、<strong>IdPでConnect</strong>をクリックして<strong>IdPでConnect</strong>ダイアログを開きます。
+1. SCIMの認証情報を保存します。ダイアログには次の項目が表示されます。
+
+   - SCIMのベースURL。
+   - SCIMの認証トークン。
+
+   両方をコピーして保存してください。SCIMプロビジョニングにはこれらの情報が必要です。IDプロバイダーに貼り付けたら、その旨を確認するチェックボックスを選択し、<strong>Done</strong>をクリックします。
+
+   Oktaについては、[SCIMプロビジョニングガイド](/bitrise-platform/accounts/saml-sso-in-bitrise/setting-up-okta-sso-for-bitrise#setting-up-scim-provisioning-in-okta)をご確認ください。
+
+## SCIMによるworkspaceおよび製品ロールの管理
+
+デフォルトでは、SCIM経由でプロビジョニングされたすべてのユーザーにViewerロールが付与され、製品へのアクセス権は付与されません。IdPがSCIMの`roles`属性をサポートしている場合、<GlossTerm baseform="workspace">Workspace</GlossTerm>と製品ロールの割り当てを自動化し、最初から適切なアクセス権でユーザーをプロビジョニングできます。
+
+### 利用可能なworkspaceロール
+
+| SCIMの値 | Workspaceロール | Description |
+|---|---|---|
+| `workspace:workspace_viewer` | Viewer | 新規メンバーのデフォルトロールです。Workspaceのリソースを閲覧できますが、アプリやプロジェクトを作成することはできません。|
+| `workspace:workspace_contributor` | Contributor | 新しいアプリやプロジェクトを作成できます。Workspace settingsの変更やメンバーの管理はできません。|
+| `workspace:workspace_manager` | Manager | Workspace settingsの変更、メンバーの管理、インテグレーションとインフラストラクチャの管理ができます。|
+
+権限の詳細については、[Workspacesにおけるロールと権限](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces)をご覧ください。
+
+### 利用可能な製品ロール
+
+| SCIMの値 | Product role | Description |
+|---|---|---|
+| `rde:rde_admin` | RDE User | WorkspaceでRemote Dev Environmentセッションを作成および管理できます。|
+
+プロジェクトレベルのBitrise CIおよびRelease Managementロールは、SCIM経由で割り当てることはできません。代わりに<strong>Collaboration</strong>ページで設定してください。[Workspacesにおけるロールと権限](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces)をご覧ください。
+
+これら3つの値のみがSCIMで受け付けられます。Workspaceが独自のworkspaceレベルロールを定義している場合は、[カスタムworkspaceロールとSCIM](#custom-workspace-roles-and-scim)をご覧ください。
+
+### ロール割り当ての仕組み
+
+各ロールエントリの`value`フィールドは`<family>:<role_name>`の形式を使用し、familyは`workspace`または`rde`のいずれかです。IdPを設定して、以下のいずれかの形式でSCIMリクエストに`roles`属性を含めるようにしてください。
+
+<strong>User creation and full update (POST and PUT):</strong>
+
+リクエストボディのトップレベル属性として`roles`を含めます。
+
+```json
+{
+  "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+  "userName": "user@example.com",
+  "roles": [
+    { "value": "workspace:workspace_manager" },
+    { "value": "rde:rde_admin" }
+  ]
+}
+```
+
+<strong>Partial update (PATCH, roles in value object):</strong>
+
+Oktaなど一部のIdPは、明示的な`path`を指定せずに、`value`オブジェクト内にネストしたロールを送信します。
+
+```json
+{
+  "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+  "Operations": [
+    {
+      "op": "replace",
+      "value": {
+        "roles": [
+          { "value": "workspace:workspace_contributor" }
+        ]
+      }
+    }
+  ]
+}
+```
+
+<strong>Partial update (PATCH, explicit path):</strong>
+
+Microsoft Entra IDなど他のIdPは、明示的な`path`フィールドを使用します。`type`フィールドは任意であり、Bitriseでは無視されます。
+
+```json
+{
+  "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+  "Operations": [
+    {
+      "op": "replace",
+      "path": "roles",
+      "value": [
+        { "value": "workspace:workspace_manager" }
+      ]
+    }
+  ]
+}
+```
+
+Bitriseは、これら3つの形式すべてを自動的に処理します。
+
+:::important
+
+SCIMリクエストに`roles`属性が含まれている場合、Bitriseはそれを完全なロール割り当てとして扱い、ユーザーの現在のロールを置き換えます。これはすべてのfamilyに適用され、送信したものだけに限りません。`workspace:`ロールのみをリストしたリクエストはユーザーのRDEアクセスを削除し、`rde:rde_admin`のみをリストしたリクエストはユーザーのworkspaceロールをViewerに戻します。ユーザーが保持すべきすべてのロールを送信してください。
+
+リクエストに`roles`がまったく含まれていない場合、既存のロール割り当ては変更されません。空の`roles`配列は、ユーザーをデフォルトのViewerロールに戻し、製品へのアクセス権を削除します。
+
+:::
+
+### カスタムworkspaceロールとSCIM
+
+メンバーのworkspaceロールは、Workspaceが定義する<GlossTerm baseform="custom role">カスタムロール</GlossTerm>にすることもできます。作成方法と割り当て方法については、[カスタムロール](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/custom-roles/custom-roles-overview)をご覧ください。SCIM経由でメンバーをプロビジョニングする際に留意すべき点が2つあります。
+
+- <strong>IdPはカスタムロールを割り当てられません。</strong> `roles`属性は3つの組み込み値のみを受け付けます。リクエストがそれ以外を指定した場合、Bitriseはそれを拒否し、メンバーは既存のロールを保持します。
+- <strong>SCIMのプッシュはカスタムロールを置き換えます。</strong> メンバーが一度に持てるworkspaceロールは1つのため、IdPが送信する組み込みロールは、Bitrise上で誰かが割り当てたカスタムロールを含め、メンバーが以前保持していたロールを置き換えます。空の`roles`配列も同様に、メンバーをViewerに戻します。
+
+メンバーにカスタムロールを保持させたい場合は、そのメンバーに対するSCIMリクエストから`roles`属性を除外してください。Bitriseは、`roles`が存在する場合にのみworkspaceロールを変更します。

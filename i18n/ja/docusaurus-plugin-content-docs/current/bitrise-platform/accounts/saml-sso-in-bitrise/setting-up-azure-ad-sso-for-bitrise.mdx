@@ -1,0 +1,108 @@
+---
+title: "Azure AD SSO"
+description: "Add SAML SSO to your Bitrise Workspace using Microsoft Entra ID."
+sidebar_position: 6
+slug: /bitrise-platform/accounts/saml-sso-in-bitrise/setting-up-azure-ad-sso-for-bitrise
+sidebar_label: Entra ID (former Azure AD) SSO
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_SAMLSSOBeforeYouStart from '@site/src/partials/saml-sso-before-you-start.mdx';
+import Partial_CAUTIONSAMLSSORestrictions from '@site/src/partials/caution-saml-sso-restrictions.mdx';
+
+<Partial_CAUTIONSAMLSSORestrictions />
+
+SAML SSOを<GlossTerm baseform="workspace">Workspace</GlossTerm>に接続する前に:
+
+- Entra IDにログインしているEntra ID管理者がすぐに対応できる状態にしてください。
+- <Partial_SAMLSSOBeforeYouStart />
+
+次の作業が必要です:
+
+1. [新しいアプリケーションとしてBitriseをEntra IDに追加する](#adding-bitrise-to-entra-id-as-a-new-application)。
+1. [Entra ID上のBitriseアプリにユーザーとグループを追加する](#adding-users-groups-to-the-app-on-entra-id)。
+1. [BitriseとEntra IDの間でSAMLSSOを設定する](#setting-up-saml-sso-between-bitrise-and-entra-id)。
+
+
+## 新しいアプリケーションとしてBitriseをEntra IDに追加する
+
+1. 管理者として[Microsoft Azure](https://azure.microsoft.com/en-us/)にログインします。
+1. <strong>Azure services</strong>ページで<strong>Azure Active Directory</strong>アイコンをクリックします。
+
+   ![azureactivedirstep2-1.jpg](/img/_paligo/uuid-bf8ba810-c8e2-5323-8d6b-30b9a030b59d.jpg)
+1. <strong>Manage</strong>の下にある<strong>Enterprise アプリケーション</strong>をクリックします。
+
+   ![enterpriseapps-1.jpg](/img/_paligo/uuid-39f030dd-13a5-7302-6200-44aa39114f17.jpg)
+1. <strong>New Application</strong>をクリックして、新しいアプリとしてBitriseをアカウントに追加します。
+
+   ![newapplication-jpg.jpg](/img/_paligo/uuid-fd697193-d536-bade-12f6-341e9ecb2df9.jpg)
+1. <strong>What’s the name of your app?</strong>フィールドに`Bitrise`と入力します。<strong>Integrate any other application you don’t find in the gallery</strong>ボタンが自動的に選択されているはずです。<strong>Create</strong>を押します。
+
+   ![createyourownapp-1.jpg](/img/_paligo/uuid-4822cd7c-0379-35e2-9ab3-d483dc8c6355.jpg)
+
+   新しく作成したアプリは<strong>All Applications</strong>ページの一覧に表示されます。
+1. <strong>Bitrise</strong>アプリをクリックして、その<strong>Overview</strong>ページに移動します。
+1. 続けてBitriseをSAMLアプリとして設定します。
+
+
+## Entra ID上のアプリへのユーザー/グループの追加
+
+アプリにSAMLを設定する前に、SAML SSOを使ってBitrise Workspaceにログインするすべてのユーザー/グループをEntra IDのアプリに追加する必要があります。つまり、すべてのBitrise WorkspaceメンバーをEntra IDにユーザーとして追加する必要があります。
+
+1. 左側のメニューから<strong>Users and groups</strong>を選択します。
+1. <strong>+ Add user/group</strong>をクリックします。
+
+   ![azureuser1-1.jpg](/img/_paligo/uuid-f90189a9-c8f8-0720-69f3-b02983eb74f3.jpg)
+1. <strong>Add Assignment</strong>のUsersページで、リストからユーザーを選択して<strong>Select</strong>をクリックします。完了すると、<strong>Select a role</strong>ドロップダウンでユーザーのロールを選択できます。
+
+   ![azureuser2-1.jpg](/img/_paligo/uuid-ea5d2cad-6d99-e1e7-e389-6cb1c2170256.jpg)
+1. <strong>Add Assignment</strong>ページで、<strong>Assign</strong>をクリックしてユーザーの追加を完了します。
+
+   ![azureuser3b-1.jpg](/img/_paligo/uuid-ee6c9c9d-82a3-5470-9e0d-f5dd4f971414.jpg)
+
+
+## BitriseとEntra IDの間でのSAML SSOの設定
+
+1. 左側のメニューで<strong>Single sign-on</strong>をクリックします。<strong>SAML</strong>を選択します。
+
+   ![singlesignonazuread.png](/img/_paligo/uuid-9a20bdb0-2c68-3ce5-1f41-ac710e25b7be.png)
+1. <strong>Set up Single Sign-On with SAML</strong>ページに移動します。
+
+   ![sso2-1.jpg](/img/_paligo/uuid-6b74d41d-4d91-adb5-0d73-17380c293ab9.jpg)
+1. <strong>Basic SAML Configuration</strong>の鉛筆アイコンをクリックして、2つのフィールドを編集します。
+
+   ![sso2a-1.jpg](/img/_paligo/uuid-954473da-632b-0628-2a76-9ff4471fcc9d.jpg)
+1. <strong>Identifier (Entity ID)</strong>として`Bitrise`を追加します。このウィンドウは閉じずに開いたままにしてください。すぐにBitriseからの情報を使ってこのウィンドウに戻ります。
+
+   :::important[同じEntraインスタンスで複数のworkspacesを使用する場合]
+
+   複数のBitrise workspaceが同じEntraIDインスタンスを使用する場合、それぞれのworkspaceに固有のEntity IDを設定する必要があります。workspaceごとに、以降の手順でEntity IDが必要になった際にはそれぞれ固有のEntity IDを使用してください。
+
+   たとえば、Alpha workspaceとBeta workspaceがある場合、Entity IDとして<strong>alpha</strong>と<strong>beta</strong>を設定できます。
+
+   :::
+
+   ![sso3-2.jpg](/img/_paligo/uuid-39c02a1a-b3f2-3922-a9d1-fac312c98f92.jpg)
+1. Bitrise上のworkspaceに戻ります: <strong>Workspace settings</strong>ページを開き、<strong>Single Sign-On</strong>に移動します
+1. 同じEntraインスタンスを使用するworkspaceが複数ある場合は、<strong>Application identifier</strong>フィールドにそれぞれ固有のEntity IDを追加します。
+1. <strong>Copy</strong>ボタンをクリックして、Bitriseから<strong>Assertion Consumer Service URL (ACS URL)</strong>をコピーします。
+1. Entra IDの<strong>Basic SAML Configuration</strong>ウィンドウに戻りましょう。
+1. Bitriseの<strong>Assertion Consumer Service URL</strong>を、Entra IDの<strong>Basic SAML Configuration</strong>ページにある<strong>Reply URLフィールド</strong>に貼り付けます。
+1. <strong>Save</strong>をクリックし、<strong>Basic SAML Configuration</strong>ウィンドウを閉じます。
+
+   ![616541a82bf14.jpg](/img/_paligo/uuid-681bee8c-6be9-b47f-06fa-72a587e7add7.jpg)
+1. Entra IDの<strong>Single sign-on</strong>ページで、<strong>Set up Bitrise</strong>セクションまで下にスクロールします。
+1. <strong>Login URL</strong>をコピーし、Bitriseの<strong>SSO URL</strong>フィールドに貼り付けます。
+1. Entra IDの<strong>Single sign-on</strong>ページで、少し上にスクロールして<strong>SAML Signing Certificate</strong>セクションに移動します。
+1. <strong>Certificate (Base64)</strong>の隣にある<strong>Download</strong>をクリックして、証明書をローカルコンピューターにダウンロードします。
+
+   ![singlesignonsummary.jpg](/img/_paligo/uuid-da7593a8-e6df-1d97-e903-d375dc504b05.jpg)
+1. 証明書ファイルを開き、その内容をBitriseの<strong>SAML SSO provider certificate</strong>フィールドにコピー&ペーストします。ローカルコンピューターからファイル自体をアップロードすることもできます。
+
+   (内容を手動で追加する場合は、`----BEGIN CERTIFICATE-----`と`-----END CERTIFICATE-----`を含む全内容が必要です。)
+1. Bitriseの<strong>Workspace settings</strong>ページを開き、<strong>Single Sign-On</strong>に移動します。
+1. <strong>Configure SSO</strong>をクリックします。
+
+これで、Entra ID上にBitriseをSAML SSOアプリとして設定できました。

@@ -1,0 +1,83 @@
+---
+title: "Auth0 SSO"
+description: "Add SAML SSO to your Bitrise Workspace using Auth0."
+sidebar_position: 5
+slug: /bitrise-platform/accounts/saml-sso-in-bitrise/setting-up-auth0-sso-for-bitrise
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_SAMLSSOBeforeYouStart from '@site/src/partials/saml-sso-before-you-start.mdx';
+import Partial_CAUTIONSAMLSSORestrictions from '@site/src/partials/caution-saml-sso-restrictions.mdx';
+
+このガイドでは、[Auth0](https://auth0.com)を使用してSAML SSOを設定する方法について説明します。
+
+<Partial_CAUTIONSAMLSSORestrictions />
+
+SAML SSOを<GlossTerm baseform="workspace">Workspace</GlossTerm>に接続する前に、次の点を確認してください:
+
+- Auth0にログインしたAuth0管理者が手元にいること。
+- <Partial_SAMLSSOBeforeYouStart />
+
+次の作業が必要です:
+
+1. [Auth0上でWebアプリケーションとしてBitriseを作成する](#creating-bitrise-as-a-web-application-on-auth0)。
+1. [Auth0からSAML SSO情報を取得する](#retrieving-saml-sso-information-from-auth0)。
+1. [BitriseアプリのClient IDのマッピングルールを設定する](#setting-up-a-mapping-rule-for-your-bitrise-apps-client-id)。
+
+
+## Auth0上でWebアプリケーションとしてBitriseを作成する
+
+1. 管理者として[Auth0](https://auth0.com)にログインします。
+1. 左側のメニューバーで<strong>Applications</strong>をクリックし、<strong>Applications</strong>ページの右側にある<strong>+ Create Application</strong>ボタンをクリックします。
+
+   ![authzero_createapp1.png](/img/_paligo/uuid-47aacb1a-a7a9-f93e-8130-83ad51654298.png)
+1. <strong>Create application</strong>ウィンドウで、<strong>Name</strong>フィールドにBitriseと入力します。<strong>Choose application type</strong>で<strong>Regular Web Applications</strong>を選択し、<strong>Create</strong>ボタンをクリックします。
+
+   ![authzero_addappname2.png](/img/_paligo/uuid-fc4a47cb-98f9-e217-042d-73780f712eb2.png)
+1. 新しく作成したBitriseアプリの<strong>Quick Start</strong>ページが表示されます。<strong>Addons</strong>タブをクリックします。<strong>SAML2 WEB APP</strong>のスイッチを右側に切り替えます。これにより自動的に<strong>Addon: SAML2 WEB APP</strong>ページに移動します。
+
+   ![authzero_addon4.png](/img/_paligo/uuid-bf544047-689a-3954-029d-58b65a35c540.png)
+1. Bitriseから<strong>Assertion Consumer Service URL (ACS URL)</strong>をコピーし、<strong>Addon: SAML2 WEB APP</strong>ページの<strong>Settings</strong>タブにある<strong>Application Callback URL</strong>フィールドに貼り付けます。<strong>Addon: SAML2 WEB APP</strong>ページの一番下までスクロールし、<strong>SAVE</strong>をクリックします。
+
+   ![authzero_settingsapplicationurl6.png](/img/_paligo/uuid-193b49ae-3ccd-9f68-5288-55ed12c9edb1.png)
+1. Go back、<strong>Addons</strong>ページに戻ると、スイッチがオンになっていることを確認できます。
+
+   ![authzero_samlappenabled8.png](/img/_paligo/uuid-c79c0bb4-943a-7604-d40b-f8478be408bd.png)
+
+
+## Auth0からSAML SSO情報を取得する
+
+Auth0上でWebアプリケーションとしてBitriseを有効化したら、証明書とIDプロバイダー固有のログインURLを取得して、Bitrise上でのSAML設定を完了させましょう。
+
+1. Auth0で<strong>Application</strong>に移動し、<strong>Addons</strong>タブを選択して有効化したBitriseアプリを見つけます。
+1. <strong>SAML2 WEB APP</strong>のWebアプリをクリックし、<strong>Usage</strong>タブを選択します。<strong>Identity Provider Certificate</strong>ラベルの横にある<strong>Download Auth0 certificate</strong>リンクをクリックします。ダウンロードした証明書ファイルを開き、その内容をBitriseの<strong>SAML SSO provider certificate</strong>フィールドにコピーするか、ローカルコンピューターからファイル自体をアップロードします。Auth0に戻り、<strong>Identity Provider Login URL</strong>をコピーしてBitriseの<strong>SSO URL</strong>フィールドに貼り付けます。
+
+   ![saml_sso_setup.png](/img/_paligo/uuid-26ad84be-65c7-1916-f079-6b553b4c436d.png)
+
+   ![authzero_downloadcertificateusage9.png](/img/_paligo/uuid-e6cb3a32-c73c-f0cb-e7fe-9eab8e908679.png)
+1. Bitriseの<strong>Configure SSO</strong>ボタンをクリックします。
+1. これでAuth0のダイアログを閉じることができます。
+
+
+## BitriseアプリのClient IDのマッピングルールを設定する
+
+Bitriseはメールアドレスを介してSAML SSOユーザーを認証するため、SAML SSOをテストする前に、必ずAuth0で新しいマッピングルールを作成してください。これによりAuth0のClient IDをメールアドレスにマッピングし、Bitrise上でのSAML認証を成功させることができます。
+
+1. Auth0で、左側のメニューバーにある<strong>Auth <GlossTerm baseform="pipeline">Pipeline</GlossTerm></strong>をクリックします。<strong>Rules</strong>をクリックします。
+1. <strong>+ Create</strong>をクリックして、新しいマッピングルールを設定します。
+1. <strong>Pick a rules template</strong>ページで、<strong>&lt;&gt; Empty rule</strong>をクリックします。
+1. 次のコードブロックを<strong>Script</strong>ボックスに追加します。新しいBitriseアプリのClient IDが必要になりますが、これは<strong>Applications</strong>ページで取得できます。
+
+   ```javascript
+   function mapSamlAttributes(user, context, callback) {
+    if (context.clientID === '{your app's clientID'}')
+      context.samlConfiguration.mappings = {
+        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier": "email"
+      }; 
+    }
+    callback(null, user, context);
+   }
+   ```
+1. <strong>Save changes</strong>をクリックします。
