@@ -1,0 +1,103 @@
+---
+title: "Adding outgoing webhooks"
+description: "You can create outgoing webhooks so that Bitrise automatically sends build event notifications to any service you would like."
+sidebar_position: 3
+slug: /bitrise-platform/integrations/webhooks/adding-outgoing-webhooks
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/src/partials/getting-to-the-project-settings-page.mdx';
+
+Bitrise CIを設定すると、任意のサービスにビルドイベントの通知を送信できます。ビルドイベントには次のものがあります。
+
+- ビルドが開始されたとき。
+- ビルドが終了したとき。
+
+Bitrise Release Management向けにアウトゴーイングWebhookを設定することもできます。これらのWebhookはrelease managementイベントによってトリガーされます。[Release ManagementでのアウトゴーイングWebhook](/release-management/releases/configuring-a-release/outgoing-webhooks-in-release-management)。
+
+Bitriseがまだ対応していないGitプロバイダーであっても、この通知を使ってビルドステータスを共有したり、ビルドの成功や失敗を適切なチームだけに通知したり、社内のリリースパイプラインの自動化に使ったりできます。
+
+Webhookの追加、削除、編集はWebインターフェースから行えます。
+
+:::tip[ファイアウォールの内側にあるサービスへのアクセス]
+
+ファイアウォールの内側にあるサービスにアクセスする必要がある場合、アウトゴーイングWebhookは使用できません。ペイロードがファイアウォールを通過できないためです。このようなサービスにアクセスするには、ファイアウォールを設定してBitrise build machinesからのアクセスを許可し、build machine内からリクエストを送信することをお勧めします。詳しい方法については、関連ガイドを確認してください。
+
+- [build machinesにアクセスするためのネットワーク設定](/bitrise-platform/infrastructure/build-machines/configuring-your-network-to-access-our-build-machines)
+- [ビルド中にVPNへ接続する](/bitrise-platform/integrations/connecting-to-a-vpn-during-a-build)
+
+:::
+
+
+## Bitrise projectへアウトゴーイングWebhookを追加する
+
+Bitriseが送信するWebhookは、WebUIでセットアップおよび設定できます。手順を見ていきましょう。
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で<strong>Integrations</strong>を選択し、<strong>Webhooks</strong>タブを選択します。
+1. <strong>Outgoing Webhooks</strong>までスクロールします。
+1. <strong>Add webhook</strong>をクリックします。
+1. 通知を送信したいサービスのURLを<strong>URL</strong>フィールドに入力します。
+
+   ![add-outgoing-webhook.png](/img/_paligo/uuid-6c73acd6-91b0-2cf7-80bb-b0ef7e8b6618.png)
+1. <strong>Send me すべて</strong>または<strong>Select 個々のイベント</strong>のいずれかのオプションを選択します。
+
+   - <strong>Send me すべて</strong>: サポートされているすべてのイベントタイプがWebhookを<GlossTerm baseform="trigger">トリガー</GlossTerm>します。現在サポートされているのはビルドイベントのみですが、今後他のオプションも追加される予定です。
+   - <strong>Select 個々のイベント</strong>: Webhookをトリガーする個々のイベントを指定できます。
+1. 必要に応じて、Webhookにカスタムヘッダーを追加します。<strong>Headers</strong>セクションで、ヘッダーの名前と値を指定します。完了したら<strong>Add header</strong>をクリックします。
+
+   たとえば、WebhookをリッスンするAPIがある場合、カスタムヘッダーとして設定したAPIキーでリクエストを追跡できます。
+
+   :::tip[header valueを非表示にする]
+
+   <strong>Hide</strong>の下にあるチェックボックスをオンにすると、ヘッダーの値を非表示にできます。ただし、これを行うと値を再度表示したり変更したりできなくなりますのでご注意ください。
+
+   :::
+1. <strong>Create Webhook</strong>をクリックします。
+
+これで完了です。Webhookの横にある鉛筆アイコンをクリックすると、いつでもWebhookを変更できます。
+
+Release ManagementのためにWebhookを作成した場合は、詳細ガイドの[Release ManagementでのアウトゴーイングWebhook](/release-management/releases/configuring-a-release/outgoing-webhooks-in-release-management)を確認してください。
+
+
+## アウトゴーイングWebhookにカスタムヘッダーを追加する
+
+Webインターフェースの<strong>Webhooks</strong>タブから、アウトゴーイングWebhookに追加のヘッダーを設定できます。たとえば、WebhookをリッスンするAPIがある場合、カスタムヘッダーとして設定したAPIキーでリクエストを追跡できます。
+
+カスタムヘッダーは、次のいずれかのタイミングで追加できます。
+
+- [新しいアウトゴーイングWebhookを作成する](/bitrise-platform/integrations/webhooks/adding-outgoing-webhooks#adding-an-outgoing-webhook-to-a-bitrise-project)。
+- URLの横にある<strong>Edit</strong>ボタンをクリックして、既存のアウトゴーイングWebhookを変更する。
+
+ヘッダーを追加する方法は次のとおりです。
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で<strong>Integrations</strong>を選択し、<strong>Webhooks</strong>タブに移動します。
+1. <strong>Outgoing webhooks</strong>セクションでWebhookを見つけ、<strong>Edit</strong>ボタンをクリックします。
+
+   ![edit-outgoing-webhook.png](/img/_paligo/uuid-73d46a9a-1191-00d2-578e-184d0bb3cb3d.png)
+1. <strong>Headers</strong>セクションで、キーと値を追加します。ヘッダーを保存するには両方が必要です。
+1. <strong>Add header</strong>をクリックします。
+1. <strong>Update Webhook</strong>をクリックします。
+
+
+## アウトゴーイングWebhookの配信を確認する
+
+アウトゴーイングWebhookのrecent deliveriesはいつでも確認でき、必要に応じて再送できます。配信が成功したかどうかに応じて、適切なステータスコードが表示されます。
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で<strong>Integrations</strong>を選択し、<strong>Webhooks</strong>タブを選択します。
+1. <strong>Outgoing Webhooks</strong>までスクロールします。
+1. Webhookを見つけて、![recent-deliveries.svg](/img/_paligo/uuid-78124fdc-5f54-e675-590c-e3b54a083649.svg)アイコンを選択します。
+1. 配信を選択して展開し、リクエストとレスポンスの全体を表示します。
+
+   ![webhooks-redeliver.png](/img/_paligo/uuid-b09fdf6d-9e83-e454-23c7-005f1344b4aa.png)
+1. Webhookのペイロードはいつでも再配信できます。必要な配信を見つけて、その横にある![redeliver.svg](/img/_paligo/uuid-f5c2904f-3e0b-71ae-b96a-b6059f61bed2.svg)アイコンをクリックします。
+
+   :::tip[ペイロードを編集する]
+
+   Webhookのペイロードを再送信する前に、webhook configurationを編集できます。<strong>Recent deliveries</strong>ポップアップウィンドウを閉じ、Webhookの横にある![edit-webhook.svg](/img/_paligo/uuid-fe3755f8-efba-2923-17e8-fa4ffd1ef16e.svg)アイコンをクリックして編集します。完了したら<strong>Update Webhook</strong>をクリックします。
+
+   :::

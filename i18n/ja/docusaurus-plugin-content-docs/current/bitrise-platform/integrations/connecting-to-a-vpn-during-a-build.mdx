@@ -1,0 +1,239 @@
+---
+title: "Connecting to a VPN during a build"
+description: "To connect to a VPN during a build, make sure that you have a Step establishing a VPN connection, such as Set up OpenVPN server."
+sidebar_position: 6
+slug: /bitrise-platform/integrations/connecting-to-a-vpn-during-a-build
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/src/partials/getting-to-the-project-settings-page.mdx';
+import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
+
+ビルドでVPN接続が必要になる場合があります。これは、サーバーに接続してリポジトリを`git clone`したり、プライベートなAPIにアクセスしたりするためです。
+
+VPNに接続するには、次の操作が必要です。
+
+1. ローカルネットワークのアドレス空間が、[Bitrise仮想マシンのアドレス空間](/bitrise-platform/infrastructure/build-machines/configuring-your-network-to-access-our-build-machines)と重複していないことを確認してください。重複するとVPNでエラーが発生する可能性があります。
+1. 必要なVPNコンポーネントをインストールして設定します。
+1. VPNに接続します。
+
+VPNは、<GlossTerm baseform="workflow">Workflow</GlossTerm>内のどこでも設定・接続できます。ただし、当然ながらVPN接続を使用する前に行う必要があります。たとえば、リポジトリにアクセスするためにVPN接続が必要な場合は、[<strong>Git Clone Repository</strong>](https://github.com/bitrise-steplib/steps-git-clone) <GlossTerm baseform="step">Step</GlossTerm>より前に接続しなければなりません。
+
+:::caution[SSHセッション]
+
+VPNツールを選択してセットアップ・設定を行う際は、既存のSSHセッションを再起動または中断しないよう注意してください。[bitrise.io](https://www.bitrise.io)のワーカーは、ビルドのControl/Masterマシンとビルド用仮想マシンの間のSSH接続が切断されると、ビルドを中止します。
+
+:::
+
+
+## VPN経由でのリポジトリへのアクセス
+
+Bitrise<GlossTerm baseform="project">プロジェクト</GlossTerm>のリポジトリがVPN経由でしかアクセスできない場合、特に次の2点に注意する必要があります。
+
+- ビルド中、リポジトリを仮想マシンにクローンする前にVPN接続を確立しておく必要があります。つまり実際には、接続を確立するStepを、Workflow内の<strong>Git Clone</strong>Stepより前に配置する必要があるということです。
+- 新規プロジェクトを追加する際は、回避策が必要です。プロジェクトの追加処理中は、VPNなしでアクセスできるダミーのリポジトリを使用してください。
+
+この回避策の手順を見ていきましょう。
+
+1. VPN接続なしでアクセスできる空のリポジトリを作成します。
+1. このリポジトリをソースとして新規プロジェクトを追加します。必ずプライベートプロジェクトにしてください。[webhook](/bitrise-platform/integrations/webhooks/adding-incoming-webhooks)を登録する必要はありません。
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で<strong>Repository</strong>を選択し、<strong>Change</strong>をクリックします。
+1. ダイアログに新しいリポジトリのURLを貼り付けます。
+
+   ![SCR-20260331-przw.png](/img/_paligo/uuid-fa95efd5-ff6f-a7a3-2dc3-7ccc5878cd47.png)
+1. <strong>Save</strong>をクリックします。
+1. Workflow内で、リポジトリにアクセスする必要があるStepsより前に、VPN接続を確立するStepまたはStepsを配置します。
+
+以上で完了です。VPN接続を確立するさまざまな方法については、以下の設定例を参照してください。
+
+
+## VPNの設定例
+
+このセクションでは、ビルド中にVPNに接続するための設定例を3つ紹介します。
+
+- [OpenVPNサーバーを使用する](#using-the-connect-to-openvpn-server-step)。
+- [Strongswan VPNを使用する](#using-strongswan-vpn)。
+- [Cisco VPNを使用する](#using-cisco-vpn)。
+
+### Connect to OpenVPN ServerStepを使用する
+
+<strong>Connect to OpenVPN Server</strong> Stepを使用するには、事前にOpenVPNサーバーを構築し、証明書ファイルと秘密鍵をエンコードしておく必要があります。
+
+1. [OpenVPNサーバーをセットアップします](https://www.digitalocean.com/community/tutorials/how-to-set-up-an-openvpn-server-on-ubuntu-18-04)。
+1. 次の項目をBase64でエンコードします。
+
+   - CA証明書
+   - クライアント証明書
+   - クライアント秘密鍵
+
+   次のコマンドでファイルをbase64エンコードできます。
+
+   ```bash
+   $ base64 <filepath>
+   ```
+1. Bitriseでプロジェクトを開き、<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>に移動します。
+1. エンコードした証明書と鍵を[Secrets](/bitrise-ci/configure-builds/secrets)として登録します。
+
+   以下のキーはVPNStepのデフォルトの入力項目であるため、使用をおすすめします。
+
+   - CA証明書: `$VPN_CA_CRT_BASE64`
+   - クライアント証明書: `$VPN_CLIENT_CRT_BASE64`
+   - 秘密鍵: `$VPN_CLIENT_KEY_BASE64`
+1. <strong>Connect to OpenVPN Server</strong> StepをWorkflowに追加します。
+
+   VPN接続が必要になる可能性のあるStepsより前にStepを追加してください。
+1. 先ほど作成したSecretsを、それぞれの入力項目に追加します。
+
+   - <strong>Base64 encoded CA Certificate</strong>
+   - <strong>Base64 encoded Client Certificate</strong>
+   - <strong>Base64 encoded Client Private Key</strong>
+
+   推奨されたキーを使ってSecretsを作成した場合は、入力項目を変更する必要はありません。
+1. その他の必須項目を入力します。
+
+   - <strong>Host</strong>: OpenVPNサーバーのIPまたはホスト名
+   - <strong>Port</strong>: OpenVPNサーバーのポート番号
+   - <strong>Protocol</strong>: OpenVPNサーバーのプロトコル
+
+### Strongswan VPNを使用する
+
+これはスクリプトの例です。リポジトリに保存してそこから実行することも、内容をそのまま`bitrise`設定(`bitrise.yml` / Workflow)内の<strong>Script Step</strong>にコピー&ペーストすることもできます。
+
+このスクリプトはStrongswan VPNを使用してVPNに接続します。macOSまたはLinuxのどちらでも動作します。スクリプトの実行に成功すると、それ以降のBitrise StepはVPN接続経由でデバイスやサービスにアクセスできるようになります。
+
+```bash
+#!/usr/bin/env bash
+set -e
+
+echo "WAN IP"
+# This prints the servers Internet IP adress to the log, useful for debugging
+curl http://httpbin.org/ip
+
+case "$OSTYPE" in
+  linux*)
+    echo "Configuring for Linux"
+
+    # Variables
+    etc_dir=/etc
+    etc_sudo='sudo' # Sudo is needed for Linux Strongswan configuration
+
+    # Install strongswan
+    echo "Installing Strongswan..."
+    sudo apt-get install -y strongswan
+
+    ;;
+  darwin*)
+    echo "Configuring for Mac OS"
+
+    # Variables
+    etc_dir=/usr/local/etc
+    etc_sudo='' # Sudo is NOT needed for Mac OS Strongswan configuration
+
+    # Install Strongswan using homebrew
+    echo "Installing OpenSSL..."
+    # Manually install OpenSSL first to save time, since installing Strongswan directly compiles OpenSSL from source instead
+    brew install openssl
+    echo "Installing Strongswan..."
+    brew install strongswan
+
+    ;;
+  *)
+    echo "Unknown operative system: $OSTYPE, exiting"
+    exit 1
+    ;;
+esac
+
+
+# Method for rendering a template string file (when run, returns the input string with $VARIABLES replaced from env)
+render_template() {
+  eval "echo \"$(cat $1)\""
+}
+
+# Create a temporary directory to hold files
+temp_dir=/tmp/vpn-config
+mkdir $temp_dir
+
+# IPsec config file, see examples at https://wiki.strongswan.org/projects/strongswan/wiki/IKEv1Examples and https://wiki.strongswan.org/projects/strongswan/wiki/IKEv2Examples
+echo "Downloading ipsec.conf..."
+wget https://www.example.com/ipsec.conf.template -O $temp_dir/ipsec.conf.template
+# IPsec credentials file, see documentation at https://wiki.strongswan.org/projects/strongswan/wiki/IpsecSecrets
+echo "Downloading ipsec.secrets..."
+wget https://www.example.com/ipsec.secrets.template -O $temp_dir/ipsec.secrets.template
+# In some cases you might need to download the certificate, or certificate chain, of your other VPN endpoint
+echo "Downloading server.crt..."
+wget https://www.example.com/server.crt -O $temp_dir/server.crt
+
+echo "Rendering config templates"
+render_template $temp_dir/ipsec.conf.template > $temp_dir/ipsec.conf
+render_template $temp_dir/ipsec.secrets.template > $temp_dir/ipsec.secrets
+
+echo "Installing configuration"
+$etc_sudo cp $temp_dir/ipsec.conf $etc_dir/ipsec.conf
+$etc_sudo cp $temp_dir/ipsec.secrets $etc_dir/ipsec.secrets
+$etc_sudo cp $temp_dir/server.crt $etc_dir/ipsec.d/ocspcerts/server.crt
+
+# Start the ipsec service
+echo "Starting ipsec"
+sudo ipsec start
+
+# We're sleeping between commands, mostly since Mac OS seems to have some problems otherwise
+sleep 1
+
+# Output some helpful status to the log
+echo "Status ipsec"
+sudo ipsec statusall
+
+sleep 1
+
+# Switch out myconnection with the name of your connection in ipsec.conf
+echo "Initiating VPN connection"
+sudo ipsec up myconnection
+
+sleep 1
+
+case "$OSTYPE" in
+  linux*)
+    ;;
+  darwin*)
+    # In Mac OS El Capitan, the `sudo ipsec up` command consistently fails the first time, but succeeds after a restart of the ipsec service
+    echo "Restarting ipsec"
+    sudo ipsec restart
+
+    sleep 1
+
+    echo "Initiating VPN connection"
+    sudo ipsec up myconnection
+
+    sleep 1
+
+    # This step might apply if you are routing all traffic trough the IPsec connection (that is, if your remote IP range is 0.0.0.0/0)
+    # Mac OS El Capitan seems to have problems getting the DNS configuration from the Strongswan interface. Also IPv6 sometimes causes issues. So we're manually turning off IPv6 and forcing a new DNS configuration.
+    echo "Disabling IPv6 and forcing DNS settings"
+    # Fetch main interface
+    main_interface=$(networksetup -listnetworkserviceorder | awk -F'\\) ' '/\(1\)/ {print $2}')
+    # Completely disable IPv6
+    sudo networksetup -setv6off "$main_interface"
+    # Switch 10.0.0.1 with your DNS server
+    sudo networksetup -setdnsservers "$main_interface" 10.0.0.1
+    ;;
+  *) ;;
+esac
+
+# Your VPN connection should be up and running. Any following steps of your Bitrise workflow can access devices over your VPN connection 🎉
+```
+
+### Cisco VPNを使用する
+
+<strong>Cisco VPN connect</strong> Stepを使用できます。これはvpncを使って、VPN3000 Concentrator、Juniper/Netscreen、IOS、PIXが提供するCisco VPNに接続します。
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. Workflowの先頭に<strong>Cisco VPN connect</strong> Stepを追加します。
+1. Stepに必要なVPNのクライアント設定と認証情報を、次のいずれかの方法で指定します。
+
+   - 既存のvpnc設定ファイルを使用する: `vpnc.conf`
+   - Stepの<strong>Commandline options</strong>入力項目を使用する。この項目で指定したオプションは、設定ファイルより優先されます。
+
+vpncのセットアップについて詳しくは、[vpncホームページ](https://www.unix-ag.uni-kl.de//~massar/vpnc/)と[vpncマニュアル](https://linux.die.net/man/8/vpnc)をご覧ください。

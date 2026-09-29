@@ -1,0 +1,72 @@
+---
+title: "Adding incoming webhooks"
+description: "An incoming webhook on Bitrise serves one purpose: to start builds automatically when a certain code event (code push, Git Tag, pull request) happens. You can setup incoming webhooks manually or automatically when adding your project to Bitrise."
+sidebar_position: 2
+slug: /bitrise-platform/integrations/webhooks/adding-incoming-webhooks
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/src/partials/getting-to-the-project-settings-page.mdx';
+
+Bitrise上の受信Webhookの目的は一つです。特定のコードイベント(コードのプッシュ、Git Tag、プルリクエスト)が発生したときに、自動的にビルドを開始することです。リポジトリに受信Webhookを登録し、[ビルドトリガーを設定する](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers)必要があります。
+
+:::note[Webhookの問題]
+
+ビルドトリガーが機能しない場合、Webhookに問題がある可能性があります。[ビルドがトリガーされない](https://support.bitrise.io/hc/en-us/articles/360014238237)
+
+:::
+
+
+## 受信Webhookを自動的に登録する
+
+Webhookの自動登録は、コードがGitHub、GitLab、Bitbucketでホストされている<GlossTerm baseform="Project">プロジェクト</GlossTerm>でサポートされています。
+
+上記のいずれかのサービスをソースコードのホスティングプロバイダーとして使用している場合、Bitriseは[プロジェクトのセットアップ](/bitrise-ci/getting-started/adding-a-new-project)の最後にボタンをワンクリックするだけで自動的にWebhookを設定します。
+
+:::note[GitHub App連携]
+
+[Bitrise GitHub App](/bitrise-platform/repository-access/github-app-integration)を使用してBitriseの<GlossTerm baseform="workspace">Workspace</GlossTerm>をGitアカウントまたは組織に接続する場合、Webhookは不要です。このアプリがあれば、Webhookなしでビルドのトリガーやステータス更新の送信ができます。
+
+:::
+
+ただし、プロジェクトの追加時にWebhookの登録をスキップした場合でも、後でこのWebhookを変更したり、新しいWebhookを追加したりすることはいつでも可能です。
+
+<strong>Project settings</strong>ページでリポジトリにWebhookを自動的に登録できます。自動登録ではBitriseがリポジトリにWebhookを登録するため、Gitプロバイダーのウェブサイトに手動でアクセスして追加する必要はありません。これには以下が必要です。
+
+- リポジトリの管理者権限を持っていること。
+- リポジトリをホストしているアカウントがBitriseアカウントに接続されていること。
+
+Webhookを自動的に登録する方法:
+
+1. Bitriseアカウントが、リポジトリをホストしているGitプロバイダーのアカウントに接続されていること、およびそのGitアカウントにリポジトリの管理者権限があることを確認します。
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で<strong>Integrations</strong>を選択します。
+1. Integrationsページの上部で、<strong>Webhooks</strong>タブを選択します。
+
+   ![webhooks-tab.png](/img/_paligo/uuid-00d7e0d5-df77-2b41-222b-c7ff05829144.png)
+1. <strong>Incoming webhooks</strong>セクションで<strong>Add webhook</strong>を選択します。
+
+Bitriseにより、プロジェクトのリポジトリにWebhookが自動的に登録されます。
+
+
+## 受信Webhookを手動で登録する
+
+Bitriseにプロジェクトを登録した後、Webhookを手動で設定または変更できます。この手順はGitプロバイダーによって異なりますが、Bitriseでは基本的な手順はどのプロバイダーでも同じです。
+
+:::note[独自のWebhook実装を作成する]
+
+[当社のWebhookプロセッサーはオープンソースです](https://github.com/bitrise-io/bitrise-webhooks)。サポート対象外のソリューションをお探しの場合は、GitHubページでissueを作成するか、実装を含むpull requestを作成してください。必要であれば、自社のファイアウォールの内側で独自のWebhookプロバイダーを運用することもできます。
+
+:::
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で<strong>Integrations</strong>を選択します。
+1. Integrationsページの上部で、<strong>Webhooks</strong>タブを選択します。
+
+   ![webhooks-tab.png](/img/_paligo/uuid-00d7e0d5-df77-2b41-222b-c7ff05829144.png)
+1. 下にスクロールして<strong>Incoming webhooks</strong>セクションに移動し、<strong>Manual webhooks</strong>を開きます。
+
+   ![manual-webhooks.png](/img/_paligo/uuid-c1dec9c9-49a4-90c6-40b3-c3d69088567b.png)
+1. webhook URLをコピーして、Gitプロバイダーに登録します。

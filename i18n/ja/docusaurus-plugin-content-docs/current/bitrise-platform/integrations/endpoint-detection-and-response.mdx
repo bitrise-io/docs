@@ -1,0 +1,37 @@
+---
+title: "Endpoint Detection and Response"
+description: "Endpoint Detection and Response (EDR) tools monitor endpoint activity and alert security teams about suspicious behavior. They are commonly used on employee laptops and long‑lived servers. Bitrise does not use EDR agents on Bitrise‑hosted CI runners."
+sidebar_position: 9
+slug: /bitrise-platform/integrations/endpoint-detection-and-response
+---
+
+## Bitrise CIランナーにおけるEDRの不使用
+
+エンドポイント検知・対応(EDR)ツールはエンドポイントのアクティビティを監視し、不審な挙動についてセキュリティチームに警告します。従業員のノートパソコンや長期稼働するサーバーで一般的に使用されています。
+
+Bitriseは、社内のセキュリティプログラムの一環としてEDRを内部的に使用しています。ただし、この利用はBitriseがホストするCIランナー上のEDRエージェントには適用されません。BitriseのビルドVMは、CI/CDのパフォーマンスに最適化された一時的で短命な環境です。この環境でEDRを実行すると、次のようなトレードオフが生じます。
+
+- パフォーマンスと信頼性への影響: EDRエージェントはCPU、メモリ、I/Oを消費するため、パフォーマンスに敏感なビルドの速度低下や干渉を引き起こす可能性があります。BitriseのビルドVMはビルド中にCPU使用率がほぼ100%に達することが多いため、追加のオーバーヘッドがビルド時間と信頼性に悪影響を及ぼす可能性があります。
+- 商用のEDRソリューションの多くは、主に長期稼働するエンドポイント向けに最適化されています。短命で計算負荷の高いCI/CDランナーでは、その効果はより限定的である一方、パフォーマンスと運用コストの負担は残ります。
+- 代替の管理策: ビルドVM上でEDRを使用する代わりに、BitriseはCI/CDの状況により適した他のセキュリティ管理策(たとえば、堅牢化されたベースイメージやイメージスキャンなど)に重点を置いています。
+
+## EDRを必要とするユーザー向けのオプション
+
+厳格なEDR要件を持つお客様は、適切なBitriseインフラストラクチャ上で独自のEDRソリューションをデプロイおよび管理できます。
+
+プライベートまたは専用のクラスターを使用しているお客様は、次のことができます。
+
+- プレウォームや類似の仕組みを使用して、ビルド開始前に独自のEDRエージェントをインストールおよび設定する。
+- 独自のEDRライセンス、ポリシー、バックエンドシステムを使用する。
+
+このモデルでは、次のようになります。
+
+- EDRソリューションの選定、インストール、設定、保守はお客様の責任となります。
+- すべてのアラート、テレメトリ、インシデント対応活動は、お客様自身のセキュリティ運用体制によって処理されます。
+- Bitriseは、お客様のEDRエージェントの運用、監視、管理を行いません。
+
+:::tip[お問い合わせ]
+
+セキュリティ要件に関するご質問がございましたら、letsconnect@bitrise.io までお問い合わせください。
+
+:::
