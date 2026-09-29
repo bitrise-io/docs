@@ -54,7 +54,17 @@ Your access token isn't a config key: it's saved to a separate file. See [Authen
 
 ### Base URLs
 
-The `api_base_url`, `web_base_url`, and `rde_api_base_url` keys are an exception to the order above: only the global config file can set them, and the `BITRISE_API_BASE_URL`, `BITRISE_WEB_BASE_URL`, and `BITRISE_RDE_API_BASE_URL` Environment Variables override even that. The CLI ignores these keys in a `.bitrise-cli.yml` file.
+There are three exceptions to the configuration order: only the glocal configuration file can set the keys that define base URLs. The CLI ignores these keys in a `.bitrise-cli.yml` file:
+
+- `api_base_url`
+- `web_base_url`
+- `rde_api_base_url`
+
+Their corresponding Environment Variables override even the global config file: 
+
+- `BITRISE_API_BASE_URL`
+- `BITRISE_WEB_BASE_URL`
+- `BITRISE_RDE_API_BASE_URL`
 
 All three set a host that the CLI sends your credentials to, and the CLI reads a `.bitrise-cli.yml` from any parent directory without asking you first. If it read these keys from there, a repository you only cloned could redirect your login to a server you don't control.
 
@@ -76,13 +86,17 @@ For example, to make `my-app-id` the default project:
 bitrise config set app_id my-app-id
 ```
 
+:::note
+
 `bitrise app create` also saves the ID of the new project as `app_id`.
+
+:::
 
 `bitrise config list` only shows what's saved in the global config file. When a command runs, flags, Environment Variables, and a `.bitrise-cli.yml` file can override those values.
 
 ## Pinning a repository to a project
 
-Add a `.bitrise-cli.yml` file to the root of a repository to set the project and Workspace for every command you run inside it. The `bitrise config` commands don't write this file, so create it by hand:
+Add a `.bitrise-cli.yml` file to the root of a repository to set the project and workspace for every command you run inside it. The `bitrise config` commands don't write this file, so create it by hand:
 
 ```yaml
 app_id: my-app-id

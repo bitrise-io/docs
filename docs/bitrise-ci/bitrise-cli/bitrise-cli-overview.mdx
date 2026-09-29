@@ -9,13 +9,28 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 
-The Bitrise CLI can run builds on your own computer from a local <GlossTerm baseform="bitrise.yml">`bitrise.yml`</GlossTerm> file, with the `bitrise local` commands. It can also work with your Bitrise account: it lists and inspects <GlossTerm baseform="project">projects</GlossTerm>, triggers and watches builds, downloads and uploads configuration files, and calls the Bitrise API.
+The Bitrise CLI is Bitrise's open source runner. It can:
+
+- Run builds on your own computer from a local <GlossTerm baseform="bitrise.yml">`bitrise.yml`</GlossTerm> file, with the `bitrise local` commands. 
+- Work with your Bitrise account: it lists and inspects <GlossTerm baseform="project">projects</GlossTerm>, triggers and watches builds, downloads and uploads configuration files, and calls the Bitrise API.
+
+On bitrise.io, the CLI is the engine that runs builds in the cloud.
 
 :::important[Bitrise CLI 3.0.0 or newer]
 
 The commands that work with your Bitrise account need Bitrise CLI 3.0.0 or newer. Run `bitrise version` to check your version, and `bitrise update` to update.
 
 :::
+
+To get started, [install the CLI](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli) and [log in](/bitrise-ci/bitrise-cli/authenticating-with-the-bitrise-cli).
+
+## Command reference
+
+The most important commands are listed below. For every command and flag, see the [Bitrise CLI command reference](https://github.com/bitrise-io/bitrise#commands) on GitHub. You can also run any command with `--help`:
+
+```bash
+bitrise build trigger --help
+```
 
 | Command | What it does | Guide |
 | --- | --- | --- |
@@ -29,11 +44,20 @@ The commands that work with your Bitrise account need Bitrise CLI 3.0.0 or newer
 | `bitrise api` | Send a request to any Bitrise API endpoint. | [Calling the Bitrise API](#calling-the-bitrise-api) |
 | `bitrise local` | Run Workflows on your own computer. | [Running your first local build with the CLI](/bitrise-ci/bitrise-cli/running-your-first-local-build-with-the-cli) |
 
-To get started, [install the CLI](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli) and [log in](/bitrise-ci/bitrise-cli/authenticating-with-the-bitrise-cli).
+## Selecting the workspace and the project
 
-## Selecting the Workspace and the project
+Bitrise CLI commands have two possible scopes:
 
-Most commands act on a single project, and some act on a Workspace. Like the Bitrise API, the CLI calls projects apps: pass a project with the `--app` flag, and a Workspace with the `--workspace` flag. Both flags take either the ID (slug) or the name: the project's title or the Workspace's name. To find an ID, see [Identifying Workspaces and apps with their slugs](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs).
+- Project: the command acts on a single project. Pass a project with the `--app` flag. 
+- Workspace: the command acts on a Bitrise workspace. Pass a workspace with the `--workspace` flag.
+
+:::note
+
+Like the Bitrise API, the CLI uses the term "app" for a project.
+
+:::
+
+Both flags take either the ID (slug) or the name: the project's title or the Workspace's name. To find an ID, see [Identifying Workspaces and apps with their slugs](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs).
 
 ```bash
 bitrise build list --app my-app-id
@@ -68,7 +92,11 @@ Choose the format with the `--format` flag:
 bitrise build view abc123 --app my-app-id --format json | jq -r '.status'
 ```
 
-Most commands also accept `-f` as a short form. On `bitrise api` and `bitrise yml update`, `-f` is a different flag. The examples in these guides use `--format`.
+:::note
+
+Most commands also accept `-f` as a short form. However, on `bitrise api` and `bitrise yml update`, `-f` is a different flag. The examples in these guides use `--format`.
+
+:::
 
 To change the default format, set the `output` config key or the `BITRISE_OUTPUT` Environment Variable. For one command line, the global `-o` or `--output` flag does the same. `--format` wins over all of them.
 
@@ -77,7 +105,11 @@ These commands don't use the default format:
 - `bitrise build log` always prints raw text, and `bitrise api` prints the API's response as it is. Neither has a `--format` flag.
 - `bitrise yml validate`, `bitrise local workflows`, `bitrise plugin list`, and `bitrise plugin info` print `raw` unless you pass `--format`.
 
-To change how the output looks in a terminal, use `--no-color` (or the `NO_COLOR` Environment Variable) to turn off colors, `--theme` to pick a color theme (`auto`, `dark`, `light`, or `none`), and `-q` or `--quiet` to hide diagnostic messages.
+You can change how the output looks in a terminal with the following flags:
+
+- `--no-color` (or the `NO_COLOR` Environment Variable): turn off colors.
+- `--theme`: pick a color theme. The available themes are `auto`, `dark`, `light`, or `none`. 
+- `-q` or `--quiet`: hide diagnostic messages.
 
 ## Pagination
 
@@ -89,7 +121,9 @@ List commands, such as `bitrise app list` and `bitrise build list`, return one p
 | `--cursor` | Fetches the page for a cursor from a previous response. |
 | `--all` | Fetches every page and prints them together. You can't combine it with `--cursor`. |
 
-In the `raw` format, the CLI prints the command for the next page below the list when there are more results. In the `json` format, the `next_cursor` field contains the cursor for the next page, and it's missing on the last page:
+In the `raw` format, the CLI prints the command for the next page below the list when there are more results. 
+
+In the `json` format, the `next_cursor` field contains the cursor for the next page, and it's missing on the last page:
 
 ```bash
 bitrise build list --app my-app-id --format json | jq -r '.next_cursor'
@@ -114,7 +148,7 @@ Typical errors include:
 
 ## Calling the Bitrise API
 
-`bitrise api` sends a request to any [Bitrise API](/bitrise-api/api-reference/bitrise-api) endpoint with your saved access token, and prints the response body. Use it for endpoints that have no dedicated command.
+The `bitrise api` command sends a request to any [Bitrise API](/bitrise-api/api-reference/bitrise-api) endpoint with your saved access token, and prints the response body. Use it for endpoints that have no dedicated command.
 
 The path is relative to the API's base URL, `https://api.bitrise.io/v0.1`:
 
@@ -142,12 +176,4 @@ To trigger a build with a request body from a file:
 
 ```bash
 bitrise api /apps/APP_ID/builds -X POST --input body.json
-```
-
-## Command reference
-
-For every command and flag, see the [Bitrise CLI command reference](https://github.com/bitrise-io/bitrise#commands) on GitHub. You can also run any command with `--help`:
-
-```bash
-bitrise build trigger --help
 ```
