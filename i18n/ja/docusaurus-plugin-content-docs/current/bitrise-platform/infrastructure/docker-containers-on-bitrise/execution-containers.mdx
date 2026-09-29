@@ -1,0 +1,290 @@
+---
+title: "Execution containers"
+sidebar_position: 2
+slug: /bitrise-platform/infrastructure/docker-containers-on-bitrise/execution-containers
+sidebar_label: Step execution containers
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditor from '@site/src/partials/opening-the-workflow-editor.mdx';
+
+<GlossTerm baseform="step">Step</GlossTerm>実行コンテナは、任意のBitrise<GlossTerm baseform="project">プロジェクト</GlossTerm>に対して定義できます。コンテナは設定ファイルのトップレベルで定義し、Stepまたは[Step bundle](/bitrise-ci/workflows-and-pipelines/steps/step-bundles)内で参照します。参照された実行コンテナ内で、StepまたはStep bundleが実行されます。同じ<GlossTerm baseform="workflow">Workflow</GlossTerm>またはPipeline内であれば、異なるStepsとStep bundlesを異なる実行コンテナで実行できます。
+
+:::important
+
+コンテナは個々のStepsおよびStep bundlesに適用され、WorkflowsまたはPipelines全体には適用されません。
+
+:::
+
+実行コンテナを定義するには、以下を設定する必要があります。
+
+- コンテナのID。このコンテナを参照する際に使用します。
+- コンテナのタイプ: `execution`。
+- 使用するDockerイメージの名前とバージョン。
+
+  :::important[イメージの取得]
+
+  [Docker Hub](https://hub.docker.com/)から、任意のパブリックDockerイメージを使用できます。
+
+  :::
+
+コンテナを定義した後は、StepまたはStep bundle内で参照できます。参照されたコンテナは、ビルド中にその中で実行されます。
+
+## コンテナ間のファイル共有
+
+異なるコンテナとホストのBitrise環境間でファイル共有を有効にするため、BitriseでDockerコンテナを実行するたびに、以下のフォルダが共有されます。
+
+- `/bitrise`
+- `/root/.bitrise:/root/.bitrise/`
+- `tmp:/tmp`
+
+デフォルトでは、Bitriseは作業ディレクトリとして`/bitrise/src`を使用します。これらのフォルダのいずれかに作成されたものはすべて、すべてのStep実行コンテナで利用できます。
+
+:::important[Step実行コンテナのみ]
+
+これはStep実行コンテナにのみ適用されます。[サービスコンテナ](/bitrise-platform/infrastructure/docker-containers-on-bitrise/service-containers)とのボリュームおよびファイル共有はサポートされていません。
+
+:::
+
+
+## 実行コンテナの定義
+
+実行コンテナを定義するには、`container`プロパティを使用します。<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>上で定義することも、<GlossTerm baseform="configuration yaml">設定YAML</GlossTerm>ファイルに直接定義することもできます。
+
+少なくとも1つの実行コンテナを定義すると、その中でStepsおよびStep bundlesを実行できます。詳細は[実行コンテナの実行](/bitrise-platform/infrastructure/docker-containers-on-bitrise/execution-containers#running-an-execution-container)を参照してください。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. 左側で<strong>Containers</strong>を選択します。
+1. <strong>Execution containers</strong>タブに移動し、<strong>Add container</strong>をクリックします。
+
+   ![SCR-20260313-pnzl.png](/img/_paligo/uuid-35998534-7cfb-c0c6-7277-bb12dd6bc345.png)
+1. コンテナに必要なプロパティを設定します。以下のとおりです。
+
+   - <strong>Unique ID</strong>: このIDは、設定YAMLファイルでコンテナを参照する際に使用します。
+   - <strong>Image:</strong> Dockerイメージの名前とバージョン。[Docker Hub](https://hub.docker.com/)にある任意のイメージ、または他のレジストリを使用できます。
+
+     Docker Hubのイメージの場合は`[name]:[version]`形式を使用します。他のレジストリの場合は`[registry server]/[owner]/[name]:[version]`を使用します。
+1. 必要に応じて、<strong>Ports</strong>フィールドに`[HostPort01]:[ContainerPort01]`形式でポートマッピングを追加します。
+
+   ポートの公開とポートマッピングの詳細については、[Dockerの公式ドキュメント](https://docs.docker.com/engine/network/port-publishing/)を参照してください。
+1. <strong>more optionsを表示</strong>をクリックすると、Dockerの認証情報、コンテナのEnvironment Variables、Docker create optionsにアクセスできます。
+1. 必要に応じて、Dockerの認証情報を設定します。
+
+   この認証情報は`docker login`コマンドで使用されます。以下を設定できます。
+
+   - <strong>Registry server</strong>: 完全修飾されたレジストリサーバーのURLを指定します。サーバーがすでにイメージ参照に含まれている場合、これは省略可能です。
+   - <strong>Username</strong>。
+   - <strong>Password</strong>。
+
+   :::tip
+
+   Dockerの認証情報を設定に渡すには、[シークレット](/bitrise-ci/configure-builds/secrets)を使用する必要があります。
+
+   :::
+1. 必要に応じて、<strong>Docker create options</strong>フィールドにオプションを追加します。
+
+   これらはDockerコンテナのリソースオプションであり、`docker container create`コマンドに渡されるパラメータです。
+
+   ![SCR-20260313-pruq.png](/img/_paligo/uuid-683647fc-3131-1c5a-8667-2fa719d617cd.png)
+
+   使用可能なすべてのオプションの一覧については、[Dockerのドキュメント](https://docs.docker.com/reference/cli/docker/container/create/#options)を参照してください。
+1. 完了したら、<strong>Createコンテナ</strong>をクリックします。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. 設定YAMLのトップレベルに`containers`プロパティを追加します。
+
+   :::tip[YAML構文リファレンス]
+
+   詳細なYAML構文リファレンスについては、[Dockerコンテナのプロパティ](/bitrise-ci/references/configuration-yaml-reference#docker-container-properties)を参照してください。
+
+   :::
+1. コンテナのIDを設定します。
+
+   設定内で一意である必要があります。このIDは、StepsまたはStep bundlesでコンテナを参照する際に使用します。
+
+   ```yaml
+   containers:
+     node-18:
+   ```
+1. コンテナに必要なプロパティを設定します。以下のとおりです。
+
+   - `name:version`形式でのDockerイメージの名前とバージョン。[Docker Hub](https://hub.docker.com/)にある任意のイメージを使用できます。
+   - コンテナタイプ: `execution`。
+
+   ```yaml
+   containers:
+     node-21:
+       type: execution
+       image: node:21.6
+     node-18: 
+       type: execution
+       image: node:18
+   ```
+1. 必要に応じて、`[HostPort01]:[ContainerPort01]`形式でポートマッピングを設定します。
+
+   ポートの公開とポートマッピングの詳細については、[Dockerの公式ドキュメント](https://docs.docker.com/engine/network/port-publishing/)を参照してください。
+
+   ```yaml
+   containers:
+     node-21:
+       type: execution
+       image: node:21.6
+       ports: 
+       - 3000:3000
+   ```
+1. 必要に応じて、Dockerの認証情報を設定します。
+
+   この認証情報は`docker login`コマンドで使用されます。以下を設定できます。
+
+   - サーバー: 完全修飾されたレジストリサーバーのURLを指定します。サーバーがすでにイメージ参照に含まれている場合、これは省略可能です。
+   - ユーザー名。
+   - パスワード。
+
+   :::tip
+
+   Dockerの認証情報を設定に渡すには、シークレットの使用をお勧めします。
+
+   :::
+
+   ```yaml
+   containers:
+     node-21:
+       type: execution
+       image: node:21.6
+       credentials:
+         username: $DOCKER_USERNAME
+         password: $DOCKER_PASSWORD
+         server: us-central1-docker.pkg.dev
+   ```
+1. 必要に応じて、`options`プロパティを使用して、追加のDockerコンテナのリソースオプション（`docker container create`コマンドに渡されるパラメータ）を設定します。
+
+   この例では、サービスに[ヘルスチェック](https://docs.docker.com/engine/reference/run/#healthchecks)を設定しています。
+
+   ```yaml
+   containers:
+     node-21:
+       type: execution
+       image: node:21.6
+       options: >-
+         --health-cmd pg_isready
+         --health-interval 10s
+         --health-timeout 5s
+         --health-retries 5
+   ```
+
+   使用可能なすべてのオプションの一覧については、[Dockerのドキュメント](https://docs.docker.com/reference/cli/docker/container/create/#options)を参照してください。
+
+</TabItem>
+</Tabs>
+
+
+## 実行コンテナの実行
+
+実行コンテナ内でStepまたはStep bundleを実行できます。そのためには、StepまたはStep bundleの設定内で[定義済みのコンテナ](/bitrise-platform/infrastructure/docker-containers-on-bitrise/execution-containers#defining-an-execution-container)を参照します。
+
+次のことができます。
+
+- Workflow内のStepまたはStep bundleでコンテナを参照する。そのWorkflowが実行されると、StepまたはStep bundleはそのコンテナ内で実行されます。
+- [Step bundleの定義でコンテナを参照する](#running-an-execution-container)。そのStep bundleがWorkflowに追加されると、Workflow内でオーバーライドしない限り、デフォルトでそのコンテナ内で実行されます。
+
+このガイドでは、両方の方法について説明します。
+
+:::note[コンテナのネスト]
+
+コンテナは異なるレベルで定義できます。StepsとStep bundlesはどちらも独自のコンテナ設定をサポートします。これにより、異なるレベル間で階層が生まれます。この階層を管理する原則については、[コンテナのネストルール](/bitrise-platform/infrastructure/docker-containers-on-bitrise/about-docker-containers-on-bitrise#container-nesting-rules)を参照してください。
+
+:::
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Workflow Editorを開きます。
+1. Workflow内でStepまたはStep bundleを選択します。
+
+   または、左側のナビゲーションメニューで<strong>Step Bundles</strong>を選択し、Step bundleの定義でコンテナを設定することもできます。以降の手順は同じです。
+
+   :::important[バンドル定義のオーバーライド]
+
+   デフォルトでは、Step bundleの定義でコンテナを設定すると、Step bundleを追加した任意のWorkflowで、参照先のコンテナ内で実行されます。
+
+   ただし、Step bundleインスタンス（Workflow内のStep bundle）でコンテナを設定した場合、Step bundleの定義で設定されたコンテナよりも優先されます。
+
+   :::
+1. <strong>Containers</strong>を選択します。
+1. <strong>実行コンテナ</strong>の下で、<strong>Add container</strong>をクリックし、メニューからコンテナを選択します。
+1. コンテナがすでに実行されていて、クリーンなインスタンスを実行したい場合は、<strong>Recreate container</strong>オプションを選択します。
+
+   デフォルトでは、StepまたはStep bundleは、すでに実行中のコンテナがあればそれを使用します。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. 設定YAMLファイルを開き、Workflowを見つけます。
+1. 必要なStepまたはStep bundleに、コンテナ名を指定した`execution_container`プロパティを追加します。参照できる実行コンテナは1つのみです。
+
+   Workflow形式でStepに実行コンテナを追加する場合:
+
+   ```yaml
+   workflows:
+     ci:
+       steps:
+       - git-clone: {}
+       - script:
+           execution_container: node-21
+   ```
+
+   Workflow内のStep bundleに実行コンテナを追加する場合:
+
+   ```yaml
+   workflows:
+     ci:
+       steps:
+       - git-clone: {}
+       - script: {}
+       - bundle::test-bundle-id:
+           execution_container: node-21
+   ```
+
+   Step bundleの定義に実行コンテナを追加する場合:
+
+   ```yaml
+   step_bundles:
+     test-bundle-id:
+       steps:
+       - git-clone@8: {}
+       - restore-cache@2: {}
+       execution_container: test-container
+   ```
+
+   :::important[バンドル定義のオーバーライド]
+
+   デフォルトでは、Step bundleを追加した任意のWorkflowで、参照先のコンテナ内で実行されます。ただし、Workflow内のStep bundleに対してコンテナを設定した場合、Step bundleの定義で設定されたコンテナよりも優先されます。
+
+   :::
+1. コンテナがすでに実行されていて、クリーンなインスタンスを実行したい場合は、`recreate`プロパティを`true`に設定します。
+
+   デフォルトでは、StepまたはStep bundleは、すでに実行中のコンテナがあればそれを使用します。デフォルトの動作を変更するには、このプロパティを使用します。
+
+   ```yaml
+   workflows:
+     ci:
+       steps:
+       - git-clone: {}
+       - script:
+           execution_container:
+           node:21
+       - bundle::test-bundle-id:
+           execution_container:
+             node-21:
+               recreate: true
+   ```
+
+</TabItem>
+</Tabs>

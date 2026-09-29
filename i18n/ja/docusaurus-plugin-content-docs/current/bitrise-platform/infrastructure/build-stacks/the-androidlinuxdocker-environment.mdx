@@ -1,0 +1,36 @@
+---
+title: "The Android/Linux/Docker environment"
+description: "Bitrise's Android stacks run on Linux-based virtual machines that are created from Docker images. You can find all the image files on GitHub."
+sidebar_position: 7
+slug: /bitrise-platform/infrastructure/build-stacks/the-android-linux-docker-environment
+---
+
+Linuxベースのスタックでは、[Docker Hub](https://hub.docker.com/)でホストされている標準のDockerイメージを使用します。利用可能なスタックは<strong>Ubuntu for Android & Docker</strong>という名前で、[スタックレポート](https://stacks.bitrise.io/stack_reports/)で確認できます。
+
+:::note[プリインストールされたツール]
+
+すべてのスタックには、多数のプリインストールされたツールが用意されています: [Bitriseスタックのプリインストールツール](/bitrise-platform/infrastructure/build-stacks/preinstalled-tools-on-bitrise-stacks)
+
+:::
+
+すべてのビルドは、単なる新しいコンテナ内だけでなく、新しいVM内で実行されます。VMはビルドの直後に破棄されます。これにより、`Docker`および環境全体に対する完全な制御をユーザーに付与できます。
+
+ビルドがDockerベースのスタックで開始すると、`/var/run/docker.sock`ソケットをコンテナ内にボリュームマウントします(`docker run -v /var/run/docker.sock:/var/run/docker.sock ...`を呼び出す場合と似ています。このアクセス許可方法についての説明は[こちら](https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/)で確認できます)。
+
+`docker`バイナリは、ベースとなるDockerイメージ内にインストールする必要があります。これは、Dockerが単一バイナリによるソリューションから動的にロードされるコンポーネントへの移行を始めており、`docker`バイナリを共有するだけではもはや不十分なためです。
+
+DockerイメージのすべてにDockerをインストールしているため、当社のイメージを使用する場合や、Dockerイメージをベースに独自のイメージを作成する場合、特に何もする必要はありません。
+
+つまり、コンテナ内で`docker`にアクセスでき、[docker-compose](https://docs.docker.com/compose)のようなDockerを使用する他のツールも利用できます。たとえば、`docker-compose`を使用して、ウェブサイトプロジェクトのテストやその他の自動化を設定・実行できます。
+
+`docker info`、`docker build`、`docker run`、`docker login`、`docker push`は、ご自身のマシンで実行する場合とまったく同じように呼び出せます。
+
+:::note[共有ボリューム]
+
+ビルド内で`docker`を実行してボリュームを共有したい場合、共有できるのは、ベースとなるDockerコンテナ(ビルドが実行されているコンテナ)と共有されているボリュームのみである点にご注意ください。これは`docker`のボリューム共有の仕組みによるものです。`/bitrise`配下のものはすべてボリュームとしてマウントできますが、それ以外のパスが`--volume`のマッピングで動作するとは限りません。
+
+つまり、標準的なパスを使用し、相対パスでボリュームをマウントする場合は、想定どおりに動作します。デフォルトのソースコードディレクトリは`/bitrise`内にあるためです(Dockerイメージでは、デフォルトで`/bitrise/src`になります)。
+
+ただし、ソースコードディレクトリを`/bitrise`の外部に変更した場合や、`/bitrise`の外部にある絶対パスでフォルダをマウントしたい場合は、動作しません。
+
+:::

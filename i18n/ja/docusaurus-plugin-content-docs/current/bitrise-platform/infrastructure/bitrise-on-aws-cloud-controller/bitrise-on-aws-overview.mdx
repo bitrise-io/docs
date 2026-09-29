@@ -1,0 +1,139 @@
+---
+title: "Bitrise on AWS overview"
+description: "The Cloud Controller enables you to enjoy the benefits of a Bitrise-managed infrastructure on your AWS environment. With the Cloud Controller, you can manage your build infrastructure even without deep knowledge about AWS."
+sidebar_position: 1
+slug: /bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/bitrise-on-aws-overview
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Cloud Controllerを使用すると、Bitriseが管理するインフラストラクチャのメリットを、AWS環境で活用できます。Cloud Controllerを使用すると、AWSに関する深い知識がなくても、ビルドインフラストラクチャを管理できます。
+
+
+## AWSの提供タイプ
+
+AWSのAMI上には、基本的に2つのタイプのBitriseがあります：
+
+- <strong>ベアメタル</strong>: ビルドはAWSマシン上で直接実行されます。つまり、ビルド環境は自分のコンピューターの場合と同様に永続化されます。環境をクリーンアップしない限り、あるビルドのアーティファクトやキャッシュアイテムが後続のビルドに影響を与える可能性があります。
+- <strong>仮想化/VMベース：</strong> Bitriseと同様に、各ビルドは専用の仮想マシン上で実行され、ビルドが完了すると破棄されます。この仕組みは、Appleの仮想化フレームワーク上に構築されたBitrise管理のマシンで数百万件のビルドを実行してきたBitriseの仮想化ソリューションによって実現されています。仮想化ソリューションを含む、当社のmacOSオファリングはAppleシリコンマシンでのみ利用できます。
+
+:::important[AMIの更新]
+
+BitriseのAMIは、プリインストールされたツールのlatest versionで常に更新されています。ただし、AMIという形で最新のXcodeおよびAndroid Studioのバージョンを提供するには、AWSのAMIレビュープロセスがあるため、Bitrise管理のマシンよりも時間がかかります。現在利用可能なバージョンは、[AWSスタックレポート](https://stacks.bitrise.io/stack_reports/aws/)で確認できます。
+
+:::
+
+:::note[Macの専用ホストにおけるAWSの料金]
+
+macOSインスタンスの場合、専用ホストを割り当てる必要があります。オンデマンドのAmazon EC2 Mac専用ホストには、最低24時間のホスト割り当ておよび課金期間があります。詳細については、公式のAWSドキュメントをご確認ください：[Amazon EC2 Dedicated Hosts Pricing](https://aws.amazon.com/ec2/dedicated-hosts/pricing/#Pricing_for_Dedicated_Hosts)。
+
+:::
+
+### ベアメタルmacOS
+
+[ベアメタルmacOS AMI](https://aws.amazon.com/marketplace/pp/prodview-gvebicfl7c37w)はAppleシリコンマシンでのみ利用可能で、以下のAmazon EC2 Mac instance typeで使用できます：
+
+- `mac-m4.metal`
+- `mac-m4pro.metal`
+- `mac2.metal`
+- `mac2-m2.metal`
+- `mac2-m2pro.metal`
+
+上記のすべてのinstance typeでAndroidエミュレーターがサポートされています。
+
+### 仮想化macOS
+
+[仮想化macOS AMI](https://aws.amazon.com/marketplace/pp/prodview-aqc5tyfdeozky)はAppleシリコンマシンでのみ利用可能で、以下のAmazon EC2 Mac instance typeで使用できます：
+
+- `mac-m4.metal`
+- `mac-m4pro.metal`
+- `mac2.metal`
+- `mac2-m2.metal`
+- `mac2-m2pro.metal`
+
+仮想化では一時的なビルド環境が提供されます。各ビルドの終了時に仮想マシンは破棄されます。つまり、すべてのビルドは完全にクリーンな環境で実行され、以前のビルドの影響を受けません。
+
+1ビルドあたり1つまたは2つのVMを実行するオプションがあります。ビルドのリソース消費量によっては、2つのVMを実行することで、ハードウェアコストを大幅に削減できる場合があります。
+
+:::caution[Androidエミュレーションなし]
+
+Appleシリコンアーキテクチャはネストされた仮想化をサポートしていないため、Androidエミュレーションは利用できません。
+
+:::
+
+### ベアメタルLinux
+
+[ベアメタルLinux AMI](https://aws.amazon.com/marketplace/pp/prodview-7h5yynaygkhls)は、以下のAmazon EC2 Linux instance typeで利用できます：
+
+- `t2.2xlarge`
+- `t2.xlarge`
+- `c5n.metal`
+- `c5.xlarge`
+- `c5.metal`
+- `c5.4xlarge`
+- `c5.2xlarge`
+
+instance typeはそれぞれ異なるコンピューティングニーズに適しています。さまざまなinstance typeの機能と特徴の詳細については、[公式AWSドキュメント](https://aws.amazon.com/ec2/instance-types/)をご確認ください。
+
+Androidエミュレーターは`metal` instance typeでのみ実行できます。他のinstance typeではエミュレーターの使用はサポートされていません。
+
+
+## AWSオプションを選択するタイミング
+
+自身が管理するインフラストラクチャでBitriseビルドを実行する必要がある場合、Amazon EC2 MacまたはLinuxインスタンスを使用する方法と、オンプレミスオプションを使用する方法の2つを用意しています。
+
+すでに重要なインフラストラクチャを運用するためのAWSアカウントをお持ちの場合は、Amazon EC2インスタンスを使用してBitriseビルドを実行することをお勧めします。Amazon EC2インスタンスの使用には、いくつかの利点があります：
+
+- プラグアンドプレイ: 必要なツールがすべてプリインストールされた、モバイル専用のビルド環境としてAmazon Machine Image（AMI）を提供しています。特別なセットアップは不要で、EC2 MacまたはLinuxインスタンスを設定するだけです。
+- 環境の制御: インスタンスの起動時にネットワークとストレージの設定を構成できます（例えば、Bitriseビルド専用のサブネットを設定できます）。これにより、すべてのbuild machinesが独自のAWS環境で実行され、会社のセキュリティポリシーに従って運用されるようにできます。
+- セキュリティ: コードベースは完全に自身の管理下に置かれます。
+
+  :::caution[AWS環境から出る情報]
+
+  特定の機能を使用すると、AWS環境の外に出る情報が発生する場合があります。例えば、build cacheの使用や、ビルドアーティファクトまたはテスト結果の生成などです。
+
+  :::
+
+AWSアカウントをお持ちでない場合、他のクラウドプロバイダーを使用している場合、またはすでに自身のマシンを管理している場合は、[当社のオンプレミスランナーのオファリング](/bitrise-platform/infrastructure/running-bitrise-builds-on-premise)をご確認ください。
+
+
+## Cloud controllerの概要
+
+Cloud Controllerを使用すると、Bitriseが管理するインフラストラクチャのメリットを、AWS環境で活用できます。Cloud Controllerを使用すると、AWSに関する深い知識がなくても、ビルドインフラストラクチャを管理できます。
+
+Cloud Controllerにより、AWSユーザーはBitriseを使って、Amazon EC2インフラストラクチャを大規模に運用できます：
+
+- この自動化は、ベアメタルとVMベースの両方のmacOSオファリングをサポートしており、macOS専用ホストの予約、選択したAMIでのインスタンスの起動、Bitriseプールへの接続を完全に自動化します。
+- Controllerの自動化により、モバイルDevOpsチームの時間を節約し、一定数以上のインスタンスではスケールしない、エラーが発生しやすい手動プロセスを排除できます。
+- Agent Poolの定義でインスタンス数を変更するだけで、Amazon EC2のコスト削減が可能になります。週末に大規模なmacOSマシンプールをスケールダウンする場合でも、設定内の数値を1つ変更するだけと同じくらい簡単です。
+- Bitriseが提供するAMIという形で、マシンを新しいビルド環境に更新する作業はシームレスに行われ、モバイル開発者の作業を妨げることはありません。設定では、更新の影響を受けるマシンの割合を任意の時点で定義できます。
+- 各Bitriseプール内のインスタンスを監視し、その状態と現在実行中のビルドを確認できます。
+
+:::important[インバウンドトラフィックは不要]
+
+最も厳格な企業ポリシー要件にも対応できるよう、最高水準のセキュリティ基準を念頭に置いてAWSにおけるBitriseオファリングを構築しました。いずれの場合も、Controllerとbuild machinesがBitriseコントロールプレーンに向けてネットワーク呼び出しを開始するため、外部からのインバウンドトラフィックは必要ありません。
+
+:::
+
+![controller-diagram.png](/img/_paligo/uuid-af9f1f82-169a-eb0c-6c50-1d23315691dc.png)
+
+:::note[Manual setup]
+
+AWS上でBitriseビルドを実行するには、Cloud Controllerの使用をお勧めします。ただし、完全な制御性とカスタマイズオプションが必要な場合は、[manual setup](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances)を選択できます。
+
+:::
+
+
+## Controllerのエアギャップモード
+
+AWS環境でBitriseのコア機能を提供するには、Controllerとbuild machinesの両方が、3つのアドレスでBitriseコントロールプレーンにアクセスする必要があります：
+
+- https://cloud-controller-aws-internal.services.bitrise.io
+- https://exec.bitrise.io
+- https://build-log.services.bitrise.io
+
+追加の利便性機能（build machineの自己更新や外部IPの収集など）の一部は、異なるアドレス上の追加リソースとのさらなる通信を必要とします。AWSで最大限のセキュリティを実現するには、Controllerの作成時に<strong>Air-gapped networkモード</strong>を有効にすることで、これらの追加機能を無効にできます。
+
+この設定はAWSの設定には影響しないことにご注意ください。使用するネットワークが安全に設定されていることを確認する必要があります。

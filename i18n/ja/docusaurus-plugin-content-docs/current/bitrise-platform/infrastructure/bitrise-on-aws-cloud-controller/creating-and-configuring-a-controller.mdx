@@ -1,0 +1,156 @@
+---
+title: "Creating and configuring a controller"
+description: "To create and configure an AWS Cloud Controller to run Bitrise builds, you need to configure it on Bitrise first and then set up an instance running the controller agent on AWS."
+sidebar_position: 3
+slug: /bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/creating-and-configuring-a-controller
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Controller が管理するAWSの提供を利用するには、Cloud Controllerを作成して接続する必要があります。このプロセスには2つの段階があります。
+
+1. [BitriseでControllerを設定する。](#configuring-the-controller-on-bitrise)
+1. AWS上でController Agentを実行するインスタンスをセットアップする。
+
+## BitriseでControllerを設定する
+
+1. BitriseチームからAWSのController機能へのアクセス権を取得します。
+1. Workspaceオーナーとして、または<strong>Manageインフラストラクチャ</strong>権限を持つ[カスタムロール](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/custom-roles/custom-roles-overview)として、Bitrise <GlossTerm baseform="workspace">Workspace</GlossTerm>にLog inします。
+
+   この機能にアクセスして設定できるのは、Workspaceオーナー、または<strong>Manageインフラストラクチャ</strong>権限を持つカスタムロールのみです。
+1. Workspaceの<strong>Workspace settings</strong>ページを開きます。
+1. <strong>Infrastructure</strong>を選択し、<strong>Bitrise on AWS</strong>タブに移動します。
+
+   ![create-controller-1.png](/img/_paligo/uuid-bfadf366-bdfc-4440-d2db-5e9f68843f9f.png)
+1. <strong>Connect with AWS</strong>をクリックします。ダイアログボックスが表示されます。
+1. Controllerの名前を設定し、Controllerをエアギャップネットワークで使用するかどうかを指定します。
+
+   エアギャップモードの詳細については、[Controllerのエアギャップモード](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/bitrise-on-aws-overview#air-gapped-mode-for-the-controller)を参照してください。
+
+   ![create-controller-1.png](/img/_paligo/uuid-a4204c31-4165-2af9-290e-e3116ef784a3.png)
+1. Copy and save your token。
+
+   :::important[トークンを保存]
+
+   このトークンは作成直後にのみアクセスできます。トークンを紛失した場合は、controllerを削除して新規作成する必要があり、その際に新しいnew tokenが生成されます。
+
+   :::
+
+作成が完了すると、Bitrise on AWS画面にControllerがBitrise側で準備完了しており、AWS接続を待機している状態が表示されます。いずれの場合も、Controllerとbuild machinesはBitriseのコントロールプレーンに向けてネットワーク呼び出しを開始するため、外部からの受信トラフィックは不要です。
+
+## AWSでControllerインスタンスをセットアップする
+
+BitriseでControllerの作成が完了したら、AWSに移動し、Controller Agentを実行するインスタンスを作成します。
+
+:::note[新規または既存のVPC]
+
+この設定にはVirtual Private Cloud (VPC) が必要です。各AWSリージョンにはデフォルトのVPCが用意されていますが、必要に応じて各リージョン内に独自のVPCを作成できます。VPCをBitrise固有のリソースとその他のリソースで共有したい場合は、既存の設定済みVPCを再利用できます。リソースを分離したい場合は、提供されているテンプレートを使用して新しいVPCを作成できます。
+
+詳細については、[AWSの公式VPCドキュメント](https://docs.aws.amazon.com/vpc/latest/userguide/configure-your-vpc.html)を参照してください。
+
+:::
+
+<Tabs>
+<TabItem value="setup-with-an-existing-vpc" label="Setup with an existing VPC" default>
+
+1. AWSアカウントにLog inします。
+1. 必要なテンプレートオプションを選択すると、テンプレートへのHTTPリンクが取得できます。テンプレートの詳細については、[AWS CloudFormationテンプレート](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates)ページを参照してください。
+
+   - [ベーステンプレートへのリンク](https://bitrise-cloudformation-templates.s3.amazonaws.com/cloud-controller-with-existing-vpc.yaml)。
+   - [エアギャップテンプレートへのリンク](https://bitrise-cloudformation-templates.s3.amazonaws.com/cloud-controller-with-existing-vpc-airgapped.yaml)。BitriseControllerを[エアギャップモード](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates)で実行する予定がある場合はこちらを使用してください。
+
+   :::note[追加の手動設定]
+
+   エアギャップサポートには、CloudFormationでは自動化されないAWS内での手動設定が一部必要です。詳細については、[AWS CloudFormationテンプレート](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates)ページを確認してください。
+
+   :::
+1. CloudFormationに移動し、<strong>Create <GlossTerm baseform="stack">stack</GlossTerm> with new resources (standard)</strong>を選択します。
+
+   ![controller-create-stack.png](/img/_paligo/uuid-336544f8-0f74-08ad-8a5d-616f33d62736.png)
+1. <strong>Template is ready</strong>と<strong>Amazon S3 URL</strong>オプションを使用してスタックを作成します。
+1. <strong>Amazon S3 URL</strong>フィールドに、前の手順で取得したURLを入力し、<strong>Next</strong>をクリックします。
+
+   ![create-stack-template.png](/img/_paligo/uuid-d2e802df-0b0d-afba-f36c-ad6a9af244bb.png)
+1. 次のプロンプトで、以下のフィールドを指定します。
+
+   - <strong>Stack name</strong>: ここには任意の値を指定できます。複数のスタックがある場合に、スタックを識別しやすくなります。
+   - <strong>Latest AMI ID</strong>: このAMI IDは、Cloud Controllerを実行するベースのAMIとして使用されます。
+   - <strong>Bitrise Controller Token</strong>: このトークンは、Bitriseでのcontroller作成時に生成されます。[BitriseでControllerを設定する](#configuring-the-controller-on-bitrise)を参照してください。
+   - <strong>Bitrise Workspace ID</strong>: [Workspacesとappをslugで識別する](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs)を参照してください。
+   - <strong>Controller Log Group Class</strong> : Cloud Controllerは、AWSの顧客がアクセスできるログを生成します。この設定では、顧客がログ分析時に使用したい機能を指定します。デフォルトは<strong>Infrequent access</strong>で、より低コストで限定的なログ分析機能を提供します。
+   - <strong>Controller Log Retention In Days</strong> : AWSがCloud Controllerのログを保存する期間を指定します。
+   - <strong>Controller SSH Key</strong> : 事前に設定したSSHキーを1つ選択します。このキーを使用して、作成したインスタンスにログインし、必要に応じて調査できます。
+   - <strong>Subnet IDs</strong> : 事前に設定したサブネットの中から、2つの異なるAvailability Zoneにある少なくとも2つのサブネットを選択します。ただし、同じAvailability Zoneから複数のサブネットを選択しないようにしてください。選択するサブネットは、選択したVPCに属している必要があります。サブネットには、作成したインスタンスがBitrise Servicesと通信できるルートテーブル設定が必要です。Controllerには受信通信は不要です。
+   - <strong>VPC CIDR Block</strong> : Default valueが提供されます。VPCのCIDR Blockと一致するCIDR Blockを選択してください。詳細については、[AWSの公式ドキュメント](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-cidr-blocks.html)を参照してください。
+   - <strong>VPC ID</strong> : 事前に設定したVPCの中から選択します。
+
+   :::note[VPC/リージョンごとにControllerは1つのみ]
+
+   1つのVPC/1つのリージョンで複数のControllerを実行することは推奨されません。必要以上のリソースが起動し、コストが発生する可能性があります。
+
+   :::
+1. その他のスタックオプションの設定は任意です。詳細については、[AWSの公式ドキュメント](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-add-tags.html)を確認してください。
+1. <strong>Review</strong>画面で、これまでの設定内容を確認します。内容に問題がなければ、画面下部でCloudFormationの権限を承認し、リクエストを送信します。
+1. AWSのCloudFormationがControllerを実行するインスタンスの作成に成功したら(このプロセスには5-7分かかることがあります)、BitriseのWorkspaceページに戻り、インスタンスとAWS間の接続を確認します。Controllerのステータスが<strong>Connected</strong>になっていれば、接続は正常に機能しています。
+
+   ![controller-ready.png](/img/_paligo/uuid-85d4125e-c0ef-ea64-d916-d04725b00581.png)
+
+</TabItem>
+<TabItem value="setup-with-a-new-vpc" label="Setup with a new VPC">
+
+1. AWSアカウントにLog inします。
+1. 必要なテンプレートオプションを選択すると、テンプレートへのHTTPリンクが取得できます。テンプレートの詳細については、[AWS CloudFormationテンプレート](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates)ページを参照してください。
+
+   - [ベーステンプレートへのリンク](https://bitrise-cloudformation-templates.s3.amazonaws.com/cloud-controller-with-new-vpc.yaml)。
+   - [エアギャップテンプレートへのリンク](https://bitrise-cloudformation-templates.s3.amazonaws.com/cloud-controller-with-new-vpc-airgapped.yaml)。BitriseControllerを[エアギャップモード](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates)で実行する予定がある場合はこちらを使用してください。
+
+   :::note[追加の手動設定]
+
+   エアギャップサポートには、CloudFormationでは自動化されないAWS内での手動設定が一部必要です。詳細については、[AWS CloudFormationテンプレート](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates)ページを確認してください。
+
+   :::
+1. CloudFormationに移動し、<strong>Create stack with new resources (standard)</strong>を選択します。
+
+   ![controller-create-stack.png](/img/_paligo/uuid-336544f8-0f74-08ad-8a5d-616f33d62736.png)
+1. <strong>Template is ready</strong>と<strong>Amazon S3 URL</strong>オプションを使用してスタックを作成します。
+1. <strong>Amazon S3 URL</strong>フィールドに、前の手順で取得したURLを入力し、<strong>Next</strong>をクリックします。
+
+   ![create-stack-template.png](/img/_paligo/uuid-d2e802df-0b0d-afba-f36c-ad6a9af244bb.png)
+1. 次のプロンプトで、以下のフィールドを指定します(特に指定がない限り、記載されているフィールドはすべて必須です)。
+
+   - <strong>Stack name</strong>: ここには任意の値を指定できます。複数のスタックがある場合に、スタックを識別しやすくなります。
+   - <strong>Latest AMI ID</strong>: このAMI IDは、Cloud Controllerを実行するベースのAMIとして使用されます。
+   - <strong>Bitrise Controller Token</strong>: このトークンは、Bitriseでのcontroller作成時に生成されます。[BitriseでControllerを設定する](#configuring-the-controller-on-bitrise)を参照してください。
+   - <strong>Bitrise Workspace ID</strong>: [Workspacesとappをslugで識別する](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs)を参照してください。
+   - <strong>Controller Log Group Class</strong> : Cloud Controllerは、AWSの顧客がアクセスできるログを生成します。この設定では、顧客がログ分析時に使用したい機能を指定します。デフォルトは<strong>Infrequent access</strong>で、より低コストで限定的なログ分析機能を提供します。
+   - <strong>Controller Log Retention In Days</strong> : AWSがCloud Controllerのログを保存する期間を指定します。
+   - <strong>Controller SSH Key</strong> : 事前に設定したSSHキーを1つ選択します。このキーを使用して、作成したインスタンスにログインし、必要に応じて調査できます。
+   - <strong>Environment Name</strong>: 任意。指定した値は、作成されるVPC、サブネット、ルートテーブルの名前に使用されます。
+   - <strong>Private Subnet 1 CIDR</strong>: Default valueが提供されます。最初のAvailability Zoneにある新しいVPCのプライベートサブネット用のIP範囲(CIDR表記)です。値は/28ネットマスクから/16ネットマスクの間である必要があります。
+   - <strong>Private Subnet 2 CIDR</strong>: Default valueが提供されます。2番目のAvailability Zoneにある新しいVPCのプライベートサブネット用のIP範囲(CIDR表記)です。値は/28ネットマスクから/16ネットマスクの間である必要があります。
+   - <strong>Public Subnet 1 CIDR</strong>: Default valueが提供されます。最初のAvailability Zoneにある新しいVPCのパブリックサブネット用のIP範囲(CIDR表記)です。値は/28ネットマスクから/16ネットマスクの間である必要があります。
+   - <strong>Public Subnet 2 CIDR</strong>: Default valueが提供されます。2番目のAvailability Zoneにある新しいVPCのパブリックサブネット用のIP範囲(CIDR表記)です。値は/28ネットマスクから/16ネットマスクの間である必要があります。
+   - <strong>VPC CIDR</strong>: Default valueが提供されます。新しいVPC用のClassless Inter-Domain Routing (CIDR) を選択します。
+1. その他のスタックオプションの設定は任意です。詳細については、[AWSの公式ドキュメント](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-add-tags.html)を確認してください。
+1. <strong>Review</strong>画面で、これまでの設定内容を確認します。内容に問題がなければ、画面下部でCloudFormationの権限を承認し、リクエストを送信します。
+1. AWSのCloudFormationがControllerを実行するインスタンスの作成に成功したら(このプロセスには5-7分かかることがあります)、BitriseのWorkspaceページに戻り、インスタンスとAWS間の接続を確認します。Controllerのステータスが<strong>Connected</strong>になっていれば、接続は正常に機能しています。
+
+   ![controller-ready.png](/img/_paligo/uuid-85d4125e-c0ef-ea64-d916-d04725b00581.png)
+
+</TabItem>
+</Tabs>
+
+
+## CloudWatch Bitrise Agentのログ記録を有効にする
+
+CloudWatchの設定は任意ですが、設定しておくことを推奨します。ビルドのトラブルシューティング機能が向上します。問題が発生した際に、CloudWatchの設定からBitrise Agent logsを共有すると、Bitriseはより迅速にサポートを提供できます。
+
+EC2インスタンスなどのAWSリソースからCloudWatchにログを送信できるようにするには、[AWS CloudFormation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html)で設定する必要があります。以下の設定が必要です。
+
+- <strong>CreatedBitriseAgentLogs</strong>: 有効にすると、この設定によりログストリーム用のCloudWatch log groupと、必要なロール、および`bitrise-agent-log-instance-profile`という名前のインスタンスプロファイルが作成されます。
+- <strong>Bitrise Agent Logs Group Class</strong>: Bitrise Agentは、AWSの顧客がアクセスできるログを生成します。この設定では、顧客がログ分析時に使用したい機能を指定します。デフォルトは<strong>Infrequent access</strong>で、より低コストで限定的なログ分析機能を提供します。
+- <strong>Bitrise Agent Logs Retention In Days</strong>(必須): AWSがBitrise Agent logsを保存する日数です。
+
+![agent-logging.png](/img/_paligo/uuid-639ad75f-9b32-7eb3-a08a-0f0a1c5035bf.png)

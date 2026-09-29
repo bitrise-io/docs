@@ -1,0 +1,97 @@
+---
+title: "Bitrise on AWS: OS security patching"
+description: "The responsibilities regarding OS security patching on AWS are shared between Bitrise and the customer. The exact responsibilities differ based on the AWS environment: different policies apply to macOS and Linux environments."
+sidebar_position: 12
+slug: /bitrise-platform/infrastructure/bitrise-on-aws--os-security-patching
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+AWSでは、セキュリティパッチの適用とメンテナンスは[Shared Responsibility Model](https://aws.amazon.com/compliance/shared-responsibility-model/)に基づいて管理されます。Bitriseにとって、最も重要な課題は次のとおりです。
+
+- ホストAMIのアップデート
+- Bitrise VMイメージのアップデート(該当する場合)
+
+これらの作業に関する責任はBitriseとお客様の間で分担されます。具体的な責任範囲はAWS環境によって異なり、macOSとLinuxの環境では異なるポリシーが適用されます。
+
+
+## macOS仮想化環境
+
+BitriseのAWSでは、macOS仮想化環境向けに[安定版スタック](https://bitrise.io/stacks/)(エッジスタックを除く)のVMイメージを使用したAMIを提供しています。
+
+:::note[定期的なツールのアップデート]
+
+Bitriseは、ツールの変更に対して定期的なVMアップデートを実施します。ツールのアップデートにより新しいVMイメージがビルドされる際は、ホストインスタンス(AMI)に最新のAWSmacOSバージョンが使用されます。VMイメージのOSは変更されません。
+
+:::
+
+| コンポーネント | Bitriseアップデート頻度 | お客様の責任 |
+| --- | --- | --- |
+| <strong>Host OS</strong> | Bitriseは一般的なOSのアップデートを行いません。OSのセキュリティパッチは、社内の情報セキュリティ評価(トラストセンターで定義)で必要と判断された場合にのみ適用されます。 | 最新のAMIを使用することはお客様の責任です。 |
+| <strong>VM OS</strong> | Bitriseは一般的なOSのアップデートを行いません。OSのセキュリティパッチは、社内の情報セキュリティ評価(トラストセンターで定義)で必要と判断された場合にのみ適用されます。 | 最新のAMIを使用することはお客様の責任です。 |
+
+
+## macOSベアメタル環境
+
+macOSベアメタル環境では、BitriseのAWSは[安定版スタック](https://bitrise.io/stacks/)のみ(エッジスタックを除く)のAMIを提供します。
+
+| コンポーネント | Bitriseアップデート頻度 | お客様の責任 |
+| --- | --- | --- |
+| <strong>Bitrise AMI</strong> | Bitriseは、新しいホストAMIをビルドする際のベースとしてAWSの最新macOSバージョンを使用します。macOSの脆弱性を監視し、社内の情報セキュリティ評価に基づいて新しいAMIバージョンを再ビルドおよび公開します。 | 最新のAMIを使用することはお客様の責任です。 |
+
+:::note[トラストセンター]
+
+Bitriseが脆弱性をどのように監視・評価しているかについての詳細は、[トラストセンター](http://security.bitrise.io)をご覧ください。
+
+:::
+
+
+## Linux環境
+
+BitriseのAWS上のLinuxインスタンスは、仮想化やDockerを一切使用せずベアメタルでのみ動作します。必要なツールはすべてAmazon Machine Image(AMI)に直接組み込まれています。
+
+| コンポーネント | Bitriseアップデート頻度 | お客様の責任 |
+| --- | --- | --- |
+| <strong>Bitrise AMI</strong> | Bitriseは、ツールの変更(例: Androidツール)に対してのみ、コアとなるLinux AMIをアップデートします。 | OSのセキュリティパッチを適用する責任はお客様にあります。 |
+
+
+## パッチ適用シナリオ
+
+セキュリティパッチを適用する方法は、[Bitrise Controller](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates)を使用しているかどうかによって異なります。
+
+### コントローラーを使用しない場合のパッチ適用
+
+manual setupを使用している場合、インスタンスへのパッチやアップデートの適用全般について、より高い柔軟性があります。次のことが可能です。
+
+- カスタムAMIの作成: Bitrise AMIを起動し、変更を加え(OSパッチの適用など)、新しいAMIスナップショットを取得したうえで、このカスタムAMIの新しいIDを使って動作するように環境を設定します。
+- [user dataスクリプト](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html)の使用: インスタンス起動時にコマンドを実行する独自のスクリプトを定義します。
+- SSHアップデートの使用: SSH経由でインスタンスに接続し、アップデートが確実に維持されるように手動でアップデートを実行します。
+
+### コントローラーを使用する場合のパッチ適用
+
+コントローラーを使用する場合、パッチを適用する方法は複数あります。
+
+- ホストウォームアップスクリプト: このスクリプトはインスタンスの起動時(一度限りの操作)に実行されます。インスタンスにアップデートを適用するには、ホストウォームアップスクリプトを変更し、インスタンスプールをドレインしてから再度起動することで、完全にアップデートされたインスタンスに対してスクリプトを実行できます。
+
+  :::caution[可用性について]
+
+  この操作を行う際は、Mac EC2の可用性にご注意ください。
+
+  :::
+- 仮想化環境でのコントローラー: 安定版スタック上のVM OSは一般的なアップデートを受け取りませんが、BitriseはOSの脆弱性を監視し、社内の情報セキュリティ評価に基づいて新しいAMIを公開します。VMウォームアップスクリプトは、開始される新しいビルドごとに新しいVM内で実行されます。これは時間がかかるため、VM OSパッチには適した選択肢ではない場合があります。
+
+:::important[カスタムAMIについて]
+
+Bitrise ControllerではカスタムAMIを使用できません。つまり、アップデート済みのAMIのスナップショットを取得してControllerで使用することはできません。Controllerでは特定のBitrise AMIのみが許可されています。これが必要になりそうな場合は、[お問い合わせ](https://bitrise.io/contact)のうえご相談ください。
+
+:::
+
+
+## セキュリティパッチ適用リファレンス
+
+|  | macOS仮想化 - コントローラー | macOSベアメタル - コントローラー | macOS仮想化 - 手動 | macOSベアメタル - 手動 | Linuxベアメタル - 手動 |
+| --- | --- | --- | --- | --- | --- |
+| <strong>Host OS Update</strong> | ホストウォームアップスクリプトを使用してアップデートを実行できます。 | ホストウォームアップスクリプトを使用してアップデートを実行できます。 | カスタムAMIを使用できる  インスタンスを直接変更できる | カスタムAMIを使用できる  インスタンスを直接変更できる | カスタムAMIを使用できる  インスタンスを直接変更できる |
+| <strong>VM OS Update</strong> | 重大なセキュリティアップデートについてはBitriseが責任を負います。 | 該当なし | 重大なセキュリティアップデートについてはBitriseが責任を負います。 | 該当なし | 該当なし |

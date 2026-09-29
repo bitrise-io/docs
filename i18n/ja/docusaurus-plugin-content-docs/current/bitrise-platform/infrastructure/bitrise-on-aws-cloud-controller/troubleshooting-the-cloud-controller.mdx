@@ -1,0 +1,132 @@
+---
+title: "Troubleshooting the cloud controller"
+sidebar_position: 6
+slug: /bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/troubleshooting-the-cloud-controller
+---
+
+cloud controllerを使用してAWS上でBitriseビルドを実行する際に発生する可能性のある問題の一部をまとめました。問題が発生している場合は、このページで該当する項目を確認してください。
+
+Bitrise on AWS画面が表示されない
+
+正しい場所を確認してください: <strong>Workspace settings</strong> > <strong>Infrastructure</strong> > <strong>Bitrise on AWS</strong>。
+
+ページが表示されない場合は、[Bitrise](https://bitrise.io/)にお問い合わせください。追加のアクセス権限が必要な場合があります。
+
+Bitrise on AWS画面は表示されるが、新しいコントローラーを作成できない
+
+WorkspaceのOwner、または<strong>Manage infrastructure</strong>権限を持つ[カスタムロール](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/custom-roles/custom-roles-overview)のみが、新しいコントローラーを作成できます。正しいアクセス権限があることを確認してください。
+
+CloudFormationが、AWSでインスタンスをセットアップする際にスタックの作成に失敗する
+
+[サポートチケット](https://bitrise.io/)を開いてください。
+
+コントローラーインスタンスがBitriseに接続できない
+
+1. 設定が正しいことを確認してください。
+
+   - CloudWatchログでエラーがないか確認してください。コントローラーは起動するものの何も実行できない場合、関連するログがそこに記録されています。
+   - AWS Secrets Manager & Secretsで、workspace IDとコントローラートークンの両方が正しく指定されていることを確認してください。
+
+   上記のいずれかが正しくnot configuredの場合は、CloudFormationスタックを削除し、正しい設定で再作成してください。
+1. インスタンスが起動したもののBitriseに接続できない場合:
+
+   - インスタンスのSystem Logsを確認してください。
+
+     `Error response from daemon: Get "https://public.ecr.aws/v2/": context deadline exceeded`というメッセージが表示される場合、インスタンスにインターネットアクセスがない可能性があります。ルートテーブルの設定を再確認し、設定したサブネットがインターネットにアクセスできることを確認してください。
+   - BitriseのURLへのアウトバウンド通信が機能することを確認してください。次の方法で確認できます。
+
+     作成したインスタンスにSSHします。ターミナルで`telnet`、`curl`、または`wget`を使用して`cloud-controller-aws-internal.services.bitrise.io:443`にアクセスします。
+
+     リクエストがタイムアウトする場合は、証拠を収集してサポートにご連絡ください。
+
+     404が返される場合は、アウトバウンド通信は正常です。
+1. 上記のいずれも解決しない場合は、Bitriseまでご連絡ください。
+
+コントローラーインスタンスがランダムに再作成される
+
+これは通常のワークフローの一部である可能性があります。組み込み機能により、登録済みのコントローラーは常に最新バージョンに保たれ、絶えず進化するBitriseとの互換性が確保されます。
+
+コントローラーには組み込みのヘルスチェック機能もあり、インスタンスが常に正しく動作していることを確認します。この機能の一環として、断続的な問題を解決するためにインスタンスが時々再起動することがあります。これによってコントローラーの正常な動作が妨げられることはありません。
+
+コントローラーが依然として頻繁に再起動する場合や、コントローラーの動作に問題があると思われる場合は、Bitriseまでご連絡ください。
+
+AWSでコントローラーを作成する前に、コントローラーのSecretを忘れてしまった
+
+トークンはAWSのSecretsから確認できます。
+
+Bitriseからコントローラーを削除できない
+
+コントローラーを削除するには、<strong>Workspace settings</strong>ページでコントローラーの横にある<strong>Remove</strong>ボタンをクリックします。コントローラーを削除できるのはWorkspaceのOwnerのみです。
+
+:::important[AWSからコントローラーを削除する]
+
+Bitriseからコントローラーを削除しても、AWSからコントローラーが削除されるわけではありません。この操作は別途行う必要があります。Bitriseから接続済みのコントローラーを削除すると、AWSで実行中のコントローラーは動作しなくなります。
+
+:::
+
+新しいマシンプールを作成できない
+
+WorkspaceのOwner、または<strong>Manage infrastructure</strong>権限を持つ[カスタムロール](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/custom-roles/custom-roles-overview)のみが、machine poolsを作成できます。正しいアクセス権限があることを確認してください。
+
+プールを作成したが、何も起こらない
+
+コントローラーが<strong>Connected</strong>状態であることを確認してください。
+
+![controller-ready.png](/img/_paligo/uuid-85d4125e-c0ef-ea64-d916-d04725b00581.png)
+
+Controllerが Connected 状態の場合は、CloudWatchログでエラーがないか確認してください。CloudWatchログには、設定ミスに関する情報が含まれている場合があります。例:
+
+- イメージの可用性とアクセス
+- ディスクサイズの要件
+- セキュリティグループとサブネットの設定の問題
+
+プールを設定してマシンが表示されているが、ステータスが3分以上「Starting」のままになっている
+
+新しいMacOSインスタンスがAWSで起動する際、基盤となるインフラストラクチャの起動に5〜10分かかることがあります。
+
+インスタンスの詳細を開き、<strong>Machine details</strong>の下にある<strong>Created at</strong>フィールドを確認してください。
+
+数分後にホストの詳細は入力されているものの、インスタンスの詳細が空の場合、プールの設定が正しくない可能性があります。これはAWSのCloudWatchログで確認できます。考えられる問題としては、存在しないSSHキー、誤ったサブネットまたはセキュリティグループ、利用できないAMIIDが設定されていることなどが挙げられます。調査結果に基づいて、マシンプールの設定を更新してください。
+
+![pool-detail.png](/img/_paligo/uuid-a30a61ec-5dea-3792-44ea-3e6d9c96b19d.png)
+
+マシンの詳細が入力されていれば、インスタンスはAWSのインフラストラクチャで起動しています。マシンが作成されてから8〜9分以上経過しても、マシンのステータスがまだ<strong>Starting...</strong>のままの場合は、調査を開始してください。
+
+- すべての設定とAWSリソースが正しく指定されていることを確認します。
+- 作成したインスタンスがBitriseに到達できることを確認します: 提供されたSSHキーを使用してインスタンスにログインし、exec.bitrise.ioにpingを実行します。
+
+プールを作成し、マシンはRunning状態になっているが、それらでビルドを開始できない
+
+ビルドが正しいプールを対象にしていることを確認してください。Workflow Editorでは、すべてのプールを選択できます。ビルドに対して正しい`agent-pool-***`が選択されていることを確認してください。
+
+Bitriseが管理するインスタンスの1つに手動でセキュリティグループを追加したが、数秒後にインスタンスのステータスがshutting-downになる
+
+コントローラーは、Bitriseページで設定されたマシンの状態を実現する役割を担っています。インスタンスが必要な設定から逸脱した場合、コントローラーがそれを検知し、設定ミスのあるリソースを再起動します。
+
+このような設定を変更したい場合は、プールを再設定してください。
+
+プールを再設定してインスタンス数を増減させたいが、Editボタンが表示されない
+
+WorkspaceのOwner、または<strong>Manage infrastructure</strong>権限を持つ[カスタムロール](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/custom-roles/custom-roles-overview)のみが、プールの設定を編集できます。正しいアクセス権限があることを確認してください。
+
+マシン数を減らすようリクエストしたが、AWSでは依然としてBitriseが管理するdedicated hostがpending/available状態のまま表示される
+
+dedicated hostが予約されると、24時間が経過するまで解放できません。コントローラーは最も古いdedicated hostから解放しようとしますが、24時間が経過していない場合、そのdedicated hostは解放できません。
+
+コントローラーは、不要になったリソースを確実に解放します。
+
+5分前にマシン数を減らすようリクエストしたが、Running状態のマシン数が以前と変わらない
+
+コントローラーが引き続き<strong>Connected</strong>状態であることを確認してください。
+
+コントローラーが接続されている場合、マシンでビルドが実行中であると、システムがマシンの終了を妨げることがあります。すべてのマシンでビルドが実行中の場合、システムは最も古いdedicated hostを持つマシンを終了対象としてマークします。マシンの終了は、実行中のビルドが完了次第、開始されます。
+
+上記のロジックは、最初に完了すると予想されるビルドを対象にしているわけではありません。代わりに、余計なコストを削減するために、最も早く解放できるdedicated hostを対象にしています。
+
+作成したマシンプールを削除できない
+
+WorkspaceのOwner、または<strong>Manage infrastructure</strong>権限を持つ[カスタムロール](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/custom-roles/custom-roles-overview)のみが、マシンプールを削除できます。同じ権限があれば、希望するnumber of replicasなど、設定に誤りがある場合にプールを再設定することもできます。
+
+Bitrise Agent logsにアクセスする必要がある
+
+Bitrise Agent logsを取得するには、CloudWatch Bitrise Agentのロギングを設定します。これはオプション機能ですが、トラブルシューティング機能を向上させるために使用することを強くお勧めします。

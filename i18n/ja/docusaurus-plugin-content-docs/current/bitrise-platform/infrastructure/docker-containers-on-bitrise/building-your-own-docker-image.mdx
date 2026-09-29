@@ -1,0 +1,158 @@
+---
+title: "Building your own Docker image"
+description: "You can create your own Docker image and push it to a container registry during a Bitrise build with the [Docker Build & Push Step](https://github.com/bitrise-steplib/bitrise-step-docker-build-push/blob/main/step.yml)."
+sidebar_position: 4
+slug: /bitrise-platform/infrastructure/docker-containers-on-bitrise/building-your-own-docker-image
+sidebar_label: Building your own Docker image on Bitrise
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+[Docker Build & Push Step](https://github.com/bitrise-steplib/bitrise-step-docker-build-push/blob/main/step.yml)を使うと、Bitriseビルド中に独自のDockerイメージを作成し、コンテナレジストリにプッシュできます。
+
+Stepは`docker build`[コマンド](https://docs.docker.com/engine/reference/commandline/image_build/)を使用します。ビルド手順を含む[Dockerfile](https://docs.docker.com/engine/reference/builder/)とビルドコンテキストが必要です。ビルドコンテキストとは、指定したパスにあるファイル群を指します。Stepでは、ビルドに[オプション](https://docs.docker.com/engine/reference/commandline/image_build/#options)や[ビルド引数](https://docs.docker.com/build/guide/build-args/)を渡すことができます。
+
+ビルドを高速化するために、Stepは[キーベースのキャッシュ](/bitrise-ci/dependencies-and-caching/key-based-caching/accessing-key-based-cache-archives)もサポートしています。
+
+ビルドオプション、ビルド引数、キャッシュを使用してイメージをビルドするには、次のようにします。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. <strong>Docker Build & Push</strong> StepをWorkflowに追加します。
+1. Stepに必要な入力を設定します。
+
+   - <strong>Imageタグ</strong>: ビルドされたイメージの名前に適用するタグのリストです。1行に1つのタグを追加できます。イメージタグの詳細、その機能、必要な形式については、[Dockerのドキュメント](https://docs.docker.com/engine/reference/commandline/image_tag/)を参照してください。
+   - <strong>Buildコンテキストパス</strong>: ビルドコンテキストを構成するファイルへのパスです。Bitriseの作業ディレクトリからの相対パスで指定します。
+   - <strong>Dockerfileのパス</strong>: 使用するDockerfileへのパスです。Bitriseの作業ディレクトリからの相対パスで指定します。
+1. ビルドしたイメージをコンテナレジストリにプッシュする場合は、<strong>Push docker image</strong>の入力を<strong>true</strong>に設定します。
+1. イメージをキャッシュするには、<strong>Use Bitrise key-value cache</strong>の入力を<strong>true</strong>に設定します。
+
+   この入力では、以下のcache keysを使用します。
+
+   - `docker-imagename-{{ .OS }}-{{ .Arch }}-{{ .Branch }}-{{ .CommitHash }}`
+   - `docker-imagename-{{ .OS }}-{{ .Arch }}-{{ .Branch }}`
+   - `docker-imagename-{{ .OS }}-{{ .Arch }}`
+
+   :::caution[代替のキャッシュ方法]
+
+   Stepでは、`docker build`コマンドの`--cache-from`オプションと`--cache-to`オプションを使用したキャッシュもサポートしています。この機能は<strong>Cache from arguments</strong>と<strong>Cache to arguments</strong>の入力で提供されます。
+
+   キーベースのキャッシュを使用する場合は、これらの入力を使用しないでください。空欄のままにしてください。
+
+   :::
+1. 必要に応じて、ビルド引数やオプションを使ってビルドコマンドをカスタマイズします。
+
+   - <strong>Build arguments</strong>の入力に[ビルド引数](https://docs.docker.com/build/guide/build-args/)を追加します。1行に1つの引数を`MY_ARG=my_value`形式で指定します。
+   - <strong>Extra options</strong>の入力に[オプション](https://docs.docker.com/engine/reference/commandline/image_build/#options)を追加します。1行に1つの追加オプションを`--option value`または`--option=value`の形式で指定します。
+
+     :::caution[引用符を含む値]
+
+     引用符を含む値を使用する場合(値にスペースが含まれる場合など)は、イコール記号を使用しないでください。代わりにスペースで区切ります: `--option "value with spaces"`。
+
+     :::
+1. 必要に応じて、ビルドコンテナでホストのネットワークを使用させる場合は<strong>Enables to use the host network with the buildkit build container</strong>の入力を<strong>true</strong>に設定します。追加のトラブルシューティング出力が必要な場合は<strong>Verbose logging</strong>の入力を<strong>true</strong>に設定します。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. `docker-build-push` StepをWorkflowに追加します。
+1. Stepに必要な入力を設定します。
+
+   - `tags`: ビルドされたイメージの名前に適用するタグのリストです。1行に1つのタグを追加できます。イメージタグの詳細、その機能、必要な形式については、[Dockerのドキュメント](https://docs.docker.com/engine/reference/commandline/image_tag/)を参照してください。
+   - `context`: ビルドコンテキストを構成するファイルへのパスです。Bitriseの作業ディレクトリからの相対パスで指定します。
+   - `file`: 使用するDockerfileへのパスです。Bitriseの作業ディレクトリからの相対パスで指定します。
+
+   ```yaml
+   workflow:
+     steps:
+       - docker-build-push:
+           inputs:
+           - tags: myregistry.com/myimage:latest
+           - context: "./path"
+           - file: "./Dockerfile"
+   ```
+1. ビルドしたイメージをコンテナレジストリにプッシュする場合は、`push`の入力を<strong>true</strong>に設定します。
+
+   ```yaml
+   workflow:
+     steps:
+       - docker-build-push:
+           inputs:
+           - tags: myregistry.com/myimage:latest
+           - context: "./path"
+           - file: "./Dockerfile"
+           - push: "true"
+   ```
+1. イメージをキャッシュするには、`use_bitrise_cache`の入力を<strong>true</strong>に設定します。
+
+   この入力では、以下のcache keysを使用します。
+
+   - `docker-imagename-{{ .OS }}-{{ .Arch }}-{{ .Branch }}-{{ .CommitHash }}`
+   - `docker-imagename-{{ .OS }}-{{ .Arch }}-{{ .Branch }}`
+   - `docker-imagename-{{ .OS }}-{{ .Arch }}`
+
+   :::caution[代替のキャッシュ方法]
+
+   Stepでは、`docker build`コマンドの`--cache-from`オプションと`--cache-to`オプションを使用したキャッシュもサポートしています。この機能は`cache_from`と`cache_to`の入力で提供されます。
+
+   キーベースのキャッシュを使用する場合は、これらの入力を使用しないでください。空欄のままにしてください。
+
+   :::
+
+   ```yaml
+   workflow:
+     steps:
+       - docker-build-push:
+           inputs:
+           - tags: myregistry.com/myimage:latest
+           - context: "./path"
+           - file: "./Dockerfile"
+           - push: "true"
+           - use_bitrise_cache: "true"
+   ```
+1. 必要に応じて、ビルド引数やオプションを使ってビルドコマンドをカスタマイズします。
+
+   - `build_arg`の入力に[ビルド引数](https://docs.docker.com/build/guide/build-args/)を追加します。1行に1つの引数を`MY_ARG=my_value`形式で指定します。
+   - `extra_options`の入力に[オプション](https://docs.docker.com/engine/reference/commandline/image_build/#options)を追加します。1行に1つの追加オプションを`--option value`または`--option=value`の形式で指定します。
+
+     :::caution[引用符を含む値]
+
+     引用符を含む値を使用する場合(値にスペースが含まれる場合など)は、イコール記号を使用しないでください。代わりにスペースで区切ります: `--option "value with spaces"`。
+
+     :::
+
+   ```yaml
+   workflow:
+     steps:
+       - docker-build-push:
+           inputs:
+           - tags: myregistry.com/myimage:latest
+           - context: "./path"
+           - file: "./Dockerfile"
+           - push: "true"
+           - use_bitrise_cache: "true"
+           - build_arg: BUILD_ARG=my_value
+           - extra_options: "--option value"
+   ```
+1. 必要に応じて、ビルドコンテナでホストのネットワークを使用させる場合は`buildx_host_network`の入力を<strong>true</strong>に設定します。追加のトラブルシューティング出力が必要な場合は`verbose`の入力を<strong>true</strong>に設定します。
+
+   ```yaml
+   workflow:
+     steps:
+       - docker-build-push:
+           inputs:
+           - tags: myregistry.com/myimage:latest
+           - context: "./path"
+           - file: "./Dockerfile"
+           - push: "true"
+           - use_bitrise_cache: "true"
+           - build_arg: BUILD_ARG=my_value
+           - extra_options: "--option value"
+           - buildx_host_network: "true"
+           - verbose: "true"
+   ```
+
+</TabItem>
+</Tabs>

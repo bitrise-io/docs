@@ -1,0 +1,63 @@
+---
+title: "About Docker containers on Bitrise"
+description: "Container support enables the use of any Docker container image as an execution environment for a group of Steps within a Workflow. It also enables running background services : this can be used, for example, to run advanced testing scenarios."
+sidebar_position: 1
+slug: /bitrise-platform/infrastructure/docker-containers-on-bitrise/about-docker-containers-on-bitrise
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Dockerイメージは、<GlossTerm baseform="step">Steps</GlossTerm>の実行環境として、またはバックグラウンドサービスとして使用できます。データベースやHTTPサーバーなど、テストに必要な依存関係を起動できます。
+
+コンテナを使用すると、いくつかのメリットがあります:
+
+- ビルド環境を完全に制御できます。Bitriseの対応を待つことなく、任意のツールやバージョンをインストールできます。
+- 依存関係はイメージ内に含まれています。これにより、ビルド時間と複雑さが軽減されます。ビルド自体の際に依存関係をインストールする必要はありません。これにより、ビルド時間と複雑さが軽減されます。
+- ローカルでアプリのテストやビルドに使用しているのと同じ環境を使用できます。
+
+Bitriseでサポートされているコンテナには、2つのタイプがあります:
+
+- [実行コンテナ](/bitrise-platform/infrastructure/docker-containers-on-bitrise/execution-containers): 実行コンテナ内でStepsまたはStep bundlesを実行できます。これにより、ビルド環境を簡単かつクリーンで信頼性の高い方法でプロビジョニングできます。
+- [サービスコンテナ](/bitrise-platform/infrastructure/docker-containers-on-bitrise/service-containers): サービスコンテナを定義し、StepsまたはStep bundles内でそれらを参照することで、StepまたはStep bundleの実行中にバックグラウンドでサービスを実行できます。サービスの例としては、HTTPサーバー、データベース、または分散環境で実行したいその他の種類の実行可能プログラムなどがあります。
+
+:::important[Linuxのみ]
+
+これはLinux専用の機能です。macOSベースの環境はサポートされていません。
+
+:::
+
+
+## コンテナのネスト規則
+
+StepsとStep bundlesはどちらも、独自のコンテナ設定をサポートしています。これにより自然な階層構造が生まれます。Stepは親のバンドルとは異なるコンテナを定義でき、バンドルは他のバンドル内にネストできます。各レベルで、それ以前の設定を上書きしたり拡張したりできます。
+
+異なるレベルの設定がどのように組み合わさるかは、2つの規則によって決まります:
+
+- Execution containersは「最も近いものが優先される」継承ルールに従います。各Stepは、階層内で最も近くに定義された実行コンテナを使用します。まず自身の定義が優先され、次に親バンドルの定義、その次に祖父バンドルの定義という順になります。実行コンテナはStepごとに1つだけ有効です。
+- Service containersは加算的に蓄積されます。Stepは、最も近いレベルだけでなく、その祖先のすべてのレベルからサービスコンテナを継承します。ネストが深くなるほど、Stepが持つサービスコンテナの数は多くなります。
+
+
+## Dockerの認証情報
+
+コンテナを使用する際は、Dockerの認証情報でログインすることをお勧めします。そのためには、コンテナのセットアップ時にDockerの認証情報を指定する必要があります:
+
+- レジストリサーバー: 完全修飾されたレジストリサーバーのURLである必要があります。イメージ参照にサーバーがすでに含まれている場合、これは省略可能です。
+- ユーザー名。
+- パスワード。
+
+これらの認証情報は、[Secrets](/bitrise-ci/configure-builds/secrets)として保存する必要があります。これらは、コンテナのセットアップ中に`docker login`コマンドを実行する際に使用されます。
+
+
+## コンテナのリソースオプション
+
+`docker container create`コマンド(短縮形: `docker create`)は、指定されたイメージから新しいコンテナを作成しますが、起動はしません。Bitriseのコンテナ設定で、このコマンドに追加のオプションを指定できます。このコマンドは、`docker run`コマンドとほとんどのオプションを共有しています。
+
+Bitriseは、コンテナ作成のほとんどのオプションをサポートしています。ただし、次のオプションは例外です:
+
+- `--network`
+- `--volume (-v)`
+- `--entrypoint`
+
+利用可能なすべてのオプションについては、[docker container create](https://docs.docker.com/reference/cli/docker/container/create/)をご確認ください。

@@ -1,0 +1,100 @@
+---
+title: "Configuring your network to access our build machines"
+description: "You can access Bitrise virtual machines from behind a private network or a firewall. To do so, allowlist our build machine IP addresses in your network."
+sidebar_position: 2
+slug: /bitrise-platform/infrastructure/build-machines/configuring-your-network-to-access-our-build-machines
+sidebar_label: Configuring network access with IP allowlists
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_IPAddressesForTheBuildMachines from '@site/src/partials/ip-addresses-for-the-build-machines.mdx';
+
+当社のデータセンターは一連のパブリックな静的IPアドレスの背後にあり、仮想マシンはそれらのアドレスの内側に独自の内部サブネットを持っています。会社のセキュリティポリシーによっては、build machineにアクセスできるようにするために、パブリックなIPアドレスを許可リストに追加する必要がある場合があります。[Bitrisebuild machinesのIPアドレス範囲](#ip-address-ranges-for-the-bitrise-build-machines)を参照してください。
+
+同様に、[app.bitrise.io](http://app.bitrise.io)のUIおよび関連するコントロールプレーン、構成管理、サービスへのシグナリングを支えているBitriseバックグラウンドワーカーには、一連の静的IPアドレスからアクセスできます。これらのアドレスを許可リストに追加すると、ビルドステータスの更新を引き続き受信できるようにしたり、Bitriseが`<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>`ファイルにアクセスできるようにしたりできます。詳細はアプリの[BitriseバックエンドワーカーのIPアドレス範囲](#ip-address-ranges-for-bitrise-backend-workers)をご覧ください。
+
+
+## Bitrisebuild machinesのIPアドレス範囲
+
+<Partial_IPAddressesForTheBuildMachines />
+
+## BitriseバックエンドワーカーのIPアドレス範囲
+
+Bitriseバックエンドワーカーは、ファイアウォールやNATゲートウェイの背後で動作しています。当社のバックエンドシステムは、お客様のサービスやWebhookにアクセスしたり、セルフホスト型リポジトリのコミット、プルリクエスト、タグに関するビルドステータスの更新を送信したりします。
+
+これらのアドレスは、セルフホスト型のGitサービスを使用している場合や、リポジトリに`bitrise.yml`ファイルを保存している場合に関係することがあります。このようにして、Bitriseは、たとえば`bitrise.yml`ファイルにアクセスしたり、セルフホスト型リポジトリのコミットやプルリクエストに関する[ビルドステータスの更新を送信](/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider)したりできます。
+
+<div className="ip-single-column">
+
+<table>
+<thead>
+<tr>
+<th>IPバックエンドワーカーのアドレス範囲</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>35.232.76.43</td>
+</tr>
+<tr>
+<td>34.68.119.18</td>
+</tr>
+<tr>
+<td>34.135.186.58</td>
+</tr>
+<tr>
+<td>74.122.<strong>200</strong>.64/28 (74.122.<strong>200.64</strong> - 74.122.<strong>200.78</strong>)<br/>74.122.<strong>201</strong>.64/28 (74.122.<strong>201.64</strong> - 74.122.<strong>201.78</strong>)<br/>74.122.<strong>202</strong>.64/28 (74.122.<strong>202.64</strong> - 74.122.<strong>202.78</strong>)<br/>74.122.<strong>203</strong>.64/28 (74.122.<strong>203.64</strong> - 74.122.<strong>203.78</strong>)</td>
+</tr>
+<tr>
+<td>185.55.<strong>252</strong>.64/28 (185.55.<strong>252.64</strong> - 185.55.<strong>252.78</strong>)<br/>185.55.<strong>253</strong>.64/28 (185.55.<strong>253.64</strong> - 185.55.<strong>253.78</strong>)<br/>185.55.<strong>254</strong>.64/28 (185.55.<strong>254.64</strong> - 185.55.<strong>254.78</strong>)<br/>185.55.<strong>255</strong>.64/28 (185.55.<strong>255.64</strong> - 185.55.<strong>255.78</strong>)</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+## Document changelog
+
+<strong>2025年11月</strong>
+
+build machinesとバックエンドワーカーの両方のIP範囲に185.55.252.0/22の範囲を追加しました。この新しいIP範囲は2026年1月21日から使用されます。正確なIP範囲は次のとおりです。
+
+Build machines：
+
+- 185.55.252.224/27
+- 185.55.253.224/27
+- 185.55.254.224/27
+- 185.55.255.224/27
+
+バックエンドワーカー：
+
+- 185.55.252.64/28
+- 185.55.253.64/28
+- 185.55.254.64/28
+- 185.55.255.64/28
+
+<strong>2025年5月</strong>
+
+Bitrisebuild machinesIP範囲を74.122.200.0/22から次のように縮小しました：
+
+- 74.122.200.224/27
+- 74.122.201.224/27
+- 74.122.202.224/27
+- 74.122.203.224/27
+
+BitriseバックエンドワーカーIP範囲を74.122.200.0/22から次のように縮小しました：
+
+- 74.122.200.64/28
+- 74.122.201.64/28
+- 74.122.202.64/28
+- 74.122.203.64/28
+
+<strong>2024年4月</strong>
+
+build machinesとバックエンドワーカーの両方のIP範囲に74.122.200.0/22の範囲を追加しました。
+
+<strong>2022年10月</strong>
+
+Linux/DockerスタックのIP範囲を大幅に拡大しました。

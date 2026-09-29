@@ -1,0 +1,179 @@
+---
+title: "AWS CloudFormation templates"
+description: "[AWS CloudFormation](https://aws.amazon.com/cloudformation/) simplifies the one-click provisioning and management of the Bitrise Cloud Controller on AWS. When the CloudFormation template is deployed into a customer VPC, it creates the Bitrise Cloud Controller and the accompanying infrastructure."
+sidebar_position: 4
+slug: /bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates
+---
+
+[AWS CloudFormation](https://aws.amazon.com/cloudformation/)を使用すると、AWS上でのBitrise Cloud Controllerのワンクリックプロビジョニングと管理が簡単に行えます。CloudFormationテンプレートを顧客のVPCにデプロイすると、Bitrise Cloud Controllerと付随するインフラストラクチャが作成されます。
+
+![cloudformation.png](/img/_paligo/uuid-f52635e0-c0c6-f09a-042a-4d8e785fb35c.png)
+
+Bitriseは、さまざまなユースケース向けにCloudFormationテンプレートを提供しています。
+
+- <strong>既存のVPCにCloud Controllerをデプロイする:</strong> すでにAWS環境が構築されており、ネットワーキングが整っている場合は、このテンプレートを選択してください。
+- <strong>新規のVPCにCloud Controllerをデプロイする</strong>: AWSを初めて使用する場合や、ネットワーキングがまだ構築されていない場合は、このテンプレートを選択してください。このテンプレートは、最初に(顧客の希望に基づいて)新しいVPCを作成し、その後コントローラーをデプロイします。
+- <strong>既存のVPCにエアギャップCloud Controllerをデプロイする</strong>: すでにAWS環境が構築されており、ネットワーキングが整っていて、コントローラーを厳密な[エアギャップ環境](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates)で実行したい場合は、このテンプレートを選択してください。これは完全には自動化されておらず、[一部の手動設定が必要です](#deploy-airgapped-cloud-controller-to-an-existing-vpc)。
+- <strong>新規のVPCにエアギャップCloud Controllerをデプロイする</strong>: AWSを初めて使用する場合や、ネットワーキングがまだ構築されていない場合で、コントローラーを厳密な[エアギャップ環境](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates)で実行したい場合は、このテンプレートを選択してください。このテンプレートは、最初に適切なエアギャップ構成で新しいVPCを作成し、その後コントローラーをデプロイします。
+
+## 既存のVPCにCloudControllerをデプロイする
+
+テンプレートパラメーター:
+
+- <strong>Stack Name</strong>(必須): AWSアカウント内のBitrise Cloud Controller親スタックを識別します。
+- <strong>Latest AMI ID</strong>: このAMI IDは、Cloud Controllerを実行するためのベースAMIとして使用されます。
+- <strong>BitriseControllerToken</strong>(必須): Bitrise Website上でコントローラーを作成する際にユーザーが受け取るコントローラートークンです。
+- <strong>BitriseWorkspaceID</strong>(必須): 顧客のBitriseアカウントに属するworkspace IDです。
+- <strong>ControllerLogGroupClass</strong>(必須): コントローラーは、顧客のAWSアカウント内のCloudWatch log groupにエラーログを保存します。どの[Log Group Class](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatch_Logs_Log_Classes.html)が予算に最も適しているかは、顧客が管理します。ほとんどの場合、default valueが適しています。デフォルト: `INFREQUENT_ACCESS`。
+- <strong>ControllerLogRetentionInDays</strong>(必須): CloudWatchがコントローラーのエラーログを保持する日数です。デフォルト: 7(日)。
+- <strong>ControllerSshKey</strong>(必須): Cloud ControllerインスタンスへのSSHアクセスを提供します。
+- <strong>SubnetIds</strong>(必須): 同一リージョン内で、異なるAZに属する少なくとも2つのサブネットです。プライベートサブネットの使用を推奨していますが、パブリックサブネットでも問題ありません。
+- <strong>VpcId</strong>(必須): コントローラーがデプロイされるVPCです。
+- <strong>VpcCidrBlock</strong>(必須): 選択したVPCのCIDRブロックです。
+- <strong>CustomBashScript</strong>(任意): インスタンス起動時に実行するカスタムbashスクリプト
+- <strong>UseHostNetwork(必須)</strong>: Dockerコンテナでホストネットワークモードを使用します(--net=host)
+
+### テンプレートによってプロビジョニングされるインフラストラクチャ
+
+- <strong>Internal Application Load Balancer</strong>: サーバーにトラフィックは発生せず、Cloud Controllerインスタンスに対して定期的なヘルスチェックのみを行います。いずれの場合も、コントローラーとbuild machinesはBitriseコントロールプレーンに向けてネットワーク呼び出しを開始するため、外部からのインバウンドトラフィックは不要です。
+- <strong>Autoscaling Group</strong>: 常に正常なCloud Controllerインスタンスが1つ実行されている状態を保証します。Instance: Cloud Controllerが実行されるt2.smallインスタンスです。
+- <strong>LaunchTemplate</strong>: Cloud Controllerインスタンスの構成です。コントローラーの自己更新機能にも必要です。
+- <strong>IAM role, instance profile, and policy</strong>: コントローラーがビルドノードの状態を照会するために、特定の権限が必要です。
+- <strong>AWS Secrets Manager</strong>: このテンプレートは、WorkspaceIDとControllerTokenをそれぞれ保存するための2つのシークレットを作成します。
+- <strong>CloudWatch log group</strong>: このテンプレートは、コントローラーのエラーログを保存するためのCloudWatch log groupを作成します。
+- <strong>Security groups</strong>: このテンプレートは、LoadBalancer用とインスタンス用の2つのセキュリティグループを作成します。
+
+## 新規のVPCにCloud Controllerをデプロイする
+
+テンプレートパラメーター:
+
+- <strong>Stack Name</strong>(必須): AWSアカウント内のBitrise Cloud Controller親スタックを識別します。
+- <strong>Latest AMI ID</strong>: このAMI IDは、Cloud Controllerを実行するためのベースAMIとして使用されます。
+- <strong>BitriseControllerToken</strong>(必須): Bitrise Website上でコントローラーを作成する際にユーザーが受け取るコントローラートークンです。
+- <strong>BitriseWorkspaceID</strong>(必須): 顧客のBitriseアカウントに属するworkspace IDです。
+- <strong>ControllerLogGroupClass</strong>(必須): コントローラーは、顧客のAWSアカウント内のCloudWatch log groupにエラーログを保存します。どの[Log Group Class](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatch_Logs_Log_Classes.html)が予算に最も適しているかは、顧客が管理します。ほとんどの場合、default valueが適しています。デフォルト: `INFREQUENT_ACCESS`。
+- <strong>ControllerLogRetentionInDays</strong>(必須): CloudWatchがコントローラーのエラーログを保持する日数です。デフォルト: 7(日)。
+- <strong>ControllerSshKey</strong>(必須): Cloud ControllerインスタンスへのSSHアクセスを提供します。
+- <strong>EnvironmentName</strong>(任意): Bitrise関連の各インフラストラクチャに、Environment Nameで指定したプレフィックスを付加します。顧客が非常に多くのリソースを保有している場合、Bitrise関連のリソースを他と区別できると便利です。
+- <strong>PrivateSubnet1CIDR</strong>(必須): 新しいVPCの1つ目のプライベートサブネットのCIDR範囲です。デフォルト: 10.192.32.0/20。
+- <strong>PrivateSubnet2CIDR</strong>(必須): 新しいVPCの2つ目のプライベートサブネットのCIDR範囲です。デフォルト: 10.192.64.0/20。
+- <strong>PublicSubnet1CIDR</strong>(必須): 新しいVPCの1つ目のパブリックサブネットのCIDR範囲です。デフォルト: 10.192.0.0/20。
+- <strong>PublicSubnet2CIDR</strong>(必須): 新しいVPCの2つ目のパブリックサブネットのCIDR範囲です。デフォルト: 10.192.16.0/20
+- <strong>VpcCidrBlock</strong>(必須): 選択したVPCのCIDRブロックです。
+- <strong>CustomBashScript</strong>(任意): インスタンス起動時に実行するカスタムbashスクリプト
+- <strong>UseHostNetwork(必須)</strong>: Dockerコンテナでホストネットワークモードを使用します(--net=host)
+
+### テンプレートによってプロビジョニングされるインフラストラクチャ
+
+- <strong>Internal Application Load Balancer</strong>: サーバーにトラフィックは発生せず、Cloud Controllerインスタンスに対して定期的なヘルスチェックのみを行います。いずれの場合も、コントローラーとbuild machinesはBitriseコントロールプレーンに向けてネットワーク呼び出しを開始するため、外部からのインバウンドトラフィックは不要です。
+- <strong>Autoscaling Group</strong>: 常に正常なCloud Controllerインスタンスが1つ実行されている状態を保証します。
+- <strong>Instance</strong>: Cloud Controllerが実行される`t2.small`インスタンスです。
+- <strong>LaunchTemplate</strong>: Cloud Controllerインスタンスの構成です。コントローラーの自己更新機能にも必要です。
+- <strong>IAM role, instance profile, and policy</strong>: コントローラーがビルドノードの状態を照会するために、特定の権限が必要です。
+- <strong>AWS Secrets Manager</strong>: このテンプレートは、WorkspaceIDとControllerTokenをそれぞれ保存するための2つのシークレットを作成します。
+- <strong>CloudWatch log group</strong>: このテンプレートは、コントローラーのエラーログを保存するためのCloudWatch log groupを作成します。
+- <strong>Security groups</strong>: このテンプレートは、LoadBalancer用とインスタンス用の2つのセキュリティグループを作成します。
+- <strong>VPC</strong>: ベストプラクティスに基づく、標準的な汎用VPCです。デフォルトのCIDRブロックを選択すると、各サブネットで4096個の利用可能なIPアドレスが確保されます。このテンプレートが作成するVPC関連リソースの一覧は次のとおりです。
+
+  - VPCを1つ。
+  - パブリックサブネットを2つ。
+  - プライベートサブネットを2つ。
+  - NATゲートウェイを1つ + Elastic IPを1つ。
+  - インターネットゲートウェイを1つ + Elastic IPを1つ。
+  - ルートテーブル。
+- <strong>Bitrise Agent Logs</strong>: この機能により、BitriseAgentのビルドログをAWSCloudWatchへシームレスに送信できます。CloudFormationを活用して必要なIAMロールとポリシーを自動的に設定し、BitriseAgentが適切な権限を持てるようにします。さらに、CloudWatch内に`bitrise-agent-log`という名前の専用ロググループを作成し、AWS環境内での整理されたログ管理とリアルタイム分析を可能にします。
+
+## 既存のVPCにエアギャップCloud Controllerをデプロイする
+
+テンプレートパラメーター:
+
+- <strong>Stack Name</strong>(必須): AWSアカウント内のBitrise Cloud Controller親スタックを識別します。
+- <strong>BitriseControllerToken</strong>(必須): Bitrise Website上でコントローラーを作成する際にユーザーが受け取るコントローラートークンです。
+- <strong>BitriseWorkspaceID</strong>(必須): 顧客のBitriseアカウントに属するworkspace IDです。
+- <strong>ControllerLogGroupClass</strong>(必須): コントローラーは、顧客のAWSアカウント内のCloudWatch log groupにエラーログを保存します。どの[Log Group Class](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatch_Logs_Log_Classes.html)が予算に最も適しているかは、顧客が管理します。ほとんどの場合、default valueが適しています。デフォルト: `INFREQUENT_ACCESS`。
+- <strong>ControllerLogRetentionInDays</strong>(必須): CloudWatchがコントローラーのエラーログを保持する日数です。デフォルト: 7(日)。
+- <strong>ControllerSshKey</strong>(必須): Cloud ControllerインスタンスへのSSHアクセスを提供します。
+- <strong>SubnetIds</strong>(必須): 同一リージョン内で、異なるAZに属する少なくとも2つのサブネットです。プライベートサブネットの使用を推奨していますが、パブリックサブネットでも問題ありません。
+- <strong>VpcId</strong>(必須): コントローラーがデプロイされるVPCです。
+- <strong>VpcCidrBlock</strong>(必須): 選択したVPCのCIDRブロックです。
+- <strong>CustomBashScript</strong>(任意): インスタンス起動時に実行するカスタムbashスクリプト
+- <strong>UseHostNetwork(必須)</strong>: Dockerコンテナでホストネットワークモードを使用します(--net=host)
+
+### テンプレートによってプロビジョニングされるインフラストラクチャ
+
+- <strong>Internal Application Load Balancer</strong>: サーバーにトラフィックは発生せず、Cloud Controllerインスタンスに対して定期的なヘルスチェックのみを行います。いずれの場合も、コントローラーとbuild machinesはBitriseコントロールプレーンに向けてネットワーク呼び出しを開始するため、外部からのインバウンドトラフィックは不要です。
+- <strong>Autoscaling Group</strong>: 常に正常なCloud Controllerインスタンスが1つ実行されている状態を保証します。Instance: Cloud Controllerが実行されるt2.smallインスタンスです。
+- <strong>Airgapped LaunchTemplate</strong>: Cloud Controllerインスタンスの構成です。コントローラーの自己更新機能にも必要です。
+- <strong>Airgapped IAM role, instance profile, and policy</strong>: コントローラーがビルドノードの状態を照会し、必要なBitriseプライベートECRにアクセスするために、特定の権限が必要です。
+- <strong>AWS Secrets Manager</strong>: このテンプレートは、WorkspaceIDとControllerTokenをそれぞれ保存するための2つのシークレットを作成します。
+- <strong>CloudWatch log group</strong>: このテンプレートは、コントローラーのエラーログを保存するためのCloudWatch log groupを作成します。
+- <strong>Airgapped security groups</strong>: このテンプレートは、LoadBalancer用とインスタンス用の2つのセキュリティグループを作成します。
+- <strong>Bitrise Agent Logs</strong>: この機能により、BitriseAgentのビルドログをAWSCloudWatchへシームレスに送信できます。CloudFormationを活用して必要なIAMロールとポリシーを自動的に設定し、BitriseAgentが適切な権限を持てるようにします。さらに、CloudWatch内に`bitrise-agent-log`という名前の専用ロググループを作成し、AWS環境内での整理されたログ管理とリアルタイム分析を可能にします。
+
+### エアギャップテンプレートの手動設定
+
+1. 設定済みのサブネットを使用して、次のインターフェイス型VPCエンドポイントを作成します。
+
+   すべてのエンドポイントでプライベートDNSが有効になっていることを確認してください。
+
+   - `com.amazonaws.${AWS::Region}.autoscaling`: コントローラーの自己更新に使用します。
+   - `com.amazonaws.${AWS::Region}.ec2`: EC2インスタンスと専用ホストの管理に使用します。
+   - `com.amazonaws.${AWS::Region}.ecr.api`: BitriseプライベートECRからコントローラーバイナリをダウンロードするために使用します。
+   - `com.amazonaws.${AWS::Region}.ecr.dkr`: BitriseプライベートECRからコントローラーバイナリをダウンロードするために使用します。
+   - `com.amazonaws.${AWS::Region}.logs`: コントローラーログをCloudWatchに送信するために使用します。
+   - `com.amazonaws.${AWS::Region}.secretsmanager`: シークレットへのアクセスに使用します。
+1. 作成したエンドポイントを、インスタンスのセキュリティグループに適用します。
+
+## 新規のVPCにエアギャップCloud Controllerをデプロイする
+
+テンプレートパラメーター:
+
+- <strong>Stack Name</strong>(必須): AWSアカウント内のBitrise Cloud Controller親スタックを識別します。
+- <strong>Latest AMI ID</strong>: このAMI IDは、Cloud Controllerを実行するためのベースAMIとして使用されます。
+- <strong>BitriseControllerToken</strong>(必須): Bitrise Website上でコントローラーを作成する際にユーザーが受け取るコントローラートークンです。
+- <strong>BitriseWorkspaceID</strong>(必須): 顧客のBitriseアカウントに属するworkspace IDです。
+- <strong>ControllerLogGroupClass</strong>(必須): コントローラーは、顧客のAWSアカウント内のCloudWatch log groupにエラーログを保存します。どの[Log Group Class](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatch_Logs_Log_Classes.html)が予算に最も適しているかは、顧客が管理します。ほとんどの場合、default valueが適しています。デフォルト: `INFREQUENT_ACCESS`。
+- <strong>ControllerLogRetentionInDays</strong>(必須): CloudWatchがコントローラーのエラーログを保持する日数です。デフォルト: 7(日)。
+- <strong>ControllerSshKey</strong>(必須): Cloud ControllerインスタンスへのSSHアクセスを提供します。
+- <strong>EnvironmentName</strong>(任意): Bitrise関連の各インフラストラクチャに、Environment Nameで指定したプレフィックスを付加します。顧客が非常に多くのリソースを保有している場合、Bitrise関連のリソースを他と区別できると便利です。
+- <strong>PrivateSubnet1CIDR</strong>(必須): 新しいVPCの1つ目のプライベートサブネットのCIDR範囲です。デフォルト: 10.192.32.0/20。
+- <strong>PrivateSubnet2CIDR</strong>(必須): 新しいVPCの2つ目のプライベートサブネットのCIDR範囲です。デフォルト: 10.192.64.0/20。
+- <strong>PublicSubnet1CIDR</strong>(必須): 新しいVPCの1つ目のパブリックサブネットのCIDR範囲です。デフォルト: 10.192.0.0/20。
+- <strong>PublicSubnet2CIDR</strong>(必須): 新しいVPCの2つ目のパブリックサブネットのCIDR範囲です。デフォルト: 10.192.16.0/20
+- <strong>VpcCidrBlock</strong>(必須): 選択したVPCのCIDRブロックです。
+- <strong>CustomBashScript</strong>(任意): インスタンス起動時に実行するカスタムbashスクリプト
+- <strong>UseHostNetwork(必須)</strong>: Dockerコンテナでホストネットワークモードを使用します(--net=host)
+
+### テンプレートによってプロビジョニングされるインフラストラクチャ
+
+- <strong>Internal Application Load Balancer</strong>: サーバーにトラフィックは発生せず、Cloud Controllerインスタンスに対して定期的なヘルスチェックのみを行います。いずれの場合も、コントローラーとbuild machinesはBitriseコントロールプレーンに向けてネットワーク呼び出しを開始するため、外部からのインバウンドトラフィックは不要です。
+- <strong>Autoscaling Group</strong>: 常に正常なCloud Controllerインスタンスが1つ実行されている状態を保証します。Instance: Cloud Controllerが実行されるt2.smallインスタンスです。
+- <strong>Instance</strong>: Cloud Controllerが実行される`t2.small`インスタンスです。
+- <strong>Airgapped LaunchTemplate</strong>: Cloud Controllerインスタンスの構成です。コントローラーの自己更新機能にも必要です。
+- <strong>IAM role, instance profile, and policy</strong>: コントローラーがビルドノードの状態を照会するために、特定の権限が必要です。
+- <strong>AWS Secrets Manager</strong>: このテンプレートは、WorkspaceIDとControllerTokenをそれぞれ保存するための2つのシークレットを作成します。
+- <strong>CloudWatch log group</strong>: このテンプレートは、コントローラーのエラーログを保存するためのCloudWatch log groupを作成します。
+- <strong>Airgapped security groups</strong>: このテンプレートは、LoadBalancer用とインスタンス用の2つのセキュリティグループを作成します。
+- <strong>VPC</strong>: ベストプラクティスに基づく、標準的な汎用VPCです。デフォルトのCIDRブロックを選択すると、各サブネットで4096個の利用可能なIPアドレスが確保されます。このテンプレートが作成するVPC関連リソースの一覧は次のとおりです。
+
+  - VPCを1つ。
+  - パブリックサブネットを2つ。
+  - プライベートサブネットを2つ。
+  - NATゲートウェイを1つ + Elastic IPを1つ。
+  - インターネットゲートウェイを1つ + Elastic IPを1つ。
+  - ルートテーブル。
+- <strong>VPC Endpoints</strong>: このテンプレートは、6つのインターフェイス型エンドポイントを作成し、インスタンスのセキュリティグループに接続することで、コントローラーがAWSリソースにアクセスできるようにします。
+
+  - `com.amazonaws.${AWS::Region}.autoscaling`: コントローラーの自己更新に使用します。
+  - `com.amazonaws.${AWS::Region}.ec2`: EC2インスタンスと専用ホストの管理に使用します。
+  - `com.amazonaws.${AWS::Region}.ecr.api`: BitriseプライベートECRからコントローラーバイナリをダウンロードするために使用します。
+  - `com.amazonaws.${AWS::Region}.ecr.dkr`: BitriseプライベートECRからコントローラーバイナリをダウンロードするために使用します。
+  - `com.amazonaws.${AWS::Region}.logs`: コントローラーログをCloudWatchに送信するために使用します。
+  - `com.amazonaws.${AWS::Region}.secretsmanager`: シークレットへのアクセスに使用します。
+- <strong>Bitrise Agent Logs</strong>: この機能により、BitriseAgentのビルドログをAWSCloudWatchへシームレスに送信できます。CloudFormationを活用して必要なIAMロールとポリシーを自動的に設定し、BitriseAgentが適切な権限を持てるようにします。さらに、CloudWatch内に`bitrise-agent-log`という名前の専用ロググループを作成し、AWS環境内での整理されたログ管理とリアルタイム分析を可能にします。
+
+## 必要なAWS権限と接続性
+
+コントローラーがビルドノードに対して操作を行うには、特定のAWS権限が必要です。必要な権限は最小限の範囲に抑えるよう努めています。信頼性を高めるため、[CloudFormationテンプレートのリポジトリ](https://github.com/bitrise-io/cloud-controller-cloudformation/blob/production/iam/roles.yaml)も公開しています。必要な権限の(最新の)全リストは、リポジトリ内の[こちら](https://github.com/bitrise-io/cloud-controller-cloudformation/blob/production/iam/roles.yaml)をご覧ください。
+
+コントローラーは、特定のBitriseエンドポイントへの接続を必要とします。詳細は[コントローラーのドキュメント](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/creating-and-configuring-a-controller)をご覧ください。

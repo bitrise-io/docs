@@ -1,0 +1,45 @@
+---
+title: "About build stacks"
+description: "The Bitrise build stack defines the virtual machine version used to run your builds. The main types are macOS stacks and Android & Docker stacks."
+sidebar_position: 1
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+ビルドの<GlossTerm baseform="Stack">スタック</GlossTerm>は、ビルドの実行に使用する仮想マシンのバージョンを示します。主なスタックの種類は次のとおりです。
+
+- <strong>macOSスタック</strong>: これらのスタックはmacOSオペレーティングシステム上で実行され、それぞれ複数のXcodeバージョンが含まれています。iOSアプリのビルドに最適です。クロスプラットフォームアプリのビルドに使用したい場合に備えて、Androidツールもインストールされています。
+- <strong>Android & Docker</strong>スタック: これらのスタックはDocker環境のLinuxオペレーティングシステム上で実行されます。Androidツールがすべてインストールされており、ネイティブAndroidアプリのビルドに最適です。
+
+:::note[空きディスク容量]
+
+各スタックには少なくとも100GBの空きディスク容量があります。各スタックの正確な利用可能ディスク容量は、該当のスタックレポートページ([Bitriseスタックレポート](https://stacks.bitrise.io/stack_reports/))で確認できます。
+
+:::
+
+各ビルドは専用の仮想マシンで実行され、ビルド終了後にその仮想マシンは保存された状態、つまり「ベースボックス」状態にロールバックされます。この仕組みにより、<strong>ビルドは他者による変更や過去の自分のビルドの影響から常に保護され</strong>、ビルド間で状態が保持されないため、<strong>安定した環境</strong>でビルドワークフローを定義できます。
+
+:::note[パスワードなしのsudoが有効]
+
+ビルドに使用されるユーザーアカウントは、<strong>パスワードなしのsudo</strong>が有効になるように設定されています。これにより、ビルドやその他の自動化に必要な追加のツールを自由にインストールできます。選択したスタックにツールがプリインストールされていない場合は、自分でインストールできます。詳しくはガイドをご覧ください。
+
+:::
+
+アプリをBitriseに追加すると、適切なスタックが自動的に選択されます。スタックは、<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>の<strong>Stacks & Machines</strong>タブでいつでも変更できます。
+
+![xcode_image.png](/img/_paligo/uuid-fc53715a-add5-8c4c-d4a6-9a04f5da6d3b.png)
+
+使用したいスタックを選択すると、そのスタックの簡単な説明と、詳細を確認するための追加リンクが表示されます(例えば、選択したスタックにどのツールがどのバージョンでプリインストールされているかを確認できます)。
+
+| 種類 | 説明 |
+| --- | --- |
+| Stable | 一般提供されており、今後も継続してサポートされる見込みです。スタックの主要ツールのアップデートが利用可能になると更新されます。例: Xcode 7.3.1がリリースされた際、Xcode 7.3スタックは7.3(.0)ではなく7.3.1を持つように更新されました。現在のStableスタックが変更されるたびにターゲットスタックを手動で更新する手間を避けるには、`latest-stable`エイリアスでそのスタックを指定できます。詳細は[最新のStableスタックの使用](/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds#using-the-latest-stable-stack)をご覧ください。 |
+| Edge | 今後のバージョンや変更をプレビューします。最新の安定版リリース、最新のベータ版リリース(利用可能な場合)、およびプリインストールされたツールのlatest versionが含まれます。定期的な更新により、ツールの追加、削除、アップグレードが行われる場合があり、アップデート間の後方互換性は保証されません。 |
+| Frozen | 更新は行われておらず、[スタックの非推奨および削除ポリシー](/bitrise-platform/infrastructure/build-stacks/stack-deprecation-and-removal-policy)に従って削除対象としてフラグが付けられています。ビルドでは引き続き利用できますが、プリインストールされたツールは更新されないため、バグ修正やセキュリティパッチへの対応はご自身の責任となります。 |
+
+| 種類 | 説明 |
+| --- | --- |
+| Pre-booted | スタックがPre-bootedとして利用可能で、その構成のマシンが十分に用意されている場合、ビルド環境の起動を待たずにビルドをすぐに開始できます。その構成のPre-bootedマシンが利用できない場合、ビルドはオンデマンド構成で開始されます。 |
+| On-demand | スタックがオンデマンド構成として利用可能で、そのスタックにPre-booted構成が(利用可能な形で)ない場合、ビルド開始時にシステムは選択した構成用の仮想マシンを作成する必要があります。つまり、関連する仮想マシンが作成・起動される間、ビルドは環境準備中の状態になります。macOS構成の場合、起動処理には通常約1〜1.5分かかります。この準備時間はビルド時間には含まれないため、ビルドの実行時間には影響しません。 |

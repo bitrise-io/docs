@@ -1,0 +1,91 @@
+---
+title: "Configuring a machine pool"
+description: "After [you created an AWS controller](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/creating-and-configuring-a-controller), you can configure a machine pool. The pool is a group of instances that share the same configuration and can run Bitrise builds. The Controller ensures that the necessary amounts of matching resources are started on AWS."
+sidebar_position: 5
+slug: /bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/configuring-a-machine-pool
+---
+
+[AWSコントローラーを作成](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/creating-and-configuring-a-controller)すると、マシンプールを設定できます。プールは、同じ設定を共有し、Bitriseビルドを実行できるインスタンスのグループです。コントローラーは、AWS上で必要な数の一致するリソースが起動されるようにします。
+
+## 新しいプールの作成
+
+新しいプールの作成は複数ステージのウィザードを通じて行われ、プールの詳細情報を入力する必要があります。
+
+1. <strong>Workspace settings</strong>ページを開きます。
+1. <strong>Infrastructure</strong>を選択し、<strong>Bitrise on AWS</strong>タブに移動して、<strong>Create pool</strong>をクリックします。
+
+   ![create-pool.png](/img/_paligo/uuid-4defa7e8-2933-8118-8b32-414f4a4994d2.png)
+1. 最初の画面で、エージェントのpool settingsを設定します。
+
+   - <strong>Pool name</strong>(必須): pool nameはWorkflow Editorの<strong>Stacks & Machines</strong>タブに表示され、ビルドを実行するプールを選択できるようになります。名前はWorkspace内で、他のプールやBitriseエージェントプールとも重複しない一意のものにする必要があります。名前が一意でない場合、プールを作成できません。
+   - <strong>Nr. of machines</strong>(必須): 作成されるマシンの数です。数が多いほど、利用可能な同時実行数の範囲内でより多くのビルドを並列実行できます。
+   - <strong>Rolling update percentage</strong>(必須): ローリングアップデートの割合は、マシン再起動時に期待されるシステムの可用性を設定します。数値が低いほど、変更のロールアウト中により多くのマシンが利用可能になりますが、ロールアウト全体に必要な時間は大幅に長くなる可能性があります。指定できる値は1%から100%の範囲内です。システムはパーセンテージベースの値を切り上げます。マシンが5台あり、ローリングアップデートの割合が95%の場合、5台すべてが同時に再起動を試みます。破壊的な変更やブロッキングな変更(SSHキーのローテーションなど)がリリースされる場合に備えてこの数値を高く保つことをお勧めします。ディスクサイズの縮小のような小さな変更の場合は、低く設定してもかまいません。
+   - <strong>Labels</strong>(任意): プールを整理・分類するためのキーバリューペアを追加します。各ラベルには一意のキーが必要で、値は任意です。ラベルは最大10個まで追加できます。
+   - <strong>IMDSv2</strong>(任意): セキュリティ強化のため、インスタンスメタデータサービスへのアクセスに、認証なしのリクエストではなくトークンベースのアクセスを要求します。デフォルトでは無効です。
+1. <strong>Next</strong>をクリックした後、次の画面でマシンのパラメーターを入力します。
+
+   ![create-machine-pool.png](/img/_paligo/uuid-12b52688-9137-1a9a-47d8-2944653f1d74.png)
+
+   - <strong>Amazon Machine Image (AMI) ID</strong>(必須): AMIは、モバイルビルドの実行に必要なツールがすべてプリインストールされたBitriseビルドの環境です。ここには、サブスクライブしているAMIのIDを指定する必要があります。現行バージョンでは、Bitriseが管理するAMIのみが受け付けられます。
+   - <strong>Stack</strong>(VMベースのAMIでは必須): Stackセレクターは、選択したAMIがVMベースのMacOSAMIである場合にのみ利用可能になります。この場合、ドロップダウンから1つのスタックを選択する必要があります。
+   - <strong>Number of virtual machines</strong>: VM数セレクターは、選択したAMIがVMベースのMacOSAMIである場合にのみ利用可能になります。この場合、build machines上で実行するVMの数(1または2)を選択する必要があります。
+   - <strong>Availability zone</strong>(必須): アベイラビリティーゾーンは、リソースがどこに確保されるかを定義します。コントローラーは<strong>mac2.metal</strong>、<strong>mac2-m2.metal</strong>、<strong>mac2-m2pro.metal</strong>のいずれかのインスタンスファミリーでリソースを起動しますが、これらはすべてのAWSアベイラビリティーゾーンで利用できるわけではありません。必ず[リストにある](https://aws.amazon.com/about-aws/whats-new/2021/10/amazon-ec2-mac-instances-additional-regions/)有効なアベイラビリティーゾーンを選択してください。
+   - <strong>Machine type(必須)</strong>: マシンタイプセレクターは、アベイラビリティーゾーンを指定した後にのみ利用可能になります。コントローラーは、選択したマシンタイプに応じてbuild machinesを起動します。
+
+   :::note[適切なリージョンを選択する]
+
+   コントローラーは、自身が配置されているのと同じリージョン内でのみリソースを起動できます。選択したアベイラビリティーゾーンが同じリージョンにない場合、マシンは起動しません。
+
+   :::
+1. 次の画面の<strong>Network & security settings</strong>で、マシンに関する詳細情報を指定できます。
+
+   ![create-pool-security.png](/img/_paligo/uuid-ac4d6375-b153-bb6a-d78d-f0bd9bebf824.png)
+
+   - <strong>Subnet ID</strong>(必須): 前に設定したアベイラビリティーゾーンから、マシンで使用するsubnet IDを指定します。作成されるマシンはすべて同じサブネット上で動作します。マシンはサブネットからBitriseサービスに到達できる必要がありますが、Bitrise側から通信を開始することはないため、パブリックサブネットである必要はありません。インスタンスが次のエンドポイントにアクセスできることを確認してください。
+
+     - https://exec.bitrise.io
+     - https://build-log.services.bitrise.io
+
+     これらのエンドポイントにアクセスできないと、インスタンスを接続した後もビルドを実行できません。つまり、サブネットはNATゲートウェイまたはインターネットゲートウェイのいずれかを介してインターネットにアクセスできる必要があります。サブネットの詳細については、[AWSの公式ドキュメント](https://docs.aws.amazon.com/vpc/latest/userguide/configure-subnets.html)を確認してください。
+   - <strong>Auto-assign public IP address</strong>: このフィールドを有効にすると、EC2インスタンス用にパブリックIPv4アドレスが作成されるようになります。設定したサブネットがパブリックである場合、つまりインターネットと直接通信するためのインターネットゲートウェイを持っている場合にのみ有効にしてください。サブネットがインターネットにアクセスできない場合は、このオプションを無効にしてください。
+   - <strong>Security groups</strong>(必須): 1つ以上のセキュリティグループIDを指定できます。セキュリティグループを使用すると、AWSリソースへのトラフィックを制御できます。
+
+     最低限、受信側が空で送信側に0.0.0.0/0を許可する`empty-default`セキュリティグループが必要です。SSHを使用してインスタンスにアクセスしたい場合は、セキュリティグループで受信ポート22を開放しておく必要があります。SSHアクセス機能が不要な場合は、関連するセキュリティグループを削除することをお勧めします。
+
+     セキュリティグループの詳細については、[AWSの公式ドキュメント](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-groups.html)を確認してください。
+
+     :::note[ネットワーク設定]
+
+     選択したサブネットとセキュリティグループが同じネットワークに属していることを確認してください。属していない場合、マシンは起動しません。
+
+     :::
+   - <strong>AWSインスタンスプロファイル</strong>(任意): インスタンスプロファイルを使用すると、マシンに追加のIAMロールを設定できます。これは、AWS内の他のリソースにアクセスしたい場合に必要です。たとえば、S3バケットをアーティファクトストアとして使用したい場合などです。そのような機能が不要な場合は、プロファイルを空のままにしておきます。
+
+     このオプションを使用すると、[Bitrise agent logsを直接CloudWatchにストリーミング](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/creating-and-configuring-a-controller#enabling-cloudwatch-bitrise-agent-logging)するための権限を含めることができ、ログ管理とモニタリングの一元的なソリューションを提供します。AWSのCloudFormationパラメーターが正しく設定されていれば、`bitrise-agent-log-instance-profile`という名前のインスタンスプロファイルが生成されます。AWSでは、ここで使用するために生成されたそのプロファイルのARNを取得できます。
+   - <strong>SSH key名</strong>(任意): インスタンスのデバッグを容易にします。SSHキーが指定されており、正しいセキュリティグループの設定がされていれば、SSH経由で作成したインスタンスにアクセスできます。デバッグが不要な場合は、このフィールドを空のままにしておくことをお勧めします。
+1. <strong>Next</strong>をクリックした後、ストレージの要件を設定します。
+
+   ![prewarm.png](/img/_paligo/uuid-8dad9adf-f9a7-fe6b-e598-972b45ecca27.png)
+
+   - <strong>Disk type</strong>(必須): さまざまなルートボリュームタイプから選択できます。少なくともgp3の設定を使用することをお勧めします。詳細については、[AWSのドキュメント](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volume-types.html)を確認してください。
+   - <strong>Storage size</strong>(必須): ルートボリュームサイズをGB単位で指定します。イメージによって作成されるディスクサイズは異なり、それぞれ必要な最小ディスクサイズがあります。ホストあたり1台のVMを持つ仮想化AMIの場合は700GBを、ホストあたり2台のVMを持つ仮想化AMIの場合は1000GBをお勧めします。ベアメタルの場合は、最小値より少なくとも50GB大きいディスクサイズに設定することをお勧めします。
+   - <strong>Prewarming the disk</strong>: すべてのAmazon EBSデバイスで確実に動作させるため、ディスクのプリウォーミングをお勧めします。このプリウォーミングには、storage sizeの構成が大きい場合、数時間かかることもあります。プリウォーミングを無効にすることもできますが、その場合build machine上で実行される最初の数回のビルドは失敗します。
+1. 完了したら、<strong>Create pool</strong>をクリックします
+
+プールが作成されると、プールの詳細が画面に表示されます。
+
+![pool-detail.png](/img/_paligo/uuid-a30a61ec-5dea-3792-44ea-3e6d9c96b19d.png)
+
+ヘッダーには、name of the poolとその状態が表示されます。プールが目的の状態にまだ達していない場合、状態は<strong>Updating...</strong>になります。完全に動作しているプールのステータスはUp-to-dateです。
+
+また、プールの設定に関するセクションと、それに続く個々のマシンも確認できます。各マシンにも状態があり、ビルドが実行されているかどうか、実行されている場合はどのビルドかを示します。
+
+## プールの再設定
+
+プールの設定が正しくない場合(たとえば、異なるSSHキーと異なるサブネットが必要な調査を行う必要がある場合など)は、設定済みの各プールの<strong>Edit</strong>ボタンを押して、プールを再設定します。
+
+再設定がリクエストされると、コントローラーは実行中の、正しく設定されていない一部のリソースを終了します。この終了が完了すると、代わりに新しいリソースが作成されます。このアプローチは、コストをできる限り削減することを目的としています。
+
+設定を高くすると可用性が低下する可能性があり、逆に低くするとロールアウトが遅くなる可能性があるため、設定中は<strong>Rolling update percentage</strong>の設定を見直すことをお勧めします。
+
+再設定が開始されると、プールのステータスは<strong>Updating...</strong>になり、すべてのリソースが新しい設定に従って実行されるまでこの状態が続きます。その時点で、プールのステータスは再び<strong>Up-to-date</strong>になります。
