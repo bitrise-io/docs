@@ -132,6 +132,7 @@ We talk to people, not at them. **American English.** Three properties:
 | stack | Lowercase generic. Capitalize when quoting a specific stack name (`Android & Docker, on Ubuntu 16.04 - LTS Stack`). | Stack |
 | guide / article | Synonyms for a DevCenter document. | post (that's blog content) |
 | deploy key | Two words. GitHub's term — keep it. | deployment key |
+| AI agent | A third-party AI tool that acts for the user, such as Claude Code or Cursor. Say `MCP client` for the app a reader adds an MCP server to, and `AI agent (MCP)` in tab and list labels next to UI / CLI / API. | AI assistant (that's the Workflow Editor's AI configuration assistant) |
 
 If you introduce a new Bitrise-specific term, add it to `migration/glossary.json` so `<GlossTerm>` works. The format is one entry per term:
 ```json
