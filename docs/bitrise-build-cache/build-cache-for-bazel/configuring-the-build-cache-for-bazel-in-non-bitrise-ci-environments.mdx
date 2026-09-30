@@ -42,11 +42,14 @@ There is a dedicated guide with GitHub Actions workflow examples: [Configuring t
    #!/usr/bin/env bash
    set -euxo pipefail
 
-   # download Bitrise Build Cache CLI
-   curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+   # download Bitrise Build Cache CLI into the user-local bin dir so bazel can
+   # resolve it by name via `--credential_helper`
+   mkdir -p "$HOME/.local/bin"
+   curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b "$HOME/.local/bin" -d
+   export PATH="$HOME/.local/bin:$PATH"
 
    # run the CLI to enable Bitrise build cache for Bazel
-   /tmp/bin/bitrise-build-cache activate bazel --cache --cache-push
+   bitrise-build-cache activate bazel --cache --cache-push
    ```
 1. If you have Remote Build Execution enabled for your workspace, you can also use it locally by adding the `--rbe` flag.
 
