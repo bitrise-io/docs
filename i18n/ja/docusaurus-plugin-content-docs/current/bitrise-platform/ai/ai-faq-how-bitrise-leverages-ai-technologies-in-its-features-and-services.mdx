@@ -1,0 +1,184 @@
+---
+title: "AI FAQ – How Bitrise leverages AI technologies in its features and services"
+description: "Bitrise leverages AI and large language models responsibly by classifying customer data to ensure security and privacy, using only anonymized or non-sensitive data for training and analysis. Customers can control AI feature usage across their organization, with AI augmenting human decision-making without replacing it."
+sidebar_position: 1
+slug: "/bitrise-platform/ai/ai-faq---how-bitrise-leverages-ai-technologies-in-its-features-and-services"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+AI技術がますます普及するなか、Bitriseがこうした技術をどのように活用しているかについて、最も多く寄せられる質問への回答をまとめました。この記事では、AIおよびLLMツールがBitriseの機能やサービス全体でどのようにサポートされているかについて、詳しい情報を確認できます。
+
+## 概要
+
+人工知能(AI)、特に大規模言語モデル(LLM)は、テクノロジー業界全体で急速に不可欠なツールになりつつあります。Bitriseは、当社のプラットフォームを強化し、お客様により賢く効率的なソリューションを提供できる、こうした新しい技術に積極的に投資しています。
+
+Bitriseにとって、セキュリティと信頼性は最も重要な事項です。当社は、AIを使用する製品や機能についても、他のすべての技術と同様に、責任を持って業界標準に準拠した形で使用することをお約束します。
+
+このドキュメントは、BitriseがAIをどのように実装しているか、Customer Content(以下で定義)がどのように分類されるか、そしてAI機能が実装されている機能を使用するかどうかをお客様がどのように選択できるかを理解する助けとなるものです。
+
+以下に、BitriseがAI技術をどのように使用しているかについて、お客様から寄せられた最も多い質問をまとめました。今後もお客様から新しい質問が寄せられ次第、このドキュメントを更新します。
+
+
+## Bitrise上でAIとともに顧客データはどのように使用されますか?
+
+Bitriseは、顧客データを次のCustomer Contentカテゴリーに分類します。
+
+| <strong>顧客コンテンツのカテゴリー</strong> | <strong>Description</strong> |
+| --- | --- |
+| <strong>Customer Sensitive Content</strong> | 厳格なアクセス制御のもとで扱う必要があり、お客様の明示的な同意と適切なプライバシー保護なしには、トレーニングやファインチューニング、その他二次的な目的に使用できないコンテンツです。 |
+| <strong>Customer Non-Sensitive Data</strong> | 標準的な運用管理のもとで扱うことができ、お客様の明示的な同意を必要とせずに、サービス改善、分析、運用目的に使用できるデータです。Customer Non-Sensitive Contentを含みます。 |
+
+Customer Sensitive ContentおよびNon-sensitive Dataは、さらに匿名化不可、匿名化可能、直接利用可能に分類され、この分類に基づいて以下のように処理される場合があります。
+
+| Customer Contentの種類 | 処理カテゴリー |
+| --- | --- |
+| <strong>匿名化不可(Customer Sensitive Content)</strong> | 非匿名化: 元の形式のまま扱うか、まったく扱わないかのいずれかとします。 |
+| <strong>匿名化可能(Customer Sensitive Content)</strong> | 匿名化: 個人情報や機微な詳細を除去したうえで処理・集計でき、Sensitive Customer Contentは匿名化されます。 |
+| <strong>直接利用可能(Customer Non-Sensitive data)</strong> | 直接利用: 運用目的でそのまま使用できます。 |
+
+![ai-faq-data.png](/img/_paligo/uuid-70109545-5b55-93cb-dfa6-20a62c0cccdb.png)
+
+### データ分類の詳細
+
+- <strong>Customer Sensitive Content</strong>:
+
+  これは、お客様がBitriseのServicesに入力するコンテンツのうち、お客様にとって機密または専有的な性質を持つもの、あるいは公開されたり不適切に扱われたりした場合にお客様に損害、競争上の不利益、または機密保持違反をもたらしうるコンテンツを指します。これには通常、以下が含まれます。
+
+  - 専有情報(ソースコード、設定シークレット、ビジネスロジックなど)。
+  - 匿名化できない個人情報や識別情報。
+  - 特定の規制上または契約上の保護要件の対象となるデータ。
+- <strong>Customer Non-Sensitive Data:</strong>
+
+  これは、お客様のBitriseのServices利用状況に関する情報、または公開されても事業上の損害、競争上の不利益、機密保持違反をもたらさない、お客様から入力された非機微コンテンツを指す顧客データです。これには通常、以下が含まれます。
+
+  - 集計されたメトリクスや運用統計。
+  - 識別性のない技術テレメトリー。
+  - 公開情報、またはお客様が自ら公開しているデータ。
+  - 専有情報を明らかにしないシステムパフォーマンスデータ。
+
+以下の表は、具体的なコンテンツの種類、その分類、および許可される処理の種類(匿名化不可の場合は許可されない処理)を示しています。
+
+| データの種類 | 分類 | 処理 |
+| --- | --- | --- |
+| お客様のソースコード | Customer Sensitive Content | 匿名化不可 |
+| Environment variables | Customer Sensitive Content | 匿名化不可 |
+| ビルド用のSecrets | Customer Sensitive Content | 匿名化不可 |
+| サードパーティ連携用の認証シークレット | Customer Sensitive Content | 匿名化不可 |
+| アーティファクト | Customer Sensitive Content | 匿名化不可 |
+| Build cacheのblob | Customer Sensitive Content | 匿名化不可 |
+| 接続済みGitアカウント(例: GitHubのユーザー名、組織) | Customer Sensitive Content | 匿名化不可 |
+| お客様が設定した送信webhook URL | Customer Sensitive Content | 匿名化不可 |
+| ユーザーおよびグループ | Customer Sensitive Content | 匿名化不可 |
+| 接続済みのSAMLアカウント | Customer Sensitive Content | 匿名化不可 |
+| アプリリリースのメタデータ(Release Management) | Customer Sensitive Content | 匿名化不可 |
+| 汎用ファイル(ビルドに必要なもの) | Customer Sensitive Content | 匿名化不可 |
+| Code signing関連ファイル(テストデバイスデータ、UUID) | Customer Sensitive Content | 匿名化不可 |
+| Build Insightsデータ(経時的なビルド失敗、経時的なビルド時間、不安定なテスト、使用率、Git統計など) | Customer Sensitive Content | 匿名化可能 |
+| <GlossTerm baseform="pipeline">Pipeline</GlossTerm>の設定(<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>) | Customer Sensitive Content | 匿名化可能 |
+| テストレポート | Customer Sensitive Content | 匿名化可能 |
+| ビルドログ | Customer Sensitive Content | 匿名化可能 |
+| アクセスログ(IPアドレス) | Customer Sensitive Content | 匿名化可能 |
+| お客様が使用するサードパーティツールの一覧 | Customer Sensitive Content | 匿名化可能 |
+| 使用データ(ビルド数、ビルド時間、エラー率、キャッシュヒット率、転送バイト数、CLI、<GlossTerm baseform="step">Step</GlossTerm>テレメトリーなど) | Customer Non-Sensitive Data | 直接利用可能 |
+| Document Centerの検索クエリ | Customer Non-Sensitive Data | 直接利用可能 |
+| マーケティング分析(Google Analyticsなど) | Customer Non-Sensitive Data | 直接利用可能 |
+| インフラ関連データ: VMの負荷(CPUおよびメモリ)、データセンターの所在地など。 | Customer Non-Sensitive Data | 直接利用可能 |
+| ウェブサイト分析 | Customer Non-Sensitive Data | 直接利用可能 |
+
+
+## Bitriseはトレーニングのために顧客データを保持しますか?
+
+顧客データはいくつかのCustomer Contentカテゴリーに分類されます。Customer Contentは、その後次のように扱われます。
+
+- <strong>匿名化不可のCustomer Sensitive Content</strong>は、トレーニングやファインチューニングの目的で保持されることはありません。たとえば、ソースコードは、いかなる他の目的がお客様のソースコードを基盤モデルや派生モデルに流出させる可能性があるかどうかにかかわらず、トレーニングや改良、その他いかなる目的のためにも保持されません。
+- <strong>匿名化済みのCustomer Sensitive Content</strong>および<strong>Customer Non-Sensitive Data</strong>は、ファインチューニング、負荷予測、パフォーマンスと信頼性の向上といったユースケースのために保持される場合があります。
+
+
+## BitriseはどこでLLM推論を実行していますか?
+
+Bitriseは、次の<strong>Inference Locations</strong>(モデルが使用され、顧客データと接する場所)を区別しています。すべてのモデルがすべてのInference Locationで利用できるわけではありません。
+
+| Inference Location | デプロイ/推論の場所 |
+| --- | --- |
+| 「Local」 | オンデバイス、つまりサービスが実行されている場所(例: ビルド/テストプロセスが実行されているのと同じサーバー上) |
+| 「BitriseがホストするGPU」 | Bitriseが管理するVPCおよびサーバー内 |
+| 「Bitriseが管理するCSPアカウント」 | 例: AWS Bedrock、GCP Vertex AI |
+| 「サードパーティのAPIベンダー」 | 例: OpenAI、Anthropic |
+
+
+## Bitriseが使用する大規模言語モデル(LLM)はどれですか?
+
+Bitriseは次のモデルファミリーを利用しており、各モデルのInference Locationは、そのモデルがどこで使用され、顧客データとどのようにやり取りするかを示しています。
+
+| モデル名/プロバイダー | デプロイ/推論の場所 | データ保持(データ保持期間は、規制/安全性の遵守のためにLLMサービスプロバイダーが設定します。Bitriseはデータを保持せず、可能な限りゼロデータ保持を設定するようLLMサービスプロバイダーと連携しています。)(サービスプロバイダーによる) |
+| --- | --- | --- |
+| Geminiモデル(専有モデル) | GCP Vertex AI | ゼロデータ保持 |
+| OpenAIモデル(専有モデル) | OpenAIがホストするAPIエンドポイント | 一時的(30日未満) |
+| Anthropicモデル(専有モデル) | AnthropicがホストするAPIエンドポイント | ゼロデータ保持 |
+| Anthropicモデル(専有モデル) | AWS Bedrock | ゼロデータ保持 |
+| Grokモデル | X.aiがホストするAPIエンドポイント | ゼロデータ保持 |
+
+
+## Bitriseはどのくらいの頻度でAIモデルを更新していますか?
+
+Bitriseは、利用可能になり次第、モデルを定期的にテストおよび更新することで、AI機能の継続的な強化に取り組んでいます。
+
+これらの更新は、お客様のデータプライバシーを尊重し、ワークフローを中断することなく、精度、セキュリティ、パフォーマンスを向上させるように設計されています。モデルは、本番環境での使用に昇格する前に厳格な評価を受けます。
+
+
+## Bitriseのどの機能がAI/LLMを使用していますか?
+
+| 機能 | 関連する顧客データの種類 | 許可されるInference Location | 許可されるモデル |
+| --- | --- | --- | --- |
+| Code reviewer | - お客様のソースコードの一部(差分の断片、変更されたファイルなど) | すべて | すべて |
+| Bitrise Coding Agent | - お客様のソースコード - Environment variables - ビルド用のSecrets | すべて | すべて |
+| Compare invocations/分析 | - 使用データ: ビルド数、ビルド時間、エラー率、キャッシュヒット率、転送バイト数など - インフラ関連データ: VMの負荷(CPUおよびメモリ)および関連テレメトリー、データセンターの所在地 - Environment variables - お客様のソースコードの一部 | すべて | すべて |
+| AI Assistant | - お客様のビルドログの一部(失敗したStepログの断片) - ビルドメタデータ(Stepのタイトル、<GlossTerm baseform="stack">stack</GlossTerm>の名前、マシンタイプ、Git branch name、コミットメッセージなど) | すべて | すべて |
+
+
+## LLMが生成した知的財産権は誰が保有しますか?
+
+所有権は、このFAQ全体で適用しているものと同じデータ分類のロジックに従います。AI出力がお客様自身の匿名化不可の素材にどれだけ近く遡れるかによって、その出力がどれだけ完全にお客様に帰属するかが決まります。それ以外はすべて当社に帰属します。
+
+| AI出力を生み出した入力データのカテゴリー | 出力を所有するのは誰か? | 根拠 |
+| --- | --- | --- |
+| <strong>匿名化不可のCustomer Sensitive Content</strong>(例: お客様のソースコード、ビルドシークレットなど) | <strong>お客様(あなた)</strong> | この出力は、お客様が既に所有しているコンテンツの延長にすぎず、当社はそれを二次的な目的のために保持または使用しないことをお約束します。 |
+| <strong>匿名化済みのCustomer Sensitive Content</strong>(例: 匿名化されたビルドログ、失敗の統計など) | <strong>Bitrise</strong> | 機微なフィールドが除去された後、その出力にはもはやお客様固有の専有情報は含まれません。当社はサービス改善のためにこれを再利用する場合があります。 |
+| <strong>Customer Non-Sensitive Data</strong>(例: テレメトリー、公開されているメタデータ、検索入力文字列など) | <strong>Bitrise</strong> | これらの入力は本質的に非機微であるか、その生成元または帰属先がBitriseであるものです。 |
+
+### Bitriseが所有する出力でできること
+
+BitriseのServicesの一部としてお客様に提供されるBitrise所有の出力は、お客様が別途ライセンスを取得して使用しているBitriseのServicesとあわせて使用できます。
+
+### Bitriseが顧客所有の出力でできること
+
+出力がお客様の匿名化不可のSensitive Contentから派生したものである場合、Bitriseは、それをお客様に生成して表示するために必要な範囲を超える権利を一切保持しません。当社は、お客様の明示的な許可なしにその出力でモデルを再利用したり再トレーニングしたりすることはなく、知的財産権はすべてお客様に帰属し続けます。たとえば、Bitriseが運用するコーディングエージェントがお客様のソースコードに基づいてコード変更を生成した場合、生成されたコードの所有権は完全にお客様にあります。
+
+
+## BitriseでAI機能を無効にすることはできますか?
+
+はい。お客様は以下の単位でAI機能を無効にできます。
+
+- 機能単位
+- <GlossTerm baseform="workspace">Workspace</GlossTerm>単位
+
+AI支援機能の一部またはすべてを無効化または有効化したい場合は、[サポートチームまでお問い合わせください](https://support.bitrise.io/en/articles/11689194-how-to-submit-a-ticket-to-bitrise-support)。
+
+
+## BitriseはサービスにおけるAI機能の使用にどのように取り組んでいますか?
+
+機能にAIを実装するにあたり、Bitriseは次の点を遵守することを目指しています。
+
+- AIの提案は常に推奨事項であり、不可逆的な操作ではありません。
+- AIは意思決定における人間の判断を補強するものであり、決して置き換えるものではありません。
+- 実現可能な場合、AIの判断は明確で非技術的な言葉で説明できるものでなければなりません。
+- 重要なフロー(デプロイ、請求など)には、常に人間による明示的な確認が必要です。
+- Bitriseは、社内ポリシーを通じて、透明性のあるインシデント調査と適時の是正措置を実施することをお約束します。
+
+
+## コンプライアンスとセキュリティに関するその他のご質問
+
+[詳しくはこちらをご覧ください](https://bitrise.io/platform/devops/security)。
