@@ -1,0 +1,339 @@
+---
+title: "Using the CodePush CLI"
+description: "How to use the CodePush CLI: project setup, release management, deployment management, update management, and workflow examples."
+sidebar_position: 4
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_CodepushCliCommandSyntax from '@site/src/partials/codepush-cli-command-syntax.mdx';
+
+<Partial_CodepushCliCommandSyntax />
+
+:::tip
+
+コマンド、フラグ、environment variablesの概要については、[CodePush CLIリファレンス](/release-management/codepush/codepush-cli/codepush-cli-reference)を参照してください。
+
+:::
+
+## プロジェクトのセットアップ
+
+CodePush CLIをインストールして認証を設定したら、プロジェクトを初期化してアプリIDをローカルに保存します。
+
+```bash
+bitrise :codepush init
+```
+
+このコマンドは、現在のディレクトリに`.codepush.json`ファイルを作成します。バージョン管理にコミットすれば、チームで同じ設定を共有できます。
+
+`init`を初めて実行すると、CLIからアプリIDの入力を求められます。アプリIDはRelease ManagementのアプリURL: `https://app.bitrise.io/release-management/workspaces/<workspace-slug>/connected-apps/<app-id>/`、または[API経由](https://api.bitrise.io/release-management/api-docs/index.html#/Connected%20Apps/ListApps)で確認できます。
+
+```yaml
+Enter your app ID (UUID):
+>a3f47d2c-6b9e-4f1a-9d2b-7c8e5a1b2c3d
+```
+
+`--app-id`で直接渡すことも、`CODEPUSH_APP_ID`環境変数を設定することもできます。CLIは次の順序でアプリIDを解決します。
+
+1. `--app-id`フラグ(優先度が最も高い)
+1. `CODEPUSH_APP_ID`環境変数
+1. `.codepush.json`内の`app_id`フィールド
+
+既存の`.codepush.json`を上書きするには:
+
+```bash
+bitrise :codepush init --force --app-id a3f47d2c-6b9e-4f1a-9d2b-7c8e5a1b2c3d
+```
+
+
+## Release management
+
+### アプリのバンドル
+
+`bundle`コマンドは、React NativeおよびExpoプロジェクト向けにJavaScriptバンドルを生成します。プロジェクトの種類、エントリファイル、Hermesの設定、Metroの設定を自動検出します。
+
+プラットフォームごとに個別にアプリをバンドルします。
+
+```bash
+bitrise :codepush bundle --platform ios
+bitrise :codepush bundle --platform android
+```
+
+自動検出が失敗した場合は、該当するフラグを手動で上書きしてください。
+
+```bash
+bitrise :codepush bundle --platform ios \
+  --entry-file index.js \
+  --config metro.config.js \
+  --pod-file ios/Podfile
+```
+
+Hermesを使用するAndroidでは、`--pod-file`の代わりに`--gradle-file`を使用します。
+
+```bash
+bitrise :codepush bundle --platform android \
+  --entry-file index.js \
+  --gradle-file android/app/build.gradle
+```
+
+### 更新のプッシュ
+
+`push`コマンドは、ビルド済みのバンドルをCodePushサーバーにアップロードします。デプロイとアプリバージョンを指定する必要があります。
+
+```bash
+bitrise :codepush push ./codepush-bundle \
+  --deployment Staging --app-version 1.0.0
+```
+
+`--bundle`フラグを使えば、バンドルとプッシュを1つのステップで実行することもできます。
+
+```bash
+bitrise :codepush push --bundle --platform ios \
+  --deployment Staging --app-version 1.0.0
+```
+
+### リリースの昇格
+
+`promote`コマンドは、あるデプロイから別のデプロイへリリースをコピーします。ステージング環境から本番環境へリリースを移動する際に最もよく使われます。
+
+```bash
+bitrise :codepush promote \
+  --source-deployment Staging \
+  --destination-deployment Production \
+  --rollout 25 --description "Gradual rollout"
+```
+
+:::tip
+
+対象のデプロイにすでに同一内容のリリースが含まれている場合、エラーではなく警告付きで終了コード0を返すには`--no-duplicate-release-error`を渡してください。
+
+:::
+
+### リリースのパッチ適用
+
+`patch`コマンドは、コードを再デプロイせずに既存のリリースのメタデータを更新します。
+
+ラベルを指定して特定のリリースにパッチを適用します。
+
+```bash
+bitrise :codepush patch --deployment Production --label v5 --mandatory true
+```
+
+最新のリリースのrollout percentageを増やします。
+
+```bash
+bitrise :codepush patch --deployment Production --rollout 50
+```
+
+### ロールバック
+
+`rollback`コマンドは、以前のバージョンを複製する新しいリリースを作成します。
+
+直前のリリースにロールバックします。
+
+```bash
+bitrise :codepush rollback --deployment Production
+```
+
+ラベルを指定して特定のリリースにロールバックします。
+
+```bash
+bitrise :codepush rollback --deployment Production --target-release v3
+```
+
+
+## デプロイ管理
+
+デプロイキーを取得するには、デプロイを作成します。CodePushの更新をアプリにリリースするには、このデプロイキーが必要です。
+
+すべてのデプロイを一覧表示します。
+
+```bash
+bitrise :codepush deployment list
+bitrise :codepush deployment list --display-keys  # include deployment keys
+```
+
+新しいデプロイを作成します。
+
+```bash
+bitrise :codepush deployment add Beta
+```
+
+カスタムのデプロイキーで新しいデプロイを作成します。
+
+```bash
+bitrise :codepush deployment add Beta --key my-custom-key
+```
+
+デプロイの詳細と最新のリリースを表示します。
+
+```bash
+bitrise :codepush deployment info Staging
+```
+
+リリース履歴を表示します。デフォルトでは、直近10件のリリースが表示されます。
+
+```bash
+bitrise :codepush deployment history Staging
+bitrise :codepush deployment history Staging --limit 25
+bitrise :codepush deployment history Staging --display-author
+```
+
+デプロイの名前を変更します。
+
+```bash
+bitrise :codepush deployment rename OldName --name NewName
+```
+
+デプロイからすべてのリリースを削除します。これは破壊的な操作です。CIでの確認プロンプトをスキップするには`--yes`を渡してください。
+
+```bash
+bitrise :codepush deployment clear Staging --yes
+```
+
+デプロイを削除します。これは破壊的な操作です。CIでの確認プロンプトをスキップするには`--yes`を渡してください。
+
+```bash
+bitrise :codepush deployment remove Beta --yes
+```
+
+
+## 更新管理
+
+デプロイ内の最新の更新の詳細を表示します。
+
+```bash
+bitrise :codepush update info Staging
+```
+
+ラベルを指定して特定の更新を表示します。
+
+```bash
+bitrise :codepush update info Staging --label v5
+```
+
+更新の処理ステータスを確認します。これは、プッシュ後にその更新が受理されたことを確認するのに役立ちます。
+
+```bash
+bitrise :codepush update status Staging
+```
+
+特定の更新を削除します。更新の指定には`--label`を、確認には`--yes`を使用します。
+
+```bash
+bitrise :codepush update remove Staging --label v3 --yes
+```
+
+
+## JSON出力
+
+任意のコマンドに`--json`を渡すと、機械可読なJSON出力を標準出力に取得できます。人間が読める形式の出力は常に標準エラー出力に送られるため、JSON出力はパイプ処理に適したクリーンな状態を保ちます。
+
+プッシュ結果をJSONとして取得します。
+
+```bash
+bitrise :codepush push ./CodePush \
+  --deployment Staging --app-version 1.0.0 --json
+```
+
+デプロイの一覧をJSONとして取得します。
+
+```bash
+bitrise :codepush deployment list --json
+```
+
+`jq`で出力を解析します。
+
+```bash
+bitrise :codepush update info Staging --json | jq '.app_version'
+```
+
+
+## Bitrise CIとの連携
+
+CLIは、`BITRISE_BUILD_NUMBER`または`BITRISE_DEPLOY_DIR`のenvironment variablesを介してBitrise CI環境を検出します。Bitriseのビルド内で実行されている場合、CLIは自動的に次を行います。
+
+- ビルド番号とコミットハッシュをプッシュのメタデータに付加します。
+- バンドル後に`codepush-bundle-summary.json`をエクスポートします。
+- プッシュ後に`codepush-push-summary.json`をエクスポートします。
+- パッチ適用後に`codepush-patch-summary.json`をエクスポートします。
+- 後続のステップのために`envman`経由でenvironment variablesをエクスポートします。
+- 対話型のプロンプトとスピナーを無効にします。
+
+
+## Workflowの例
+
+### 完全なリリースのライフサイクル
+
+1. BitriseのAPIトークンで認証します。
+
+   ```bash
+   bitrise :codepush auth login --token $BITRISE_API_TOKEN
+   ```
+
+1. ターゲットプラットフォーム向けにJavaScriptをバンドルします。
+
+   ```bash
+   bitrise :codepush bundle --platform ios
+   ```
+
+1. 限定的なロールアウトでStagingにプッシュします。
+
+   ```bash
+   bitrise :codepush push ./CodePush \
+     --deployment Staging \
+     --app-version 1.2.0 --rollout 10 --description "Fix login crash"
+   ```
+
+1. 処理ステータスを確認し、更新が受理されたことを確認します。
+
+   ```bash
+   bitrise :codepush update status Staging
+   ```
+
+1. テストデバイスでの検証後、ロールアウトを増やします。
+
+   ```bash
+   bitrise :codepush patch --deployment Staging --rollout 100
+   ```
+
+1. Productionに昇格させます。
+
+   ```bash
+   bitrise :codepush promote \
+     --source-deployment Staging \
+     --destination-deployment Production \
+     --rollout 25
+   ```
+
+1. 問題が発生した場合は、ロールバックします。
+
+   ```bash
+   bitrise :codepush rollback --deployment Production
+   ```
+
+### Bitrise CIパイプライン
+
+BitriseのWorkflowに`BITRISE_API_TOKEN`、`CODEPUSH_APP_ID`、`CODEPUSH_DEPLOYMENT`をenvironment variablesとして設定し、単一のコマンドを実行します。
+
+```bash
+bitrise :codepush push --bundle --platform ios --app-version $APP_VERSION
+```
+
+CLIはBitrise環境を自動検出し、ビルドメタデータ(ビルド番号とコミットハッシュ)を付加し、サマリーファイルを`$BITRISE_DEPLOY_DIR`にエクスポートします。
+
+### Expoワークフロー
+
+Expoは`package.json`から自動検出されるため、追加のフラグは必要ありません。CLIは、内部で`react-native bundle`の代わりに`npx expo export:embed`を使用します。それ以外のフラグ(デプロイ、アプリバージョン、ロールアウトなど)はすべて同じように動作します。
+
+```bash
+bitrise :codepush push --bundle --platform ios \
+  --deployment Staging \
+  --app-version 1.0.0
+```
+
+バンドラーの動作は2つのフラグで制御します。
+
+- `--minify`(デフォルト`false`): バンドルを圧縮するかどうかを指定します。デバッグを容易にするためデフォルトでは無効になっています。可能な限り小さいバンドルにするには`--minify=true`を設定してください。
+- `--reset-cache`(デフォルト`true`): 実行のたびにMetroバンドラーのキャッシュをクリアし、クリーンな出力を保証します。キャッシュのクリアをスキップしてローカルでの繰り返し実行を高速化するには`--reset-cache=false`を設定してください。
