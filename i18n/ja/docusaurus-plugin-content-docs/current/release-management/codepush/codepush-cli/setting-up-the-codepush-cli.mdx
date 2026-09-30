@@ -1,0 +1,99 @@
+---
+title: "Setting up the CodePush CLI"
+description: "Install the CodePush CLI in plugin mode or as a standalone binary. Optionally, set a custom server URL."
+sidebar_position: 3
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_CodepushCliCommandSyntax from '@site/src/partials/codepush-cli-command-syntax.mdx';
+
+CodePush CLIは、Bitrise CLIプラグインとして、またはスタンドアロンバイナリとして、2つの方法でインストールできます。どちらも同じコマンドをサポートします。すでにBitrise CLIを使用している場合はプラグインモードを、CLIを独立して実行したい場合はスタンドアロンモードを使用してください。
+
+## プラグインモード
+
+プラグインモードでは、コマンドの先頭に`bitrise :codepush`が付きます。
+
+1. [Bitrise CLIをインストールします](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli)。
+1. 次のコマンドを実行します。
+
+   ```bash
+   bitrise plugin install https://github.com/bitrise-io/bitrise-plugins-codepush-cli.git
+   ```
+1. インストールを確認します。
+
+   ```bash
+   bitrise :codepush
+   ```
+
+標準のBitrise CLIコマンドを使用してプラグインを管理できます。
+
+```bash
+bitrise plugin list              # confirm installation
+bitrise plugin update codepush   # upgrade to latest version
+bitrise plugin delete codepush
+```
+
+## スタンドアロンモード
+
+スタンドアロンモードでは、コマンドの先頭に`codepush`が付きます。Bitrise CLIは必要ありません。
+
+1. [Releasesページ](https://github.com/bitrise-io/bitrise-plugins-codepush-cli/releases)からご使用のプラットフォーム用のバイナリをダウンロードします。
+
+   | プラットフォーム | バイナリ |
+   |---|---|
+   | macOS(Apple Silicon) | `codepush-Darwin-arm64` |
+   | macOS(Intel) | `codepush-Darwin-x86_64` |
+   | Linux(x86_64) | `codepush-Linux-x86_64` |
+
+1. 実行可能にして、PATHに移動します。
+
+   ```bash
+   chmod +x codepush-Darwin-arm64
+   mv codepush-Darwin-arm64 /usr/local/bin/codepush
+   ```
+
+1. インストールを確認します。
+
+   ```bash
+   codepush version
+   ```
+
+:::note[プラグインモードとの違い]
+
+スタンドアロンモードでは、`BITRISE_BUILD_NUMBER`、`BITRISE_DEPLOY_DIR`、`GIT_CLONE_COMMIT_HASH`は自動入力されず、`envman`のエクスポート(`CODEPUSH_UPDATE_ID`、`CODEPUSH_APP_VERSION`、`CODEPUSH_LABEL`)は後続のStepで使用できません。
+
+:::
+
+
+## カスタムサーバーURLの設定
+
+メインのBitriseサーバーの代わりに、CodePushの別のターゲット環境を設定できます。たとえば、ステージング環境をベースサーバーURLとして設定できます。
+
+<Partial_CodepushCliCommandSyntax />
+
+これを行うには、次の3つの方法があります。
+
+- `--server-url`フラグを付けて任意のコマンドを使用します。
+
+  ```bash
+  bitrise :codepush push --server-url https://api.staging.bitrise.io
+  ```
+- `CODEPUSH_SERVER_URL`環境変数をエクスポートします。
+
+  ```bash
+  export CODEPUSH_SERVER_URL=https://api.staging.bitrise.io
+  ```
+- `init`コマンドで初期化時にサーバーURLを設定します。これにより、URLが`.codepush.json`ファイルに書き込まれます。
+
+  ```bash
+  bitrise :codepush init --server-url https://api.staging.bitrise.io
+  ```
+
+サーバーURLは、次の順序で解決されます。
+
+1. `--server-url`フラグ(優先度が最も高い)
+1. `CODEPUSH_SERVER_URL`環境変数
+1. `.codepush.json`ファイル内の`server_url`フィールド。
+1. デフォルト: https://api.bitrise.io
