@@ -1,0 +1,97 @@
+---
+title: "Release automation"
+description: "You can specify events in the release management process that triggers a selected Workflow or Pipeline. For example, you can create an automation that triggers a Workflow whenever an App Store review is cancelled."
+sidebar_position: 4
+slug: /release-management/releases/configuring-a-release/release-automation
+sidebar_label: Configuring release automation
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningAnAppInReleaseManagement from '@site/src/partials/opening-an-app-in-release-management.mdx';
+
+release managementプロセスでは、選択した<GlossTerm baseform="workflow">Workflow</GlossTerm>または<GlossTerm baseform="pipeline">Pipeline</GlossTerm>を<GlossTerm baseform="trigger">トリガー</GlossTerm>するイベントを指定できます。たとえば、App StoreのレビューがキャンセルされたときにWorkflowをトリガーするオートメーションを作成できます。
+
+:::important[Standardプランのみ]
+
+この機能は[有料プラン](https://bitrise.io/pricing)でのみご利用いただけますのでご注意ください。
+
+:::
+
+:::note[Release Managementからの環境変数]
+
+Release Managementは、Release candidate stageおよび後のReleaseステージで特定のEnvironment Variablesをビルドに渡します。詳細は[Available environment variables](/bitrise-ci/references/available-environment-variables)をご覧ください。これらの環境変数は、オートメーションによってトリガーされたビルドで使用できます。
+
+:::
+
+リリースオートメーションを設定するには:
+
+## リリース向けのオートメーションの設定
+
+各リリースごとに個別にオートメーションを設定できます:
+
+1. <Partial_OpeningAnAppInReleaseManagement />
+1. <strong>Releases</strong>を選択し、対象のリリースを選択します。
+1. 左側のナビゲーションバーで<strong>Configuration</strong>を選択します。
+1. <strong>Release process</strong>セクションで<strong>Automation</strong>を見つけます。
+1. <strong>Show details</strong>をクリックし、続けて<strong>Add automation</strong>をクリックします。
+
+   ![2025-08-08-rm-add-automation.png](/img/_paligo/uuid-7225cae0-64cd-a1cf-b878-270a054e58da.png)
+1. <strong>Event</strong>フィールドで、WorkflowまたはPipelineをトリガーするrelease managementイベントを選択します。
+
+   ![2025-08-08-rm-add-automation-dialog.png](/img/_paligo/uuid-5e41d5a0-b686-edc7-44a5-42c09bf1b12b.png)
+1. automation typeを<strong>Workflow</strong>または<strong>Pipeline</strong>のいずれかに設定します。
+1. <strong>Add automation</strong>をクリックします。
+
+## リリースプリセットとしてのオートメーションの設定
+
+オートメーションは[リリースプリセット](/release-management/releases/release-presets)として設定できます。これらのオートメーション設定は、以降作成されるすべての新しいリリースに適用されます。
+
+1. Release Managementを開き、your appを選択します。
+1. 左側のナビゲーションメニューから<strong>Release presets</strong>を選択します。
+
+   ![release-presets-notif.png](/img/_paligo/uuid-7c480e99-66d6-8197-a63a-e9275e127d78.png)
+1. プリセットテンプレート名の横にあるオプションメニュー(⋮)をクリックし、<strong>Change</strong>を選択します。
+1. <strong>Release process</strong>セクションで<strong>Automation</strong>を見つけます。
+1. <strong>Show details</strong>をクリックし、続けて<strong>Add automation</strong>をクリックします。
+1. <strong>Event</strong>フィールドで、WorkflowまたはPipelineをトリガーするrelease managementイベントを選択します。
+
+   ![2025-08-08-rm-add-release-automation-preset-dialog.png](/img/_paligo/uuid-28812c0e-a307-6879-8d90-d0d516765519.png)
+1. automation typeを<strong>Workflow</strong>または<strong>Pipeline</strong>のいずれかに設定します。
+1. <strong>Add automation</strong>をクリックします。
+
+## オートメーションイベント
+
+ここでは、Bitrise CIWorkflowsをトリガーできるすべてのイベントを確認できます。リリースオートメーションには、トリガーを識別する$RM_EVENT_IDという環境変数(Env Var)があります。詳細は[Release Management 環境変数](/bitrise-ci/references/available-environment-variables#release-management-env-vars)および[Available Environment Variables](/bitrise-ci/references/available-environment-variables)をご覧ください。
+
+<div className="automation-events-table">
+
+| ステージ | イベント | イベントの説明 |
+| --- | --- | --- |
+| リリース候補 | リリース候補が設定されました<br/>イベントID: `release_candidate_set` | このイベントは、Release candidate stageで新しいリリース候補が選択されるたびにトリガーされます。これは自動的に発生する場合(新しいビルドが新しいIPAを生成した場合)と、手動で発生する場合(リリースマネージャーがRelease candidate stage上で特定のアーティファクトをロックした場合)があります。 |
+| TestFlightアップロード | アップロードと処理が完了しました<br/>イベントID: `testflight_upload_finished` | このイベントは、アップロードされたIPAのTestFlight処理が完了するとトリガーされます。まずIPAをTestFlightにアップロードし、その後TestFlightの処理が開始されます。処理が完了すると、イベントがトリガーされます。 |
+| TestFlightアップロード | TestFlightアプリレビューによって承認されました<br/>イベントID: `beta_review_approved` | このイベントは、外部のベータテスターとアプリを共有するために必要なベータアプリレビューをAppleが承認するとトリガーされます。 |
+| TestFlightアップロード | TestFlightアプリレビューによって却下されました<br/>イベントID: `beta_review_rejected` | このイベントは、外部のベータテスターとアプリを共有するために必要なベータアプリレビューをAppleが却下するとトリガーされます。 |
+| TestFlightアップロード | TestFlight/App Storeのテストグループにリリースされました<br/>イベントID: `release_for_apple_app_store_testing_group` | このイベントは、アップロードされたビルドがTestFlightのテストグループにリリースされるとトリガーされます。 |
+| 承認 | リリースが承認されました<br/>イベントID: `approvals_completed` | このイベントは、Approvalステージですべてのタスクが承認されるとトリガーされます。各承認ごとにはトリガーされず、すべてのタスクが完了したときにのみトリガーされます。承認タスクが設定されていない場合、このイベントは直前のイベントの直後にトリガーされます。 |
+| App Storeレビュー | リリースがレビューに送信されました<br/>イベントID: `submitted_for_review` | このイベントは、ストアレビューの申請が開始されると発生します。(リリースマネージャーが送信ボタンをクリックし、Appleがそれを受理します) |
+| App Storeレビュー | レビュー申請のステータスが変更されました<br/>イベントID: `review_status_changed` `review_cancelled` | このイベントは、レビュー申請のステータスに変更があるたびにトリガーされます。(承認、却下、キャンセル) |
+| リリース | リリースが開始されました<br/>イベントID: `release_started` | このイベントは、申請が受理され、リリースのロールアウトが開始された後にトリガーされます(つまり、新しいバージョンがApp Store Connectで利用可能になります) |
+| リリース | リリースが完了しました<br/>イベントID: `release_completed` | このイベントは、Release Managementでリリースが完了ステータスになるとトリガーされます(これは、リリースがGoogle PlayまたはApp Storeに完全にロールアウトされたことを意味します)。 |
+
+</div>
+
+<div className="automation-events-table">
+
+| ステージ | イベント | イベントの説明 |
+| --- | --- | --- |
+| リリース候補 | リリース候補が設定されました<br/>イベントID: `release_candidate_set` | このイベントは、Release Candidate stageで新しいリリース候補が選択されるたびにトリガーされます。これは自動的に発生する場合(新しいビルドが新しいAABを生成した場合)と、手動で発生する場合(リリースマネージャーがRelease candidate stage上で特定のアーティファクトをロックした場合)があります。 |
+| Google Playアップロード | アップロードと処理が完了しました<br/>イベントID: `google_play_store_upload_finished` | このイベントは、AABがGoogle Play consoleにアップロードされ、App bundle explorerで利用可能になった後にトリガーされます。 |
+| Google Playアップロード | テストトラックでリリースされました<br/>イベントID: `release_on_google_play_store_testing_track` | このイベントは、リリース候補がGoogle Playのテストトラックでリリースされた後にトリガーされます。 |
+| 承認 | リリースが承認されました<br/>イベントID: `approvals_completed` | このイベントは、Approvalステージですべてのタスクが承認されるとトリガーされます。各承認ごとにはトリガーされず、すべてのタスクが完了したときにのみトリガーされます。 |
+| リリース | リリースが開始されました<br/>イベントID: `release_started` | このイベントは、リリースが開始されるとトリガーされます。これは完全リリースの場合も、段階的ロールアウトの場合もあります。段階的ロールアウトの場合、最初のロールアウト時に一度だけ発生します。 |
+| リリース | リリースが完了しました<br/>イベントID: `release_completed` | このイベントは、Release Managementでリリースが完了するとトリガーされます。 |
+| リリース | Rollout percentageが変更されました<br/>イベントID: `release_percentage_changed` | このイベントは、rollout percentageが0%以外の割合から変化した場合にトリガーされます。たとえば、rollout percentageが10%から20%に変わった場合です。最初のロールアウトが発生したときにはトリガーされません。 |
+
+</div>
