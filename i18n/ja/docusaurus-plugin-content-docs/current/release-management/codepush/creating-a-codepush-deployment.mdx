@@ -1,0 +1,79 @@
+---
+title: "Creating a CodePush deployment"
+description: "Create a CodePush deployment to get your deployment key. You need the deployment key to release CodePush updates to your apps."
+sidebar_position: 2
+slug: /release-management/codepush/creating-a-codepush-deployment
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_ReleaseManagementConfiguration from '@site/src/partials/release-management-configuration.mdx';
+
+デプロイキーを取得するには、CodePushのデプロイを作成します。アプリにCodePushの更新をリリースするには、このデプロイキーが必要です。
+
+デプロイの作成は、[API](/release-management/release-management-api)、またはRelease ManagementのGUIから行えます。
+
+<Tabs>
+  <TabItem value="gui" label="GUI">
+
+  1. React Nativeのプロジェクトごとに、Release Managementに[2つのアプリ](/release-management/getting-started-with-release-management/adding-a-new-app-to-release-management)があることを確認してください。1つはiOS用、もう1つはAndroid用です。
+  1. <Partial_ReleaseManagementConfiguration />
+  1. <strong>Deployment</strong>を選択します。
+  1. <strong>New deployment</strong>をクリックします。
+  1. Enter a name。
+
+     複数のデプロイがある場合、それぞれに一意の名前を付ける必要があります。名前にはデプロイのターゲットを含めることをお勧めします（例: Staging Deployment）。
+  1. <strong>Deployment key</strong>フィールドに、既存のデプロイキーを貼り付けることができます。
+
+     空欄のままにすると、Bitriseが安全なデプロイキーを自動生成します。
+
+  </TabItem>
+  <TabItem value="api" label="API">
+
+  1. [個人アクセストークン](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token)、または[workspace APIトークン](/bitrise-platform/workspaces/workspace-api-token#creating-a-workspace-api-token)があることを確認してください。
+
+     [Release Management API](/release-management/release-management-api)で認証するには、トークンが必要です。
+  1. React Nativeのプロジェクトごとに、Release Managementに[2つのアプリ](/release-management/getting-started-with-release-management/adding-a-new-app-to-release-management)があることを確認してください。1つはiOS用、もう1つはAndroid用です。
+  1. 各アプリのアプリIDを取得します。これはアプリページのURLで確認できます。https://app.bitrise.io/release-management/workspaces/<workspace-id>/connected-apps/<connected-app-id>.
+
+     :::tip[APIからのID]
+
+     [APIを使ってアプリを追加できます](https://api.bitrise.io/release-management/api-docs/index.html#/Connected%20Apps/CreateConnectedApp)。`/connected-apps`エンドポイントのレスポンスには`id`フィールドが含まれています。これが必要なアプリIDです。
+
+     :::
+  1. `/connected-apps/{connected_app_id}/code-push/deployments`エンドポイントを呼び出して、各アプリのCodePushデプロイを作成します。このリクエストには以下が必要です。
+
+     - 接続済みアプリのアプリID
+     - 認証用のトークン
+     - デプロイに使用する名前
+
+     この例では、`prod`という名前を使用します：
+
+     ```bash
+     curl -X 'POST' \
+       'https://api.bitrise.io/release-management/v1/connected-apps/<connected-app-id>/code-push/deployments' \
+       -H 'accept: application/json' \
+       -H 'authorization: <access-token>' \
+       -H 'Content-Type: application/json' \
+       -d '{
+         "name": "prod"
+       }'
+     ```
+
+     :::tip[既存のdeploymentKey]
+
+     すでに`deploymentKey`をお持ちの場合（例えば、Microsoft App Centerから移行する場合など）は、APIリクエストで`key`パラメータを使用できます：
+
+     ```json
+     {
+         "name": "prod",
+         "key": "<existing-deploymentKey>"
+     }
+     ```
+
+     :::
+  1. レスポンスで返されるbase64エンコードされた`key`をコピーします。これがCodePushのデプロイキーです。これは[CodePush用にアプリを設定する](/release-management/codepush/configuring-your-app-for-codepush)ために必要です。
+
+  </TabItem>
+</Tabs>
