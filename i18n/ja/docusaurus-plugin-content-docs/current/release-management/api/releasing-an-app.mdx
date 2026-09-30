@@ -1,0 +1,253 @@
+---
+title: "Releasing an app to the store"
+description: "Submit your app for review and release it to the App Store or Google Play via the Release Management API."
+sidebar_position: 6
+slug: /release-management/api/releasing-an-app
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+リリース候補がストアにアップロードされ、すべての承認が完了すると、ユーザーへのリリースが可能になります。iOSの場合、まずApp Store審査にアプリを提出する必要もあります。Androidのリリースはリリースステップに直接進みます。
+
+Store Releases のサブAPIのベースURLは次のとおりです: `https://api.bitrise.io/release-management/v2/store-releases/v1`。エンドポイント、パラメーター、スキーマの全一覧については、[Store Releases APIリファレンス](/release-management-api/store-releases/api-reference/release-management-api-app-versions)を参照してください。
+
+## Configuring beta distribution (iOS)
+
+正式リリースを提出する前に、TestFlight（iOSのみ）を通じてビルドをベータテスターに配布できます。
+
+### Listing TestFlight testing groups
+
+リリースに関連付けられたTestFlightテストグループを返します。特定のグループへの配布を開始するには、レスポンスの`id`の値を使用します。
+
+```bash
+curl -X GET "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/beta-distribution/testing-groups" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+
+### Starting beta distribution to a TestFlight group
+
+特定のTestFlightグループのテスターに対して、リリースビルドを利用可能にします。テスターには通知が届き、TestFlightアプリから直接ビルドをインストールできます。
+
+```bash
+curl -X PATCH "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/beta-distribution/testing-groups/GROUP_ID" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+### Adding what-to-test notes for TestFlight
+
+リリースビルドにテスト手順を添付します。テスターはビルド通知を受け取った際、TestFlightアプリでこれらのメモを確認できます。
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/beta-distribution/what-to-test" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "locale": "en-US",
+    "whats_new": "Fixed login issue and improved onboarding flow."
+  }'
+```
+
+## リリースノートの追加（Android）
+
+リリースノートはアプリのGoogle Play Store掲載ページの<strong>新機能</strong>の下に表示され、ユーザーがアプリを更新する前後に表示されます。複数の言語でノートを提供できます。Google Playはユーザーのデバイス言語に一致するバージョンを表示し、一致するものがない場合は`en-US`にフォールバックします。
+
+[BCP 47言語タグ](https://www.rfc-editor.org/rfc/bcp/bcp47.txt)を使用して、言語とテキストのペアの配列を`release_notes`フィールドに渡します（例: `en-US`、`de-DE`、`fr-FR`）:
+
+```bash
+curl -X PUT "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/google-play-store/localized-release-notes" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "release_notes": [
+      {
+        "language": "en-US",
+        "text": "Fixed login issue and improved onboarding flow."
+      },
+      {
+        "language": "de-DE",
+        "text": "Login-Problem behoben und Onboarding-Flow verbessert."
+      }
+    ]
+  }'
+```
+
+各リリースノートのテキストは最大500文字まで指定できます。
+
+## ストア審査への提出（iOS）
+
+:::note[Android]
+
+API経由で提出されたAndroidのリリースは、設定済みのGoogle Playトラックに直接進み、個別の審査提出ステップは不要です。以下のリリースステップに進んでください。
+
+:::
+
+| エンドポイント | 機能 | 必要なロール |
+| --- | --- | --- |
+| [`POST /app-versions/{id}/apple-app-store/review/submit`](/release-management-api/store-releases/api-reference/submit-release-candidate-for-review) | リリースをApp Store審査に提出します。 | リリースマネージャー |
+| [`GET /app-versions/{id}/apple-app-store/review/status`](/release-management-api/store-releases/api-reference/get-review-status) | 現在のApp Store審査ステータスを取得します。 | 誰でも |
+| [`POST /app-versions/{id}/apple-app-store/review/cancel`](/release-management-api/store-releases/api-reference/cancel-review) | 保留中の審査提出をキャンセルします。 | リリースマネージャー |
+
+リリースをApp Store審査に提出します:
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/apple-app-store/review/submit" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "copy_primary_whats_new": true,
+    "localizations": [
+      {
+        "locale": "en-US",
+        "whats_new": "Bug fixes and performance improvements.",
+        "description": "Updated description for this version.",
+        "keywords": "productivity, task manager"
+      }
+    ]
+  }'
+```
+
+`copy_primary_whats_new: true`を設定すると、プライマリロケールの「新機能」テキストが、テキストが未設定の他のすべてのローカライズにコピーされます。
+
+審査ステータスを確認するには:
+
+```bash
+curl -X GET "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/apple-app-store/review/status" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+
+## リリース設定の構成
+
+<Tabs groupId="platform">
+<TabItem value="ios" label="iOS">
+
+リリースする前に、アップデートをユーザーにロールアウトする方法を設定します:
+
+```bash
+curl -X PATCH "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/apple-app-store/release/settings" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "release_type": "AFTER_APPROVAL",
+    "phased_release": true
+  }'
+```
+
+`release_type`のオプション:
+- `AFTER_APPROVAL`: Appleによる承認後に自動的にリリースします。
+- `MANUAL`: 手動でトリガーするまでリリースを保留します。
+- `SCHEDULED`: 指定した日時にリリースします（ISO 8601形式の`earliest_release_date`が必要です）。
+
+`phased_release: true`を使用すると、アップデートを一度に配信するのではなく、7日間かけてユーザーにロールアウトします。
+
+</TabItem>
+<TabItem value="android" label="Android">
+
+Androidの場合、ユーザーの一部にロールアウトをスケジュールできます（段階的ロールアウト）:
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/google-play-store/staged-rollout-schedule" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "location": "America/New_York",
+    "schedule": [
+      { "percentage": 10, "when": "2026-07-20T09:00:00-04:00" },
+      { "percentage": 50, "when": "2026-07-22T09:00:00-04:00" },
+      { "percentage": 100, "when": "2026-07-25T09:00:00-04:00" }
+    ]
+  }'
+```
+
+</TabItem>
+</Tabs>
+
+## ユーザーへのリリース
+
+<Tabs groupId="platform">
+<TabItem value="ios" label="iOS">
+
+| エンドポイント | 機能 | 必要なロール |
+| --- | --- | --- |
+| [`POST /app-versions/{id}/apple-app-store/release`](/release-management-api/store-releases/api-reference/create-store-release-ios) | アプリをApp Storeにリリースします。 | リリースマネージャー |
+| [`GET /app-versions/{id}/apple-app-store/release/status`](/release-management-api/store-releases/api-reference/get-release-status) | release statusを取得します。 | 誰でも |
+| [`POST /app-versions/{id}/apple-app-store/release/pause`](/release-management-api/store-releases/api-reference/pause-phased-release-ios) | 段階的リリースを一時停止します。 | リリースマネージャー |
+| [`POST /app-versions/{id}/apple-app-store/release/continue`](/release-management-api/store-releases/api-reference/continue-phased-release-ios) | 一時停止中の段階的リリースを再開します。 | リリースマネージャー |
+| [`POST /app-versions/{id}/apple-app-store/release/complete`](/release-management-api/store-releases/api-reference/complete-phased-release-ios) | 段階的リリースを即座に完了します。 | リリースマネージャー |
+
+リリースをトリガーします:
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/apple-app-store/release" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+release statusを確認します:
+
+```bash
+curl -X GET "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/apple-app-store/release/status" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+
+段階的リリースを即座に完了するには（すぐに100%のユーザーへ展開する場合）:
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/apple-app-store/release/complete" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+</TabItem>
+<TabItem value="android" label="Android">
+
+| エンドポイント | 機能 | 必要なロール |
+| --- | --- | --- |
+| [`POST /app-versions/{id}/google-play-store/release`](/release-management-api/store-releases/api-reference/create-store-release-android) | 全ユーザーまたは一部のユーザーにリリースします。 | リリースマネージャー |
+
+全ユーザーにリリースします:
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/google-play-store/release" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_fraction": 1.0
+  }'
+```
+
+10%から開始する段階的ロールアウトの場合:
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/google-play-store/release" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_fraction": 0.1
+  }'
+```
+
+`user_fraction`の値は`0`から`1`の範囲で、`1`がユーザーの100%に相当します。
+
+</TabItem>
+</Tabs>
+
+## リリースWebhookの設定
+
+リリースが主要な段階に達した際に通知を受け取るよう、送信Webhookを設定できます。
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/RELEASE_ID/outgoing-webhooks" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "events": ["release_started", "submitted_for_review"],
+    "webhook_configuration_id": "WEBHOOK_CONFIG_ID"
+  }'
+```
+
+個々のイベントを列挙する代わりに`all_events: true`を設定すると、リリースのライフサイクル全体のイベントについて通知を受け取れます。
