@@ -1,0 +1,109 @@
+---
+title: "CodePush CLI reference"
+description: "Command, flag, environment variable, and exit code reference for the CodePush CLI."
+sidebar_position: 5
+---
+
+import Partial_CodepushCliCommandSyntax from '@site/src/partials/codepush-cli-command-syntax.mdx';
+
+<Partial_CodepushCliCommandSyntax />
+
+任意のコマンドの詳細なフラグと使用方法については、`bitrise :codepush <command> --help`を実行してください。
+
+## Global flags
+
+| Flag | Description |
+|---|---|
+| `--app-id` | Release managementアプリのUUID（環境変数: `CODEPUSH_APP_ID`） |
+| `--json`、`-j` | 結果をJSONとして標準出力に出力します |
+| `--server-url` | APIサーバーのベースURL（環境変数: `CODEPUSH_SERVER_URL`） |
+| `--progress-style` | プログレスインジケーターのスタイル: `bar`（デフォルト）、`spinner`、`counter` |
+
+## Commands
+
+### Release management
+
+| Command | Description |
+|---|---|
+| `bundle` | OTAアップデート用にJavaScriptをバンドルします |
+| `push [bundle-path]` | OTAアップデートをプッシュします |
+| `rollback` | 以前のリリースにロールバックします |
+| `promote` | リリースを1つのデプロイから別のデプロイへプロモートします |
+| `patch` | 既存のリリースのメタデータを更新します |
+
+### Deployment management
+
+| Command | Description |
+|---|---|
+| `deployment list` | すべてのデプロイを一覧表示します（キー列を含めるには`--display-keys` / `-k`） |
+| `deployment add <name>` | 新しいデプロイを作成します（カスタムデプロイキーには`--key` / `-k`） |
+| `deployment info <deployment>` | デプロイの詳細と最新のリリースを表示します |
+| `deployment rename <deployment>` | デプロイの名前を変更します（`--name`、`-n`） |
+| `deployment remove <deployment>` | デプロイを削除します（確認には`--yes` / `-y`） |
+| `deployment history <deployment>` | リリース履歴を表示します（`--limit` / `-n`、デフォルトは10件、作成者列を含めるには`--display-author` / `-a`） |
+| `deployment clear <deployment>` | デプロイからすべてのアップデートを削除します（確認には`--yes` / `-y`） |
+
+### Update management
+
+| Command | Description |
+|---|---|
+| `update info <deployment>` | アップデートの詳細を表示します（特定のバージョンには`--label` / `-l`） |
+| `update status <deployment>` | アップデートの処理ステータスを表示します（`--label` / `-l`） |
+| `update remove <deployment>` | アップデートを削除します（`--label` / `-l`が必須、確認には`--yes` / `-y`） |
+
+### Setup
+
+| Command | Description |
+|---|---|
+| `init` | アプリIDを使用してプロジェクト設定（`.codepush.json`）を初期化します |
+| `auth login` | BitriseAPIトークンをローカルに保存します |
+| `auth revoke` | 保存されたAPIトークンを削除します |
+
+### Developer tools
+
+| Command | Description |
+|---|---|
+| `debug <platform>` | 接続されたデバイスまたはシミュレーターからCodePushのログ出力をストリーミングします（`android`または`ios`） |
+
+### Other
+
+| Command | Description |
+|---|---|
+| `version` | バージョン情報を表示します |
+
+## Environment variables
+
+| Variable | Description |
+|---|---|
+| `BITRISE_API_TOKEN` | 認証用のAPIトークン |
+| `CODEPUSH_APP_ID` | デフォルトのrelease managementアプリUUID（`--app-id`が設定されていない場合に使用） |
+| `CODEPUSH_DEPLOYMENT` | デフォルトのdeployment nameまたはUUID（`--deployment`が設定されていない場合に使用） |
+| `CODEPUSH_SERVER_URL` | APIサーバーのベースURL（`--server-url`が設定されていない場合に使用） |
+| `NO_COLOR` | ターミナルのカラー出力を無効にします |
+
+### Bitrise CI変数（自動的に読み込まれます）
+
+| Variable | Description |
+|---|---|
+| `BITRISE_BUILD_NUMBER` | プッシュのメタデータに付加されます |
+| `BITRISE_DEPLOY_DIR` | サマリーファイルのエクスポート先ディレクトリ |
+| `GIT_CLONE_COMMIT_HASH` | プッシュのメタデータに付加されます |
+
+### Exported variables (Bitrise CI)
+
+`push`、`rollback`、`promote`、または`patch`が成功すると、CLIは下流のBitrise stepsのためにこれらを`envman`経由でエクスポートします。
+
+| Variable | Description |
+|---|---|
+| `CODEPUSH_UPDATE_ID` | 作成または変更されたアップデートのID |
+| `CODEPUSH_APP_VERSION` | リリースのアプリバージョン |
+| `CODEPUSH_LABEL` | リリースラベル（patchコマンドのみ） |
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | 成功 |
+| `1` | エラー（認証失敗、APIエラー、検証エラーなど） |
+
+終了コードが0以外の場合は、操作が失敗したことを意味します。エラーメッセージについては、標準エラー出力を確認してください。
