@@ -1,0 +1,241 @@
+---
+title: "Creating and releasing CodePush updates"
+description: "Create an update bundle and upload it to the Bitrise CodePush Server to push updates to your users' devices."
+sidebar_position: 4
+slug: /release-management/codepush/creating-and-releasing-codepush-updates
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+アップデートバンドルを作成し、Bitrise CodePush Serverにアップロードして、ユーザーのデバイスにアップデートを配信します。
+
+:::important
+
+このガイドでは、CodePushアップデートをリリースする一般的な流れについて説明します。プロセスの自動化にはBitrise CIの使用をお勧めします: [Bitrise CIを使ったCodePushアップデート](/release-management/codepush/codepush-updates-with-bitrise-ci)。
+
+:::
+
+
+## CodePushの認証情報を取得する
+
+:::note[APIのみ]
+
+bitrise.ioのGUIを使ってCodePushアップデートをリリースする場合は、このセクションはスキップできます。
+
+:::
+
+APIでCodePushアップデートをリリースするには、次のデプロイ認証情報が必要です。
+
+- Bitrise CodePushの[デプロイID](/release-management/codepush/creating-a-codepush-deployment)。
+
+  iOSとAndroidでは、それぞれ別のデプロイIDが必要です。
+- Bitrise Release Managementの[アプリID](/release-management/getting-started-with-release-management/adding-a-new-app-to-release-management)。
+
+  iOSとAndroidでは、それぞれ別のアプリIDが必要です。
+- デプロイキー。
+
+  iOSとAndroidでは、それぞれ別のデプロイキーが必要です。
+- Bitrise APIトークン: [個人用アクセストークン](/bitrise-platform/accounts/personal-access-tokens)または[workspace APIトークン](/bitrise-platform/workspaces/workspace-api-token)のいずれかを使用できます。
+
+これらの認証情報は、CodePushデプロイの作成時に保存できます。後で取得する必要がある場合は、Release Management APIを使用してください。
+
+1. Bitrise APIトークンがあることを確認します。
+
+   - [個人用アクセストークンを作成する](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token)。
+   - [Workspace APIトークンを作成する](/bitrise-platform/workspaces/workspace-api-token#creating-a-workspace-api-token)。
+1. iOSアプリとAndroidアプリの両方について、Release ManagementからアプリIDを取得します。
+
+   Release Managementでアプリを開き、URLからIDをコピーします。これはURLの末尾にある英数字のコードです: https://app.bitrise.io/release-management/workspaces/4afb6c4bb001295/connected-apps/12a0cf2b-9cf1-401a-8904-393b18v449ca.
+1. APIからデプロイIDとデプロイキーを取得します。
+
+   :::tip
+
+   CodePush deploymentsを作成するときに、IDとキーの両方を取得できます。作成時に保存しなかった場合は、以下を参照してください。
+
+   :::
+
+   デプロイIDを取得するには、`deployments`エンドポイントを呼び出します。これによってすべてのデプロイが返されます。
+
+   ```yaml
+   curl -X 'GET' \
+     'https://api.bitrise.io/release-management/v1/connected-apps/<APP-ID>/code-push/deployments' \
+     -H 'accept: application/json' \
+     -H 'authorization: <YOUR-ACCESS-TOKEN>'
+   ```
+
+   レスポンスには各デプロイのデプロイID(`id`)が含まれています。これはデプロイキー(`key`を取得するために必要です。`id`の値を指定して`deployments`を呼び出します:
+
+   ```yaml
+   curl -X 'GET' \
+     'https://api.bitrise.io/release-management/v1/connected-apps/<APP-ID>/code-push/deployments/<DEPLOYMENT-ID>' \
+     -H 'accept: application/json' \
+     -H 'authorization: <YOUR-ACCESS-TOKEN>'
+   ```
+
+これらの認証情報があれば、アプリへのCodePushアップデートのリリースに進むことができます。
+
+## アップデートバンドルの作成
+
+<Tabs>
+<TabItem value="react-native" label="React Native" default>
+
+1. コードにアップデートを加えます。
+1. iOSとAndroidの両方についてアップデートバンドルを作成します。
+
+   - iOS:
+
+     ```bash
+     npx react-native bundle \
+       --platform ios \
+       --dev false \
+       --entry-file index.js \
+       --bundle-output ./build/main.jsbundle \
+       --assets-dest ./build
+     ```
+   - Android:
+
+     ```bash
+     npx react-native bundle \
+       --platform android \
+       --dev false \
+       --entry-file index.js \
+       --bundle-output ./build/index.android.bundle \
+       --assets-dest ./build
+     ```
+1. ビルドフォルダをZIP圧縮します。
+
+   ```bash
+   zip -r update.zip ./build
+   ```
+
+</TabItem>
+<TabItem value="expo" label="Expo">
+
+1. コードにアップデートを加えます。
+1. iOSとAndroidの両方についてアップデートバンドルを作成します。
+
+   - iOS:
+
+     ```bash
+     npx expo export:embed \
+       --entry-file index.js \
+       --platform ios \
+       --dev false \
+       --reset-cache \
+       --bundle-output ./build/main.jsbundle \
+       --assets-dest ./build \
+       --minify false
+     ```
+   - Android:
+
+     ```bash
+     npx expo export:embed \
+       --entry-file index.js \
+       --platform android \
+       --dev false \
+       --reset-cache \
+       --bundle-output ./build/index.android.bundle \
+       --assets-dest ./build \
+       --minify false
+     ```
+1. ビルドフォルダをZIP圧縮します。
+
+   ```bash
+   zip -r update.zip ./build
+   ```
+
+</TabItem>
+</Tabs>
+
+## Bitrise CodePush Serverへのパッケージのアップロード
+
+パッケージはRelease ManagementのGUIまたはRelease Management APIのいずれかを使ってアップロードできます。
+
+<Tabs>
+<TabItem value="gui" label="GUI" default>
+
+1. Release Managementでアプリを開きます。
+1. 左側で<strong>CodePush</strong>を選択します。
+1. デプロイを選択します。
+
+   ![20251217-rm-deployments.png](/img/_paligo/uuid-87908768-bac5-5e86-6412-826381a0b8a4.png)
+1. <strong>New update</strong>をクリックします。
+1. <strong>Target versions</strong>フィールドに、アップデートのバージョン範囲を追加します。
+
+   範囲式を使用できます: [対象バージョン](#target-versions)。
+1. 必要に応じて、アップデートの説明を追加します。
+1. <strong>Enabled</strong>をチェックして、ユーザーがアップデートをダウンロードできるようにします。
+
+   ![20251217-new-codepush-update-dialog.png](/img/_paligo/uuid-8e971849-b560-9393-f308-ed2587195b2c.png)
+1. 必要に応じて、<strong>Mandatory</strong>をチェックして、ユーザーに今すぐアップデートするよう促します。
+1. アップデートファイルをドラッグ&ドロップエリアにドラッグ&ドロップするか、エリアをクリックしてファイルを選択します。
+
+   :::important[ファイルの要件]
+
+   - `.bundle`、`.jsbundle`、または`.zip`ファイルをアップロードしてください。
+   - 最大ファイルサイズは50 MBです。
+
+   :::
+1. <strong>Rollout percentage</strong>フィールドで、アップデートを受け取るユーザーの割合を設定します。
+
+   後でパーセンテージの値を増やすことができます。default valueは100%です。
+1. <strong>Release update</strong>をクリックします。
+
+</TabItem>
+<TabItem value="api" label="API">
+
+1. CodePushの認証情報が利用可能であることを確認します。[CodePushの認証情報を取得する](#getting-your-codepush-credentials)を参照してください。
+1. Bitriseから`release-management-recipes`リポジトリをクローンします。
+
+   このリポジトリには、アップデートパッケージのアップロードに使用するヘルパースクリプトが含まれています。
+
+   ```bash
+   git clone https://github.com/bitrise-io/release-management-recipes
+   ```
+1. `release-management-recipes`フォルダに移動します。
+
+   ```bash
+   cd release-management-recipes
+   ```
+1. スクリプトを実行してアップロードします。
+
+   スクリプトには次の入力データが必要です。
+
+   - `update.zip`ファイルのパス。
+   - Bitrise APIトークン: [個人用アクセストークン](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token)または[workspace APIトークン](/bitrise-platform/workspaces/workspace-api-token)のいずれかを使用できます。
+   - Release ManagementアプリのアプリID。
+   - デプロイID。
+   - アプリのバージョン。詳細については、[対象バージョン](/release-management/codepush/creating-and-releasing-codepush-updates#target-versions)を参照してください。
+
+   最終的なコマンドは次のようになります。
+
+   ```bash
+   PACKAGE_PATH=../update.zip \
+   AUTHORIZATION_TOKEN=<api-token> \
+   CONNECTED_APP_ID=<connected-app-id> \
+   DEPLOYMENT_ID=<deployment-id> \
+   APP_VERSION=<app-version>  /bin/bash ./api/upload_code_push_package.sh
+   ```
+
+</TabItem>
+</Tabs>
+
+
+## 対象バージョン
+
+CodePush用のアップデートを作成する際は、パッケージをCodePushサーバーにアップロードするときにアプリのバージョンを指定する必要があります。これがターゲットバージョンです。指定したバージョンのアプリを実行しているユーザーがアップデートを受け取ります。
+
+範囲式を使用してバージョンを指定できます。
+
+| 範囲式 | アップデートの対象 |
+| --- | --- |
+| 1.2.3 | アプリのバイナリストアバージョン1.2.3を実行している特定のデバイスのみ |
+| * | CodePushアプリからアップデートを受け取るように設定されたすべてのデバイス |
+| 1.2.x | メジャーバージョン1、マイナーバージョン2、任意のパッチバージョンを実行しているデバイス |
+| 1.2.3 - 1.2.7 | バイナリバージョンが1.2.3(以上)から1.2.7(以下)の範囲内にあるデバイス |
+| >=1.2.3 &lt;1.2.7 | バイナリバージョンが1.2.3(以上)から1.2.7(未満)の範囲内にあるデバイス |
+| 1.2 | >=1.2.0 &lt;1.3.0 と同等 |
+| ~1.2.3 | >=1.2.3 &lt;1.3.0 と同等 |
+| ^1.2.3 | >=1.2.3 &lt;2.0.0 と同等 |
