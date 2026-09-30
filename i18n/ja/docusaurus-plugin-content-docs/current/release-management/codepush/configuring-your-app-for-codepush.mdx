@@ -1,0 +1,285 @@
+---
+title: "Configuring your mobile app for CodePush"
+description: "Learn how to configure the CodePush SDK in your React Native / Expo project to receive over-the-air updates."
+sidebar_position: 3
+slug: /release-management/codepush/configuring-your-app-for-codepush
+---
+
+React Native アプリで CodePush のSDKを設定し、OTA（Over-The-Air）アップデートを受け取れるようにします。ベアな React Native プロジェクトと Expo プロジェクトの両方がサポートされています。詳しくは、[bare React Native プロジェクト向けの CodePush の設定](#configuring-codepush-for-bare-react-native-projects)および[Expo アプリ向けの CodePush の設定](#configuring-codepush-for-expo-apps)を参照してください。
+
+CodePush SDKは[オープンソースであり](https://github.com/bitrise-io/react-native-code-push)、[フィードバックを歓迎しています](https://github.com/bitrise-io/react-native-code-push/issues/new)。
+
+## Expo アプリ向けの CodePush の設定
+
+:::note[Continuous Native Generation]
+
+このガイドは、Expo の [Continuous Native Generation](https://docs.expo.dev/workflow/continuous-native-generation/) 機能を採用しているプロジェクトを対象としています。
+
+コードベース内でネイティブの iOS および Android プロジェクトを手動で管理している場合（Expo Prebuild を使用していない場合）は、代わりに[bare React Native のセットアップ](#configuring-codepush-for-bare-react-native-projects)手順に従ってください。
+
+:::
+
+
+1. アプリのバンドル ID と package name が、[アプリを作成](/release-management/getting-started-with-release-management/adding-a-new-app-to-release-management) Bitrise 上で使用したものと一致していることを確認してください。`app.json` では、これらは `ios.bundleIdentifier` フィールドと `android.package` フィールドです。
+1. CodePush アプリSDKをインストールします。
+
+   ```bash
+   npm install @bitrise/code-push-sdk
+   ```
+1. `app.json` に Expo の CodePush プラグインを追加します。
+
+     ```json
+     {
+        "plugins": [
+           // ...existing plugins
+           [
+              "@bitrise/code-push-sdk/expo",
+              {
+                 "ios": {
+                    "CodePushDeploymentKey": "...",
+                    "CodePushServerURL": "https://<workspace-slug>.codepush.bitrise.io"
+                 },
+                 "android": {
+                    "CodePushDeploymentKey": "...",
+                    "CodePushServerURL": "https://<workspace-slug>.codepush.bitrise.io"
+                 }
+              }
+           ]
+        ]
+     }
+     ```
+
+   <strong>Deployment key</strong>: Bitrise の CodePush deployments ページから値をコピーしてください。デプロイキーは、[Bitrise 上で CodePush デプロイを作成](/release-management/codepush/creating-a-codepush-deployment)する際に取得できます。
+
+   <strong>Workspace slug</strong>: サーバーURLには Bitrise の workspace スラッグが必要です。[Workspaces とアプリをスラッグで識別する](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs)を参照してください。
+
+   :::note[Deployment keys are not secrets]
+
+   これらは最終的なアプリのビルド内にプレーンな文字列値として含まれます。秘密情報ではありませんが、workspace と CodePush のデプロイ設定に固有の値です。
+
+   :::
+
+1. `npx expo prebuild` を実行して設定を確認します。生成された以下のファイルを手動で確認できます。
+   - `ios/<projectname>/Info.plist`: `CodePushDeploymentKey` と `CodePushServerURL` のエントリが含まれます。
+   - `ios/<projectname>/AppDelegate.swift`: `CodePush` のインポートと `ReactNativeDelegate.bundleURL()` メソッドのオーバーライドが含まれます。
+   - `android/app/src/main/res/values/strings.xml`: `CodePushDeploymentKey` と `CodePushServerURL` のエントリが含まれます。
+   - `android/app/src/main/java/.../MainApplication.kt`: `jsBundleFilePath` が `CodePush.getJSBundleFile()` に設定されています。
+1. アプリのルートコンポーネントでアップデートチェックを初期化します。[アップデートライフサイクルのカスタマイズ](#customizing-the-update-lifecycle)を参照してください。
+
+
+## bare React Native プロジェクト向けの CodePush の設定
+
+これらの手順は、React Native の New Architecture を対象としています。それより古い React Native のバージョンでは、代わりに SDK の[iOS のセットアップ](https://github.com/bitrise-io/react-native-code-push/blob/master/docs/setup-ios.md)ガイドと[Android のセットアップ](https://github.com/bitrise-io/react-native-code-push/blob/master/docs/setup-android.md)ガイドに従ってください。その後、デプロイキーとサーバーURLの値についてはこのページに戻ってきてください。
+
+1. プロジェクトに CodePush SDKを追加します。
+
+   ```bash
+   npm install @bitrise/code-push-sdk
+   ```
+1. プロジェクトに CodePush iOS SDKをSet upします。[iOS のセットアップ](#ios-setup)を参照してください。
+1. プロジェクトに CodePush Android SDKをSet upします。[Android のセットアップ](#android-setup)を参照してください。
+1. アプリのルートコンポーネントでアップデートチェックを初期化します。[アップデートライフサイクルのカスタマイズ](#customizing-the-update-lifecycle)を参照してください。
+
+### iOS のセットアップ
+
+1. `ios` フォルダーから `bundle exec pod install` を実行し、事前に追加した CodePush SDK 依存関係を反映させます。
+1. `ios/<projectname>/AppDelegate.swift` を更新します。
+
+   1. CodePush ヘッダーの import 文を追加します。
+
+      ```swift
+      import CodePush
+      ```
+   1. `class ReactNativeDelegate` で、本番ビルド用のバンドルURLを返している行を見つけ、CodePush SDK の呼び出しに置き換えます。
+
+      ```diff
+      override func bundleURL() -> URL? {
+      #if DEBUG
+         RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
+      #else
+      -    Bundle.main.url(forResource: "main", withExtension: "jsbundle")
+      +    CodePush.bundleURL()
+      #endif
+      }
+      ```
+
+   CodePush を使って JS バンドルの場所を解決するのは、リリースビルドのときだけにしてください。`DEBUG` プリプロセッサマクロによって、デバッグビルドでは Metro パッケージャー、リリースビルドでは CodePush に切り替わるため、デバッグ中も Chrome Dev Tools やライブリロードが引き続き使用できます。
+
+1. `ios/<projectname>/Info.plist` を CodePush デプロイキーと CodePush サーバーURLで更新し、CodePush ランタイムがどのデプロイに対してアップデートを問い合わせればよいかを認識できるようにします。
+
+   ```xml
+   <key>CodePushDeploymentKey</key>
+   <string></string>
+   <key>CodePushServerURL</key>
+   <string>https://<workspace-slug>.codepush.bitrise.io</string>
+   ```
+
+   <strong>Deployment key</strong>: Bitrise の CodePush deployments ページから値をコピーしてください。デプロイキーは、[Bitrise 上で CodePush デプロイを作成](/release-management/codepush/creating-a-codepush-deployment)する際に取得できます。
+
+   <strong>Workspace slug</strong>: サーバーURLには Bitrise の workspace スラッグが必要です。[Workspaces とアプリをスラッグで識別する](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs)を参照してください。
+
+   :::note[Deployment keys are not secrets]
+
+   これらは最終的なアプリのビルド内にプレーンな文字列値として含まれます。秘密情報ではありませんが、workspace と CodePush のデプロイ設定に固有の値です。
+
+   :::
+
+1. 任意: iOS の最小デプロイターゲットが 15.5 未満の場合は、少なくとも `15.5` まで引き上げる必要があります。`ios/Podfile` で `platform :ios, min_ios_version_supported` の行を探し、`platform :ios, '15.5'` に変更してください。
+
+### Android のセットアップ
+
+1. アプリモジュールの Gradle ビルドスクリプト（`android/app/build.gradle`）を編集します。ファイルの末尾に、追加のビルドタスク定義として次を追加します。
+
+   ```groovy
+   ...
+   apply from: "../../node_modules/@bitrise/code-push-sdk/android/codepush.gradle"
+   ...
+   ```
+1. `android/app/src/main/java/…/MainApplication.kt` にある Application クラスを更新し、CodePush ランタイムにフックさせます。
+
+   ```diff
+   + import com.microsoft.codepush.react.CodePush
+
+     class MainApplication : Application(), ReactApplication {
+
+        override val reactHost: ReactHost by lazy {
+           getDefaultReactHost(
+                 context = applicationContext,
+                 packageList = PackageList(this).packages.apply {
+                    // Packages that cannot be autolinked yet can be added manually here, for example:
+                    // add(MyReactNativePackage())
+                 },
+   +             // Set jsBundleFilePath to CodePush so CodePush resolves the JS bundle path
+   +             // at startup (OTA update if available, fallback to bundled JS otherwise).
+   +             jsBundleFilePath = CodePush.getJSBundleFile(),
+           )
+        }
+     }
+   ```
+1. `android/app/src/main/res/values/strings.xml` に CodePush デプロイキーと CodePush サーバーURLを追加し、CodePush ランタイムがどのデプロイに対してアップデートを問い合わせればよいかを認識できるようにします。
+
+   ```xml
+   <string name="CodePushDeploymentKey" translatable="false">...</string>
+   <string name="CodePushServerUrl" translatable="false">https://<workspace-slug>.codepush.bitrise.io</string>
+   ```
+
+   <strong>Deployment key</strong>: Bitrise の CodePush deployments ページから値をコピーしてください。デプロイキーは、[Bitrise 上で CodePush デプロイを作成](/release-management/codepush/creating-a-codepush-deployment)する際に取得できます。
+
+   <strong>Workspace slug</strong>: サーバーURLには Bitrise の workspace スラッグが必要です。[Workspaces とアプリをスラッグで識別する](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs)を参照してください。
+
+   :::note[Deployment keys are not secrets]
+
+   これらは最終的なアプリのビルド内にプレーンな文字列値として含まれます。秘密情報ではありませんが、workspace と CodePush のデプロイ設定に固有の値です。
+
+   :::
+
+## アップデートライフサイクルのカスタマイズ
+
+設定手順を完了すると、CodePush はアプリのライフサイクルにフックし、アプリにパッケージされたバンドルの代わりにアップデートされたバンドルを読み込めるようになります。
+
+アプリのルートコンポーネントから `codePush.sync()` を呼び出すことで、アップデートをいつ、どのように適用するかをカスタマイズします。SDKでは、アップデート体験をカスタマイズするための各種オプションが用意されています。
+
+:::note[API reference]
+
+すべてのオプションとパラメーターは、[CodePush JS API リファレンス](https://github.com/bitrise-io/react-native-code-push/blob/master/docs/api-js.md)に記載されています。
+
+:::
+
+設定方法にはいくつかの種類があります。
+
+### アプリ起動時のサイレント同期
+
+もっともシンプルで、デフォルトの動作です。アプリは利用可能なアップデートを自動的にダウンロードし、次回アプリを再起動したときに適用します。この方法では、エンドユーザーにアップデートダイアログが表示されることはなく、アップデート体験全体がユーザーに気づかれずに行われます。
+
+```javascript
+import { useEffect } from "react";
+import codePush from "@bitrise/code-push-sdk";
+
+function App() {
+    useEffect(() => {
+        // Fully silent update which keeps the app in
+        // sync with the server, without ever
+        // interrupting the end user
+        codePush.sync();
+    }, []);
+
+    return <YourAppContent />;
+}
+```
+
+### アプリがフォアグラウンドに復帰するたびにサイレント同期
+
+前述の方法とほぼ同じですが、アプリがフォアグラウンドに戻るたびにアップデートを確認し、アップデートが存在すれば適用します。
+
+```javascript
+import { useEffect } from "react";
+import { AppState } from "react-native";
+import codePush from "@bitrise/code-push-sdk";
+
+function App() {
+    useEffect(() => {
+        const syncOptions = {
+           installMode: codePush.InstallMode.ON_NEXT_RESUME,
+        };
+        codePush.sync(syncOptions);
+
+        const subscription = AppState.addEventListener("change", (newState) => {
+            if (newState === "active") {
+                codePush.sync(syncOptions);
+            }
+        });
+
+        return () => subscription.remove();
+    }, []);
+
+    return <YourAppContent />;
+}
+```
+
+### インタラクティブ
+
+アップデートが利用可能な場合、ダウンロードの前にエンドユーザーに許可を求め、許可されたらすぐにアップデートを適用します。アップデートに `mandatory` フラグが設定されている場合、エンドユーザーにはアップデートについて通知はされますが、それを無視するという選択肢はありません。
+
+```javascript
+import { useEffect } from "react";
+import codePush from "@bitrise/code-push-sdk";
+
+function App() {
+    useEffect(() => {
+        // Active update, which lets the end user know
+        // about each update, and displays it to them
+        // immediately after downloading it
+        codePush.sync({
+           updateDialog: true,
+           installMode: codePush.InstallMode.IMMEDIATE
+        });
+    }, []);
+
+    return <YourAppContent />;
+}
+```
+
+### 進行状況のログ表示
+
+`syncStatusChangedCallback` や `downloadProgressCallback` の引数を `sync` に渡すことで、処理の各段階をログに記録したり、ユーザーに進捗バーを表示したりできます。
+
+```javascript
+import { useEffect, useState } from "react";
+import codePush from "@bitrise/code-push-sdk";
+
+function App() {
+    const [status, setStatus] = useState(null);
+
+    useEffect(() => {
+        codePush.sync(
+            {},
+            (syncStatus) => setStatus(syncStatus),
+            ({ receivedBytes, totalBytes }) => {
+                console.log(`${receivedBytes} of ${totalBytes} received.`);
+            }
+        );
+    }, []);
+
+    return <YourAppContent status={status} />;
+}
+```
