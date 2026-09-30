@@ -51,7 +51,7 @@ Choose the code to build with these flags:
 
 | Flag | What it sets |
 | --- | --- |
-| `--branch` | The branch to build. If you don't set a branch or a tag, the CLI builds `main`. |
+| `--branch` | The branch to build. If you don't set a branch, a tag, or a commit hash, the CLI builds `main`. |
 | `--commit-hash` | A specific commit to build. |
 | `--tag` | A Git tag to build. |
 | `--commit-message` | The commit message to show for the build. |
@@ -81,7 +81,31 @@ bitrise build trigger --app my-app-id --workflow primary --env '{"MY_VAR":"hello
 
 These variables can override <GlossTerm baseform="secret">Secrets</GlossTerm>, but not the Environment Variables defined in your configuration.
 
-Set the build's position in the queue with `--priority`. See [Build priority](/bitrise-ci/configure-builds/configuring-build-settings/build-priority).
+Bitrise expands `$VAR` references in the values. To pass a value as it is, give it as an object with `"is_expand": false`. This matches unchecking **Replace variables in input** when you [start a build manually](/bitrise-ci/run-and-analyze-builds/starting-builds/starting-builds-manually):
+
+```bash
+bitrise build trigger --app my-app-id --workflow primary --env '{"API_URL":"https://staging.example.com","PRICE":{"value":"$5","is_expand":false}}'
+```
+
+Set the build's position in the queue with `--priority`, from -100 to 100. The value overrides the priority set in the `bitrise.yml` and in the triggers, even when it's `0`. Leave out the flag to keep those. See [Build priority](/bitrise-ci/configure-builds/configuring-build-settings/build-priority).
+
+```bash
+bitrise build trigger --app my-app-id --pipeline my-pipeline --priority 0
+```
+
+### Setting the stack, machine type, and license pool
+
+Override where and how the build runs with these flags:
+
+| Flag | What it sets |
+| --- | --- |
+| `--stack` | The ID of the <GlossTerm baseform="stack">stack</GlossTerm> to run the build on, such as `osx-xcode-16.0.x`. It overrides the stack of the Workflow. See [Setting the stack for your builds](/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds). |
+| `--machine-type` | The ID of the machine type to run the build on, such as `g2-m1.4core`. It overrides the machine type of the Workflow. See [Build machine types](/bitrise-build-hub/infrastructure/build-machine-types). |
+| `--license-pool` | The ID of the license pool to run the build with. |
+
+```bash
+bitrise build trigger --app my-app-id --workflow primary --stack osx-xcode-16.0.x --machine-type g2-m1.4core
+```
 
 ## Waiting for a build to finish
 
