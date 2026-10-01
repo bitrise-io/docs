@@ -1,0 +1,106 @@
+---
+title: "Configuring your GitHub Actions workflow"
+description: "Configure your GitHub Actions workflow to run on Bitrise Build Hub infrastructure using the runs-on property, and set up tooling access on the deprecated Linux Docker image."
+sidebar_position: 3
+slug: /bitrise-build-hub/build-hub-for-github-actions/configuring-your-github-actions-workflow
+---
+
+import GlossTerm from '@site/src/components/GlossTerm';
+
+マシンプールの作成に成功したら、ビルドを実行する際にそのマシンプールを使用するように GitHub Actions ワークフローを設定する必要があります。
+
+ワークフロー内で `runs-on` プロパティを使用して、Bitrise マシンを指定します。ランナーに割り当てられたラベルに基づいてランナーをターゲットにできます。
+
+1. リポジトリ内で、Build Hub上で実行したい GitHub Actions ワークフローファイルを開きます。通常は `.github/workflows/` 配下にある YAML ファイルです。
+
+   コードエディタでファイルを直接編集することも、GitHub の UI から見つけることもできます。GitHub リポジトリを開き、<strong>Actions</strong> を選択し、<GlossTerm baseform="workflow">Workflow</GlossTerm> の名前をクリックしてから、その下に表示される YAML ファイル名をクリックします。
+1. Build Hub上で実行したいジョブに `runs-on` プロパティを追加します。[マシンプールの作成または更新](/bitrise-build-hub/build-hub-for-github-actions/creating-machine-pools-for-github-actions#creating-a-machine-pool) の際に作成したラベルをターゲットにする必要があります。
+
+   - 単一のラベルを使用できます。この場合、指定したラベルを持つすべてのランナーを使用できるようになります。
+
+     ```yaml
+     jobs:
+       build:
+         runs-on: image:xcode-26
+     ```
+   - ラベルの配列を使用することもできます。ランナープールが指定されたすべてのラベルを持っている場合にのみ、ランナーはジョブを受け取ります。
+
+     ```yaml
+     jobs:
+       build:
+         runs-on: [bitrise-runner-my-pool, image:xcode-26]
+     ```
+
+     この例では、ジョブは `bitrise-runner-my-pool` ラベルと `image:xcode-26` ラベルの両方を持つランナー上でのみ実行されます。
+
+     Bitrise はマシンプールごとに `bitrise-runner-<pool-name>` ラベルを自動的に作成するため、名前で特定のプールをターゲットにできます。
+
+self-hosted runners をターゲットにするためのラベルの使用方法の詳細については、GitHub Actionsドキュメントの [self-hosted runners でのラベルの使用](https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/using-labels-with-self-hosted-runners) を参照してください。
+
+ワークフローがBuild Hub上で実行されたら、それを実行しているマシンを確認するには [GitHub Actions向けの machine pools の監視](/bitrise-build-hub/build-hub-for-github-actions/monitoring-machine-pools-for-github-actions) を参照してください。
+
+## Build Cacheでビルドを高速化する
+
+Build Hubのマシンでは、[Bitrise Build Cache](/bitrise-build-cache) を使用して、実行間でビルドとテストの出力を再利用できます。設定するトークンはありません。マシンはすでに Bitrise Workspace に接続されているため、Bitrise Build Cache CLI が認証情報を自動的に取得し、ジョブにシークレット、変数、環境変数は不要です。マシンプールは Build Cache と同じ Workspace に属している必要があります。
+
+ビルドシステムに応じて、GitHub Actionsガイドに従ってください。
+
+- [Build Cache for Gradle](/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-github-actions)
+- [Build Cache for Bazel](/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-github-actions)
+- [Build Cache for Xcode](/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-github-actions)
+- [Build Cache for React Native](/bitrise-build-cache/build-cache-for-react-native/configuring-the-build-cache-for-react-native-in-github-actions)
+
+## Linux マシンでツールにアクセスできるようにする
+
+:::warning[非推奨の Docker ベースの Linux イメージのみ対象]
+
+このセクションは、非推奨の Docker ベースの `linux-docker-bitvirt` イメージを使用する machine pools にのみ適用されます。`linux-bitvirt-2026` イメージではこれらの手順は不要です。
+
+:::
+
+Build Hub上で GitHub Actions ワークフローを実行する際に Linux イメージ上にプリインストールされたツールへアクセスするには、`linux-docker-bitvirt` イメージを使用する Machine pools に回避策が必要です。
+
+GitHub Actions ワークフローが Docker コンテナ内でステップを実行するために `container:` プロパティを使用すると、ランナーはイメージのツール設定を壊すような形で環境を変更します。そのため、ビルドはツールマネージャーとしての `asdf` にアクセスできなくなり、プリインストールされたツールを利用できなくなります。
+
+問題を解決するには、次の手順に従います。
+
+1. GitHub Actions ワークフローのコンテナ設定に `env` プロパティを追加します。`asdf` にコアスクリプトとプラグイン、インストール済みバージョン、シムの場所を伝え、イメージの `BASH_ENV=/.bashrc` を上書きするために、3つの Environment Variables を設定します。
+
+   ```yaml
+   container:
+     image: bitriseio/ubuntu-noble-24.04-bitrise-2025-android:latest
+     env:
+       ASDF_DIR: /root/.asdf
+       ASDF_DATA_DIR: /root/.asdf
+       BASH_ENV: /root/.asdf/asdf.sh
+   ```
+1. `defaults` プロパティの下で、デフォルトシェルを `bash` に設定します。
+
+   ```yaml
+   container:
+     image: bitriseio/ubuntu-noble-24.04-bitrise-2025-android:latest
+     env:
+       ASDF_DIR: /root/.asdf
+       ASDF_DATA_DIR: /root/.asdf
+       BASH_ENV: /root/.asdf/asdf.sh
+     defaults:
+       run:
+         shell: bash
+   ```
+1. `steps` プロパティの下に、イメージのデフォルトツールバージョンを `asdf` が期待する場所へコピーするステップを追加します。
+
+   ```yaml
+   steps:
+     - name: Setup environment
+       run: |
+         cp /root/.tool-versions "$HOME/.tool-versions"
+   ```
+1. Gitに、すべての作業ディレクトリを安全なものとして扱うよう指示します。これを行わないと、ディレクトリの所有者の不一致により一部のコマンドが失敗することがあります。
+
+   ```yaml
+   steps:
+     - name: Setup environment
+       run: |
+         cp /root/.tool-versions "$HOME/.tool-versions"
+         git config --global --add safe.directory '*'
+   ```

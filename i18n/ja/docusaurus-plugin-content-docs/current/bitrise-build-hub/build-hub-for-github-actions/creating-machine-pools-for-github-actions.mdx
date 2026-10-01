@@ -1,0 +1,265 @@
+---
+title: "Creating machine pools for GitHub Actions"
+description: "Create a Bitrise machine pool for GitHub Actions, authenticating with the Bitrise - Build Hub GitHub app, or a personal access token on Enterprise plans."
+sidebar_position: 2
+slug: /bitrise-build-hub/build-hub-for-github-actions/creating-machine-pools-for-github-actions
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+GitHub Actions で Build Hub を正常に使用するには、次の操作が必要です。
+
+1. Bitrise でマシンプールを作成します。
+
+   マシンプールには認証情報が必要です。Enterprise プランでは Bitrise - Build Hub アプリまたは GitHub パーソナルアクセストークンのいずれかを使用できます。それ以外のすべてのプラン（無料トライアル、Starter、Pro）ではアプリのみ使用できます。
+
+   - Bitrise - Build Hub GitHub アプリをインストールします。
+   - Enterprise プランの場合は、[GitHub パーソナルアクセストークンを作成します](#creating-github-personal-access-tokens-for-build-hub)。
+
+1. [GitHub Actions ワークフロー](/bitrise-build-hub/build-hub-for-github-actions/configuring-your-github-actions-workflow)を設定して、ビルドに Bitrise インフラストラクチャを使用します。
+
+
+## マシンプールを作成する
+
+Bitrise ハードウェア上で GitHub Action ビルドを実行できるマシンプールを作成します。認証方法によってプロセスが若干異なります。[GitHub 組織にインストールされた GitHub アプリ](/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview#authentication)、個人の GitHub アカウントにインストールされた GitHub アプリ、または Enterprise プランの場合は [GitHub パーソナルアクセストークン](#creating-github-personal-access-tokens-for-build-hub) のいずれかです。
+
+GitHub アプリは GitHub 組織または個人の GitHub アカウントにインストールできます。Bitrise ウィザードに戻ると、この2つは若干異なる動作をします。
+
+- 組織の接続では、ランナーがランナーグループに登録されます。
+- 個人アカウントの接続では、個人アカウントにランナーグループがないため、単一のリポジトリに直接登録されます。
+
+<Tabs>
+<TabItem value="github-app-organization" label="GitHub organization-based" default>
+
+:::important[パブリックリポジトリ]
+
+パブリックリポジトリ向けのビルドを実行する予定がある場合は、マシンプールが登録されるランナーグループで、GitHub の（<strong>Organization 設定</strong> → <strong>Actions</strong> → <strong>Runner group</strong>）<strong>Allow パブリックリポジトリ</strong>を有効にする必要があります。これを行わないと、GitHub は Build Hub ランナーにパブリックリポジトリからのジョブをディスパッチしません。プール、ラベル、認証がすべて正常であっても、ジョブは無期限にキューに残ったままになります。
+
+<strong>Enable、この設定は自己責任で使用してください。</strong> GitHub では重大なセキュリティ上の理由から、デフォルトでこれが無効になっています。パブリックリポジトリ上のフォーク PR ワークフローは、セルフホストの Build Hub ランナー上で外部コントリビューターの信頼できないコードを実行できるため、ビルド環境、シークレット、インフラストラクチャが危険にさらされます。有効にする前に、少なくともフォーク PR のワークフローに承認を必須にしてください。詳しくは、GitHub ドキュメントの[パブリックフォークからのワークフロー実行の承認](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/approve-runs-from-forks)を参照してください。
+
+:::
+
+1. 左側のナビゲーションバーで <strong>Build Hub</strong> を選択します。
+1. <strong>Machine pool</strong> をクリックします。
+
+   ![左側のナビゲーションバーの Build Hub 項目と Machine pool ボタンがハイライトされた Build Hub ページ](/img/bitrise-build-hub/2026-09-08-build-hub-select-machine-pool.png)
+1. <strong>CI provider</strong> ドロップダウンメニューを開きます。既存の connected account を選択するか、<strong>Connect account</strong> をクリックして新規に追加します。
+1. GitHub <strong>(GitHub App)</strong> を選択し、<strong>Continue to install</strong> をクリックします。
+
+   ![SCR-20260320-mmwy.png](/img/_paligo/uuid-115c121e-082e-a3b6-6741-f53cdab5d89e.png)
+1. リソースオーナーとして、GitHub 組織を選択します。
+1. リポジトリのスコープを選択します。
+
+   - <strong>All repositories</strong>: 組織が所有する現在および今後のすべてのリポジトリに適用されます。パブリックリポジトリ（読み取り専用）も含まれます。
+   - <strong>Only select repositories</strong>: 少なくとも1つのリポジトリを選択します。パブリックリポジトリ（読み取り専用）も含まれます。
+
+   インストールを特定のリポジトリに限定した場合、そのワークフローの `runs-on` ラベルがこのプールと一致していても、Bitrise はそのリスト外のリポジトリに対してジョブをディスパッチできません。
+
+   ![SCR-20260320-nqmt.png](/img/_paligo/uuid-6186a9bb-4a81-f79c-3200-1e65de613b47.png)
+1. 一意の <strong>Pool name</strong> を設定します。作成後は変更できません。
+1. <strong>CI provider</strong> ドロップダウンメニューで connected account を選択します。
+1. <strong>Runner group</strong> を追加します。
+
+   [ランナーグループ](https://docs.github.com/en/actions/concepts/runners/runner-groups) は GitHub でセキュリティ境界を作成し、どのリポジトリまたは組織がランナーにジョブをディスパッチできるかを制御します。グループが GitHub にまだ存在しない場合は、Bitrise が自動的に作成します。ランナーグループは、ワークフローでこの特定のプールをターゲットにするためには使用しません。代わりにラベルと `runs-on` プロパティを使用してください。
+
+   完了したら、<strong>Next</strong> をクリックします。
+1. <strong>Image</strong> ドロップダウンメニューでイメージを選択します。
+
+   イメージは [stack reports ページ](https://bitrise.io/stacks) で確認できます。
+1. <strong>Machine type</strong> ドロップダウンメニューでマシンタイプを選択します。
+
+   Bitrise マシンの詳細については、[Build machines](/bitrise-platform/infrastructure/build-machines/about-build-machines)をご覧ください。
+1. プールの <strong>Capacity</strong>（マシン数の上限）を設定します。選択したマシンタイプで利用可能な数までです。
+
+   - <strong>Maximum</strong>: このプールが同時に実行する最大マシン数です。
+   - <strong>Minimum</strong>: このフィールドが workspace で利用可能な場合、これは GitHub App 接続でのみ表示されます。マシンを稼働し続けることで、次のビルドが即座に開始されます。作業がないときにゼロまでスケールダウンするには、0 のままにします。
+
+   完了したら、<strong>Next</strong> をクリックします。
+1. GitHub のキャッシュバックエンドの代わりに Bitrise インフラストラクチャで GitHub Actions のキャッシュリクエストを処理したい場合は、<strong>Use Bitrise for GitHub Actions caching</strong> をオンにします。
+
+   これにより、キャッシュ操作が高速化されます。
+1. 必要に応じて、Workflow が実行される前にビルド環境をカスタマイズするウォームアップスクリプトを追加します。
+
+   ウォームアップスクリプトが不要な場合は、空のままにします。
+
+   :::important[ゼロ以外の終了コード]
+
+   ビルド開始の失敗を防ぐため、エラー発生時にスクリプトがゼロ以外の終了コードを返すようにしてください。
+
+   :::
+
+   完了したら、<strong>Next</strong> をクリックします。
+1. 必要に応じて、ワークフローでこのプールをターゲットにしやすくするための追加のラベルを追加します。
+
+   Bitrise は常にデフォルトのラベルセット（pool name、イメージ、マシンタイプ）を適用し、これらは変更も削除もできません。これらに加えて独自のラベルを追加できます。ラベルはキーと値のペアですが、必須なのはキーのみです。ラベルは [GitHub Actions の設定](/bitrise-build-hub/build-hub-for-github-actions/configuring-your-github-actions-workflow)がこのプールをターゲットにする方法であるため、ワークフローファイル内の `runs-on` プロパティがここで設定したラベルと同じものを使用していることを確認してください。ランナープールにジョブの `runs-on` プロパティで指定されたすべてのラベルが揃っていない場合、そのジョブはそのプールでは実行されません。
+1. <strong>Create pool</strong> をクリックします。
+
+</TabItem>
+<TabItem value="github-app-user" label="GitHub user-based">
+
+1. 左側のナビゲーションバーで <strong>Build Hub</strong> を選択します。
+1. <strong>Machine pool</strong> をクリックします。
+
+   ![左側のナビゲーションバーの Build Hub 項目と Machine pool ボタンがハイライトされた Build Hub ページ](/img/bitrise-build-hub/2026-09-08-build-hub-select-machine-pool.png)
+1. <strong>CI provider</strong> ドロップダウンメニューを開きます。既存の connected account を選択するか、<strong>Connect account</strong> をクリックして新規に追加します。
+1. GitHub <strong>(GitHub App)</strong> を選択し、<strong>Continue to install</strong> をクリックします。
+
+   ![SCR-20260320-mmwy.png](/img/_paligo/uuid-115c121e-082e-a3b6-6741-f53cdab5d89e.png)
+1. リソースオーナーとして、個人の GitHub アカウントを選択します。
+1. リポジトリのスコープを選択します。
+
+   - <strong>All repositories</strong>: アカウントが所有する現在および今後のすべてのリポジトリに適用されます。パブリックリポジトリ（読み取り専用）も含まれます。
+   - <strong>Only select repositories</strong>: 少なくとも1つのリポジトリを選択します。パブリックリポジトリ（読み取り専用）も含まれます。
+
+   ![SCR-20260320-nqmt.png](/img/_paligo/uuid-6186a9bb-4a81-f79c-3200-1e65de613b47.png)
+1. 一意の <strong>Pool name</strong> を設定します。作成後は変更できません。
+1. <strong>CI provider</strong> ドロップダウンメニューで connected account を選択します。
+1. <strong>Repository</strong> を選択します。
+
+   個人アカウントにはランナーグループがないため、ランナーグループの代わりに、ランナーはここで選択した単一のリポジトリに直接登録されます。このリストには、現在 GitHub App インストールがアクセスできるリポジトリのみが含まれます。インストールを「Only select repositories」に限定していて別のリポジトリをターゲットにしたい場合は、先に GitHub でインストールのリポジトリアクセスを更新してください。
+
+   完了したら、<strong>Next</strong> をクリックします。
+1. <strong>Image</strong> ドロップダウンメニューでイメージを選択します。
+
+   イメージは [stack reports ページ](https://bitrise.io/stacks) で確認できます。
+1. <strong>Machine type</strong> ドロップダウンメニューでマシンタイプを選択します。
+
+   Bitrise マシンの詳細については、[Build machines](/bitrise-platform/infrastructure/build-machines/about-build-machines)をご覧ください。
+1. プールの <strong>Capacity</strong>（マシン数の上限）を設定します。選択したマシンタイプで利用可能な数までです。
+
+   - <strong>Maximum</strong>: このプールが同時に実行する最大マシン数です。
+   - <strong>Minimum</strong>: このフィールドが workspace で利用可能な場合、これは GitHub App 接続でのみ表示されます。マシンを稼働し続けることで、次のビルドが即座に開始されます。作業がないときにゼロまでスケールダウンするには、0 のままにします。
+
+   完了したら、<strong>Next</strong> をクリックします。
+1. GitHub のキャッシュバックエンドの代わりに Bitrise インフラストラクチャで GitHub Actions のキャッシュリクエストを処理したい場合は、<strong>Use Bitrise for GitHub Actions caching</strong> をオンにします。
+
+   これにより、キャッシュ操作が高速化されます。
+1. 必要に応じて、Workflow が実行される前にビルド環境をカスタマイズするウォームアップスクリプトを追加します。
+
+   ウォームアップスクリプトが不要な場合は、空のままにします。
+
+   :::important[ゼロ以外の終了コード]
+
+   ビルド開始の失敗を防ぐため、エラー発生時にスクリプトがゼロ以外の終了コードを返すようにしてください。
+
+   :::
+
+   完了したら、<strong>Next</strong> をクリックします。
+1. 必要に応じて、ワークフローでこのプールをターゲットにしやすくするための追加のラベルを追加します。
+
+   Bitrise は常にデフォルトのラベルセット（pool name、イメージ、マシンタイプ）を適用し、これらは変更も削除もできません。これらに加えて独自のラベルを追加できます。ラベルはキーと値のペアですが、必須なのはキーのみです。ラベルは [GitHub Actions の設定](/bitrise-build-hub/build-hub-for-github-actions/configuring-your-github-actions-workflow)がこのプールをターゲットにする方法であるため、ワークフローファイル内の `runs-on` プロパティがここで設定したラベルと同じものを使用していることを確認してください。
+1. <strong>Create pool</strong> をクリックします。
+
+</TabItem>
+<TabItem value="github-personal-access-token" label="GitHub personal access token">
+
+:::important[Enterprise プラン限定]
+
+パーソナルアクセストークン認証は、Enterprise プランでのみ利用できます。
+
+:::
+
+1. 左側のナビゲーションバーで <strong>Build Hub</strong> を選択します。
+1. <strong>Machine pool</strong> をクリックします。
+
+   ![左側のナビゲーションバーの Build Hub 項目と Machine pool ボタンがハイライトされた Build Hub ページ](/img/bitrise-build-hub/2026-09-08-build-hub-select-machine-pool.png)
+1. <strong>CI provider</strong> ドロップダウンメニューを開きます。既存の connected account を選択するか、<strong>Connect account</strong> をクリックして新規に追加します。
+1. <strong>Connect account</strong> をクリックし、<strong>GitHub (PAT)</strong> を選択します。
+1. connection name と target scope URL を設定します。
+
+   ターゲットスコープの詳細については、こちらをご覧ください: [Target scope](/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview#target-scope)
+
+   ![SCR-20260320-nsxn.png](/img/_paligo/uuid-22b5a6f5-fedb-0cc6-b685-1bb5406d1e12.png)
+1. <strong>Personal access token</strong> フィールドに GitHub パーソナルアクセストークンを入力し、<strong>Connect</strong> をクリックします。
+1. 一意の <strong>Pool name</strong> を設定します。作成後は変更できません。
+1. <strong>CI provider</strong> ドロップダウンメニューで connected account を選択します。
+1. <strong>Runner group</strong> を追加します。
+
+   [ランナーグループ](https://docs.github.com/en/actions/concepts/runners/runner-groups) は GitHub でセキュリティ境界を作成し、どのリポジトリまたは組織がランナーにジョブをディスパッチできるかを制御します。グループが GitHub にまだ存在しない場合は、Bitrise が自動的に作成します。ランナーグループは、ワークフローでこの特定のプールをターゲットにするためには使用しません。代わりにラベルと `runs-on` プロパティを使用してください。
+
+   完了したら、<strong>Next</strong> をクリックします。
+1. <strong>Image</strong> ドロップダウンメニューでイメージを選択します。
+
+   イメージは [stack reports ページ](https://bitrise.io/stacks) で確認できます。
+1. <strong>Machine type</strong> ドロップダウンメニューでマシンタイプを選択します。
+
+   Bitrise マシンの詳細については、[Build machines](/bitrise-platform/infrastructure/build-machines/about-build-machines)をご覧ください。
+1. プールの <strong>Capacity</strong>（マシン数の上限）を設定します。選択したマシンタイプで利用可能な数までです。
+
+   - <strong>Maximum</strong>: このプールが同時に実行する最大マシン数です。
+   - <strong>Minimum</strong>: このフィールドが workspace で利用可能な場合、これは GitHub App 接続でのみ表示されます。マシンを稼働し続けることで、次のビルドが即座に開始されます。作業がないときにゼロまでスケールダウンするには、0 のままにします。
+
+   完了したら、<strong>Next</strong> をクリックします。
+1. GitHub のキャッシュバックエンドの代わりに Bitrise インフラストラクチャで GitHub Actions のキャッシュリクエストを処理したい場合は、<strong>Use Bitrise for GitHub Actions caching</strong> をオンにします。
+
+   これにより、キャッシュ操作が高速化されます。
+1. 必要に応じて、Workflow が実行される前にビルド環境をカスタマイズするウォームアップスクリプトを追加します。
+
+   ウォームアップスクリプトが不要な場合は、空のままにします。
+
+   :::important[ゼロ以外の終了コード]
+
+   ビルド開始の失敗を防ぐため、エラー発生時にスクリプトがゼロ以外の終了コードを返すようにしてください。
+
+   :::
+
+   完了したら、<strong>Next</strong> をクリックします。
+1. 必要に応じて、ワークフローでこのプールをターゲットにしやすくするための追加のラベルを追加します。
+
+   Bitrise は常にデフォルトのラベルセット（pool name、イメージ、マシンタイプ）を適用し、これらは変更も削除もできません。これらに加えて独自のラベルを追加できます。ラベルはキーと値のペアですが、必須なのはキーのみです。ラベルは [GitHub Actions の設定](/bitrise-build-hub/build-hub-for-github-actions/configuring-your-github-actions-workflow)がこのプールをターゲットにする方法であるため、ワークフローファイル内の `runs-on` プロパティがここで設定したラベルと同じものを使用していることを確認してください。
+1. <strong>Create pool</strong> をクリックします。
+
+</TabItem>
+</Tabs>
+
+
+## Build Hub 用の GitHub パーソナルアクセストークンを作成する
+
+:::important[Enterprise プラン限定]
+
+パーソナルアクセストークン認証は、Enterprise プランでのみ利用できます。無料トライアルおよびセルフサーブの workspaces は、代わりに Bitrise - Build Hub GitHub App を使用する必要があります。詳しくは [Authentication for Build Hub](/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview#authentication) を参照してください。
+
+Enterprise プランの場合、この手順は任意です。GitHub App を使用していない場合にのみ、パーソナルアクセストークンを作成してください。
+
+:::
+
+GitHub パーソナルアクセストークンを使用して、Build Hub を GitHub Actions に対して認証できます。ニーズに応じて、クラシックアクセストークンまたはきめ細かいアクセストークンのいずれかを使用できます。認証の仕組みについて詳しくは、[Authentication for Build Hub](/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview#authentication) を参照してください。
+
+GitHub でトークンを作成するには:
+
+<Tabs>
+<TabItem value="fine-grained" label="Fine-grained" default>
+
+1. リソースオーナーの選択に進むまで、[こちらで説明されている手順](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token) に従います。
+1. リソースオーナーを選択します。組織を選択してください。
+
+   :::note[承認]
+
+   組織がトークンの承認を必要とする場合があります。たとえば、SSO 経由でログインを求められることがあります。
+
+   :::
+1. <strong>Repository access</strong> で、<strong>All repositories</strong> を選択します。
+1. <strong>Permissions</strong> で、<strong>Organizations</strong> を選択します。
+1. <strong>Add permissions</strong> をクリックします。
+1. <strong>Self-hosted runners</strong> を選択します。
+1. アクセス権を <strong>Read and write</strong> に設定します。
+
+   ![github-fine-grained-token-permissions.png](/img/_paligo/uuid-9def1cb2-5111-b6a3-58af-ade8becde4e4.png)
+1. <strong>Generate token</strong> をクリックします。
+1. パーソナルアクセストークンをコピーします。これは二度と表示されませんが、[マシンプールの作成](#creating-a-machine-pool) 時に必要になります。
+
+</TabItem>
+<TabItem value="classic" label="Classic">
+
+1. スコープの選択に進むまで、[こちらで説明されている手順](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) に従います。
+1. 適切なスコープを選択します。これはマシンプールに必要なターゲットスコープによって異なります。
+
+   - GitHub Cloud organization (`https://github.com/<org>`) および GHE organization (`https://<hostname>/<org>`): <strong>org:admin</strong>
+   - GitHub Enterprise (GHE) Cloud (`https://github.com/enterprises/<enterprise>`) および GHE Server (`https://<hostname>/enterprises/<enterprise>`): <strong>manage_runners:enterprise</strong>。
+   - GitHub Cloud repository (`https://github.com/<owner>/<repo>`) および GHE repository (`https://<hostname>/<owner>/<repo>`): <strong>workflow</strong>。
+1. <strong>Generate token</strong> をクリックします。
+1. パーソナルアクセストークンをコピーします。これは二度と表示されませんが、[マシンプールの作成](#creating-a-machine-pool) 時に必要になります。
+
+</TabItem>
+</Tabs>
