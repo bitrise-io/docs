@@ -302,10 +302,6 @@ const config: Config = {
   ],
 
   clientModules: [
-    // Powers the old Vertex-widget search restored for real pages (see
-    // src/theme/Navbar) — kept separate from AskAiPanel's own on-demand
-    // widget instances, used only on /internal-ai-summary-test.
-    './src/clientModules/genSearchWidget.ts',
     './src/clientModules/intercomWidget.ts',
   ],
 
@@ -478,16 +474,6 @@ const config: Config = {
         href: '/',
       },
       items: [
-        // This has to stay registered even though its own SearchBar (see
-        // src/theme/SearchBar's default export) deliberately renders
-        // nothing: removing the item entirely triggers theme-classic's own
-        // fallback in Navbar/Content — `{!searchBarItem && <NavbarSearch>
-        // <SearchBar /></NavbarSearch>}` — which renders that exact same
-        // component anyway, just via a different path, with no config way
-        // to suppress it. Real pages get the old Vertex-widget search back
-        // via src/theme/Navbar instead; the new Algolia + AI Summary search
-        // is only reachable via AlgoliaSearchBar's own explicit use on the
-        // unlisted /internal-ai-summary-test page.
         {
           type: 'search',
           position: 'right',

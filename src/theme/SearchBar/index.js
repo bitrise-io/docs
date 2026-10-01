@@ -623,30 +623,11 @@ function DocSearch({externalUrlRegex, ...props}) {
   );
 }
 
-// Named export for direct, deliberate use (currently just
-// /internal-ai-summary-test, which imports this instead of the default) —
-// the real thing, unguarded.
-export function AlgoliaSearchBar(props) {
+export default function SearchBar(props) {
   const {siteConfig} = useDocusaurusContext();
   const docSearchProps = {
     ...siteConfig.themeConfig.algolia,
     ...props,
   };
   return <DocSearch {...docSearchProps} />;
-}
-
-// The default export is what Docusaurus's own NavbarContent renders into
-// every navbar's search slot — unconditionally, the moment a `type:
-// 'search'` item exists in themeConfig.navbar.items, with no prop or config
-// way to suppress it (confirmed live: removing that navbar item entirely,
-// meaning to stop Algolia from rendering on real pages, instead triggered
-// theme-classic's OWN fallback — `{!searchBarItem && <NavbarSearch><SearchBar
-// /></NavbarSearch>}` in Navbar/Content — which renders this exact same
-// component anyway, just via a different path; the old widget's navbar
-// search (from src/theme/Navbar) ended up doubled up with it as a result).
-// Keeping the navbar item registered avoids that fallback, so this default
-// export is deliberately a no-op — the search-engine feature is still only
-// reachable via AlgoliaSearchBar's own explicit use on the test page.
-export default function SearchBar() {
-  return null;
 }
