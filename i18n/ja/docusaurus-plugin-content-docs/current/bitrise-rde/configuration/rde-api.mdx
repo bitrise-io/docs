@@ -1,0 +1,65 @@
+---
+title: "Remote Dev Environments API"
+description: "Manage Remote Dev Environment sessions, templates, and saved inputs programmatically over the REST API, and report on workspace usage."
+sidebar_position: 4
+slug: /bitrise-rde/configuration/rde-api
+sidebar_label: "API"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Remote Dev Environments REST APIを使用すると、<GlossTerm baseform="rde session">セッション</GlossTerm>、<GlossTerm baseform="rde template">テンプレート</GlossTerm>、<GlossTerm baseform="saved input">保存済みの入力</GlossTerm>をプログラムで管理したり、workspaceのアクティブなセッションが消費しているリソースをレポートしたりできます。これは、CLI、Web UI、およびMCPサーバーが使用しているものと同じAPIです。
+
+:::warning[試験的なAPI]
+
+RDE APIは試験的な機能です。バージョン管理されていますが、エンドポイントとペイロードは予告なく後方互換性のない形で変更される場合があります。統合を動作確認済みの挙動に固定し、随時更新する必要があることを想定してください。
+
+:::
+
+## ベースURL
+
+APIは次の場所で提供されます:
+
+```text
+https://api.bitrise.io/rde
+```
+
+## 認証
+
+`Authorization`ヘッダーで送信するBitrise[個人用アクセストークン](https://app.bitrise.io/me/account/security)を使用して認証します:
+
+```text
+Authorization: token YOUR_BITRISE_PAT
+```
+
+## Workspace使用状況レポート
+
+使用状況エンドポイントは、workspaceのアクティブなセッションの特定時点でのスナップショットを返します。セッション数、およびOS別、workspace全体別、ユーザー別に分けたvCPUとメモリの合計が含まれます。これは現時点でセッションが消費しているリソースを報告するものであり、過去の履歴や請求期間のレポートではありません。
+
+```text
+GET /v1/workspaces/{workspace_id}/usage
+```
+
+他のエンドポイントとは異なり、これには請求情報の閲覧権限が必要です。workspaceのオーナーと、請求管理用のカスタムロールを持つメンバーのみがこれを呼び出せます。それ以外のメンバーには`403`レスポンスが返されます。
+
+## デバイスセッション
+
+セッション作成リクエストに`device_spec`を含めると、そのセッションでiOSシミュレーターまたはAndroidエミュレーターを起動でき、`artifact`を含めるとアプリのビルドをそこにインストールできます。各セッションの読み取りに含まれる`device`フィールドは、デバイスの状態とインストール状況を報告します。詳細については、[デバイスセッション](/bitrise-rde/devices/device-sessions)をご覧ください。
+
+## デバイスプレビューリンク
+
+プレビューリンクエンドポイントは、Bitriseへのログインなしで、受信者のブラウザでデバイス上にアプリのビルドを開く共有可能なリンクを発行します:
+
+```text
+POST /v1/workspaces/{workspace_id}/preview-links
+```
+
+他のエンドポイントとは異なり、<strong>Remote Dev Environments</strong>権限で作成された[WorkspaceAPIトークン](/bitrise-platform/workspaces/workspace-api-token)も受け付けます。これはCIパイプラインが使用すべきものです。詳細については、[デバイスプレビューリンク](/bitrise-rde/devices/device-preview-links)をご覧ください。
+
+## リファレンス
+
+エンドポイント、リクエストおよびレスポンスのスキーマ、使用例の全一覧については、インタラクティブなAPIリファレンスをご覧ください:
+
+[Remote Dev Environments APIリファレンス](/bitrise-rde-api/api-reference/bitrise-remote-dev-environments-api)

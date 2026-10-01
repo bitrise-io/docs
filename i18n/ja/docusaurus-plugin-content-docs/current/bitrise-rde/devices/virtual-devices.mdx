@@ -1,0 +1,43 @@
+---
+title: "Virtual devices"
+description: "Boot an iOS simulator or Android emulator on a Remote Dev Environment session, or share an app build with anyone through a device preview link that runs it in the browser."
+sidebar_position: 1
+slug: /bitrise-rde/devices/virtual-devices
+---
+
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Remote Dev Environments は、仮想デバイス(iOS シミュレーターまたはAndroidエミュレーター)をBitriseインフラストラクチャ上で起動し、ブラウザにストリーミングできます。XcodeやAndroid Studio、ローカルシミュレーターは不要です。デバイスはクラウドマシン上で実行され、アクセス権を持つ人は誰でもブラウザからそれを確認し、操作できます。
+
+## 仮想デバイスの使用
+
+仮想デバイスを使用する方法は2つあり、どちらも同じ仕組みの上に構築されています。
+
+- <strong><GlossTerm baseform="device session">デバイスセッション</GlossTerm></strong> は、デバイスも起動する通常の RDE <GlossTerm baseform="rde session">セッション</GlossTerm>です。あなた、または AI コーディングエージェントは、ビルド、インストール、テスト、そしてブラウザでの確認ができる、起動済みのシミュレーターまたはエミュレーターを備えたフル開発マシンを利用できます。[デバイスセッション](/bitrise-rde/devices/device-sessions)を参照してください。
+- <strong><GlossTerm baseform="device preview link">デバイスプレビューリンク</GlossTerm></strong> は、完成したアプリのビルドをURLに変換します。リンクを開いた人は誰でも、アプリがインストールされ実行されている状態の新しいデバイスを取得でき、Bitriseログインは不要です。典型的な使用例は、すべてのプルリクエストにリンクを投稿する[Device Preview Step](https://bitrise.io/integrations/steps/device-preview)です。[デバイスプレビューリンク](/bitrise-rde/devices/device-preview-links)を参照してください。
+
+| | デバイスセッション | デバイスプレビューリンク |
+| --- | --- | --- |
+| 対象者 | アプリに取り組む開発者と AI エージェント | アプリを試すレビュアー、デザイナー、関係者 |
+| Bitriseログイン | RDE アクセスを伴う必須 | 不要 |
+| 得られるもの | SSH、`adb`、`xcrun simctl` 経由でアクセスできる、起動済みデバイスを備えた開発マシン | デバイス上でアプリが実行されている様子を表示するブラウザタブ |
+| アプリのビルド | 任意: ビルドをインストールするか、マシン上でビルドする | 必須: リンクは1つのビルドを表示するために存在する |
+| 作成元 | RDE UI、CLI、MCP サーバー、API | CI Step、CLI、MCP サーバー、API |
+| 有効期間 | 他のセッションと同様に、終了させるか自動終了タイマーが作動するまで実行され、復元も可能 | リンクはデフォルトで24時間後に失効し、各デバイスはしばらく誰も見ていない状態が続くとシャットダウンする |
+
+## サポートされているプラットフォーム
+
+| プラットフォーム | 実行環境 | 受け入れるアプリのビルド |
+| --- | --- | --- |
+| iOS シミュレーター | macOS スタック | シミュレーター向けにビルドされ、zip 圧縮された `.app` |
+| Androidエミュレーター | Linux Android スタック | `.apk` |
+
+アプリは、物理デバイス向けではなく、シミュレーターまたはエミュレーター向けにビルドする必要があります。`.ipa`やAndroid App Bundle(`.aab`)は仮想デバイスにはインストールできません。Bitrise CIでは、[Xcode Build for Simulator](https://bitrise.io/integrations/steps/xcode-build-for-simulator) Step が iOS ビルドを生成し、[Android Build](https://bitrise.io/integrations/steps/android-build) Step が`.apk`を生成します。[シミュレーター向けの iOS アプリのビルド](/bitrise-ci/testing/testing-ios-apps/building-an-ios-app-for-a-simulator)を参照してください。
+
+スタックやマシンタイプを選択する必要はありません。デバイスをリクエストすると、Bitrise がそのプラットフォーム向けに動作確認済みのstack and machine typeを適用します。固定することもできますが、その場合は条件を満たす必要があります。iOS には macOS スタックが必要で、Android には少なくとも4 vCPU を搭載したマシン上のLinux Android スタックが必要です。
+
+:::note[デバイスモデルは画面プロファイルです]
+
+デバイスモデルは、仮想デバイスの画面サイズとピクセル密度を設定します。その電話機のファームウェアを提供するわけではありません。`pixel_7` は、Pixel 7 サイズの画面上で動作する汎用のAndroidシステムイメージであり、Pixel のソフトウェアではありません。
+
+:::

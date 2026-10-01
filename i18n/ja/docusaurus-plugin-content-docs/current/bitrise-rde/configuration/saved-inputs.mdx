@@ -1,0 +1,86 @@
+---
+title: "Saved inputs"
+description: "Store reusable values and credentials — including SSH keys, Claude Code credentials, and secrets — and map them into your Remote Dev Environment sessions."
+sidebar_position: 2
+slug: /bitrise-rde/configuration/saved-inputs
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+<GlossTerm baseform="saved input">保存された入力</GlossTerm>とは、一度保存しておき、必要に応じて<GlossTerm baseform="rde session">セッション</GlossTerm>にマッピングできる再利用可能な値または認証情報です。保存された入力は単一の<GlossTerm baseform="workspace">workspace</GlossTerm>ではなくユーザーアカウントに紐づけられ、シークレット値は保存時に暗号化されます。
+
+:::note[GitHubアクセスをお探しですか？]
+
+同じ画面にある<strong>GitHub</strong>カードは保存された入力ではありません。これは[GitHub 連携](/bitrise-rde/configuration/github-integration)を切り替えるもので、トークンを保存することなくセッションに自動的な git およびGitHub CLI認証を付与します。
+
+:::
+
+## よく使われる保存された入力
+
+一部の保存された入力には、専用の用途があります。
+
+- <strong>SSH public key</strong>: `SSH_PUBLIC_KEY`として登録することで、パスワードなしでSSH経由でセッションに接続できます。詳細は[セッションへの接続](/bitrise-rde/rde-options/connecting-to-a-session#ssh)を参照してください。
+- <strong>Claude Code 認証情報</strong>: `CLAUDE_CODE_OAUTH_TOKEN`または`ANTHROPIC_API_KEY`の値を指定すると、セッションはClaude Codeに対してあらかじめ認証済みの状態で開始します。
+- <strong>Custom 値</strong>: 環境に必要な任意のキーと値のペアで、APIトークンやレジストリのログイン情報などが該当します。シークレットとしてマークすると暗号化されます。
+
+### パスワードなしのSSHアクセスを設定する
+
+パスワードなしでSSH経由でセッションに接続するには、SSHの公開鍵を追加します。
+
+1. 左側の<strong>ユーザー設定</strong>の下にある<strong>Saved Inputs</strong>を選択します。
+1. <strong>パスワードなしのSSHアクセス</strong>の下で、<strong>+ Addの公開鍵</strong>をクリックします。
+
+   ![SSH public keyを追加するダイアログ](/img/rde/2026-06-29-rde-saved-inputs-add-ssh-key.png)
+
+1. 公開鍵（たとえば`~/.ssh/id_ed25519.pub`の内容）を`SSH_PUBLIC_KEY`フィールドに貼り付けます。
+1. <strong>Save</strong>をクリックします。
+
+Bitriseは、新しいセッションの`authorized_keys`ごとにこの鍵を追加するため、直接`ssh`で接続できるようになります。
+
+### Claude Codeの認証情報を設定する
+
+新しいセッションでClaude Codeを自動的に開始するには、Claude Codeの認証情報を追加します。
+
+<Tabs>
+<TabItem value="subscription-token" label="Subscription token" default>
+
+このオプションを使用すると、使用量を Claude Pro プランまたは Max プランに対して請求できます。
+
+1. <strong>Claude Code</strong>の下で、<strong>Subscriptionトークン</strong>タブを開きます。
+1. <strong>+ Addサブスクリプショントークン</strong>をクリックします。
+
+   ![Claude サブスクリプショントークンを追加するダイアログ](/img/rde/2026-06-29-rde-saved-inputs-add-subscription-token.png)
+
+1. ターミナルで`claude login`を実行し、続けて`claude setup-token`を実行します。生成されたトークン（`sk-ant-oat01-`で始まります）をコピーします。
+1. トークンを`CLAUDE_CODE_OAUTH_TOKEN`フィールドに貼り付けます。
+1. <strong>Save</strong>をクリックします。
+
+</TabItem>
+<TabItem value="api-key" label="API key">
+
+このオプションは、Anthropic のAPIキーによるトークン課金に使用します。
+
+1. <strong>Claude Code</strong>の下で、<strong>API key</strong>タブを開きます。
+1. <strong>+ Add API key</strong>をクリックします。
+
+   ![Anthropic API keyを追加するダイアログ](/img/rde/2026-06-29-rde-saved-inputs-api-key.png)
+
+1. Anthropic のAPIキー（`sk-ant-`で始まります）を`ANTHROPIC_API_KEY`フィールドに貼り付けます。
+1. <strong>Save</strong>をクリックします。
+
+</TabItem>
+</Tabs>
+
+保存すると、テンプレートにClaude Codeの認証情報を含む新しいセッションは、Claude Codeに対してあらかじめ認証済みの状態で開始します。
+
+## セッションで保存された入力を使用する
+
+セッションを作成すると、[テンプレート](/bitrise-rde/configuration/templates)の入力は保存された入力から値を取得できます。保存された入力を明示的に選択することも、Bitriseに同じキーを共有する保存された入力をセッション入力にマッピングさせることもできます。
+
+セッションは ID によって保存された入力を参照するため、シークレットを含む実際の値はサーバー側で解決され、UIやセッション設定の中に公開されることはありません。
+
+## 保存された入力を管理する
+
+保存された入力の作成、編集、削除は、[Bitrise RDE UI](/bitrise-rde/rde-options/bitrise-rde-ui)から、または`bitrise-cli rde saved-input`を使用してCLIから行えます。

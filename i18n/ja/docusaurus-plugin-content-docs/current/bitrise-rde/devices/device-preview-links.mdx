@@ -1,0 +1,167 @@
+---
+title: "Device preview links"
+description: "Turn an app build into a shareable link that opens it on a live iOS simulator or Android emulator in the browser, with no Bitrise login, and post it on every pull request from CI."
+sidebar_position: 3
+slug: /bitrise-rde/devices/device-preview-links
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+<GlossTerm baseform="device preview link">device preview link</GlossTerm>は、受信者のブラウザ上でライブのiOSシミュレーターまたはAndroidエミュレーター上にアプリビルドを開くURLです。リンクを開いた人はそれぞれ新しいデバイスを取得し、アプリがインストール・起動済みの状態ですぐに操作できます。Bitriseアカウント、Xcode、Android Studio、その他のインストールは一切不要で、必要なのはブラウザだけです。
+
+典型的な用途はコードレビューです。CIWorkflowがアプリをビルドし、そのビルド用のリンクを発行して、プルリクエストに投稿します。レビュアー、デザイナー、その他リンクを共有した相手は、マージされる前に変更内容を試すことができます。
+
+## プレビューリンクについて
+
+- リンクは1つのアプリビルドと1つのデバイス構成に対して発行されます。発行時には何も保存されません。リンクは署名付きトークンであり、誰も開かないリンクにはコストがかかりません。
+- リンクを開くたびに、お使いの<GlossTerm baseform="workspace">workspace</GlossTerm>内で新しい<GlossTerm baseform="device session">device session</GlossTerm>が開始され、デバイスを起動し、ビルドをダウンロードして、アプリをインストール・起動します。1つのリンクで複数のレビュアーに同時に対応できます。
+- リンクが開くセッションは通常のセッションです。CIから、または[Workspace APIトークン](/bitrise-platform/workspaces/workspace-api-token)を使って発行したリンクは、workspaceが所有するセッションを作成し、RDEのUI内の<strong>Workspace sessions</strong>で全メンバーに表示されます。個人アクセストークンで発行したリンクは、自分が所有するセッションを作成します。
+- しばらく誰も見ていない状態が続くと、デバイスは自動的にシャットダウンします。プレビューデバイスを復元する人はいません。リンクを再度開くと新しいデバイスが起動します。
+- リンクは有効期限が切れると使用できなくなります。すでに開いているデバイスには影響しません。
+
+ビルドはシミュレーターまたはエミュレーター用のビルドであり、絶対`https`URL経由で匿名の`GET`からアクセスできる必要があります。対応フォーマットについては[Supported platforms](/bitrise-rde/devices/virtual-devices#supported-platforms)を参照してください。期限付きの署名済みダウンロードURLでも問題はなく、閲覧者に表示されることもありませんが、リンクより長く有効である必要があります。URLの期限が切れた後にリンクを開いた閲覧者は、インストールに失敗したデバイスを受け取ることになります。
+
+## CI Workflowからリンクを作成する
+
+Bitrise Step Libraryの[<strong>Device Preview</strong> Step](https://bitrise.io/integrations/steps/device-preview)は次のことを行います。
+
+- Workflow内で以前にビルドされたアプリに対してリンクを作成します。
+- `$BITRISE_DEVICE_PREVIEW_URL`としてエクスポートします。
+- 任意で、ビルドが属するプルリクエストにコメントとして投稿します。
+
+ビルド自体のAPIトークンで認証するため、設定することは何もありません。Workflow Editor内のStep LibraryからWorkflowに追加するか、`bitrise.yml`内に`device-preview@1`として追加してください。プレビュー中にStepをGitのURLで参照していた場合は、バージョン管理された更新を受け取れるようStep Library IDに切り替えてください。
+
+<Tabs>
+<TabItem value="ios" label="iOS" default>
+
+```yaml
+workflows:
+  pr-preview:
+    steps:
+    - xcode-build-for-simulator@0:
+        inputs:
+        - project_path: $BITRISE_PROJECT_PATH
+        - scheme: $BITRISE_SCHEME
+    - deploy-to-bitrise-io@2: {}
+    - device-preview@1:
+        inputs:
+        - app_path: $BITRISE_APP_DIR_PATH.zip
+        - post_pr_comment: "true"
+```
+
+</TabItem>
+<TabItem value="android" label="Android">
+
+```yaml
+workflows:
+  pr-preview:
+    steps:
+    - android-build@1:
+        inputs:
+        - variant: debug
+    - deploy-to-bitrise-io@2: {}
+    - device-preview@1:
+        inputs:
+        - app_path: $BITRISE_APK_PATH
+        - post_pr_comment: "true"
+```
+
+</TabItem>
+</Tabs>
+
+Stepは、上記の例のように`app_path`入力からプラットフォームを検出します。iOSの場合は`.zip`、Androidの場合は`.apk`です。`app_path`はCIbuild machine上のローカルファイルです。[Deploy to Bitrise.io](https://bitrise.io/integrations/steps/deploy-to-bitrise-io)のStepがWorkflow内で以前に同じファイルをすでにアップロード済みの場合、Device PreviewStepはそのURLを再利用してプレビューリンクを作成します。そうでない場合は、自身でファイルをアップロードし、そこからリンクを作成します。
+
+その他の入力は、以下の[link options](#link-options)に対応しています: `device_model`、`os_version`、`system_image`、`link_ttl_hours`、`auto_terminate_minutes`、`stack`、`machine_type`、およびAndroidエミュレーターのサイズ設定の入力です。すべての入出力は[StepのREADME](https://github.com/bitrise-steplib/steps-device-preview#readme)に記載されています。
+
+Stepは`BITRISE_DEVICE_PREVIEW_URL`と`BITRISE_DEVICE_PREVIEW_EXPIRES_AT`を後で使うStepsとしてエクスポートします。URLをSlackに投稿したり、チェックに添付したり、リリースノートに記載したりできます。Stepはリンクを作成できなかった場合にビルドを失敗させます。プレビューの問題でビルドを止めたくない場合は、`is_skippable: true`を設定してください。
+
+:::tip[Build for the simulator on pull requests]
+
+デバイスビルドのみを生成するプルリクエストのWorkflowでは、プレビューできるものがありません。Workflowにシミュレーターまたはエミュレーター用のビルドを追加するか、Pipeline内で並行して実行し、その出力をStepに渡してください。
+
+:::
+
+## CLIからリンクを作成する
+
+すでにURLを持っているビルドに対してリンクを発行します。
+
+```bash
+bitrise-cli rde preview-link create --device-platform ios --artifact-url https://…/App.zip
+```
+
+このコマンドは、リンク、そのID、有効期限を出力します。JSONと同じフィールドを使うには`--output json`を追加し、コマンドラインの代わりにファイルから署名済みのURLを読み込むには`--artifact-url-stdin`を追加してください。
+
+CIや、誰もサインインしていない環境では、<strong>Remote Dev Environments</strong>アクセス権で作成した[Workspace APIトークン](/bitrise-platform/workspaces/workspace-api-token)で認証してください。`BITRISE_TOKEN`として渡し、workspaceを明示的に指定してください。workspaceトークンは1つのworkspaceに紐づいており、自動で検索することができないためです。
+
+```bash
+BITRISE_TOKEN=bitwat_… bitrise-cli rde preview-link create --workspace WORKSPACE_ID \
+  --device-platform android --artifact-url-stdin < artifact-url.txt
+```
+
+## AIアシスタントからリンクを作成する
+
+例えば「シミュレーター用にアプリをビルドして、デザインチャンネルに投稿できるプレビューリンクをください」のように、平易な言葉でリンクを依頼してください。アシスタントはセッション内でアプリをビルドし、アクセス可能な場所にアップロードし、`device_spec`と`artifact`を指定して`bitrise_devenv_create_preview_link`を呼び出します。このツールは渡すためのURLを返します。
+
+ツールの説明は、人がアプリを試すべき場面でプレビューリンクが適切なツールであることをアシスタントに伝えます。アシスタント自身がデバイスを操作する必要がある場合は、代わりに[device session](/bitrise-rde/devices/device-sessions)を作成します。
+
+## APIでリンクを作成する
+
+create preview linkエンドポイントを呼び出します。他のRDE APIとは異なり、個人アクセストークンに加えてWorkspace APIトークンも受け付けます。
+
+```bash
+curl -X POST "https://api.bitrise.io/rde/v1/workspaces/WORKSPACE_ID/preview-links" \
+  -H "Authorization: token YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "device_spec": { "platform": "android" },
+    "artifact": {
+      "url": "https://…/app.apk",
+      "app_name": "My App",
+      "build_number": "1234",
+      "commit_sha": "0a1b2c3"
+    },
+    "ttl_seconds": 14400
+  }'
+```
+
+レスポンスには、共有可能な`url`、リンクのID、`expires_at`が含まれます。詳細はAPIリファレンスの[Create device preview link](/bitrise-rde-api/api-reference/codespaces-service-create-preview-link)を参照してください。
+
+## リンクオプション
+
+デバイスフィールドはdevice sessionの[device options](/bitrise-rde/devices/device-sessions#device-options)と同じです: プラットフォーム、デバイスモデル、OSバージョンまたはシステムイメージ、そしてAndroidではエミュレーターのサイズ設定です。2点の違いがあります。プラットフォームとアプリビルドは必須である点、そしてデバイスモデルはリンクの発行時には検証されないため、未知のモデルを指定するとデフォルトが起動し、閲覧者には通知が表示される点です。
+
+リンク固有のオプション:
+
+| オプション | 説明 |
+| --- | --- |
+| アプリ名、ビルド番号、コミット | 閲覧者ページに表示される表示用メタデータで、レビュアーがどのビルドを見ているかを把握できます。 |
+| リンクの有効期間 | リンクを開ける期間です。デフォルトは24時間で、最大72時間です。 |
+| 自動終了 | 最後の閲覧者が切断してからデバイスが稼働し続ける時間です。デフォルトは60分で、最短10分です。 |
+| Stack and machine type | デバイスの実行場所です。空欄にするとプラットフォームのデフォルトが使われます。プラットフォームに合わない値は、リンクの発行時に拒否されます。 |
+
+## 受信者に表示される内容
+
+リンクを開くと、アプリ名、ビルド番号、コミットが表示され、続いてデバイスの起動とアプリのインストール・起動の進行状況が表示されます。通常1〜3分かかります。その後、閲覧者はデバイス画面をタップ、入力、スワイプでき、ホームボタン、アプリスイッチャー、Androidでのバックボタン、回転、ライト・ダーク表示、フル解像度スクリーンショットの操作が可能です。
+
+2つのmore actionsが利用できます:
+
+- <strong>Share this device</strong>は、現在の状態のままこのデバイスを開くリンクをコピーします。これにより、新規インストールではなく、2人目が同じ画面を見ることができます。見つけたばかりのバグを誰かに見せるときに使ってください。
+- <strong>Delete session</strong>は、タイムアウトを待たずに即座にデバイスを終了します。
+
+リンクの有効期限が切れた後にリンクを開くと、プレビューリンクが期限切れであることが表示されます。workspaceログインを持つユーザーは、RDEのUIでそのリンクが作成したセッションを引き続き見つけることができます。
+
+## セキュリティと制限
+
+プレビューリンクはパスワードと同様に扱ってください。URLを持つ人は誰でもお使いのworkspace内でデバイスを開くことができ、リンクを無効化することはできません。期限が切れるまで機能し続けます。リンクはプルリクエストやチームのチャンネルに投稿し、公開の場には決して投稿せず、レビューサイクルが許す限り有効期間を短く保ってください。
+
+1つのリンクがもたらすコストを制限する上限:
+
+- リンクはデフォルトで24時間有効で、最大72時間です。
+- リンクあたり最大5台、workspaceあたり最大20台のデバイスを同時に稼働できます。上限を超える起動は、デバイスがシャットダウンするまで拒否されます。
+- 各デバイスは自動終了ウィンドウの間に閲覧者がいなければシャットダウンし、合計で8時間を超えて稼働することはありません。
+
+リンクがすでに開いたデバイスを停止するには、RDEのUI内の<strong>Workspace sessions</strong>リストからセッションを終了または削除するか、`bitrise-cli rde session list --scope workspace`を使用してください。漏えいしたWorkspace APIトークンがこれ以上リンクを発行できないようにするには、トークンを再生成してください。
+
+プレビューリンクには、workspaceでのRemote Dev Environmentsアクセスが必要です。Workspace APIトークンは、<strong>Remote Dev Environments</strong>アクセス権で作成されている場合に限りリンクを発行できます。
