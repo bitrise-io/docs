@@ -1,0 +1,75 @@
+---
+title: "Monitoring and optimizing your slowest mobile builds"
+sidebar_position: 1
+slug: /insights/insights-tutorials/monitoring-and-optimizing-your-slowest-mobile-builds
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+ビルドが遅いと、ビルドの完了を待つ必要が生じます。ビルドの実行中に別の作業に切り替えたとしても、ビルドが完了して元の作業に戻る際にコンテキストスイッチが発生します。
+
+プルリクエストのレビュー中は、レビュアーのフィードバックや自動リンターの指摘に基づいて変更や改善を行うため、何度もビルドを実行することがあります。モバイルビルドが遅いほど、プルリクエストのプロセス全体で待ち時間が長くなります。
+
+ビルドが遅い上に失敗した場合は、さらに状況が悪化します。その場合、何かを修正または変更してから再度ビルドを実行する必要があり、さらに多くのビルド時間がかかります。ビルドに時間がかかると、失敗するまで長く待ち、その後問題を修正して新しいビルドを開始し、再び待つことになります。これはリリースビルドやデプロイビルドが失敗した場合に特に深刻で、通常はできるだけ早く修正して再試行する必要があります。
+
+ビルドが遅いことのもう一つの影響は、モバイルビルドの設定をどれだけ速く反復改善できるかという点です。変更を加えるたびに、新しいビルドを開始して新しい設定をテストしたくなります。そのビルドに時間がかかると、反復のスピードが遅くなります。テストビルドが失敗したり、設定に何かを追加し忘れたり、あるいは単に整理したい箇所があったりして、その後さらに変更を加える必要がある場合は、これがなおさら重要になります。ビルドが遅いと、反復のたびに長く待つことになります。反復を速く行えるほど、より多くのことを試し、より多くの改善を行うことができ、また一定の時間内でミスを犯して修正する機会も増えます。
+
+主な目標は、開発プロセス全体を通じて待ち時間を削減することです。完了までに時間がかかるモバイルビルドがある場合、遅かれ早かれそれを待つ必要が生じ、1) コンテキストスイッチによって、または 2) ビルドの結果を待っている間に有益な作業ができないことによって、時間を失う可能性が高くなります。
+
+
+## ビルドの遅延を見つける
+
+では、ビルド時間をどのように監視し、Bitrise Insightsを使ってどのように診断・改善すればよいのでしょうか。
+
+Bitrise Insightsを開くと、<strong>Overview</strong>ページで<strong>Successful build time</strong>チャートを確認できます。ここでは、<GlossTerm baseform="Workspace">Workspace</GlossTerm>全体のビルド時間の傾向を確認できるほか、ビルドが最も遅いtop 5個のアプリのビルド時間の傾向も確認できます。
+
+ここから、<strong>View details</strong>ボタンを使用するか、左サイドバーの<strong>Explore</strong>セクションにある<strong>Builds</strong>ページをクリックして、調査を続けることができます。
+
+![builds-explore.png](/img/_paligo/uuid-c73e996d-b1f3-422a-f317-5ec31fedcd68.png)
+
+<strong>Build Explore</strong>ページを開くと、ビルド時間に関連して確認できる重要な[メトリクス](/insights/available-metrics-in-insights/bitrise-ci-metrics)が2つあります。90パーセンタイルである<strong>Top build time (p90)</strong>と、50パーセンタイルである<strong>Typical build time (p50)</strong>です。
+
+:::note[パーセンタイルの定義]
+
+50パーセンタイルとは、100件のビルドのうち50番目に遅いビルドがこの時間で完了したことを意味します。90パーセンタイルとは、100件のビルドのうち90件がこの時間以内で完了したことを意味します。
+
+:::
+
+<strong>Build Explore</strong>ページでは、フィルターが適用されていない場合に上部のチャートで確認できるWorkspaceレベルから調査を開始できます。インテリジェントな内訳(2番目のチャート)を使用すると、データをドリルダウンして、どのアプリケーション、どの<GlossTerm baseform="Workflow">Workflow</GlossTerm>、どの<GlossTerm baseform="Step">Step</GlossTerm>が、確認中のビルド時間の傾向に影響しているかを特定できます。
+
+例を見てみましょう。この内訳チャートでは、このWorkspaceの中で最も遅いアプリケーションがあることがわかります。
+
+![explore-builds-example.png](/img/_paligo/uuid-1789f853-23db-4863-8ecc-70e6a837ad2f.png)
+
+左上のドロップダウンメニューでそのアプリに絞り込むと、次のレベルでWorkflowごとの内訳が表示されます。上部のチャートには、現在何で絞り込まれているかが表示されるため、この場合は選択したアプリのp90ビルド時間になります。
+
+下部の内訳チャートでは、どのWorkflowの所要時間が最も長いかを確認できます。
+
+そのWorkflowに絞り込んでみましょう。
+
+![filter-by-workflow.png](/img/_paligo/uuid-f1483521-2b52-d69c-9cbb-ae0eff053094.png)
+
+上部のチャートにはこの絞り込みが反映され、内訳チャートはステップごとのビルド時間に切り替わります。内訳チャートを使用すると、調査中のビルド時間の傾向の原因となっているStepを特定できます。
+
+グラフの下には、上部で設定したフィルターと、右上で設定したtime rangeに基づいて絞り込まれたビルド履歴も表示されます。
+
+確認中の傾向と相関するビルドが見つかったら、該当するビルドのページにすぐに移動し、そこで調査を続けることができます。
+
+![build-history.png](/img/_paligo/uuid-ac92de93-beb4-8a7d-d28c-0fe5cc8296b8.png)
+
+
+## ビルドのボトルネックを診断する
+
+<strong>Bottlenecks</strong>ページでは、Insightsが過去7日間のマイナスの傾向を表示します。注目すべき関連ボトルネックは<strong>Build time</strong>で、過去7日間でその前の7日間と比べて遅くなったワークフローが一覧表示されます。
+
+![bottlenecks-overview.png](/img/_paligo/uuid-6b2fbeca-bd57-7bfa-2ba6-7bb84f9036b4.png)
+
+ここでは、その遅延傾向の時間的影響に基づいてWorkflowsが一覧表示されます。ここで算出される時間的影響には50パーセンタイルのビルド時間の増加率が反映されるため、通常はここを確認するのが適切です。また、過去7日間でのビルド件数も考慮されます。例えば、あるWorkflowsのビルド時間が2分増加したものの、そのWorkflowでのビルドは数件しかなかったとします。一方、別のWorkflowはビルド時間の増加がわずか1分でも、そのWorkflowで数十件から数百件のビルドがあったとします。この場合、後者のWorkflowの方が時間的影響が大きくなり、<strong>Bottlenecks</strong>でより上位に表示されます。
+
+<strong>Build time</strong>セクションにWorkflowsが一件も表示されていない場合は、Workflowsのいずれにも大きなビルド時間の増加がなかったことを意味します。
+
+最も重要なメトリクスを監視して改善することで、アプリ開発プロセスの待ち時間を削減できます。さらに、開発者の生産性と満足度も向上します。
+
+ご質問やご意見がございましたら、Bitrise Insightsページ左下にあるGive feedbackボタンからお知らせください。

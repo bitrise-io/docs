@@ -1,0 +1,69 @@
+---
+title: "Tracking build failure rate"
+sidebar_position: 2
+slug: /insights/insights-tutorials/tracking-build-failure-rate
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+失敗したビルドごとに、たいていの場合、1) 時間をかけて失敗を修正し、2) ビルドを再度試行し、3) 再試行したビルドが完了するのを待つ必要があります。ビルドの実行中に他の作業に切り替えられるとしても、ビルドが完了して元の作業に戻る際にはコンテキストスイッチが発生します。
+
+特定のアプリや<GlossTerm baseform="Workflow">Workflow</GlossTerm>のビルドで失敗率が高い場合、それはユーザーがデバッグ、修正、そしてビルドの再試行に頻繁に時間を費やしていることを意味します。
+
+失敗率は特に長時間のビルドにおいて重要です。エンジニアは修正を行い新しいビルドを実行する際に、さらに長く待つ必要があるためです。失敗したビルドの頻度を追跡し減らすことで、ビルドの失敗を解決するために費やす時間と労力を最小限に抑え、チーム全体の効率と生産性を高めることができます。
+
+主な目標は、開発プロセス全体における待機時間を削減することです。頻繁に失敗するビルドがある場合、遅かれ早かれ失敗したビルドに直面し、なぜ失敗したのかを確認し、問題を修正し、再度試行して、ビルドが無事に成功することを願いながら待つ必要が生じます。この過程では、コンテキストスイッチによって、あるいはビルドの結果を待っている間に有益な作業ができないことによって、時間を失う可能性が高くなります。
+
+
+## 頻繁に失敗するビルドを見つける
+
+Bitrise Insightsを開くと、<strong>Overview</strong> ページで<strong>Buildの失敗</strong>率チャートを確認できます。
+
+ここでは、<GlossTerm baseform="Workspace">Workspace</GlossTerm>全体におけるビルド失敗率の全体的な傾向を確認できるほか、最も頻繁に失敗しているアプリ上位top 5件のビルド失敗率の傾向も確認できます。
+
+ここから、View detailsボタンを使用するか、左サイドバーの <strong>EXPLORE</strong> セクションにある <strong>Builds</strong> ページをクリックすることで、調査を続けることができます。
+
+<strong>Builds</strong> ページを開いたら、<strong>Failure rate</strong> タブに切り替えてください。
+
+![failure-rate-tab.png](/img/_paligo/uuid-605f48bd-0c0c-9003-4605-0b682c26dc57.png)
+
+<strong>Builds</strong> ページでは、適用されているフィルターに応じて、上部のチャートに表示されるWorkspaceレベルから確認を開始できます。インテリジェントな内訳(2つ目の下部チャート)を使用すると、データを詳細に調べて、どのアプリケーション、どのワークフロー、どのステップが確認中のビルド失敗率の傾向の原因になっているかを特定できます。
+
+例を見てみましょう。この内訳チャートでは、このWorkspaceにおいて最も頻繁に失敗しているアプリケーションがあることがわかります。
+
+![most-failing-app.png](/img/_paligo/uuid-80961ec0-a95b-8cce-6af1-263d07fcc5a4.png)
+
+そのアプリケーションに絞り込むと、次のレベルでWorkflowごとの内訳が表示されます。
+
+上部のチャートには、現在フィルターされている対象が表示されます。この場合は、選択したアプリの失敗率です。下部の内訳チャートでは、最も頻繁に失敗しているWorkflowを確認できます。
+
+そのWorkflowに絞り込んでみましょう。
+
+![workflow-breakdown-chart.png](/img/_paligo/uuid-211085d7-b298-e040-1432-189aa06bca6c.png)
+
+上部のチャートにはこのフィルタリングが反映され、内訳チャートは<GlossTerm baseform="Step">Step</GlossTerm>ごとの失敗率に切り替わりました。内訳チャートを使用すると、調査中の失敗率の傾向の原因となっているStepを特定できます。
+
+グラフの下には、上部で設定したフィルターと、右上で設定したtime rangeに基づいてフィルタリングされたビルド履歴も表示されます。
+
+バーにカーソルを合わせると、特定のStepsにかかった時間と、そのステップが失敗したビルドを確認できます。
+
+確認中の傾向と相関するビルドが見つかったら、該当するビルドのページにすばやく移動し、そこで調査を続けることができます。
+
+![failed-build-history.png](/img/_paligo/uuid-6507d4b6-e17c-fe9a-7fcf-286e99bf5447.png)
+
+
+## ビルドの失敗を引き起こすボトルネックを診断する
+
+Insights には、定期的に確認する価値があるもう一つのページ、<strong>Bottlenecks</strong> ページがあります。
+
+![bottlenecks-menu-option.png](/img/_paligo/uuid-3861bf61-778c-af22-dad4-28d5b52cf1f0.png)
+
+<strong>Bottlenecks</strong> ページでは、Insights が過去7日間のネガティブな傾向を表示します。関連するボトルネックは <strong>Failing Workflows</strong> で、失敗までに最も多くの時間を消費したWorkflowsが一覧表示されます。失敗したビルドの時間的影響に基づいてWorkflowsが一覧表示されます。
+
+ここでの時間的影響の計算には、特定のWorkflowのビルドがどれくらいの頻度で失敗するかと、それらの失敗したビルドにどれくらいの時間がかかるかの両方が反映されるため、通常はここを確認するとよいでしょう。このページに一覧表示される時間的影響は、過去7日間におけるそのWorkflowの失敗したビルドの合計ビルド時間です。上記の例では、<strong>bullseye</strong> アプリの <strong>test</strong> Workflowビルドが73.68%の確率で失敗し、合計でそれらの失敗したビルドが過去7日間に1時間38分を消費したことを意味します。
+
+失敗率のみに基づくのではなく時間的影響に基づいてWorkflowsを一覧表示することで、<strong>Bottlenecks</strong> ページは最も影響の大きいビルド失敗の傾向に注目するのに役立ちます。例えば、ビルド数が少なくそのすべてが失敗したWorkflowと、数十から数百のビルドがあり50%の確率で失敗した別のWorkflowがある場合、両方のWorkflowsのビルドの長さがほぼ同じであれば、全体として失敗したビルドがエンジニアの待機時間をより多く発生させているため、後者のWorkflowの方が上位にランクされます。
+
+ビルド失敗率を注視し改善することは、アプリ開発プロセス中の待機時間を削減し、チームの効率と生産性を高めるのに役立ちます。
