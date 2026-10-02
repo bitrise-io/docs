@@ -80,7 +80,7 @@ CURATED = {
         "Pipeline","Pipelines","Stack","Stacks","Build machine","Build machines","Project","Projects",
         "Workspace","Workspaces","Trigger","Trigger map","Secrets","Environment Variables","Verified Steps",
         "Default Workflows","Selective builds","Rolling builds","Build priority","Service credential user",
-        "Bitrise dashboard"],
+        "Bitrise dashboard","warm pool","warm pools","Warm pool","Warm pools"],
     "third_party": ["GitHub","GitHub Cloud","GitHub Enterprise Server","GitLab","Bitbucket","Bitbucket Server",
         "Xcode","Fastlane","Slack","AWS","Amazon EC2","EC2","Google Play","Google Play Console",
         "App Store Connect","Apple","Apple ID","Jenkins","App Center","Unity","Expo","Flutter","React Native",
