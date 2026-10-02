@@ -6,34 +6,34 @@ slug: /bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-fo
 sidebar_label: Configuring the Build Cache for Gradle in local environments
 ---
 
-Bitrise Build Cache は、ローカルの Gradle ビルドでも利用できます。ローカルビルドは CI ビルドと同じキャッシュを読み取るため、CI で既にコンパイル済みのタスクを、お使いのマシンで再度コンパイルする必要はありません。
+Bitrise Build Cache は、ローカルの Gradle ビルドでも使用できます。ローカルビルドは CI ビルドと同じキャッシュを読み取るため、CI がすでにコンパイルしたタスクを自分のマシンで再度コンパイルする必要はありません。
 
-Bitrise Build Cache CLI がセットアップを行います。Gradle の init スクリプトを `~/.gradle/init.d/` に書き込むため、プロジェクトのファイルは変更されません。
+Bitrise Build Cache CLI がセットアップを行います。Gradle の init スクリプトを `~/.gradle/init.d/` に書き込むため、プロジェクトファイルは変更されません。
 
-手順を手動で進める代わりに、AI コーディングエージェントを使ってセットアップすることもできます。[Getting started with AI](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai) を参照してください。
+手動で手順を進める代わりに、AIコーディングエージェントを使ってセットアップすることもできます。[AIで始める](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai)を参照してください。
 
-## 始める前に {#before-you-start}
+## 開始する前に {#before-you-start}
 
-次の準備ができていることを確認してください。
-- お使いのマシン (macOS または Linux) で動作する Gradle プロジェクト。
+次のものを用意してください。
+- マシン上で動作する Gradle プロジェクト (macOS または Linux)。
 - Build Cache が有効になっている Bitrise workspace。[Build Cache ページ](https://app.bitrise.io/build-cache/)で確認できます。
-- マシンが VPN、ファイアウォール、またはアウトバウンドプロキシの内側にある場合は、Build Cache が使用する Bitrise ホストへのネットワークアクセス。[Network endpoints for firewalls and VPNs](/bitrise-build-cache/getting-started-with-the-build-cache/network-endpoints-for-firewalls-and-vpns) を参照してください。
+- マシンがファイアウォール、VPN、または送信プロキシの内側にある場合は、Build Cache が使用する Bitrise ホストへのネットワークアクセス。[ファイアウォールと VPN のネットワークエンドポイント](/bitrise-build-cache/getting-started-with-the-build-cache/network-endpoints-for-firewalls-and-vpns)を参照してください。
 
-:::note[Android projects with native code]
+:::note[ネイティブコードを含む Android プロジェクト]
 
-プロジェクトで C/C++ コード (NDK、JNI、またはネイティブモジュール) をビルドする場合は、Gradle と併せて `ccache` をセットアップしてください。Gradle プラグインは Java と Kotlin タスクの出力をキャッシュしますが、ネイティブのコンパイルはこれを経由せず、代わりに `ccache` を経由します。`brew install ccache` でインストールし、ウィザードで <strong>Gradle</strong> と <strong>ccache (C/C++)</strong> の両方を選択してください。
+プロジェクトが C/C++ コード (NDK、JNI、またはネイティブモジュール) をビルドする場合は、Gradle と併せて `ccache` をセットアップしてください。Gradle プラグインは Java と Kotlin のタスク出力をキャッシュしますが、ネイティブのコンパイルはこれを経由せず、代わりに `ccache` を経由します。`brew install ccache` でインストールし、ウィザードで <strong>Gradle</strong> と <strong>ccache (C/C++)</strong> の両方を選択してください。
 
 :::
 
-## CLI のインストール {#installing-the-cli}
+## CLIのインストール {#installing-the-cli}
 
-Homebrew を使って CLI をインストールします (<strong>推奨</strong>)。
+Homebrew で CLI をインストールします (<strong>推奨</strong>)。
 
 ```bash
 brew install bitrise-io/bitrise-build-cache/bitrise-build-cache
 ```
 
-Homebrew を使わない場合は、次のようにします。
+Homebrew を使用しない場合は、次のようにします。
 
 ```bash
 curl --retry 5 -sSfL \
@@ -41,7 +41,7 @@ curl --retry 5 -sSfL \
   | sh -s -- -b ~/.local/bin
 ```
 
-インストール先が `PATH` に含まれていることを確認し、インストールを確認してください。
+インストール先が `PATH` に含まれていることを確認してから、インストールを確認します。
 
 ```bash
 bitrise-build-cache --version
@@ -55,18 +55,19 @@ bitrise-build-cache --version
 bitrise-build-cache activate --interactive
 ```
 
-ウィザードでは、次の項目を尋ねられます。
+ウィザードでは、次の項目が求められます。
 
-1. <strong>Sign in to Bitrise</strong>: 初回実行時にブラウザーが開き、認証を行います。CLI は認証情報を OS のキーチェーンに保存し、自動的に更新するため、以降の実行ではこの手順がスキップされます。使用可能なキーチェーンがないマシンでは、CLI は認証情報を設定ファイルに保存します。
-1. <strong>Select a workspace</strong>: 使用する Build Cache を持つ workspace を選択します。アクセスできるものが 1 つだけの場合は、CLI が自動的に選択します。
-1. <strong>Which build tools should I set up</strong>: <strong>Gradle</strong> が選択されていることを確認してください。プロジェクトでネイティブコードをビルドする場合は、<strong>ccache (C/C++)</strong> も選択します。スペースキーでオプションを切り替え、Enter キーで確定します。
-1. <strong>Display name for this machine's local invocations</strong>: ローカルビルドが Build Cache ダッシュボードに表示される名前です。例: `local-<yourhandle>`。
+1. <strong>Sign in to Bitrise</strong>: 初回実行時に、認証のためブラウザーが開きます。CLI は認証情報を OS のキーチェーンに保存して自動的に更新するため、2回目以降はこの手順がスキップされます。使用可能なキーチェーンがないマシンでは、CLI は設定ファイルに保存する方法に切り替わります。
+1. <strong>Select a workspace</strong>: キャッシュを使用する workspace の Build Cache を選択します。アクセスできるものが1つだけの場合は、CLI が自動的に選択します。
+1. <strong>Which build tools should I set up</strong>: <strong>Gradle</strong> が選択されていることを確認してください。プロジェクトがネイティブコードをビルドする場合は、<strong>ccache (C/C++)</strong> も選択します。スペースキーでオプションを切り替え、Enter キーで確定します。
+1. <strong>Cache for all projects, or only opted-in ones?</strong>: このマシン上に複数のプロジェクトがあり、一部のプロジェクトだけでキャッシュを使用したい場合を除き、デフォルトの <strong>Always</strong> のままにします。[プロジェクトごとのキャッシュスコープ](/bitrise-build-cache/getting-started-with-the-build-cache/per-project-cache-scoping)を参照してください。
+1. <strong>Display name for this machine's local invocations</strong>: Build Cache ダッシュボードにローカルビルドが表示される名前です。例: `local-<yourhandle>`。
 1. <strong>Enable cache push</strong>: デフォルトの <strong>Yes, push too</strong> のままにします。[キャッシュプッシュモード](#cache-push-mode)を参照してください。
-1. <strong>Keep the cache proxies running in the background</strong>: `ccache` をセットアップした場合は <strong>Yes, install + start</strong> を選択します。これにより、ヘルパープロセスが OS に登録され、シェルを再起動しても動作し続けます。
+1. <strong>Keep the cache proxies running in the background</strong>: `ccache` をセットアップする場合は、<strong>Yes, install + start</strong> を選択します。これにより、ヘルパープロセスが OS に登録され、シェルを再起動しても動作し続けます。
 
 :::note[Environment Variables take precedence]
 
-`BITRISE_BUILD_CACHE_AUTH_TOKEN` と `BITRISE_BUILD_CACHE_WORKSPACE_ID` がシェルで既に設定されている場合、CLI は保存された認証情報ではなく、それらを使用します。サインインを反映させたい場合は、これらの設定を解除してください。
+`BITRISE_BUILD_CACHE_AUTH_TOKEN` と `BITRISE_BUILD_CACHE_WORKSPACE_ID` がシェルですでに設定されている場合、CLI は保存された認証情報の代わりにそれらを使用します。サインインを反映させたい場合は、これらを unset してください。
 
 :::
 
@@ -78,7 +79,7 @@ CLI のヘルスチェックを実行します。
 bitrise-build-cache doctor
 ```
 
-認証情報、バックエンドへの接続、ヘルパープロセス、ログディレクトリなど、ローカルセットアップのすべての部分の状態を報告し、最後に総合的な判定を表示します。
+認証情報、バックエンドへの接続、ヘルパープロセス、ログディレクトリなど、ローカルセットアップのすべての項目の状態が報告され、最後に全体の判定が表示されます。
 
 ```bash
 Bitrise Build Cache - doctor
@@ -88,6 +89,7 @@ Healthy:
   ✓ auth                   OAuth login (keychain) (workspace <id>), token valid until <iso-timestamp>
   ✓ keychain-smoke         Set/Get/Delete round-trip OK
   ✓ auth-backend           latency <ms>, source=keychain, workspace=<id>
+  ✓ project-scope          mode=always; cache_push=true (machine config); no .bitrise-build-cache.json found in <cwd> or parents.; would gate this directory: no
   ✓ ccache-binary          found at /opt/homebrew/bin/ccache
   ✓ ccache-helper          running (~/.local/state/ccache/ccache.sock)
   ✓ log-dirs               all log dirs present + writable
@@ -95,11 +97,11 @@ Healthy:
 Overall: ok
 ```
 
-CLI に自動で修復可能な問題を修復させるには、`bitrise-build-cache doctor --fix --interactive` を実行します。
+CLI が自動的に修復できる問題を修復するには、`bitrise-build-cache doctor --fix --interactive` を実行します。
 
 ## ビルドの実行 {#running-a-build}
 
-1. まず、プロジェクトのローカルビルド出力をクリーンアップし、ビルド時にリモートキャッシュから取得されるようにします。`--no-daemon` も併せて指定してください。有効化の前に起動した Gradle デーモンは、新しい設定を読み込みません。
+1. まずプロジェクトのローカルビルド出力をクリーンアップし、ビルドがリモートキャッシュから取得するようにします。`--no-daemon` も指定してください。有効化の前に起動した Gradle デーモンは、新しい設定を読み込まないためです。
 
    ```bash
    cd path/to/your/gradle/project
@@ -130,20 +132,20 @@ BUILD SUCCESSFUL in 18s
 | シグナル | 確認場所 | 成功時の状態 |
 |---|---|---|
 | `Task :module:name FROM-CACHE` | Gradle のビルド出力 (タスクごと) | タスクの行が `FROM-CACHE` で終わる |
-| `N actionable tasks: X executed, Y from cache` | Gradle のビルドサマリー | `from cache` の数が 0 以外になる |
-| Invocation link | ビルドの最後に表示される | ビルドのタスクごとのメトリクスが開く |
+| `N actionable tasks: X executed, Y from cache` | Gradle のビルドサマリー | `from cache` の件数が0以外 |
+| Invocation link | ビルドの最後に出力される | ビルドのタスクごとのメトリクスが開く |
 | Dashboard | [Build Cache ページ](https://app.bitrise.io/build-cache/) | 表示名の下に行が表示される |
 | Init script | `~/.gradle/init.d/bitrise-build-cache.init.gradle.kts` | ファイルが存在し、`buildCache {` を含んでいる |
 
 ## キャッシュプッシュモード {#cache-push-mode}
 
-このガイドのセットアップでは、キャッシュプッシュを有効にした状態で Build Cache を有効化します。ローカルビルドは共有キャッシュからの読み取りと書き込みの両方を行います。お使いのマシンがビルドしたすべてのタスクは、チームメンバーや CI が再利用できるエントリーとなり、アクティビティは [Build Cache ページ](https://app.bitrise.io/build-cache/)に表示されます。
+このガイドのセットアップでは、キャッシュプッシュを有効にして Build Cache を有効化します。ローカルビルドは共有キャッシュからの読み取りと書き込みの両方を行います。マシンがビルドしたすべてのタスクが、チームメンバーや CI が再利用できるエントリになり、アクティビティは [Build Cache ページ](https://app.bitrise.io/build-cache/)に表示されます。
 
-ローカルビルドでキャッシュの読み取りのみを行いたい場合は、以下の[プルオンリーモードの選択](#opting-into-pull-only-mode)を参照してください。
+ローカルビルドでキャッシュの読み取りだけを行いたい場合は、後述の[プルのみモードの選択](#opting-into-pull-only-mode)を参照してください。
 
-## プルオンリーモードの選択 {#opting-into-pull-only-mode}
+## プルのみモードの選択 {#opting-into-pull-only-mode}
 
-チームが既に CI からキャッシュを蓄積していて、ローカルビルドではキャッシュの読み取りのみを行いたい場合は、キャッシュプッシュをオフにします。ただし、ローカルビルドは何も蓄積しないため、CI がまだ実行されていない場合、サマリー行は `0 from cache` のままになります。
+チームがすでに CI からキャッシュを蓄積していて、ローカルビルドでは読み取りだけを行いたい場合は、キャッシュプッシュをオフにします。ただし、ローカルビルドは何も提供しないため、CI がまだ実行されていない場合、サマリー行は `0 from cache` のままになります。
 
 `bitrise-build-cache activate --interactive` を再実行し、キャッシュプッシュのプロンプトで <strong>No, pull only</strong> と答えるか、非対話型の activate コマンドを実行します。
 
@@ -151,7 +153,7 @@ BUILD SUCCESSFUL in 18s
 bitrise-build-cache activate gradle --cache --cache-push=false
 ```
 
-ビルドが期待どおりに動作しない場合は、デバッグログを有効にして、有効化を再実行してください。
+ビルドが期待どおりに動作しない場合は、デバッグログを有効にして activate を再実行してください。
 
 ```bash
 bitrise-build-cache activate gradle --cache --cache-push=false --debug
@@ -159,18 +161,18 @@ bitrise-build-cache activate gradle --cache --cache-push=false --debug
 
 ## トラブルシューティング {#troubleshooting}
 
-まず CLI のヘルスチェックを実行します。ローカルセットアップのすべての部分を検査し、自動で修復可能な問題を修復します。
+まず CLI のヘルスチェックを実行します。ローカルセットアップのすべての項目を検査し、自動的に修復できる問題を修復します。
 
 ```bash
 bitrise-build-cache doctor --fix --interactive
 ```
 
-問題が解決しない場合は、次の表を確認してください。
+それでも問題が解決しない場合は、次の表を確認してください。
 
 | 問題 | 対処方法 |
 |---|---|
 | ウィザードがターミナルを必要とすると報告する | 行ベースモードにするには `TERM=dumb bitrise-build-cache activate --interactive` を実行します。 |
-| `doctor` が修復できない問題を報告する | 詳細なコンテキストを確認するには、`--debug` を付けて再実行します。 |
+| `doctor` が修復できない問題を報告する | 詳細な情報を表示するには `--debug` を付けて再実行します。 |
 | ビルドが新しい設定を無視する | 実行中の Gradle デーモンを `./gradlew --stop` で停止するか、`--no-daemon` を指定します。 |
-| 最初からやり直したい | ウィザードは再実行しても問題ありません。現在の状態を再読み込みし、同じ有効化を再度適用します。 |
-| ビルドがキャッシュに到達できない、またはキャッシュ呼び出しがタイムアウトする | VPN、ファイアウォール、またはプロキシが Bitrise ホストをブロックしている可能性があります。[Network endpoints for firewalls and VPNs](/bitrise-build-cache/getting-started-with-the-build-cache/network-endpoints-for-firewalls-and-vpns) と照らし合わせて確認してください。 |
+| 最初からやり直したい | ウィザードは再実行しても問題ありません。現在の状態を読み直し、同じ有効化を再度適用します。 |
+| ビルドがキャッシュに到達できない、またはキャッシュ呼び出しがタイムアウトする | VPN、ファイアウォール、またはプロキシが Bitrise ホストをブロックしている可能性があります。[ファイアウォールと VPN のネットワークエンドポイント](/bitrise-build-cache/getting-started-with-the-build-cache/network-endpoints-for-firewalls-and-vpns)と照らし合わせて確認してください。 |

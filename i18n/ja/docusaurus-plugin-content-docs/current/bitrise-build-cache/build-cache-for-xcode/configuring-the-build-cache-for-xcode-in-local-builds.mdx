@@ -5,28 +5,27 @@ sidebar_position: 4
 slug: /bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-local-builds
 sidebar_label: Configuring the Build Cache for Xcode in local environments
 ---
-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-Bitrise Build Cacheは、ローカルの Xcode ビルドでも使用できます。ローカルビルドは CI ビルドと同じコンパイルキャッシュから読み取るため、CI がすでにコンパイルしたコードを、お使いのマシンで再度コンパイルする必要はありません。
+Bitrise Build Cacheは、ローカルのXcodeビルドにも使用できます。ローカルビルドがCIビルドと同じコンパイルキャッシュを読み取るため、CIがすでにコンパイルしたコードをお使いのマシンで再度コンパイルする必要はありません。
 
-Bitrise Build Cache CLI は、お使いの `PATH` に `xcodebuild` ラッパーをインストールして、これをセットアップします。プロジェクトファイルは変更されません。
+Bitrise Build Cache CLIは、`xcodebuild`ラッパーを`PATH`にインストールすることでこれを設定します。プロジェクトファイルは変更されません。
 
-手順を手動で実行する代わりに、AI コーディングエージェントを使ってセットアップすることもできます。[Getting started with AI](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai)を参照してください。
+手順を手動で実行する代わりに、AIコーディングエージェントを使ってセットアップすることもできます。[Getting started with AI](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai)を参照してください。
 
 ## 始める前に {#before-you-start}
 
-以下を確認してください。
-- Xcode 26 or later でビルドした、お使いのマシン上で動作する Xcode プロジェクト。それより前のバージョンでは、CLI が必要とするコンパイルキャッシュのフラグが公開されておらず、ラッパーは何も行いません。
-- Build Cache が有効な Bitrise workspace。[Build Cache ページ](https://app.bitrise.io/build-cache/)で確認できます。
-- お使いのマシンが VPN、ファイアウォール、またはアウトバウンドプロキシの内側にある場合は、Build Cache が使用する Bitrise ホストへのネットワークアクセス。[ファイアウォールと VPN のネットワークエンドポイント](/bitrise-build-cache/getting-started-with-the-build-cache/network-endpoints-for-firewalls-and-vpns)を参照してください。
+次のものを用意してください。
+- お使いのマシン上で、Xcode 26 or laterでビルドされた動作するXcodeプロジェクト。それより前のバージョンでは、CLIが必要とするコンパイルキャッシュのフラグが公開されておらず、ラッパーは何も行いません。
+- Build Cacheが有効なBitrise workspace。[Build Cacheページ](https://app.bitrise.io/build-cache/)で確認できます。
+- お使いのマシンがファイアウォールやアウトバウンドプロキシ、VPNの内側にある場合は、Build Cacheが使用するBitriseホストへのネットワークアクセス。[Network endpoints for firewalls and VPNs](/bitrise-build-cache/getting-started-with-the-build-cache/network-endpoints-for-firewalls-and-vpns)を参照してください。
 
-:::important[ターミナルからのビルドのみ]
+:::important[Terminal builds only]
 
-キャッシュは、`PATH` を通じて解決される `xcodebuild` の実行で機能します。対象は、Terminal、iTerm、エディターの統合ターミナル、`fastlane`、および `xcodebuild` を呼び出すすべてのスクリプトです。
+キャッシュは、`PATH`を介して解決される`xcodebuild`の実行で機能します。対象は、Terminal、iTerm、エディターの統合ターミナル、`fastlane`、および`xcodebuild`を呼び出すスクリプトです。
 
-Xcode.app は `xcodebuild` をハードコードされた絶対パスで呼び出すため、IDE で ⌘B や ⌘R を押すとラッパーが経由されません。これらのビルドでは、キャッシュの読み取りも書き込みも行われず、アナリティクスも記録されません。IDE からビルドしてもキャッシュの動作が見られない場合は、これが原因です。代わりにターミナルからビルドを実行してください。
+Xcode.appは`xcodebuild`をハードコードされた絶対パスで呼び出すため、IDEで⌘Bまたは⌘Rを押すとラッパーが迂回されます。これらのビルドでは、キャッシュの読み取り、キャッシュの書き込み、アナリティクスのいずれも行われません。IDEからビルドしてキャッシュのアクティビティが表示されない場合は、これが原因です。代わりにターミナルからビルドを実行してください。
 
 :::
 
@@ -51,13 +50,13 @@ curl --retry 5 -sSfL \
 </TabItem>
 </Tabs>
 
-インストール先が `PATH` に含まれていることを確認してから、インストールを確認します。
+インストール先が`PATH`に含まれていることを確認してから、インストールを確認します。
 
 ```bash
 bitrise-build-cache --version
 ```
 
-## キャッシュの有効化 {#activating-the-cache}
+## キャッシュのアクティベーション {#activating-the-cache}
 
 対話型ウィザードを実行します。
 
@@ -65,37 +64,38 @@ bitrise-build-cache --version
 bitrise-build-cache activate --interactive
 ```
 
-ウィザードでは、次の項目を尋ねられます。
+ウィザードでは、次の項目が表示されます。
 
-1. <strong>Sign in to Bitrise</strong>: 初回実行時に、認証用のブラウザーが開きます。CLI は認証情報を macOS のキーチェーンに保存して自動的に更新するため、2 回目以降はこのステップがスキップされます。
-1. <strong>Select a workspace</strong>: 使用する Build Cache を持つ workspace を選択します。アクセスできるものが 1 つだけの場合は、CLI が自動的に選択します。
-1. <strong>Which build tools should I set up</strong>: <strong>Xcode</strong> が選択されていることを確認します。スペースキーでオプションを切り替え、Enter キーで確定します。
-1. <strong>Display name for this machine's local invocations</strong>: Build Cache ダッシュボードにローカルビルドが表示される名前です。例: `local-<yourhandle>`。
-1. <strong>Enable cache push</strong>: デフォルトの <strong>Yes, push too</strong> のままにします。[キャッシュのプッシュモード](#cache-push-mode)を参照してください。
-1. <strong>Keep the cache proxies running in the background</strong>: <strong>Yes, install + start</strong> を選択します。これにより、キャッシュプロキシが OS に登録され、シェルを再起動しても動作し続けます。
+1. <strong>Sign in to Bitrise</strong>: 初回実行時にブラウザーが開き、認証を行います。CLIは認証情報をmacOSのキーチェーンに保存して自動的に更新するため、2回目以降はこの手順がスキップされます。
+1. <strong>Select a workspace</strong>: 使用するBuild Cacheを持つworkspaceを選択します。アクセスできるものが1つだけの場合は、CLIが自動的に選択します。
+1. <strong>Which build tools should I set up</strong>: <strong>Xcode</strong>が選択されていることを確認します。スペースキーでオプションを切り替え、Enterキーで確定します。
+1. <strong>Cache for all projects, or only opted-in ones?</strong>: このマシンに複数のプロジェクトがあり、その一部だけでキャッシュを使用したい場合を除き、デフォルトの<strong>Always</strong>のままにします。[Per-project cache scoping](/bitrise-build-cache/getting-started-with-the-build-cache/per-project-cache-scoping)を参照してください。
+1. <strong>Display name for this machine's local invocations</strong>: Build Cacheダッシュボードでローカルビルドが表示される名前です。例: `local-<yourhandle>`
+1. <strong>Enable cache push</strong>: デフォルトの<strong>Yes, push too</strong>のままにします。[Cache push mode](#cache-push-mode)を参照してください。
+1. <strong>Keep the cache proxies running in the background</strong>: <strong>Yes, install + start</strong>を選択します。これにより、キャッシュプロキシがOSに登録され、シェルを再起動しても動作し続けます。
 
-:::important[有効化後に新しいターミナルを開く]
+:::important[Open a new terminal afterwards]
 
-有効化の処理では、シェルの rc ファイルに 1 行を書き込むことで、`PATH` の先頭に `~/.bitrise-xcelerate/bin` が追加されます。現在のシェルはまだこの変更を読み込んでいないため、そのシェルで開始したビルドは引き続きラッパーなしで実行され、`doctor` もそれについて警告しません。
+アクティベーションでは、シェルのrcファイルに1行を書き込むことで、`~/.bitrise-xcelerate/bin`が`PATH`の先頭に追加されます。現在のシェルはまだこの変更を読み込んでいないため、そのシェルで開始したビルドは引き続きラッパーなしで実行され、`doctor`も警告しません。
 
 :::
 
-新しいターミナルを開くか、`source ~/.zshrc` を実行してから、ラッパーが有効になっていることを確認します。
+新しいターミナルを開くか、`source ~/.zshrc`を実行してから、ラッパーが有効になっていることを確認します。
 
 ```bash
 which xcodebuild
 # → /Users/<you>/.bitrise-xcelerate/bin/xcodebuild
 ```
 
-## セットアップの検証 {#verifying-the-setup}
+## セットアップの確認 {#verifying-the-setup}
 
-CLI のヘルスチェックを実行します。
+CLIのヘルスチェックを実行します。
 
 ```bash
 bitrise-build-cache doctor
 ```
 
-認証情報、バックエンドへの接続、キャッシュプロキシ、ログディレクトリなど、ローカルセットアップのすべての部分の状態が報告され、最後に全体の判定が表示されます。
+資格情報、バックエンドへの接続、キャッシュプロキシ、ログディレクトリなど、ローカルセットアップの各部分の状態が報告され、最後に全体の判定が表示されます。
 
 ```bash
 Bitrise Build Cache - doctor
@@ -105,6 +105,7 @@ Healthy:
   ✓ auth                   OAuth login (keychain) (workspace <id>), token valid until <iso-timestamp>
   ✓ keychain-smoke         Set/Get/Delete round-trip OK
   ✓ auth-backend           latency <ms>, source=keychain, workspace=<id>
+  ✓ project-scope          mode=always; cache_push=true (machine config); no .bitrise-build-cache.json found in <cwd> or parents.; would gate this directory: no
   ✓ xcelerate-proxy        running (/var/folders/…/T/xcelerate-proxy.sock)
   ✓ xcelerate-enrichment   no enrichment attempts yet
   ✓ log-dirs               all log dirs present + writable
@@ -112,11 +113,11 @@ Healthy:
 Overall: ok
 ```
 
-`xcelerate-enrichment` は、最初のビルドの後に `no enrichment attempts yet` から `healthy` に変わります。CLI に、自動で修復できる問題を修復させるには、`bitrise-build-cache doctor --fix --interactive` を実行します。
+最初のビルドの後、`xcelerate-enrichment`は`no enrichment attempts yet`から`healthy`に変わります。CLIに自動修復可能な問題を修復させるには、`bitrise-build-cache doctor --fix --interactive`を実行します。
 
 ## ビルドの実行 {#running-a-build}
 
-ターミナルから、いつもの `xcodebuild` コマンドを実行します。
+ターミナルから、通常の`xcodebuild`コマンドを実行します。
 
 ```bash
 cd path/to/your/xcode/project
@@ -130,7 +131,7 @@ xcodebuild \
   CODE_SIGNING_ALLOWED=NO clean build
 ```
 
-ラッパーは、ビルドの derived data を `~/.bitrise/cache/xcode-dd/` に、モジュールキャッシュを `~/.bitrise/cache/xcode-ptd/` にリダイレクトするため、cache keys はマシン間で同一になります。既存の `~/Library/Developer/Xcode/DerivedData/` フォルダーはそのまま残り、Xcode.app は引き続きそれを使用します。
+ラッパーは、ビルドのDerived Dataを`~/.bitrise/cache/xcode-dd/`に、モジュールキャッシュを`~/.bitrise/cache/xcode-ptd/`にリダイレクトするため、cache keysはどのマシンでも同じになります。既存の`~/Library/Developer/Xcode/DerivedData/`フォルダーはそのまま残り、Xcode.appも引き続きそれを使用します。
 
 ウォームキャッシュにヒットしたビルドは、次のように終了します。
 
@@ -151,45 +152,45 @@ note: 82 hits / 82 cacheable tasks (100%)
 
 | シグナル | 確認場所 | 成功時の状態 |
 |---|---|---|
-| `CompilationCacheMetrics note: N / M cacheable tasks (P%)` | Xcode のビルド出力 | 行が存在し、ヒット数が 0 ではない |
-| `[Bitrise Analytics] Xcode task stats:` | ビルド出力の最後の数行 | `CompilationCacheMetrics` と同じ数値 |
-| `[Bitrise Analytics] Proxy blob stats:` | ビルド出力の最後の数行 | `hits: N / total: M`。リモートキャッシュから提供された blob が表示される |
-| Invocation link | ビルドの最後に出力される | 同じヒット率で invocation が開く |
-| Dashboard | [Build Cache ページ](https://app.bitrise.io/build-cache/) | 表示名の下に行が表示される |
-| Per-invocation log | `~/.local/state/xcelerate/logs/xcelerate-<uuid>.log` | ビルドのラッパーログの全文 |
+| `CompilationCacheMetrics note: N / M cacheable tasks (P%)` | Xcodeビルド出力 | 行が存在し、ヒット数が0ではない |
+| `[Bitrise Analytics] Xcode task stats:` | ビルド出力の最後の数行 | `CompilationCacheMetrics`と同じ数値 |
+| `[Bitrise Analytics] Proxy blob stats:` | ビルド出力の最後の数行 | `hits: N / total: M`。リモートキャッシュから提供されたBlobが表示される |
+| インボケーションリンク | ビルドの最後に出力される | 同じヒット率でインボケーションが開く |
+| ダッシュボード | [Build Cache page](https://app.bitrise.io/build-cache/) | 表示名の下に行が表示される |
+| インボケーションごとのログ | `~/.local/state/xcelerate/logs/xcelerate-<uuid>.log` | ビルドのラッパーログの全体 |
 
 :::note[Explicit module build warnings]
 
-ラッパーが `SWIFT_ENABLE_EXPLICIT_MODULES=YES` を設定していても、一部の `swift compiler caching requires explicit module build` 警告が表示されることがあります。Xcode はラッパーのビルド設定が適用される前にこれらを出力しますが、無視しても問題ありません。キャッシュヒット数から、キャッシュが機能していることを確認できます。
+ラッパーが`SWIFT_ENABLE_EXPLICIT_MODULES=YES`を設定しているにもかかわらず、`swift compiler caching requires explicit module build`の警告がいくつか表示される場合があります。Xcodeは、ラッパーのビルド設定が適用される前にこれらを出力するため、無視して問題ありません。キャッシュのヒット数から、キャッシュが機能していることを確認できます。
 
 :::
 
-プロジェクトによっては、explicit modules ではまったくビルドできず、`unable to resolve module dependency` で失敗する場合があります。その場合は `--no-swift-cache` で有効化してください。これにより、clang と Objective-C のコンパイルのみがキャッシュされ、Swift はキャッシュされません。ウィザードではこれについて尋ねられないため、非対話型の activate コマンドを使用します。
+プロジェクトによっては、explicit modulesではビルドできず、`unable to resolve module dependency`で失敗する場合があります。その場合は`--no-swift-cache`でアクティベートしてください。これはclangとObjective-Cのコンパイルのみをキャッシュし、Swiftはキャッシュしません。ウィザードではこの点を確認しないため、非対話型のactivateコマンドを使用します。
 
 ```bash
 bitrise-build-cache activate xcode --cache --no-swift-cache
 ```
 
-## キャッシュのプッシュモード {#cache-push-mode}
+## キャッシュプッシュモード {#cache-push-mode}
 
-このガイドのセットアップでは、Build Cache をキャッシュプッシュを有効にして有効化します。ローカルビルドは共有キャッシュから読み取り、共有キャッシュへ書き込みます。お使いのマシンがコンパイルしたものはすべてエントリーとなり、チームメイトや CI が再利用できます。また、お使いのマシンのアクティビティは [Build Cache ページ](https://app.bitrise.io/build-cache/)に表示されます。
+このガイドのセットアップでは、キャッシュプッシュを有効にしてBuild Cacheをアクティベートします。ローカルビルドは共有キャッシュから読み取り、共有キャッシュに書き込みます。お使いのマシンでコンパイルしたものはすべて、チームメイトやCIが再利用できるエントリーになり、アクティビティは[Build Cacheページ](https://app.bitrise.io/build-cache/)に表示されます。
 
-ローカルビルドでキャッシュからの読み取りのみを行いたい場合は、後述の[プルのみモードの選択](#opting-into-pull-only-mode)を参照してください。
+ローカルビルドでキャッシュの読み取りだけを行いたい場合は、以下の[Opting into pull-only mode](#opting-into-pull-only-mode)を参照してください。
 
-## プルのみモードの選択 {#opting-into-pull-only-mode}
+## プルのみモードの利用 {#opting-into-pull-only-mode}
 
-チームがすでに CI からキャッシュを蓄積していて、ローカルビルドでは読み取りのみを行いたい場合は、キャッシュプッシュをオフにします。ただし、ローカルビルドは何も提供しないため、CI がまだ実行されていない場合、お使いのスキーム、構成、SDK の組み合わせでは、比率が `0 / N (0%)` のままになります。
+チームがすでにCIからキャッシュにエントリーを書き込んでおり、ローカルビルドでは読み取りだけを行いたい場合は、キャッシュプッシュをオフにします。ただし、ローカルビルドはキャッシュに何も追加しないため、CIがまだ実行されていない場合、スキーム、構成、SDKの組み合わせでは、比率は`0 / N (0%)`のままです。
 
-キャッシュプッシュをオフにする方法は 2 つあります。
+キャッシュプッシュをオフにする方法は2つあります。
 
-- `bitrise-build-cache activate --interactive` を再実行し、キャッシュプッシュのプロンプトで <strong>No, pull only</strong> と回答します。
-- 非対話型の activate コマンドを実行します。
+- `bitrise-build-cache activate --interactive`を再実行し、キャッシュプッシュのプロンプトで<strong>No, pull only</strong>と答えます。
+- 非対話型のactivateコマンドを実行します。
 
   ```bash
   bitrise-build-cache activate xcode --cache --cache-push=false
   ```
 
-  ビルドが期待どおりに動作しない場合は、デバッグログを有効にして有効化を再実行します。
+  ビルドが期待どおりに動作しない場合は、デバッグログを有効にしてアクティベーションを再実行します。
 
   ```bash
   bitrise-build-cache activate xcode --cache --cache-push=false --debug
@@ -197,7 +198,7 @@ bitrise-build-cache activate xcode --cache --no-swift-cache
 
 ## トラブルシューティング {#troubleshooting}
 
-まず、CLI のヘルスチェックから始めます。ローカルセットアップのすべての部分を検査し、自動で修復できる問題を修復します。
+まず、CLIのヘルスチェックを実行します。ローカルセットアップの各部分を検査し、自動修復可能な問題を修復します。
 
 ```bash
 bitrise-build-cache doctor --fix --interactive
@@ -207,9 +208,9 @@ bitrise-build-cache doctor --fix --interactive
 
 | 問題 | 対処方法 |
 |---|---|
-| ウィザードがターミナルを必要とすると報告する | `TERM=dumb bitrise-build-cache activate --interactive` を実行して、行ベースモードを使用します。 |
-| `which xcodebuild` がまだ `/usr/bin/xcodebuild` を指している | 新しいターミナルを開くか、`source ~/.zshrc` を実行します。 |
-| ビルドでキャッシュのアクティビティがまったく表示されない | Xcode.app ではなく、ターミナルから実行したことを確認してください。 |
-| `doctor` が修復できない問題を報告する | `--debug` を付けて再実行し、完全なコンテキストを確認します。 |
-| 最初からやり直したい | ウィザードを再実行しても問題ありません。現在の状態を読み直し、同じ有効化を再度適用します。 |
-| ビルドがキャッシュに到達できない、またはキャッシュ呼び出しがタイムアウトする | VPN、ファイアウォール、またはプロキシが Bitrise ホストをブロックしている可能性があります。[ファイアウォールと VPN のネットワークエンドポイント](/bitrise-build-cache/getting-started-with-the-build-cache/network-endpoints-for-firewalls-and-vpns)と照らし合わせて確認してください。 |
+| ウィザードがターミナルを必要とすると報告する | 行ベースのモードで`TERM=dumb bitrise-build-cache activate --interactive`を実行します。 |
+| `which xcodebuild`が依然として`/usr/bin/xcodebuild`を指している | 新しいターミナルを開くか、`source ~/.zshrc`を実行します。 |
+| ビルドでキャッシュのアクティビティがまったく表示されない | Xcode.appではなく、ターミナルから実行したことを確認します。 |
+| `doctor`が修復できない問題を報告する | `--debug`を付けて再実行し、完全なコンテキストを確認します。 |
+| 最初からやり直したい | ウィザードは安全に再実行できます。現在の状態を再度読み取り、同じアクティベーションを再び適用します。 |
+| ビルドがキャッシュに接続できない、またはキャッシュ呼び出しがタイムアウトする | VPN、ファイアウォール、またはプロキシがBitriseホストをブロックしている可能性があります。[Network endpoints for firewalls and VPNs](/bitrise-build-cache/getting-started-with-the-build-cache/network-endpoints-for-firewalls-and-vpns)で確認してください。 |
