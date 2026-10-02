@@ -15,6 +15,9 @@ import {DEFAULT_DESCRIPTION} from './shared/site-metadata';
 // we splice the partial's actual list items in BEFORE MDX parses the page.
 // The partial file remains the canonical source.
 const PARTIALS_DIR = path.resolve(__dirname, 'src/partials');
+// Translated partials, one file per partial slug. Pages under i18n/ja/ read
+// from here and fall back to the English partial when a translation is missing.
+const JA_PARTIALS_DIR = path.resolve(__dirname, 'i18n/ja/partials');
 const PARTIALS_INDEX_FILE = path.resolve(__dirname, 'migration/partials_index.json');
 
 let partialsIndex: Record<string, string> = {};
@@ -32,11 +35,16 @@ const partialContentCache = new Map<string, string[]>();
  * the leading prefix removed; multi-line items keep their indented
  * continuation lines (3-space for ordered, 2-space for bulleted).
  */
-function extractPartialItems(component: string): string[] | null {
-  if (partialContentCache.has(component)) return partialContentCache.get(component)!;
+function extractPartialItems(component: string, locale: 'en' | 'ja' = 'en'): string[] | null {
+  const cacheKey = `${locale}:${component}`;
+  if (partialContentCache.has(cacheKey)) return partialContentCache.get(cacheKey)!;
   const slug = partialsIndex[component];
   if (!slug) return null;
-  const file = path.join(PARTIALS_DIR, `${slug}.mdx`);
+  let file = path.join(PARTIALS_DIR, `${slug}.mdx`);
+  if (locale === 'ja') {
+    const jaFile = path.join(JA_PARTIALS_DIR, `${slug}.mdx`);
+    if (fs.existsSync(jaFile)) file = jaFile;
+  }
   if (!fs.existsSync(file)) return null;
   const text = fs.readFileSync(file, 'utf-8');
 
@@ -87,7 +95,7 @@ function extractPartialItems(component: string): string[] | null {
     // Non-list content before any list item — keep scanning until we hit one
   }
   if (current) items.push(current.join('\n'));
-  partialContentCache.set(component, items);
+  partialContentCache.set(cacheKey, items);
   return items;
 }
 
@@ -95,10 +103,10 @@ function extractPartialItems(component: string): string[] | null {
  * Replace `1. <Partial_X />` (and bulleted `- <Partial_X />`) lines with the
  * partial's actual list items, re-prefixed to match the consumer's list style.
  */
-function expandListPartials(content: string): string {
+function expandListPartials(content: string, locale: 'en' | 'ja' = 'en'): string {
   const refRe = /^([ \t]*)(\d+\.|[-+*])\s*<(Partial_[A-Za-z0-9_]+)\s*\/>\s*$/gm;
   return content.replace(refRe, (match, indent, prefix, name) => {
-    const items = extractPartialItems(name);
+    const items = extractPartialItems(name, locale);
     if (!items || items.length === 0) return match;
     const isOrdered = /^\d+\./.test(prefix);
     const itemPrefix = isOrdered ? '1. ' : '- ';
@@ -177,7 +185,10 @@ const config: Config = {
       // Step 1: expand `1. <Partial_X />` placeholders (list-context partials)
       // BEFORE we do tag escaping below, so the inlined items are subject to
       // the same escape rules as inline content.
-      fileContent = expandListPartials(fileContent);
+      fileContent = expandListPartials(
+        fileContent,
+        filePath.includes('/i18n/ja/') ? 'ja' : 'en',
+      );
       const ALLOWED = new Set([
         'Tabs', 'TabItem', 'GlossTerm', 'NT',
         'SwaggerUIEmbed',
