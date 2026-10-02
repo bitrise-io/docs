@@ -18,7 +18,7 @@ See [README.md](./README.md#run-the-docs-locally) — it has the full step-by-st
 | Path | What it's for | Touch when |
 |---|---|---|
 | `docs/<section>/<page>.mdx` | A documentation page — always `.mdx`, never `.md`. Subfolder structure becomes the sidebar tree. | Editing or adding pages. |
-| `docs/<section>/<sub>/_category_.json` | Sidebar category metadata (label, position, optional link). `link: null` means "non-clickable toggle". | Renaming/reordering sidebar entries; never delete by hand. |
+| `docs/<section>/<sub>/_category_.json` | Sidebar category metadata (label, position, optional link). `link: null` means "non-clickable toggle". `customProps.appendApiHubLink` (plus optional `appendApiHubLinkLabel`, default "API reference") adds a new-tab reference link as the last item. | Renaming/reordering sidebar entries; never delete by hand. |
 | `src/partials/<slug>.mdx` | Reusable content fragment imported by `<Partial_X />`. **Edit here once, every consumer updates.** | Editing shared content; adding new reusable chunks. |
 | `static/img/<topic>/<file>.png` | Static images served at `/img/<topic>/<file>.png`. UUID-prefixed files in `_paligo/` are migration-managed — don't rename. | Adding new screenshots; replacing existing ones. |
 | `static/llms.txt` | Hand-curated index of the docs for AI agents (#114). `docusaurus-plugin-llms` generates `llms-full.txt` and per-page `.md` mirrors, but not the root `llms.txt` — that file is maintained by hand. `bitrise.io/llms.txt`, kept in [bitrise-io/llms-txt](https://github.com/bitrise-io/llms-txt), points its documentation section here rather than repeating it, so this file is the developer surface an agent reaches from the marketing site. | Adding a product area or major section; renaming or moving a page listed in it. |
@@ -132,6 +132,7 @@ We talk to people, not at them. **American English.** Three properties:
 | stack | Lowercase generic. Capitalize when quoting a specific stack name (`Android & Docker, on Ubuntu 16.04 - LTS Stack`). | Stack |
 | guide / article | Synonyms for a DevCenter document. | post (that's blog content) |
 | deploy key | Two words. GitHub's term — keep it. | deployment key |
+| AI agent | A third-party AI tool that acts for the user, such as Claude Code or Cursor. Say `MCP client` for the app a reader adds an MCP server to, and `AI agent (MCP)` in tab and list labels next to UI / CLI / API. | AI assistant (that's the Workflow Editor's AI configuration assistant) |
 
 If you introduce a new Bitrise-specific term, add it to `migration/glossary.json` so `<GlossTerm>` works. The format is one entry per term:
 ```json

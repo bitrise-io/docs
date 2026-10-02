@@ -27,13 +27,16 @@ You can also set this up with an AI coding agent instead of following the steps 
 
    ```yaml
    - name: Install the Bitrise Build Cache CLI
-     run: curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+     run: |
+       mkdir -p "$HOME/.local/bin"
+       curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b "$HOME/.local/bin" -d
+       echo "$HOME/.local/bin" >> "$GITHUB_PATH"
    ```
 1. Add a step that activates the Build Cache for Bazel, before the step that runs Bazel:
 
    ```yaml
    - name: Activate Bitrise Build Cache for Bazel
-     run: /tmp/bin/bitrise-build-cache activate bazel --cache --cache-push
+     run: bitrise-build-cache activate bazel --cache --cache-push
    ```
 
    `--cache` enables reading from the cache and `--cache-push` enables writing to it. CI is normally the environment that fills the cache, so keep both enabled.
@@ -71,10 +74,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install the Bitrise Build Cache CLI
-        run: curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b "$HOME/.local/bin" -d
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Activate Bitrise Build Cache for Bazel
-        run: /tmp/bin/bitrise-build-cache activate bazel --cache --cache-push
+        run: bitrise-build-cache activate bazel --cache --cache-push
 
       - name: Build
         run: bazel build //...
@@ -97,10 +103,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install the Bitrise Build Cache CLI
-        run: curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b "$HOME/.local/bin" -d
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Activate Bitrise Build Cache for Bazel
-        run: /tmp/bin/bitrise-build-cache activate bazel --cache --cache-push
+        run: bitrise-build-cache activate bazel --cache --cache-push
 
       - name: Build
         run: bazel build //...

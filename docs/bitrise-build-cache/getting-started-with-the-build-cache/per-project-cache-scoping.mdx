@@ -1,0 +1,111 @@
+---
+title: "Per-project cache scoping"
+description: "Turn Build Cache activation into a per-project opt-in by marking the projects that should use the cache. Other projects will skip the cache entirely."
+sidebar_position: 8
+slug: /bitrise-build-cache/getting-started-with-the-build-cache/per-project-cache-scoping
+sidebar_label: Per-project scoping
+---
+
+By default, once you activate the Bitrise Build Cache on your machine, every project you build on that machine goes through the cache. If your machine hosts several projects and you only want a subset to use the cache, you can switch the CLI to opt-in mode: it then caches only the projects that carry a `.bitrise-build-cache.json` marker file, and leaves every other project alone.
+
+Scoping is a local-dev feature. On Bitrise CI, GitHub Actions runners, and other CI environments the CLI activates once per job for a single checkout, so the default `always` mode is what you want there.
+
+## Overview
+
+Two settings decide whether a build uses the cache:
+
+- The **machine mode** lives at `~/.bitrise/cache/config.json` and applies to every activated tool on the machine. It has two values: `always` (default) and `opt-in`.
+- The **project marker** is an empty JSON file named `.bitrise-build-cache.json` at your project's root. The CLI walks up from the build's working directory until it finds one, or hits the filesystem root.
+
+When the mode is `always`, the marker is ignored and every build uses the cache. When the mode is `opt-in`, the CLI activates the cache for a build only if the walk-up finds a marker. Builds without a marker run as if the Build Cache were not installed at all: Gradle skips the `buildCache` wiring, the `xcodebuild` wrapper skips proxy startup, the Bazel credential helper returns empty headers so Bazel falls back to no-cache, and the `ccache` helper answers reads with a miss and writes with push disabled.
+
+## Switching your machine to opt-in
+
+Run the interactive wizard and pick opt-in at the **Cache for all projects, or only opted-in ones?** step:
+
+```bash
+bitrise-build-cache activate --interactive
+```
+
+Or set it non-interactively while activating any of the supported tools:
+
+```bash
+bitrise-build-cache activate gradle --project-mode opt-in
+bitrise-build-cache activate xcode  --project-mode opt-in
+bitrise-build-cache activate bazel  --project-mode opt-in
+bitrise-build-cache activate c++    --project-mode opt-in
+```
+
+Passing `--project-mode` on any activate command switches the machine-wide setting and persists it, so you only have to set it once. Leaving the flag off keeps the stored value. To switch back:
+
+```bash
+bitrise-build-cache activate gradle --project-mode always
+```
+
+:::note[Reactivation applies the change]
+
+Each build tool bakes the mode into its activation artifact: the Gradle init script, the `xcodebuild` wrapper's config, the `.bazelrc` block, and the `ccache` helper's config. After changing the mode, re-run `bitrise-build-cache activate` for every tool you use so the new setting lands in each artifact. The `ccache` helper restarts automatically when it detects the change.
+
+:::
+
+## Opting a project in
+
+Use the `project enable` command to opt a project in. 
+
+From the project root, run:
+
+```bash
+cd path/to/your/project
+bitrise-build-cache project enable
+```
+
+The command writes an empty `.bitrise-build-cache.json` at the current directory:
+
+```json
+{}
+```
+
+You can also pass a directory:
+
+```bash
+bitrise-build-cache project enable path/to/your/project
+```
+
+If the directory is already covered by a marker in an ancestor, `project enable` is a no-op and prints where the existing marker is. It's safe to commit the marker to your repo so every developer on the project inherits the opt-in.
+
+## Checking a directory's scope
+
+`bitrise-build-cache doctor` reports the effective mode and whether builds in the current directory would skip the cache:
+
+```bash
+bitrise-build-cache doctor
+```
+
+The relevant line looks like this in `opt-in` mode with no marker:
+
+```bash
+✓ project-scope           mode=opt-in; cache_push=true (machine config); no .bitrise-build-cache.json found in /Users/you/projects/one or parents.; would gate this directory: yes
+```
+
+And like this in `opt-in` mode with a marker somewhere up the tree:
+
+```bash
+✓ project-scope           mode=opt-in; cache_push=true (machine config); marker at /Users/you/projects/one/.bitrise-build-cache.json; would gate this directory: no
+```
+
+## Build tool behavior
+
+| Build tool | What happens when the mode is `opt-in` and no marker is found |
+|---|---|
+| Gradle | The init script prints `[bitrise-build-cache] project-mode=opt-in, no marker found ...` and returns before wiring up `buildCache` or the analytics listener. The build runs with your project's own cache configuration. |
+| Xcode | The `xcodebuild` wrapper skips proxy startup and forwards the invocation to the system `xcodebuild` with cache disabled. The Bitrise dashboard records the invocation with `disabledBy: project-mode=opt-in`. |
+| Bazel | The credential helper (`bitrise-build-cache get`) returns an empty header set, so every RPC's auth header is empty. The RPC returns 401 and Bazel falls back to running without a remote cache. |
+| `ccache` | The storage helper answers `GET` with a miss (0-byte payload) and `PUT` with push disabled, so the daemon does not touch the cache backend. |
+| React Native | React Native activation wraps Gradle, Xcode, and `ccache`. Each honors the mode as described above. |
+
+## Reverting
+
+Two things you might want to undo:
+
+- **Turn opt-in off for the whole machine**: re-run the wizard and pick **Always**, or run `bitrise-build-cache activate <tool> --project-mode always`. Then re-activate every tool you use so the new mode lands in each artifact.
+- **Take a single project out of the cache while keeping opt-in mode**: delete the project's `.bitrise-build-cache.json` file. If the marker sits in an ancestor, delete it there — the CLI walks up the whole tree.
