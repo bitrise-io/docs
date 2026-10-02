@@ -13,17 +13,17 @@ import GlossTerm from '@site/src/components/GlossTerm';
 このガイドでは、macOSプロジェクトをBitriseに追加する方法、Xcodeテストを実行する方法、code signingファイルを管理する方法、そして完成したアプリをbitrise.ioとApp Storeにデプロイする方法について説明します。
 
 
-## macOSプロジェクトをBitriseに追加する
+## macOSプロジェクトをBitriseに追加する {#adding-a-macos-project-to-bitrise}
 
 プロジェクトの追加方法は他の場合と同じです。ウィザードの詳しい手順については[新しいプロジェクトの追加](/bitrise-ci/getting-started/adding-a-new-project)をご覧ください。このセクションでは、macOS特有の内容について説明します。
 
-### スキャナーがmacOSプロジェクトを検出する方法
+### スキャナーがmacOSプロジェクトを検出する方法 {#how-the-scanner-detects-a-macos-project}
 
 <GlossTerm baseform="project scanner">プロジェクトスキャナー</GlossTerm>は、iOSの場合と同様に`.xcodeproj`ファイルと`.xcworkspace`ディレクトリを探します。両者を区別するために、各ビルド構成の`SDKROOT`を確認します。`macosx`という値(またはそれを含む`SUPPORTED_PLATFORMS`リスト)が設定されている場合はmacOSプロジェクトとして登録され、`iphoneos`の場合はiOSとして登録されます。
 
 iOSと同様に、Xcodeプロジェクトやworkspaceを持たない`Package.swift`ファイルはSwiftパッケージとして扱われ、宣言されたプラットフォームに`macos`が含まれている場合はmacOSに一致します。
 
-### 設定できる項目
+### 設定できる項目 {#what-you-can-configure}
 
 <strong>CI configuration</strong>の段階では、ウィザードに次の項目が表示されます。
 
@@ -31,7 +31,7 @@ iOSと同様に、Xcodeプロジェクトやworkspaceを持たない`Package.swi
 - <strong>Scheme name</strong>: プロジェクトまたはworkspace内で見つかった共有スキーム。
 - <strong>エクスポート方法</strong>: Bitriseがアプリをエクスポートする方法(App Store、Developer ID、Development、またはNoneなど)。Noneを選択すると、`.app`ファイルのコピーを再署名せずにエクスポートします。このオプションはSwiftパッケージには表示されません。
 
-## macOSアプリのテスト
+## macOSアプリのテスト {#testing-your-macos-app}
 
 テストターゲットが定義されている場合、macOSプロジェクトのデフォルトのWorkflowには、Xcodeテストを実行し、その結果を[bitrise.io](https://bitrise.io/)で確認するために必要な2つの<GlossTerm baseform="step">Steps</GlossTerm>が含まれています。
 
@@ -54,7 +54,7 @@ Xcodeテストの実行と、その結果のBitriseへのデプロイにはcode 
 結果は[テスト結果のデプロイと確認](/bitrise-ci/testing/deploying-and-viewing-test-results)で一箇所にまとめて確認できます。
 
 
-## macOSアプリのCode signingとエクスポート
+## macOSアプリのCode signingとエクスポート {#code-signing-and-exporting-a-macos-app}
 
 他の物理デバイスにアプリをインストールしてテストするには、.appまたは.pkgファイルを作成してエクスポートする必要があります。これにはcode signingの設定が必要です。この例では、<strong>development</strong>エクスポート方法を使ってアプリをエクスポートします。この方法でエクスポートしたアプリはTestflightにアップロードできませんが、たとえば社内テスターのデバイスでテストすることができます。
 
@@ -93,7 +93,7 @@ Xcodeテストの実行と、その結果のBitriseへのデプロイにはcode 
 正しいcode signingファイルをアップロードしていれば、<strong>Certificate and profile installer</strong> Stepがcode signingファイルをインストールし、<strong>Xcode Archive for Mac</strong> Stepがdevelopmentエクスポート方法で.appまたは.pkgファイルをエクスポートします。ワークフローに<strong>Deploy to Bitrise.io</strong> Stepが含まれている場合は、ビルドページの<strong>Artifacts</strong>タブでバイナリパッケージファイルを確認できます。
 
 
-## アプリをApp Store Connectにデプロイする
+## アプリをApp Store Connectにデプロイする {#deploying-the-app-to-the-app-store-connect}
 
 code signingファイルを設定し、社内テスター向けに.appまたは.pkgファイルを作成できたら、次は社外テスターを巻き込み、macOSアプリをApp Storeに公開する段階です。その方法を見ていきましょう。
 

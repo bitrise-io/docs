@@ -12,7 +12,7 @@ Bitrise Build Cache CLI は、キャッシュのフラグを `~/.bazelrc` に書
 
 手順を手動で実行する代わりに、AI コーディングエージェントを使ってセットアップすることもできます。[Getting started with AI](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai) を参照してください。
 
-## 始める前に
+## 始める前に {#before-you-start}
 
 次のものを用意してください。
 - お使いのマシン上で動作する Bazel 6 以降の Bazel プロジェクト。このセットアップでは Bazel の認証情報ヘルパーのサポートを使用しますが、それ以前のバージョンにはこの機能がありません。
@@ -27,7 +27,7 @@ Bitrise Build Cache CLI は、キャッシュのフラグを `~/.bazelrc` に書
 
 :::
 
-## CLI のインストール
+## CLI のインストール {#installing-the-cli}
 
 Homebrew で CLI をインストールします（<strong>推奨</strong>）。
 
@@ -51,7 +51,7 @@ bitrise-build-cache --version
 
 その後も、CLI を `PATH` に残しておいてください。Bazel は、セットアップ時だけでなく、ビルドのたびに CLI を実行して新しい認証トークンを取得します。
 
-## キャッシュのアクティベーション
+## キャッシュのアクティベーション {#activating-the-cache}
 
 対話型ウィザードを実行します。
 
@@ -73,7 +73,7 @@ bitrise-build-cache activate --interactive
 bitrise-build-cache activate bazel --cache
 ```
 
-### アクティベーションで書き込まれる内容
+### アクティベーションで書き込まれる内容 {#what-the-activation-writes}
 
 `~/.bazelrc` の末尾に、マーカー付きのブロックが 1 つ追加されます。既存の内容は保持され、アクティベーションを再実行した場合はこのブロックのみが更新されます。
 
@@ -110,7 +110,7 @@ build --bes_header='x-mem-size=16759259136'
 
 `x-os`、`x-cpu-cores`、`x-mem-size`、`x-locale`、`x-default-charset` の各ヘッダーはお使いのマシンの情報を表し、分析目的にのみ使用されます。cache keys には影響しません。これらはブロックを生成したマシンに固有の値であるため、設定をコミットする場合には注意が必要です。[コミットしても安全な内容](#what-is-safe-to-commit)を参照してください。
 
-## セットアップの確認
+## セットアップの確認 {#verifying-the-setup}
 
 CLI のヘルスチェックを実行します。
 
@@ -140,7 +140,7 @@ Overall: ok
 
 CLI が自動で修復できる問題を修復するには、`bitrise-build-cache doctor --fix --interactive` を実行してください。
 
-## ビルドの実行
+## ビルドの実行 {#running-a-build}
 
 1. まず `bazel clean` を実行します。Bazel のローカルアクションキャッシュはリモートキャッシュの手前に位置しているため、ターゲットがすでにローカルでビルドされている場合、Bazel はディスクから結果を提供し、Bitrise に接続しません。その結果、リモートキャッシュが動作している証拠を確認できません。
 
@@ -167,7 +167,7 @@ CLI が自動で修復できる問題を修復するには、`bitrise-build-cach
 (16:47:36) INFO: Build completed successfully, 11 total actions
 ```
 
-## 動作の確認
+## 動作の確認 {#checking-that-it-worked}
 
 サマリー行が動作の証拠です。次の 3 つのケースで表示が異なります。
 
@@ -185,13 +185,13 @@ CLI が自動で修復できる問題を修復するには、`bitrise-build-cach
 | `INFO: Streaming build results to:` | ビルドの最初と最後の行 | invocation へのリンクが出力される |
 | ダッシュボード | 出力されたリンク、または [Build Cache ページ](https://app.bitrise.io/build-cache/) | 表示名の下に行が表示され、ヒット数が同じになる |
 
-## キャッシュのプッシュモード
+## キャッシュのプッシュモード {#cache-push-mode}
 
 このガイドのセットアップでは、キャッシュのプッシュを有効にした状態で Build Cache をアクティベートします。ローカルビルドは共有キャッシュから読み取り、共有キャッシュへ書き込みます。お使いのマシンが実行したすべてのアクションは、チームメンバーや CI が再利用できるエントリになり、アクティビティは [Build Cache ページ](https://app.bitrise.io/build-cache/)に表示されます。
 
 ローカルビルドでキャッシュの読み取りのみを行いたい場合は、以下の[プルのみのモードの選択](#opting-into-pull-only-mode)を参照してください。
 
-## プルのみのモードの選択
+## プルのみのモードの選択 {#opting-into-pull-only-mode}
 
 チームがすでに CI からキャッシュを蓄積していて、ローカルビルドでは読み取りのみを行いたい場合は、キャッシュのプッシュをオフにします。この場合、ローカルビルドは何も提供しないため、CI がまだ実行されていないとサマリー行には `0 remote cache hit` と報告され続けます。
 
@@ -209,7 +209,7 @@ grep upload_local_results ~/.bazelrc
 # --noremote_upload_local_results  → pull-only
 ```
 
-## 設定をリポジトリにコミットする
+## 設定をリポジトリにコミットする {#committing-the-configuration-to-your-repository}
 
 Bazel は workspace のルートにある `.bazelrc` をすでに読み込むため、キャッシュのフラグをマシンごとに生成する代わりに、リポジトリにコミットできます。これにより、開発マシンのオンボーディングは、CLI のインストールとサインインだけで済みます。
 
@@ -218,7 +218,7 @@ brew install bitrise-io/bitrise-build-cache/bitrise-build-cache
 bitrise-build-cache auth login
 ```
 
-### ファイルの組み合わせ方
+### ファイルの組み合わせ方 {#how-the-files-combine}
 
 Bazel は設定ファイルを次の順序で読み込み、単一の値を取るフラグでは最後の値が優先されます。
 
@@ -229,7 +229,7 @@ Bazel は設定ファイルを次の順序で読み込み、単一の値を取�
 
 そのため、ホームファイルはコミットされたファイルよりも優先され、コマンドラインのフラグはどちらよりも優先されます。ビルドに `--announce_rc` を追加すると、Bazel が実際に読み込んだ内容を確認できます。
 
-### アクティベーションを実行しない開発者向けにプルのみを強制する
+### アクティベーションを実行しない開発者向けにプルのみを強制する {#force-pull-only-for-developers-who-dont-run-the-activation}
 
 CLI をインストールして `auth login` を実行するだけの開発者には `~/.bazelrc` が作成されないため、コミットされたブロックを上書きするものがありません。CLI のデフォルトに関係なく、これらの開発者にキャッシュの読み取りのみを行わせたい場合は、プルのみのフラグをコミットします。
 
@@ -245,7 +245,7 @@ bitrise-build-cache activate bazel --cache
 
 これにより、開発者ごとの設定なしで役割を分けられます。コミットされたファイルは、アクティベーションを行わない開発者が引き継ぐプルのみのデフォルトとなり、キャッシュへ書き込む環境は、アクティベーションを実行する環境となります。
 
-### コミットしても安全な内容
+### コミットしても安全な内容 {#what-is-safe-to-commit}
 
 | 行 | コミット | 理由 |
 |---|---|---|
@@ -257,7 +257,7 @@ bitrise-build-cache activate bazel --cache
 | `--bes_header='x-os=…'`、`x-cpu-cores`、`x-mem-size`、`x-locale`、`x-default-charset` | 不可 | マシンごとの値であり、`x-os` にはホスト名が含まれます。分析目的のみで cache keys には影響しませんが、コミットするとすべての人のビルドがお使いのマシンに帰属してしまいます |
 | `--remote_header=authorization="Bearer …"` | 絶対に不可 | 有効な認証情報です。CI で生成されたブロックにのみ現れます |
 
-### CLI がインストールされていない場合に起こること
+### CLI がインストールされていない場合に起こること {#what-happens-without-the-cli-installed}
 
 `--credential_helper` の行をコミットした場合、CLI をインストールしていないチームメンバーはビルドをまったく実行できません。Bazel は `PATH` からヘルパーを検索しますが見つからず、リモートキャッシュの初期化中に失敗します。
 
@@ -276,7 +276,7 @@ Bazel はコード 2 で終了し、ターゲットは 1 つもビルドされ�
 
 workspace で Remote Build Execution が有効になっている場合は、アクティベーションに `--rbe` フラグを追加することで、ローカルで使用できます。事前に、workspace 用のワーカーのセットアップと、リポジトリの `.bazelrc` でのプール設定が必要です。[Remote Build Execution for Bazel](/bitrise-build-cache/build-cache-for-bazel/remote-build-execution-for-bazel) を参照してください。
 
-## トラブルシューティング
+## トラブルシューティング {#troubleshooting}
 
 まず CLI のヘルスチェックを実行してください。ローカルセットアップの各部分を検査し、自動で修復できる問題を修復します。
 

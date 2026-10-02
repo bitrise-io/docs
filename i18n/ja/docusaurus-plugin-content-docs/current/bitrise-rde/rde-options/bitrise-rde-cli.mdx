@@ -13,7 +13,7 @@ Bitrise RDE CLIを使うと、ターミナルからリモート開発環境を�
 
 とにかく早く始めたい場合は、[クイックスタート](/bitrise-rde/getting-started/quickstart)に従ってください。このページは、CLIでできることについての、より広範なリファレンスです。
 
-## CLIのインストール
+## CLIのインストール {#installing-the-cli}
 
 インストールスクリプトを使ってlatest versionをインストールします。
 
@@ -23,7 +23,7 @@ curl -fsSL https://app.bitrise.io/cli/install.sh | bash
 
 これにより、`bitrise-cli`バイナリが`~/.local/bin`にインストールされます。このディレクトリが`PATH`に含まれていることを確認してください。[GitHubのリリース](https://github.com/bitrise-io/bitrise-cli/releases)からビルドをダウンロードすることも、`go install github.com/bitrise-io/bitrise-cli@latest`を使ってソースからインストールすることもできます。
 
-## サインイン
+## サインイン {#signing-in}
 
 Bitriseアカウントにサインインします。これによりブラウザが開き、認証が行われます。
 
@@ -33,7 +33,7 @@ bitrise-cli auth login
 
 ステータスの確認は`bitrise-cli auth status`で、サインアウトは`bitrise-cli auth logout`で行えます。CIのような非対話的な用途では、`BITRISE_TOKEN`環境変数にパーソナルアクセストークンを設定するか、`bitrise-cli auth login --with-token`にトークンをパイプしてください。
 
-### workspaceの選択
+### workspaceの選択 {#choosing-a-workspace}
 
 RDEのコマンドは<GlossTerm baseform="workspace">workspace</GlossTerm>に対して実行されます。所属先がちょうど1つの場合は、CLIが自動的にそれを選択します。複数に所属している場合、CLIは選択を求めるプロンプトを表示します。このプロンプトをスキップするには、デフォルトを保存します。
 
@@ -43,7 +43,7 @@ bitrise-cli config set default_workspace_id WORKSPACE_ID
 
 単一のコマンドについては、`--workspace`フラグが最優先され、次に`BITRISE_WORKSPACE_ID`環境変数、その後に保存済みのデフォルトが優先されます。
 
-## セッションの管理
+## セッションの管理 {#managing-sessions}
 
 `bitrise-cli rde session`コマンドは、セッションのライフサイクル全体をカバーします。`SESSION_ID`を受け取るコマンドは、名前が一意である限り、セッションの名前も受け付けます。
 
@@ -67,7 +67,7 @@ bitrise-cli config set default_workspace_id WORKSPACE_ID
 | `bitrise-cli rde session delete SESSION_ID` | 終了済みのセッションを完全に削除します。 |
 | `bitrise-cli rde session delete-terminated` | workspace内の終了済みのセッションをすべて完全に削除します。 |
 
-## セッション内でのコマンド実行
+## セッション内でのコマンド実行 {#running-commands-in-a-session}
 
 `bitrise-cli rde session exec`は、対話シェルを開くことなく、セッション内で単一のコマンドを実行し、その出力をストリーミングで返します。これは、セッションをスクリプト化したり、AIエージェントにセッションを操作させたりするための、主要な構成要素です。
 
@@ -100,7 +100,7 @@ exec:
 
 `exec`コマンドは、作業ディレクトリまたはその親フォルダからこのファイルを読み込み、実行のたびに記載された変数を転送します。`--env`は同名のエントリを上書きし、`--no-env-file`はこのファイル自体を完全にスキップします。
 
-## AIコーディングエージェントの実行
+## AIコーディングエージェントの実行 {#running-ai-coding-agents}
 
 `bitrise-cli rde claude`コマンドはセッションを作成し、現在のリポジトリブランチをそこにクローンしたうえで、クラウドマシン上で動作するClaude Codeにそのまま入ります。エージェントが作業している間、CLIは安全な接続を維持し、VNCビューアーを開いたり、ローカルマシンとの間でファイルを転送したりできるようにします。
 
@@ -113,7 +113,7 @@ exec:
 
 セッションに戻るには、最も新しいセッションには`bitrise-cli rde claude --continue`を、一覧から選ぶには`bitrise-cli rde claude --resume`を使用します。再開すると、実行中のセッションには再接続し、終了済みのセッションは復元したうえで、同じClaude Codeの会話を継続します。
 
-## 仮想デバイス
+## 仮想デバイス {#virtual-devices}
 
 CLIは、[仮想デバイス](/bitrise-rde/devices/virtual-devices)を使う2つの方法の両方をカバーしています。
 
@@ -121,7 +121,7 @@ CLIは、[仮想デバイス](/bitrise-rde/devices/virtual-devices)を使う2つ
 - `bitrise-cli rde device-guide [ios|android]`: デバイスを待機し、接続し、操作するためのガイドを表示します。
 - `bitrise-cli rde preview-link create --device-platform ios|android --artifact-url URL`: [デバイスプレビューリンク](/bitrise-rde/devices/device-preview-links)を発行します。
 
-## テンプレート、保存済みの入力、マシンオプション
+## テンプレート、保存済みの入力、マシンオプション {#templates-saved-inputs-and-machine-options}
 
 CLIは、セッションの背後にある設定オブジェクトも管理します。
 
@@ -130,7 +130,7 @@ CLIは、セッションの背後にある設定オブジェクトも管理し�
 - `bitrise-cli rde stack list`: workspaceで利用可能なスタックを一覧表示します。
 - `bitrise-cli rde machine-type list --stack STACK_ID`: 指定したスタックに対応するマシンタイプを一覧表示します。
 
-## Workspaceの利用状況
+## Workspaceの利用状況 {#workspace-usage}
 
 Workspaceのオーナーと、課金を管理するメンバーは、workspaceのアクティブなセッションが消費しているリソースを確認できます。
 
@@ -140,7 +140,7 @@ bitrise-cli rde usage
 
 このレポートはある時点でのスナップショットであり、OS別に分けたアクティブなセッション数、vCPUとメモリの合計、さらにユーザーごとの内訳を示します。スクリプトや自動化で使用する機械可読な形式が必要な場合は、`--output json`を追加してください。
 
-## コマンドリファレンス全体
+## コマンドリファレンス全体 {#full-command-reference}
 
 すべてのコマンドには詳細な組み込みヘルプが用意されており、人間とAIエージェントの両方が機能を発見できるように書かれています。ヘルプは機能自体と合わせて更新されるため、最も最新のリファレンスとなります。
 

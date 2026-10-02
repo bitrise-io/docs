@@ -29,7 +29,7 @@ Stepには、ビルドタスクを実行するコードが含まれています�
 
 ファーストパーティのBitrise Stepsは[Go](https://golang.org/)で記述されていますが、Bash Stepでラップしてエントリーポイントを設定すれば、任意の言語やフレームワークを使用できます。各Stepには、コードと`step.yml`メタデータファイルを含む専用のgitリポジトリがあります。Stepを他のユーザーが利用できるようにしたい場合は、`<GlossTerm baseform="step.yml">step.yml</GlossTerm>`ファイルをBitrise Step Library(`bitrise-steplib`リポジトリ)に提出し、<GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>で発見・再利用できるようにする必要があります。
 
-## Stepの作成
+## Stepの作成 {#creating-the-step}
 
 まずStepの基本構造をスキャフォールドすることから始めます。特定のプロパティと入力は自動的に生成・割り当てられます。これらは後で変更できます。このプロセスの終了時には、リポジトリ内に`step.yml`ファイル、`README.md`ファイル、そして`main.go`または`step.sh`のいずれかのファイルが作成されます。
 
@@ -46,14 +46,14 @@ Stepの作成プロセス中に、いくつかのオプションを設定する�
 これで完了です。`step.yml`、`README.md`ファイル、そして`main.go`または`main.sh`のいずれかのファイルが作成されているはずです。
 
 
-## step.ymlファイル
+## step.ymlファイル {#the-stepyml-file}
 
 `step.yml`ファイルには、BitriseシステムがStepについて知る必要のあるすべてのメタデータが含まれています。ここでStepの入力と出力、そしてStepが機能するために必要な依存関係を定義します。
 
 `step.yml`ファイルの完全なリファレンスについては、[Stepコードについて](/bitrise-ci/references/steps-reference/about-step-code)をご覧ください。
 
 
-## Stepの命名と説明
+## Stepの命名と説明 {#naming-and-describing-a-step}
 
 すべてのStepには、`step.yml`ファイルにタイトルと概要を少なくとも1つ定義する必要があります。これらは[Integrations](https://www.bitrise.io/integrations/)ページと[Workflow Editor](/bitrise-ci/references/glossary#workflow-editor)に表示されます。
 
@@ -63,7 +63,7 @@ Stepの作成プロセス中に、いくつかのオプションを設定する�
 
 :::
 
-### タイトル
+### タイトル {#title}
 
 短く分かりやすいものにしてください。<strong>Git Clone Repository</strong>のように、サービス名とその機能を含めます。 
 
@@ -76,13 +76,13 @@ Stepの作成プロセス中に、いくつかのオプションを設定する�
 - サービスやツールの名前は正しいものを使用してください。たとえば、GithubではなくGitHubとします。
 - 実装の詳細は含めないでください。
 
-### 概要
+### 概要 {#summary}
 
 Stepに関する最も重要な情報を1行にまとめます。100文字以内に収めてください。
 
 概要はWorkflow Editor上でデフォルトで表示されます。ユーザーが概要を展開すると、Stepの説明が表示されます。
 
-### 説明
+### 説明 {#description}
 
 Stepについての詳細な説明です。`description`プロパティには、他のユーザーがStepの動作をより理解できるよう、より長く詳細な説明を記載します。また、ユーザーがWorkflow EditorでStepsを検索する際の検索順位にも影響します。
 
@@ -96,11 +96,11 @@ Stepについての詳細な説明です。`description`プロパティには、
 デフォルトでは、Stepの説明は<GlossTerm baseform="workflow">Workflow</GlossTerm> Editorで折りたたまれており、概要のみが表示されます。
 
 
-## Stepのカテゴリ
+## Stepのカテゴリ {#step-categories}
 
 Stepについて知りたいことがもう1つあります。それはどのような種類のStepかということです。IntegrationsページやWorkflow Editorで確認できるように、Stepsは利用可能なプラットフォームと機能という2つの要素に基づいて、さまざまなカテゴリに分類されます。
 
-### プラットフォーム
+### プラットフォーム {#platforms}
 
 関連するプラットフォームは`project_type_tags`属性によって制御されます。Stepがすべてのプラットフォームまたはプロジェクトタイプで利用可能な場合は、`project_type_tags`を指定しないでください。それ以外の場合は、Stepが関連し、完全にサポートされているすべてのプラットフォームタイプを選択します。
 
@@ -116,7 +116,7 @@ Stepについて知りたいことがもう1つあります。それはどのよ
 - `web`
 - `kotlin-multiplatform`
 
-### カテゴリ
+### カテゴリ {#category}
 
 機能カテゴリは、`step.yml`内の`type_tags`属性によって制御されます。1つのStepには、タイプタグを1つだけ割り当てるようにしてください。他のどのタイプもStepに当てはまらないと思われる場合にのみ、`utility`を使用してください。
 
@@ -182,7 +182,7 @@ Environment Variablesは、次の場合を除きdefault valueとして使用し�
 
 キーと値に加えて、Step inputsには`opts`プロパティが必須です。このプロパティには、入力がStepのコードにどのように渡されるか、またWorkflow Editorでどのように表示されるかを定義するさまざまなオプションが含まれています。入力の値の候補も`opts`内で設定できます。例を見てみましょう。
 
-### Step inputsの命名と説明
+### Step inputsの命名と説明 {#naming-and-describing-step-inputs}
 
 Stepの入力には、Step自体と同様に、名前、概要、説明を設定できます。これらを定義するには:
 
@@ -213,7 +213,7 @@ Stepの入力には、Step自体と同様に、名前、概要、説明を設定
     is_required: true
 ```
 
-### 必須の入力
+### 必須の入力 {#required-inputs}
 
 入力が必須としてマークされている場合(かつdefault valueが定義されていない場合)、ユーザーは静的な文字列、または空でない文字列に解決される環境変数のいずれかの値を指定する必要があります。
 
@@ -228,7 +228,7 @@ Stepの入力を必須としてマークするには、`opts`プロパティのi
     is_required: true
 ```
 
-### 入力値としてのEnv Varの使用(is_expand)
+### 入力値としてのEnv Varの使用(is_expand) {#using-env-vars-as-input-values-is_expand}
 
 前述のとおり、任意の入力の値としてEnvironment Variablesを使用できます。デフォルトでは、Step inputs内のEnv Varは、そのEnv Varが指す値に展開されます。これは`opts`プロパティの`is_expand`オプションによって制御されます。
 
@@ -246,7 +246,7 @@ Stepの入力を必須としてマークするには、`opts`プロパティのi
 
 :::
 
-### 機密の入力
+### 機密の入力 {#sensitive-inputs}
 
 Step inputsを機密としてマークすることで、ビルドログやUIへの漏えいを防ぐことができます。機密の入力は、値として[Secrets](/bitrise-ci/configure-builds/secrets)のみを受け付けます。
 
@@ -266,7 +266,7 @@ inputs:
       is_sensitive: true
 ```
 
-### 入力のグループ化
+### 入力のグループ化 {#input-grouping}
 
 `category`プロパティは、関連する入力をグループ化するために使用します。カテゴリが設定された入力は、Workflow Editor内でデフォルトで折りたたまれ、カテゴリ名のみが表示されます。
 
@@ -287,7 +287,7 @@ Stepのカテゴリを設計する際は、以下の点に注意してくださ�
 - 必須の入力は、Stepを設定する際に見落としやすくなるため、グループ化しないでください。
 - グループ化された入力は、カテゴリのない入力の後に定義してください。
 
-### リストとしての入力値
+### リストとしての入力値 {#lists-as-input-values}
 
 現時点では、文字列のリストはStepの入力タイプとしてサポートされていません。リストのような入力には、以下の規則が使用されます。
 
@@ -296,19 +296,19 @@ Stepのカテゴリを設計する際は、以下の点に注意してくださ�
 - 入力の`summary`と`description`には、その入力が値のリストであることと、そのフォーマット方法を明確に記載してください。
 
 
-## Stepの出力
+## Stepの出力 {#step-outputs}
 
 Stepsは出力を生成でき、その出力は他のStepsの入力として使用できます。つまり、Stepがアーティファクトを生成した場合、そのアーティファクトのパスをビルド内の別のStepの入力として使用できるということです。たとえば、<strong>Xcode Archive & Export for iOS</strong> Stepは`$BITRISE_IPA_PATH`出力を公開しており、これを<strong>Deploy to Bitrise.io</strong> Stepの入力値として使用できます。
 
 出力は`step.yml`ファイル内の`outputs`プロパティで定義します。出力はStep inputsと同じ構造を持ち、上記のガイドラインが同様に適用されます。
 
 
-### リストとしての出力値
+### リストとしての出力値 {#lists-as-output-values}
 
 Stepの出力にもStep inputsと同じ制限が適用されます。詳細は上記の[リストとしての入力値](#lists-as-input-values)セクションを参照してください。
 
 
-## Stepの実行条件の設定
+## Stepの実行条件の設定 {#setting-conditions-for-running-the-step}
 
 特定のWorkflow内でStepを実行するかどうかを定義するプロパティは、`is_always_run`、`is_skippable`、`run_if`の3つです。
 
@@ -321,7 +321,7 @@ Stepの出力にもStep inputsと同じ制限が適用されます。詳細は�
 `run_if`:`run_if`プロパティを使用すると、Stepの実行を特定の条件に依存させることができます。たとえば、PRによってトリガーされたビルドでのみ実行されるようにStepを設定できます。考えられるユースケースについては、[Stepの条件付き有効化・無効化](/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally)ガイドで詳しく説明しています。
 
 
-## Stepの依存関係
+## Stepの依存関係 {#step-dependencies}
 
 Stepのコードは、ローカルのCLIツールに依存したり、外部のAPIとやり取りしたりすることがよくあります。Stepsはさまざまな環境(macOSやLinux、異なるOSバージョンでプリインストールされているツールも異なる環境)で実行されるため、Stepがそれらすべての環境で動作することを確認することが重要です。
 
@@ -342,7 +342,7 @@ Stepの依存関係がOSの依存関係マネージャーにパッケージ化�
 - 信頼して管理しているドメイン(または依存関係の公式ソースとして記載されているドメイン)からのみダウンロードするようにしてください。
 - 依存関係管理の手段としてgit submoduleを使用しないでください:Stepの実行時にクローンされません。 
 
-### Env Varを使用したStepリポジトリ内のファイルへのアクセス
+### Env Varを使用したStepリポジトリ内のファイルへのアクセス {#accessing-files-in-the-step-repo-with-an-env-var}
 
 Stepに必要なバイナリ、アセット、その他のファイルをStepリポジトリにバンドルして保持する必要がある場合は、`step.yml`ファイルやStepのコードと一緒に含めることができます。Bitrise CLIは、これらのファイルにいつでもアクセスできるようにする`$BITRISE_STEP_SOURCE_DIR`という環境変数を自動的にエクスポートします。
 

@@ -11,14 +11,14 @@ import Partial_OpeningTheWorkspaceSettingsPage from '@site/i18n/ja/partials/open
 
 Bitriseは、Microsoft Entra IDを使用した[SCIM 2.0](https://scim.cloud/)による自動ユーザーおよびグループプロビジョニングをサポートしています。設定が完了すると、Entra IDが<GlossTerm baseform="workspace">workspace</GlossTerm>メンバーシップの正式なソースとなります。ユーザーとグループの割り当ては自動的にBitriseにプッシュされ、Entraでユーザーを削除するとBitriseでのアクセスが無効になります。
 
-## SCIMの要件
+## SCIMの要件 {#scim-requirements}
 
 - SCIMのプロビジョニングには、<strong>Enterpriseプラン</strong>が必要です。
 - SCIMを有効にする前に、BitriseとEntra IDの間で[SAML SSO設定済み](/bitrise-platform/accounts/saml-sso-in-bitrise/setting-up-azure-ad-sso-for-bitrise)である必要があります。
 - [検証済みドメイン](/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-saml-sso-on-bitrise#verifying-your-domain)が必要です。ドメインの検証には最大72時間かかる場合があります。少なくとも1つのドメインが検証されるまで、SCIMの認証情報は生成できません。
 - [Bitrise workspaceオーナー](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces)とEntra ID管理者の両方が、設定作業中に利用可能である必要があります。
 
-## SCIMの設定
+## SCIMの設定 {#setting-up-scim}
 
 設定は次の3つの手順で構成されます。
 
@@ -26,7 +26,7 @@ Bitriseは、Microsoft Entra IDを使用した[SCIM 2.0](https://scim.cloud/)に
 1. [Entra IDでSCIMプロビジョニングを設定する。](#configuring-scim-provisioning-in-entra-id)
 1. [接続を確認する。](#verifying-the-connection)
 
-### BitriseでSCIM認証情報を生成する
+### BitriseでSCIM認証情報を生成する {#generating-scim-credentials-on-bitrise}
 
 1. <Partial_OpeningTheWorkspaceSettingsPage />
 1. 左側のメニューから<strong>Single sign-on</strong>を選択します。
@@ -38,7 +38,7 @@ Bitriseは、Microsoft Entra IDを使用した[SCIM 2.0](https://scim.cloud/)に
 
    ダイアログを閉じると、このトークンは再表示されません。トークンを紛失した場合は再生成できますが、再生成すると直前のトークンは直ちに無効になります。
 
-### Entra IDでSCIMプロビジョニングを設定する
+### Entra IDでSCIMプロビジョニングを設定する {#configuring-scim-provisioning-in-entra-id}
 
 BitriseはEntra IDのギャラリーアプリではありません。Microsoftの[非ギャラリーアプリケーションでSCIMを設定するチュートリアル](https://learn.microsoft.com/en-us/entra/identity/app-provisioning/use-scim-to-provision-users-and-groups)を使用し、次のBitrise固有の値を適用してください。
 
@@ -54,11 +54,11 @@ Bitrise上のWorkspaceメンバーシップはグループを通じて管理さ�
 
 :::
 
-### 接続の確認
+### 接続の確認 {#verifying-the-connection}
 
 Entra IDのプロビジョニング設定で<strong>Test Connection</strong>をクリックします。これによりBitriseの`/ServiceProviderConfig`エンドポイントにクエリが送信され、認証情報が有効であることが確認されます。テストが成功すると、Entra IDがBitriseに到達し、正しく認証できることを意味します。
 
-## 属性マッピング
+## 属性マッピング {#attribute-mapping}
 
 BitriseはSCIM 2.0のCore User SchemaおよびCore Group Schema(RFC 7643/7644)を実装しています。Entra IDのデフォルトの属性マッピングは、カスタム変換なしで動作します。
 
@@ -78,7 +78,7 @@ BitriseはSCIM 2.0のCore User SchemaおよびCore Group Schema(RFC 7643/7644)�
 
 `roles`属性によるworkspaceロールの割り当てについては、[SCIMによるworkspaceとプロダクトロールの管理](/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-scim#managing-workspace-and-product-roles-via-scim)を参照してください。
 
-## グループの動作
+## グループの動作 {#group-behavior}
 
 <strong>Nameの一致:</strong> Entra IDがグループをプッシュすると、Bitriseは同じ名前の既存グループにリンクするか、新しいグループを作成します。一致判定は大文字・小文字を区別し、完全一致で行われます。`ios_dev`と`iOS Dev`は異なるグループとして扱われます。同期を有効にする前に、Entra IDのグループ名が既存のBitriseのグループ名と完全に一致していることを確認してください。
 
@@ -86,13 +86,13 @@ BitriseはSCIM 2.0のCore User SchemaおよびCore Group Schema(RFC 7643/7644)�
 
 <strong>Protectedグループ:</strong> Global AccessグループおよびSAMLのデフォルトグループは、SCIM経由で削除できません。意図しないメンバーシップの変更を避けるため、これらのグループはEntra IDの同期対象から除外してください。
 
-## ユーザープロビジョニングの動作
+## ユーザープロビジョニングの動作 {#user-provisioning-behavior}
 
 <strong>メールによるアクティベーション手順が不要:</strong> 検証済みドメイン上でSCIMによりプロビジョニングされたユーザーは、直ちに確認済みの有効な状態で作成されます。Bitriseからのメールアクティベーションリンクは送信されません。初回ログイン時には、Entra IDのSSOフローに直接リダイレクトされます。
 
 <strong>Defaultworkspace role:</strong> SCIMによってプロビジョニングされたすべてのユーザーには、デフォルトでWorkspace Viewerロールが付与されます。このロールにはBitrise CIプロダクトへのアクセス権は含まれません。プロビジョニング時に別のロールを割り当てるには、Entra IDで`roles`属性を設定します。[SCIMによるworkspaceとプロダクトロールの管理](/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-scim#managing-workspace-and-product-roles-via-scim)を参照してください。
 
-## デプロビジョニングの動作
+## デプロビジョニングの動作 {#deprovisioning-behavior}
 
 Entra IDでユーザーの割り当てを削除した場合、またはEntra IDが`PATCH active:false`または`DELETE`リクエストを送信した場合:
 
@@ -103,7 +103,7 @@ Entra IDでユーザーの割り当てを削除した場合、またはEntra ID�
 
 <strong>デプロビジョニングされたユーザーの再プロビジョニング:</strong> デプロビジョニングされたユーザーのアカウントは削除されず、workspaceから削除されるだけです。同じメールアドレスでSCIM経由の再プロビジョニングはサポートされており、Entra IDで再度割り当てられると、通常どおりSCIM経由でグループメンバーシップを管理できます。
 
-## 既存のworkspaceメンバーの移行
+## 既存のworkspaceメンバーの移行 {#migrating-existing-workspace-members}
 
 SCIMはプッシュベースです。Bitriseは、Entra IDから送信されたリクエストに対してのみ処理を行います。Entra IDで割り当てられていない既存のworkspaceメンバーには変更が加えられず、workspace内にそのまま残ります。
 
@@ -116,7 +116,7 @@ SCIMはプッシュベースです。Bitriseは、Entra IDから送信された�
 
 ドライランやプレビューモードはありません。段階的なパイロットアプローチが実質的な代替手段となります。
 
-## 未検証ドメイン上のユーザー
+## 未検証ドメイン上のユーザー {#users-on-unverified-domains}
 
 メールアドレスのドメインがBitriseで検証されていないユーザーは、SCIM経由で管理できません。プロビジョニングまたは変更を試みても拒否されます。ドメインが検証されるまで、これらのユーザーはEntra IDの割り当て対象から除外してください。
 

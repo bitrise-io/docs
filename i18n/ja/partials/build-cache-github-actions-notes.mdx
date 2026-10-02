@@ -1,14 +1,14 @@
-### アクティベーションは独立したステップとして実行する
+### アクティベーションは独立したステップとして実行する {#run-the-activation-as-its-own-step}
 
 CLIは、`$GITHUB_ENV`を通じて設定を公開します。GitHub Actions は、この設定をジョブの<strong>後続の</strong>ステップに適用します。Build Cacheのアクティベーションとビルドの実行を同じ`run:`ブロック内で行うと、ビルドは設定を認識しません。
 
 アクティベーションは、ビルドを実行するステップより前の独立したステップで行ってください。
 
-### Workflows：フォークからトリガーされた実行にはシークレットがありません
+### Workflows：フォークからトリガーされた実行にはシークレットがありません {#workflows-triggered-by-forks-have-no-secrets}
 
 GitHubは、フォークからトリガーされたワークフローの実行に、リポジトリや Organization のシークレットを渡しません。そのような実行では`BITRISE_BUILD_CACHE_AUTH_TOKEN`が空になるため、CLIは認証できず、ビルドはキャッシュなしで実行されます。
 
-### 依存関係のキャッシュとBuild Cacheを分けて考える
+### 依存関係のキャッシュとBuild Cacheを分けて考える {#keep-dependency-caching-separate-from-the-build-cache}
 
 `actions/cache`は<strong>依存関係のキャッシュ</strong>を行います。GradleやCocoaPodsのキャッシュなど、ビルドがダウンロードするパッケージを保存し、次回の実行時に復元することで、再度取得する必要をなくします。Bitrise CIでは、キーベースのキャッシュStepsが同じ役割を果たします。詳細については、[Dependencies and caching overview](/bitrise-ci/dependencies-and-caching/dependencies-and-caching-overview)を参照してください。
 

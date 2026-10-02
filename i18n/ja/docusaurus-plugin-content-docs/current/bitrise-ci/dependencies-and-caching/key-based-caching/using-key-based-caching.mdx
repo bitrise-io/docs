@@ -26,13 +26,13 @@ npmやyarnの依存関係をキャッシュするには、[Save NPM Cache](https
 
 Stepsはどちらも、キー文字列を使用してキャッシュアーカイブにアクセスします。これらのキーは、<strong>Cache keys</strong> [Step input](/bitrise-ci/workflows-and-pipelines/steps/step-inputs)の値として指定する必要があります。各キーは個別のキャッシュアーカイブを識別します。
 
-## キャッシュの保持と削除ポリシー
+## キャッシュの保持と削除ポリシー {#cache-retention-and-eviction-policy}
 
 キャッシュエントリは、最後に使用されてから7日間保持されます。ワークフローで7日間連続して使用されない場合、自動的に削除されます。
 
 キャッシュストレージの許容量を超えた場合、アプリ上のLeast Recently Used(LRU)キャッシュエントリは、新しく生成されたものに置き換えられます。LRUは、新しいデータのために領域を確保するために、最も使用されていないデータを削除するキャッシュ置換アルゴリズムです。置き換えられたキャッシュエントリが<GlossTerm baseform="workflow">Workflows</GlossTerm>で必要とされる場合、キャッシュヒット率が低下する可能性があります。Workflowsに必要なキャッシュエントリを失わないように、より多くのストレージを確保するために[上位プラン](http://www.bitrise.io/pricing)へのアップグレードをお勧めします。
 
-## 新しいキャッシュアーカイブの作成
+## 新しいキャッシュアーカイブの作成 {#creating-a-new-cache-archive}
 
 1. Workflowの最後に[<strong>Save Cache</strong>](https://github.com/bitrise-steplib/bitrise-step-save-cache) Stepを追加します。
 1. <strong>Cache key</strong> inputでcache keyを定義します。このキーはキャッシュアーカイブを識別するために使用されます。
@@ -83,7 +83,7 @@ Stepsはどちらも、キー文字列を使用してキャッシュアーカイ
 
 キャッシュアーカイブが作成されたら、<strong>App Settings</strong>ページでアクセスできます。詳細は[キーベースキャッシュアーカイブへのアクセス](/bitrise-ci/dependencies-and-caching/key-based-caching/accessing-key-based-cache-archives)をご覧ください。
 
-## 既存のキャッシュアーカイブの復元
+## 既存のキャッシュアーカイブの復元 {#restoring-an-existing-cache-archive}
 
 1. Workflowの最初に[<strong>Restore Cache</strong>](https://github.com/bitrise-steplib/bitrise-step-restore-cache) Stepを追加します。
 1. <strong>Cache key</strong> inputに、復元したいキャッシュのキーを入力します。
@@ -108,11 +108,11 @@ Stepsはどちらも、キー文字列を使用してキャッシュアーカイ
    ```
 
 
-## キーベースキャッシュのテンプレートと関数
+## キーベースキャッシュのテンプレートと関数 {#key-based-caching-templates-and-functions}
 
 キーベースキャッシュのStepsはどちらも、Step inputs内でテンプレート要素を使用できます。Stepsは実行時にキーテンプレートを評価し、使用される最終的なcache keyはビルド環境やリポジトリ内の特定のファイルによって変化する場合があります。
 
-### 利用可能なキャッシュテンプレート
+### 利用可能なキャッシュテンプレート {#available-caching-templates}
 
 | Template expression | Definition | Possible values |
 | --- | --- | --- |
@@ -121,7 +121,7 @@ Stepsはどちらも、キー文字列を使用してキャッシュアーカイ
 | `cache-key-{{ .Workflow }}` | 現在のBitriseワークフロー名(例:`primary`)。 | アプリに存在する任意のWorkflowの正確な名前。 |
 | `{{ .OS }}-cache-key` | ビルド<GlossTerm baseform="stack">stack</GlossTerm>の現在のオペレーティングシステム(`linux`または`darwin`)。 | - `linux`:Linuxベースのstack向け。 - `darwin`:macOSベースのstack向け。 |
 
-### キャッシュテンプレートでの関数の使用
+### キャッシュテンプレートでの関数の使用 {#using-functions-in-caching-templates}
 
 キーベースキャッシュのテンプレートでは、2つの異なる関数を使用できます:
 
@@ -160,7 +160,7 @@ Stepsはどちらも、キー文字列を使用してキャッシュアーカイ
 ```
 
 
-## キャッシュアーカイブのキー照合
+## キャッシュアーカイブのキー照合 {#key-matching-for-cache-archives}
 
 キーベースキャッシュのStepsの<strong>Cache keys</strong> inputには、複数のキーを定義できます。追加のキーは、1行に1つずつ記述することで指定できます。このリストは優先順位順になっており、Stepはまず指定した最初のキーの一致を試み、そのキーに対応するキャッシュが保存されていない場合は、2番目のキーの一致を試みます(以降も同様です)。
 
@@ -182,7 +182,7 @@ inputs:
 ```
 
 
-## 動的キーを使用した条件付きキャッシュの利用
+## 動的キーを使用した条件付きキャッシュの利用 {#using-conditional-caching-with-dynamic-keys}
 
 ビルドを実行するたびにキャッシュアーカイブを更新したくない場合があります。キャッシュをスキップすることで、次のことができます:
 

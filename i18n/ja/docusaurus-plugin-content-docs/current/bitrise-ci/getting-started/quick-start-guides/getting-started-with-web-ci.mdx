@@ -14,11 +14,11 @@ Bitriseはモバイルに特化したDevOpsプラットフォームです。た�
 WebCIにBitriseを使用すると、モバイルを含むすべてのプロジェクトをBitrise上に統合できます。Bitriseは複雑な領域であるモバイルCI/CDに優れているため、モバイル向けの汎用的なCIよりもWeb向けのBitriseを採用する方が容易であり、統合によって運用がシンプルになります。
 
 
-## WebCIプロジェクトの追加
+## WebCIプロジェクトの追加 {#adding-a-web-ci-project}
 
 プロジェクトの追加方法は他の場合と同じです。ウィザードの詳しい手順については、[新規プロジェクトの追加](/bitrise-ci/getting-started/adding-a-new-project)をご覧ください。このセクションでは、モバイル以外のプロジェクトに特有の内容を説明します。
 
-### スキャナーがプロジェクトタイプを検出する仕組み
+### スキャナーがプロジェクトタイプを検出する仕組み {#how-the-scanner-detects-your-project-type}
 
 <GlossTerm baseform="project scanner">プロジェクトスキャナー</GlossTerm>は、サポートされている各言語を識別するファイルがないか、リポジトリを確認します。
 
@@ -29,11 +29,11 @@ WebCIにBitriseを使用すると、モバイルを含むすべてのプロジ�
 
 Node.js、Ruby、Pythonの場合は、Workflowに適した言語バージョンを選択するために、`.nvmrc`、`.ruby-version`、`.python-version`などのバージョンファイル(またはプロジェクトのマニフェスト内の`engines`/`requires-python`フィールド)も読み取ります。これら2つのスキャナーの詳細については、[Rubyプロジェクトのデータベース設定](#database-configuration-for-ruby-projects)および[Pythonのパッケージマネージャー検出](#package-manager-detection-for-python)をご覧ください。
 
-### 設定できる項目
+### 設定できる項目 {#what-you-can-configure}
 
 <strong>CI configuration</strong>の段階では、ウィザードに検出された各プロジェクトの<strong>Project directory</strong>オプションと、該当する場合はパッケージマネージャーの選択肢が表示されます。スキャナーがロックファイルからパッケージマネージャーを検出できない場合は、手動で選択してください。Bitriseが、それに合った設定を生成します。
 
-## Rubyプロジェクトのデータベース設定
+## Rubyプロジェクトのデータベース設定 {#database-configuration-for-ruby-projects}
 
 Rubyプロジェクトを追加すると、プロジェクトスキャナーがデータベースgemを検出します: `pg`、`mysql2`、`redis`、`mongoid/mongo`、`sqlite3`。検出された各データベースgemに対して、スキャナーはPostgres、MySQL、Redis、MongoDBのいずれかの適切なサービスコンテナを生成します。各コンテナには正しいイメージ、ポートマッピング、ヘルスチェックが設定されており、テストが接続を試みる前にコンテナが完全に準備できた状態になります。
 
@@ -42,7 +42,7 @@ Rubyプロジェクトを追加すると、プロジェクトスキャナーが�
 スキャナーは`database.yml`内の`test`環境セクションを優先し、testブロックが存在しない場合はdefaultにフォールバックします。これはRails自体が使用するのと同じルックアップ順序です。
 
 
-## 依存関係の管理
+## 依存関係の管理 {#managing-dependencies}
 
 Bitriseは、依存関係を簡単に扱えるようにする専用の<GlossTerm baseform="step">Steps</GlossTerm>を通じて、複数の依存関係マネージャーをサポートしています。WebCIプロジェクトにおいて特に重要なのは次のとおりです。
 
@@ -87,7 +87,7 @@ Bitriseは、依存関係を簡単に扱えるようにする専用の<GlossTerm
       - gradle_task: install
   ```
 
-### Pythonのパッケージマネージャー検出
+### Pythonのパッケージマネージャー検出 {#package-manager-detection-for-python}
 
 Pythonプロジェクトの場合、Bitriseは次の順序でパッケージマネージャーのソースを確認したうえで、依存関係管理の設定を作成します。
 
@@ -98,11 +98,11 @@ Pythonプロジェクトの場合、Bitriseは次の順序でパッケージマ�
 これらのいずれも見つからない場合、パッケージマネージャーは未検出のままになります。ユーザーはセットアップ時に1つを選択し、その選択に応じた設定が生成されます。
 
 
-## テストの実行
+## テストの実行 {#running-tests}
 
 すべてのBitrise<GlossTerm baseform="project">プロジェクト</GlossTerm>には、`run_tests`というデフォルトのテストWorkflowがあります。Workflowの内容は、正確なプロジェクトタイプによって異なります。
 
-### JavaおよびKotlin向けのGradleを使ったテスト
+### JavaおよびKotlin向けのGradleを使ったテスト {#testing-with-gradle-for-java-and-kotlin}
 
 GradleでビルドされたJavaおよびKotlinプロジェクトでは、テストは`test` Gradleタスクを中心に行われます。Bitriseには、これ専用のStepである<strong>Run Gradle Tests</strong>があり、これはデフォルトのWorkflowの一部です。
 
@@ -110,13 +110,13 @@ GradleでビルドされたJavaおよびKotlinプロジェクトでは、テス�
 - 実行したいGradleタスクを設定するには、<strong>Test task</strong>入力を使用します。デフォルトではStepが`test`タスクを実行しますが、任意のGradleタスクを設定できます。
 - gradlewコマンドをさらにカスタマイズするには、<strong>Additional flags</strong>入力を使用します。たとえば、特定のテストクラスを実行するフラグを設定できます。
 
-### Java向けのMavenを使ったテスト
+### Java向けのMavenを使ったテスト {#testing-with-maven-for-java}
 
 MavenでビルドされたJavaプロジェクトでは、[Maven Wrapper's](https://maven.apache.org/tools/wrapper/)のテストコマンドである`./mvnw test`を実行するScript Stepを使用してテストが実行されます。
 
 Script Stepsは完全にカスタマイズ可能で、必要なMaven設定を自由に作成できます。デフォルトの設定は、目的に合わせていつでも自由に変更できます。Mavenを使ったテストの実行の詳細については、[Surefire](https://maven.apache.org/surefire/index.html)をご覧ください。
 
-### Node.jsプロジェクトのlintとテスト
+### Node.jsプロジェクトのlintとテスト {#linting-and-testing-nodejs-projects}
 
 Node.jsプロジェクトの場合、デフォルトの`run_tests` Workflowは、テストスイートではなく、Node.jsのインストールとlintの実行という2つの処理をデフォルトで行います。
 
@@ -144,7 +144,7 @@ Node.jsプロジェクトの場合、デフォルトの`run_tests` Workflowは�
 
 <strong>npm</strong> Stepでは、テストの実行も可能です。`package.json`ファイルに定義されたテストを実行するには、`test`コマンドを実行します。
 
-### Rubyプロジェクトのテスト
+### Rubyプロジェクトのテスト {#testing-ruby-projects}
 
 Rubyプロジェクトの場合、適切なテストコマンドを備えたテストWorkflowが自動的に生成されます。Rubyプロジェクトを追加すると、スキャナーはテストフレームワークを探し、見つかった内容に基づいて適切なテストコマンドを選択します。
 
@@ -155,7 +155,7 @@ Rubyプロジェクトの場合、適切なテストコマンドを備えたテ�
 - テストフレームワークはないがRakefileが存在する場合: `bundle exec rake test`。
 
 
-## キャッシュ
+## キャッシュ {#caching}
 
 Bitriseは、2つの異なるキャッシュソリューションを提供しています。
 
@@ -172,7 +172,7 @@ Bitrise Build Cacheにnew connectionを追加するには、以下が必要で�
 - 別のCIプロバイダーを使用する場合は、[パーソナルアクセストークン](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token)を追加して、Bitrise Build CacheがCIにアクセスできるようにします。
 - キャッシュ有効化スクリプトをCIプロセスに追加します。Bitriseでは、これ専用の[Steps](/bitrise-ci/workflows-and-pipelines/steps/steps-overview)を用意しています。
 
-### キーベースのキャッシュ
+### キーベースのキャッシュ {#key-based-caching}
 
 キーベースのキャッシュを使用するには、主に2つの方法があります。
 
@@ -180,11 +180,11 @@ Bitrise Build Cacheにnew connectionを追加するには、以下が必要で�
 - <strong>Script</strong>Stepsを使用して、キャッシュアーカイブのキーを設定する方法です。これにより、キャッシュ設定を完全に制御できます。[キーベースのキャッシュの使用](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching)をご覧ください。
 
 
-## Dockerコンテナのサポート
+## Dockerコンテナのサポート {#docker-container-support}
 
 Bitrise WorkflowsおよびPipelinesでDockerコンテナを使用できます。コンテナのサポートにより、バックグラウンドサービスも利用できるようになります。コンテナ内でビルドを実行すると、ビルド環境を完全に制御でき、ビルド中に依存関係をインストールする必要もなくなります。
 
-### Dockerイメージのビルド
+### Dockerイメージのビルド {#building-a-docker-image}
 
 コンテナを使用するには、Dockerイメージが必要です。[Docker Build & Push](https://bitrise.io/integrations/steps/docker-build-push) Stepを使用すると、独自のDockerイメージをビルドしてプッシュできます。Stepには、ビルドしたイメージに適用するイメージタグのリストが必要です。次のことも指定できます。
 
@@ -193,7 +193,7 @@ Bitrise WorkflowsおよびPipelinesでDockerコンテナを使用できます。
 
 <strong>Docker Build & Push</strong> Stepには、[キーベースのキャッシュ](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching)が組み込みでサポートされています。つまり、Stepは、プリセットのcache keysを使用して、ビルドしたDockerイメージを自動的にキャッシュします。詳細については、[独自のDockerイメージのビルド](/bitrise-platform/infrastructure/docker-containers-on-bitrise/building-your-own-docker-image)をご覧ください。
 
-### コンテナの使用
+### コンテナの使用 {#using-containers}
 
 ビルドでコンテナを使用するには、次のことが必要です。
 
@@ -205,7 +205,7 @@ Bitrise WorkflowsおよびPipelinesでDockerコンテナを使用できます。
 詳細については、[BitriseにおけるDockerコンテナについて](/bitrise-platform/infrastructure/docker-containers-on-bitrise/about-docker-containers-on-bitrise)をご覧ください。
 
 
-## デプロイ
+## デプロイ {#deploying}
 
 WebCIプロジェクトは、次の3つの方法のいずれかでデプロイできます。
 

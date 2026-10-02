@@ -18,7 +18,7 @@ Gradleのタスクとそのキャッシュの仕組みについて詳しく知�
 Bitriseで診断ビルドを設定する方法を確認するには、[診断ビルド](#diagnostic-builds)に進んでください。
 
 
-## Gradleのタスクとキャッシュ
+## Gradleのタスクとキャッシュ {#gradle-tasks-and-caching}
 
 Gradleのビルドシステムでは、基本的な処理の単位はタスクです。タスクは、クラスのコンパイル、単体テストの実行、JAR の作成などを行います。各タスクには、ファイルや環境変数などの入力と、出力があります。
 
@@ -30,7 +30,7 @@ Gradleのビルドシステムでは、基本的な処理の単位はタスク�
 
 :::
 
-### Gradleのタスク（CI環境）
+### Gradleのタスク（CI環境） {#gradle-tasks-in-a-ci-environment}
 
 CI環境でGradleを実行すると、ビルドディレクトリが空であるため、すべてのタスクが実行されるか、キャッシュから取得されます。実行後、Gradleはタスクの入力に関するメタデータを[プロジェクトのキャッシュディレクトリ](https://docs.gradle.org/current/userguide/directory_layout.html)に保存します。Gradleはこのメタデータを使用して、インクリメンタルビルドを実行します。
 
@@ -38,7 +38,7 @@ CI環境でGradleを実行すると、ビルドディレクトリが空である
 
 メタデータが利用できない場合、Gradleはすべてのタスクを実行します。
 
-### タスクのキャッシュ
+### タスクのキャッシュ {#caching-tasks}
 
 メタデータからタスクを実行する必要があると判断され、かつBitrisebuild cacheが有効になっている場合、タスクの入力と、バージョンなどの特定のGradleプロパティがハッシュ化され、cache keyになります。リモートまたはローカルのキャッシュにcache keyと一致するものがあれば、タスクを完全に実行する必要はありません。実行結果がキャッシュから読み込まれ、`FROM-CACHE`の結果ラベルが付きます。
 
@@ -51,7 +51,7 @@ CI環境でGradleを実行すると、ビルドディレクトリが空である
 - `UP-DO-DATE`ラベルが付いていないタスクでも、過去に入力が一度以上キャッシュされていれば、キャッシュできます。
 
 
-## 診断ビルド
+## 診断ビルド {#diagnostic-builds}
 
 タスクが実行される原因となった変更を把握するには、Gradleのメタデータと、以前のビルドのビルド出力が必要です。これらをCI環境に復元すると、ローカルのインクリメンタルビルドをシミュレートでき、キャッシュミスの原因となるビルド間の変更を確認できます。
 
@@ -74,7 +74,7 @@ Gradleの診断ビルドを設定して実行するには、次の手順を行�
 1. 初回のビルドを実行して、必要なディレクトリをキーベースのキャッシュに保存します。
 1. 診断ビルドを実行して、Gradleの実行理由を確認します。
 
-### 診断ビルド用のCI設定の作成
+### 診断ビルド用のCI設定の作成 {#creating-the-ci-configuration-for-a-diagnostic-build}
 
 Gradleの診断ビルド用にCIの設定を作成するには、Bitrise<GlossTerm baseform="workflow">Workflow</GlossTerm>に、ビルド出力を保存および復元するための新しい<GlossTerm baseform="step">Steps</GlossTerm>を2つ追加する必要があります。これらには、BitriseBuild CacheCLIを使用します。
 
@@ -153,7 +153,7 @@ Gradleの診断ビルド用にCIの設定を作成するには、Bitrise<GlossTe
 </TabItem>
 </Tabs>
 
-### キーベースのキャッシュへのディレクトリの保存
+### キーベースのキャッシュへのディレクトリの保存 {#saving-the-directories-in-the-key-based-cache}
 
 Gradleの診断ビルドを初めて設定する場合は、[作成した設定](#creating-the-ci-configuration-for-a-diagnostic-build)で初回のビルドを実行して、必要なディレクトリをキーベースのキャッシュに保存する必要があります。この初回のビルドでは、invocation detailsに実行理由は表示されません。
 
@@ -162,7 +162,7 @@ Gradleの診断ビルドを初めて設定する場合は、[作成した設定]
 
    ![upload-complete.png](/img/_paligo/uuid-223b519e-cddd-6157-de92-bfdf36d7ba2d.png)
 
-### 診断ビルドの実行と確認
+### 診断ビルドの実行と確認 {#running-and-checking-a-diagnostic-build}
 
 [CIの設定が完了](#creating-the-ci-configuration-for-a-diagnostic-build)し、[初回のビルドが必要なディレクトリのアップロードに成功](#running-and-checking-a-diagnostic-build)してキーベースのキャッシュに保存されたら、診断ビルドを実行して、Gradleのタスクの実行理由を確認できます。初回のビルドと同じWorkflowとブランチを使用してください。
 

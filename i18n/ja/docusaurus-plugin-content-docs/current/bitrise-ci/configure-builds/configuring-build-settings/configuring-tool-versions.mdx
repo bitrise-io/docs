@@ -26,7 +26,7 @@ Bitriseは、CIプロジェクトに適したバージョンのツールを自�
 | ローカルの開発環境は設定されません（`bitrise local run workflow_name`経由でローカルでWorkflowsを実行する場合を除きます）。 | ツールのバージョンがバージョンファイル（たとえば`.ruby-version`）で定義されており、チームの全員がツールバージョンマネージャー（たとえば`Mise`）をセットアップしている場合は、ローカルの開発環境が設定されます。 |
 
 
-## 宣言的なツールセットアップ
+## 宣言的なツールセットアップ {#declarative-tool-setup}
 
 ツールとそのバージョンを、設定YAMLファイルの最上位にある`tools`プロパティに追加します。
 
@@ -50,7 +50,7 @@ workflows:
 - [部分的なバージョン番号を設定する](#setting-partial-version-numbers)
 - [特別なエイリアスを使用する](#using-other-aliases)
 
-### 正確なバージョン番号を設定する
+### 正確なバージョン番号を設定する {#setting-exact-version-numbers}
 
 `tools`プロパティに正確なバージョン番号を定義できます。
 
@@ -61,7 +61,7 @@ tools:
 
 これにより、最も決定的な動作と再現性のあるビルドが得られますが、インストールに時間がかかる場合があります。
 
-### 部分的なバージョン番号を設定する
+### 部分的なバージョン番号を設定する {#setting-partial-version-numbers}
 
 プロジェクトで正確なツールバージョンが必要ない場合は、部分的なバージョン番号を定義できます。部分的なバージョン番号を使用すると、BitriseはBitrisebuild machinesにプリインストールされているバージョン、または利用可能な最新のリリースバージョンのいずれかを確認します。
 
@@ -83,7 +83,7 @@ tools:
 
 これにより、Bitrisebuild machinesに何がプリインストールされているかに関係なく、Rubyの最新の3.3パッチバージョンがインストールされます。
 
-### Workflow固有の定義
+### Workflow固有の定義 {#workflow-specific-definitions}
 
 ツールバージョンの定義は、グローバルに、または1つ以上のWorkflowsに対して個別に定義できます。設定の最上位で`tools`プロパティを定義する代わりに、1つ以上のWorkflowsの下にネストします。
 
@@ -130,7 +130,7 @@ Workflow固有の定義を使用する場合は、次の3つの一般的なパ�
 
   この例では、`lint`というWorkflowにはRubyがインストールされません。
 
-### その他のエイリアスを使用する
+### その他のエイリアスを使用する {#using-other-aliases}
 
 特別なバージョン文字列である`latest`と`installed`を使用して、ツールの最も新しいリリースバージョンまたはインストール済みバージョンを選択することもできます。
 
@@ -149,11 +149,11 @@ tools:
 ```
 
 
-## Workflow実行中のツールセットアップ
+## Workflow実行中のツールセットアップ {#tool-setup-during-workflow-execution}
 
 Workflowの実行中にツールのセットアップを行うには、専用の依存関係インストーラーであるStepを使用するか、独自のスクリプトから呼び出すCLIサブコマンドを使用します。
 
-### CLIサブコマンドを使用したツールセットアップ
+### CLIサブコマンドを使用したツールセットアップ {#tool-setup-with-cli-subcommand}
 
 Workflowから`bitrise local tools setup`を呼び出します。このツールは設定ファイルまたはバージョンファイルのパスを探します。パスを指定しない場合、ツールは作業ディレクトリ内のファイルを検出します。
 
@@ -222,7 +222,7 @@ workflows:
       - cocoapods-install: {}
 ```
 
-### 依存関係インストーラーStepを使用したツールセットアップ
+### 依存関係インストーラーStepを使用したツールセットアップ {#tool-setup-with-the-dependency-installer-step}
 
 <strong>[Dependency installer](https://bitrise.io/integrations/steps/dependency-installer)</strong> Stepは、ツールのインストールを実行するCLIサブコマンドのラッパーです。複数の種類のツールバージョンファイルを受け付けます。完全なリストはStepの説明を参照してください。
 
@@ -238,7 +238,7 @@ steps:
 ```
 
 
-## サポートされているツール
+## サポートされているツール {#supported-tools}
 
 このシステムは、対応するツールや言語のリストを今後も拡大していけるように設計されていますが、Bitriseでは、記載されている最も一般的なツールについてのみ安定性を検証およびテストしています。ここに記載されていないツールが必要な場合は、how to use community pluginsを参照してください。
 
@@ -268,7 +268,7 @@ tool_config:
 | <strong>Tuist</strong> | 4.54.0バージョンをインストールする場合:  ``` tools:   tuist: 4.54.0 ``` |  |
 
 
-## ツールバージョンマネージャーの変更
+## ツールバージョンマネージャーの変更 {#changing-tool-version-managers}
 
 Bitriseは、実行時に必要なツールをインストールして提供するために、ツールバージョンマネージャーを使用します。主要なマネージャーは[mise](https://mise.jdx.dev/)ですが、[asdf](https://asdf-vm.com/)もサポートされており、同じように動作します。何らかの理由で実装を切り替えたい場合は、次の方法で切り替えられます。
 
@@ -278,7 +278,7 @@ tool_config:
 ```
 
 
-## 制限事項と代替手段
+## 制限事項と代替手段 {#limitations-and-alternatives}
 
 - <strong>ビジュアルエディタなし</strong>: この機能は、現時点では設定YAMLでのみ設定できます。
 - <strong>専用のバージョンマネージャーツール</strong>: ツールのインストールには、このページで説明されている方法を使用することをお勧めします。

@@ -11,7 +11,7 @@ import GlossTerm from '@site/src/components/GlossTerm';
 
 Bitriseは、iOSおよびAndroid（FlutterやReact Nativeを含む）向けの、モバイルに特化したCI/CDとアプリ配布です。Claude CodeやCursor、GitHub Copilot付きのVS CodeなどのAIエージェントを使って作業している場合、チャットから離れることなく[Bitrise MCPサーバー](/bitrise-platform/ai/bitrise-mcp)を使ってBitriseに接続できます。エージェントが初めてアクセスを必要とするとき、クライアントは認証を求め、ブラウザでBitriseのサインインを開始します。一度サインイン（またはアカウントを作成）して接続を承認すれば、エージェントは認証されます。同じサインインでBitrise websiteにもログインするため、二重に設定する必要はありません。
 
-## この機能を使う場面
+## この機能を使う場面 {#when-to-use-this}
 
 CI/CDやアプリ配布、ローカルビルドをデバイスに配布する目的でBitriseを使いたく、かつ次のいずれかに該当する場合です。
 
@@ -22,15 +22,15 @@ CI/CDやアプリ配布、ローカルビルドをデバイスに配布する目
 
 エージェントを使いたくない場合は、ブラウザから[Bitriseに登録](/bitrise-platform/getting-started/signing-up-for-bitrise)することもできます。
 
-## MCP経由で接続する
+## MCP経由で接続する {#connecting-through-the-mcp}
 
 MCPサーバーはOAuthを使用します。クライアントに認証が必要であることを伝え、クライアントがブラウザでのサインインを代行します。トークンをコピー＆ペーストする必要は一切ありません。
 
-### Step1: MCPに対応したAIクライアントを用意する
+### Step1: MCPに対応したAIクライアントを用意する {#step-1-get-an-ai-client-that-supports-mcp}
 
 MCPに対応したAIクライアントが必要です。以下の各手順では、Claude Code、Cursor、VS Code、Claude Desktopという、最も一般的なクライアントの設定方法を説明します。Bitrise MCPは、[Windsurf](/bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-windsurf)、[Google Gemini CLI](/bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-gemini-cli)、[AWS Kiro](/bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-kiro)、[その他のCopilot IDE](/bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-other-copilot-ides)にも対応しています。クライアント固有の詳細については、それぞれのインストールガイドを参照してください。
 
-### Step2: MCPサーバーに接続する
+### Step2: MCPサーバーに接続する {#step-2-connect-the-mcp-server}
 
 クライアントを、<strong>トークンなし</strong>でリモートサーバーに向けて設定します。サーバーはクライアントにOAuthで保護されていることを伝え、以降の認証処理はクライアントが行います。設定を編集したら、変更を反映させるためにクライアントを再読み込みしてください（[MCPクライアントの再接続](#reconnecting-the-mcp-client)を参照）。
 
@@ -73,7 +73,7 @@ claude mcp add --transport http bitrise https://mcp.bitrise.io
 </TabItem>
 </Tabs>
 
-### Step3: サインインするか、アカウントを作成する
+### Step3: サインインするか、アカウントを作成する {#step-3-sign-in-or-create-your-account}
 
 サーバーは認証を必須としているため、匿名では接続できません。エージェントが自動でサインインすることはできません。（Step2で再読み込みした後）クライアントが接続すると、Bitriseに認証が必要であることを検知し、ブラウザでサインインを開始します。開始方法はクライアントによって異なります。Claude Codeでは、`/mcp`を実行し、<strong>bitrise</strong>を選択してサインインを開始してください。
 
@@ -90,7 +90,7 @@ Bitriseのサインインページでは、次の手順を行います。
 
 :::
 
-### Step4: メールアドレスを確認する（メールアドレスとパスワードの場合のみ）
+### Step4: メールアドレスを確認する（メールアドレスとパスワードの場合のみ） {#step-4-confirm-your-email-email-and-password-only}
 
 メールアドレスとパスワードでアカウントを作成した場合、Bitriseは<strong>すぐに</strong>確認メールを送信し、「メールアドレスを確認してください」という画面を表示します。ソーシャルサインイン（GitHub、Bitbucket、Google）ではこの手順は不要です。プロバイダー側ですでに検証済みのためです。
 
@@ -98,11 +98,11 @@ Bitriseのサインインページでは、次の手順を行います。
 - 確認画面は<strong>自動的にポーリング</strong>するため、どこでリンクをクリックしても問題ありません。メールアドレスが確認されると、画面は数秒以内にそれを検知して自動的に再読み込みされ、認証処理を自動的に続行します。
 - 元のウィンドウに戻ったり、何かを再入力したりする必要はありません。確認が完了すると、処理は中断した箇所から自動的に再開します。
 
-### Step5: 接続を確認する
+### Step5: 接続を確認する {#step-5-confirm-the-connection}
 
 認証が完了すると、エージェントは有効化されているBitriseツールを呼び出せるようになります。`me`または`list_workspaces`ツールを実行させて、接続を確認してください。新規の場合は、<GlossTerm baseform="workspace">Workspace</GlossTerm>が自動的に作成されます。Workspacesがアプリやチームをどのように整理するかについては、[Workspacesの概要](/bitrise-platform/workspaces/workspaces-overview)をご覧ください。
 
-## 個人用アクセストークンを使う場合
+## 個人用アクセストークンを使う場合 {#using-a-personal-access-token-instead}
 
 OAuthのフローは、短期間有効なトークンをバックグラウンドで発行・更新するため、認証情報を管理しなくても接続を維持できます。クライアントの認証が失われた場合（長時間アイドル状態が続いた後など）も、ブラウザでのサインインが再度開くだけです。
 
@@ -139,7 +139,7 @@ claude mcp remove bitrise && claude mcp add --transport http bitrise https://mcp
 </TabItem>
 </Tabs>
 
-## MCPクライアントを再接続する
+## MCPクライアントを再接続する {#reconnecting-the-mcp-client}
 
 Step2で設定を編集しても、クライアントがBitrise MCPサーバーを再読み込みするまでは反映されません。クライアントによっては、ここでOAuthのサインインが表示されることもあります（たとえば、Claude Codeの`/mcp`が認証を行う場所です）。再読み込みの方法はクライアントによって異なります。
 
@@ -149,14 +149,14 @@ Step2で設定を編集しても、クライアントがBitrise MCPサーバー�
 - <strong>Claude Desktop:</strong> アプリを完全に終了し（macOSでは`Cmd+Q`、Windowsではシステムトレイから終了）、再度開いてください。ウィンドウを閉じるだけでは再読み込みされません。
 - <strong>Otherクライアント（Windsurf、Gemini CLI、AWS Kiro）:</strong> クライアントを再起動するか、MCP接続が公開されている場合はそちらを再起動してください。
 
-## うまくいかない場合
+## うまくいかない場合 {#if-something-goes-wrong}
 
 - <strong>サインインのプロンプトが表示されない場合:</strong> クライアントでMCPサーバーを再読み込みし（[MCPクライアントを再接続する](#reconnecting-the-mcp-client)を参照）、認証プロンプトを再度発生させてください。Claude Codeでは、`/mcp`を実行して<strong>bitrise</strong>のサインインを開始します。
 - <strong>承認前にページを閉じてしまった場合:</strong> Bitriseツールを再度実行すると、クライアントがサインインを再開します。
 - <strong>「メールアドレスを確認してください」の画面から進まない場合:</strong> Bitriseが送信した確認メール内のリンクをクリックしてください（迷惑メールフォルダも確認してください）。画面は数秒おきにポーリングしており、メールアドレスが確認されると自動的に処理を続行します。手動での再読み込みは不要です。
 - <strong>登録時に「このメールアドレスはすでに登録されています」と表示される場合:</strong> すでにBitriseアカウントをお持ちです。新規作成せずに、前の画面に戻ってそのプロバイダーまたはメールアドレスで<strong>サインイン</strong>してください。
 
-## アカウント作成後
+## アカウント作成後 {#after-your-account-is-created}
 
 同じMCP接続を使って、これ以降のBitrise（[アプリの作成とリポジトリの接続](/bitrise-ci/getting-started/adding-a-new-project)、[`bitrise.yml`の設定](/bitrise-ci/configure-builds/configuration-yaml/configuration-yaml-overview)、ビルドのトリガー、ログの読み取り、アーティファクトと配布の管理）をすべて行えます。サーバーが公開するツールグループを制限することもできます。詳しくは[Tools](/bitrise-platform/ai/bitrise-mcp/tools)を参照してください。
 
@@ -170,7 +170,7 @@ npx skills add bitrise-io/agent-skills
 
 Bitriseが初めての方は、[はじめに](/bitrise-ci/getting-started/getting-started)と[Bitriseの主要な概念](/bitrise-ci/getting-started/key-bitrise-concepts)から始めてください。AIを使ってBitriseでほかに何ができるかについては、[BitriseのAI機能](/bitrise-platform/ai/ai-features-on-bitrise)をご覧ください。
 
-## 関連リンク
+## 関連リンク {#related-links}
 
 - [Bitrise MCP](/bitrise-platform/ai/bitrise-mcp): MCPサーバーとは何か、また認証方法について。
 - [Tools](/bitrise-platform/ai/bitrise-mcp/tools): 特定のツールグループの有効化・無効化について。

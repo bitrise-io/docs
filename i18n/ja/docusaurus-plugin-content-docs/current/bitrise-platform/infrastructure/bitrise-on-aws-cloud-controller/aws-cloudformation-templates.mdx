@@ -16,7 +16,7 @@ Bitriseは、さまざまなユースケース向けにCloudFormationテンプ�
 - <strong>既存のVPCにエアギャップCloud Controllerをデプロイする</strong>: すでにAWS環境が構築されており、ネットワーキングが整っていて、コントローラーを厳密な[エアギャップ環境](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates)で実行したい場合は、このテンプレートを選択してください。これは完全には自動化されておらず、[一部の手動設定が必要です](#deploy-airgapped-cloud-controller-to-an-existing-vpc)。
 - <strong>新規のVPCにエアギャップCloud Controllerをデプロイする</strong>: AWSを初めて使用する場合や、ネットワーキングがまだ構築されていない場合で、コントローラーを厳密な[エアギャップ環境](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/aws-cloudformation-templates)で実行したい場合は、このテンプレートを選択してください。このテンプレートは、最初に適切なエアギャップ構成で新しいVPCを作成し、その後コントローラーをデプロイします。
 
-## 既存のVPCにCloudControllerをデプロイする
+## 既存のVPCにCloudControllerをデプロイする {#deploy-cloudcontroller-to-an-existing-vpc}
 
 テンプレートパラメーター:
 
@@ -33,7 +33,7 @@ Bitriseは、さまざまなユースケース向けにCloudFormationテンプ�
 - <strong>CustomBashScript</strong>(任意): インスタンス起動時に実行するカスタムbashスクリプト
 - <strong>UseHostNetwork(必須)</strong>: Dockerコンテナでホストネットワークモードを使用します(--net=host)
 
-### テンプレートによってプロビジョニングされるインフラストラクチャ
+### テンプレートによってプロビジョニングされるインフラストラクチャ {#infrastructure-provisioned-by-the-template}
 
 - <strong>Internal Application Load Balancer</strong>: サーバーにトラフィックは発生せず、Cloud Controllerインスタンスに対して定期的なヘルスチェックのみを行います。いずれの場合も、コントローラーとbuild machinesはBitriseコントロールプレーンに向けてネットワーク呼び出しを開始するため、外部からのインバウンドトラフィックは不要です。
 - <strong>Autoscaling Group</strong>: 常に正常なCloud Controllerインスタンスが1つ実行されている状態を保証します。Instance: Cloud Controllerが実行されるt2.smallインスタンスです。
@@ -43,7 +43,7 @@ Bitriseは、さまざまなユースケース向けにCloudFormationテンプ�
 - <strong>CloudWatch log group</strong>: このテンプレートは、コントローラーのエラーログを保存するためのCloudWatch log groupを作成します。
 - <strong>Security groups</strong>: このテンプレートは、LoadBalancer用とインスタンス用の2つのセキュリティグループを作成します。
 
-## 新規のVPCにCloud Controllerをデプロイする
+## 新規のVPCにCloud Controllerをデプロイする {#deploy-cloud-controller-to-a-new-vpc}
 
 テンプレートパラメーター:
 
@@ -63,7 +63,7 @@ Bitriseは、さまざまなユースケース向けにCloudFormationテンプ�
 - <strong>CustomBashScript</strong>(任意): インスタンス起動時に実行するカスタムbashスクリプト
 - <strong>UseHostNetwork(必須)</strong>: Dockerコンテナでホストネットワークモードを使用します(--net=host)
 
-### テンプレートによってプロビジョニングされるインフラストラクチャ
+### テンプレートによってプロビジョニングされるインフラストラクチャ {#infrastructure-provisioned-by-the-template-1}
 
 - <strong>Internal Application Load Balancer</strong>: サーバーにトラフィックは発生せず、Cloud Controllerインスタンスに対して定期的なヘルスチェックのみを行います。いずれの場合も、コントローラーとbuild machinesはBitriseコントロールプレーンに向けてネットワーク呼び出しを開始するため、外部からのインバウンドトラフィックは不要です。
 - <strong>Autoscaling Group</strong>: 常に正常なCloud Controllerインスタンスが1つ実行されている状態を保証します。
@@ -83,7 +83,7 @@ Bitriseは、さまざまなユースケース向けにCloudFormationテンプ�
   - ルートテーブル。
 - <strong>Bitrise Agent Logs</strong>: この機能により、BitriseAgentのビルドログをAWSCloudWatchへシームレスに送信できます。CloudFormationを活用して必要なIAMロールとポリシーを自動的に設定し、BitriseAgentが適切な権限を持てるようにします。さらに、CloudWatch内に`bitrise-agent-log`という名前の専用ロググループを作成し、AWS環境内での整理されたログ管理とリアルタイム分析を可能にします。
 
-## 既存のVPCにエアギャップCloud Controllerをデプロイする
+## 既存のVPCにエアギャップCloud Controllerをデプロイする {#deploy-airgapped-cloud-controller-to-an-existing-vpc}
 
 テンプレートパラメーター:
 
@@ -99,7 +99,7 @@ Bitriseは、さまざまなユースケース向けにCloudFormationテンプ�
 - <strong>CustomBashScript</strong>(任意): インスタンス起動時に実行するカスタムbashスクリプト
 - <strong>UseHostNetwork(必須)</strong>: Dockerコンテナでホストネットワークモードを使用します(--net=host)
 
-### テンプレートによってプロビジョニングされるインフラストラクチャ
+### テンプレートによってプロビジョニングされるインフラストラクチャ {#infrastructure-provisioned-by-the-template-2}
 
 - <strong>Internal Application Load Balancer</strong>: サーバーにトラフィックは発生せず、Cloud Controllerインスタンスに対して定期的なヘルスチェックのみを行います。いずれの場合も、コントローラーとbuild machinesはBitriseコントロールプレーンに向けてネットワーク呼び出しを開始するため、外部からのインバウンドトラフィックは不要です。
 - <strong>Autoscaling Group</strong>: 常に正常なCloud Controllerインスタンスが1つ実行されている状態を保証します。Instance: Cloud Controllerが実行されるt2.smallインスタンスです。
@@ -110,7 +110,7 @@ Bitriseは、さまざまなユースケース向けにCloudFormationテンプ�
 - <strong>Airgapped security groups</strong>: このテンプレートは、LoadBalancer用とインスタンス用の2つのセキュリティグループを作成します。
 - <strong>Bitrise Agent Logs</strong>: この機能により、BitriseAgentのビルドログをAWSCloudWatchへシームレスに送信できます。CloudFormationを活用して必要なIAMロールとポリシーを自動的に設定し、BitriseAgentが適切な権限を持てるようにします。さらに、CloudWatch内に`bitrise-agent-log`という名前の専用ロググループを作成し、AWS環境内での整理されたログ管理とリアルタイム分析を可能にします。
 
-### エアギャップテンプレートの手動設定
+### エアギャップテンプレートの手動設定 {#manual-configuration-for-the-airgapped-template}
 
 1. 設定済みのサブネットを使用して、次のインターフェイス型VPCエンドポイントを作成します。
 
@@ -124,7 +124,7 @@ Bitriseは、さまざまなユースケース向けにCloudFormationテンプ�
    - `com.amazonaws.${AWS::Region}.secretsmanager`: シークレットへのアクセスに使用します。
 1. 作成したエンドポイントを、インスタンスのセキュリティグループに適用します。
 
-## 新規のVPCにエアギャップCloud Controllerをデプロイする
+## 新規のVPCにエアギャップCloud Controllerをデプロイする {#deploy-airgapped-cloud-controller-to-a-new-vpc}
 
 テンプレートパラメーター:
 
@@ -144,7 +144,7 @@ Bitriseは、さまざまなユースケース向けにCloudFormationテンプ�
 - <strong>CustomBashScript</strong>(任意): インスタンス起動時に実行するカスタムbashスクリプト
 - <strong>UseHostNetwork(必須)</strong>: Dockerコンテナでホストネットワークモードを使用します(--net=host)
 
-### テンプレートによってプロビジョニングされるインフラストラクチャ
+### テンプレートによってプロビジョニングされるインフラストラクチャ {#infrastructure-provisioned-by-the-template-3}
 
 - <strong>Internal Application Load Balancer</strong>: サーバーにトラフィックは発生せず、Cloud Controllerインスタンスに対して定期的なヘルスチェックのみを行います。いずれの場合も、コントローラーとbuild machinesはBitriseコントロールプレーンに向けてネットワーク呼び出しを開始するため、外部からのインバウンドトラフィックは不要です。
 - <strong>Autoscaling Group</strong>: 常に正常なCloud Controllerインスタンスが1つ実行されている状態を保証します。Instance: Cloud Controllerが実行されるt2.smallインスタンスです。
@@ -172,7 +172,7 @@ Bitriseは、さまざまなユースケース向けにCloudFormationテンプ�
   - `com.amazonaws.${AWS::Region}.secretsmanager`: シークレットへのアクセスに使用します。
 - <strong>Bitrise Agent Logs</strong>: この機能により、BitriseAgentのビルドログをAWSCloudWatchへシームレスに送信できます。CloudFormationを活用して必要なIAMロールとポリシーを自動的に設定し、BitriseAgentが適切な権限を持てるようにします。さらに、CloudWatch内に`bitrise-agent-log`という名前の専用ロググループを作成し、AWS環境内での整理されたログ管理とリアルタイム分析を可能にします。
 
-## 必要なAWS権限と接続性
+## 必要なAWS権限と接続性 {#necessary-aws-permissions-and-connectivity}
 
 コントローラーがビルドノードに対して操作を行うには、特定のAWS権限が必要です。必要な権限は最小限の範囲に抑えるよう努めています。信頼性を高めるため、[CloudFormationテンプレートのリポジトリ](https://github.com/bitrise-io/cloud-controller-cloudformation/blob/production/iam/roles.yaml)も公開しています。必要な権限の(最新の)全リストは、リポジトリ内の[こちら](https://github.com/bitrise-io/cloud-controller-cloudformation/blob/production/iam/roles.yaml)をご覧ください。
 

@@ -39,7 +39,7 @@ Pipelineの設定を2024年12月より前から使用している場合、Pipeli
 1. Workflow Aが完了すると、Workflows BとCが同時に開始します。
 1. Workflow Dは、Workflows BとCの両方が正常に完了した場合にのみ開始します。
 
-## Pipelineの作成
+## Pipelineの作成 {#creating-a-pipeline}
 
 <Tabs>
 <TabItem value="workflow-editor" label="Workflow Editor" default>
@@ -124,7 +124,7 @@ D:
 </TabItem>
 </Tabs>
 
-## 設定の制限
+## 設定の制限 {#configuration-restrictions}
 
 - Pipelineに含めることができるWorkflowsは最大200個です。それぞれがルートレベルの`workflows`要素の下に存在するWorkflowである必要があります。
 - [ユーティリティWorkflows](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#utility-workflows)はPipelineに追加できません。ユーティリティWorkflowsを使用したい場合は、通常のWorkflowの一部として含めてください。
@@ -132,7 +132,7 @@ D:
 - 依存関係リストで定義されたWorkflowは、すべて同じPipelineに含まれている必要があります。
 - 設定から生成される依存グラフに、循環やループを含めることはできません。無効なPipelineの設定でビルドを開始することはできません。
 
-## Pipeline内でのWorkflowの条件付き実行
+## Pipeline内でのWorkflowの条件付き実行 {#conditional-workflow-execution-in-a-pipeline}
 
 `run_if`式を使用してWorkflowの実行を制御できます。Workflowを実行するかどうかの条件を設定できます。
 
@@ -182,7 +182,7 @@ Bitrise CLIは実行時に式を評価します。Workflowは、その`run_if`�
 
 スキップされたWorkflowは成功としてカウントされるため、すべてのWorkflowがスキップされたPipelineは正常に完了し、Gitプロバイダーに緑のステータスを報告します。ドキュメントのみの変更など、ビルドをトリガーすべきでないプルリクエストで必須のステータスチェックに合格させるために、スキップされたWorkflowを使用できます。これを確実に設定する方法については、[Passing a required check on documentation-only pull requests](/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#passing-a-required-check-on-documentation-only-pull-requests)をご覧ください。
 
-## Pipeline内で常にWorkflowを実行する
+## Pipeline内で常にWorkflowを実行する {#always-executing-a-workflow-in-a-pipeline}
 
 依存先のWorkflowが失敗した場合でも必ず実行されるように、Workflowをマークできます。
 
@@ -237,7 +237,7 @@ pipelines:
 </TabItem>
 </Tabs>
 
-## Workflowの失敗時にPipelineを中止する
+## Workflowの失敗時にPipelineを中止する {#aborting-the-pipeline-on-workflow-failure}
 
 指定したWorkflowが失敗した際にPipelineをすぐに終了するように設定できます。デフォルトでは、Pipelineは終了しません
 
@@ -269,7 +269,7 @@ pipelines:
 </Tabs>
 
 
-## Pipelineの優先度
+## Pipelineの優先度 {#pipeline-priority}
 
 各Pipelineに優先度を設定できます。優先度の設定は、build queue内でのPipelineビルドの位置を決定します。優先度が高いほど、Pipelineビルドの実行が早くなります。
 
@@ -278,7 +278,7 @@ pipelines:
 build priorityの詳細、および異なるタイプの優先度間の優先順位については、[Build priority](/bitrise-ci/configure-builds/configuring-build-settings/build-priority)をご覧ください。
 
 
-## Pipeline内でWorkflows間のファイルを共有する
+## Pipeline内でWorkflows間のファイルを共有する {#sharing-files-between-workflows-in-a-pipeline}
 
 Pipeline内のWorkflows間でファイルを共有するには、<strong>Deploy to Bitrise.io</strong><GlossTerm baseform="step">Step</GlossTerm>と<strong>Pull Pipeline intermediate files</strong>Stepを使用します。StepはPipelineの中間ファイルをローカルフォルダにダウンロードします。
 
@@ -336,7 +336,7 @@ Pipeline内のWorkflows間でファイルを共有するには、<strong>Deploy 
 
 詳細については、[Step repository](https://www.bitrise.io/integrations/steps/pull-intermediate-files)をご覧ください。
 
-## Workflows間で環境変数を共有する
+## Workflows間で環境変数を共有する {#sharing-env-vars-between-workflows}
 
 [Share Pipeline variables](https://github.com/bitrise-steplib/bitrise-step-share-pipeline-variable)Stepを使用して、Workflowの環境変数を再利用し、以降のWorkflowsで再利用できます。
 
@@ -363,13 +363,13 @@ Pipeline内のWorkflows間でファイルを共有するには、<strong>Deploy 
    :::
 
 
-## 同じWorkflowのバリエーションの実行
+## 同じWorkflowのバリエーションの実行 {#running-variations-of-the-same-workflow}
 
 並列実行(Parallelism)を使うと、1つの指示でPipeline内の単一のWorkflowの実行を多数のランナーに分割できます。これはテストシャーディングに特に有用です。各シャードごとに定型コードを指定する必要なく、1つのテストWorkflowを複数回再利用できます。実行時、Bitriseは自動的に並列のWorkflowsのセットを作成し、シャード番号とシャードの合計数をenvironment variablesとして提供します。
 
 並列設定を使用して、同じコードベースから複数のホワイトラベルアプリをビルド・テストしたり、同じCIジョブを複数回実行する必要があるその他の目的を達成したりすることもできます。
 
-### 並列実行の概要
+### 並列実行の概要 {#parallelism-overview}
 
 :::important[Graph pipelines only]
 
@@ -384,7 +384,7 @@ Pipeline内のWorkflows間でファイルを共有するには、<strong>Deploy 
 - $BITRISE_IO_PARALLEL_INDEX: Workflowの各コピーに対するゼロベースのインデックス。
 - $BITRISE_IO_PARALLEL_TOTAL: コピーの総数。
 
-### 並列実行の設定
+### 並列実行の設定 {#configuring-parallelism}
 
 設定するには、以下の手順に従います。
 
@@ -437,11 +437,11 @@ Pipeline内のWorkflows間でファイルを共有するには、<strong>Deploy 
 </TabItem>
 </Tabs>
 
-## Pipelinesでサポートされるユースケース
+## Pipelinesでサポートされるユースケース {#supported-use-cases-for-pipelines}
 
 一般的なiOSとAndroidのユースケースに基づいたPipelineのレシピを用意しています。これらには、ユーザーが実行する必要がある最も頻繁なタスクの一部が含まれています。これらは[GitHub repository](https://github.com/bitrise-io/workflow-recipes/tree/main/recipes)でご確認いただけます。
 
-## Pipelineのトラブルシューティング
+## Pipelineのトラブルシューティング {#troubleshooting-a-pipeline}
 
 Pipelineビルドが失敗した場合、主に2つの選択肢があります。
 
