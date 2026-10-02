@@ -1,0 +1,17 @@
+### アクティベーションは独立したステップとして実行する
+
+CLIは、`$GITHUB_ENV`を通じて設定を公開します。GitHub Actions は、この設定をジョブの<strong>後続の</strong>ステップに適用します。Build Cacheのアクティベーションとビルドの実行を同じ`run:`ブロック内で行うと、ビルドは設定を認識しません。
+
+アクティベーションは、ビルドを実行するステップより前の独立したステップで行ってください。
+
+### Workflows：フォークからトリガーされた実行にはシークレットがありません
+
+GitHubは、フォークからトリガーされたワークフローの実行に、リポジトリや Organization のシークレットを渡しません。そのような実行では`BITRISE_BUILD_CACHE_AUTH_TOKEN`が空になるため、CLIは認証できず、ビルドはキャッシュなしで実行されます。
+
+### 依存関係のキャッシュとBuild Cacheを分けて考える
+
+`actions/cache`は<strong>依存関係のキャッシュ</strong>を行います。GradleやCocoaPodsのキャッシュなど、ビルドがダウンロードするパッケージを保存し、次回の実行時に復元することで、再度取得する必要をなくします。Bitrise CIでは、キーベースのキャッシュStepsが同じ役割を果たします。詳細については、[Dependencies and caching overview](/bitrise-ci/dependencies-and-caching/dependencies-and-caching-overview)を参照してください。
+
+これは、ビルド自体の<strong>出力</strong>（コンパイル済みクラス、コンパイル済みソース、タスクの結果）を再利用するBitriseBuild Cacheとは別の役割です。この2つは組み合わせて効果を発揮するため、引き続き依存関係をキャッシュしてください。
+
+やってはいけないのは、ビルドの出力をdependency cacheに含めることです。たとえば、`actions/cache`がGradleのローカルのbuild cacheディレクトリ（`~/.gradle/caches/build-cache-1`）を復元すると、復元されたローカルコピーが、BitriseBuild Cacheが提供するはずの結果を返してしまい、リモートキャッシュのヒット率がほぼゼロまで低下します。キャッシュするのは依存関係のディレクトリであり、ビルド出力のディレクトリではありません。

@@ -1,0 +1,35 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## React Native アプリのテスト
+
+React Native の組み込みテスト方法である <strong>jest</strong> を使用して、ユニットテストを実行できます。
+
+1. Bitrise にアクセスして Log in、左側の <strong>Bitrise CI</strong> を選択し、プロジェクトを選択します。
+1. メインページの <strong><GlossTerm baseform="workflow">Workflows</GlossTerm></strong> ボタンをクリックします。
+1. <strong>run npm command</strong> <GlossTerm baseform="step">Step</GlossTerm> を Workflow に追加します。
+1. <strong>npm command with arguments to run</strong> 入力フィールドに `test` と入力します。
+
+   ![Getting_started_with_React_Native_apps.png](/img/_paligo/uuid-f5f86a6c-d609-1970-a451-0de6d5b4edb3.png)
+
+React Native のテストの詳細なガイドについては、[Testing React Native apps](/bitrise-ci/testing/testing-react-native-apps/running-detox-tests-on-bitrise) を参照してください。
+
+### React Native のテスト結果の表示
+
+Bitrise では、テスト結果を 1 か所で確認して分析できます。詳しくは [Deploying and viewing test results](/bitrise-ci/testing/deploying-and-viewing-test-results) を参照してください。
+
+デフォルトでは、<strong>Run npm command</strong> Step で実行したテストはテストレポートに表示されません。ただし、結果をエクスポートできます。基本的な手順は次のとおりです。
+
+1. ビルド中に `junit.xml` ファイルを生成します。
+
+   たとえば、[jest-junit](https://www.npmjs.com/package/jest-junit) を使用してレポートを準備できます。
+1. <strong>Export test results to Test Reports</strong> Step を Workflow に追加します。
+
+   ![Managing_an_app_s_bitrise.png](/img/_paligo/uuid-fd13332e-571f-e706-88ed-a20a29db7aea.png)
+1. <strong>Path where custom test results reside</strong> 入力に、`junit.xml` ファイルとその他のテスト結果が保存されているフォルダーを追加します。
+1. <strong>Test result search pattern</strong> 入力に `*.xml` を設定します。
+1. <strong>The name of the test</strong> 入力に、実行を示す the name of the test を設定します。
+
+   テスト結果は、この名前で表示されます。
+1. Workflow に <strong>Deploy to Bitrise.io</strong> Step が含まれていることを確認します。

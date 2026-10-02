@@ -1,0 +1,88 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+GitHub Actions で Bitrise Build Cache CLI を認証する方法は3つあります。最適な方法は、ジョブの実行場所によって異なります。
+
+<Tabs>
+<TabItem value="build-hub" label="Build Hub runners" default>
+
+[Bitrise Build Hub](/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview) ランナーでは、設定は不要です。マシンはすでに Bitrise Workspace に接続されているため、CLI がマシンから認証情報を取得します。トークンを作成する必要はなく、ワークフローにシークレット、変数、環境変数を追加する必要もありません。
+
+マシンプールは、使用する Build Cache と同じ Workspace に属している必要があります。
+
+:::note[最小 CLI バージョン]
+
+Build Hub ランナーでの自動認証には、Bitrise Build Cache CLI v3.10.0 以降が必要です。このページのインストールコマンドは常に最新リリースを取得するため、CLI を古いバージョンに固定している場合にのみ関係します。古い CLI はマシンの認証情報を認識できず、トークンがないというエラーで停止します。
+
+:::
+
+CLI が Bitrise に接続してトークンを取得できない場合は、このページの他の方法にフォールバックします。`BITRISE_BUILD_CACHE_AUTH_TOKEN` と `BITRISE_BUILD_CACHE_WORKSPACE_ID` も設定しているジョブは引き続き動作し、それらの値がマシン自体の認証情報よりも優先されます。
+
+</TabItem>
+<TabItem value="workspace-api-token" label="Workspace API token">
+
+GitHub ホストのランナーでは、[workspace API トークン](/bitrise-platform/workspaces/workspace-api-token) の使用を推奨します。このトークンは個人ではなく workspace に属するため、担当者のロールが変わったり退職したりしても引き続き使用できます。
+
+トークンには、少なくとも <strong>viewer</strong> workspace ロールを付与してください。これは Build Cache にアクセスできる最も低いロールです。
+
+ジョブには2つの値が必要です。
+
+- トークン。機密情報のため、GitHub のシークレットに保存します。
+- [workspace スラッグ](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs)。機密情報ではないため、GitHub の変数として設定できます。どちらも単一のリポジトリに追加することも、組織に追加してすべてのリポジトリで使用できるようにすることもできます。
+
+1. GitHub で、追加先のリポジトリまたは組織を開き、<strong>Settings</strong> を選択します。
+1. サイドバーの <strong>Security</strong> で、<strong>Secrets and variables</strong>、<strong>Actions</strong> の順に選択します。
+1. <strong>Secrets</strong> タブで <strong>New repository secret</strong> をクリックします。組織の設定を開いている場合は <strong>New organization secret</strong> をクリックします。
+1. 名前に `BITRISE_BUILD_CACHE_AUTH_TOKEN` を設定し、値に Workspace API トークンを貼り付けて、<strong>Add secret</strong> をクリックします。
+
+   組織のシークレットでは、使用を許可するリポジトリも選択します。
+1. <strong>Variable</strong> タブに切り替えて <strong>New repository variable</strong> をクリックします。組織の場合は <strong>New organization variable</strong> をクリックします。
+1. 名前に `BITRISE_BUILD_CACHE_WORKSPACE_ID` を設定し、値に Bitrise Workspace のスラッグを設定して、<strong>Add variable</strong> をクリックします。
+
+   スラッグは、Bitrise Workspace の <strong>Workspace settings</strong> ページの <strong>General settings</strong> で確認できます。
+1. GitHub Actions のワークフローで、両方を environment variables としてジョブに渡します。
+
+   ```yaml
+   jobs:
+     build:
+       env:
+         BITRISE_BUILD_CACHE_AUTH_TOKEN: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+         BITRISE_BUILD_CACHE_WORKSPACE_ID: ${{ vars.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
+   ```
+
+</TabItem>
+<TabItem value="personal-access-token" label="Personal access token">
+
+:::caution[Personal Access Token はユーザーのロールを継承します]
+
+[Personal Access Token](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token) は、作成したユーザーと同じロールを持ちます。そのユーザーのロールが変わるとアクセス権も変わり、ユーザーが Workspace を離れると使用できなくなります。共有の CI 構成では、代わりに Workspace API トークンを使用してください。
+
+:::
+
+ジョブには2つの値が必要です。
+
+- トークン。機密情報のため、GitHub のシークレットに保存します。
+- [workspace スラッグ](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs)。機密情報ではないため、GitHub の変数として設定できます。どちらも単一のリポジトリに追加することも、組織に追加してすべてのリポジトリで使用できるようにすることもできます。
+
+1. GitHub で、追加先のリポジトリまたは組織を開き、<strong>Settings</strong> を選択します。
+1. サイドバーの <strong>Security</strong> で、<strong>Secrets and variables</strong>、<strong>Actions</strong> の順に選択します。
+1. <strong>Secrets</strong> タブで <strong>New repository secret</strong> をクリックします。組織の設定を開いている場合は <strong>New organization secret</strong> をクリックします。
+1. 名前に `BITRISE_BUILD_CACHE_AUTH_TOKEN` を設定し、値に Personal Access Token を貼り付けて、<strong>Add secret</strong> をクリックします。
+
+   組織のシークレットでは、使用を許可するリポジトリも選択します。
+1. <strong>Variable</strong> タブに切り替えて <strong>New repository variable</strong> をクリックします。組織の場合は <strong>New organization variable</strong> をクリックします。
+1. 名前に `BITRISE_BUILD_CACHE_WORKSPACE_ID` を設定し、値に Bitrise Workspace のスラッグを設定して、<strong>Add variable</strong> をクリックします。
+
+   スラッグは、Bitrise Workspace の <strong>Workspace settings</strong> ページの <strong>General settings</strong> で確認できます。
+1. GitHub Actions のワークフローで、両方を environment variables としてジョブに渡します。
+
+   ```yaml
+   jobs:
+     build:
+       env:
+         BITRISE_BUILD_CACHE_AUTH_TOKEN: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+         BITRISE_BUILD_CACHE_WORKSPACE_ID: ${{ vars.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
+   ```
+
+</TabItem>
+</Tabs>

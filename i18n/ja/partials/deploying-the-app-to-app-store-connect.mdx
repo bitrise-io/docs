@@ -1,0 +1,32 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## アプリをApp Store Connectにデプロイする
+
+アプリをApp Store Connectにプッシュするたびに、ビルド番号とバージョン番号の組み合わせが一意である必要があります。デプロイする前に、[どちらか一方、または両方をインクリメントしてください](/bitrise-ci/run-and-analyze-builds/build-numbering-and-app-versioning)。
+
+1. Apple Developer アカウントへの[接続が正常に動作していること](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)を確認してください。
+1. 自分のマシンで IPA ファイルを少なくとも一度生成してください。
+1. 必要な code signing ファイルをすべて Bitrise に[アップロードしてください](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)。
+
+   アプリをApp Store Connectにデプロイするには、Distribution タイプの証明書と App Store タイプのプロビジョニングプロファイルが必要です。
+1. <strong>Xcode Archive & Export for iOS</strong> <GlossTerm baseform="step">Step</GlossTerm> が <GlossTerm baseform="workflow">Workflow</GlossTerm> に含まれていることを確認してください。
+1. <strong>Automatic code signing</strong> 入力に、code signingに使用するApple service connectionを設定してください。選択できるオプションは次のとおりです。
+
+   - `off`: automatic code signingを使用しない場合、または Step inputs を Apple サービス認証にのみ使用する場合に指定します。
+   - `api-key`: [API キー認証](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)を使用する場合に指定します。
+   - `apple-id`: [Apple ID 認証](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)を使用する場合に指定します。
+1. Stepの <strong>Distribution method</strong> 入力を `app-store` に設定してください。
+
+   Stepは、エクスポートした .ipa ファイルのパスを $BITRISE_IPA_PATH 環境変数に保存します。
+1. <strong>Deploy to App Store Connect</strong> Stepを Workflowに追加してください。
+1. 必須の入力を入力してください。
+
+   - アプリの Apple ID または Bundle ID のどちらかが必須の入力です。いずれか一方を指定する必要があります。
+   - <strong>Submit for Review</strong> を `yes` に設定すると、Stepは App Store Connect での提出物の処理が完了するまで待機し、その後、指定したバージョンのアプリを審査に提出します。
+   - <strong>Skip App Version Update</strong> 入力のdefault valueは `No` です。アプリのバージョン番号を別の方法でインクリメントした場合にのみ変更してください。
+   - 複数のチームにリンクされた App Store Connect アカウントを使用している場合は、Team ID または Team 名のいずれかを指定してください。
+1. ビルドを開始してください。
+
+すべて問題なく完了すると、アプリは App Store に提出され、Testflight または App Store 経由で配布できます。

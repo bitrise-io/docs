@@ -1,0 +1,85 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Google Playへのデプロイ
+
+Google Playにデプロイするには、[署名済みの APK または AAB ファイル](/bitrise-ci/code-signing/android-code-signing/android-code-signing-using-the-android-sign-step)と、<strong>[Google Play Deploy](https://www.bitrise.io/integrations/steps/google-play-deploy)</strong> <GlossTerm baseform="Step">Step</GlossTerm>が必要です。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. サービスアカウントの JSON キーを <strong>Files</strong> セクションに[アップロードしてください](/bitrise-ci/run-and-analyze-builds/managing-build-files/uploading-files-for-your-builds)。
+1. <strong>Files</strong> セクションで、サービスアカウントファイルの <strong>Download URL</strong> をコピーしてください。
+
+   例: `BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL`
+1. <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm> を開き、<strong><GlossTerm baseform="secret">Secrets</GlossTerm></strong> を選択してください。
+1. コピーしたダウンロード URL を値として、Secret を作成してください。
+
+   JSON キーファイルを Bitrise にアップロードした場合、ダウンロード URL は環境変数であるため、<strong>Replace variables in inputs</strong> チェックボックスをオンにしてください。
+
+   :::note[Direct link]
+
+   キーストアファイルを Bitrise にアップロードせず、ダイレクトリンクを使用する場合は、<strong>Replace the variables in inputs</strong> オプションをオンにする必要はありません。
+
+   :::
+1. <strong>Google Play Deploy</strong> Stepを <GlossTerm baseform="workflow">Workflow</GlossTerm> に追加してください。
+1. <strong>Service Account JSON key file path</strong> 入力に、作成した Secret を貼り付けてください。
+1. <strong>Package name</strong> 入力に、アプリの package name を入力してください。
+1. <strong>Track</strong> 入力に、APK のデプロイ先のトラックを入力してください(例: alpha/beta/rollout/production、または設定したカスタムトラック)。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. サービスアカウントの JSON キーを <strong>Files</strong> セクションに[アップロードしてください](/bitrise-ci/run-and-analyze-builds/managing-build-files/uploading-files-for-your-builds)。
+
+   :::note[Uploading the service account JSON key file]
+
+   サービスアカウントの JSON キーは Bitrise にアップロードすることを推奨しますが、必須ではありません。別の場所に保存し、そのダイレクトリンクを指定することもできます。
+
+   :::
+1. アプリの <GlossTerm baseform="configuration yaml">Configuration YAML</GlossTerm> ファイルを開き、`google-play-deploy` Stepを追加してください。
+
+   ```yaml
+   deploy-workflow:
+     steps: 
+     - google-play-deploy: 
+         inputs:
+   ```
+1. `service_account_json_key_path` 入力に、サービスアカウントの JSON キーファイルのパスを指定する必要があります。
+
+   そのパスの[Secret を作成](/bitrise-ci/configure-builds/secrets)し、ここで参照してください。
+
+   ```yaml
+   deploy-workflow:
+     steps: 
+     - google-play-deploy: 
+         inputs:   
+         - service_account_json_key_path: "$BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL"
+   ```
+1. `package` 入力に、アプリの[package name](https://support.google.com/admob/answer/9972781?hl=en#:~:text=The%20package%20name%20of%20an,supported%20third%2Dparty%20Android%20stores.)を入力してください。
+
+   ```yaml
+   deploy-workflow:
+     steps: 
+     - google-play-deploy: 
+         inputs:   
+         - service_account_json_key_path: "$BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL"
+         - package_name: myApp
+   ```
+1. `track` 入力に、アプリバイナリのデプロイ先のトラックを入力してください(例: alpha/beta/rollout/production、または設定したカスタムトラック)。
+
+   ```yaml
+   deploy-workflow:
+     steps: 
+     - google-play-deploy: 
+         inputs:   
+         - service_account_json_key_path: "$BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL"
+         - package_name: myApp
+         - track: alpha
+   ```
+
+</TabItem>
+</Tabs>
+
+以上で完了です。ビルドを開始またはスケジュールし、URLを外部のテスターと共有するか、任意のアプリストアでアプリを配布してください。
