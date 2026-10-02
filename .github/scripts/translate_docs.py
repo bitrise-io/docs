@@ -36,6 +36,9 @@ Design:
      writing the page — a bad translation can never be silently committed.
      This also gives protection a measurable guarantee: a token that
      survives verbatim IS the term surviving verbatim.
+  3b. PIN HEADING IDS — each translated heading is given its English heading's
+     anchor as an explicit {#id} (scripts/heading_ids.py), so links to
+     #anchors keep working after translation.
   4. WRITE — output goes to the Japanese i18n path. Front matter is split
      off and never sent to the model at all, so there's no risk of it
      touching the slug — only the body is translated.
@@ -68,6 +71,7 @@ import yaml
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(REPO_ROOT, "scripts"))
 
+from heading_ids import add_english_heading_ids  # noqa: E402
 from nt_terms import TermMatcher  # noqa: E402
 
 TOKEN_RE = re.compile(r"⟦p\d+⟧")
@@ -422,6 +426,14 @@ def main():
                   file=sys.stderr)
             failures.append(src)
             continue
+        # Translated headings get new auto-generated anchors, which breaks
+        # every #anchor link written against the English heading. Pin each
+        # one to its English id. A page whose headings can't be paired is
+        # written unchanged and reported, never guessed at.
+        translated, heading_note = add_english_heading_ids(body, translated)
+        if heading_note:
+            print(f"  warning: heading ids not added to {src}: {heading_note}",
+                  file=sys.stderr)
         dst = dest_path(src, a.src_root, a.dest_root)
         os.makedirs(os.path.dirname(dst) or ".", exist_ok=True)
         open(dst, "w", encoding="utf-8").write(frontmatter + translated)
