@@ -189,5 +189,80 @@ class EndToEndTests(unittest.TestCase):
             self.assertFalse(os.path.exists(gone))
 
 
+HUB = """---
+title: "Hub"
+description: "About the hub."
+sidebar_position: 2
+slug: /hub
+---
+
+import ProductOverview from '@site/src/components/ProductOverview';
+
+<ProductOverview
+  title="Hub"
+  columns={[
+    {
+      label: 'Getting started',
+      href: '/hub/start',
+    },
+  ]}
+/>
+
+Intro text.
+"""
+
+
+def fake_translate_strings(client, model, sysp, masked):
+    """Translate %%marker%% lines and prose; leave tokens alone."""
+    out = re.sub(r"^(%%[^%]+%% )(.*)$", r"\1JA:\2", masked, flags=re.M)
+    return re.sub(r"^Intro text\.$", "JA:Intro text.", out, flags=re.M)
+
+
+class FrontmatterAndHubTests(EndToEndTests):
+    def test_frontmatter_and_jsx_props_are_translated_and_syntax_survives(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(f"{tmp}/docs")
+            open(f"{tmp}/docs/hub.mdx", "w", encoding="utf-8").write(HUB)
+            with mock.patch.object(T, "translate_verified", fake_translate_strings):
+                argv = ["translate_docs.py", "--glossary", GLOSSARY,
+                        "--src-root", f"{tmp}/docs", "--dest-root", f"{tmp}/out/docs",
+                        "--partials-src-root", f"{tmp}/src/partials",
+                        "--partials-dest-root", f"{tmp}/out/partials", f"{tmp}/docs/hub.mdx"]
+                with mock.patch.object(sys, "argv", argv), \
+                     mock.patch.dict(sys.modules, {"anthropic": types.SimpleNamespace(Anthropic=lambda: object())}), \
+                     mock.patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test"}):
+                    T.main()
+            out = open(f"{tmp}/out/docs/hub.mdx", encoding="utf-8").read()
+            self.assertIn('title: "JA:Hub"', out)
+            self.assertIn('description: "JA:About the hub."', out)
+            self.assertIn("sidebar_position: 2\nslug: /hub\n", out)
+            self.assertIn('title="JA:Hub"', out)
+            self.assertIn("label: 'JA:Getting started',", out)
+            self.assertIn("href: '/hub/start',", out)
+            self.assertNotIn("@@JS", out)
+            self.assertNotIn("%%", out)
+            self.assertIn("JA:Intro text.", out)
+
+    def test_whitespace_only_change_is_not_retranslated(self):
+        calls = []
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(f"{tmp}/docs")
+            os.makedirs(f"{tmp}/out/docs")
+            open(f"{tmp}/out/docs/page.mdx", "w").write("existing")
+            open(f"{tmp}/docs/page.mdx", "w", encoding="utf-8").write(PAGE + "\n\n")
+            argv = ["translate_docs.py", "--glossary", GLOSSARY, "--base-ref", "BASE",
+                    "--src-root", f"{tmp}/docs", "--dest-root", f"{tmp}/out/docs",
+                    "--partials-src-root", f"{tmp}/src/partials",
+                    "--partials-dest-root", f"{tmp}/out/partials", f"{tmp}/docs/page.mdx"]
+            with mock.patch.object(sys, "argv", argv), \
+                 mock.patch.dict(sys.modules, {"anthropic": types.SimpleNamespace(Anthropic=lambda: object())}), \
+                 mock.patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test"}), \
+                 mock.patch.object(T, "english_really_changed", lambda *_: False), \
+                 mock.patch.object(T, "translate_verified", lambda *a: calls.append(1)):
+                T.main()
+            self.assertEqual(calls, [])
+            self.assertEqual(open(f"{tmp}/out/docs/page.mdx").read(), "existing")
+
+
 if __name__ == "__main__":
     unittest.main()

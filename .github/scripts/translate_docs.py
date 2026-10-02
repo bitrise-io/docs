@@ -80,6 +80,7 @@ sys.path.insert(0, os.path.join(REPO_ROOT, "scripts"))
 
 from heading_ids import add_english_heading_ids  # noqa: E402
 from nt_terms import TermMatcher  # noqa: E402
+import translatable_strings as ts  # noqa: E402
 
 TOKEN_RE = re.compile(r"⟦p\d+⟧")
 MAX_ATTEMPTS = 3
@@ -241,6 +242,11 @@ def system_prompt(preferred):
         "Japanese doesn't inflect nouns for number). An English inflectional "
         "suffix left dangling right after a token (⟦p3⟧s, ⟦p3⟧'s) is English "
         "grammar, not content — drop it or express it in Japanese instead.",
+        "3a. Lines that start with %%name%% (for example `%%fm:title%% Selective builds`) "
+        "are separate short strings to translate (page title, description, UI labels). "
+        "Translate only the text after the marker, keep the %%name%% marker and put each "
+        "on its own line, in the same order. Keep a title short and noun-like, with no "
+        "trailing period.",
         "3. Preserve all Markdown/MDX structure: headings, lists, bold/italic, "
         "links, table structure, admonition (:::type[...]) syntax.",
     ]
@@ -332,6 +338,18 @@ def point_imports_at_translated_partials(text, translated_dir, import_prefix):
     return PARTIAL_IMPORT_RE.sub(sub, text)
 
 
+def english_really_changed(base_ref, src, new_raw):
+    """False only when the page at `base_ref` and now differ in whitespace alone.
+    Anything unknown (new file, git failure) counts as changed."""
+    import subprocess
+    try:
+        old = subprocess.run(["git", "show", f"{base_ref}:{src}"], capture_output=True,
+                             text=True, check=True).stdout
+    except (subprocess.CalledProcessError, OSError):
+        return True
+    return ts.normalized(old) != ts.normalized(new_raw)
+
+
 def is_relevant(path):
     return path.endswith((".md", ".mdx")) and "/api-reference/" not in path
 
@@ -391,6 +409,9 @@ def main():
     ap.add_argument("--partials-dest-root", default="i18n/ja/partials")
     ap.add_argument("--partials-import-prefix", default="@site/i18n/ja/partials",
                     help="import path JA pages use for a translated partial")
+    ap.add_argument("--base-ref", default=None,
+                    help="git ref the changes are measured against; a page whose English text only "
+                         "changed in whitespace there is not re-translated")
     ap.add_argument("files", nargs="*")
     a = ap.parse_args()
 
@@ -453,24 +474,46 @@ def main():
     partials_prefix = a.partials_src_root.rstrip("/") + "/"
     files.sort(key=lambda p: not p.startswith(partials_prefix))
 
-    failures = []
+    # Cost guard: say what this run will spend before spending it, and leave a
+    # page alone when its English only changed in whitespace (sync scripts that
+    # rewrite files cosmetically would otherwise re-translate everything).
+    todo = []
     for src in files:
         if not os.path.isfile(src):
             print(f"  skip (missing): {src}")
             continue
         raw = open(src, encoding="utf-8").read()
+        if a.base_ref and os.path.isfile(route(src, a)) and not english_really_changed(a.base_ref, src, raw):
+            print(f"  skip (English only changed in whitespace): {src}")
+            continue
+        todo.append((src, raw))
+    print(f"Plan: translating {len(todo)} file(s), {sum(len(r) for _, r in todo):,} characters of English.")
+
+    failures = []
+    for src, raw in todo:
         frontmatter, body = split_frontmatter(raw)
+        # Frontmatter values and JSX string props are readable text the masker
+        # would otherwise protect; send them as %%key%% lines instead.
+        fm_values = ts.extract_frontmatter(frontmatter)
+        body, jsx_strings = ts.extract_jsx_strings(body)
         store = {}
         masked, n = mask(body, patterns, store)
         masked, n = mask_terms(masked, matcher, store, n)
+        block = ts.build_block(fm_values, jsx_strings)
+        if block:
+            block, n = mask(block, patterns, store, n)
+            block, n = mask_terms(block, matcher, store, n)
+            masked = block + "\n\n" + masked
         translated = translate_verified(client, model, sysp, masked)
         if translated is None:
             print(f"  FAILED verification after {MAX_ATTEMPTS} attempts, not writing: {src}",
                   file=sys.stderr)
             failures.append(src)
             continue
-        translated = promote_bold_to_strong(translated)  # pre-unmask: code is still tokens
+        found, translated = ts.parse_block(translated)
+        translated = promote_bold_to_strong(translated.lstrip("\n"))  # pre-unmask: code is still tokens
         translated = unmask(translated, store)
+        found = {k: unmask(v, store) for k, v in found.items()}
         if TOKEN_RE.search(translated):
             # Can't happen if verify_tokens passed and the store is sound —
             # belt and braces against a placeholder leaking into the page.
@@ -488,6 +531,9 @@ def main():
                   file=sys.stderr)
         translated = point_imports_at_translated_partials(
             translated, a.partials_dest_root, a.partials_import_prefix)
+        fm_tr, js_tr = ts.split_block(found)
+        translated = ts.apply_jsx_strings(translated, jsx_strings, js_tr)
+        frontmatter = ts.apply_frontmatter(frontmatter, fm_tr)
         dst = route(src, a)
         os.makedirs(os.path.dirname(dst) or ".", exist_ok=True)
         open(dst, "w", encoding="utf-8").write(frontmatter + translated)
