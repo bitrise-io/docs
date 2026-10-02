@@ -43,6 +43,7 @@ on:
       - 'docs/**/*.md'          # <-- adjust to your English docs location
       - 'docs/**/*.mdx'
       - 'src/partials/**/*.mdx' # reusable partials are translated too
+      - 'docs/**/_category_.json' # sidebar labels feed translate_ui_strings.py
 
 # A fast-follow push to the same PR (a very ordinary thing to do — push,
 # notice something, push again) starts a new run while the previous one may
@@ -115,12 +116,28 @@ jobs:
             --partials-dest-root i18n/ja/partials \
             --base-ref "${{ github.event.pull_request.base.sha }}"
 
+      # Sidebar labels, navbar items and other UI strings live in JSON, not in
+      # pages. write-translations adds the new English keys (keeping existing
+      # Japanese values); translate_ui_strings.py then translates only those.
+      - uses: actions/setup-node@v4
+        if: steps.changed.outputs.count != '0'
+        with: { node-version: '20', cache: npm }
+
+      - name: Translate new sidebar labels and UI strings
+        if: steps.changed.outputs.count != '0'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          npm ci
+          npx docusaurus write-translations --locale ja
+          python3 scripts/translate_ui_strings.py
+
       - name: Commit Japanese translations
         if: steps.changed.outputs.count != '0'
         run: |
           git config user.name  "bitrise-docs-bot"
           git config user.email "docs-bot@bitrise.io"
-          git add i18n/ja/ || true
+          git add i18n/ja/ localization/ja-ui-strings.yaml || true
           if ! git diff --cached --quiet; then
             git commit -m "docs(ja): auto-translate changed pages [skip ci]"
             git push
