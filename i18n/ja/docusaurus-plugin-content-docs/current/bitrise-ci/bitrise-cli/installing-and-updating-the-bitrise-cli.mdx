@@ -1,7 +1,7 @@
 ---
 title: "Installing and updating the Bitrise CLI"
 description: "The Bitrise CLI is distributed as a single binary for macOS and Linux. You can download it using curl or Homebrew."
-sidebar_position: 1
+sidebar_position: 2
 slug: /bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli
 ---
 
@@ -9,65 +9,55 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 
-Bitrise CLIはBitriseのオープンソースランナーです。CLIは[bitrise.io](https://www.bitrise.io)上でビルドを実行するために使用され、ご自身のコンピューターにインストールしてローカルでビルドを実行することもできます。
-
-Bitrise CLIはmacOSとLinux向けに単一のバイナリとして配布されています。curlまたはHomebrewを使ってダウンロードできます。
+Bitrise CLI は、macOS と Linux 向けの単一のバイナリとして配布されています。curl または Homebrew でダウンロードできます。
 
 
-## curlでBitrise CLIをインストールする {#installing-the-bitrise-cli-with-curl}
+## curl を使用した Bitrise CLI のインストール {#installing-the-bitrise-cli-with-curl}
 
-1. bashシェルで次のコマンドを実行します。
+1. bash シェルで次のコマンドを実行します。
 
    ```bash
    curl -fL https://github.com/bitrise-io/bitrise/releases/latest/download/bitrise-$(uname -s)-$(uname -m) > /usr/local/bin/bitrise
    ```
 
-   Bitrise CLIの最新リリースは[releases](https://github.com/bitrise-io/bitrise/releases)ページで確認できます。
+   Bitrise CLI の最新リリースは、[releases](https://github.com/bitrise-io/bitrise/releases) ページで確認できます。
 1. ダウンロードしたバイナリを実行可能にします。
 
    ```bash
    chmod +x /usr/local/bin/bitrise
    ```
-1. `bitrise local setup`を実行します。
+1. `bitrise local setup` を実行します。
 
-   これにより、Bitriseの実行に必要なものがすべてインストールされ、利用可能かどうかを確認します。この手順を省略した場合でも、`bitrise local run`を初めて呼び出した時点でCLIがセットアップを実行します。
+   これにより、Bitrise の実行に必要なものがすべてインストールされ、利用可能であるかが確認されます。この手順を省略しても、`bitrise local run` を初めて呼び出す際に CLI がセットアップを実行します。
 
 
-## HomebrewでBitrise CLIをインストールする {#installing-the-bitrise-cli-with-homebrew}
+## Homebrew を使用した Bitrise CLI のインストール {#installing-the-bitrise-cli-with-homebrew}
 
-MacにHomebrewパッケージマネージャーがインストールされている場合は、それを使ってBitrise CLIをインストールできます。
+Mac に Homebrew パッケージマネージャーがインストールされている場合は、それを使用して Bitrise CLI をインストールできます。
 
-1. Macで`Terminal`アプリを開き、次を実行します。
+1. Mac で `Terminal` アプリを開き、次のコマンドを実行します。
 
    ```bash
    brew update && brew install bitrise
    ```
-1. Bitrise CLIの初回セットアップを実行します。
+1. Bitrise CLI の初回セットアップを実行します。
 
    ```bash
    bitrise local setup
    ```
 
-   これにより、Bitriseの実行に必要なものがすべてインストールされ、利用可能かどうかを確認します。この手順を省略した場合でも、`bitrise local run`を初めて呼び出した時点でCLIがセットアップを実行します。
+   これにより、Bitrise の実行に必要なものがすべてインストールされ、利用可能であるかが確認されます。この手順を省略しても、`bitrise local run` を初めて呼び出す際に CLI がセットアップを実行します。
 
 
-## Bitrise CLIを更新する {#updating-the-bitrise-cli}
+## Bitrise CLI の更新 {#updating-the-bitrise-cli}
 
-Bitrise CLIの更新は簡単で、Homebrewでインストールした場合でもGitHubのリリースからインストールした場合でも変わりません。
+Bitrise CLI の更新は簡単です。Homebrew でインストールした場合でも、GitHub のリリースからインストールした場合でも、手順は同じです。
 
-`bitrise update`を実行するだけです。それだけです。CLIは1日に1回更新を確認し、新しいバージョンが公開されるとすぐに通知します。
+`bitrise update` を実行するだけです。CLI は毎日 1 回更新を確認し、新しいバージョンが公開されるとすぐに通知します。
 
 
-## 設定ファイルの場所 {#configuration-file-locations}
+## Bitrise CLI の設定 {#configuring-the-bitrise-cli}
 
-CLIは、優先度の高い順に最大3つのファイルから設定を読み込みます。
+CLI は設定を `~/.config/bitrise/cli/config.yml` に保存します。`~/.config` (設定している場合は `$XDG_CONFIG_HOME`) が書き込み可能であることを確認してください。書き込みできない場合、`bitrise local setup` やプラグインのコマンドが失敗することがあります。
 
-- `~/.bitrise/config.json` — レガシーな設定ファイルです。以前のバージョンのCLIが書き込んでいたもので、存在する場合はこちらが優先されます。新しい設定はここには記述しません。
-- `.bitrise-cli.yml` — ディレクトリごとの設定ファイルです。CLIは、現在のディレクトリとその親ディレクトリでこのファイルを探します。
-- `~/.config/bitrise/cli/config.yml` — グローバルな設定ファイルです。`~/.config`以外の場所から読み込むには、`$XDG_CONFIG_HOME`を設定します。
-
-いずれのファイルにも値が設定されていない場合、CLIは組み込みのデフォルト値を使用します。
-
-`api_base_url`、`web_base_url`、`rde_api_base_url`の設定は例外です。これらはグローバル設定ファイルでのみ設定でき、さらに`BITRISE_API_BASE_URL`、`BITRISE_WEB_BASE_URL`、`BITRISE_RDE_API_BASE_URL`のenvironment variablesはそれさえも上書きします。この3つはいずれも、認証情報の送信先となるホストをCLIに指定するものであり、`.bitrise-cli.yml`は事前の確認なしに任意の親ディレクトリから読み込まれます。そのため、クローンしただけのリポジトリであっても、ログイン先を制御外のサーバーにリダイレクトされてしまう可能性があります。
-
-`~/.config`(`$XDG_CONFIG_HOME`を設定している場合はそちら)に書き込み権限があることを確認してください。書き込みできない場合、`bitrise local setup`やプラグインのコマンドが失敗することがあります。
+設定ファイルや保存できる設定の詳細については、[Configuring the Bitrise CLI](/bitrise-ci/bitrise-cli/configuring-the-bitrise-cli)を参照してください。

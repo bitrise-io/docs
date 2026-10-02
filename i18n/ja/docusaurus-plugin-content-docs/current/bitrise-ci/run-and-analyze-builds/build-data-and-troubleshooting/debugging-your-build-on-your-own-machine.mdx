@@ -9,53 +9,53 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 
-ビルドがBitriseで失敗する場合は、ローカル環境、つまりご自身のマシン上で実行してみることをお勧めします。その方法は次のとおりです。
+ビルドが Bitrise で失敗する場合は、お使いのマシン上でローカルにビルドを実行してみることをお勧めします。次の手順で行います。
 
-- プロジェクトのオンラインリポジトリの完全にクリーンなgit cloneを実行します。
-- Bitrise CLIを使用してマシン上でビルドを実行します。
+- プロジェクトのオンラインリポジトリを完全にクリーンな状態で git clone します。
+- Bitrise CLI を使用して、お使いのマシンでビルドを実行します。
 
-これにより、特によくある問題、つまり作業ディレクトリ内にコミットされていない、または.gitignoreで除外されたファイルがあるためにオンラインのgitリポジトリにコミットされておらず、その結果Bitriseがビルド実行のためにリポジトリをクローンする際にそれらのファイルを利用できない、という問題を解消できます。その他に考えられる問題には、次のようなものがあります。
+これにより、よくある問題の 1 つを切り分けることができます。それは、コミットされていないファイルや gitignore されたファイルが作業ディレクトリにあるものの、オンラインの git リポジトリにはコミットされていないため、Bitrise がビルド実行のためにリポジトリをクローンする際に利用できない、という問題です。他に考えられる原因は次のとおりです。
 
-- Code signingファイルがローカルマシン上には存在するものの、Bitriseにアップロードされていない。
-- ビルドに使用するツールのバージョンに差異がある。
+- Code signing ファイルがローカルマシンにあるものの、Bitrise にアップロードされていない。
+- ビルドで使用するツールのバージョンが異なっている。
 
 
-## 完全にクリーンなgit cloneでテストする {#testing-with-a-full-clean-git-clone}
+## 完全にクリーンな状態での git clone のテスト {#testing-with-a-full-clean-git-clone}
 
-1. マシン上でターミナル/コマンドラインインターフェースを開きます。
+1. お使いのマシンでターミナル / コマンドラインインターフェースを開きます。
 1. 次のように入力します: `cd /tmp`
-1. 次のコマンドでリポジトリをクローンします: `git clone REPOURL ./quick-repo-test --branch BRANCH-YOU-WANT-TO-TEST`:
+1. 次のコマンドでリポジトリをクローンします: `git clone REPOURL ./quick-repo-test --branch BRANCH-YOU-WANT-TO-TEST`
 
    ```bash
    git clone https://github.com/bitrise-io/bitrise.git ./quick-repo-test --branch master
    ```
-1. `cd ./quick-repo-test.`と入力します。
+1. `cd ./quick-repo-test.` と入力します。
 
-テストしたいコマンドを実行して、プロジェクトをビルドするか、このディレクトリからプロジェクトファイルを開きます。
+テストしたいコマンドを実行してプロジェクトをビルドするか、このディレクトリからプロジェクトファイルを開きます。
 
 
-## Bitrise CLIでテストする {#testing-with-the-bitrise-cli}
+## Bitrise CLI でのテスト {#testing-with-the-bitrise-cli}
 
-完全にクリーンなgit cloneを実行した後、[Bitrise CLI](https://www.bitrise.io/cli)を使用してローカルでビルドを実行します。
+完全にクリーンな git clone を行った後、[Bitrise CLI](https://www.bitrise.io/cli)を使用してローカルでビルドを実行します。
 
-1. [Bitrise CLIをインストールします](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli)。
-1. [bitrise.io](https://www.bitrise.io/)からアプリの`bitrise.yml`ファイルをダウンロードします。
-1. 次のコマンドでビルドを実行します: `bitrise local run <workflow-name>`(例: `bitrise local run primary`)。
+1. [Bitrise CLI をインストールします](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli)。
+1. [bitrise.io](https://www.bitrise.io/) からアプリの `bitrise.yml` ファイルをダウンロードします。失敗したビルドが実行されたときの正確な設定を取得するには、`bitrise build yml BUILD-SLUG --app APP-SLUG > bitrise.yml` を実行します。[Viewing a build](/bitrise-ci/bitrise-cli/managing-builds-with-the-bitrise-cli#viewing-a-build)を参照してください。
+1. 次のコマンドでビルドを実行します: `bitrise local run <workflow-name>` (例: `bitrise local run primary`)。
 
-ほとんどの場合、これによって問題を再現しやすくなり、ご自身のマシン上でデバッグを試みることができます。
+これにより、ほとんどの場合に問題を再現でき、お使いのマシン上で自分でデバッグを試みることができます。
 
-これらの条件下でビルドが成功するものの、Bitriseでは依然として失敗する場合は、[サポートまでお問い合わせください。](https://www.bitrise.io/requests/new)
+この条件でビルドが成功するものの、Bitrise では引き続き失敗する場合は、[サポートにお問い合わせください。](https://www.bitrise.io/requests/new)
 
-:::tip[Androidプロジェクト]
+:::tip[Android プロジェクト]
 
-それでもローカルで問題を再現できない場合は、Gradleキャッシュをクリアするために`$HOME/.gradle`(隠しディレクトリ)を削除することもご検討ください。(クイックなターミナル/コマンドラインコマンド: `rm -rf $HOME/.gradle`)。
+ローカルで問題を再現できない場合は、`$HOME/.gradle` (隠し) ディレクトリを削除して、Gradle のキャッシュをクリアすることもできます。(ターミナル / コマンドラインのコマンド例: `rm -rf $HOME/.gradle`)。
 
 :::
 
-:::tip[クリーンなgit cloneからdockerを実行する]
+:::tip[クリーンな git clone から docker を実行する]
 
-プロジェクトがAndroid/Linux環境を使用している場合は、[bitrise.io](https://www.bitrise.io/)上でビルドが実行されているものとまったく同じ環境をダウンロードして使用できます。
+プロジェクトが Android/Linux 環境を使用している場合は、[bitrise.io](https://www.bitrise.io/) で、ビルドが実行されている環境とまったく同じ環境をダウンロードして使用できます。
 
-理想的には、まずクリーンなgit cloneを行い、そこから`docker`を実行することで、`.gitignore`内のファイルがビルドに影響を与えないようにし、[bitrise.io](https://www.bitrise.io/)と同じ方法でビルドを実行できるようにすることをお勧めします。
+理想的には、まずクリーンな git clone を行い、そこから `docker` を実行します。これにより、`.gitignore` にあるファイルがビルドに影響せず、[bitrise.io](https://www.bitrise.io/) と同じ方法でビルドを実行できます。
 
 :::

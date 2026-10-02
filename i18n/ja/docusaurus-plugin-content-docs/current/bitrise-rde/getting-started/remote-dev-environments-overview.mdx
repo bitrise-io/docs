@@ -9,47 +9,45 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 
-<GlossTerm baseform="remote dev environment">Remote Dev Environment</GlossTerm>(RDE)は、macOSまたはLinux上で動作するオンデマンドのクラウドマシンで、Bitrise CIと同じインフラストラクチャ、<GlossTerm baseform="stack">スタック</GlossTerm>、キャッシュを使用します。<GlossTerm baseform="rde session">セッション</GlossTerm>を数秒で起動し、ターミナル、IDE、またはAIコーディングエージェントから接続し、作業が終わったらアーカイブします。永続ディスクは保持されるため、作成元のスタックが利用可能である限り、セッションを復元して中断したところから作業を再開できます。
+<GlossTerm baseform="remote dev environment">Remote Dev Environment</GlossTerm>(RDE)は、macOS または Linux のオンデマンドクラウドマシンです。Bitrise CIと同じインフラストラクチャ、<GlossTerm baseform="stack">stacks</GlossTerm>、キャッシュで動作します。<GlossTerm baseform="rde session">session</GlossTerm>を数秒で起動し、ターミナル、IDE、またはAIコーディングエージェントから接続して、作業が終わったらアーカイブします。永続ディスクは保持されるため、作成元のスタックが利用可能である限り、セッションを復元して作業を再開できます。
 
-## RDEを使用する理由 {#why-use-rde}
+## RDE を使う理由 {#why-use-rde}
 
-Remote Dev Environmentを使用すると、自前のハードウェアを用意することなく、クラウド上で強力かつ事前設定済みのマシンを利用できます。次のような場合に適しています。
+Remote Dev Environment を使うと、自前のハードウェアを用意することなく、事前構成済みの高性能なマシンをクラウド上で利用できます。次のような場合に適しています。
 
-- ノートパソコンよりもはるかに強力なマシンで開発する(ツールチェーンはあらかじめインストールおよびキャッシュ済みです)。
-- Claude CodeのようなAIコーディングエージェントを、アプリのビルドとテストが可能なサンドボックス内で、自分のAPIキーを使って実行する。
-- ビルドが実行される環境と一致する環境で、CIの失敗を再現する。
-- 短期的なタスク向けに、並行で使い捨て可能な環境を起動し、作業後に破棄する。
-- セッションから直接ブランチをプッシュし、プルリクエストを作成する: [GitHub連携](/bitrise-rde/configuration/github-integration)により、gitおよびGitHub CLIはユーザー自身として認証されます。
-- セッションでiOSシミュレーターまたはAndroidエミュレーターを起動してアプリをテストする、あるいはブラウザ上で実行できる[デバイスプレビューリンク](/bitrise-rde/devices/device-preview-links)を通じて誰とでもビルドを共有する。[Virtual devices](/bitrise-rde/devices/virtual-devices)を参照してください。
+- ツールチェーンがインストール済みでキャッシュされた、ノートパソコンよりはるかに高性能なマシンで開発する。
+- Claude CodeなどのAIコーディングエージェントを、アプリのビルドとテストが可能なサンドボックスで、独自の API キーを使って実行する。
+- CIの失敗を、ビルドが実行される環境と一致する環境で再現する。
+- 短期間のタスク用に、並列で使い捨ての環境を起動し、終了後に破棄する。
+- セッションから直接ブランチをプッシュし、プルリクエストを作成する。[GitHub integration](/bitrise-rde/configuration/github-integration)を使うと、git と GitHub CLI があなたとして認証されます。
+- セッションと一緒に iOS シミュレーターまたは Android エミュレーターを起動してアプリをテストする。または、ブラウザー上でアプリを実行する[デバイスプレビューリンク](/bitrise-rde/devices/device-preview-links)を使って、ビルドを誰とでも共有する。[Virtual devices](/bitrise-rde/devices/virtual-devices)を参照してください。
 
-RDEはBitrise CIと同じマシンおよびスタックを使用するため、コードを記述する環境とテストする環境が一致します。
+RDE は Bitrise CI と同じマシンとスタックを使用するため、コードを書く環境とコードをテストする環境が一致します。
 
-## サポートされているプラットフォーム {#supported-platforms}
+## サポートされるプラットフォーム {#supported-platforms}
 
-RDEは、米国およびEUのデータセンターにある本番グレードのBitriseインフラストラクチャ上で動作します。
+RDE は、米国と EU のデータセンターにある本番グレードの Bitrise インフラストラクチャで動作します。
 
-- <strong>macOS</strong>: iOS、macOS、クロスプラットフォーム開発向けのAppleシリコンマシン(M2 Pro、M4、M4 Pro)。macOSセッションでは、VNC経由でグラフィカルデスクトップも利用できます。
-- <strong>Linux</strong>: 専用および共有クラスター上で、2〜48 vCPUのマシンを提供し、Dockerを完全にサポートします。
+- <strong>macOS</strong>: iOS、macOS、クロスプラットフォーム開発向けの Apple シリコンマシン(M2 Pro、M4、M4 Pro)。macOS のセッションでは、VNC 経由のグラフィカルデスクトップも利用できます。
+- <strong>Linux</strong>: 専用クラスターと共有クラスターで、2 から 48 vCPU までのマシン。Dockerを完全にサポートします。
 
-セッションの作成時、直接またはテンプレート経由でマシンを選択します。利用可能な正確なスタックとマシンタイプについては、[セッションを作成](/bitrise-rde/rde-options/bitrise-rde-ui)する際に製品内の一覧を確認してください。
+マシンは、セッションの作成時に直接、またはテンプレートを通じて選択します。利用可能なスタックとマシンタイプの詳細は、[セッションを作成する](/bitrise-rde/rde-options/bitrise-rde-ui)際に、製品内の一覧で確認してください。
 
-## RDEの利用方法 {#ways-to-use-rde}
+## RDE の使い方 {#ways-to-use-rde}
 
-セッションの作成と接続には、複数のクライアントを利用できます。どれも同じセッション、<GlossTerm baseform="rde template">テンプレート</GlossTerm>、<GlossTerm baseform="saved input">保存済み入力</GlossTerm>を共有しているため、自分の作業スタイルに合ったものを選んでください。
+複数のクライアントからセッションを作成して接続できます。作業スタイルに合ったものを選んでください。どのクライアントでも、同じセッション、<GlossTerm baseform="rde template">templates</GlossTerm>、<GlossTerm baseform="saved input">saved inputs</GlossTerm>を共有します。
 
-- [Bitrise RDE CLI](/bitrise-rde/rde-options/bitrise-rde-cli): ターミナルからセッションを管理し、1つのコマンドでセッション内にAIコーディングエージェントを起動できます。最も素早く始められる方法です。
-- [Bitrise RDE UI](/bitrise-rde/rde-options/bitrise-rde-ui): ブラウザからセッション、テンプレート、保存済み入力を作成・管理し、組み込みのWebターミナルで接続します。
-- [MCPサーバー](/bitrise-rde/rde-options/bitrise-rde-mcp-server): Model Context Protocolをサポートする任意のAIアシスタントが、代わりにセッションを作成・操作できるようにします。
-- [Bitrise VS Code プラグイン](/bitrise-rde/rde-options/bitrise-vscode-plugin): 新しいセッションでリポジトリを開き、VS Codeから編集します。このクライアントは近日公開予定です。
+- [Bitrise RDE CLI](/bitrise-rde/rde-options/bitrise-rde-cli): ターミナルからセッションを管理し、1 つのコマンドでセッション内の AIコーディングエージェントを起動します。最も手軽に始められる方法です。
+- [Bitrise RDE UI](/bitrise-rde/rde-options/bitrise-rde-ui): ブラウザーからセッション、テンプレート、saved inputs を作成・管理し、組み込みの Web ターミナルで接続します。
+- [MCP server](/bitrise-rde/rde-options/bitrise-rde-mcp-server): Model Context Protocol をサポートするAIエージェントが、ユーザーに代わってセッションを作成・操作できるようにします。
+- [Bitrise VS Code plugin](/bitrise-rde/rde-options/bitrise-vscode-plugin): 新しいセッションでリポジトリを開き、VS Code から編集します。このクライアントは近日公開予定です。
 
 どこから始めればよいかわからない場合は、[Quickstart](/bitrise-rde/getting-started/quickstart)に従ってください。
 
 ## 必要なもの {#what-you-need}
 
-Remote Dev Environmentsを使用するには、次のものが必要です。
+Remote Dev Environments を使用するには、次のものが必要です。
 
-- RDEアクセス権を持つBitrise <GlossTerm baseform="workspace">workspace</GlossTerm>。[Remote Dev Environmentsページ](https://bitrise.io/platform/remote-dev-environments)でサインアップするか、組織が営業経由で購入している場合はBitriseにお問い合わせください。
-- そのworkspaceにおける<strong>RDE User</strong>ロール。メンバーに自動的には付与されません。workspaceのオーナーまたはマネージャーが付与します: [Managing RDE access](/bitrise-rde/configuration/managing-rde-access)を参照してください。
-- 選択したクライアントに応じた接続手段: Bitrise CLI、サポートされているAIアシスタント、またはブラウザ。
-</content>
-</invoke>
+- RDE にアクセスできる Bitrise <GlossTerm baseform="workspace">workspace</GlossTerm>。[Remote Dev Environments ページ](https://bitrise.io/platform/remote-dev-environments)でサインアップするか、営業経由で購入する場合は Bitrise にお問い合わせください。
+- そのworkspaceでの <strong>RDE User</strong> ロール。メンバーには自動的に付与されません。workspaceのオーナーまたはマネージャーが付与します。[Managing RDE access](/bitrise-rde/configuration/managing-rde-access)を参照してください。
+- 選択したクライアントに応じた接続手段: Bitrise CLI、MCPをサポートするAIエージェント、またはブラウザー。

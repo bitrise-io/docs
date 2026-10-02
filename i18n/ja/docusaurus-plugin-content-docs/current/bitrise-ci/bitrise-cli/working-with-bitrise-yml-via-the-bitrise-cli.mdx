@@ -1,0 +1,136 @@
+---
+title: "Working with bitrise.yml via the Bitrise CLI"
+description: "Download, upload, validate, and merge bitrise.yml files with the Bitrise CLI, and look up the stack IDs you can use in them."
+sidebar_position: 11
+slug: /bitrise-ci/bitrise-cli/working-with-bitrise-yml-via-the-bitrise-cli
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+`bitrise yml` コマンドは、<GlossTerm baseform="bitrise.yml">`bitrise.yml`</GlossTerm> ファイルを操作します。
+
+- Bitrise 上の <GlossTerm baseform="project">project</GlossTerm> の CI 設定をダウンロードおよびアップロードします。
+- ファイルを使用する前に検証します。
+- [モジュラー設定](/bitrise-ci/configure-builds/configuration-yaml/modular-yaml-configuration)を 1 つのファイルにマージします。
+
+:::important[Bitrise CLI 3.0.0 以降]
+
+`bitrise yml get`、`bitrise yml update`、`bitrise stack list` コマンドとオンライン検証には、Bitrise CLI 3.0.0 以降とアクセストークンが必要です。詳しくは、[Bitrise CLI での認証](/bitrise-ci/bitrise-cli/authenticating-with-the-bitrise-cli)を参照してください。
+
+:::
+
+CLI には、お使いのコンピューター上の `bitrise.yml` ファイル用のツールがほかにもあります。
+
+- プロジェクトの `bitrise.yml` を生成するには、`bitrise local init` を実行します。詳しくは、[Bitrise project をローカルで初期化する](/bitrise-ci/bitrise-cli/initializing-a-bitrise-project-locally)を参照してください。
+- グラフィカルエディターで `bitrise.yml` を編集するには、オフラインの <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm> を実行します。詳しくは、[オフライン Workflow Editor のインストールとアップグレード](/bitrise-ci/bitrise-cli/installing-and-upgrading-the-offline-workflow-editor)を参照してください。
+- `bitrise.yml` から <GlossTerm baseform="workflow">Workflow</GlossTerm> を実行するには、`bitrise local run` を実行します。詳しくは、[CLI で最初のローカルビルドを実行する](/bitrise-ci/bitrise-cli/running-your-first-local-build-with-the-cli)を参照してください。
+
+## bitrise.yml ファイルのダウンロード {#downloading-the-bitriseyml-file}
+
+`bitrise yml get` は、Bitrise がプロジェクト用に保存している `bitrise.yml` を出力します。編集またはローカルで実行するには、ファイルに保存してください。
+
+```bash
+bitrise yml get --app my-app-id > bitrise.yml
+```
+
+特定のビルドが実行された時点の `bitrise.yml` を取得するには、ビルドの ID を指定して `--build` を追加します。`bitrise build yml` でも同じ結果が得られます。
+
+```bash
+bitrise yml get --app my-app-id --build abc123
+bitrise build yml abc123 --app my-app-id
+```
+
+`--format json` または `--format yml` を指定すると、CLI はプロジェクトの ID、ビルドの ID (設定した場合)、および `content` フィールド内の単一の文字列としての設定を含むオブジェクトを出力します。ファイルそのものを保存するには、デフォルトの `raw` 形式を使用してください。
+
+## bitrise.yml ファイルのアップロード {#uploading-a-bitriseyml-file}
+
+`bitrise yml update` は、Bitrise がプロジェクト用に保存している `bitrise.yml` を置き換えます。ファイルを `--file` で指定するか、標準入力で渡してください。
+
+```bash
+bitrise yml update --app my-app-id --file bitrise.yml
+bitrise yml update --app my-app-id < bitrise.yml
+```
+
+:::warning[bitrise.yml をリポジトリに保存している場合]
+
+プロジェクトが [`bitrise.yml` をリポジトリに保存している](/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml)場合、コマンドは成功しますが、ビルドは引き続きリポジトリ内のファイルを使用します。代わりに、変更をリポジトリにコミットしてください。
+
+:::
+
+Bitrise は、アップロードしたファイルそのものではなく、構造化データとして設定を保存します。コメント、キーの順序、YAML アンカーは失われます。その後の `bitrise yml get` では、同等の内容に整形し直されたファイルが返されます。
+
+Bitrise ビルド内では、`--app` を指定しない場合、コマンドはそのビルドが実行されているプロジェクトを更新します。ビルドから別のプロジェクトを更新する場合は、必ず `--app` を指定してください。
+
+アップロードする前に誤りを見つけるには、まず[ファイルを検証](#validating-a-bitriseyml-file)してください。
+
+## bitrise.yml ファイルの検証 {#validating-a-bitriseyml-file}
+
+`bitrise yml validate` は、カレントディレクトリの `bitrise.yml`、または指定した任意の設定 YAML ファイルをチェックします。カレントディレクトリに `.bitrise.secrets.yml` ファイルがある場合、コマンドはそのファイルも `bitrise.yml` とあわせて検証します。
+
+```bash
+bitrise yml validate
+```
+
+Bitrise にログインしている場合、CLI は Bitrise API でファイルを検証します。`--app` を指定すると、API は <GlossTerm baseform="stack">stacks</GlossTerm>、マシンタイプ、ライセンスプールなど、プロジェクトに依存する設定もチェックします。
+
+```bash
+bitrise yml validate --app my-app-id
+```
+
+ログインしていない場合、`--offline` を追加した場合、またはオンラインチェックを完了できない場合、CLI はお使いのコンピューター上の `bitrise.yml` スキーマに対してのみファイルをチェックします。
+
+別の設定 YAML ファイルを検証するには、次のフラグを使用します。
+
+| Flag | 指定する値 |
+| --- | --- |
+| `--config` | ファイルのパス。標準入力から読み込む場合は `-`。 |
+| `--config-base64` | Base64 でエンコードしたファイルの内容。 |
+| `--inventory` | 設定とあわせて検証する [Secrets ファイル](/bitrise-ci/bitrise-cli/managing-secrets-locally)のパス。このフラグを指定しない場合、CLI はカレントディレクトリに `.bitrise.secrets.yml` があればそれを検証します。 |
+| `--inventory-base64` | Base64 でエンコードした Secrets ファイルの内容。 |
+
+```bash
+bitrise yml validate --config ./ci/bitrise.yml
+```
+
+結果を JSON または YAML で出力するには、`--format json` または `--format yml` を追加します。このコマンドは、設定の[デフォルトの出力形式](/bitrise-ci/bitrise-cli/bitrise-cli-overview#output-formats)を使用しません。
+
+## モジュラー設定のマージ {#merging-a-modular-configuration}
+
+[モジュラー設定](/bitrise-ci/configure-builds/configuration-yaml/modular-yaml-configuration)は、`include` ステートメントを使って `bitrise.yml` を複数の設定 YAML ファイルに分割します。`bitrise yml merge` はインクルードを解決し、単一の `bitrise.yml` を出力したあと、インクルードされたファイルのツリーを出力します。
+
+デフォルトでは、コマンドはカレントディレクトリの `bitrise.yml` をマージします。名前や場所が異なる設定 YAML ファイルをマージするには、そのパスを指定してください。マージ後の出力は常に `bitrise.yml` という名前になります。
+
+```bash
+bitrise yml merge
+bitrise yml merge ./ci/bitrise.yml
+```
+
+結果をファイルに書き出すには、`--output` でディレクトリを指定します。CLI は、マージした設定を `bitrise.yml` に、ファイルツリーを `config_tree.json` に、そのディレクトリ内で書き出します。
+
+```bash
+bitrise yml merge --output ./merged
+```
+
+## stack ID の検索 {#finding-stack-ids}
+
+`bitrise.yml` でビルドの[スタックを設定](/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds#setting-the-stack-in-the-configuration-yaml)するには、スタックの ID が必要です。`bitrise stack list` は、利用可能なスタックを ID、オペレーティングシステム、ステータスとともに一覧表示します。
+
+```bash
+bitrise stack list
+```
+
+CLI が `--workspace`、`BITRISE_WORKSPACE_ID`、または `default_workspace_id` から <GlossTerm baseform="workspace">Workspace</GlossTerm> を見つけた場合、その Workspace で利用可能なスタック (カスタムスタックを含む) を一覧表示します。見つからない場合は、すべてのユーザーが利用可能なスタックを一覧表示します。
+
+```bash
+bitrise stack list --workspace my-workspace-id
+```
+
+`bitrise.yml` の `meta` セクションで ID を使用してください。
+
+```yaml
+meta:
+  bitrise.io:
+    stack: osx-xcode-latest-stable
+```

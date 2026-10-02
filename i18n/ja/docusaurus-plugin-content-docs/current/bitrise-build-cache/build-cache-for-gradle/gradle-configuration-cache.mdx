@@ -4,73 +4,72 @@ description: "Gradle configuration cache reduces build times by caching the resu
 sidebar_position: 5
 slug: /bitrise-build-cache/build-cache-for-gradle/gradle-configuration-cache
 ---
+Gradle configuration cache は、Gradle プロジェクトの configuration フェーズの結果をキャッシュし、以降のビルドで再利用することで、ビルド時間を短縮します。詳細については、[Gradle の公式ドキュメント](https://docs.gradle.org/current/userguide/configuration_cache.html)を参照してください。[Bitrise Build Cache](https://bitrise.io/platform/devops/build-caching)は、Gradle 8.6 以降でこの機能をサポートしています。
 
-Gradleの構成キャッシュ(configuration cache)は、Gradleプロジェクトの構成フェーズの結果をキャッシュし、以降のビルドで再利用することで、ビルド時間を短縮します。詳細については、[Gradleの公式ドキュメント](https://docs.gradle.org/current/userguide/configuration_cache.html)を参照してください。[Bitrise Build Cache](https://bitrise.io/platform/devops/build-caching)は、Gradle 8.6 以降でこの機能をサポートしています。
+## configuration cache の設定 {#setting-up-the-configuration-cache}
 
-## 構成キャッシュのセットアップ {#setting-up-the-configuration-cache}
-
-構成キャッシュをセットアップするには、次の手順を実行します。
+configuration cache を設定するには、次の手順を実行します。
 
 1. [Bitrise Build Cache](https://bitrise.io/platform/devops/build-caching)のサブスクリプションまたはトライアルがあることを確認します。
-1. `--configuration-cache`フラグを付けてローカルでビルドを実行します。
+1. `--configuration-cache` フラグを付けてローカルでビルドを実行します。
 
-   これにより、Gradleプロジェクトが構成キャッシュをサポートしていることを確認できます。Gradleの設定で構成キャッシュを有効にするには、[Gradleの公式ガイド](https://docs.gradle.org/current/userguide/configuration_cache.html#config_cache:usage:enable)を参照してください。
-1. Gradleの暗号化キーを生成します。
+   これにより、Gradle プロジェクトが configuration caching をサポートしていることを確認できます。Gradle の設定で configuration caching を有効にするには、[Gradle の公式ガイド](https://docs.gradle.org/current/userguide/configuration_cache.html#config_cache:usage:enable)を参照してください。
+1. Gradle 暗号化キーを生成します。
 
    ```
    openssl rand -base64 16
    ```
-1. キーを、[Secret](/bitrise-ci/configure-builds/secrets)として、Bitrise project内に GRADLE_ENCRYPTION_KEY という名前で保存します。
+1. キーを Bitrise project の [Secret](/bitrise-ci/configure-builds/secrets) として GRADLE_ENCRYPTION_KEY という名前で保存します。
 
-   これにより、構成キャッシュの暗号化された値が、異なるビルド間でも同じに保たれます。固定の暗号化キーの使用は、Gradle バージョン 8.6 以降でサポートされています。Bitriseは、それ以前のGradleバージョンではGradleの構成キャッシュをサポートしていません。
-1. <strong>Build Cache for Gradle</strong> StepをWorkflowに追加します。
+   これにより、configuration cache の暗号化された値が、異なるビルド間でも同じままになります。固定の暗号化キーは Gradle バージョン 8.6 以降でサポートされています。Bitrise は、それ以前の Gradle バージョンでは Gradle configuration cache をサポートしていません。
+1. <strong>Build Cache for Gradle</strong> Step を Workflow に追加します。
 
-   Stepのバージョンは 2.7.7 以降である必要があります。Stepを以降に更新すると、構成キャッシュが一度だけ無効になります。この場合は、再ビルドして問題を解消してください。
+   Step のバージョンは 2.7.7 以降である必要があります。Step を以降に更新すると、configuration cache が一度だけ無効になります。この場合は、再ビルドして問題を解決してください。
 
-   :::note[Authentication tokens]
+   :::note[認証トークン]
 
-   Step バージョン 3.6.1 以降では、Gradleのプラグインが実行中のビルドのトークンで認証を行うため、構成キャッシュ用に認証トークンをセットアップする必要はありません。
+   Step バージョン 3.6.1 以降では、Gradle プラグインは実行中のビルドのトークンで認証を行うため、configuration cache 用に認証トークンを設定する必要はありません。
 
-   それ以前のStepバージョンでは、トークンはキャッシュされた構成の一部であり、ビルド間で同じ値を維持する必要があります。これらのバージョンでは、[パーソナルアクセストークン](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token)を BITRISE_BUILD_CACHE_AUTH_TOKEN キーの [Secret](/bitrise-ci/configure-builds/secrets)として保存し、[workspace スラッグ](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs)を BITRISE_BUILD_CACHE_WORKSPACE_ID という名前の Environment Variable として保存する必要があります。
-
-   :::
-1. Gradleの呼び出しの前に、Workflow内で <strong>Restore Gradle configuration cache</strong> と <strong>Restore Gradle Cache</strong> Stepsを追加します。
-
-   Stepsは、キャッシュされた構成データを取得し、構成キャッシュが参照するアーティファクトにアクセスできるようにします。
-
-   :::note[Configuration cache directory]
-
-   <strong>Restore Gradle configuration cache</strong> Stepは、`./.gradle/configuration-cache` ディレクトリにデータを保存します。これは、<strong>Configuration cache directory</strong> 入力を変更することで上書きできます。
+   それ以前の Step バージョンでは、トークンが cache された configuration の一部となるため、ビルド間で同じである必要があります。これらのバージョンでは、[workspace API トークン](/bitrise-platform/workspaces/workspace-api-token)を [Secret](/bitrise-ci/configure-builds/secrets) として BITRISE_BUILD_CACHE_AUTH_TOKEN キーで保存し、[workspace slug](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs) を BITRISE_BUILD_CACHE_WORKSPACE_ID という名前の Environment Variable として設定する必要があります。workspace API トークンは特定の個人に紐づかないため、担当者のロールが変わったり退職したりしても、キャッシュされた configuration は有効なままです。
 
    :::
+1. Workflow 内の Gradle の呼び出しの前に、<strong>Restore Gradle configuration cache</strong> と <strong>Restore Gradle Cache</strong> Steps を追加します。
 
-   たとえば、<strong>Android Build</strong> を使用してGradleプロジェクトをビルドする場合、この 2 つのStepsをWorkflow内でそのよりも前に配置する必要があります。
-1. Gradleの呼び出しの後に、Workflow内で <strong>Save Gradle configuration cache</strong> と <strong>Save Gradle Cache</strong> Stepsを追加します。
+   Steps は、キャッシュされた configuration データを取得し、configuration cache が参照するアーティファクトにアクセスできるようにします。
 
-   Stepsは、構成データをキャッシュに保存し、構成キャッシュが参照するアーティファクトを保存します。
-1. Enable the <strong>Save Gradle Cache</strong> Stepの <strong>Save transforms</strong> 入力。Step バージョン 1.4.1 以降が必要です。
+   :::note[Configuration cache ディレクトリ]
 
-## Gradleの構成キャッシュログの保存 {#saving-the-gradle-configuration-cache-log}
+   <strong>Restore Gradle configuration cache</strong> Step は、データを `./.gradle/configuration-cache` ディレクトリに保存します。これは、<strong>Configuration cache directory</strong> 入力を変更することで上書きできます。
 
-Gradleのビルドログには、構成キャッシュが再利用されなかった理由に関する情報が含まれている場合があります。このログは、ビルドの <strong>Artifacts</strong> ページに保存できます。
+   :::
 
-1. Gradleで、Enable the `--info` [ログレベル](https://docs.gradle.org/current/userguide/logging.html)。
-1. <strong>Deploy to Bitrise.io</strong> StepをWorkflowに追加します。
-1. <strong>Deploy directory or file path</strong> 入力に、Gradleがファイルパスとして出力する値を設定します。
+   たとえば、<strong>Android Build</strong> を使用して Gradle プロジェクトをビルドする場合、この 2 つの Steps を Workflow 内でその前に配置する必要があります。
+1. Workflow 内の Gradle の呼び出しの後に、<strong>Save Gradle configuration cache</strong> と <strong>Save Gradle Cache</strong> Steps を追加します。
 
-デプロイされたファイルは、<strong>Artifacts</strong> ページで確認できます。Bitrise CIを開き、プロジェクトを選択して、続けてビルドを選択し、<strong>Artifacts</strong> タブを選択してください。
+   Steps は、configuration データをキャッシュに保存し、configuration cache が参照するアーティファクトを保存します。
+1. Enable the <strong>Save Gradle Cache</strong> Step の <strong>Save transforms</strong> 入力に対して設定します。Step バージョン 1.4.1 以降が必要です。
 
-## 構成キャッシュのトラブルシューティング {#troubleshooting-the-configuration-cache}
+## Gradle configuration cache ログの保存 {#saving-the-gradle-configuration-cache-log}
 
-ビルドで構成キャッシュが再利用されない場合は、考えられる問題をいくつか確認できます。
+Gradle のビルドログには、configuration cache が再利用されなかった理由に関する情報が含まれている場合があります。このログは、ビルドの <strong>Artifacts</strong> ページに保存できます。
+
+1. Enable the `--info` [ログレベル](https://docs.gradle.org/current/userguide/logging.html)を Gradle で設定します。
+1. <strong>Deploy to Bitrise.io</strong> Step を Workflow に追加します。
+1. <strong>Deploy directory or file path</strong> 入力に、Gradle が出力するファイルパスを設定します。
+
+デプロイされたファイルは、<strong>Artifacts</strong> ページで確認できます。Bitrise CI を開き、プロジェクトを選択してからビルドを選択し、<strong>Artifacts</strong> タブを選択します。
+
+## configuration cache のトラブルシューティング {#troubleshooting-the-configuration-cache}
+
+ビルドで configuration cache が再利用されない場合は、考えられる問題をいくつか確認できます。
 
 ### 一般的なトラブルシューティング {#general-troubleshooting}
 
-- 依存関係のキャッシュを利用するには、Save/Restore Gradle キャッシュ Stepsを追加してください。Gradleの構成キャッシュは、存在している必要のあるアーティファクトを参照します。
-- 構成キャッシュが完全に適用されて再利用されるまでに、複数回の実行が必要になる場合があります。
-- Gradleのログを確認して、Gradleが構成キャッシュを再利用しなかった理由を調べてください。[gradle の構成キャッシュログを保存](#saving-the-gradle-configuration-cache-log)して、ビルドのアーティファクトに含めることができます。
-- <strong>Build Cache for Gradle</strong> Stepを更新すると、構成キャッシュが一度だけ無効になります。別のビルドを実行して問題を解消してください。
-- Step バージョン 3.6.1 より前の場合は、すべてのビルドで認証トークンが同じであることを確認してください。ビルド間でトークンが変わると、キャッシュされた構成が無効になります。
+- 依存関係のキャッシュを利用するには、Save/Restore Gradle cache Steps を追加してください。Gradle configuration cache は、存在している必要があるアーティファクトを参照します。
+- configuration cache が完全に適用され再利用されるまでに、複数回の実行が必要になる場合があります。
+- Gradle のログを確認して、Gradle が configuration cache を再利用しなかった理由を調べてください。[gradle configuration cache log を保存](#saving-the-gradle-configuration-cache-log)して、ビルドのアーティファクトに含めることができます。
+- <strong>Build Cache for Gradle</strong> Step を更新すると、configuration cache が一度だけ無効になります。別のビルドを実行して問題を解決してください。
+- Step バージョン 3.6.1 より前では、認証トークンがすべてのビルドで同じであることを確認してください。ビルド間でトークンが変わると、キャッシュされた configuration が無効になります。
 
 ### Failed to instrument class エラー {#failed-to-instrument-class-error}
 
@@ -80,13 +79,13 @@ Gradleのビルドログには、構成キャッシュが再利用されなか�
 org.gradle.internal.operations.BuildOperationInvocationException: Failed to instrument class io/bitrise/gradle/cache/BitriseBuildCache in ClassLoaderScopeIdentifier.Id{coreAndPlugins:init-file:/root/.gradle/init.d/bitrise-build-cache.init.gradle.kts(export)}
 ```
 
-この問題を解決するには、次の手順を実行します。
+この問題を修正するには、次の手順を実行します。
 
-1. <strong>Save Gradle cache</strong> Stepで、<strong>Save transforms</strong> 入力を <strong>true</strong> に設定します。
+1. <strong>Save Gradle cache</strong> Step で、<strong>Save transforms</strong> 入力を <strong>true</strong> に設定します。
 
-   :::note[Version requirement]
+   :::note[バージョン要件]
 
    この入力は、バージョン 1.4.1 以降でのみ使用できます。
 
    :::
-1. <strong>Restore Gradle cache</strong> Stepを使用せずにビルドを実行して、保存を強制します。
+1. <strong>Restore Gradle cache</strong> Step を使用せずにビルドを実行して、保存を強制します。

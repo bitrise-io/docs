@@ -1,26 +1,25 @@
 ---
 title: "Remote Dev Environments API"
 description: "Manage Remote Dev Environment sessions, templates, and saved inputs programmatically over the REST API, and report on workspace usage."
-sidebar_position: 4
+sidebar_position: 5
 slug: /bitrise-rde/configuration/rde-api
 sidebar_label: "API"
 ---
-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 
-Remote Dev Environments REST APIを使用すると、<GlossTerm baseform="rde session">セッション</GlossTerm>、<GlossTerm baseform="rde template">テンプレート</GlossTerm>、<GlossTerm baseform="saved input">保存済みの入力</GlossTerm>をプログラムで管理したり、workspaceのアクティブなセッションが消費しているリソースをレポートしたりできます。これは、CLI、Web UI、およびMCPサーバーが使用しているものと同じAPIです。
+Remote Dev Environments REST APIを使うと、<GlossTerm baseform="rde session">セッション</GlossTerm>、<GlossTerm baseform="rde template">テンプレート</GlossTerm>、<GlossTerm baseform="saved input">保存済み入力</GlossTerm>をプログラムから管理したり、workspaceのアクティブなセッションによる消費量をレポートしたりできます。これは、CLI、Web UI、MCP サーバーが使用しているものと同じ API です。
 
-:::warning[試験的なAPI]
+:::warning[Experimental API]
 
-RDE APIは試験的な機能です。バージョン管理されていますが、エンドポイントとペイロードは予告なく後方互換性のない形で変更される場合があります。統合を動作確認済みの挙動に固定し、随時更新する必要があることを想定してください。
+RDE API は試験的な機能です。バージョン管理されていますが、エンドポイントやペイロードは予告なく後方互換性のない形で変更される可能性があります。連携は動作確認済みの挙動に固定し、更新が必要になることを想定してください。
 
 :::
 
-## ベースURL {#base-url}
+## Base URL
 
-APIは次の場所で提供されます:
+APIは次の場所で提供されています。
 
 ```text
 https://api.bitrise.io/rde
@@ -28,7 +27,7 @@ https://api.bitrise.io/rde
 
 ## 認証 {#authentication}
 
-`Authorization`ヘッダーで送信するBitrise[個人用アクセストークン](https://app.bitrise.io/me/account/security)を使用して認証します:
+Bitrise [personal access token](https://app.bitrise.io/me/account/security)で認証し、`Authorization` ヘッダーで送信します。
 
 ```text
 Authorization: token YOUR_BITRISE_PAT
@@ -36,30 +35,44 @@ Authorization: token YOUR_BITRISE_PAT
 
 ## Workspace使用状況レポート {#workspace-usage-report}
 
-使用状況エンドポイントは、workspaceのアクティブなセッションの特定時点でのスナップショットを返します。セッション数、およびOS別、workspace全体別、ユーザー別に分けたvCPUとメモリの合計が含まれます。これは現時点でセッションが消費しているリソースを報告するものであり、過去の履歴や請求期間のレポートではありません。
+使用状況エンドポイントは、workspaceのアクティブなセッションについて、ある時点のスナップショットを返します。セッション数、vCPU とメモリの合計を、OS別、workspace全体、ユーザーごとに分けて取得できます。報告されるのは現時点でセッションが消費している量です。履歴や請求期間ごとのレポートではありません。
 
 ```text
 GET /v1/workspaces/{workspace_id}/usage
 ```
 
-他のエンドポイントとは異なり、これには請求情報の閲覧権限が必要です。workspaceのオーナーと、請求管理用のカスタムロールを持つメンバーのみがこれを呼び出せます。それ以外のメンバーには`403`レスポンスが返されます。
+他のエンドポイントと異なり、このエンドポイントには請求情報の閲覧権限が必要です。workspaceのオーナーと、請求管理権限を持つカスタムロールのメンバーが呼び出せます。他のメンバーには `403` レスポンスが返されます。
+
+## Warm pools
+
+warm poolエンドポイントは、事前に起動されたセッションのプールを管理します。セッション作成リクエストとプレビューリンク作成リクエストは、`warm_pool_id` を指定してプールからセッションを割り当てます。
+
+```text
+GET    /v1/workspaces/{workspace_id}/warm-pools
+POST   /v1/workspaces/{workspace_id}/warm-pools
+GET    /v1/workspaces/{workspace_id}/warm-pools/{warm_pool_id}
+PATCH  /v1/workspaces/{workspace_id}/warm-pools/{warm_pool_id}
+DELETE /v1/workspaces/{workspace_id}/warm-pools/{warm_pool_id}
+```
+
+プールの `status` には、準備完了およびウォームアップ中のセッション数、ウォーム状態のセッション自体、構成エラーが報告されます。[Warm pools](/bitrise-rde/configuration/warm-pools)をご覧ください。
 
 ## デバイスセッション {#device-sessions}
 
-セッション作成リクエストに`device_spec`を含めると、そのセッションでiOSシミュレーターまたはAndroidエミュレーターを起動でき、`artifact`を含めるとアプリのビルドをそこにインストールできます。各セッションの読み取りに含まれる`device`フィールドは、デバイスの状態とインストール状況を報告します。詳細については、[デバイスセッション](/bitrise-rde/devices/device-sessions)をご覧ください。
+セッション作成リクエストに `device_spec` を含めると、セッションとともに iOS シミュレーターまたは Android エミュレーターが起動します。`artifact` を含めると、そのデバイスにアプリのビルドがインストールされます。すべてのセッション読み取りに含まれる `device` フィールドには、デバイスの状態とインストールの状況が報告されます。[Device sessions](/bitrise-rde/devices/device-sessions)をご覧ください。
 
 ## デバイスプレビューリンク {#device-preview-links}
 
-プレビューリンクエンドポイントは、Bitriseへのログインなしで、受信者のブラウザでデバイス上にアプリのビルドを開く共有可能なリンクを発行します:
+プレビューリンクエンドポイントは、共有可能なリンクを発行します。受信者は、Bitrise にログインしなくても、ブラウザー上のデバイスでアプリのビルドを開けます。
 
 ```text
 POST /v1/workspaces/{workspace_id}/preview-links
 ```
 
-他のエンドポイントとは異なり、<strong>Remote Dev Environments</strong>権限で作成された[WorkspaceAPIトークン](/bitrise-platform/workspaces/workspace-api-token)も受け付けます。これはCIパイプラインが使用すべきものです。詳細については、[デバイスプレビューリンク](/bitrise-rde/devices/device-preview-links)をご覧ください。
+他のエンドポイントと異なり、<strong>Remote Dev Environments</strong> アクセスで作成した [Workspace API token](/bitrise-platform/workspaces/workspace-api-token)も使用できます。CI パイプラインではこちらを使用してください。[Device preview links](/bitrise-rde/devices/device-preview-links)をご覧ください。
 
 ## リファレンス {#reference}
 
-エンドポイント、リクエストおよびレスポンスのスキーマ、使用例の全一覧については、インタラクティブなAPIリファレンスをご覧ください:
+エンドポイントの全一覧、リクエストとレスポンスのスキーマ、例については、インタラクティブな API リファレンスをご覧ください。
 
-[Remote Dev Environments APIリファレンス](/bitrise-rde-api/api-reference/bitrise-remote-dev-environments-api)
+[Remote Dev Environments API reference](/bitrise-rde-api/api-reference/bitrise-remote-dev-environments-api)

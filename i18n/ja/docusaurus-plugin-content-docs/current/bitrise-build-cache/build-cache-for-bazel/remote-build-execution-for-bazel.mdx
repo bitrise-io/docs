@@ -10,24 +10,24 @@ import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 import Partial_OpeningTheWorkflowEditor from '@site/i18n/ja/partials/opening-the-workflow-editor.mdx';
 
-Bazel ビルドのリモート実行を使用すると、ビルドアクションとテストアクションを複数のマシンに分散できます。これにより、ビルドとテストの実行が高速化され、開発チーム間でビルド出力を再利用でき、一貫した環境を提供できます。
+Bazelビルドのリモート実行により、ビルドおよびテストのアクションを複数のマシンに分散できます。これにより、ビルドとテストの実行が高速化され、開発チーム間でビルド出力を再利用でき、一貫した環境が得られます。
 
-Bitrise Build Cache の Remote Build Execution は、Bitrise でも Bitrise CI 以外の環境でも使用できます。
+Bitrise Build CacheのRemote Build Executionは、Bitrise上でも、Bitrise CI以外の環境でも使用できます。
 
-## Bitrise での Remote Build Execution の設定 {#configuring-remote-build-execution-on-bitrise}
+## BitriseでのRemote Build Executionの設定 {#configuring-remote-build-execution-on-bitrise}
 
 <Tabs>
 <TabItem value="workflow-editor" label="Workflow Editor" default>
 
-1. Set up Bitrise [Build Cache for Bazel](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-bazel)：[Configuring the build cache for Bazel in the Bitrise CI environment](/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-the-bitrise-ci-environment) の手順で設定を始めます。
+1. Set up Bitrise [Build Cache for Bazel](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-bazel): [Bitrise CI環境でのBazel用build cacheの設定](/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-the-bitrise-ci-environment)を参照してください。
 1. <Partial_OpeningTheWorkflowEditor />
-1. <strong>Bitrise [Build Cache for Bazel](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-bazel)</strong> <GlossTerm baseform="step">Step</GlossTerm> で、<strong>Enable Bazel RBE</strong> 入力フィールドを <strong>true</strong> に設定します。
+1. <strong>Bitrise [Build Cache for Bazel](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-bazel)</strong>の<GlossTerm baseform="step">Step</GlossTerm>で、<strong>Enable Bazel RBE</strong>入力フィールドを<strong>true</strong>に設定します。
 
 </TabItem>
 <TabItem value="configuration-yaml" label="Configuration YAML">
 
-1. <GlossTerm baseform="configuration yaml"> の設定 YAML</GlossTerm> ファイルを開きます。
-1. `activate-build-cache-for-bazel` Step を Workflow に追加します。
+1. <GlossTerm baseform="configuration yaml">の設定YAML</GlossTerm>ファイルを開きます。
+1. `activate-build-cache-for-bazel` StepをWorkflowに追加します。
 
    ```yaml
    your-workflow:
@@ -41,29 +41,29 @@ Bitrise Build Cache の Remote Build Execution は、Bitrise でも Bitrise CI �
 </TabItem>
 </Tabs>
 
-## Bitrise 以外の環境での Remote Build Execution の設定 {#configuring-remote-build-execution-in-a-non-bitrise-environment}
+## Bitrise以外の環境でのRemote Build Executionの設定 {#configuring-remote-build-execution-in-a-non-bitrise-environment}
 
 <Tabs>
 <TabItem value="other-ci" label="Non-Bitrise CI" default>
 
-1. Bitrise [Build Cache for Bazel](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-bazel)：[Configuring the Build Cache for Bazel in non-Bitrise CI environments](/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-non-bitrise-ci-environments) の手順で設定を始めます。
-1. Bitrise Build Cache を有効にするときに、`--rbe` フラグを追加します。
+1. Bitrise [Build Cache for Bazel](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-bazel)の設定を開始します: [Bitrise CI以外の環境でのBuild Cache for Bazelの設定](/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-non-bitrise-ci-environments)を参照してください。
+1. Bitrise Build Cacheを有効にするときに、`--rbe`フラグを追加します。
 
    ```bash
-   /tmp/bin/bitrise-build-cache activate bazel --cache --cache-push=false --rbe
+   bitrise-build-cache activate bazel --cache --cache-push=false --rbe
    ```
 
    :::note[キャッシュ]
 
-   リモートビルドの実行中は、ワーカーが結果をキャッシュにアップロードするため、`--cache-push` フラグを false に設定することをお勧めします。
+   リモートビルド実行中はワーカーが結果をキャッシュにアップロードするため、`--cache-push`フラグはfalseに設定することをおすすめします。
 
    :::
 
 </TabItem>
 <TabItem value="local-environment" label="Local environment">
 
-1. Bitrise [Build Cache for Bazel](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-bazel)：[Configuring the build cache for Bazel in local builds](/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-local-builds) の手順で設定を始めます。
-1. RBE エンドポイントの設定を `.bazelrc` に追加します。
+1. Bitrise [Build Cache for Bazel](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-bazel)の設定を開始します: [ローカルビルドでのBazel用build cacheの設定](/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-local-builds)を参照してください。
+1. RBEエンドポイントの設定を`.bazelrc`に追加します。
 
    ```yaml
    build:remote --remote_executor=grpcs://bitrise-accelerate.services.bitrise.io:443
@@ -73,9 +73,9 @@ Bitrise Build Cache の Remote Build Execution は、Bitrise でも Bitrise CI �
 </Tabs>
 
 
-## Remote Build Execution の推奨フラグ {#recommended-flags-for-remote-build-execution}
+## Remote Build Executionの推奨フラグ {#recommended-flags-for-remote-build-execution}
 
-Remote Build Execution を最大限に活用するには、Bazel のコマンドフラグがいくつか必要です。再利用できるように、これらのフラグを `.bazelrc` ファイルに追加することをお勧めします。
+Bazelには、Remote Build Executionを最大限に活用するために必要なコマンドフラグが数多くあります。再利用できるように、これらを`.bazelrc`ファイルに追加することをおすすめします。
 
 ```yaml
 build:remote --jobs=100
@@ -84,26 +84,26 @@ build:remote --spawn_strategy=remote,local
 build:remote --remote_default_exec_properties=Pool=<pool-name>
 ```
 
-`<pool-name>` を worker pool の名前に置き換えてください。複数のデータセンターに worker pool がある場合は、どこでも同じ設定が機能するように、各データセンターで同じ pool name を使用してください。
+`<pool-name>`をworker poolの名前に置き換えてください。複数のデータセンターにworker poolがある場合は、どのデータセンターでも同じ設定が使えるように、各データセンターで同じpool nameを使用してください。
 
-すべての準備が整ったら、任意の Bazel コマンドに remote 設定を追加することで、Remote Build Execution を呼び出せます。
+準備が整ったら、任意のBazelコマンドにremote configを追加することで、Remote Build Executionを呼び出せます。
 
 ```bash
 bazel build //... --config=remote
 ```
 
-各フラグの機能は次のとおりです。
+各フラグの役割は次のとおりです。
 
 | フラグと推奨値 | 説明 |
 | --- | --- |
-| `--jobs=100` | Bazel が同時に「処理中」にできるビルド/テストアクションの最大数を定義します。このフラグを省略すると、Bazel はホスト VM の論理 CPU コア数に暗黙的にフォールバックします。このデフォルト値はローカル実行には適していますが、RBE クラスターを大幅に使い切れなくなります。  `--jobs=100` はほとんどの Android/iOS モノレポにとって適切な開始値ですが、ワーカー数に応じて徐々に増やすことができます。 |
-| `--remote_default_exec_properties=Pool=<pool-name>` | リモートアクションを実行する worker pool を選択します。値は、Bitrise に表示される worker pool の名前です。  プロパティセットは worker pool と完全に一致する必要があります。ターゲットに対して他の `exec_properties` がどこにも設定されていないことを確認してください。設定されていると、Bazel が worker pool に一致せず、ビルドが失敗します。 |
-| `--spawn_strategy=remote,local` | Bazel がアクションの実行を試みる順序を決定します。Bazel は、リストの中で特定のアクションを実行できる最初のストラテジを使用します。default value は `remote,worker,sandboxed,local` です。  リモート実行環境でアクションが実行され、ローカル実行に適切にフォールバックされるように、remote を先頭に維持してください。 |
-| `--noremote_upload_local_results` | ローカルで生成された出力の再アップロードをスキップします。リモートワーカーはすでにアーティファクトをキャッシュにプッシュしているため、帯域幅を節約できます。  この設定フラグは、Bitrise Build Cache CLI でも設定されます。これを使用する場合は、このフラグの使用時に、CLI で `--cache-push` フラグが false またはオフになっていることを確認してください。 |
+| `--jobs=100` | Bazelが同時に「実行中」にできるビルド/テストアクションの最大数を定義します。このフラグを省略すると、Bazelは暗黙的にホストVMの論理CPUコア数にフォールバックします。このデフォルト値はローカル実行には適していますが、RBEクラスターを大幅に使い切れません。`--jobs=100`は、ほとんどのAndroid/iOSモノレポで適切な開始値であり、ワーカー数に応じて段階的に増やせます。 |
+| `--remote_default_exec_properties=Pool=<pool-name>` | リモートアクションを実行するworker poolを選択します。値は、Bitriseに表示されるworker poolの名前です。プロパティセットはworker poolと完全に一致する必要があります。ターゲットに対して他の`exec_properties`がどこにも設定されていないことを確認してください。設定されていると、Bazelはworker poolと一致せず、ビルドが失敗します。 |
+| `--spawn_strategy=remote,local` | Bazelがアクションの実行を試みる順序を決定します。Bazelは、リスト内で指定のアクションを実行できる最初のストラテジーを使用します。default valueは`remote,worker,sandboxed,local`です。リモートを先頭に置くことで、アクションがリモート実行環境で実行され、ローカル実行へ円滑にフォールバックします。 |
+| `--noremote_upload_local_results` | ローカルで生成された出力の再アップロードをスキップします。リモートワーカーはすでにアーティファクトをキャッシュにプッシュしているため、帯域幅を節約できます。このconfigフラグは、Bitrise Build Cache CLIでも設定されます。これを使用する場合は、このフラグの使用時にCLIで`--cache-push`フラグがfalseまたはoffになっていることを確認してください。 |
 
-## ターゲットごとの worker pool の選択 {#selecting-a-worker-pool-per-target}
+## ターゲットごとのworker poolの選択 {#selecting-a-worker-pool-per-target}
 
-`--remote_default_exec_properties` は呼び出し全体に適用され、実行プラットフォームが独自の `exec_properties` を設定しているターゲットについては、Bazel はこれを無視します。たとえば、異なる macOS イメージを持つプールでテストを実行するなど、ターゲットごとに別々の worker pool にルーティングするには、プールごとにプラットフォームを定義し、そこで `Pool` プロパティを設定します。
+`--remote_default_exec_properties`は呼び出し全体に適用され、実行プラットフォームが独自の`exec_properties`を設定しているターゲットについては、Bazelはこれを無視します。たとえば、異なるmacOSイメージを持つプールでテストを実行するなど、ターゲットごとに異なるworker poolにルーティングするには、プールごとにプラットフォームを定義し、そこで`Pool`プロパティを設定します。
 
 ```python
 platform(
@@ -116,4 +116,4 @@ platform(
 )
 ```
 
-`--extra_execution_platforms` でプラットフォームを登録し、標準の Bazel プラットフォームとツールチェーンの解決を使用して、ターゲットを割り当てます。
+`--extra_execution_platforms`でプラットフォームを登録し、標準のBazelプラットフォームとツールチェーンの解決を使用して、ターゲットをそのプラットフォームに割り当てます。

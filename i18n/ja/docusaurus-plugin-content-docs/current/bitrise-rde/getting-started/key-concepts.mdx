@@ -4,65 +4,70 @@ description: "Understand the building blocks of Remote Dev Environments: session
 sidebar_position: 3
 slug: /bitrise-rde/getting-started/key-concepts
 ---
-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 
-Remote Dev Environment は、クライアントの種類を問わず同じ基本要素を共有しています。CLI、Web UI、MCP サーバー、API です。これらの概念を理解しておくと、クライアント間の移動がスムーズになります。
+Remote Dev Environments は、すべてのクライアントで同じ構成要素を共有しています。CLI、Web UI、MCP サーバー、API です。これらの概念を理解しておくと、クライアント間をスムーズに行き来できます。
 
 ## セッション {#sessions}
 
-<GlossTerm baseform="rde session">セッション</GlossTerm>とは、単一の Remote Dev Environment インスタンスのことです。つまり、接続して作業を行う1台のクラウドマシンです。セッションは、[テンプレート](#templates) から作成するか、[スタックとマシンタイプ](#stacks-and-machine-types) を直接選択して作成します。
+<GlossTerm baseform="rde session">セッション</GlossTerm>は、Remote Dev Environments の単一のインスタンスです。接続して作業するための 1 台のクラウドマシンを指します。セッションは、[テンプレート](#templates)から作成するか、[スタックとマシンタイプ](#stacks-and-machine-types)を直接選択して作成します。
 
-各セッションは、作成元の <GlossTerm baseform="workspace">workspace</GlossTerm> に属し、作成したユーザーが所有します。セッションへの接続方法はいくつかあります。詳しくは [Connecting to a session](/bitrise-rde/rde-options/connecting-to-a-session)をご覧ください。
+各セッションは、作成された <GlossTerm baseform="workspace">workspace</GlossTerm> に属し、作成したユーザーが所有します。workspace所有のセッションの場合は、workspace自体が所有します。[Can several people share one session?](/bitrise-rde/getting-started/rde-faq)(FAQ)をご覧ください。セッションには複数の方法で接続できます。[Connecting to a session](/bitrise-rde/rde-options/connecting-to-a-session)をご覧ください。
 
 ## セッションのライフサイクル {#session-lifecycle}
 
-セッションは、その存続期間中にいくつかの状態を移行します。
+セッションは、存続中にいくつかの状態を遷移します。
 
-- <strong>Running</strong>: マシンがプロビジョニングされ、接続可能な状態です。セッションを作成または復元すると、短い起動時間の後にこの状態になります。
-- <strong>Terminated</strong>: マシンは停止していますが、セッションと永続ディスクは保持されます。終了操作は元に戻すことができます。
-- <strong>Deleted</strong>: セッションは完全に削除されます。削除できるのは、すでに終了済みのセッションのみです。
+- <strong>Running</strong>: マシンがプロビジョニングされ、接続可能な状態です。セッションを作成または復元すると、短い起動時間の後に実行中になります。
+- <strong>Terminated</strong>: マシンは停止していますが、セッションと永続ディスクは保持されます。終了は元に戻せます。
+- <strong>Deleted</strong>: セッションは完全に削除されます。削除できるのは、すでに終了しているセッションのみです。
 
-セッションを終了しても <strong>永続ディスク</strong> は保持されるため、復元するとファイルや変更内容はそのまま残っています。終了したセッションの保持期間に制限はありません。削除するか、作成元のスタックが Bitrise から削除されるまで保持されます。
+セッションを終了しても<strong>永続ディスク</strong>は保持されるため、復元すると、ファイルや変更内容はそのまま残っています。終了したセッションの保持期間に制限はありません。削除するまで、またはセッションの作成元のスタックが Bitrise から削除されるまで保持されます。
 
-セッションのディスクには、作成元のスタックイメージに対して行った変更のみが保存されます。そのため、そのスタックイメージが利用可能な間のみセッションを起動できます。Stacks は公開スケジュールに従って削除され、少なくとも4週間前に通知されます。詳しくは [Stackの非推奨化と削除ポリシー](/bitrise-build-hub/infrastructure/build-stacks/stack-deprecation-and-removal-policy)をご覧ください。スタックが削除されると、そこから作成されたセッションは完全に消去され、復元できなくなります。それまでに、現行のスタックから新しいセッションを作成し、保持したい内容はコミットまたはエクスポートしてください。
+セッションのディスクには、作成元のスタックイメージの上に加えた変更のみが保存されるため、セッションを起動できるのは、そのスタックイメージが利用可能な間だけです。Stacksは、少なくとも 4 週間前に通知したうえで、公開されているスケジュールに従って削除されます。[Stack deprecation and removal policy](/bitrise-build-hub/infrastructure/build-stacks/stack-deprecation-and-removal-policy)をご覧ください。スタックが削除されると、そのスタックから作成されたセッションは完全に消去され、復元できません。その前に、現行のスタックから新しいセッションを作成し、保持したいものはコミットまたはエクスポートしてください。
 
-マシンを起動したままにしないよう、すべてのセッションには <strong>auto-terminate</strong> タイマーが設定されています。
+マシンが起動したままになるのを防ぐため、すべてのセッションには<strong>自動終了</strong>タイマーがあります。
 
-- 既定値は、非アクティブ状態が5日間続いた場合です。
-- 最大30日まで任意の値に設定できるほか、オフにしてセッションが自動終了しないようにすることもできます。
-- 無料トライアルの workspaces 内のセッションは8時間が上限で、この設定を変更できません。
+- デフォルトは 5 日間の非アクティブです。
+- 最大 30 日までの任意の期間に設定できます。オフにして、自動終了しないようにすることもできます。
+- 無料トライアルの workspaces のセッションは 8 時間が上限で、この設定は変更できません。
 
 ## Stacksとマシンタイプ {#stacks-and-machine-types}
 
-セッションを作成する際には、次の2つを選択します。
+セッションを作成するときは、次の 2 つを選択します。
 
-- <strong><GlossTerm baseform="stack">スタック</GlossTerm></strong>: OS イメージと、そこにプリインストールされたツール群です。例えば macOS 上の特定の Xcode バージョンなどです。これらは Bitrise CI で使用されているものと同じスタックです。
-- <strong>machine type</strong>: マシンの CPU と RAM によって決まるサイズです。macOS では Apple シリコン搭載のマシンタイプが使用され、Linux のマシンタイプは、小規模な共有インスタンスから大規模な専用インスタンスまで多岐にわたります。
+- <strong><GlossTerm baseform="stack">スタック</GlossTerm></strong>: オペレーティングシステムイメージと、プリインストールされているツールです。たとえば macOS 上の特定の Xcode バージョンなどです。これらは Bitrise CI で使用されるスタックと同じものです。
+- <strong>machine type</strong>: CPU と RAM で定義されるマシンのサイズです。macOS では Apple シリコンのマシンタイプを使用します。Linux のマシンタイプには、小規模な共有インスタンスから大規模な専有インスタンスまであります。
 
-テンプレートでこれらを設定することも、セッション作成時に直接選択することもできます。利用可能なスタックとマシンタイプは、ご利用の workspace によって異なります。
+テンプレートでこれらを設定することも、セッションの作成時に直接選択することもできます。利用可能なスタックとマシンタイプは、workspace によって異なります。
 
-<strong>セッションは、選択したスタックに固定されたままになります。</strong> スタックは単なる起点ではありません。セッションは、作成元のスタックイメージに対して恒久的な依存関係を持ちます。セッションのディスクには、そのイメージに対して行った変更のみが保存されるため、そのイメージが Bitrise 上で利用可能な間のみセッションを起動できます。既存のセッションを別のスタックに移動することはできません。新しいスタックに移行するには、そのスタックから新しいセッションを作成してください。スタックは最終的に公開スケジュールに従って削除されるため、これによってセッションを保持できる期間も決まります。詳しくは [セッションのライフサイクル](#session-lifecycle) をご覧ください。
+<strong>セッションは、選択したスタックに紐づいたままになります。</strong> スタックは単なる開始点ではありません。セッションは、作成元のスタックイメージへの依存関係を恒久的に保持します。セッションのディスクには、そのイメージの上に加えた変更のみが保存されるため、セッションを起動できるのは、そのイメージが Bitrise で利用可能な間だけです。既存のセッションを別のスタックに移行することはできません。新しいスタックを使うには、そのスタックから新しいセッションを作成してください。スタックは公開されているスケジュールに従って最終的に削除されるため、これによってセッションを保持できる期間も決まります。[セッションのライフサイクル](#session-lifecycle)をご覧ください。
 
 ## 仮想デバイス {#virtual-devices}
 
-セッションでは、iOS シミュレーターや Android エミュレーターを起動することもでき、その場合は <GlossTerm baseform="device session">デバイスセッション</GlossTerm>になります。また、<GlossTerm baseform="device preview link">デバイスプレビューリンク</GlossTerm>を使うと、リンクを持つ誰でもそのデバイス上でアプリのビルドを開くことができます。詳しくは [仮想デバイス](/bitrise-rde/devices/virtual-devices)をご覧ください。
+セッションでは、iOS シミュレーターや Android エミュレーターを起動することもできます。これを <GlossTerm baseform="device session">デバイスセッション</GlossTerm>と呼びます。<GlossTerm baseform="device preview link">デバイスプレビューリンク</GlossTerm>を使うと、リンクを知っている人なら誰でも、そのデバイス上でアプリのビルドを開けます。[Virtual devices](/bitrise-rde/devices/virtual-devices)をご覧ください。
 
 ## テンプレート {#templates}
 
-<GlossTerm baseform="rde template">テンプレート</GlossTerm>とは、再利用可能なセッション構成です。スタック、マシンタイプ、セットアップ手順を毎回選択する代わりに、テンプレートでこれらを一度定義しておき、そこからセッションを作成します。テンプレートには、次の要素を含めることができます。
+<GlossTerm baseform="rde template">テンプレート</GlossTerm>は、再利用可能なセッション設定です。セッションを作成するたびにスタック、マシンタイプ、セットアップ手順を選択する代わりに、テンプレートで一度定義しておけば、そこからセッションを作成できます。テンプレートには次の内容を含められます。
 
-- スタック、マシンタイプ、作業ディレクトリ
-- セッションの初回作成時に一度だけ実行される <strong>warmup script</strong> と、起動のたびに実行される <strong>startup script</strong>
-- <strong>テンプレート変数</strong> と <strong>セッション入力</strong>: セッションに必要な値で、environment variables として公開したり、シークレットとして設定したりできます。
-- <strong>Workspace リンク</strong>: IDE で特定のフォルダーを開くショートカットボタンです。
+- スタック、マシンタイプ、作業ディレクトリ。
+- セッションの初回作成時に 1 回だけ実行される <strong>warmup script</strong> と、起動のたびに実行される <strong>startup script</strong>。
+- <strong>テンプレート変数</strong>と<strong>セッション入力</strong>: セッションが必要とする値です。environment variablesとして公開したり、シークレットとして設定したりできます。
+- <strong>Workspace リンク</strong>: IDE で特定のフォルダーを開くショートカットボタン。
 
-詳しくは、[テンプレート](/bitrise-rde/configuration/templates)をご覧ください。
+詳細は、[Templates](/bitrise-rde/configuration/templates)をご覧ください。
 
-## 保存済みの入力 {#saved-inputs}
+## Warm pools
 
-<GlossTerm baseform="saved input">保存済みの入力</GlossTerm>とは、一度保存しておき、必要に応じてセッションにマッピングできる再利用可能な値や認証情報です。例えば、SSH 公開鍵、API トークン、Claude Code 認証情報などです。保存済みの入力はユーザーアカウント単位で管理され、単一の workspace に限定されることはなく、シークレット値は保存時に暗号化されます。
+<GlossTerm baseform="warm pool">warm pool</GlossTerm>は、1 つの構成のセッションを一定数、起動済みのアイドル状態で保持します。そのため、プールからセッションを作成すると数秒で完了します。新しいマシンを起動する代わりにプールからセッションが割り当てられ、プールは代わりのセッションを起動します。プールはテンプレートを入力とオーバーライドとともに保存し、ユーザー自身または workspace に属します。プールサイズはいつでも変更でき、スケジュールに従って変更することもできます。
 
-詳しくは、[保存済みの入力](/bitrise-rde/configuration/saved-inputs)をご覧ください。
+詳細は、[Warm pools](/bitrise-rde/configuration/warm-pools)をご覧ください。
+
+## 保存済み入力 {#saved-inputs}
+
+<GlossTerm baseform="saved input">保存済み入力</GlossTerm>は、再利用可能な値や認証情報です。たとえば SSH 公開鍵、API トークン、Claude Code 認証情報などで、一度保存しておけば、必要に応じてセッションにマッピングできます。保存済み入力のスコープは単一の workspace ではなくユーザーアカウントで、シークレット値は保存時に暗号化されます。
+
+詳細は、[Saved inputs](/bitrise-rde/configuration/saved-inputs)をご覧ください。

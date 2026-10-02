@@ -10,38 +10,38 @@ import GlossTerm from '@site/src/components/GlossTerm';
 
 :::warning[Docker Hub のレート制限]
 
-2024年7月15日から、Docker Hub からのダウンロードにレート制限が適用されます。認証なしでBitriseビルド中に弊社のLinuxマシン上でDocker Hub からDockerイメージをプルすると、レート制限の影響で問題が発生する可能性があります。
+2024年7月15日から、Docker Hub からのダウンロードにレート制限が適用されます。当社のLinuxマシン上の Bitrise ビルド中に、認証なしで Docker Hub から Docker イメージをプルすると、レート制限により問題が発生する場合があります。
 
-Bitriseは人気の高いパブリックな Docker イメージの一部をミラーリングしていますが、レート制限によるこうした問題を回避するには、次のいずれかの方法があります。
+Bitrise は一部の人気のあるパブリック docker イメージをミラーリングしていますが、レート制限によるこれらの問題を避けるために、次のいずれかを実行できます。
 
-- Docker Hub に対するDockerイメージのプルリクエストを認証します。詳細とDockerの完全なポリシーについては、[Docker Hub のレート制限](https://docs.docker.com/docker-hub/download-rate-limit/)を参照してください。
-- イメージの保存先を別のDockerレジストリに切り替えます。
-
-:::
-
-Linux <GlossTerm baseform="stack">stack</GlossTerm>ビルドをローカルで実行できるようにするには、[docker](https://www.docker.com/)が必要です。
-
-- Linuxの場合は、[公式のインストール手順](https://docs.docker.com/engine/installation/linux/)に従ってください。
-- Macの場合は、Docker for Macを使うのが最も簡単に始める方法です。
-
-このガイドでは、[このBitrise Androidサンプルプロジェクト](https://github.com/bitrise-samples/sample-apps-android-sdk22)を使用します。
-
-:::caution[イメージサイズが大きいので注意]
-
-公式のBitrise Dockerイメージは、多種多様なツールがプリインストールされているため、サイズがかなり大きくなっています。少なくとも20〜25GBの空きディスク容量が必要です。
+- Docker Hub に対する Docker イメージのプルリクエストを認証する。詳細と Docker の完全なポリシーについては、[Docker Hub rate limit](https://docs.docker.com/docker-hub/download-rate-limit/)を参照してください。
+- イメージを保存するために、別の Docker レジストリに切り替える。
 
 :::
 
-[Bitrise CLI](https://www.bitrise.io/cli)に慣れていない場合は、まずそちらを試すことをおすすめします。CLIを完全にマスターする必要はなく、`bitrise local run WORKFLOW`が何を行うかを理解していれば、このチュートリアルには十分です。
+Linux <GlossTerm baseform="stack">スタック</GlossTerm>のビルドをローカルで実行するには、[docker](https://www.docker.com/)が必要です。
+
+- Linux の場合は、[公式のインストール手順](https://docs.docker.com/engine/installation/linux/)に従ってください。
+- Mac の場合は、Docker for Mac を使用すると最も簡単に始められます。
+
+このガイドでは、[この Bitrise Android サンプルプロジェクト](https://github.com/bitrise-samples/sample-apps-android-sdk22)を使用します。
+
+:::caution[大きなイメージについて]
+
+公式の Bitrise Docker イメージは、さまざまなツールがプリインストールされているため、非常に大きくなっています。少なくとも 20～25 GB の空きディスク容量が必要です。
+
+:::
+
+[Bitrise CLI](https://www.bitrise.io/cli)に慣れていない場合は、まずそちらを試してください。CLIを使いこなす必要はありません。`bitrise local run WORKFLOW` の動作を理解していれば、このチュートリアルには十分です。
 
 
-## Dockerイメージのダウンロード {#downloading-docker-images}
+## docker イメージのダウンロード {#downloading-docker-images}
 
 1. [docker](https://www.docker.com/)をインストールします。
-1. リポジトリに`bitrise.yml`があることを確認します。
+1. リポジトリに `bitrise.yml` があることを確認してください。
 
-   コミットする必要はありませんが、このファイルはリポジトリのルートディレクトリに存在している必要があります。
-1. Mac/Linux上のリポジトリのディレクトリに`cd`します。
+   コミットする必要はありませんが、ファイルがリポジトリのルートディレクトリに存在している必要があります。
+1. `cd` で、Mac/Linux 上のリポジトリのディレクトリに移動します。
 1. レジストリからイメージをプルします。
 
    ```bash
@@ -53,26 +53,28 @@ Linux <GlossTerm baseform="stack">stack</GlossTerm>ビルドをローカルで�
    docker run --privileged --env CI=false --volume "$(pwd):/bitrise/src" --volume "/var/run/docker.sock:/var/run/docker.sock" --rm bitriseio/android-20.04:latest bitrise local run WORKFLOW
    ```
 
-   コンテナ内に直接入って試したい場合は、`--rm bitriseio/android-20.04:latest bitrise local run WORKFLOW`を`-it bitriseio/android-20.04:latest bash`に置き換えることで、コンテナ内でインタラクティブなbashシェルを起動できます。例:
+   コンテナーに入って中で試してみたい場合は、`--rm bitriseio/android-20.04:latest bitrise local run WORKFLOW` を `-it bitriseio/android-20.04:latest bash` に置き換えると、コンテナー内で対話型の bash シェルが起動します。例:
 
    ```bash
    docker run --privileged --env CI=false --volume "$(pwd):/bitrise/src" --volume "/var/run/docker.sock:/var/run/docker.sock" -it bitriseio/android-20.04:latest bash
    ```
 
-   一般的に、プロジェクトがAndroidプロジェクトでAndroid NDKを使用しない場合は、貴重なディスク容量を節約するために[bitriseio/android](https://quay.io/repository/bitriseio/android) Dockerイメージを使用することをおすすめします。他の公式Bitrise Dockerイメージは、[Quayページ](https://quay.io/organization/bitriseio)で確認できます。この例では、`bitriseio/android`のものを使用しています。
-1. [Quay](https://quay.io/organization/bitriseio)からDockerイメージをダウンロードします。
+   一般的に、プロジェクトが Android プロジェクトで Android NDK を使用しない場合は、貴重なディスク容量を節約するために、[bitriseio/android](https://quay.io/repository/bitriseio/android) docker イメージを使用してください。その他の公式 Bitrise docker イメージは、[Quay のページ](https://quay.io/organization/bitriseio)で確認できます。この例では `bitriseio/android` のイメージを使用しています。
+1. [Quay](https://quay.io/organization/bitriseio)から docker イメージをダウンロードします。
 
    ```bash
    docker pull bitriseio/android-20.04:latest
    ```
 
-   このイメージは10GBを超えるため、ダウンロードにはかなり時間がかかることに注意してください。ダウンロードが失敗したりハングしたりした場合は、同じコマンドを再度実行することでいつでも再開できます。
-1. Bitriseのビルド設定(`bitrise.yml`)をリポジトリのルートディレクトリにダウンロードします。
+   このイメージは 10 GB を超えるため、ダウンロードにはかなり時間がかかる場合があります。ダウンロードが失敗したりハングしたりした場合は、同じコマンドをもう一度実行すればいつでも再開できます。
+1. Bitrise のビルド設定(`bitrise.yml`)をリポジトリのルートディレクトリにダウンロードします。
 
-   [bitrise.io](https://www.bitrise.io)上の<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>の<strong><GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm></strong>タブから、プロジェクトの`bitrise.yml`を[ダウンロード](/bitrise-ci/configure-builds/configuration-yaml/accessing-a-build-s-bitrise-yml-file)できます。
-1. ターミナル/コマンドラインで、リポジトリのルートディレクトリに移動します(`cd`)。この場所に`bitrise.yml`があるかを確認してください。
+   [bitrise.io](https://www.bitrise.io)の <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm> の <strong><GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm></strong> タブから、プロジェクトの `bitrise.yml` を[ダウンロード](/bitrise-ci/configure-builds/configuration-yaml/accessing-a-build-s-bitrise-yml-file)できます。
 
-問題を再現しようとする場合は、リポジトリを新しいディレクトリに`git clone`してください。そうすることで、そのディレクトリにはリポジトリにコミットされているファイルのみが含まれるようになります。通常の作業ディレクトリでコマンドを実行しようとすると、再現性に関する問題がよく発生します。作業ディレクトリには、たとえば`.gitignore`内のファイルなど、リポジトリにコミットされていないファイルが含まれている可能性が高いためです。
+   または、Bitrise CLI でダウンロードすることもできます: `bitrise yml get --app APP-ID > bitrise.yml`。[Downloading the bitrise.yml file](/bitrise-ci/bitrise-cli/working-with-bitrise-yml-via-the-bitrise-cli#downloading-the-bitriseyml-file)を参照してください。このコマンドには Bitrise CLI 3.0.0 以降が必要です。
+1. ターミナル/コマンドラインで、リポジトリのルートディレクトリに移動(`cd`)します。この場所に `bitrise.yml` があることを確認してください。
+
+問題を再現しようとする場合は、リポジトリを新しいディレクトリに `git clone` して、リポジトリにコミットされたファイルだけがディレクトリに含まれるようにしてください。通常の作業ディレクトリでコマンドを実行すると、リポジトリにコミットされていないファイル(たとえば `.gitignore` にあるファイル)が存在することが多く、再現性の問題がよく発生します。
 
 
 ## ビルドの実行 {#running-the-build}
@@ -85,7 +87,7 @@ docker run --privileged --env CI=false --volume "$(pwd):/bitrise/src" --volume "
 
 - `--rm bitriseio/android:latest bitrise local run WORKFLOW`
 
-  `-it bitriseio/android:latest bash`を指定すると、コンテナ内でインタラクティブなbashシェルを起動できます。
+  `-it bitriseio/android:latest bash` を指定すると、コンテナー内で対話型の bash シェルが起動します。
 
   例:
 
@@ -93,14 +95,14 @@ docker run --privileged --env CI=false --volume "$(pwd):/bitrise/src" --volume "
   docker run --privileged --env CI=false --volume "$(pwd):/bitrise/src" --volume "/var/run/docker.sock:/var/run/docker.sock" -it bitriseio/android:latest bash
   ```
 
-  このコマンドは、現在のディレクトリ(リポジトリのディレクトリ)をDockerコンテナと共有ボリュームとして共有し、コンテナ内のパス`/bitrise/src`からアクセスできるようにします。
+  このコマンドは、現在のディレクトリ(リポジトリのディレクトリ)を共有ボリュームとして docker コンテナーと共有し、コンテナー内のパス `/bitrise/src` で利用できるようにします。
 
-  この後、`bitrise local run WORKFLOW`を実行すると、コンテナ内でWorkflowが実行されます。コンテナから抜けるには、`exit`を実行するだけです。
-- `bitrise.yml`内の`WORKFLOW`は、`primary`のような実際のWorkflow IDに置き換えるのを忘れないでください。
+  その後、`bitrise local run WORKFLOW` を実行すると、コンテナー内で Workflow が実行されます。コンテナーを終了するには、`exit` を実行します。
+- `WORKFLOW` は、`bitrise.yml` 内の Workflow の実際の ID に置き換えてください(`primary` のような形式です)。
 
-- `--env CI=false`フラグは環境変数`CI`を`false`に設定します。これにより、CI環境でのみ意味のある特定のStepをBitrise CLIがスキップするようになります。たとえば、`Git Clone` <GlossTerm baseform="step">Step</GlossTerm>の場合、コードはすでに手元にあるため、Dockerコンテナ内で再度git cloneする必要はありません(そのためコードのディレクトリを`--volume`として共有しました)。
-- `--rm`フラグは、`docker run`コマンドの終了後にコンテナを破棄するようDockerに指示します。つまり、コマンドを再度実行しても、`docker run ..`コマンドの実行間で保持されるのは、共有された`--volume`(リポジトリのディレクトリ内)に保存されているファイルのみです。それ以外の、一時的な場所などに生成されるファイルはすべて破棄され、保持されません。
+- `--env CI=false` フラグは、環境変数 `CI` を `false` に設定します。これにより、Bitrise CLI は CI 環境でのみ実行する意味のある一部の Step をスキップします。たとえば、`Git Clone` <GlossTerm baseform="step">Step</GlossTerm> です。コードはすでにあるため、docker コンテナー内で再度 git clone する必要はありません(そのため、コードディレクトリを `--volume` として共有しました)。
+- `--rm` フラグは、`docker run` コマンドの終了後に docker がコンテナーを破棄するよう指示します。つまり、コマンドを再実行した場合、`docker run ..` コマンド間で保持されるのは、共有 `--volume`(リポジトリのディレクトリ内)に保存されたファイルだけです。一時ディレクトリなどの他の場所に生成されたファイルはすべて破棄され、保持されません。
 
-  ビルドが失敗した後にコンテナをデバッグしたい場合は、`--rm`フラグを自由に削除し、既存のDockerコンテナに接続する方法について解説したDockerチュートリアルを確認してください。同じコマンドを再度実行しても、同じコンテナは使用されず、新しいコンテナが作成される点に注意してください。
-- `--privileged`フラグは、Dockerコンテナからホストへのアクセス制御を許可します。そのため、使用するDockerイメージを信頼できる場合を除き、このフラグは絶対に使用しないでください!このフラグは、たとえばVPNを機能させる(ホストのネットワーク設定を変更する)ために必要です。
-- `--volume "/var/run/docker.sock:/var/run/docker.sock"`フラグは、ホストのDockerソケットをコンテナに公開します。これは、コンテナ内から他のDockerコンテナを実行したい場合や、ビルド中/コンテナ内で`docker`コマンドを実行したい場合に必要です。
+  失敗したビルドの後でコンテナーをデバッグしたい場合は、`--rm` フラグを削除し、既存の docker コンテナーに接続する方法を解説した Docker のチュートリアルを参照してください。コマンドを再実行しても同じコンテナーは使用されず、新しいコンテナーが作成されることに注意してください。
+- `--privileged` フラグは、docker コンテナーからホストへのアクセス制御を許可します。そのため、使用する docker イメージを信頼できる場合を除き、このフラグは使用しないでください。このフラグは、たとえば VPN が動作する(ホストのネットワーク設定を変更する)ために必要です。
+- `--volume "/var/run/docker.sock:/var/run/docker.sock"` フラグは、ホストの docker ソケットをコンテナーに公開します。これは、コンテナー内から他の docker コンテナーを実行する場合や、ビルド中またはコンテナー内で `docker` コマンドを実行する場合に必要です。
