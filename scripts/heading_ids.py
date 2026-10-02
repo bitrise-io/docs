@@ -132,6 +132,32 @@ def final_ids(headings):
     return ids
 
 
+_ANY_ID_RE = re.compile(r"[ \t]*\{#([^}\s]+)\}")
+
+
+def relocate_inline_anchors(lines):
+    """Move a heading's {#id} to the end of its line, in place.
+
+    The id is masked as a placeholder token during translation, and a model may
+    legally reorder tokens, so it sometimes lands mid-heading
+    ("Bitrise CLI {#id}が公開する Env Vars"). Docusaurus only reads an id at the
+    very end of the line and MDX rejects the stray braces, so the page would not
+    compile. Returns True if any line changed.
+    """
+    changed = False
+    for h in scan(lines):
+        ids = _ANY_ID_RE.findall(h.raw)
+        if not ids or (len(ids) == 1 and h.explicit):
+            continue
+        line = lines[h.line].rstrip("\r")
+        cr = lines[h.line][len(line):]
+        prefix = re.match(r"^ {0,3}#{1,6}[ \t]+", line).group(0)
+        text = _ANY_ID_RE.sub("", h.raw).rstrip()
+        lines[h.line] = f"{prefix}{text} {{#{ids[0]}}}{cr}"
+        changed = True
+    return changed
+
+
 def add_english_heading_ids(src_text, ja_text):
     """Give translated headings the explicit id of their English counterpart.
 
@@ -140,6 +166,9 @@ def add_english_heading_ids(src_text, ja_text):
     """
     src_lines = src_text.split("\n")
     ja_lines = ja_text.split("\n")
+    relocated = relocate_inline_anchors(ja_lines)
+    if relocated:
+        ja_text = "\n".join(ja_lines)
     src, ja = scan(src_lines), scan(ja_lines)
     if len(src) != len(ja):
         return ja_text, f"heading count differs (en {len(src)}, ja {len(ja)})"

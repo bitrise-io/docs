@@ -103,6 +103,20 @@ class AddIdsTests(unittest.TestCase):
         out, _ = add_english_heading_ids("## Title\r\n", "## タイトル\r\n")
         self.assertEqual(out, "## タイトル {#title}\r\n")
 
+    def test_mid_heading_anchor_moves_to_end_without_duplicating(self):
+        en = "## Env Vars exposed by the Bitrise CLI\n"
+        ja = "## Bitrise CLI {#env-vars-exposed-by-the-bitrise-cli}が公開する Env Vars\n"
+        out, note = add_english_heading_ids(en, ja)
+        self.assertIsNone(note)
+        self.assertEqual(out, "## Bitrise CLIが公開する Env Vars {#env-vars-exposed-by-the-bitrise-cli}\n")
+
+    def test_mid_heading_anchor_plus_duplicate_collapses_to_one(self):
+        en = "## Env Vars exposed by the Bitrise CLI\n"
+        ja = "## Bitrise CLI {#x}が公開する {#x}\n"
+        out, _ = add_english_heading_ids(en, ja)
+        self.assertEqual(out.count("{#"), 1)
+        self.assertTrue(out.rstrip().endswith("{#x}"))
+
 
 if __name__ == "__main__":
     unittest.main()
