@@ -1,0 +1,55 @@
+---
+title: "Configuring the Build Cache for Xcode in non-Bitrise CI environments"
+description: "The Bitrise Build Cache does not require using the Bitrise CI. You can use other CI/CD services and still take advantage of the cache to improve your Xcode build times. To do so, you need to configure your CI environment to download the Bitrise Build Cache CLI during the build and then run the CLI to enable the Bitrise Build Cache."
+sidebar_position: 3
+slug: /bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-non-bitrise-ci-environments
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitrise Build Cache の利用に Bitrise CI は必須ではありません。他の CI/CD サービスを使用しながら、キャッシュを活用して Xcode のビルド時間を短縮することもできます。
+
+そのためには、CI 環境を設定して、ビルド中に Bitrise Build Cache CLI をダウンロードし、CLI を実行して Bitrise Build Cache を有効にします。
+
+手順を手動で進める代わりに、AI コーディングエージェントを使ってセットアップすることもできます。[Getting started with AI](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai) を参照してください。
+
+:::tip[GitHub Actions を使用していますか?]
+
+GitHub Actions のワークフロー例を掲載した専用ガイドがあります: [Configuring the Build Cache for Xcode in GitHub Actions](/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-github-actions)。
+
+[Bitrise Build Hub](/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview) ランナーでは、トークンはまったく必要ありません。マシンがすでに Bitrise Workspace に接続されているため、CLI が自動的に認証されます。以下の手順は、それ以外のすべての環境が対象です。
+
+:::
+
+1. Bitrise で Personal Access Token を生成します: [Creating a personal access token](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token)。
+
+   トークンの値は手順の途中で必要になるため、コピーしておいてください。
+1. [Workspace ID を確認します](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs): <strong>Workspace settings</strong> ページを開き、左側のナビゲーションメニューで <strong>General settings</strong> を選択します。ここからスラッグを確認してコピーできます。
+1. CI の設定で、次の Environment Variables を設定します。
+
+   - BITRISE_BUILD_CACHE_AUTH_TOKEN: 値には Personal Access Token を指定します。
+   - BITRISE_BUILD_CACHE_WORKSPACE_ID: 値には Bitrise Workspace のスラッグを指定します。
+1. 高速化したいステップの前に、次のスクリプトを CI の設定に追加します。
+
+   :::important[環境]
+
+   高速化したい Xcode コマンドと同じ環境でスクリプトを実行してください。
+
+   他のビルドツール用のワークフローがすでに設定されている場合(例: Gradle)は、Xcode をサポートする最新バージョンの CLI (v1.0.0 以降)をインストールしてください。
+
+   Xcode Compilation Cache には Xcode 26 or later バージョンが必要です。
+
+   :::
+
+   ```bash
+   #!/usr/bin/env bash
+   set -euxo pipefail
+
+   # download Bitrise Build Cache CLI
+   curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+
+   # run the CLI to enable Bitrise build cache for Xcode
+   /tmp/bin/bitrise-build-cache activate xcode --cache --cache-push
+   ```

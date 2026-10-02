@@ -1,0 +1,296 @@
+---
+title: "Configuring the build cache for Bazel in local builds"
+description: "Set up the Bitrise Build Cache for local Bazel builds so your machine reads the same cache your CI builds populate."
+sidebar_position: 4
+slug: /bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-local-builds
+sidebar_label: Configuring the Bitrise Build Cache for Bazel in local environments
+---
+
+Bitrise Build Cache は、ローカルの Bazel ビルドでも使用できます。ローカルビルドは CI ビルドと同じキャッシュを読み取るため、CI がすでに実行したアクションを、お使いのマシンで再度実行する必要はありません。
+
+Bitrise Build Cache CLI は、キャッシュのフラグを `~/.bazelrc` に書き込むことで、この設定を行います。
+
+手順を手動で実行する代わりに、AI コーディングエージェントを使ってセットアップすることもできます。[Getting started with AI](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai) を参照してください。
+
+## 始める前に
+
+次のものを用意してください。
+- お使いのマシン上で動作する Bazel 6 以降の Bazel プロジェクト。このセットアップでは Bazel の認証情報ヘルパーのサポートを使用しますが、それ以前のバージョンにはこの機能がありません。
+- Build Cache が有効な Bitrise workspace。[Build Cache ページ](https://app.bitrise.io/build-cache/)で確認できます。
+- お使いのマシンがファイアウォールまたはアウトバウンドプロキシの内側にある場合は、Build Cache が使用する Bitrise ホストへのネットワークアクセス（VPN を含む）。[Network endpoints for firewalls and VPN](/bitrise-build-cache/getting-started-with-the-build-cache/network-endpoints-for-firewalls-and-vpns) を参照してください。
+
+:::important[Activation is global, not per-project]
+
+`activate bazel` は、ホームディレクトリの `~/.bazelrc` に 1 つのブロックを書き込みます。プロジェクトの `.bazelrc` には一切変更を加えません。
+
+アクティベーションを実行したプロジェクトだけでなく、お使いのマシン上のすべての Bazel プロジェクトがキャッシュのフラグを読み込みます。ダッシュボードに報告されるリポジトリ URL は、アクティベーションを実行したディレクトリの git リモートから読み取られるため、複数の Bazel プロジェクトがあるマシンでは、すべてが最初のプロジェクトとして報告されます。影響を受けるのはダッシュボード上の帰属表示のみで、キャッシュの正確性には影響しません。変更するには、別のプロジェクトのディレクトリからアクティベーションを再実行してください。
+
+:::
+
+## CLI のインストール
+
+Homebrew で CLI をインストールします（<strong>推奨</strong>）。
+
+```bash
+brew install bitrise-io/bitrise-build-cache/bitrise-build-cache
+```
+
+Homebrew を使用しない場合は、次のようにします。
+
+```bash
+curl --retry 5 -sSfL \
+  'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' \
+  | sh -s -- -b ~/.local/bin
+```
+
+インストール先が `PATH` に含まれていることを確認し、インストールを確認してください。
+
+```bash
+bitrise-build-cache --version
+```
+
+その後も、CLI を `PATH` に残しておいてください。Bazel は、セットアップ時だけでなく、ビルドのたびに CLI を実行して新しい認証トークンを取得します。
+
+## キャッシュのアクティベーション
+
+対話型ウィザードを実行します。
+
+```bash
+bitrise-build-cache activate --interactive
+```
+
+ウィザードでは、次の項目を入力します。
+
+1. <strong>Sign in to Bitrise</strong>: 初回実行時に、認証のためブラウザーが開きます。CLI は認証情報を OS のキーチェーンに保存して自動的に更新するため、2 回目以降はこの手順がスキップされます。使用可能なキーチェーンがないマシンでは、CLI は設定ファイルへの保存に切り替わります。
+1. <strong>Select a workspace</strong>: 使用する Build Cache を持つ workspace を選択します。アクセスできるものが 1 つだけの場合は、CLI が自動的に選択します。
+1. <strong>Which build tool should I set up</strong>: <strong>Bazel</strong> が選択されていることを確認します。スペースキーでオプションを切り替え、Enter キーで確定します。
+1. <strong>Display name for this machine's local invocations</strong>: ローカルビルドが Build Cache ダッシュボードに表示される名前です。例: `local-<yourhandle>`
+1. <strong>Enable cache push</strong>: デフォルトの <strong>Yes, push too</strong> のままにします。[キャッシュのプッシュモード](#cache-push-mode)を参照してください。
+
+サインイン済みの場合の非対話型の方法は次のとおりです。
+
+```bash
+bitrise-build-cache activate bazel --cache
+```
+
+### アクティベーションで書き込まれる内容
+
+`~/.bazelrc` の末尾に、マーカー付きのブロックが 1 つ追加されます。既存の内容は保持され、アクティベーションを再実行した場合はこのブロックのみが更新されます。
+
+```bash
+# [start] generated-by-bitrise-build-cache
+build --credential_helper=*.services.bitrise.io=bitrise-build-cache
+build --remote_cache=grpcs://bitrise-accelerate.services.bitrise.io
+build --remote_timeout=600s
+build --remote_header=x-flare-buildtool=bazel
+build --remote_header=x-flare-builduser=
+build --remote_upload_local_results
+build --bes_backend=grpcs://flare-bes.services.bitrise.io:443
+build --bes_results_url=https://app.bitrise.io/build-cache/invocations/bazel/
+build --bes_timeout=2m
+build --bes_upload_mode=wait_for_upload_complete
+build --build_event_publish_all_actions
+build --show_timestamps
+build --remote_header='x-org-id=<workspace-id>'
+build --bes_header='x-org-id=<workspace-id>'
+build --remote_header='x-repository-url=https://github.com/<org>/<repo>.git'
+build --bes_header='x-repository-url=https://github.com/<org>/<repo>.git'
+build --bes_header='x-os=<detailed OS info>'
+build --bes_header='x-locale=C'
+build --bes_header='x-default-charset=UTF-8'
+build --bes_header='x-cpu-cores=4'
+build --bes_header='x-mem-size=16759259136'
+# [end] generated-by-bitrise-build-cache
+```
+
+注目すべき 2 行があります。
+
+- `--credential_helper` は、トークンを保存する代わりに CLI を指します。そのため、Bazel はビルドのたびに新しいトークンを取得し、期限切れが近いログインでも動作し続けます。これが、CLI を `PATH` に残しておく必要がある理由です。
+- `--remote_upload_local_results` はプッシュモードで、デフォルトの設定です。`--cache-push=false` を指定してアクティベーションを行うと、代わりに `--noremote_upload_local_results` が書き込まれます。
+
+`x-os`、`x-cpu-cores`、`x-mem-size`、`x-locale`、`x-default-charset` の各ヘッダーはお使いのマシンの情報を表し、分析目的にのみ使用されます。cache keys には影響しません。これらはブロックを生成したマシンに固有の値であるため、設定をコミットする場合には注意が必要です。[コミットしても安全な内容](#what-is-safe-to-commit)を参照してください。
+
+## セットアップの確認
+
+CLI のヘルスチェックを実行します。
+
+```bash
+bitrise-build-cache doctor
+```
+
+ローカルセットアップの各部分の状態が報告され、最後に総合判定が表示されます。他のビルドツール向けのプローブは、スキップとして報告されます。
+
+```bash
+Bitrise Build Cache - doctor
+CLI version: 3.x.y
+
+Healthy:
+  ✓ auth                   OAuth login (keychain) (workspace <id>), token valid until <iso-timestamp>
+  ✓ keychain-smoke         Set/Get/Delete round-trip OK
+  ✓ auth-backend           latency <ms>, source=keychain, workspace=<id>
+  ✓ xcelerate-proxy        skipped (xcode not activated)
+  ✓ xcelerate-wrapper-path skipped (xcode not activated)
+  ✓ xcelerate-enrichment   skipped (xcode not activated)
+  ✓ ccache-helper          skipped (c++ not activated)
+  ✓ ccache-binary          skipped (c++ not activated)
+  ✓ log-dirs               no activated tool writes logs
+
+Overall: ok
+```
+
+CLI が自動で修復できる問題を修復するには、`bitrise-build-cache doctor --fix --interactive` を実行してください。
+
+## ビルドの実行
+
+1. まず `bazel clean` を実行します。Bazel のローカルアクションキャッシュはリモートキャッシュの手前に位置しているため、ターゲットがすでにローカルでビルドされている場合、Bazel はディスクから結果を提供し、Bitrise に接続しません。その結果、リモートキャッシュが動作している証拠を確認できません。
+
+   ```bash
+   cd path/to/your/bazel/project
+   bazel clean
+   ```
+
+1. ターゲットをビルドします。
+
+   ```bash
+   bazel build //your/target:name
+   ```
+
+ウォームキャッシュにヒットしたビルドは、次のように終了します。
+
+```bash
+(16:47:35) INFO: Invocation ID: <invocation-id>
+(16:47:35) INFO: Streaming build results to: https://app.bitrise.io/build-cache/invocations/bazel/<invocation-id>
+(16:47:36) INFO: Analyzed target //src/close-matching-prs:close-matching-prs (91 packages loaded, 9216 targets configured).
+(16:47:36) INFO: Found 1 target...
+(16:47:36) INFO: Elapsed time: 0.934s, Critical Path: 0.18s
+(16:47:36) INFO: 11 processes: 4 remote cache hit, 7 internal.
+(16:47:36) INFO: Build completed successfully, 11 total actions
+```
+
+## 動作の確認
+
+サマリー行が動作の証拠です。次の 3 つのケースで表示が異なります。
+
+| サマリー行 | 意味 |
+|---|---|
+| `11 processes: 4 remote cache hit, 7 internal.` | 動作しています。アクションは Bitrise Build Cache から取得されました。 |
+| `1 process: 4 action cache hit, 1 internal.` | ローカルキャッシュから提供されました。リモートキャッシュには接続されていないため、まず `bazel clean` を実行してください。 |
+| `11 processes: 7 internal, 4 processwrapper-sandbox.` | ローカルでゼロからビルドされました。このターゲットのキャッシュにエントリがないか、認証に失敗しています。出力の前半にある `WARNING: Remote Cache: UNAUTHENTICATED` を探してください。 |
+
+`internal` アクション（シンボリックリンクやファイルの書き込みなど）は、キャッシュ対象にはなりません。重要なのは、内部アクションを除いたアクションに対するリモートキャッシュヒットの比率です。
+
+| シグナル | 確認場所 | 成功時の状態 |
+|---|---|---|
+| `INFO: N processes: X remote cache hit` | Bazel のビルドサマリー | `bazel clean` の後に `remote cache hit` の数が 0 以外になる |
+| `INFO: Streaming build results to:` | ビルドの最初と最後の行 | invocation へのリンクが出力される |
+| ダッシュボード | 出力されたリンク、または [Build Cache ページ](https://app.bitrise.io/build-cache/) | 表示名の下に行が表示され、ヒット数が同じになる |
+
+## キャッシュのプッシュモード
+
+このガイドのセットアップでは、キャッシュのプッシュを有効にした状態で Build Cache をアクティベートします。ローカルビルドは共有キャッシュから読み取り、共有キャッシュへ書き込みます。お使いのマシンが実行したすべてのアクションは、チームメンバーや CI が再利用できるエントリになり、アクティビティは [Build Cache ページ](https://app.bitrise.io/build-cache/)に表示されます。
+
+ローカルビルドでキャッシュの読み取りのみを行いたい場合は、以下の[プルのみのモードの選択](#opting-into-pull-only-mode)を参照してください。
+
+## プルのみのモードの選択
+
+チームがすでに CI からキャッシュを蓄積していて、ローカルビルドでは読み取りのみを行いたい場合は、キャッシュのプッシュをオフにします。この場合、ローカルビルドは何も提供しないため、CI がまだ実行されていないとサマリー行には `0 remote cache hit` と報告され続けます。
+
+`bitrise-build-cache activate --interactive` を再実行し、キャッシュのプッシュのプロンプトで <strong>No, pull only</strong> と答えるか、非対話型の activate コマンドを実行します。
+
+```bash
+bitrise-build-cache activate bazel --cache --cache-push=false
+```
+
+ビルドを実行しなくても、現在のモードを確認できます。
+
+```bash
+grep upload_local_results ~/.bazelrc
+# --remote_upload_local_results    → push enabled (default)
+# --noremote_upload_local_results  → pull-only
+```
+
+## 設定をリポジトリにコミットする
+
+Bazel は workspace のルートにある `.bazelrc` をすでに読み込むため、キャッシュのフラグをマシンごとに生成する代わりに、リポジトリにコミットできます。これにより、開発マシンのオンボーディングは、CLI のインストールとサインインだけで済みます。
+
+```bash
+brew install bitrise-io/bitrise-build-cache/bitrise-build-cache
+bitrise-build-cache auth login
+```
+
+### ファイルの組み合わせ方
+
+Bazel は設定ファイルを次の順序で読み込み、単一の値を取るフラグでは最後の値が優先されます。
+
+1. システムファイル `/etc/bazel.bazelrc`
+1. workspace ファイル `<repo>/.bazelrc`（コミットされたもの）
+1. ホームファイル `~/.bazelrc`（アクティベーションを実行した場合に書き込まれるもの）
+1. コマンドラインのフラグ
+
+そのため、ホームファイルはコミットされたファイルよりも優先され、コマンドラインのフラグはどちらよりも優先されます。ビルドに `--announce_rc` を追加すると、Bazel が実際に読み込んだ内容を確認できます。
+
+### アクティベーションを実行しない開発者向けにプルのみを強制する
+
+CLI をインストールして `auth login` を実行するだけの開発者には `~/.bazelrc` が作成されないため、コミットされたブロックを上書きするものがありません。CLI のデフォルトに関係なく、これらの開発者にキャッシュの読み取りのみを行わせたい場合は、プルのみのフラグをコミットします。
+
+```bash
+build --noremote_upload_local_results
+```
+
+CI ではアクティベーションを実行します。CLI はプッシュ有効のフラグを `~/.bazelrc` に書き込みます。ホームファイルはコミットされた workspace ファイルより優先されるため、そのマシンに限り、コミットされたプルのみのフラグが上書きされます。
+
+```bash
+bitrise-build-cache activate bazel --cache
+```
+
+これにより、開発者ごとの設定なしで役割を分けられます。コミットされたファイルは、アクティベーションを行わない開発者が引き継ぐプルのみのデフォルトとなり、キャッシュへ書き込む環境は、アクティベーションを実行する環境となります。
+
+### コミットしても安全な内容
+
+| 行 | コミット | 理由 |
+|---|---|---|
+| `--remote_cache`、`--remote_timeout`、`--bes_backend`、`--bes_results_url`、`--bes_timeout`、`--bes_upload_mode`、`--build_event_publish_all_actions`、`--show_timestamps` | 可 | すべてのマシンで同一です |
+| `--remote_header='x-org-id=…'` と、対応する `--bes_header` | 可 | Workspace 全体で共通であり、マシン固有ではありません |
+| `--remote_header='x-repository-url=…'` と、対応する `--bes_header` | 可 | このリポジトリを識別します |
+| `--noremote_upload_local_results` | 任意（アクティベーションを行わない開発者にプルのみを強制したい場合） | `auth login` のみを実行するすべての開発者に引き継がれます。CI でアクティベーションを実行すると `--remote_upload_local_results` が `~/.bazelrc` に書き込まれ、そのマシンではコミットされた値が上書きされます |
+| `--credential_helper=*.services.bitrise.io=bitrise-build-cache` | 可（値を確認した後） | これはバイナリ名のみで、Bazel は `PATH` から検索します。CLI が `PATH` に含まれていないマシンでアクティベーションを実行した場合、CLI は代わりに絶対パスを書き込みます。その形式はコミットしないでください |
+| `--bes_header='x-os=…'`、`x-cpu-cores`、`x-mem-size`、`x-locale`、`x-default-charset` | 不可 | マシンごとの値であり、`x-os` にはホスト名が含まれます。分析目的のみで cache keys には影響しませんが、コミットするとすべての人のビルドがお使いのマシンに帰属してしまいます |
+| `--remote_header=authorization="Bearer …"` | 絶対に不可 | 有効な認証情報です。CI で生成されたブロックにのみ現れます |
+
+### CLI がインストールされていない場合に起こること
+
+`--credential_helper` の行をコミットした場合、CLI をインストールしていないチームメンバーはビルドをまったく実行できません。Bazel は `PATH` からヘルパーを検索しますが見つからず、リモートキャッシュの初期化中に失敗します。
+
+```bash
+ERROR: Could not find file with name 'bitrise-build-cache' on PATH '...'
+ERROR: Could not find file with name 'bitrise-build-cache' on PATH '...'
+ERROR: Could not find file with name 'bitrise-build-cache' on PATH '...'
+ERROR: Error initializing RemoteModule
+```
+
+Bazel はコード 2 で終了し、ターゲットは 1 つもビルドされません。失敗はビルドの開始前に発生するため、ローカルビルドへのフォールバックはありません。
+
+そのマシンで CLI をインストールし、`bitrise-build-cache auth login` を実行すると解決します。
+
+## Remote Build Execution
+
+workspace で Remote Build Execution が有効になっている場合は、アクティベーションに `--rbe` フラグを追加することで、ローカルで使用できます。事前に、workspace 用のワーカーのセットアップと、リポジトリの `.bazelrc` でのプール設定が必要です。[Remote Build Execution for Bazel](/bitrise-build-cache/build-cache-for-bazel/remote-build-execution-for-bazel) を参照してください。
+
+## トラブルシューティング
+
+まず CLI のヘルスチェックを実行してください。ローカルセットアップの各部分を検査し、自動で修復できる問題を修復します。
+
+```bash
+bitrise-build-cache doctor --fix --interactive
+```
+
+それでも問題が解決しない場合は、次の表を確認してください。
+
+| 問題 | 対処方法 |
+|---|---|
+| ウィザードがターミナルを必要とすると報告される | `TERM=dumb bitrise-build-cache activate --interactive` を実行して、行ベースのモードを使用してください。 |
+| ビルドで `remote cache hit` ではなく `action cache hit` と報告される | `bazel clean` を実行して、Bazel がリモートキャッシュから取得するようにしてください。 |
+| ビルドが `Could not find file with name 'bitrise-build-cache' on PATH` で失敗する | CLI がインストールされていないか、`PATH` に含まれていません。インストールしてから `bitrise-build-cache auth login` を実行してください。 |
+| 認証情報の取得中にビルドが失敗し、認証情報ヘルパーの名前が表示される | CLI はインストールされていますが、認証情報がありません。`bitrise-build-cache auth login` を実行してください。 |
+| `doctor` が修復できない問題を報告する | `--debug` を付けて再実行し、詳細なコンテキストを確認してください。 |
+| ビルドがキャッシュに到達できない、またはキャッシュの呼び出しがタイムアウトする | お使いの VPN、ファイアウォール、またはプロキシが Bitrise ホストをブロックしている可能性があります。[Network endpoints for firewalls and VPN](/bitrise-build-cache/getting-started-with-the-build-cache/network-endpoints-for-firewalls-and-vpns) で確認してください。 |

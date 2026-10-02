@@ -1,0 +1,53 @@
+---
+title: "Configuring the Build Cache for Bazel in non-Bitrise CI environments"
+sidebar_position: 3
+slug: /bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-non-bitrise-ci-environments
+---
+
+Bitrise Build Cacheでは、Bitrise CIを使用する必要はありません。他のCI/CDサービスを使用しながら、リモートキャッシュを活用して Bazel のビルド時間を短縮することもできます。
+
+そのためには、ビルド中にBitrise Build Cache CLIをダウンロードするようにCI環境を設定し、CLIを実行してBitrise Build Cacheを有効にします。
+
+手順を手動で実行する代わりに、AI コーディングエージェントを使ってセットアップすることもできます。[Getting started with AI](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai)を参照してください。
+
+:::tip[GitHub Actions を使用していますか？]
+
+GitHub Actions のワークフロー例を掲載した専用ガイドがあります。[GitHub Actions でのBuild Cache for Bazelの設定](/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-github-actions)
+
+:::
+
+1. Bitrise workspaceを選択し、<strong>Build Cache</strong> に移動します。
+1. <strong>New connection</strong> をクリックします。
+1. <strong>Other CI provider</strong> を選択し、ドロップダウンメニューからビルドツールを選択します。
+
+   ![2025-10-21-choose-build-tool.png](/img/_paligo/uuid-95236863-449a-87ff-2713-11f9a7f3cfdd.png)
+1. <strong>Create token</strong> をクリックします。
+
+   ![2025-10-21-create-token.png](/img/_paligo/uuid-20c79dca-f52e-e046-e9f2-3fce1c6019ba.png)
+1. Enter a name を行い、有効期限を無期限に設定します。
+1. 変数をコピーし、Environment VariablesとしてCIの設定に追加します。
+1. 高速化したいステップの前に、次のスクリプトをCIの設定に追加します。
+
+   :::important[環境]
+
+   高速化したい Bazel コマンドと同じ環境でスクリプトを実行してください。たとえば、ビルド全体で複数のDockerコンテナを使用している場合は、Bitrise Build Cache CLIが Bazel コマンドと同じDockerコンテナ内で実行されるようにしてください。
+
+   :::
+
+   ```bash
+   #!/usr/bin/env bash
+   set -euxo pipefail
+
+   # download Bitrise Build Cache CLI
+   curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+
+   # run the CLI to enable Bitrise build cache for Bazel
+   /tmp/bin/bitrise-build-cache activate bazel --cache --cache-push
+   ```
+1. workspaceでRemote Build Executionが有効になっている場合は、`--rbe`フラグを追加することで、ローカルでも使用できます。
+
+   :::note[RBE をローカルで有効にする]
+
+   RBE をローカルで有効にする前に、workspaceのワーカーのセットアップと、リポジトリの`.bazelrc`ファイル内のプール設定を済ませておく必要があります。
+
+   :::

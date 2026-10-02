@@ -1,0 +1,44 @@
+---
+title: "Configuring the build cache for Gradle in the Bitrise CI environment"
+sidebar_position: 1
+slug: /bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-the-bitrise-ci-environment
+sidebar_label: Configuring the Build Cache for Gradle in the Bitrise CI environment
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditorAndSelectingAWorkflow from '@site/src/partials/opening-the-workflow-editor-and-selecting-a-workflow.mdx';
+
+Bitrise CI 環境では、Gradle ビルドで Bitrise Build Cache を使用するために必要なのは、公式の <GlossTerm baseform="Step">Step</GlossTerm> だけです。
+
+Bitrise Build Cache を [ローカルビルドで使用したい場合](/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-local-builds)は、まず CI 環境で有効化する必要があります。
+
+手順を手動で実行する代わりに、AI コーディングエージェントを使ってセットアップすることもできます。[Getting started with AI](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai)を参照してください。
+
+<Tabs>
+  <TabItem value="workflow-editor" label="Workflow Editor">
+
+  1. <Partial_OpeningTheWorkflowEditorAndSelectingAWorkflow />
+  1. [<strong>Build Cache for Gradle</strong>](https://github.com/bitrise-steplib/bitrise-step-activate-gradle-remote-cache) Step を <GlossTerm baseform="workflow">Workflow</GlossTerm> に追加します。
+
+     Step は、Gradle タスクを実行する Step (たとえば [<strong>Gradle Runner</strong>](https://github.com/bitrise-io/steps-gradle-runner) や [<strong>Android Build</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build)) より前に配置してください。
+
+     ![gradle-cache-image.png](/img/_paligo/uuid-1afefa9a-7cc1-db41-6186-0ee56293458c.png)
+
+  </TabItem>
+  <TabItem value="yaml" label="Configuration YAML">
+
+  1. `bitrise.yml` ファイルを開き、`activate-build-cache-for-gradle` Step を Workflow に追加します。
+
+     Step は、Gradle タスクを実行する Step (たとえば `gradle-runner` や `android-build`) より前に配置してください。
+
+     ```yaml
+     your-workflow:
+       steps:
+         - git-clone@8: {}
+         - activate-build-cache-for-gradle:
+     ```
+
+  </TabItem>
+</Tabs>

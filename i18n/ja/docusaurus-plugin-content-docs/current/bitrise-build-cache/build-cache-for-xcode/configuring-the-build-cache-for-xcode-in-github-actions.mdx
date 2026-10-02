@@ -1,0 +1,126 @@
+---
+title: "Configuring the Build Cache for Xcode in GitHub Actions"
+description: "Set up the Bitrise Build Cache for Xcode in a GitHub Actions workflow, on GitHub-hosted runners or on Bitrise Build Hub runners."
+sidebar_position: 2
+slug: /bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-github-actions
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Partial_BuildCacheGitHubActionsAuthentication from '@site/src/partials/build-cache-github-actions-authentication.mdx';
+import Partial_BuildCacheGitHubActionsNotes from '@site/src/partials/build-cache-github-actions-notes.mdx';
+import Partial_BuildCacheGitHubActionsVerifying from '@site/src/partials/build-cache-github-actions-verifying.mdx';
+
+Bitrise Build Cache を使用すると、CI を Bitrise に移行することなく、GitHub Actions ワークフローでの Xcode ビルドを高速化できます。GitHub ホスト型ランナーでも、[Bitrise Build Hub](/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview) ランナーでも同じように動作します。
+
+ワークフローには 2 つのステップを追加する必要があります。1 つは Bitrise Build Cache CLI をインストールするステップ、もう 1 つは Xcode のキャッシュを有効にするステップです。同じジョブ内でそれ以降に実行される `xcodebuild` ステップはすべて、このキャッシュを使用します。
+
+手順を手動で進める代わりに、AI コーディングエージェントを使ってセットアップすることもできます。詳細については、[Getting started with AI](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai) を参照してください。
+
+## 要件
+
+- Xcode 26 or later。Xcode Compilation Cache は、これより前のバージョンでは利用できません。
+- Bitrise Build Cache CLI v1.0.0 以降。すでに別のビルドツール用に CLI をインストールしている場合は、固定するバージョンが Xcode をサポートしていることを確認してください。
+
+## 認証
+
+<Partial_BuildCacheGitHubActionsAuthentication />
+
+## ワークフローへの Build Cache の追加
+
+1. Bitrise Build Cache CLI をインストールするステップを追加します。
+
+   ```yaml
+   - name: Install the Bitrise Build Cache CLI
+     run: curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+   ```
+1. `xcodebuild` を実行するステップの前に、Build Cache for Xcode を有効にするステップを追加します。
+
+   ```yaml
+   - name: Activate Bitrise Build Cache for Xcode
+     run: /tmp/bin/bitrise-build-cache activate xcode --cache --cache-push
+   ```
+
+   `--cache` はキャッシュからの読み取りを、`--cache-push` はキャッシュへの書き込みを有効にします。CI は通常、キャッシュを作成する環境であるため、両方を有効のままにしてください。
+
+   :::important[`xcodebuild` を `PATH` 経由で呼び出す]
+
+   有効化すると、ラップされた `xcodebuild` が `PATH` の先頭に配置されます。`/usr/bin/xcodebuild` のようにバイナリを絶対パスで直接呼び出すコマンドはラッパーを経由しないため、キャッシュされません。これは、ユーザーに代わって `xcodebuild` や `xcrun` を絶対パスで呼び出すツールにも当てはまります。
+
+   :::
+
+## ワークフローの例
+
+<Tabs>
+<TabItem value="github-hosted" label="GitHub-hosted runners" default>
+
+```yaml
+name: build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    env:
+      BITRISE_BUILD_CACHE_AUTH_TOKEN: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+      BITRISE_BUILD_CACHE_WORKSPACE_ID: ${{ vars.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the Bitrise Build Cache CLI
+        run: curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+
+      - name: Activate Bitrise Build Cache for Xcode
+        run: /tmp/bin/bitrise-build-cache activate xcode --cache --cache-push
+
+      - name: Build
+        run: |
+          xcodebuild build-for-testing \
+            -workspace MyApp.xcworkspace \
+            -scheme MyApp \
+            -destination 'generic/platform=iOS Simulator'
+```
+
+</TabItem>
+<TabItem value="build-hub" label="Build Hub runners">
+
+このジョブにはトークンも environment variables も必要ありません。`runs-on` ラベルは、使用するプールを指定します。Bitrise はマシンプールごとに `bitrise-runner-<pool name>` ラベルを作成するため、`ios-builds` という名前のプールは `bitrise-runner-ios-builds` で指定します。
+
+```yaml
+name: build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: bitrise-runner-ios-builds
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the Bitrise Build Cache CLI
+        run: curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+
+      - name: Activate Bitrise Build Cache for Xcode
+        run: /tmp/bin/bitrise-build-cache activate xcode --cache --cache-push
+
+      - name: Build
+        run: |
+          xcodebuild build-for-testing \
+            -workspace MyApp.xcworkspace \
+            -scheme MyApp \
+            -destination 'generic/platform=iOS Simulator'
+```
+
+マシンプールのイメージに Xcode 26 or later が含まれていることを確認してください。プールのカスタムラベルを使用することもできます。詳細については、[Configuring your GitHub Actions workflow](/bitrise-build-hub/build-hub-for-github-actions/configuring-your-github-actions-workflow) を参照してください。
+
+</TabItem>
+</Tabs>
+
+## ベストプラクティスと制限事項
+
+<Partial_BuildCacheGitHubActionsNotes />
+
+## セットアップの確認
+
+<Partial_BuildCacheGitHubActionsVerifying />

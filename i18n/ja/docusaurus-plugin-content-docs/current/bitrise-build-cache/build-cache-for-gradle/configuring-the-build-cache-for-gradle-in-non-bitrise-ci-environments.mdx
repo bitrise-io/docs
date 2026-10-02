@@ -1,0 +1,46 @@
+---
+title: "Configuring the Build Cache for Gradle in non-Bitrise CI environments"
+sidebar_position: 3
+slug: /bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-non-bitrise-ci-environments
+---
+
+Bitrise Build Cache の利用には Bitrise CI は必須ではありません。他の CI/CD サービスを使用しながら、キャッシュを活用して Gradle ビルド時間を短縮できます。
+
+そのためには、CI 環境を設定して、ビルド中に Bitrise Build Cache CLI をダウンロードし、CLI を実行して Bitrise Build Cache を有効にする必要があります。
+
+手順を手動で進める代わりに、AI コーディングエージェントを使ってセットアップすることもできます。[Getting started with AI](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai) を参照してください。
+
+:::tip[Using GitHub Actions?]
+
+GitHub Actions のワークフロー例を掲載した専用ガイドがあります。[Configuring the Build Cache for Gradle in GitHub Actions](/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-github-actions) を参照してください。
+
+:::
+
+1. Bitrise workspace を選択し、<strong>Build Cache</strong> に移動します。
+1. <strong>New connection</strong> をクリックします。
+1. <strong>Other CI provider</strong> を選択し、ドロップダウンメニューからビルドツールを選択します。
+
+   ![2025-10-21-choose-build-tool.png](/img/_paligo/uuid-95236863-449a-87ff-2713-11f9a7f3cfdd.png)
+1. <strong>Create token</strong> をクリックします。
+
+   ![2025-10-21-create-token.png](/img/_paligo/uuid-20c79dca-f52e-e046-e9f2-3fce1c6019ba.png)
+1. Enter a name し、有効期限を「無期限」に設定します。
+1. 変数をコピーし、CI の設定に Environment Variables として追加します。
+1. 高速化したいステップの前に、次のスクリプトを CI の設定に追加します。
+
+   :::important[Environment]
+
+   高速化したい Gradle コマンドと同じ環境でスクリプトを実行してください。たとえば、ビルド中に複数の Docker コンテナーを使用する場合は、Bitrise Build Cache CLI が Gradle コマンドと同じ Docker コンテナーで実行されるようにしてください。
+
+   :::
+
+   ```bash
+   #!/usr/bin/env bash
+   set -euxo pipefail
+
+   # download Bitrise Build Cache CLI
+   curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+
+   # run the CLI to enable Bitrise build cache for Gradle
+   /tmp/bin/bitrise-build-cache activate gradle --cache --cache-push
+   ```

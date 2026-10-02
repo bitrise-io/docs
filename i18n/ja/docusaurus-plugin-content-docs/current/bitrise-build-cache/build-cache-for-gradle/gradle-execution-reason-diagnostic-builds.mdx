@@ -1,0 +1,181 @@
+---
+title: "Gradle execution reason diagnostic builds"
+description: "You can run Gradle diagnostic builds on Bitrise to find out the reasons behind Gradle task execution events. This helps reducing cache misses for remote caching."
+sidebar_position: 6
+slug: /bitrise-build-cache/build-cache-for-gradle/gradle-execution-reason-diagnostic-builds
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+キャッシュヒット率とは、キャッシュが受け取ったリクエスト数に対して、そのうち何件のコンテンツリクエストを正常に処理できたかを示す指標です。キャッシュミスが多いと、キャッシュを十分に活用できないため、ビルドが遅くなります。
+
+Gradleのタスクを実行する際、タスクの入力が変更されると、通常はキャッシュミスが発生します。Gradleの実行理由を確認すると、入力が変更された原因を把握し、問題をデバッグするのに役立ちます。
+
+Gradleのタスクとそのキャッシュの仕組みについて詳しく知りたい場合は、このまま読み進めてください。
+
+Bitriseで診断ビルドを設定する方法を確認するには、[診断ビルド](#diagnostic-builds)に進んでください。
+
+
+## Gradleのタスクとキャッシュ
+
+Gradleのビルドシステムでは、基本的な処理の単位はタスクです。タスクは、クラスのコンパイル、単体テストの実行、JAR の作成などを行います。各タスクには、ファイルや環境変数などの入力と、出力があります。
+
+タスクは通常、モジュールごとに設定できる特定のビルドディレクトリに出力を生成します。このディレクトリの内容は、同じマシン上のビルド間で再利用できる場合が多くあります。そのため、Gradleは再利用できないタスクだけを実行して時間を節約します。その他のタスクでは、ビルドディレクトリの出力が再利用され、タスクには`UP-TO-DATE`ラベルが付きます。このプロセスは、Gradleで[インクリメンタルビルド](https://docs.gradle.org/current/userguide/incremental_build.html)と呼ばれています。
+
+:::note[インクリメンタルビルドとインクリメンタルなタスク実行の違い]
+
+インクリメンタルビルドは、インクリメンタルなタスク実行とは異なります。インクリメンタルなタスクについては、[Gradleの公式ドキュメント](https://docs.gradle.org/current/userguide/custom_tasks.html#incremental_tasks)を参照してください。
+
+:::
+
+### Gradleのタスク（CI環境）
+
+CI環境でGradleを実行すると、ビルドディレクトリが空であるため、すべてのタスクが実行されるか、キャッシュから取得されます。実行後、Gradleはタスクの入力に関するメタデータを[プロジェクトのキャッシュディレクトリ](https://docs.gradle.org/current/userguide/directory_layout.html)に保存します。Gradleはこのメタデータを使用して、インクリメンタルビルドを実行します。
+
+たとえば、コンパイルタスクの場合、Gradleはソースファイルのチェックサムを保存し、チェックサムに基づいて変更されたファイルのみを再コンパイルします。Gradleがタスクの入力をチェックする仕組みの詳細については、[Gradleのタスクの入力と出力に関するドキュメント](https://docs.gradle.org/current/userguide/incremental_build.html#sec:task_inputs_outputs)を参照してください。
+
+メタデータが利用できない場合、Gradleはすべてのタスクを実行します。
+
+### タスクのキャッシュ
+
+メタデータからタスクを実行する必要があると判断され、かつBitrisebuild cacheが有効になっている場合、タスクの入力と、バージョンなどの特定のGradleプロパティがハッシュ化され、cache keyになります。リモートまたはローカルのキャッシュにcache keyと一致するものがあれば、タスクを完全に実行する必要はありません。実行結果がキャッシュから読み込まれ、`FROM-CACHE`の結果ラベルが付きます。
+
+リモートまたはローカルのキャッシュにcache keyと一致するものがない場合（キャッシュミス）、タスクは完全に実行され、その出力がキャッシュに保存されます。
+
+タスクに`UP-TO-DATE`ラベルが付いていない場合、その理由が記録され、Bitriseのinvocation detailsにあるタスクの行に表示されます。考えられる理由の例は次のとおりです。
+
+- メタデータが存在しない場合、<strong>No history available</strong> と表示されます。
+- 出力が存在しない場合、<strong>Output... has been removed</strong> と表示されます。
+- `UP-DO-DATE`ラベルが付いていないタスクでも、過去に入力が一度以上キャッシュされていれば、キャッシュできます。
+
+
+## 診断ビルド
+
+タスクが実行される原因となった変更を把握するには、Gradleのメタデータと、以前のビルドのビルド出力が必要です。これらをCI環境に復元すると、ローカルのインクリメンタルビルドをシミュレートでき、キャッシュミスの原因となるビルド間の変更を確認できます。
+
+これらのビルドは、Bitriseでは診断ビルドと呼ばれます。
+
+:::important[デバッグ専用]
+
+診断ビルドは[キーベースのキャッシュ](/bitrise-ci/dependencies-and-caching/key-based-caching/accessing-key-based-cache-archives)を多用し、ビルド時間が長くなります。診断ビルドの目的はデバッグであり、日常のWorkflowに組み込むべきではありません。
+
+キーベースのキャッシュのアーカイブ上限は 15 Gb です。アプリの出力がこの上限を超える場合は、独自のartifact storageソリューションを使用して、同じ原則で2回に分けてビルドを実行できます。
+
+:::
+
+Gradleの診断ビルドを設定して実行するには、次の手順を行います。
+
+1. 次の内容を含むCIの設定を作成します。
+
+   - BitriseBuild CacheCLIを使用して、ビルド出力とGradleのメタデータを保存します。
+   - キャッシュからビルド出力とメタデータを復元します。
+1. 初回のビルドを実行して、必要なディレクトリをキーベースのキャッシュに保存します。
+1. 診断ビルドを実行して、Gradleの実行理由を確認します。
+
+### 診断ビルド用のCI設定の作成
+
+Gradleの診断ビルド用にCIの設定を作成するには、Bitrise<GlossTerm baseform="workflow">Workflow</GlossTerm>に、ビルド出力を保存および復元するための新しい<GlossTerm baseform="step">Steps</GlossTerm>を2つ追加する必要があります。これらには、BitriseBuild CacheCLIを使用します。
+
+:::note[キーベースのキャッシュStepsは使用しないでください]
+
+診断ビルドではキーベースのキャッシュを使用しますが、この目的では、専用のキーベースのキャッシュStepsは使用しないでください。このガイドの説明に従って、<strong>Script</strong> Stepsを設定してください。
+
+:::
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. 診断ビルド用にCreate a new Workflow。
+
+   `bitrise.yml`ファイルを[リポジトリ内](/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml#storing-the-bitriseyml-file-in-your-repository)に保存している場合は、新しいブランチも作成し、そのブランチから診断ビルドを実行することをおすすめします。
+1. Workflowに <strong>Build Cache for Gradle</strong> Stepを追加します。
+1. Gradleタスクを実行するStepの後（例: <strong>Android Build</strong>）に、<strong>Script</strong> Stepを追加します。
+
+   :::important[環境]
+
+   高速化したいGradleコマンドと同じ環境でスクリプトを実行してください。たとえば、ビルド全体で複数のDockerコンテナーを使用している場合は、BitriseBuild CacheCLIが、Gradleコマンドと同じDockerコンテナーで実行されるようにしてください。
+
+   :::
+1. <strong>Script content</strong> 入力に、次の内容を追加します。
+
+   ```bash
+   /tmp/bin/bitrise-build-cache save-gradle-output-data
+   ```
+
+   これにより、Gradleのメタデータディレクトリとビルド出力が、<GlossTerm baseform="workspace">Workspace</GlossTerm>、アプリ、Workflowごとに一意のcache keyでキーベースのキャッシュに保存されます。
+1. Gradleタスクを実行するStepの前に、もう1つ <strong>Script</strong> Stepを追加します。
+1. <strong>Script content</strong> 入力に、次の内容を追加します。
+
+   ```bash
+   /tmp/bin/bitrise-build-cache restore-gradle-output-data
+   ```
+
+   このStepはキャッシュにアクセスし、Gradleのビルドデータを復元します。
+
+</TabItem>
+<TabItem value="bitriseyml" label="Configuration YAML">
+
+1. 診断ビルド用にCreate a new Workflow。
+
+   `bitrise.yml`ファイルを[リポジトリ内](/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml#storing-the-bitriseyml-file-in-your-repository)に保存している場合は、新しいブランチも作成し、そのブランチから診断ビルドを実行することをおすすめします。
+1. Workflowに`activate-build-cache-for-gradle` Stepを追加します。
+1. Gradleタスクを実行するStepの後（例: `android-build`）に、`script` Stepを追加します。
+
+   :::important[環境]
+
+   高速化したいGradleコマンドと同じ環境でスクリプトを実行してください。たとえば、ビルド全体で複数のDockerコンテナーを使用している場合は、BitriseBuild CacheCLIが、Gradleコマンドと同じDockerコンテナーで実行されるようにしてください。
+
+   :::
+1. `content` 入力に、次の内容を追加します。
+
+   ```yaml
+   - script:
+     inputs:
+     - content: |-
+         /tmp/bin/bitrise-build-cache save-gradle-output-data
+   ```
+
+   これにより、Gradleのメタデータディレクトリとビルド出力が、Workspace、アプリ、Workflowごとに一意のcache keyでキーベースのキャッシュに保存されます。
+1. Gradleタスクを実行するStepの前に、もう1つ`script` Stepを追加します。
+1. `content` 入力に、次の内容を追加します。`/tmp/bin/bitrise-build-cache restore-gradle-output-data`
+
+   ```yaml
+   - script:
+     inputs:
+     - content: |-
+         /tmp/bin/bitrise-build-cache restore-gradle-output-data
+   ```
+
+   このStepはキャッシュにアクセスし、Gradleのビルドデータを復元します。
+
+</TabItem>
+</Tabs>
+
+### キーベースのキャッシュへのディレクトリの保存
+
+Gradleの診断ビルドを初めて設定する場合は、[作成した設定](#creating-the-ci-configuration-for-a-diagnostic-build)で初回のビルドを実行して、必要なディレクトリをキーベースのキャッシュに保存する必要があります。この初回のビルドでは、invocation detailsに実行理由は表示されません。
+
+1. CIの設定が完了したら、ビルドを実行します。
+1. ログを確認して、アップロードが正常に完了したことを確認します。
+
+   ![upload-complete.png](/img/_paligo/uuid-223b519e-cddd-6157-de92-bfdf36d7ba2d.png)
+
+### 診断ビルドの実行と確認
+
+[CIの設定が完了](#creating-the-ci-configuration-for-a-diagnostic-build)し、[初回のビルドが必要なディレクトリのアップロードに成功](#running-and-checking-a-diagnostic-build)してキーベースのキャッシュに保存されたら、診断ビルドを実行して、Gradleのタスクの実行理由を確認できます。初回のビルドと同じWorkflowとブランチを使用してください。
+
+診断ビルドでは、Gradleはローカルのインクリメンタルビルドであるかのように動作します。
+
+1. ビルドを実行します。
+1. [Build Cacheページ](https://app.bitrise.io/build-cache/)を開きます。
+1. <strong>Latest invocations</strong> の中から、必要なタスクを探します。青いアイコンは、タスクの実行理由が含まれているタスクを示します。
+
+   ![invocations-significant.png](/img/_paligo/uuid-f63b2a01-2f9d-fb91-dc1d-a94aa4d3e386.png)
+
+   CIの設定に関連する変更が表示されます。これらの変更は、タスクの入力変更やキャッシュミスの原因となることがよくあります。
+
+   ![task-reason.png](/img/_paligo/uuid-60ec20cb-92a4-2e4d-c084-55988b170c60.png)
+
+これらの理由を正しく解釈してデバッグするには、[Gradleの関連ドキュメント](https://docs.gradle.org/current/userguide/build_cache_debugging.html)を確認するか、[デバッグのヒント](https://discuss.bitrise.io/t/debugging-and-optimizing-bitrise-build-cache-for-gradle/23275)を参照してください。
