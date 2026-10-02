@@ -7,7 +7,7 @@ Plain stdlib unittest. Usage:
 """
 import unittest
 
-from heading_ids import Slugger, add_english_heading_ids, plain_text, scan, slugify
+from heading_ids import untranslated_headings, Slugger, add_english_heading_ids, plain_text, scan, slugify
 
 
 class SlugTests(unittest.TestCase):
@@ -116,6 +116,11 @@ class AddIdsTests(unittest.TestCase):
         out, _ = add_english_heading_ids(en, ja)
         self.assertEqual(out.count("{#"), 1)
         self.assertTrue(out.rstrip().endswith("{#x}"))
+
+    def test_untranslated_headings_flags_english_but_not_token_only(self):
+        masked = "## About the ⟦p1⟧ integration\n\n## ⟦p2⟧\n\n## Setup\n"
+        out = "## About the ⟦p1⟧ integration\n\n## ⟦p2⟧\n\n## セットアップ\n"
+        self.assertEqual(untranslated_headings(masked, out), ["About the ⟦p1⟧ integration"])
 
 
 if __name__ == "__main__":

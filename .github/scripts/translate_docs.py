@@ -78,7 +78,7 @@ import yaml
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(REPO_ROOT, "scripts"))
 
-from heading_ids import add_english_heading_ids  # noqa: E402
+from heading_ids import add_english_heading_ids, untranslated_headings  # noqa: E402
 from nt_terms import TermMatcher  # noqa: E402
 import translatable_strings as ts  # noqa: E402
 
@@ -511,6 +511,10 @@ def main():
             failures.append(src)
             continue
         found, translated = ts.parse_block(translated)
+        left_english = untranslated_headings(masked, translated)
+        if left_english:
+            print(f"  warning: {len(left_english)} heading(s) left in English in {src}: "
+                  + "; ".join(h for h in left_english[:5]), file=sys.stderr)
         translated = promote_bold_to_strong(translated.lstrip("\n"))  # pre-unmask: code is still tokens
         translated = unmask(translated, store)
         found = {k: unmask(v, store) for k, v in found.items()}

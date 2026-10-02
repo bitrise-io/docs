@@ -201,6 +201,29 @@ def add_english_heading_ids(src_text, ja_text):
     return "\n".join(ja_lines), None
 
 
+_TOKEN_RE = re.compile(r"⟦p\d+⟧")
+
+
+def untranslated_headings(masked, translated):
+    """Headings the model handed back word-for-word.
+
+    Compares the masked input with the model output heading by heading (same
+    position). A heading counts as left in English when its text is unchanged and
+    still holds a real English word once protected tokens are removed; a heading
+    made only of tokens (a product name) is fine. Returns [text, ...]; a page
+    whose heading counts differ returns [] (the id pairing reports that).
+    """
+    a, b = scan(masked.split("\n")), scan(translated.split("\n"))
+    if len(a) != len(b):
+        return []
+    out = []
+    for x, y in zip(a, b):
+        tx = EXPLICIT_ID_RE.sub("", x.raw).strip()
+        if tx == EXPLICIT_ID_RE.sub("", y.raw).strip() and re.search(r"[A-Za-z]{2,}", _TOKEN_RE.sub("", tx)):
+            out.append(tx)
+    return out
+
+
 def _split_frontmatter(content):
     m = re.match(r"^(---\r?\n.*?\r?\n---\r?\n)", content, re.DOTALL)
     return (m.group(1), content[m.end():]) if m else ("", content)
