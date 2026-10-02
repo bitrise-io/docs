@@ -338,6 +338,10 @@ Anything reused across pages: a setup-prerequisites paragraph, a "how to open th
 - Don't paste a partial's content directly into a page. The whole point is one source of truth.
 - Don't put a section heading at the top of a partial that's used in list context — the preprocessor only extracts the first list block, and a heading would be left dangling.
 
+### Japanese translations of partials
+
+Every partial is also translated: `src/partials/<slug>.mdx` → `i18n/ja/partials/<slug>.mdx`, by `translate_docs.py` (the workflow watches `src/partials/` too). Translated pages import the Japanese copy (`@site/i18n/ja/partials/<slug>.mdx`) instead of the English one; list-context references are filled from the Japanese copy by `docusaurus.config.ts` for pages under `i18n/ja/`. Edit only the English partial — never the `i18n/ja/partials/` copy.
+
 ---
 
 ## Glossary terms

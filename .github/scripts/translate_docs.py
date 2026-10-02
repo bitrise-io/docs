@@ -43,6 +43,13 @@ Design:
      off and never sent to the model at all, so there's no risk of it
      touching the slug — only the body is translated.
 
+PARTIALS
+  Reusable partials (src/partials/*.mdx) are translated exactly like pages,
+  into i18n/ja/partials/ (--partials-src-root / --partials-dest-root). They
+  are processed first, and every translated page's `@site/src/partials/x.mdx`
+  import is repointed at `@site/i18n/ja/partials/x.mdx` when that translated
+  partial exists, so a JA page never renders the English partial.
+
 USAGE
   python3 translate_docs.py \
       --glossary ja-do-not-translate-glossary.yaml \
@@ -180,6 +187,12 @@ def verify_tokens(masked_text, translated):
 
 
 BOLD_SPAN_RE = re.compile(r"\*\*(.+?)\*\*")
+# **Key pair name - *required***: bold whose last words are italic, so the
+# span ends in a run of three asterisks. Left to BOLD_SPAN_RE alone, the
+# non-greedy match closes on the first two of the three and strands the third,
+# producing <strong>...*required</strong>* — an unbalanced emphasis that fails
+# MDX compilation.
+BOLD_ENDING_IN_ITALIC_RE = re.compile(r"\*\*([^*\n]+?)\*([^*\s][^*\n]*?)\*\*\*(?!\*)")
 
 
 def promote_bold_to_strong(text):
@@ -200,7 +213,11 @@ def promote_bold_to_strong(text):
     MUST run on the translated text BEFORE unmasking: at that point fenced
     code, inline code, and URLs are still placeholder tokens, so a literal
     ** inside restored code can never be caught by this rewrite. Matches one
-    non-greedy same-line pair at a time."""
+    non-greedy same-line pair at a time. A bold span that ends in an italic
+    (**text *italic***) is rewritten first, as <strong>text <em>italic</em>
+    </strong>, so its closing *** is not split."""
+    text = BOLD_ENDING_IN_ITALIC_RE.sub(
+        lambda m: f"<strong>{m.group(1)}<em>{m.group(2)}</em></strong>", text)
     return BOLD_SPAN_RE.sub(lambda m: f"<strong>{m.group(1)}</strong>", text)
 
 
@@ -290,6 +307,31 @@ def dest_path(src, src_root, dest_root):
     raise ValueError(f"{src!r} is not under src_root {src_root!r}")
 
 
+def route(src, a):
+    """Destination path for `src`: partials map to the translated-partials
+    root, everything else to the docs root."""
+    if src.startswith(a.partials_src_root.rstrip("/") + "/"):
+        return dest_path(src, a.partials_src_root, a.partials_dest_root)
+    return dest_path(src, a.src_root, a.dest_root)
+
+
+PARTIAL_IMPORT_RE = re.compile(r"@site/src/partials/([A-Za-z0-9_./-]+\.mdx?)")
+
+
+def point_imports_at_translated_partials(text, translated_dir, import_prefix):
+    """Repoint `@site/src/partials/x.mdx` imports at the translated copy.
+
+    A page's import lines are masked, so the model hands them back unchanged
+    and a translated page would keep rendering the ENGLISH partial. Rewrite an
+    import only when the translated partial exists, so a page can never end up
+    importing a file that isn't there."""
+    def sub(m):
+        if os.path.isfile(os.path.join(translated_dir, m.group(1))):
+            return f"{import_prefix}/{m.group(1)}"
+        return m.group(0)
+    return PARTIAL_IMPORT_RE.sub(sub, text)
+
+
 def is_relevant(path):
     return path.endswith((".md", ".mdx")) and "/api-reference/" not in path
 
@@ -344,6 +386,11 @@ def main():
                     help="ja-preferred-translations.yaml — optional terminology-consistency map")
     ap.add_argument("--src-root", default="docs")
     ap.add_argument("--dest-root", default="i18n/ja/docusaurus-plugin-content-docs/current")
+    ap.add_argument("--partials-src-root", default="src/partials",
+                    help="reusable partials; translated like pages")
+    ap.add_argument("--partials-dest-root", default="i18n/ja/partials")
+    ap.add_argument("--partials-import-prefix", default="@site/i18n/ja/partials",
+                    help="import path JA pages use for a translated partial")
     ap.add_argument("files", nargs="*")
     a = ap.parse_args()
 
@@ -354,7 +401,7 @@ def main():
     # before anything that needs an API key, so a PR that only deletes or
     # moves pages (no content changes) doesn't require one at all.
     for src in to_delete:
-        dst = dest_path(src, a.src_root, a.dest_root)
+        dst = route(src, a)
         if os.path.isfile(dst):
             os.remove(dst)
             print(f"  deleted {dst} (source {src} was deleted)")
@@ -362,8 +409,8 @@ def main():
             print(f"  skip delete (no JA counterpart): {src}")
 
     for old_src, new_src in to_rename:
-        old_dst = dest_path(old_src, a.src_root, a.dest_root)
-        new_dst = dest_path(new_src, a.src_root, a.dest_root)
+        old_dst = route(old_src, a)
+        new_dst = route(new_src, a)
         if not os.path.isfile(old_dst):
             # Renamed page was never translated in the first place — nothing
             # to move, but the content at its new path still needs a first
@@ -401,6 +448,11 @@ def main():
     model = os.environ.get("TRANSLATE_MODEL", "claude-sonnet-5")
     sysp = system_prompt(preferred)
 
+    # Partials first: a page translated in the same run points its imports at
+    # the translated partial only if that file already exists.
+    partials_prefix = a.partials_src_root.rstrip("/") + "/"
+    files.sort(key=lambda p: not p.startswith(partials_prefix))
+
     failures = []
     for src in files:
         if not os.path.isfile(src):
@@ -434,7 +486,9 @@ def main():
         if heading_note:
             print(f"  warning: heading ids not added to {src}: {heading_note}",
                   file=sys.stderr)
-        dst = dest_path(src, a.src_root, a.dest_root)
+        translated = point_imports_at_translated_partials(
+            translated, a.partials_dest_root, a.partials_import_prefix)
+        dst = route(src, a)
         os.makedirs(os.path.dirname(dst) or ".", exist_ok=True)
         open(dst, "w", encoding="utf-8").write(frontmatter + translated)
         print(f"  translated {src} -> {dst}")
