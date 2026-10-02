@@ -1,0 +1,90 @@
+---
+title: "Network endpoints for firewalls and VPNs"
+description: "Every Bitrise host the Build Cache CLI, plugins, and proxies connect to, so you can allowlist them on a corporate VPN, firewall, or proxy."
+sidebar_position: 7
+slug: /bitrise-build-cache/getting-started-with-the-build-cache/network-endpoints-for-firewalls-and-vpns
+sidebar_label: Network endpoints
+---
+
+お使いのマシンまたは CI ランナーが、社内の VPN、ファイアウォール、またはアウトバウンドプロキシの内側にある場合は、Bitrise Build Cache が少数の Bitrise ホストにアクセスできるようにしてください。
+
+このドキュメントの許可リストには、次のものが含まれます。
+
+- Bitrise Build Cache CLI。
+- Gradle がインストールするプラグイン。
+- Bazel が書き込む設定。
+- Xcode と `ccache` のプロキシが接続するすべての宛先。
+
+ローカルの開発マシンと、Bitrise 外の CI ランナーのどちらにも適用されます。Bitrise がホストするマシンでは、対応は不要です。トラフィックは当社のデータセンター内にとどまります。
+
+## 許可リスト
+
+次のホストとポートを許可リストに追加してください。
+
+```bash
+*.services.bitrise.io    :443, :444
+app.bitrise.io           :443
+oauth.bitrise.io         :443
+api.bitrise.io           :443
+```
+
+これで必要なものはすべてです。ワイルドカードを使わずに特定のホスト名を指定する必要がある場合は、以下のセクションでビルドツールごとに詳しく説明します。
+
+:::note[Bitrise以外のホスト]
+
+CLI 自体のインストールと更新には GitHub と Google Artifact Registry が使用され、Gradle の init スクリプトは Gradle Plugin Portal、Maven Central、JitPack からプラグインを解決します。これらは Bitrise のホストではないため、ここには記載していませんが、ビルドにはこれらも必要です。
+
+:::
+
+## すべてのビルドで使用されるエンドポイント
+
+実際に実行するビルドツールに対応するセクションを許可リストに追加してください。React Native のビルドでは、Gradle、Xcode、`ccache` の各セクションがすべて必要です。
+
+### Gradle
+
+| ホスト | ポート | プロトコル | 用途 |
+|---|---|---|---|
+| `bitrise-accelerate.services.bitrise.io` | 443 | gRPC/TLS | リモート build cache、および Test Distribution エンドポイント |
+| `gradle-analytics.services.bitrise.io` | 443 <strong>および 444</strong> | gRPC/TLS | タスクごとのデータやタスク入力ファイルのデータを含む、プラグインの分析 |
+| `gradle-sink.services.bitrise.io` | 443 | HTTPS | 分析用 HTTP シンク |
+
+### Bazel
+
+| ホスト | ポート | プロトコル | 用途 |
+|---|---|---|---|
+| `bitrise-accelerate.services.bitrise.io` | 443 | gRPC/TLS | リモートキャッシュと Remote Build Execution |
+| `flare-bes.services.bitrise.io` | 443 | gRPC/TLS | Build Event Service |
+
+### Xcode
+
+| ホスト | ポート | プロトコル | 用途 |
+|---|---|---|---|
+| `bitrise-accelerate.services.bitrise.io` | 443 | gRPC/TLS | `xcelerate` プロキシ経由のコンパイルキャッシュ |
+| `xcode-analytics.services.bitrise.io` | 443 | HTTPS | 呼び出しの分析、および DerivedData の保存と復元 |
+| `multiplatform-analytics.services.bitrise.io` | 443 | HTTPS | `xcodebuild` ラッパーの呼び出しの分析 |
+
+### ccache
+
+| ホスト | ポート | プロトコル | 用途 |
+|---|---|---|---|
+| `bitrise-accelerate.services.bitrise.io` | 443 | gRPC/TLS | ストレージヘルパー経由のオブジェクトキャッシュ |
+| `multiplatform-analytics.services.bitrise.io` | 443 | HTTPS | 呼び出しの分析 |
+
+### React Native
+
+React Native ビルドには、次のものが必要です。
+
+- Gradle、Xcode、`ccache` の各セクションに記載されたすべてのもの。
+- React Native の呼び出しレコード用の、ポート 443 の `multiplatform-analytics.services.bitrise.io`。
+
+## アクティベーションとログイン時に使用されるエンドポイント
+
+CLI は、キャッシュのアクティベーション時やログイン時に、次のエンドポイントにアクセスします。
+
+| ホスト | ポート | 用途 |
+|---|---|---|
+| `app.bitrise.io` | 443 | ベンチマークフェーズのステータス、呼び出しリンク、OAuth クライアントのメタデータ、および `/oidc/token` エンドポイント |
+| `oauth.bitrise.io` | 443 | `bitrise-build-cache auth login` 用の OAuth 発行者 |
+| `api.bitrise.io` | 443 | ログインフローの workspace ピッカー |
+
+対話型ログインの代わりに `BITRISE_BUILD_CACHE_AUTH_TOKEN` Env Var で認証する場合は、許可リストから `oauth.bitrise.io` と `api.bitrise.io` を除外できます。

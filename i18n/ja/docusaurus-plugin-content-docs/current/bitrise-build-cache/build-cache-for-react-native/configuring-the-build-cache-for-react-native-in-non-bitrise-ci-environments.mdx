@@ -1,0 +1,76 @@
+---
+title: "Configuring the Build Cache for React Native in non-Bitrise CI environments"
+description: "Download and run the Bitrise Build Cache CLI on any third-party CI provider to speed up React Native builds, covering authentication, activation, and wrapping native build commands."
+sidebar_position: 4
+---
+Bitrise Build Cache CLI は、サードパーティの CI プロバイダー（GitHub Actions、GitLab CI、CircleCI、Jenkins など）にダウンロードして実行できます。
+
+手順を手動で進める代わりに、AI コーディングエージェントを使ってセットアップすることもできます。[AI のスタートガイド](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai)を参照してください。
+
+:::tip[GitHub Actions を使用していますか？]
+
+GitHub Actions のワークフロー例を掲載した専用ガイドがあります。[GitHub Actions での Build Cache for React Native の設定](/bitrise-build-cache/build-cache-for-react-native/configuring-the-build-cache-for-react-native-in-github-actions)をご覧ください。
+
+[Bitrise Build Hub](/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview) ランナーでは、トークンはまったく必要ありません。マシンはすでに Bitrise Workspace に接続されているため、CLI が自動的に認証を行います。以下の手順は、それ以外のすべての環境が対象です。
+
+:::
+
+1. [Personal Access Token](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token)を作成します。
+1. [Workspace のスラッグ](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs)を取得します。
+1. CI プロバイダーのシークレット／環境設定で、2 つの変数を設定します。
+
+   - BITRISE_BUILD_CACHE_AUTH_TOKEN: Personal Access Token。
+   - BITRISE_BUILD_CACHE_WORKSPACE_ID: Workspace のスラッグ。
+1. ビルドを実行する Step の前に、次のスクリプトを CI パイプラインに追加します。
+
+   このスクリプトは、高速化の対象となるビルドコマンドと同じ環境（同じシェル、同じコンテナー）で実行する必要があります。
+
+   ```bash
+   #!/usr/bin/env bash
+   set -euxo pipefail
+
+   # Download the Bitrise Build Cache CLI.
+   curl --retry 5 -sSfL \
+     'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' \
+     | sh -s -- -b /tmp/bin -d
+
+   # Activate Build Cache for React Native (Gradle + Xcode + ccache for C++).
+   /tmp/bin/bitrise-build-cache activate react-native
+   ```
+
+   デフォルトでは、3 つのバックエンドすべてが有効になります。バックエンドを無効にするには、対応するフラグを渡します。
+
+   ```
+   /tmp/bin/bitrise-build-cache activate react-native --gradle=true --xcode=true --cpp=false
+   ```
+
+   CI は通常、キャッシュを生成する環境です。読み取りに加えて書き込みアクセスを有効にするには、`--cache-push` を渡します。
+
+   ```
+   /tmp/bin/bitrise-build-cache activate react-native --cache-push
+   ```
+
+   :::note
+
+   これまでに Bitrise Build Cache CLI を Gradle または Xcode のみで使用していた場合は、React Native のサポートを利用するために、<strong>CLI v1.0.0 以降</strong>を使用していることを確認してください。
+
+   :::
+1. 有効化が完了すると、`bitrise-build-cache` バイナリが PATH に追加されます。ビルドを実行するすべてのコマンドの先頭に `bitrise-build-cache react-native run` を付けます。
+
+   :::note
+
+   ラッピングの詳細については、[ネイティブビルドコマンドのラッピング](/bitrise-build-cache/build-cache-for-react-native/wrapping-native-build-commands)を参照してください。
+
+   :::
+
+<strong>Example の設定: GitHub Actions</strong>
+
+Bitrise Build Hub ランナー上で実行するジョブを含む GitHub Actions のワークフロー例については、[GitHub Actions での Build Cache for React Native の設定](/bitrise-build-cache/build-cache-for-react-native/configuring-the-build-cache-for-react-native-in-github-actions)を参照してください。
+
+## セットアップの検証
+
+1. 新しい設定でビルドを実行します。有効化ステップが正常に完了するはずです。
+1. Bitrise の <strong>Build details</strong> ページを開き、<strong>Build Cache</strong> タブを確認します。ラップされたコマンドがキャッシュ統計とともに一覧表示されているはずです。
+1. 最初のビルドでは、キャッシュヒット率は 0% と報告されます。この時点ではキャッシュが空のため、これは想定どおりの動作です。
+1. 1～3 回ビルドを追加で実行して、キャッシュをウォームアップします。以降のビルドでは、ヒット率が 0% を上回るはずです。
+1. キャッシュのパフォーマンスは、ビルドごと、またはビルド全体で、[Build Cache 一覧ページ](https://app.bitrise.io/build-cache/)で確認できます。

@@ -1,0 +1,146 @@
+---
+title: "Maven Central repository manager"
+sidebar_position: 6
+slug: /bitrise-build-cache/getting-started-with-the-build-cache/maven-central-repository-manager
+---
+
+import GlossTerm from '@site/src/components/GlossTerm';
+
+CI/CD をホストするプラットフォーム（Bitrise を含む）は、すべてのお客様のビルドにわたって Maven Central に大量の集約トラフィックを発生させます。
+
+ユーザーをレート制限（HTTP 429 エラー）から保護し、ビルドのパフォーマンスを向上させるため、Bitrise は各データセンターにリポジトリマネージャー（プロキシキャッシュ）をデプロイしています。このリポジトリマネージャーは Gradle のアーティファクトを保存するため、ビルドは公開インターネットではなく、データセンター内から依存関係を解決できます。その結果、Maven Central へのアップストリームリクエストが通常の数分の一に減り、ビルドの依存関係の解決も高速になります。
+
+:::note[リポジトリマネージャー、Build Cache、キーベースのキャッシュの違い]
+
+リポジトリマネージャーは、Maven Central のサードパーティ依存関係を保存します。そのため、ビルドのたびにインターネットから再ダウンロードする必要はありません。
+
+Build Cache は、プロジェクト自体のビルド出力（コンパイル済みクラス、タスクの結果）を保存します。これにより、Gradle は変更のない処理を再実行する必要がなくなります。
+
+[キーバリューキャッシュ](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching) は、指定したファイルやディレクトリ全体（`~/.gradle/caches` など）を保存し、一時的な CI ランナー上でもビルド間で保持できるようにします。3つはいずれも補完的な関係にあり、組み合わせて使用できます。
+
+:::
+
+## リポジトリマネージャーの仕組み
+
+Bitrise ホストのビルドはすべて、デフォルトでリポジトリマネージャーを利用するよう設定されています。通常、ユーザー側での操作は必要ありません。
+
+リポジトリマネージャーは、ビルドランナーに組み込まれた Gradle `init` スクリプトによって動作します。`init` スクリプトは、Bitrise のリポジトリマネージャーを Gradle 設定のリポジトリ一覧の先頭に追加します。これにより、同じ場所にあるリポジトリマネージャーから優先的に依存関係が解決されます。
+
+リポジトリマネージャーに該当のアーティファクトがない場合は、Maven Central から一度だけ取得して保存し、プラットフォーム全体の以降のビルドで利用します。
+
+リポジトリマネージャーは CI ランナーと同じデータセンター内に配置されているため、リモートの CDN から取得するよりもダウンロードが高速です。
+
+:::note
+
+システムの初期バージョンでは、Workflow に Step を追加する必要がありました。リポジトリマネージャーの機能のためだけに Workflow Step（[Activate Gradle Mirrors](https://github.com/bitrise-steplib/bitrise-step-activate-gradle-mirrors) など）を追加していたユーザーのほとんどは、安全に削除できます。
+
+:::
+
+## Step が引き続き必要な特別なケース
+
+リポジトリマネージャーは、すべての Bitrise ホストのビルドでデフォルトで有効になっています。ただし、一部の特別なケースでは、[Activate Gradle Mirrors](https://github.com/bitrise-steplib/bitrise-step-activate-gradle-mirrors) <GlossTerm baseform="step">Step</GlossTerm> を <GlossTerm baseform="workflow">Workflow</GlossTerm> に追加する必要があります。
+
+### 依存関係の検証
+
+プロジェクトで依存関係の検証を使用している場合は、追加の手順が必要です。Bitrise は `init` スクリプトを使用して、Gradle プロジェクトのリポジトリ一覧にリポジトリマネージャーを追加します。依存関係の検証を有効にしていると、すべてのプラグインと依存関係をプロジェクトの検証メタデータ XML ファイル（`$PROJECT_ROOT/gradle/verification-metadata.xml`）に記載する必要があるため、この変更は拒否されます。
+
+依存関係の検証を通過するには、次の手順を実行します。
+
+1. [Activate Gradle Mirrors](https://github.com/bitrise-steplib/bitrise-step-activate-gradle-mirrors) Step を Workflow に追加します。
+
+2. Step のバージョンが最新のパッチバージョンに固定されていることを確認します（例では `0.1.2` です）。現在、これは `bitrise.yml` 設定ファイルで行います。
+
+   :::note
+
+   Step のバージョンを更新するたびに、`verification-metadata.xml` も更新する必要があります。
+
+   :::
+
+   ```yaml
+   activate-gradle-mirrors@0.1.2:
+     inputs:
+     - verbose: 'true'
+   ```
+
+3. 依存関係マトリクスで、Step が使用する CLI のバージョンを確認します。対応する CLI のリリースページ（`https://github.com/bitrise-io/bitrise-build-cache-cli/releases/tag/<VERSION>`）を開き、`verification-metadata-mirror.xml` をダウンロードします。
+
+   `verification-metadata-mirror.xml` には、Bitrise のリポジトリマネージャーが提供するものに一致する SHA-256 チェックサムが含まれています。一方、通常の `verification-metadata.xml` には Maven Central の元のチェックサムが記録されているため、ミラーが有効な状態では検証に失敗します。
+
+4. ダウンロードしたメタデータから、components の内容を `$PROJECT_ROOT/gradle/verification-metadata.xml` ファイルに追加します。
+
+5. 変更内容を確認してコミットします。
+
+:::note
+
+プラグインの依存関係は、シンプルな Gradle プロジェクトと特定のプラットフォームランタイムバージョンを使用して収集しています。お使いの環境では、Gradle がわずかに異なる依存関係を取得する場合があります。その場合は、依存関係のメタデータを自分で生成する必要があります。
+
+:::
+
+### 検証メタデータの更新
+
+次の手順は、有効化している Step を更新するたびに、または収集済みのメタデータが、お使いの環境で Gradle が期待するものとまだ異なる場合に必要です。
+
+Bitrise Build Cache CLI には、依存関係の収集を目的とした方法でプラグインの依存関係を追加するコマンドがあります。
+
+これを使用して、build cache と analytics の依存関係を更新する手順は次のとおりです。
+
+1. [Activate Gradle Mirrors](https://github.com/bitrise-steplib/bitrise-step-activate-gradle-mirrors) Step を latest version に更新します。この際、`bitrise.yml` のバージョンを、最新の正確な（パッチ）Step バージョンに更新して固定します。
+
+2. Workflows に build cache Steps（例: [Build Cache for Gradle](https://github.com/bitrise-steplib/bitrise-step-activate-gradle-remote-cache) Step や [Build Cache for React Native](https://github.com/bitrise-steplib/bitrise-step-activate-react-native-features) Step）が含まれている場合は、関連する CLI のバージョンが [Activate Gradle Mirrors](https://github.com/bitrise-steplib/bitrise-step-activate-gradle-mirrors) Step の関連する CLI バージョンと一致する Step のバージョンに固定します。この情報は、関連する依存関係マトリクスで Step ごとに確認できます。
+
+3. 開発マシン上、または別の Workflow を使用する Bitrise 上で、依存関係マトリクスに記載されている、activate gradle mirror 用の関連バージョンの CLI をインストールします。
+
+   ```bash
+   # Replace CLIVERSION with the CLI version you want to install, for example: v2.4.6
+   curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d "CLIVERSION"
+   ```
+
+4. すでに Bitrise Build Cache を有効にしている場合は、次の手順で上書きされるため、`$HOME/.gradle/init.d/bitrise-build-cache.init.gradle.kts` をバックアップしてください。
+
+5. 本番の Workflow で Bitrise Maven Central ミラーが有効（デフォルト）になっている場合は、再生成されるメタデータに元のチェックサムではなくミラーが提供するチェックサムが記録されるよう、ローカルでミラーを有効化します。
+
+   ```bash
+   BITRISE_MAVENCENTRAL_PROXY_ENABLED=true /tmp/bin/bitrise-build-cache activate gradle-mirrors -d
+   ```
+
+6. 開発マシンまたは CI 設定で、Bitrise Build Cache CLI の `gradle-verification add-reference-deps` コマンドを実行します。
+
+   これにより、最新のプラグインを含む init スクリプトがドライランモードで生成されます。
+
+7. プロジェクトフォルダーで、通常の Workflow を実行して検証メタデータを書き込みます。
+
+   ```bash
+   ./gradlew tasks --write-verification-metadata sha256
+   ```
+
+8. メタデータの差分を確認し、変更内容をコミットして本番の Workflow に反映すると、更新が完了し、更新後の Step を Workflows で使用できます。
+
+9. ローカルマシンで `$HOME/.gradle/init.d/bitrise-build-cache.init.gradle.kts` をバックアップした場合は、変更を元に戻します。
+
+この方法では、Bitrise Build Cache の latest version を使用しながら、依存関係を固定したままにできます。
+
+## リポジトリマネージャーを使用しない設定
+
+Maven Central に直接アクセスする必要がある場合は、ビルド設定で `BITRISE_MAVENCENTRAL_PROXY_ENABLED` を `false` に設定することで、リポジトリマネージャーを無効にできます。
+
+- <strong>Workflow レベル:</strong> 該当する Workflow について、<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm> の <strong>Env Vars</strong> に環境変数を追加します。
+- <strong>プロジェクトレベル:</strong> プロジェクトレベルの環境変数として Workflow Editor に追加すると、そのプロジェクト内のすべての Workflows でプロキシが無効になります。
+- <strong><GlossTerm baseform="secret">Secret</GlossTerm>:</strong> `bitrise.yml` に含めたくない場合は、シークレット環境変数として追加します。
+
+この環境変数は、[Activate Gradle Mirrors](https://github.com/bitrise-steplib/bitrise-step-activate-gradle-mirrors) Step を含む他のすべての設定よりも優先されます。追加のスクリプト Steps やコードの変更は必要ありません。
+
+:::note
+
+この設定を無効にすると、ビルドは Maven Central から直接依存関係を解決するようになり、ピーク時のトラフィック発生中にレート制限（HTTP 429 エラー）が発生する可能性があります。
+
+:::
+
+## Build Hub でのプロキシキャッシュの使用
+
+Bitrise Build Hub を使用している場合は、依存関係の解決前に、次のスクリプトをジョブ定義に追加します。
+
+```
+curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d \
+  && BITRISE_MAVENCENTRAL_PROXY_ENABLED=true /tmp/bin/bitrise-build-cache activate gradle-mirrors -d \
+  || true
+```
