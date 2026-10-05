@@ -26,8 +26,10 @@ function NavbarSearchPortal(): ReactNode {
         <svg class="navbar-search__icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path d="M11.5 11.5L14.5 14.5M13 7.5C13 10.5376 10.5376 13 7.5 13C4.46243 13 2 10.5376 2 7.5C2 4.46243 4.46243 2 7.5 2C10.5376 2 13 4.46243 13 7.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
-        <input class="navbar-search__input" type="text" placeholder="${placeholder}" id="searchWidgetTrigger" readonly />
+        <input class="navbar-search__input" type="text" id="searchWidgetTrigger" readonly />
       `;
+      // Set via the DOM property, not the template: a translation containing a quote would break the attribute.
+      searchEl.querySelector<HTMLInputElement>('#searchWidgetTrigger')!.placeholder = placeholder;
       searchEl.addEventListener('click', () => {
         const input = searchEl!.querySelector<HTMLInputElement>('#searchWidgetTrigger');
         input?.click();
