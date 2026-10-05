@@ -215,7 +215,7 @@ the same `slug:`).
 ### Code
 
 - Inline: backticks for filenames, command names, env var names. ``Open `bitrise.yml`.``
-- Blocks: triple backticks with a language hint (one of `yaml`, `bash`, `json`, `swift`, `kotlin`, `groovy`, `ruby`, `dart`, `diff` — those are the languages our Prism config loads).
+- Blocks: triple backticks with a language hint. `docusaurus.config.ts` adds `yaml`, `bash`, `json`, `swift`, `kotlin`, `groovy`, `ruby`, `dart`, `diff` on top of the languages `prism-react-renderer` bundles (among others `javascript`, `typescript`, `xml`, `go`, `python`). Use `text` for plain text, such as file names.
 - **Don't put code blocks inside admonitions.** Render the admonition first, then the code block as a sibling.
 
 **Showing a change to an existing file**
