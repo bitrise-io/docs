@@ -9,10 +9,11 @@ import React, {
   type ReactNode,
 } from 'react';
 import clsx from 'clsx';
+import DateRangePicker, {type DateRange} from './DateRangePicker';
 import styles from './styles.module.css';
 
 // The documentation areas, one per product hub (API references belong to their
-// product). Order here is the order of the filter buttons. `id` is what entries
+// product). Order here is the order of the filter options. `id` is what entries
 // put in `areas="..."` and what each hub's changelog page passes as `area`.
 export const AREAS = [
   {id: 'ci', label: 'Bitrise CI'},
@@ -24,9 +25,10 @@ export const AREAS = [
   {id: 'rde', label: 'Remote Dev Environments'},
 ] as const;
 
-// The filter buttons sit on two lines. The split (All areas + the first three
-// areas, then the other four) is picked so both lines come out about the same
-// width at the buttons' natural sizes; revisit it if a label changes.
+// The filter options sit on two lines inside one segmented control. The split
+// (All areas + the first three areas, then the other four) is picked so both
+// lines come out about the same width at the options' natural sizes; revisit it
+// if a label changes.
 const FILTER_ITEMS = [{id: 'all', label: 'All areas'}, ...AREAS] as const;
 const FILTER_ROWS = [FILTER_ITEMS.slice(0, 4), FILTER_ITEMS.slice(4)];
 
@@ -39,11 +41,13 @@ const AREA_LABEL: Record<string, string> = Object.fromEntries(
 
 interface ChangelogState {
   filter: Filter;
+  range: DateRange | null; // null shows every date
   setFilter: (f: Filter) => void;
 }
 
 const ChangelogContext = createContext<ChangelogState>({
   filter: 'all',
+  range: null,
   setFilter: () => {},
 });
 
@@ -66,15 +70,17 @@ export default function Changelog({
   children: ReactNode;
 }): ReactElement {
   const [filter, setFilter] = useState<Filter>(isArea(area) ? area : 'all');
+  const [range, setRange] = useState<DateRange | null>(null);
 
   // Feed items and shared links point at /<hub>/changelog#<anchor> regardless of
-  // the entry's area. If the target entry is filtered out, show everything so
-  // the link lands on something visible.
+  // the entry's area or date. If the target entry is filtered out, show
+  // everything so the link lands on something visible.
   useEffect(() => {
     const reveal = () => {
       const id = decodeURIComponent(window.location.hash.slice(1));
       if (!id) return;
       setFilter('all');
+      setRange(null);
       requestAnimationFrame(() =>
         document.getElementById(id)?.scrollIntoView(),
       );
@@ -85,7 +91,7 @@ export default function Changelog({
   }, []);
 
   return (
-    <ChangelogContext.Provider value={{filter, setFilter}}>
+    <ChangelogContext.Provider value={{filter, range, setFilter}}>
       <div className={styles.toolbar}>
         <svg
           className={styles.filterIcon}
@@ -99,15 +105,14 @@ export default function Changelog({
           aria-hidden="true">
           <path d="M3 5h14M5.5 10h9M8 15h4" />
         </svg>
-        <div className={styles.filters}>
-        <div className={styles.areaRows} role="group" aria-label="Filter by area">
+        <div className={styles.segmented} role="group" aria-label="Filter by area">
           {FILTER_ROWS.map((row, i) => (
-            <div key={i} className={styles.buttons}>
+            <div key={i} className={styles.segmentedRow}>
               {row.map((a) => (
                 <button
                   key={a.id}
                   type="button"
-                  className={clsx(styles.button, filter === a.id && styles.buttonActive)}
+                  className={clsx(styles.option, filter === a.id && styles.optionActive)}
                   aria-pressed={filter === a.id}
                   onClick={() => setFilter(a.id)}>
                   {a.label}
@@ -116,7 +121,7 @@ export default function Changelog({
             </div>
           ))}
         </div>
-        </div>
+        <DateRangePicker value={range} onChange={setRange} />
       </div>
       {children}
     </ChangelogContext.Provider>
@@ -124,8 +129,10 @@ export default function Changelog({
 }
 
 interface EntryProps {
-  /** Space-separated area ids. The first one is the entry's primary area. */
+  /** Space-separated area ids. */
   areas: string;
+  /** The entry's date (YYYY-MM-DD), used by the date range filter. */
+  date?: string;
   children: ReactNode;
 }
 
@@ -160,19 +167,23 @@ const isEntry = (c: ReactNode): c is ReactElement<EntryProps> =>
   isValidElement(c) && c.type === Entry;
 
 /**
- * A time bucket (for example "2026 Q3"). Its first child is the `##` heading,
- * so the page TOC still lists the quarters. Entries are filtered here, and a
- * quarter with no visible entry is hidden along with its heading.
+ * A time bucket. Its first child is the `##` heading, so the page TOC still
+ * lists the quarters. Entries are filtered here, and a quarter with no visible
+ * entry is hidden along with its heading.
  */
 export function Quarter({children}: {children: ReactNode}): ReactElement | null {
-  const {filter} = useContext(ChangelogContext);
+  const {filter, range} = useContext(ChangelogContext);
+
   const all = Children.toArray(children);
   const entries = all.filter(isEntry);
   const rest = all.filter((c) => !isEntry(c));
 
-  const visible = entries.filter(
-    (e) => filter === 'all' || parseAreas(e.props.areas).includes(filter),
-  );
+  const visible = entries.filter((e) => {
+    const {areas, date} = e.props;
+    if (filter !== 'all' && !parseAreas(areas).includes(filter)) return false;
+    if (range && date && (date < range.start || date > range.end)) return false;
+    return true;
+  });
   if (visible.length === 0) return null;
 
   return (
