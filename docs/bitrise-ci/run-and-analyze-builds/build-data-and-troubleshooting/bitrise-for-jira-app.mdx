@@ -55,6 +55,7 @@ This page walks through both sides from start to finish. Each section names who'
 | Creating a token | Bitrise, by whoever creates the token |
 | Connecting Bitrise projects | Bitrise, then Jira |
 | Verifying the connection | Jira, by a Jira admin |
+| Limiting the **Bitrise builds** section to specific Jira projects (optional) | Jira, by a Jira admin |
 
 ## Installing the app in Jira
 
@@ -136,8 +137,8 @@ To connect Bitrise projects to Jira, you need the API token and a list of the pr
 1. **On Bitrise:** Decide which Bitrise projects should send updates to Jira. Make a list of the specific projects, or decide to connect all of them.
 1. Share the API token and the project list with the Jira admin through a secure channel, such as a password manager or secrets tool, not over plain email or chat.
 1. **On Jira:** Go to **Apps > Manage your apps > Bitrise for Jira** and open its configuration page.
-1. Under **Bitrise API Token**, paste the token you received and click **Save**.
-1. Under **Connected Bitrise Projects**, select the projects you were given and click **Save**.
+1. Under **Bitrise API token**, paste the token you received and click **Save**.
+1. Under **Connected Bitrise projects**, select the projects you were given and click **Save**.
 
 :::note
 
@@ -154,14 +155,37 @@ You can verify the connection with a Jira admin.
 
 If nothing appears, see [Troubleshooting](#troubleshooting).
 
+## Limiting the Bitrise builds section to specific Jira projects
+
+By default, the **Bitrise builds** section appears on issues in every Jira project on your site. If only some of your Jira projects use Bitrise, you can limit the section to those projects. A Jira admin does this on the app's configuration page.
+
+:::important[Approve the app update first]
+
+The project picker needs new permissions, so Jira treats it as a major update of the app. On an existing installation, the **Connected Jira projects** setting becomes available after a Jira admin approves the update. Until then, the section keeps appearing in every project.
+
+:::
+
+1. In Jira, go to **Apps > Manage your apps > Bitrise for Jira** and open its configuration page.
+1. Under **Connected Jira projects**, search for Jira projects by name or key and select the ones that should show the section.
+1. Click **Save panel visibility**.
+
+The **Bitrise builds** section then appears only on issues in the selected projects. To show it in every project again, remove all selected projects and save.
+
+:::note
+
+The picker lists only the Jira projects that you can browse. This setting controls the **Bitrise builds** section only. It doesn't change the **Builds** tab of Jira's development panel, and it's separate from **Connected Bitrise projects**, which controls which Bitrise projects send build updates to Jira.
+
+:::
+
 ## Maintaining the connection
 
 - **Token expiry or change:** If the API token expires, is regenerated, or is replaced, the connection stops working. Update the token on the app's configuration page and re-check your connected projects.
-- **New Bitrise projects:** When you add a new project in Bitrise that you want to appear in Jira, return to the app's configuration page and add it under **Connected Bitrise Projects**.
+- **New Bitrise projects:** When you add a new project in Bitrise that you want to appear in Jira, return to the app's configuration page and add it under **Connected Bitrise projects**.
 
 ## Troubleshooting
 
-- **No build status on issues:** Confirm the issue key is present in the branch name, a Git tag, the pull request title, the pull request description, or a commit message. Then check that the token is still valid and that the relevant project is selected under **Connected Bitrise Projects**.
+- **No build status on issues:** Confirm the issue key is present in the branch name, a Git tag, the pull request title, the pull request description, or a commit message. Then check that the token is still valid and that the relevant project is selected under **Connected Bitrise projects**.
+- **The Bitrise builds section is missing from issues in one Jira project:** A Jira admin may have limited the section to specific projects. Check **Connected Jira projects** on the app's configuration page, and add the project or clear the selection to show the section everywhere. See [Limiting the Bitrise builds section to specific Jira projects](#limiting-the-bitrise-builds-section-to-specific-jira-projects).
 - **A project is missing from the list:** The token can't access it. Check that the token (or the project role of its owner, for a Personal access token) includes that project, or ask whoever created the token to update it.
 - **Build status that used to work stops appearing:** The usual cause is someone unchecking **Attach Bitrise OIDC token** on the connected project's outgoing webhook, in Bitrise. Check the **Activity** section on the app's Jira configuration page for rejected deliveries.
 
