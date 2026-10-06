@@ -131,8 +131,6 @@ export default function Changelog({
 interface EntryProps {
   /** Space-separated area ids. */
   areas: string;
-  /** The entry's date (YYYY-MM-DD), used by the date range filter. */
-  date?: string;
   children: ReactNode;
 }
 
@@ -166,6 +164,33 @@ export function Entry({areas, children}: EntryProps): ReactElement {
 const isEntry = (c: ReactNode): c is ReactElement<EntryProps> =>
   isValidElement(c) && c.type === Entry;
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * The date of an entry, read from its heading so it is written only once: the
+ * `dateTime` of the `<time>` element, or a bare `YYYY-MM-DD` at the start of
+ * the heading text.
+ */
+function findDate(node: ReactNode): string | undefined {
+  if (typeof node === 'string') {
+    const m = node.trim().match(/^(\d{4}-\d{2}-\d{2})\b/);
+    return m?.[1];
+  }
+  if (!isValidElement(node)) return undefined;
+  const props = node.props as {dateTime?: unknown; children?: ReactNode};
+  if (typeof props.dateTime === 'string' && ISO_DATE.test(props.dateTime)) {
+    return props.dateTime;
+  }
+  for (const child of Children.toArray(props.children)) {
+    const found = findDate(child);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+const entryDate = (e: ReactElement<EntryProps>): string | undefined =>
+  findDate(Children.toArray(e.props.children)[0]); // the heading
+
 /**
  * A time bucket. Its first child is the `##` heading, so the page TOC still
  * lists the quarters. Entries are filtered here, and a quarter with no visible
@@ -179,9 +204,18 @@ export function Quarter({children}: {children: ReactNode}): ReactElement | null 
   const rest = all.filter((c) => !isEntry(c));
 
   const visible = entries.filter((e) => {
-    const {areas, date} = e.props;
-    if (filter !== 'all' && !parseAreas(areas).includes(filter)) return false;
-    if (range && date && (date < range.start || date > range.end)) return false;
+    if (filter !== 'all' && !parseAreas(e.props.areas).includes(filter)) return false;
+    if (range) {
+      const date = entryDate(e);
+      if (!date) {
+        // Shown regardless of the range, but worth knowing about while writing.
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('Changelog entry heading has no date; the date filter skips it.');
+        }
+        return true;
+      }
+      if (date < range.start || date > range.end) return false;
+    }
     return true;
   });
   if (visible.length === 0) return null;

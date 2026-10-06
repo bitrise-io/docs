@@ -20,20 +20,50 @@ Run in **retroactive mode** when:
 
 ## Entry format
 
-The changelog uses monthly H2 sections with H3 entries:
+The changelog groups entries into quarters. Each quarter is a `<Quarter>` block with an H2, and each entry is an `<Entry>` block holding an H3 and a summary:
 
 ```
-## YYYY Month
+<Quarter>
+
+## YYYY QN
+
+<Entry areas="ci build-cache">
 
 ### <time dateTime="YYYY-MM-DD">YYYY-MM-DD</time> Title {#YYYY-MM-DD-slug-of-title}
 
 Summary paragraph.
 
+</Entry>
+
+</Quarter>
 ```
+
+Rules for the markup:
+- Put the `<Quarter>`, `</Quarter>`, `<Entry …>` and `</Entry>` tags at the start of a line, with no indentation, and leave a blank line after every opening tag and before every closing tag. The feed plugin and MDX both depend on this.
+- The entry's date is written once, in the heading's `<time dateTime="…">`. The page reads it from there for the date filter. Do not add a `date` attribute to `<Entry>`.
+- `areas` is a space-separated list of area ids; see "Choosing areas" below.
 
 The `{#anchor}` ID uses the same slug formula as the feed plugin: lowercase the title, replace every run of non-alphanumeric characters with a single hyphen, strip leading/trailing hyphens, then prepend the date: `YYYY-MM-DD-slug`.
 
-Month headers use the format `## YYYY Month` (e.g. `## 2026 June`).
+Quarter headers use the format `## YYYY QN` (e.g. `## 2026 Q3`): Q1 is January to March, Q2 April to June, Q3 July to September, Q4 October to December.
+
+### Choosing areas
+
+Tag every entry with the areas whose readers it affects. Use the paths of the changed `docs/` files:
+
+| Changed pages under | Area id |
+|---|---|
+| `docs/bitrise-ci/`, `docs/bitrise-api/` | `ci` |
+| `docs/bitrise-platform/` | `platform` |
+| `docs/bitrise-build-cache/` | `build-cache` |
+| `docs/bitrise-build-hub/` | `build-hub` |
+| `docs/insights/` | `insights` |
+| `docs/release-management/`, `docs/release-management-api/` | `release-management` |
+| `docs/bitrise-rde/`, `docs/bitrise-rde-api/` | `rde` |
+
+- A change that affects more than one area lists each one. Use at most three. For a shared partial, count every hub whose pages import it.
+- API references belong to their product, so there is no separate API area.
+- If you are unsure, pick the most likely areas and say so in the draft you show for review.
 
 ---
 
@@ -58,6 +88,7 @@ Generate a changelog entry from the current branch's changes, commit it, then cr
    - Formatting or cleanup (syntax highlighting, whitespace, list numbering)
    - Broken link or image path corrections
    - Navigation or sidebar changes
+   - Site-wide changes, such as search or navigation
    - Glossary tooltips or internal cross-references
    - Corrections with no new information
    - File moves or renames with identical content
@@ -68,12 +99,13 @@ Generate a changelog entry from the current branch's changes, commit it, then cr
    - **Title**: 5–8 words from the reader's perspective.
    - **Summary**: 1–2 sentences. Write from the reader's perspective ("You can now…", "The X guide now covers…"), not the author's ("We added…"). Use today's date.
    - **Linking**: if the changes are concentrated in one page, end the summary with a link to that page using its `slug` (e.g. `See [Running Xcode tests](/en/bitrise-ci/testing/running-xcode-tests).`). If changes span multiple pages, include a link to the most relevant one at your discretion — or omit if no single page stands out.
+   - **Areas**: pick the area ids as described in "Choosing areas" and show them in the draft.
    - One entry per PR even if multiple files changed.
 
 4. **Write and commit** once approved. Insert the entry into `src/partials/changelog-content.mdx`:
-   - Find the H2 for the current month (e.g. `## 2026 June`).
-   - Insert the new H3 entry at the top of that section, immediately after the H2 line.
-   - If no H2 exists for the current month yet, create it at the top of the entries (immediately after `<!-- changelog-entries -->`), then add the H3 entry beneath it.
+   - Find the `<Quarter>` for the current quarter (e.g. the one whose heading is `## 2026 Q3`).
+   - Insert the new `<Entry>` block at the top of that quarter, immediately after the H2 line and its blank line.
+   - If no quarter exists for the current one yet, create a new `<Quarter>` block with its `## YYYY QN` heading at the top of the entries (immediately after `<!-- changelog-entries -->`), then add the `<Entry>` block beneath the heading.
 
    Then commit:
    ```
@@ -101,7 +133,7 @@ Generate entries for all merged PRs not yet covered by the changelog.
    - `mergedAt` is strictly after the cutoff date
    - at least one file path starts with `docs/` and ends with `.md` or `.mdx`
 
-   Sort ascending by `mergedAt` (oldest first — you'll insert in reverse so newest ends up on top within each month).
+   Sort ascending by `mergedAt` (oldest first — you'll insert in reverse so newest ends up on top within each quarter).
 
 3. **For each uncovered PR**, ascending order:
    a. Fetch the diff:
@@ -120,19 +152,21 @@ Generate entries for all merged PRs not yet covered by the changelog.
       - Formatting or cleanup
       - Broken link or image path corrections
       - Navigation or sidebar changes
+      - Site-wide changes, such as search or navigation
       - Glossary tooltips or internal cross-references
       - Corrections with no new information
       - File moves or renames with identical content
 
    d. If keeping, write:
       - **Title**: 5–8 words from the reader's perspective.
+      - **Areas**: area ids from the PR's changed `docs/` paths, as described in "Choosing areas".
       - **Summary**: 1–2 sentences. Reader's perspective, not the author's.
       - **Linking**: if the changes are concentrated in one page, end the summary with a link to that page using its `slug`. If changes span multiple pages, link to the most relevant one at your discretion — or omit if no single page stands out.
 
-4. **Insert new entries** into their respective month sections, newest first within each section. For each entry:
-   - Find the H2 for its month (e.g. `## 2026 June`).
-   - Insert the H3 entry at the top of that section.
-   - If no H2 exists for that month, create it in the correct chronological position.
+4. **Insert new entries** into their respective quarters, newest first within each quarter. For each entry:
+   - Find the `<Quarter>` whose H2 matches the entry's date (e.g. `## 2026 Q3`).
+   - Insert the `<Entry>` block at the top of that quarter, after the H2 line and its blank line.
+   - If no quarter exists for that date, create a new `<Quarter>` block in the correct chronological position.
 
    The `{#anchor}` ID must use the same slug formula as the feed plugin: lowercase the title, replace every run of non-alphanumeric characters with a single hyphen, strip leading/trailing hyphens, then prepend the date: `YYYY-MM-DD-slug`.
 
