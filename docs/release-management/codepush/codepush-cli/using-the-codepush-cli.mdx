@@ -228,6 +228,12 @@ Check the processing status of an update. This is useful after a push to confirm
 bitrise :codepush update status Staging
 ```
 
+The `update status` command also shows how far the server got with generating delta updates against earlier updates. `Delta generation` is `pending` while deltas are still being built and `completed` once they are stored. After completion, the output has one `Delta from <version>` line per earlier update, named by its version label (or by its package hash when no labelled update is left). Each line lists the stored delta kinds: `file-level diff` and `binary patch`.
+
+A completed update with no deltas means clients download the full package. This is expected for the first CodePush update of a binary release, because Bitrise generates deltas against earlier CodePush updates only, never against the store binary.
+
+With `--json`, the same data is in `delta_generation_status` and `deltas`, keyed by package hash, with the labels in `update_versions`.
+
 Delete a specific update. Use `--label` to specify the update and `--yes` to confirm:
 
 ```bash
