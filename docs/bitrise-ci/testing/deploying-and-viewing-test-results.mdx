@@ -130,12 +130,10 @@ The file name has the following structure, for example `com.example.LoginTest__e
 
 #### Setting up your test tool
 
-Set up the naming once, in your test configuration. The following examples work without changing your tests:
+Set up the naming once, in your test configuration. The following examples do this for some popular test tools:
 
 <Tabs>
-<TabItem value="android" label="Android" default>
-
-**AndroidX Test and Espresso**
+<TabItem value="espresso" label="Espresso" default>
 
 Register a `RunListener` that takes a screenshot when an Espresso check fails:
 
@@ -182,7 +180,71 @@ class BitriseScreenshotListener : RunListener() {
 
 Plain JUnit assertions don't get a screenshot.
 
-**Roborazzi**
+</TabItem>
+<TabItem value="paparazzi" label="Paparazzi">
+
+Create your Paparazzi rules through a shared function that adds a snapshot handler. The handler saves every snapshot under the attachment name as well:
+
+```kotlin
+// src/test/java/com/example/testing/BitrisePaparazzi.kt
+package com.example.testing
+
+import app.cash.paparazzi.DeviceConfig
+import app.cash.paparazzi.HtmlReportWriter
+import app.cash.paparazzi.Paparazzi
+import app.cash.paparazzi.Snapshot
+import app.cash.paparazzi.SnapshotHandler
+import app.cash.paparazzi.SnapshotVerifier
+import java.awt.image.BufferedImage
+import java.io.File
+import javax.imageio.ImageIO
+
+private fun clean(value: String) = value.replace(Regex("""["*/:<>?\\|]"""), "_")
+
+fun bitrisePaparazzi(deviceConfig: DeviceConfig = DeviceConfig.PIXEL_5) =
+    Paparazzi(deviceConfig = deviceConfig, snapshotHandler = BitriseSnapshotHandler())
+
+class BitriseSnapshotHandler(
+    maxPercentDifference: Double = 0.1,
+    private val delegate: SnapshotHandler =
+        if (System.getProperty("paparazzi.test.verify") == "true") SnapshotVerifier(maxPercentDifference)
+        else HtmlReportWriter(),
+) : SnapshotHandler by delegate {
+    override fun newFrameHandler(snapshot: Snapshot, frameCount: Int, fps: Int): SnapshotHandler.FrameHandler {
+        val frames = delegate.newFrameHandler(snapshot, frameCount, fps)
+        val test = snapshot.testName
+        val label = snapshot.name?.replace(Regex("_+"), "_")?.removePrefix("_") ?: "snapshot"
+        val name = "${clean("${test.packageName}.${test.className}")}__${clean(test.methodName)}__$label"
+        val file = File(System.getProperty("paparazzi.build.dir"), "bitrise-snapshots/$name.png")
+        return object : SnapshotHandler.FrameHandler by frames {
+            override fun handle(image: BufferedImage) {
+                file.parentFile.mkdirs()
+                ImageIO.write(image, "png", file)
+                frames.handle(image)
+            }
+        }
+    }
+}
+```
+
+In your tests, replace `Paparazzi(...)` with `bitrisePaparazzi(...)`. Then add the following to the module's `build.gradle.kts`. The first block lets the handler use `java.awt` on Android Gradle plugin 8, and the second one removes the snapshots of the previous run and keeps the current ones in the build cache:
+
+```kotlin
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
+    if ("UnitTest" in name) compilerOptions.noJdk.set(false)
+}
+
+tasks.withType<Test>().configureEach {
+    val snapshots = layout.buildDirectory.dir("bitrise-snapshots")
+    outputs.dir(snapshots)
+    doFirst { snapshots.get().asFile.deleteRecursively() }
+}
+```
+
+The example is for Paparazzi 1.3.5. On Paparazzi 2.0, create the report writer with `HtmlReportWriter(maxPercentDifference = maxPercentDifference)`.
+
+</TabItem>
+<TabItem value="roborazzi" label="Roborazzi">
 
 Copy Roborazzi's screenshots under the attachment name after each Roborazzi run:
 
@@ -199,9 +261,7 @@ tasks.named { it == "finalizeTestRoborazziDebug" }.configureEach { finalizedBy(b
 Roborazzi writes screenshots only when you run `recordRoborazziDebug`, `verifyRoborazziDebug`, or `compareRoborazziDebug`. Parameterized tests don't get attachments.
 
 </TabItem>
-<TabItem value="react-native" label="React Native">
-
-**Detox**
+<TabItem value="detox" label="Detox">
 
 Point `artifacts.pathBuilder` in your Detox configuration to this file. It names every screenshot, video, and log the way jest-junit names the test with its default settings:
 
@@ -229,9 +289,7 @@ module.exports = class BitrisePathBuilder {
 ```
 
 </TabItem>
-<TabItem value="web" label="Web">
-
-**Playwright**
+<TabItem value="playwright" label="Playwright">
 
 Turn on `includeProjectInTestName` for the junit reporter, and add a reporter that copies the screenshots and videos of each test under the attachment name:
 
