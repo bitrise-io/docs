@@ -50,7 +50,7 @@ If you run your tests using other Steps (for example, you can use [Script](https
 
    :::important[Attachments and flaky tests]
 
-   If your tests generate attachments or you want Bitrise to show flaky tests, the **Deploy to Bitrise.io** Step must be of version 2.19.1 or newer. To link attachments by file name, it must be version 2.26.0 or newer: [Naming attachments after their test case](/bitrise-ci/testing/deploying-and-viewing-test-results#naming-attachments-after-their-test-case).
+   If your tests generate attachments or you want Bitrise to show flaky tests, the **Deploy to Bitrise.io** Step must be of version 2.19.1 or newer.
 
    :::
 
@@ -109,57 +109,35 @@ If your tests don't generate an `xcresult` file, Bitrise can still show attachme
 
 ### Naming attachments after their test case
 
-Name a screenshot, recording, or log after the test case that produced it, and Bitrise shows it under that test on the **Tests** tab. You don't have to edit the JUnit XML or write a script that links the files.
+Name a screenshot, recording, or log after the test case that produced it, and Bitrise shows it under that test on the **Tests** tab.
 
 :::important[Step versions]
 
-Linking attachments by file name requires the **Deploy to Bitrise.io** Step version 2.26.0 or newer. If you export your test results with the **Export test results to Test Reports** Step, it must be version 1.3.0 or newer.
+This requires the **Deploy to Bitrise.io** Step version 2.26.0 or newer. If you use the **Export test results to Test Reports** Step, it must be version 1.3.0 or newer.
 
 :::
 
-The file name has the following structure:
+The file name has the following structure, for example `com.example.LoginTest__emptyState__1.png`:
 
 ```text
 <classname>__<name>[__run<k>]__<label>.<ext>
 ```
 
-For example:
+- Copy `classname` and `name` from the `<testcase>` element of your JUnit XML, and replace any of the `" * / : < > ? \ |` characters with `_`.
+- Always add a label, such as a counter. The label can't contain `__` or start with `_`.
+- If the same tests run on more than one device, put the device in the label, for example `api34_1`. Otherwise, the files overwrite each other.
+- To attach a file to a later run of the same test case, add `__run2`, `__run3`, and so on before the label.
 
-```text
-com.example.LoginTest__emptyState__1.png
-com.example.LoginTest__wrongPassword__run2__api34.png
-com.example.LoginTest__wrongPassword__locked__1.png
-```
+#### Setting up your test tool
 
-The third file belongs to the test called `wrongPassword__locked`.
-
-| Part | Rule |
-|---|---|
-| `classname`, `name` | The `classname` and `name` attributes of the `<testcase>` element in your JUnit XML, case-sensitive. Replace each of the `" * / : < > ? \ \|` characters with `_`. |
-| `run<k>` | Optional. `k` is one or higher, and selects the k-th occurrence of the test case in its test suite: the **Run #k** card on the **Tests** tab. Without it, the file goes to the first run. |
-| `label` | Required. Any text that doesn't contain `__` and doesn't start with `_`: a counter (`1`), a device (`api34`), or both (`api34_1`). Attachments are sorted by label, with numbers in numeric order, so `2` comes before `10`. |
-| `ext` | One of `png`, `jpg`, `jpeg`, `mp4`, `webm`, `ogg`, `txt`, `log`, in any case. |
-
-Keep the following in mind:
-
-- Only the file name counts for matching, not the folder. The file still has to be somewhere the Steps look for it: [Exporting the attachments](#exporting-the-attachments).
-- A test name can contain `__`. If a test's own name ends in `__run<k>`, the file goes to that test, not to a run of another test.
-- When the same tests run more than once in a build, for example on two emulators, put the device in the label, such as the API level. Otherwise, the files overwrite each other or get skipped as copies.
-- If the same test case appears in more than one test suite of a report, its files aren't linked, because Bitrise can't tell which test case they belong to.
-- Attachment problems never fail the build. To find out why a file isn't linked, see [Troubleshooting missing attachments](#troubleshooting-missing-attachments).
-
-A file name can be at most 255 bytes on Linux and Android, and 255 characters on macOS. Long test names, such as parameterized tests or Kotlin test names written in backticks, can exceed this limit together with the label and the extension. Saving the file then fails in your own test code (`ENAMETOOLONG`). Bitrise doesn't shorten the names.
-
-#### Saving attachments from your test tool
-
-Set up the naming once, in your test configuration, so that you don't have to change your tests. Build the name from the same `classname` and `name` values that your JUnit reporter writes into the XML, replace the characters listed above, and always add a label. The following examples do this for some popular test tools.
+Set up the naming once, in your test configuration. The following examples work without changing your tests:
 
 <Tabs>
 <TabItem value="android" label="Android" default>
 
 **AndroidX Test and Espresso**
 
-Register a JUnit `RunListener` once, through an instrumentation runner argument. Before each test, the listener installs an Espresso failure handler that takes a screenshot when an Espresso check fails, and saves it to test storage. The Android Gradle plugin then pulls the screenshot into `build/outputs/connected_android_test_additional_output/`.
+Register a `RunListener` that takes a screenshot when an Espresso check fails:
 
 ```kotlin
 // app/build.gradle.kts
@@ -202,11 +180,11 @@ class BitriseScreenshotListener : RunListener() {
 }
 ```
 
-Only failed Espresso checks get a screenshot, not plain JUnit assertions. The API level in the label keeps the screenshots of devices with different API levels apart.
+Plain JUnit assertions don't get a screenshot.
 
 **Roborazzi**
 
-Add a task that copies Roborazzi's screenshots under the attachment name after each Roborazzi run. Roborazzi names its files `<class>.<method>.png`, so the task can rename them without any change to your tests:
+Copy Roborazzi's screenshots under the attachment name after each Roborazzi run:
 
 ```kotlin
 // app/build.gradle.kts
@@ -218,14 +196,14 @@ val bitriseScreenshots by tasks.registering(Sync::class) {
 tasks.named { it == "finalizeTestRoborazziDebug" }.configureEach { finalizedBy(bitriseScreenshots) }
 ```
 
-Roborazzi only writes screenshots when you run `recordRoborazziDebug`, `verifyRoborazziDebug`, or `compareRoborazziDebug`. Parameterized tests don't get attachments, because Roborazzi doesn't put the parameters in the file name.
+Roborazzi writes screenshots only when you run `recordRoborazziDebug`, `verifyRoborazziDebug`, or `compareRoborazziDebug`. Parameterized tests don't get attachments.
 
 </TabItem>
 <TabItem value="react-native" label="React Native">
 
 **Detox**
 
-Detox names every per-test artifact, such as screenshots, videos, and logs, through a path builder. With its default templates, jest-junit writes the describe blocks and the test title into both `classname` and `name`, so the path builder can rebuild them from the test's title and full name. Point `artifacts.pathBuilder` in your Detox configuration to this file:
+Point `artifacts.pathBuilder` in your Detox configuration to this file. It names every screenshot, video, and log the way jest-junit names the test with its default settings:
 
 ```javascript
 // e2e/bitrisePathBuilder.js
@@ -250,14 +228,12 @@ module.exports = class BitrisePathBuilder {
 };
 ```
 
-Because the full test name appears twice, long test names reach the file name length limit sooner.
-
 </TabItem>
 <TabItem value="web" label="Web">
 
 **Playwright**
 
-Add a reporter that copies the screenshots and videos Playwright attaches to a test under the attachment name. The junit reporter writes the spec file as `classname`, and the describe blocks and the test title as `name`. Turn on `includeProjectInTestName`, so that each project writes its own test case. Without it, every project writes the same test case, and none of them gets attachments:
+Turn on `includeProjectInTestName` for the junit reporter, and add a reporter that copies the screenshots and videos of each test under the attachment name:
 
 ```typescript
 // playwright.config.ts
@@ -292,75 +268,19 @@ export default class BitriseAttachments implements Reporter {
 }
 ```
 
-A retried test stays one test case in the XML, so the reporter puts the retry in the label instead of using `run<k>`.
-
 </TabItem>
 </Tabs>
 
 #### Exporting the attachments
 
-If you run your tests with a Script Step or another Step that doesn't export its own results, the **Export test results to Test Reports** Step exports the attachments together with the JUnit XML.
-
-<Tabs>
-<TabItem value="workflow-editor" label="Workflow Editor" default>
-
-1. <Partial_OpeningTheWorkflowEditor />
-1. Add the **Export test results to Test Reports** Step to your Workflow after the Step that runs your tests.
-1. In the **Test result base path** input, set a folder that contains both your test results and your attachments, for example `app/build/`.
-
-   The Step looks for attachments only in this folder. If it points to the folder of the XML, for example `app/build/test-results/`, the Step doesn't find screenshots saved elsewhere.
-1. In the **Test result search pattern** input, set a pattern that matches a single JUnit XML, for example `*/test-results/testDemoDebugUnitTest/TEST-com.example.ScreenshotTest.xml`.
-
-   The Step exports only the first match. A wider base path makes it more likely that the pattern matches more than one file. Gradle writes a separate XML for each test class, so only the tests and attachments of the matched class show up.
-1. Make sure you have the **Deploy to Bitrise.io** Step at the end of your Workflow.
-
-</TabItem>
-<TabItem value="configuration-yaml" label="Configuration YAML">
-
-1. Add the `custom-test-results-export` Step to your Workflow after the Step that runs your tests.
-1. Set `base_path` to a folder that contains both your test results and your attachments, and set `search_pattern` to a pattern that matches a single JUnit XML.
-
-   The Step looks for attachments only in `base_path`, and exports only the first match of `search_pattern`. Gradle writes a separate XML for each test class, so only the tests and attachments of the matched class show up.
-1. Add the `deploy-to-bitrise-io` Step to the end of your Workflow.
-
-   ```yaml
-   workflows:
-     screenshot-tests:
-       steps:
-       - script@1:
-           inputs:
-           - content: ./gradlew testDebugUnitTest
-       - custom-test-results-export@1:
-           inputs:
-           - test_name: screenshot_tests
-           - base_path: app/build/
-           - search_pattern: "*/test-results/testDebugUnitTest/TEST-com.example.ScreenshotTest.xml"
-       - deploy-to-bitrise-io@2: {}
-   ```
-
-</TabItem>
-</Tabs>
-
-After exporting the XML, the Step copies every file whose name matches a test case in that XML into the report. It skips the following files:
-
-- Files tracked by git, such as committed reference images
-- Files in dependency and tool folders, such as `.git`, `node_modules`, `Pods`, and `.dart_tool`
-- Files that an earlier Step already exported
-
-Outside a git repository, the Step logs a warning and doesn't filter out committed files.
-
-If you copy the files into the report folder yourself, for example with a Script Step, the **Deploy to Bitrise.io** Step links them by name, too.
+If you use the **Export test results to Test Reports** Step, set its **Test result base path** input to a folder that contains both your test results and your attachments, for example `app/build/`. See [Using the Export test results to Test Reports Step](#using-the-export-test-results-to-test-reports-step).
 
 #### Troubleshooting missing attachments
 
-The Steps report attachment problems in the build log:
+If an attachment doesn't show up, check the build log:
 
-- If a file name doesn't match any test case, for example because of a typo or a missing label, the **Export test results to Test Reports** Step skips the file without a warning. To see which files it skipped and why, set its **Enable verbose logging?** input to `yes`.
-- If the **Export test results to Test Reports** Step finds a matching file but can't link it, for example because more than one file has the same name, it logs `Skipping attachment <file>: <reason>`.
-- If the **Deploy to Bitrise.io** Step can't link a file in the report folder, it logs `Test attachment <file> is not linked to a test case: <reason>`.
-- Use a lowercase `.xml` extension for your JUnit XML. Bitrise doesn't recognize test results with an uppercase `.XML` extension.
-- The **Export test results to Test Reports** Step exports `.junit` test results without attachments.
-- Bitrise drops `attachment_*` properties on a `<testsuite>` element. Add them to the `<testcase>` element instead.
+- The **Export test results to Test Reports** Step skips files that don't match a test case without a warning. To list them, set its **Enable verbose logging?** input to `yes`.
+- The **Deploy to Bitrise.io** Step logs a warning for every file in the report that it can't link to a test case.
 
 ### Referencing attachments in the JUnit XML
 
@@ -512,7 +432,7 @@ With the correct configuration, the Step finds the test results in your projectâ
    - If your projectâ€™s root directory is `app`: `app/build/test-results/testDemoDebugUnitTest/`
    - If your test results are within a project folder but `app` is not the root directory: ./app/build/test-results/testDemoDebugUnitTest/
 
-   The Step also looks for [attachments named after their test case](/bitrise-ci/testing/deploying-and-viewing-test-results#naming-attachments-after-their-test-case) in this folder. If your tests save attachments, such as screenshots, outside this folder, set a folder that contains both, for example `app/build/`. Then make the search pattern in the next input specific enough to match a single test result.
+   To export [attachments named after their test case](/bitrise-ci/testing/deploying-and-viewing-test-results#naming-attachments-after-their-test-case), set a folder that contains both your test results and your attachments, for example `app/build/`.
 1. In the **Test result search pattern** input, set a pattern that matches your test result file.
 
    This search pattern is used to search every file and folder of the path that was set in the **Path where custom test results reside** input.
@@ -529,4 +449,4 @@ With the correct configuration, the Step finds the test results in your projectâ
    Do NOT modify this inputâ€™s value: this is the folder where the **Deploy to Bitrise.io** Step will look for the test results to export them. It should be set to the `$BITRISE_TEST_RESULT_DIR` Env Var.
 1. Make sure you have a **Deploy to Bitrise.io** Step in your Workflow.
 
-   If your tests generate attachments, make sure the Step is of version 2.19.x or newer. To link attachments by file name, use version 2.26.0 or newer.
+   If your tests generate attachments, make sure the Step is of version 2.19.x or newer.
