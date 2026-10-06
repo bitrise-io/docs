@@ -155,6 +155,7 @@ dependencies {
 // app/src/androidTest/java/com/example/testing/BitriseScreenshotListener.kt
 package com.example.testing
 
+import android.content.res.Resources
 import android.os.Build
 import androidx.test.core.app.takeScreenshot
 import androidx.test.core.graphics.writeToTestStorage
@@ -170,7 +171,8 @@ class BitriseScreenshotListener : RunListener() {
     override fun testStarted(test: Description) {
         val default = DefaultFailureHandler(InstrumentationRegistry.getInstrumentation().targetContext)
         Espresso.setFailureHandler { error, viewMatcher ->
-            val name = "${clean(test.className)}__${clean(test.methodName)}__api${Build.VERSION.SDK_INT}_failure"
+            val screen = Resources.getSystem().displayMetrics.run { "${widthPixels}x$heightPixels" }
+            val name = "${clean(test.className)}__${clean(test.methodName)}__api${Build.VERSION.SDK_INT}_${screen}_failure"
             takeScreenshot().writeToTestStorage(name)
             default.handle(error, viewMatcher)
         }
@@ -215,7 +217,7 @@ class BitriseSnapshotHandler(
         val test = snapshot.testName
         val label = snapshot.name?.replace(Regex("_+"), "_")?.removePrefix("_") ?: "snapshot"
         val name = "${clean("${test.packageName}.${test.className}")}__${clean(test.methodName)}__$label"
-        val file = File(System.getProperty("paparazzi.build.dir"), "bitrise-snapshots/$name.png")
+        val file = File(System.getProperty("paparazzi.build.dir"), "bitrise-snapshots/${System.getProperty("bitrise.test.task")}/$name.png")
         return object : SnapshotHandler.FrameHandler by frames {
             override fun handle(image: BufferedImage) {
                 file.parentFile.mkdirs()
@@ -227,7 +229,7 @@ class BitriseSnapshotHandler(
 }
 ```
 
-In your tests, replace `Paparazzi(...)` with `bitrisePaparazzi(...)`. Then add the following to the module's `build.gradle.kts`. The first block lets the handler use `java.awt` on Android Gradle plugin 8, and the second one removes the snapshots of the previous run and keeps the current ones in the build cache:
+In your tests, replace `Paparazzi(...)` with `bitrisePaparazzi(...)`. Then add the following to the module's `build.gradle.kts`. The first block lets the handler use `java.awt` on Android Gradle plugin 8, and the second one gives each test task its own folder, removes the snapshots of the previous run, and keeps the current ones in the build cache:
 
 ```kotlin
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
@@ -235,7 +237,8 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEa
 }
 
 tasks.withType<Test>().configureEach {
-    val snapshots = layout.buildDirectory.dir("bitrise-snapshots")
+    val snapshots = layout.buildDirectory.dir("bitrise-snapshots/$name")
+    systemProperty("bitrise.test.task", name)
     outputs.dir(snapshots)
     doFirst { snapshots.get().asFile.deleteRecursively() }
 }
