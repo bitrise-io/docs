@@ -77,8 +77,14 @@ class Block(unittest.TestCase):
 
 class Normalized(unittest.TestCase):
     def test_whitespace_only_changes_compare_equal(self):
-        self.assertEqual(normalized("a  b\n\nc "), normalized("a b c"))
+        self.assertEqual(normalized("a  b \r\n\n\n\nc  \n\n"), normalized("a b\n\nc"))
         self.assertNotEqual(normalized("a b"), normalized("a c"))
+
+    def test_indentation_and_code_changes_are_real_changes(self):
+        yaml_old = "Use:\n\n```yaml\nworkflows:\n  primary:\n    steps: []\n```\n"
+        self.assertNotEqual(normalized(yaml_old), normalized(yaml_old.replace("    steps", "  steps")))
+        self.assertNotEqual(normalized("```\necho a  b\n```"), normalized("```\necho a b\n```"))
+        self.assertNotEqual(normalized("- a\n  - b\n"), normalized("- a\n- b\n"))
 
 
 if __name__ == "__main__":
