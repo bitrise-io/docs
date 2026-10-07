@@ -1,0 +1,140 @@
+---
+title: "APIキーを使ったAppleサービスへの接続"
+description: "iOSのcode signingとデプロイを管理するために、APIキーを使ってAppleサービスに接続します。BitriseをAppleサービスに接続する場合は、APIキー認証が推奨される方法です。"
+sidebar_position: 2
+slug: /bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_IMPORTANTNoStepInputModificationsNeeded from '@site/i18n/ja/partials/important-no-step-input-modifications-needed.mdx';
+import Partial_GettingToTheProjectSettingsPage from '@site/i18n/ja/partials/getting-to-the-project-settings-page.mdx';
+
+[APIキーを使用してAppleサービス](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)(App Store ConnectやApple Developer Portalなど)に接続するには、APIキーの生成、Bitriseでの認証データの追加、そしてアプリへのキーの割り当てが必要です。
+
+APIキー認証は、BitriseをAppleサービスに接続する際に推奨される方法です。<strong>Apple Services接続</strong>ページにはAPIキーを50個まで追加できますが、アプリで使用できるのは1つだけです。
+
+<Partial_IMPORTANTNoStepInputModificationsNeeded />
+
+
+## BitriseでAPIキー認証データを追加する {#adding-api-key-authentication-data-on-bitrise}
+
+<strong><GlossTerm baseform="workspace">Workspace</GlossTerm>設定</strong>ページでAPIキー認証データを追加できます。ここでは複数のAPIキーを追加できます。プロジェクトごとに異なるAPIキーを選択し、Bitrise CIまたはBitrise Release Managementのいずれかに使用できます。
+
+1. [App Store Connect](https://appstoreconnect.apple.com/login)で、<strong>Users and Access</strong>の下にある[管理者アクセス権を持つ新しいAPIキーを生成します](https://developer.apple.com/documentation/appstoreconnectapi/creating_api_keys_for_app_store_connect_api)。
+
+   Bitrise上でキーの名前、key ID、issuer IDが必要です。
+
+   :::warning[必要条件]
+
+   - APIキーは[チームのAPIキー](https://developer.apple.com/documentation/appstoreconnectapi/creating-api-keys-for-app-store-connect-api#Generate-a-Team-Key-and-Assign-It-a-Role)である必要があります。個人のAPIキーは使用できません。
+
+     ![apple-app-store-connect.png](/img/_paligo/uuid-b104fac1-d553-69d3-ebcb-b8260e8a3595.png)
+   - APIキーには、App Store上で<strong>Admin</strong>ロールを設定する必要があります。設定していない場合、ビルドは失敗します。
+   - Bitriseでは、APIキーのデータを追加するにはworkspaceの<strong>Owner</strong>または<strong>Manager</strong>である必要があります。詳細については、[Workspaceレベルのロール](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces#workspace-level-roles)を参照してください。
+
+   :::
+1. Bitriseで、ドロップダウンメニューからworkspaceを選択し、<strong>Settings</strong>に移動します。
+1. 左側で<strong>Integrations</strong>を選択します。
+1. <strong>App Store Connect</strong>を選択します。
+1. <strong>Add API key</strong>をクリックします。
+
+   :::note[必要なロール]
+
+   ボタンが表示されない場合、workspace内で<strong>Viewer</strong>または<strong>Contributor</strong>のロールしか持っていないことが原因です。<strong>Owner</strong>または<strong>Manager</strong>のいずれかである必要があります。
+
+   詳細については、[Workspaceレベルのロール](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces#workspace-level-roles)を参照してください。
+
+   :::
+
+   ![api-key-app-store.png](/img/_paligo/uuid-1bbd8347-eb11-4439-9ece-315d004d74fe.png)
+1. 必要な項目をすべて入力します。
+
+   - <strong>Name</strong>: 生成したAPIキーの名前です。
+   - <strong>Issuer ID</strong>: issuer IDを取得するには、App Store Connectにログインし、<strong>Users and Access</strong>を選択してから<strong>API Keys</strong>タブを選択します。issuer IDはページの上部付近に表示されます。issuer IDをコピーするには、IDの横にある<strong>Copy</strong>をクリックします。
+   - <strong>Key ID</strong>: 新しいAPIキーの生成に成功すると、App Store Connectがkey IDを表示します。
+
+   ![api-key-dialog.png](/img/_paligo/uuid-22e6048e-7f47-9480-fea3-958eb9a0348b.png)
+1. APIキーがApple Enterprise APIキーの場合は、<strong>Use for Enterprise Program API</strong>にチェックを入れます。
+
+   ![api-key-enterprise.png](/img/_paligo/uuid-7dc1ff71-7abf-8c37-8117-a2f7abb13861.png)
+1. `.p8`ファイルをアップロードします。アップロードフィールドにドラッグ&ドロップするか、クリックしてコンピューターからファイルを選択してください。
+1. <strong>Add API key</strong>をクリックします。
+
+完了すると、このアカウントでアクセス権を持つ任意のアプリに、このAPIキーを割り当てられるようになります。以降、そのアプリはこのAPI接続を使用してApp Store Connectにアクセスします。
+
+
+## プロジェクトへのAPIキー認証の割り当て {#assigning-api-key-authentication-to-your-project}
+
+プロジェクトでAppleサービスにAPIキー認証を使用するには、次の操作が必要です。
+
+- [BitriseでAPIキーを追加する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key#adding-api-key-authentication-data-on-bitrise): 同じアカウントに複数のAPIキーを追加できます。APIキーがApple Enterprise APIキーの場合は、追加時に<strong>Use for Enterprise Program API</strong>にチェックを入れてください。
+- プロジェクトにAPIキーを割り当てる: 各プロジェクトに割り当てられるAPIキーは1つだけです。
+
+プロジェクトにAPIキーを割り当てるには、次の手順を実行します。
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で<strong>Integrations</strong>を選択します。
+1. <strong>Stores</strong>タブを選択します。
+1. <strong>App Store Connect</strong>セクションを見つけます。
+
+   ![add-api-key-apple.png](/img/_paligo/uuid-95e5fcc6-46bd-1efe-69a0-538ef9c8c8cb.png)
+1. <strong>API key認証(推奨)</strong>オプションを見つけます。
+1. <strong>Add API key</strong>をクリックします。
+
+   :::note[同じAPIキーを使う複数のプロジェクト]
+
+   <strong>Add API key</strong>ボタンを使用すると、Bitriseアカウントに新しいApp Store Connect APIキーを追加できます。アクセス権を持つ他のプロジェクトでも、このAPIキーを使用できます。
+
+   :::
+1. このプロジェクトで使用するAPI keyを選択します。
+
+これで<GlossTerm baseform="Step">Step</GlossTerm>は、ビルド中にApp Store ConnectまたはApple Developer Portalに接続できるようになります。
+
+
+## Apple Enterpriseユーザー向けのAPIキー認証 {#api-key-authentication-for-apple-enterprise-users}
+
+Enterprise developer programに参加しているAppleアカウントでも、APIキーベースの認証を使用できます。
+
+Enterpriseアカウントで引き続きApple ID認証を使用している場合は、次の理由からAPIキー認証への切り替えを強くお勧めします。
+
+- より信頼性が高く、安全です。
+- 30日ごとに再認証する必要がありません。
+- Apple ID認証方式は、将来的に非推奨になる予定です。
+
+認証方式を変更するには、次の手順を実行します。
+
+1. まだ行っていない場合は、[BitriseでAPIキーを追加](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key#adding-api-key-authentication-data-on-bitrise)し、必ず<strong>Use for Enterprise Program API</strong>にチェックを入れてください。
+1. [APIキーを割り当て](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key#assigning-api-key-authentication-to-your-project)て、Bitrise上のプロジェクトに設定します。
+
+   :::caution[Apple ID connectionを残しておく]
+
+   Apple ID connectionは削除しないことを強くお勧めします。APIキー接続に問題が発生した場合、Apple IDベースの認証に安全にロールバックできます。
+
+   :::
+1. AppleサービスへのアクセスにApple ID認証を使用しているすべてのStep inputsを調整します。以下のStepsが対象です。
+
+   - <strong>Xcode Archive & Export for iOS</strong>: バージョン5.3.0以降。`automatic_code_signing`入力を`api-key`に設定します。
+   - <strong>Xcode Build for Testing</strong>: バージョン3.1.0以降。`automatic_code_signing`入力を`api-key`に設定します。
+   - <strong>Manage iOS Code Signing</strong>: バージョン2.1.0以降。`apple_service_connection`入力を`api-key`に設定します。
+   - <strong>Export iOS and tvOS Xcode archive</strong>: バージョン4.6.0以降。`automatic_code_signing`入力を`api-key`に設定します。
+
+### 同じプロジェクトで複数のAPIキーを使う {#multiple-api-keys-for-the-same-project}
+
+Bitrise websiteでは、プロジェクトごとに設定できるAPI接続は1つだけです。つまり、そのプロジェクトが扱えるcode signingファイルは1つのAppleデベロッパチームのものに限られます。APIキーが認可するのは、単一のデベロッパチームのみだからです。
+
+![api-key-chart.png](/img/_paligo/uuid-ea47d90b-0ff0-7cd5-2f80-4013e10f7fb3.png)
+
+Bitrise<GlossTerm baseform="project">プロジェクト</GlossTerm>で複数のデベロッパチームのcode signingを扱う必要がある場合は、追加のAPIキーをStep inputsとして渡すことができます。これにより、Bitriseが管理するAPI接続が上書きされます。利用できる入力はStepによって異なります。
+
+| Step | 入力 |
+| --- | --- |
+| <ul><li>Xcode Archive & Export for iOS</li><li>Xcode Build for Testing</li><li>Manage iOS Code Signing</li><li>Export iOS and tvOS Xcode archive</li></ul> | <ul><li>`api_key_path`: APIキーのローカルファイルパスまたはダウンロードURL。</li><li>`api_key_id`: App Store Connectのkey ID。</li><li>`api_key_issuer_id`: App Store Connectのissuer ID。</li><li>`api_key_enterprise_account`: キーがApple Enterprise Programアカウントに属しているかどうかを`yes`または`no`で指定します。</li></ul> |
+| <ul><li>fastlane</li><li>Deploy to App Store Connect with Deliver</li></ul> | <ul><li>`api_key_path`: APIキーのローカルファイルパスまたはダウンロードURLです。ファイル名にkey IDを埋め込みます。key ID専用の入力はありません。</li><li>`api_issuer`: App Store Connectのissuer ID。</li></ul> |
+
+:::note[GUIでの入力]
+
+Bitrise <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>のグラフィカルUIでは、Appleサービスにアクセスできる各Stepの<strong>Configuration</strong>タブにある<strong>App Store Connect connection override</strong>入力グループの下でこれらの入力を確認できます。
+
+:::

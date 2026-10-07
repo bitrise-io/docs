@@ -1,0 +1,107 @@
+---
+title: "GitHub Actions向けBuild Hubの概要"
+description: "Bitrise Build Hubは、モバイルアプリ開発のために作られた、GitHub Actions向けの高性能ビルドインフラストラクチャです。完全マネージドでメンテナンス不要のランナーにより、業界最速のAppleシリコンとLinuxマシン上でGitHub Actionsワークフローを実行します。"
+sidebar_position: 1
+slug: /bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitrise Build Hubは、GitHub Actions向けの高性能なビルドインフラストラクチャであり、モバイルアプリ開発のために専用に構築されています。業界最速のAppleシリコンとLinuxマシン上でGitHub Actionsワークフローを実行する、完全マネージド型でメンテナンス不要のランナーを提供します。
+
+GitHub Actions向けにBuild Hubを設定する方法については、[GitHub Actions向けのmachine poolsの作成](/bitrise-build-hub/build-hub-for-github-actions/creating-machine-pools-for-github-actions)をご覧ください。
+
+[Bitrise Build Cache](/bitrise-build-cache)を使用して、Build Hubマシンで実行されるビルドを高速化することもできます。各ビルドツールには専用のGitHub Actionsガイドがあります。例: [GitHub ActionsでのBuild Cache for Gradleの設定](/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-github-actions)。
+
+## 主な機能 {#key-capabilities}
+
+- iOSおよびAndroidビルドに最適化された`M4 Pro` Appleシリコンと`AMD EPYC Zen4/Zen5` Linuxマシン。
+- Appleのリリースから24時間以内の最新Xcodeバージョン(ベータ版を含む)。
+- プリインストール済みのツール(`Xcode`、`Android SDK`、`Flutter`、`React Native`など)を備えた、モバイル向けに最適化された<GlossTerm baseform="stack">スタック</GlossTerm>。
+- レイテンシーがほぼゼロで、ネットワーク送信コストがかからないコロケーションキャッシュ。
+- データレジデンシー要件に対応する米国およびEUのデータセンター。
+- キュー待ち時間なしで即座にビルドを開始できる、事前にウォームアップされたVMプール。
+
+Build HubはGitHub CloudリポジトリとGitHub Enterprise Serverリポジトリの両方で動作します。既存のGitHub Actionsワークフローファイルは変更不要です。ビルドをBitriseインフラストラクチャにルーティングするために、runs-onラベルを更新するだけです。
+
+## 要件 {#requirements}
+
+Bitrise Build HubインフラストラクチャでGitHub Actionsワークフローを実行するには、次のものが必要です:
+
+- Bitriseの<GlossTerm baseform="workspace">workspace</GlossTerm>。
+- GitHubアカウント。
+- Build HubマシンをGitHub Actionsに対して認証する方法。Enterpriseプランでは、Bitrise - Build Hubアプリまたはパーソナルアクセストークンのいずれかを使用できます。その他すべてのプラン(無料トライアル、Starter、Pro)ではアプリのみ使用できます。
+- Bitrise上のマシンプール: machine type、マシンの数、インスタンスの起動に必要なソフトウェア構成を含むシステムイメージを選択できます。
+
+
+## 認証 {#authentication}
+
+Enterpriseプランでは、Bitrise - Build Hub GitHubアプリまたは[GitHubパーソナルアクセストークン](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)のいずれかを使用してBitrise Build Hubを認証できます。その他すべてのプラン(無料トライアル、Starter、Pro)ではアプリのみ使用できます。
+
+### GitHubアプリ認証 {#github-app-authentication}
+
+Bitrise - Build Hubアプリは、GitHubアカウントまたはGitHub組織にインストールできます。アプリのアクセス範囲は、次のいずれかに設定できます:
+
+- All repositories: リソースオーナーが所有する現在および将来のすべてのリポジトリ(パブリックリポジトリを含む)。
+- 特定のリポジトリ: 少なくとも1つのリポジトリを選択する必要があります。Build Hubは、同じリソースオーナーが所有する他のリポジトリにアクセスできません。
+
+このアプリには、次のアクセス権があります:
+
+- actions、metadata、およびorganization eventsへの読み取りアクセス。
+- organization self hosted runnersへの読み取りおよび書き込みアクセス。
+
+[マシンプールの作成](/bitrise-build-hub/build-hub-for-github-actions/creating-machine-pools-for-github-actions#creating-a-machine-pool)時に、任意のGitHubアカウントまたは組織にアプリをインストールできます。
+
+### GitHubパーソナルアクセストークン {#github-personal-access-token}
+
+:::important[Enterpriseプランのみ]
+
+パーソナルアクセストークン認証は、Enterpriseプランでのみ使用できます。無料トライアルおよびセルフサーブのworkspacesでは、代わりに[GitHubアプリ](#github-app-authentication)を使用する必要があります。
+
+:::
+
+次の2種類のトークンを使用できます:
+
+- [クラシックトークン](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic)
+- [ファイングレインドアクセストークン](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token)
+
+トークンの種類によって、必要なアクセスの種類は[ターゲットスコープ](/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview#target-scope)によって異なります。それぞれのターゲットスコープに必要な正確な権限については、以下の表を確認してください。
+
+| ターゲットスコープ | クラシックトークンに必要な権限 | ファイングレインドアクセストークンに必要な権限 |
+| --- | --- | --- |
+| GitHub Enterprise (GHE) Cloud: `https://github.com/enterprises/<enterprise>`<br/>GHE Server: `https://<hostname>/enterprises/<enterprise>` | `manage_runners:enterprise` | サポートされていません |
+| GitHub Cloud organization: `https://github.com/<org>`<br/>GHE organization: `https://<hostname>/<org>` | `org:admin` | <strong>Self-hosted runners</strong>への`read/write`権限 |
+| GitHub Cloud repository: `https://github.com/<owner>/<repo>`<br/>GHE repository: `https://<hostname>/<owner>/<repo>` | `workflow` | サポートされていません |
+
+[マシンプールの作成](/bitrise-build-hub/build-hub-for-github-actions/creating-machine-pools-for-github-actions#creating-a-machine-pool)前に、[パーソナルアクセストークンの作成](/bitrise-build-hub/build-hub-for-github-actions/creating-machine-pools-for-github-actions#creating-github-personal-access-tokens-for-build-hub)を行ってください。
+
+
+## GitHub Actions用のマシンのプロビジョニング {#provisioning-machines-for-github-actions}
+
+[マシンプールの作成](/bitrise-build-hub/build-hub-for-github-actions/creating-machine-pools-for-github-actions#creating-a-machine-pool)時に、ビルドを実行する一定数のマシンをリクエストする必要があります。同時に実行し続けるマシンの数は、[認証方法](/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview#authentication)によって異なります:
+
+- GitHubアプリを使用する場合: マシンはオンデマンドで作成・起動されます。GitHub Actionsワークフローが開始されると、マシンがプロビジョニングされます。複数のGitHub Actionsワークフローを同時に開始した場合、マシンプール構成で定義された最大マシン数まで、それぞれに対してマシンが起動されます。GitHub Actionsビルドが終了すると、マシンはシャットダウンされます。
+- GitHubパーソナルアクセストークンを使用する場合: マシンプールでリクエストした数のマシンが常に実行され続けます。特定の時点で必要なマシンの数が少ない場合は、マシンプール構成でマシンの数を手動で減らす必要があります。
+
+
+## ターゲットスコープ {#target-scope}
+
+GitHubパーソナルアクセストークンを使用してBuild Hubを認証する場合は、[マシンプールの作成](/bitrise-build-hub/build-hub-for-github-actions/creating-machine-pools-for-github-actions#creating-a-machine-pool)時にターゲットスコープを設定する必要があります。ターゲットスコープとは、特定のリポジトリやGitHub組織など、ランナーの動作が許可されるコンテキストです。
+
+使用できるターゲットスコープは次のとおりです:
+
+- GitHub Cloud organization: `https://github.com/<org>`
+- GitHub Cloud repository: `https://github.com/<owner>/<repo>`
+- GitHub Enterprise (GHE) Cloud: `https://github.com/enterprises/<enterprise>`
+- GHE Server: `https://<hostname>/enterprises/<enterprise>`
+- GHE organization: `https://<hostname>/<org>`
+- GHE repository: `https://<hostname>/<owner>/<repo>`
+
+
+## ウォームアップスクリプト {#warmup-script}
+
+ウォームアップスクリプトを使用すると、ビルド環境をカスタマイズし、速度とパフォーマンスを向上させることができます。マシンプールの作成時に、任意のスクリプトを構成に追加できます。スクリプトは、マシンのセットアップ時に実行されます。
+
+ビルドの開始が失敗しないように、エラーが発生した場合にスクリプトがゼロ以外の終了コードを返すようにしてください。

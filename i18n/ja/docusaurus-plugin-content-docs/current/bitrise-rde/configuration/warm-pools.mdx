@@ -1,0 +1,149 @@
+---
+title: "Warm pools"
+description: "事前に起動したRemote Dev Environmentのセッションを待機させておくことで、新しいセッションやデバイスプレビューを、マシンの起動を待たずに数秒で利用できます。"
+sidebar_position: 2
+slug: /bitrise-rde/configuration/warm-pools
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+<GlossTerm baseform="warm pool">warm pool</GlossTerm>は、<GlossTerm baseform="rde session">RDE セッション</GlossTerm>を一定数、起動済みのアイドル状態で保持します。これにより、新しいマシンの起動とセットアップに数分かかるところを、数秒でセッションを作成できます。セッションの作成時と同じ要領でセッションを一度定義し、プールサイズを設定します。Bitriseは、その数のセッションをウォーム状態に保ち、リクエストがあると1つ渡します。
+
+Warm poolsは、プールがすぐに必要になる場面で役立ちます。たとえば、今すぐマシンが必要なAIエージェント、1日に多数の似たセッションを開始するチーム、レビュアーがクリックしてすぐにアプリが画面に表示されることを期待する [device preview links](/bitrise-rde/devices/device-preview-links) です。
+
+## warm poolの仕組み {#how-a-warm-pool-works}
+
+warm poolは、保存されたセッション設定に、オーナーとプールサイズを加えたものです。
+
+- 設定は、セッション作成リクエストに含まれる内容です。<GlossTerm baseform="rde template">テンプレート</GlossTerm>、そのセッション入力値、有効にする feature flag、およびスタック、マシンタイプ、クラスター、仮想デバイスの任意のオーバーライドが含まれます。
+- プールサイズは、プールが起動済みで保持するセッション数です。Bitriseがセッションを作成し、テンプレートの warmup スクリプトと startup スクリプトを実行して、準備完了の状態に保ちます。1つが claim されると、代わりのセッションが起動します。
+- サイズが 0 のプールはセッションを保持しませんが、設定プリセットとして残ります。そこから claim すると、保存された設定からセッションが作成されます。
+
+プールからセッションを claim すると、ウォーム状態のセッションが1つ渡され、名前、ラベル、自動終了までの時間があなたの指定で上書きされます。まだ準備中のものしかない場合は、起動中のセッションが渡され、あなたの名前のもとで起動が完了します。その時点でウォーム状態のセッションがない場合は、代わりにプールの設定からセッションが作成されます。すべてのセッションには作成元が記録されます。claim されたセッションのウォーム状態は `claimed`、プールからオンデマンドで作成されたセッションは `cold` です。RDE UIでは、セッション一覧にこれらが <strong>Claimed</strong> バッジと <strong>Built cold</strong> バッジとして表示されます。
+
+ウォーム状態のセッションは内部的には通常のセッションであり、待機中もマシン時間が消費されます。誰のセッション一覧にも表示されず、claim されるまでは接続、変更、終了ができません。ただし、セットアップスクリプトが想定どおりに動作しているかを確認するために、プールのページからログを読むことはできます。ウォーム状態のセッションには独自の自動終了タイマーがなく、claim されるか、プールの縮小や設定変更によって破棄されます。
+
+## 個人用プールと workspace プール {#personal-and-workspace-pools}
+
+プールは、あなた個人、または <GlossTerm baseform="workspace">workspace</GlossTerm> のいずれかに属します。
+
+- <strong>個人用プール</strong>は、あなただけのものです。表示、claim、管理ができるのはあなただけです。入力には [saved inputs](/bitrise-rde/configuration/saved-inputs) を参照できるため、ローテーションした認証情報は、プールを編集しなくても次のウォーム状態のセッションに反映されます。
+- <strong>workspace プール</strong>は、workspace のすべてのメンバーと共有されます。RDE にアクセスできる人は誰でも、そこから claim でき、管理できます。また、[Workspace API token](/bitrise-platform/workspaces/workspace-api-token) を使って CI から利用できます。その入力は、単一の個人の saved inputs を使えないため、プレーンな値として保存され、シークレットとしてマークされている場合は保存時に暗号化されます。デバイスプレビューリンクを提供できるのは workspace プールのみです。
+
+個人用プールから claim したセッションは、自分で作成したセッションと同様に、あなたがオーナーになります。
+
+workspace プールから claim したセッションは、workspace がオーナーになります。すべてのメンバーが <strong>Workspace sessions</strong> で表示と管理を行え、あなたは作成者として記録されます。
+
+Warm poolsは、無料トライアルの workspaces では利用できません。
+
+## プールの作成 {#creating-a-pool}
+
+<Tabs>
+<TabItem value="ui" label="RDE UI" default>
+
+1. Remote Dev Environments セクションで <strong>Warm pools</strong> を開き、<strong>New warm pool</strong> をクリックします。テンプレートのページから <strong>Create warm pool</strong> をクリックすると、そのテンプレートが選択済みの同じフォームが開きます。
+1. テンプレートを選択します。フォームには、そのテンプレートが必要とする項目のみが表示されます。セッション入力、feature flag、テンプレートがデバイスを起動する場合のデバイスセクション、そしてセッションフォームと同じ <strong>Override machine configuration</strong> スイッチです。
+1. <strong>Pool name</strong> を入力し、オーナーを選択します。個人用プールの場合は <strong>Me</strong>、共有プールの場合は <strong>Workspace</strong> を選択します。
+1. <strong>Pool size</strong> を設定します。
+1. <strong>Create warm pool</strong> をクリックします。
+
+プールのページには、準備完了のセッション数と準備中のセッション数、ウォーム状態のセッションの名前一覧、そして claim されたセッションとコールドセッションの累計数が表示されます。
+
+</TabItem>
+<TabItem value="cli" label="CLI">
+
+```bash
+bitrise-cli rde warm-pool create ios-reviewers --template "iOS Xcode 26" --size 2 --owner workspace
+```
+
+`--input`、`--secret-input`、`--saved-input` はテンプレートのセッション入力を設定し、`--feature-flag` はテンプレートの feature flag を有効にします。`--stack`、`--machine-type`、`--device-*` の各フラグは、テンプレートの宣言内容を上書きします。プール ID を受け取るコマンドは、すべてプール名も受け付けます。
+
+</TabItem>
+<TabItem value="mcp" label="AI agent (MCP)">
+
+自然な言葉で依頼してください。たとえば、*「チーム用に、iOS Xcode 26 テンプレートのセッションを2つウォーム状態で保持して」* のように指定します。エージェントは、テンプレート、入力、オーナー、プールサイズを指定して `bitrise_devenv_create_warm_pool` を呼び出します。
+
+</TabItem>
+<TabItem value="api" label="API">
+
+```bash
+curl -X POST "https://api.bitrise.io/rde/v1/workspaces/WORKSPACE_ID/warm-pools" \
+  -H "Authorization: token YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "ios-reviewers",
+    "template_id": "TEMPLATE_ID",
+    "owner_type": "workspace",
+    "pool_size": 2
+  }'
+```
+
+設定フィールドは、セッション作成リクエストと同じです。詳しくは、API リファレンスの [Create warm pool](/bitrise-rde-api/api-reference/codespaces-service-create-warm-pool) を参照してください。
+
+</TabItem>
+</Tabs>
+
+設定は、セッション作成時と同じ方法で検証されます。未知の入力、不足している必須入力、マシンタイプで実行できないデバイスは、保存時に拒否されます。ウォーム状態のセッションは実行中のセッションであり、人が作成したセッションと同様に、workspace のセッション上限にカウントされます。workspace が上限に達していてプールがサイズに到達できない場合、プールのページにエラーが表示され、プールは再試行を続けます。
+
+## セッションの claim {#claiming-a-session}
+
+<Tabs>
+<TabItem value="ui" label="RDE UI" default>
+
+<strong>New session</strong> フォームで、テンプレートとオーナーを選択すると、<strong>Start from warm pool</strong> に該当するプールが一覧表示されます。ちょうど1つが該当する場合は、あらかじめ選択されます。プールを選択すると、設定セクションはプールによって固定され、セッション名と自動終了までの時間のみを指定します。プールのページにも <strong>Claim a session</strong> ボタンがあり、そのプールが選択済みのフォームが開きます。
+
+</TabItem>
+<TabItem value="cli" label="CLI">
+
+```bash
+bitrise-cli rde session create my-fix --warm-pool ios-reviewers
+```
+
+</TabItem>
+<TabItem value="mcp" label="AI agent (MCP)">
+
+エージェントは `warm_pool_id` を `bitrise_devenv_create` に渡します。`bitrise_devenv_list_warm_pools` を使うと、claim できるプールを確認できます。
+
+</TabItem>
+<TabItem value="api" label="API">
+
+セッション作成リクエストで `warm_pool_id` を設定し、設定フィールドは空のままにします。
+
+</TabItem>
+</Tabs>
+
+設定はプールによって固定されるため、claim ではテンプレート、入力、feature flag、スタック、マシンタイプ、クラスター、デバイスを同時に渡すことはできません。これらは無視されるのではなく、拒否されます。セッションごとに選択できるのは、名前、説明、ラベル、自動終了までの時間、そしてデバイスを起動するプールの場合はインストールするアプリのビルドです。
+
+## プールを正常に保つ {#keeping-the-pool-healthy}
+
+Bitrise はすべてのプールを定期的にチェックし、サイズを維持します。以下の点に注意してください。
+
+- <strong>設定を編集すると、ウォーム状態のセッションが置き換えられます。</strong> 入力、フラグ、マシンやデバイスの設定を変更すると、古い設定でウォームアップされたセッションは破棄され、新しいセッションが起動します。このような変更を保存する前に、UI が警告を表示します。プール名やサイズを変更しても、ウォーム状態のセッションには影響しません。
+- <strong>テンプレートの編集も同様です。</strong> プールはテンプレートに従うため、テンプレートのスクリプトや変数を編集すると、プールのウォーム状態のセッションも置き換えられます。個人用プールが参照している saved input をローテーションした場合も、同じ結果になります。
+- <strong>動作しなくなった設定はプールを一時停止します。</strong> テンプレートの編集によって、プールにない必須入力が追加されたり、プールが有効にしている feature flag が削除されたりすると、プールに設定エラーが表示され、修正するまでセッションの作成が停止します。すでにあるウォーム状態のセッションは、引き続き claim できます。
+- <strong>失敗が繰り返されると、プールは一時停止され</strong>、しばらくしてから再試行します。これにより、壊れたセットアップスクリプトがループ内でマシンを無駄に消費することを防ぎます。プールのページには、最後のエラーが表示されます。
+
+## スケジュールによるプールのスケーリング {#scaling-a-pool-on-a-schedule}
+
+ウォーム状態のセッションはアイドル中もマシン時間を消費するため、サイズは需要に必要な数に保ってください。サイズの変更は1回の呼び出しで行えるため、スケジュール化が簡単です。たとえば、営業時間に向けてプールをウォームアップし、夕方に空にできます。workspace プールの場合は、cron ジョブで Workspace API token を使うことで実現できます。
+
+```bash
+0 8  * * 1-5  BITRISE_TOKEN=bitwat_… bitrise-cli rde warm-pool set-size ios-reviewers 3 --workspace WORKSPACE_ID -q
+0 19 * * 1-5  BITRISE_TOKEN=bitwat_… bitrise-cli rde warm-pool set-size ios-reviewers 0 --workspace WORKSPACE_ID -q
+```
+
+サイズを 0 にすると、すべてのウォーム状態のセッションが破棄されますが、プール、その設定、およびそれを使って発行されたプレビューリンクは残ります。プールを削除すると、ウォーム状態のセッションも破棄され、さらにプレビューリンクも無効になります。すでにプールから claim されたセッションは通常のセッションであり、どちらの操作の影響も受けません。
+
+## デバイスプールとプレビューリンク {#device-pools-and-preview-links}
+
+仮想デバイスを起動するテンプレートのプールは、デバイスも起動済みで保持します。これにより、[device preview link](/bitrise-rde/devices/device-preview-links) は、アプリのダウンロードにかかる時間だけで開けるようになります。リンクは workspace プールに対して発行すると、開かれるたびにウォーム状態のデバイスが1つ claim されます。詳しくは、[Serving links from a warm pool](/bitrise-rde/devices/device-preview-links#serving-links-from-a-warm-pool) を参照してください。
+
+デバイスプールからの claim では、アプリのビルドをすぐにインストールできます。ビルドの URL をセッションのアーティファクトとして渡すと、デバイスがすでに実行中であるため、セッションが渡された瞬間にインストールされます。
+
+## プールの管理 {#managing-pools}
+
+<strong>Warm pools</strong> ページには、自分のプールが <strong>My pools</strong> に、共有プールが <strong>Workspace pools</strong> に一覧表示されます。プールのページから、サイズの変更、設定の編集、セッションの claim、削除を行えます。CLI では、`bitrise-cli rde warm-pool list`、`view`、`update`、`set-size`、`delete` で同じ操作を行え、[API](/bitrise-rde/configuration/rde-api#warm-pools) には warm pool エンドポイントがあります。
+
+Workspace のオーナーと、課金を管理するメンバーは、<strong>Usage</strong> ページおよび `bitrise-cli rde warm-pool list --all` を使って、他のメンバーの個人用プールを含め、workspace 内のすべてのプールを確認できます。このビューは読み取り専用で、プールを管理できるのはそのプールのオーナーだけです。

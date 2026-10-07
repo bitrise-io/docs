@@ -1,0 +1,57 @@
+---
+title: "Androidの依存関係"
+description: "Androidの依存関係がbuild.gradleファイルで定義されている場合、Bitrise上の専用のAndroidStepsが、依存関係のインストールやキャッシュまで処理できます。"
+sidebar_position: 3
+slug: /bitrise-ci/dependencies-and-caching/android-dependencies
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+GradleビルドシステムはAndroidアプリの依存関係を処理します。依存関係を`build.gradle`ファイルで定義している場合、Bitrise上の専用Android<GlossTerm baseform="Step">Steps</GlossTerm>がそれらのインストールやキャッシュも行うことができます。
+
+## Androidアプリの依存関係をインストールする {#installing-dependencies-for-android-apps}
+
+Gradleの依存関係を持つAndroidアプリのビルドは、Bitriseでは簡単です。最初に[アプリを追加](/bitrise-ci/getting-started/adding-a-new-project)すると、<GlossTerm baseform="Project scanner">プロジェクトスキャナー</GlossTerm>が`build.gradle`ファイルを検出して、それがAndroidアプリであると判定します。公式のAndroidStepsは、ビルドプロセス中に依存関係のインストールを処理でき、さまざまなモジュールやバリアントを簡単にビルドできます。
+
+ビルド中にすべての依存関係が確実にインストールされるようにするには、次の操作を行います:
+
+1. Androidプロジェクトで[依存関係を定義](https://developer.android.com/build/dependencies)します。
+1. アプリをビルドするには、AndroidのStepsのいずれかを使用します。次のStepsは、依存関係のインストールとアプリのビルドを行うことができます:
+
+   - [<strong>Android Build</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build)
+   - [<strong>Android Build for UI Testing</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing)
+   - [<strong>Gradle Runner</strong>](https://github.com/bitrise-io/steps-gradle-runner)
+
+   これらのStepsはいずれも、お使いのデバイスで実行する場合と同じ方法でGradleタスクを実行します。特定のモジュールをビルドし、その過程でそれらのモジュールに関連する依存関係をインストールできます。
+
+## 不足しているAndroidSDKコンポーネントのインストール {#installing-missing-android-sdk-components}
+
+build machinesには、最もよく使用されるAndroidツールがすべてあらかじめインストールされています。ただし、AndroidSDKの追加コンポーネントをインストールする必要がある場合は、その作業を代行する専用のStepが用意されています。
+
+このStepを使うには、プロジェクトに[Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html)が必要です。これは``gradlew`ファイルを探すためです。不足している依存関係を一覧表示してインストールするために、`gradlew dependencies --stacktrace`コマンドを実行します。
+
+Bitriseビルドで不足しているAndroidSDKコンポーネントをインストールするには、次の操作を行います:
+
+1. プロジェクトのトップレベルの`build.gradle`ファイルで、必要なAndroidSDKコンポーネントを定義します。
+1. プロジェクトのリポジトリに`gradlew`ファイルがあることを確認します。
+1. Bitriseで、[<strong>Install missing Android SDK components</strong>](https://github.com/bitrise-steplib/steps-install-missing-android-tools) Stepを<GlossTerm baseform="Workflow">Workflow</GlossTerm>に追加します。これは、AndroidSDKコンポーネントを必要とするStepより前に配置する必要があります。
+1. <strong>gradlewファイルパス</strong>の入力欄に、リポジトリのルートからの相対パスで`gradlew`ファイルのパスを設定します。
+
+   ![install-sdk.png](/img/_paligo/uuid-3138c36f-fad8-3630-46b8-dfd9910807cc.png)
+1. プロジェクトでNative Development Kitを使用している場合は、<strong>NDK version</strong>の入力欄で必要なバージョンを設定します。
+
+   NDKを使用しない場合は、入力欄を空のままにします。
+1. <strong>gradlewの依存関係コマンド用のAdditional options</strong>の入力欄では、デフォルトのコマンド呼び出しに加えてフラグを設定できます。
+
+## Gradle依存関係のキャッシュ {#caching-gradle-dependencies}
+
+キーベースのキャッシュでは、Gradle依存関係をキャッシュするために必要なのは、[<strong>Gradleキャッシュを復元</strong>](https://github.com/bitrise-steplib/bitrise-step-restore-gradle-cache)と[<strong>SaveGradleキャッシュ</strong>](https://github.com/bitrise-steplib/bitrise-step-save-gradle-cache)Stepsだけです。これらのStepsは、依存関係に必要なcache keysを自動的にセットアップするため、設定は不要です。
+
+1. [<strong>Gradleキャッシュを復元</strong>](https://github.com/bitrise-steplib/bitrise-step-restore-gradle-cache) StepをWorkflowに追加します
+
+   ![restore-gradle.png](/img/_paligo/uuid-527aa0a4-a647-f9e9-7a56-ea38c1366f33.png)
+
+   これは、[<strong>Android Build</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build)など、何らかの形で依存関係を処理するStepより前に配置する必要があります。
+1. [<strong>Save Gradle Cache</strong>](https://github.com/bitrise-steplib/bitrise-step-save-gradle-cache) StepをWorkflowの最後に追加します。

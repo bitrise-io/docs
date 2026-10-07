@@ -1,0 +1,94 @@
+---
+title: "AIエージェント向けMCPサーバー"
+description: "オープンソースのBitrise Dev Environments MCPサーバーをAIエージェントに接続し、あなたの代わりにRemote Dev Environmentのセッションを作成、操作できるようにします。"
+sidebar_position: 5
+slug: /bitrise-rde/rde-options/bitrise-rde-mcp-server
+sidebar_label: "MCPサーバー"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitrise Dev Environments MCP サーバーを使用すると、[Model Context Protocol](https://modelcontextprotocol.io) をサポートする任意のAIエージェント (Claude Code、Claude Desktop、Cursor、VS Code など) が、Remote Dev Environment の<GlossTerm baseform="rde session">セッション</GlossTerm>を作成して操作できます。このサーバーはオープンソースです。
+
+## 接続オプション {#connection-options}
+
+MCP サーバーへの接続方法は2つあります。
+
+- <strong>Hosted</strong>: MCP クライアントを `https://mcp-rde.bitrise.io` に接続し、初回はブラウザーでサインインします。インストールは不要で、推奨のオプションです。
+- <strong>Local</strong>: Personal Access Token を使用して、サーバーをバイナリとしてお使いのマシン上で実行します。セッションとお使いのコンピューターの間でのファイルのアップロードやダウンロードなど、すべてのツールを利用できます。
+
+## MCP クライアントへのサーバーの追加 {#adding-the-server-to-your-mcp-client}
+
+お使いのクライアントで、Hosted サーバーを設定します。
+
+<Tabs>
+<TabItem value="claude-code" label="Claude Code" default>
+
+```bash
+claude mcp add --transport http bitrise-dev-environments https://mcp-rde.bitrise.io
+```
+
+`/mcp` を実行し、ブラウザーで認証します。
+
+</TabItem>
+<TabItem value="cursor" label="Cursor">
+
+`mcp.json` にサーバーを追加します。
+
+```json
+{
+  "mcpServers": {
+    "bitrise-dev-environments": {
+      "url": "https://mcp-rde.bitrise.io"
+    }
+  }
+}
+```
+
+</TabItem>
+<TabItem value="vs-code" label="VS Code">
+
+MCP の設定にサーバーを追加します。
+
+```json
+{
+  "servers": {
+    "bitrise-dev-environments": {
+      "type": "http",
+      "url": "https://mcp-rde.bitrise.io"
+    }
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+## エージェントの機能 {#agent-capabilities}
+
+接続後は、エージェントに自然な言葉で次のような操作を依頼できます。
+
+- セッションの作成、一覧表示、復元、終了、削除を行う。
+- セッションと一緒に iOS シミュレーターまたは Android エミュレーターを起動し、準備が整うまで待機して操作する: ビルドのインストール、UI のタップ操作、スクリーンショットの取得、テストの実行など。[Device sessions](/bitrise-rde/devices/device-sessions)を参照してください。
+- 他のユーザーのブラウザーでアプリのビルドをデバイス上で開く[デバイスプレビューリンク](/bitrise-rde/devices/device-preview-links)を発行する。
+- [warm pool](/bitrise-rde/configuration/warm-pools)にセッションを待機させておき、すぐにマシンが必要になったときに 1 つ確保する。
+- SSH 経由でセッション内のシェルコマンドを実行する。
+- macOS デスクトップのスクリーンショットを取得し、操作する。
+- SSH または VNC によるリモートアクセスを開く。
+- workspace のアクティブなセッションとリソース使用状況を報告する (workspace のオーナーと請求管理者のみ)。
+- ファイルをアップロードおよびダウンロードする (Local サーバーのみ)。
+
+たとえば、*「macOS の Xcode セッションを起動し、リポジトリをクローンして、ユニットテストを実行して」* や、*「iPhone 16 シミュレーターのセッションを作成し、アプリをビルドして、オンボーディングフローを確認して」* のように依頼できます。
+
+このサーバーは、AIエージェントが仮想デバイスを操作するために必要なガイドも、MCP リソースおよびツールとして提供します。[Guides for AI agents](/bitrise-rde/devices/device-sessions#guides-for-ai-agents)を参照してください。
+
+## 認証 {#authentication}
+
+* Hosted サーバーはブラウザーベースのサインインを使用するため、管理が必要なトークンはありません。
+* Local サーバーは、Bitrise [Personal Access Token](https://app.bitrise.io/me/account/security) を `BITRISE_TOKEN` 環境変数に設定して認証します。複数の <GlossTerm baseform="workspace">workspace</GlossTerm> に所属している場合は、`BITRISE_WORKSPACE_ID` を設定してください。
+
+## 詳細情報 {#learn-more}
+
+Local のセットアップ、ツールの完全な一覧、クライアントごとのインストールガイドについては、オープンソースのリポジトリを参照してください: [bitrise-io/bitrise-mcp-dev-environments](https://github.com/bitrise-io/bitrise-mcp-dev-environments)。

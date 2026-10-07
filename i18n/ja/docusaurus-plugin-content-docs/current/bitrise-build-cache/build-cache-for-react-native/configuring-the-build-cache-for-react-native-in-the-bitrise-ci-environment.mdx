@@ -1,0 +1,108 @@
+---
+title: "Bitrise CI環境でのBuild Cache for React Nativeの設定"
+sidebar_position: 2
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditor from '@site/i18n/ja/partials/opening-the-workflow-editor.mdx';
+
+アクティベーションは、<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>から、または`bitrise.yml`で直接追加できます。
+
+手順を手動で進める代わりに、AIコーディングエージェントを使ってセットアップすることもできます。[Getting started with AI](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai)を参照してください。
+
+<Tabs>
+  <TabItem value="workflow-editor" label="Workflow Editor">
+
+  1. 次のものを用意してください。
+
+     - 有効なBitrise Build Cacheのトライアルまたはサブスクリプション。サブスクリプションの状況は、[Bitrise Build Cache ページ](https://app.bitrise.io/build-cache/)で確認できます。
+     - Build Cacheなしですでに正常にビルドできるReact Nativeプロジェクト (基準となる状態を把握するため)。
+     - iOS プロジェクトの場合: <strong>Xcode 26 or later</strong>。
+  1. <Partial_OpeningTheWorkflowEditor />
+  1. 必要な<GlossTerm baseform="workflow">Workflow</GlossTerm>を選択します。
+  1. ネイティブビルドを<GlossTerm baseform="trigger">トリガー</GlossTerm>する<GlossTerm baseform="step">Step</GlossTerm>の*前*に、<strong>Build Cache for React Native</strong>ステップを追加します。
+
+     たとえば、`yarn`、`npm`、`npx`、`expo`、`fastlane`、または直接のGradle/Xcodeコマンドを実行する <strong>Script</strong> Stepsの前に追加します。`git-clone`の直後に配置することもできます。
+  1. 特別な理由がない限り、入力はデフォルトのままにしてください。このステップには主に 2 つの入力があります。
+
+     - <strong>Enable Xcode キャッシュ</strong>: iOS ビルド向けにBitrise Build Cacheを有効にします。バックグラウンドプロキシが自動的に起動します。
+     - <strong>Enable Gradle キャッシュ</strong>: Androidビルド向けにBitrise Build Cacheを有効にします。C++ ネイティブモジュールも`ccache`経由でキャッシュされ、バックグラウンドのストレージヘルパーが自動的に起動します。
+  1. ネイティブビルドを呼び出す <strong>Script</strong> Stepsでは、コマンドの先頭に`bitrise-build-cache react-native run`を付けてください。
+
+     :::note
+
+     公式のBitrise Steps <strong>Gradle Runner</strong>、<strong>Android Build</strong>、または <strong>Xcode Archive</strong> を使ってReact Nativeビルドを実行する場合は、latest versionを使用していることを確認してください。ラッピングは自動的に処理されるため、入力を変更する必要はありません。
+
+     ラッピングの詳細については、[Wrapping native build commands](/bitrise-build-cache/build-cache-for-react-native/wrapping-native-build-commands)を参照してください。
+
+     :::
+  1. Workflowを保存して、ビルドを実行します。
+
+  </TabItem>
+  <TabItem value="yaml" label="Configuration YAML">
+
+  1. 次のものを用意してください。
+
+     - 有効なBitrise Build Cacheのトライアルまたはサブスクリプション。サブスクリプションの状況は、[Bitrise Build Cache ページ](https://app.bitrise.io/build-cache/)で確認できます。
+     - Build Cacheなしですでに正常にビルドできるReact Nativeプロジェクト (基準となる状態を把握するため)。
+     - iOS プロジェクトの場合: <strong>Xcode 26 or later</strong>。
+  1. ビルドを実行するステップの前に、`activate-build-cache-for-react-native` Stepを追加します。
+
+     ```yaml
+     workflows:
+       build-react-native:
+         steps:
+         - activate-ssh-key@4: {}
+         - git-clone@8: {}
+         - activate-build-cache-for-react-native@0: {}
+         # JS dependencies — no wrapping needed.
+         - script@1:
+             title: Install dependencies
+             inputs:
+             - content: yarn install
+     ```
+  1. ネイティブビルドをトリガーするコマンドを、CLIでラップします。
+
+     :::note
+
+     公式のBitrise Steps <strong>Gradle Runner</strong>、<strong>Android Build</strong>、または <strong>Xcode Archive</strong> を使ってReact Nativeビルドを実行する場合は、latest versionを使用していることを確認してください。ラッピングは自動的に処理されるため、入力を変更する必要はありません。
+
+     ラッピングの詳細については、[Wrapping native build commands](/bitrise-build-cache/build-cache-for-react-native/wrapping-native-build-commands)を参照してください。
+
+     :::
+
+     ```yaml
+     workflows:
+       build-react-native:
+         steps:
+         - activate-ssh-key@4: {}
+         - git-clone@8: {}
+         - activate-build-cache-for-react-native@0: {}
+         # JS dependencies — no wrapping needed.
+         - script@1:
+             title: Install dependencies
+             inputs:
+             - content: yarn install
+         - script@1:
+             title: Build Android
+             inputs:
+             - content: bitrise-build-cache react-native run npx react-native run-android --mode=release
+         - script@1:
+             title: Build iOS
+             inputs:
+             - content: bitrise-build-cache react-native run npx react-native run-ios --configuration=Release
+         - deploy-to-bitrise-io@2: {}
+     ```
+
+  </TabItem>
+</Tabs>
+
+## セットアップの検証 {#validating-the-setup}
+
+1. 新しい設定でビルドを実行します。アクティベーションステップが正常に完了するはずです。
+1. Bitriseで <strong>Build details</strong> ページを開き、<strong>Build Cache</strong> タブを確認します。ラップされたコマンドがキャッシュ統計とともに一覧表示されます。
+1. 最初のビルドではキャッシュヒット率が 0% と報告されます。この時点ではキャッシュが空のためで、想定どおりの動作です。
+1. さらに 1～3 回ビルドを実行してキャッシュを温めます。以降のビルドでは、ヒット率が 0% を超えるはずです。
+1. ビルドごと、およびビルド全体のキャッシュのパフォーマンスは、[Build Cache 一覧ページ](https://app.bitrise.io/build-cache/)で確認できます。

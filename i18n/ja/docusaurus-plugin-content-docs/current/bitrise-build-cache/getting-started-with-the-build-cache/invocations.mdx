@@ -1,0 +1,83 @@
+---
+title: "インボケーション"
+description: "インボケーションは、リモートキャッシュにおける重要な概念であり、ガイド内で頻繁に使用します。インボケーションとは、GradleまたはBazelコマンドの1回の実行を指します。つまり、特定の目的を達成するために特定のコマンドを実行することです。"
+sidebar_position: 3
+slug: /bitrise-build-cache/getting-started-with-the-build-cache/invocations
+---
+
+インボケーションは、リモートキャッシュにおける重要な概念です。インボケーションとは、コマンドを1回実行することを指します。つまり、特定の目的を達成するために特定のコマンドを実行することです。
+
+インボケーションは、Bitrise Build Cacheまたは分析が有効になっている場合にのみカウントされます。課金の対象となるのは、キャッシュされたインボケーション(キャッシュからデータをダウンロードするインボケーション)のみです。データをダウンロードしないインボケーションは課金されません(無料)。
+
+## インボケーションの確認 {#checking-invocations}
+
+すべてのインボケーションの詳細は、cache historyで確認できます。
+
+1. Build Cacheを開きます。
+1. ビルドツールのタブ(Gradle、Xcode、Bazelのいずれか)を選択します。
+1. フィルターを選択します。次の項目でフィルターできます。
+
+   - 日付
+   - Bitrise project
+   - CI provider
+   - インボケーションのステータス
+   - Bitrise Workflow
+1. invocation listで、任意のインボケーションの左にある下向き矢印をクリックすると、そのインボケーションの基本情報が表示されます。
+
+   ![2025-09-16-xcode-tab-invocations.png](/img/_paligo/uuid-e1c9e6b8-a0cf-6513-8b88-7ad65a2df1fe.png)
+
+   - Invocation ID。
+   - 使用されたCIプロバイダー。
+   - ビルドのURL。
+
+   Bitrise CIを使用している場合は、コマンドが実行されたWorkflowとStepが表示されます。
+1. 右側の矢印をクリックすると、インボケーションの詳細ページが開きます。
+
+## Invocation details
+
+invocation detailsページには、次の情報が表示されます。
+
+- コマンド名と、そのインボケーションのイベントデータ(CIプロバイダー、ビルドツール、所要時間、キャッシュヒット率など)。
+- クリティカルパス: インボケーション内で、依存関係のあるビルドタスクが最も長く連なったもの。実行されたキャッシュ可能なタスクを修正すると、build cacheのパフォーマンスを改善できます。
+- インボケーション中のアップロードとダウンロード。大きなアイテムや多数のアイテムがあると、インボケーションのサイズが増加します。これはキャッシュの効率に影響する場合があります。
+
+詳細ページでは、このインボケーションのメトリクスを、同じコマンドの過去30日間の平均と比較できます。
+
+![mygreat-project.png](/img/_paligo/uuid-3452d29c-7dd3-8a00-dbc3-c69620063c48.png)
+
+Bitrise CIを使用している場合は、コマンドカードからプロジェクトのbuild listに移動できます。
+
+![mygreat-project-name.png](/img/_paligo/uuid-79a85107-1f7e-60a6-6934-cbec5be94c28.png)
+
+インボケーションのメトリクスをさらに確認するには、[インサイト](/insights/available-metrics-in-insights/command-metrics)を参照してください。
+
+## インボケーションの差分の比較 {#comparing-invocation-differences}
+
+2つのコマンドインボケーションを並べて比較すると、両者の間で何が変わったかをすばやく特定できます。これは、デバッグや障害の根本原因分析に役立ちます。
+
+たとえば、Bitrise Insightsでコマンドの失敗が増加していることがわかったとします。どのコマンドが失敗し始めたかを確認します。build cacheページで、そのコマンドの2つのインボケーションの違いを確認できます。
+
+差分を確認するには、次の手順を実行します。
+
+1. Build Cacheを開きます。
+1. ビルドツールのタブ(Gradle、Xcode、Bazelのいずれか)を選択します。
+1. 必要に応じてフィルターを設定します。
+1. <strong>Compare</strong>をクリックします。
+
+   ![inv-compare.png](/img/_paligo/uuid-4e5bd057-700c-f047-f6ae-498ebd98f1a2.png)
+1. 比較したいインボケーションの右側にあるチェックボックスをオンにします。
+1. <strong>Compare</strong>をクリックすると、差分が表示されます。
+
+   ![invocation-diffing.png](/img/_paligo/uuid-d5bbba7f-b660-6c42-3745-ce80f0c72abf.png)
+
+   この例では、新しい方のインボケーションの所要時間が、前のインボケーションと比べて2倍になっていることがすぐにわかります。詳細な比較を確認すると、その理由を調べられます。
+
+   ![demo-wait-seconds-reason.png](/img/_paligo/uuid-ca915855-de3e-21af-a1d7-539b1020af65.png)
+
+   `demo.wait.seconds` Gradleプロパティが28から56に変更されています。
+
+:::tip[Invocation details]
+
+[<strong>Invocation details</strong>ページ](#invocation-details)からも比較機能にアクセスできます。ボタンはページの右上にあります。
+
+:::

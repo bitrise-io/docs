@@ -1,0 +1,113 @@
+---
+title: "AABからのユニバーサルAPKのエクスポート"
+description: "BitriseのExport Universal APKStepを使用すると、App Bundleからユニバーサルapkをエクスポートし、キーストア(またはデバッグキーストア)で署名し、Google Play Storeにアプリをリリースする前にテストデバイスにAPKをデプロイできます。"
+sidebar_position: 5
+slug: /bitrise-ci/deploying/android-deployment/exporting-a-universal-apk-from-an-aab
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+生成されたアーティファクトがApp Bundle(`.aab`)であっても、Androidアプリをテストデバイスでテストできます。[<strong>Export Universal APK</strong>](https://github.com/bitrise-steplib/bitrise-step-export-universal-apk)<GlossTerm baseform="Step">Step</GlossTerm>を使用すると、App BundleからユニバーサルAPKをエクスポートし、キーストア(またはデバッグキーストア)で署名してから、アプリをGoogle Play Storeにリリースする前にテストデバイスへAPKをデプロイできます。
+
+このStepを設定するには:
+
+
+<Tabs>
+  <TabItem value="workflow-editor" label="Workflow Editor">
+
+  1. <GlossTerm baseform="Workflow">Workflow</GlossTerm>内で、[<strong>Android Build</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build)Stepの後に[<strong>Export Universal APK</strong>](https://github.com/bitrise-steplib/bitrise-step-export-universal-apk)Stepを挿入します。
+  1. <strong>Android App Bundle path</strong>入力の値が、前のビルドStepの出力変数(BITRISE_AAB_PATH)になっていることを確認します。
+
+     :::note[別のビルドStepを使用する場合]
+
+     AABファイルのビルドに[<strong>Android Build</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build)Stepを使用していない場合は、使用したStepのAAB出力を入力が指しているか確認してください。[環境変数](/bitrise-ci/configure-builds/environment-variables)を使用するか、直接ローカルパスまたはURLを使用することもできます。
+
+     :::
+  1. <strong>Keystore URL</strong>入力がAndroidキーストアファイルを指していることを確認します。
+
+     ファイルをBitriseにアップロードし、デフォルトのEnv Var($BITRISEIO_ANDROID_KEYSTORE_URL)を使用することをお勧めします。ただし、ここではローカルパスやURLを入力値として使用することもできます。
+  1. <strong>Keystore alias</strong>と<strong>Keystore password</strong>の各入力に認証情報を入力します。
+
+     キーストアファイルをBitriseにアップロードした場合、入力のdefault valueを変更する必要はありません。
+  1. <strong>Bundletool version</strong>入力では、特定のバージョンが必要な場合にデフォルトのBundletoolバージョンを上書きできますが、必ず[正しいバージョン](https://github.com/google/bundletool/releases)を使用してください。
+  1. Workflowを実行します。
+
+  </TabItem>
+  <TabItem value="yaml" label="Configuration YAML">
+
+  1. アプリの<GlossTerm baseform="configuration yaml">Configuration YAML</GlossTerm>ファイルで、`android-build` Stepの後に`bitrise-step-export-universal-apk` Stepを挿入します。
+
+     ```yaml
+     my-workflow:
+       steps:
+         - android-build: {}
+         - bitrise-step-export-universal-apk:
+             inputs:
+     ```
+  1. `aab_path`入力の値が、前のビルドStepの出力変数($BITRISE_AAB_PATH)になっていることを確認します。
+
+     :::note[別のビルドStepを使用する場合]
+
+     AABファイルのビルドに`android-build` Stepを使用していない場合は、使用したStepのAAB出力を入力が指しているか確認してください。環境変数を使用するか、直接ローカルパスまたはURLを使用することもできます。
+
+     :::
+
+     ```yaml
+     my-workflow:
+       steps:
+         - android-build: {}
+         - bitrise-step-export-universal-apk:
+             inputs:
+             - aab_path: "$BITRISE_AAB_PATH"
+     ```
+  1. `keystore_url`入力がAndroidキーストアファイルを指していることを確認します。
+
+     ファイルをBitriseにアップロードし、デフォルトのEnv Var($BITRISEIO_ANDROID_KEYSTORE_URL)を使用することをお勧めします。ただし、ここではローカルパスやURLを入力値として使用することもできます。
+
+     ```yaml
+     my-workflow:
+       steps:
+         - android-build: {}
+         - bitrise-step-export-universal-apk:
+             inputs:
+             - aab_path: "$BITRISE_AAB_PATH"
+             - keystore_url: "$BITRISEIO_ANDROID_KEYSTORE_URL"
+     ```
+  1. `keystore_alias`と`keystore_password`の各入力に認証情報を入力します。
+
+     キーストアファイルをBitriseにアップロードした場合、入力のdefault valueを変更する必要はありません。そうでない場合は、認証情報を[シークレット](/bitrise-ci/configure-builds/secrets)に保存し、Secretsを入力値として使用してください。
+
+     ```yaml
+     my-workflow:
+       steps:
+         - android-build: {}
+         - bitrise-step-export-universal-apk:
+             inputs:
+             - aab_path: "$BITRISE_AAB_PATH"
+             - keystore_url: "$BITRISEIO_ANDROID_KEYSTORE_URL"
+             - keystore_password: "$BITRISEIO_ANDROID_KEYSTORE_PASSWORD"
+             - keystore_alias: "$BITRISEIO_ANDROID_KEYSTORE_ALIAS"
+     ```
+  1. `bundletool_version`入力では、特定のバージョンが必要な場合にデフォルトのBundletoolバージョンを上書きできますが、必ず[正しいバージョン](https://github.com/google/bundletool/releases)を使用してください。
+
+     ```yaml
+     my-workflow:
+       steps:
+         - android-build: {}
+         - bitrise-step-export-universal-apk:
+             inputs:
+             - aab_path: "$BITRISE_AAB_PATH"
+             - keystore_url: "$BITRISEIO_ANDROID_KEYSTORE_URL"
+             - keystore_password: "$BITRISEIO_ANDROID_KEYSTORE_PASSWORD"
+             - keystore_alias: "$BITRISEIO_ANDROID_KEYSTORE_ALIAS"
+             - bundletool_version: 1.8.1
+     ```
+  1. Workflowを実行します。
+
+  </TabItem>
+</Tabs>
+
+
+[<strong>Export Universal APK</strong>](https://github.com/bitrise-steplib/bitrise-step-export-universal-apk)Stepは、APKを`$BITRISE_APK_PATH`環境変数にエクスポートし、次のStepsがこれを取得できるようにします。[<strong>Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files</strong>](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io)StepがWorkflowに含まれている場合、[Release Management](/release-management)がAPKのデプロイを代行します。

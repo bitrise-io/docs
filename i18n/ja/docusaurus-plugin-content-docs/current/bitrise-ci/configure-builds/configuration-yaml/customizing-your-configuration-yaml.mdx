@@ -1,0 +1,86 @@
+---
+title: "構成YAMLのカスタマイズ"
+description: "`bitrise.yml`を編集できるツールであれば、カスタムプロパティを追加できます。これにより、環境変数に特別なプロパティやメモを追加したり、`bitrise.yml`でWorkflowの新しい構成を試したりすることもできます。適切な場所に、`meta`フィールドと、キーと値を持つ名前空間ラベルを追加するだけです。"
+sidebar_position: 7
+slug: /bitrise-ci/configure-builds/configuration-yaml/customizing-your-configuration-yaml
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+:::note[完全なリファレンス]
+
+これは、YAMLにおけるCI/CD設定の中でも特に重要な側面についての基本的なリファレンスです。完全なリファレンスについては、[YAML設定リファレンス](/bitrise-ci/references/configuration-yaml-reference)をご覧ください。
+
+:::
+
+<GlossTerm baseform="configuration yaml">設定YAML</GlossTerm>ファイルを編集できるツールであれば、そのファイルにカスタムプロパティを追加できます。これにより、[環境変数](/bitrise-ci/configure-builds/environment-variables)に特別なプロパティやメモを追加したり、<GlossTerm baseform="Workflow">Workflow</GlossTerm>の新しい設定を試したりできます。必要な作業は、正しい場所に`meta`フィールドと、キーと値を持つ名前空間ラベルを追加するだけです。
+
+設定にカスタム値を追加するには、次の形式を使用してください：
+
+```yaml
+KEY: "VALUE",
+opts: {
+  title: "My env var"
+  description: "Description of my env var."
+  summary: "Summary of env var."
+  ...
+  meta: {
+    custom_namespace_id_1: {
+      key1: "value1",
+      key2: "value2",
+      ...
+    }
+    custom_namespace_id_2: {
+      ...
+    }
+}
+```
+
+<strong><GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>の独自バージョンを使用する</strong>
+
+Workflow Editorをフォークして、独自バージョンを使用できます。その後、`meta`を使用できます。たとえば、Environment Variables（環境変数）のひとつを監視したいとします。それがいつ、誰によってlast modifiedされたかを知りたいとします。
+
+```yaml
+app:
+   envs:
+   - ASXaS: "`ZX`ZX"
+     opts:
+       is_expand: false
+       meta:
+         audit: # used by the Audited Workflow Editor imaginary tool: that works like the WFE but it also saves the modifier and modification date, and displays it
+           last_modified_at: 2018.09.12.
+           last_modifier: Jane Doe
+```
+
+<strong>環境変数に背景色を追加する</strong>
+
+独自のツールで環境変数に背景色を追加するには、`meta`を使用してください：
+
+```yaml
+meta: {
+   my_fancy_new_workflow_editor: {
+     env_var_background_color: "red"
+   }
+ }
+```
+
+Workflow Editor UIで<GlossTerm baseform="stack">stack</GlossTerm>設定を変更すると、裏側で`meta`が変更されます。この例では、`deploy` WorkflowはXcode 16.1で実行するように設定されています。
+
+```yaml
+workflows:
+  deploy:
+    steps:
+    - activate-ssh-key@4:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+    - git-clone@4: {}
+    - script@1:
+        title: Do anything with Script step
+    - deploy-to-bitrise-io@1: {}
+    meta:
+      bitrise.io:
+        stack: osx-xcode-16.1.x
+```
+
+このメタ情報は[bitrise.io](https://www.bitrise.io/)上でのみ解釈され、ローカルやBitrise CLI上では解釈されないため、`bitrise.io`という名前空間に分類されます（stackがキーで、`osx-xcode-12.1.x`が値です）。Workflow Editorは常に保存された変数を検証し、構文エラーがあればエラーをスローしますが、`meta`を追加すると、その内容はWorkflow Editorの検証プロセスで完全に無視されます。

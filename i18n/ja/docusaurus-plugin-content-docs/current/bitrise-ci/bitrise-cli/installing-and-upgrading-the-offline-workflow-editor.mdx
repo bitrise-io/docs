@@ -1,0 +1,55 @@
+---
+title: "オフラインWorkflow Editorのインストールとアップグレード"
+sidebar_position: 7
+slug: /bitrise-ci/bitrise-cli/installing-and-upgrading-the-offline-workflow-editor
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitrise <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>は、[bitrise.io](https://www.bitrise.io/)にログインせずに、ご自身のコンピューター上でオフラインで実行できます。<GlossTerm baseform="workflow">Workflow</GlossTerm> Editorはオープンソースです。GitHub上の[bitrise-workflow-editor repository](https://github.com/bitrise-io/bitrise-workflow-editor)をご覧ください。
+
+## オフラインWorkflow Editorについて {#about-the-offline-workflow-editor}
+
+オフラインWorkflow Editorは、Bitrise CLIに同梱されているWorkflow Editorのローカルコピーです。ご自身のコンピューター上のブラウザで動作し、プロジェクトの設定<GlossTerm baseform="configuration yaml">YAML</GlossTerm>ファイルをローカルで編集します。
+
+次のような場合に使用します。
+
+- bitrise.ioにログインせずに設定を編集したい場合。
+- セキュリティポリシー上、設定を自社ネットワークの外に出せない場合。
+- 設定YAMLファイルを手動で編集するのではなく、GUIで編集したい場合。
+
+## 制限事項 {#limitations}
+
+オフラインWorkflow Editorは、Step bundlesやコンテナ、ターゲットベースのトリガーなど、bitrise.io上のWorkflow Editorのほとんどの機能をサポートしています。
+
+例外として、<strong>Stacks & Machines</strong>ページがローカルでは利用できないため、<GlossTerm baseform="stack">スタック</GlossTerm>やマシンタイプは選択できません。設定YAMLファイルを直接編集してスタックを設定することはできますが、オフラインWorkflow Editorはスタックの値を検証しません。利用可能なスタックの一覧はアカウントに依存しますが、オフラインWorkflow Editorはbitrise.ioにログインしないためです。プロジェクトに対してスタックの値が有効かどうかを確認するには、bitrise.io上のWorkflow Editorで<strong>Stacks & Machines</strong>を開いてください。
+
+すべての機能を利用するにはBitrise CLI 2.43.0以降が必要です。古いバージョンをお使いの場合は、CLIを更新するか、Workflow Editorプラグインを更新してください。
+
+```bash
+bitrise plugin update workflow-editor
+```
+
+## オフラインWorkflow Editorをコンピューターにインストールする {#installing-the-offline-workflow-editor-to-your-computer}
+
+1. [Bitrise CLI](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli)をインストールします。
+1. Bitrise Pluginsの一部としてオフラインWorkflow Editorをインストールするには、`bitrise local setup`を実行します。
+
+   `bitrise local setup`を実行すると、Bitrise Core tools、Bitrise PluginsおよびToolkitsがローカルマシンにインストールされているかどうかも確認されます。インストールされていない場合は、自動的にインストールされます。macOSの場合は、Homebrewの有無も確認し、見つからない場合は手動でのインストールを案内します。
+
+
+## オフラインWorkflow Editorを起動する {#starting-the-offline-workflow-editor}
+
+1. `bitrise.yml`があるディレクトリに`cd`します。
+1. オフラインセッションを開始するには、`bitrise :workflow-editor`コマンドを実行します。
+
+   オフラインWorkflow Editorがブラウザで開きます。
+
+![Workflowsタブを開いた状態のオフラインWorkflow Editorで、WorkflowのSteps](/img/bitrise-cli/2026-09-02-offline-workflow-editor.png)
+
+
+## Workflow Editorのバージョンをアップグレードする {#upgrading-workflow-editor-version}
+
+`bitrise plugin update workflow-editor`コマンドを実行すると、Workflow Editorをlatest versionにアップグレードできます。

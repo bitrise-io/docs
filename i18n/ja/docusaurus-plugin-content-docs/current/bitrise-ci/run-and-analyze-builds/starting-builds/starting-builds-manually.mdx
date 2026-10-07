@@ -1,0 +1,85 @@
+---
+title: "ビルドの手動開始"
+description: "Dashboard から必要なアプリを選択し、Start/Schedule build ボタンをクリックして、ビルドを手動で開始できます。"
+sidebar_position: 1
+slug: /bitrise-ci/run-and-analyze-builds/starting-builds/starting-builds-manually
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_StartingABuildBasicOptionsSteps from '@site/i18n/ja/partials/starting-a-build-basic-options-steps.mdx';
+
+Bitriseで手動でビルドを開始するのは、デフォルト設定のままであれば文字通り2クリックで完了します。そうしたくない場合、あるいは少なくともデフォルト設定の内容を確認しておきたい場合は、続きをお読みください。
+
+基本設定オプションを使用してビルドを開始するには、次の手順に従います。
+
+1. your appの<strong>Bitrise CI</strong>ページで、<strong>Start build</strong>ボタンをクリックします。
+
+   ![scheduling-builds.png](/img/_paligo/uuid-ea158f34-25dc-4585-c7a3-0961c5ef5472.png)
+1. <Partial_StartingABuildBasicOptionsSteps />
+
+:::note[ビルドのスケジュール設定]
+
+<strong>Schedule this build</strong>オプションを使用すると、特定の時間にトリガーされるようにビルドを設定できます。詳細は[ビルドのスケジュール設定](/bitrise-ci/run-and-analyze-builds/starting-builds/scheduling-builds)をご覧ください。
+
+:::
+
+
+## Workflow EditorからWorkflowsを実行する {#running-workflows-from-the-workflow-editor}
+
+<GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>から単一の<GlossTerm baseform="Workflow">Workflow</GlossTerm>を実行することで、手動でビルドを開始できます。
+
+その方法は次のとおりです。
+
+1. Bitriseでプロジェクトを開き、<strong>Workflows</strong>ボタンをクリックしてWorkflow Editorを開きます。
+1. 左側で<strong>Workflows</strong>を選択し、ドロップダウンメニューを使用して実行するWorkflowを選択します。
+
+   ![Workflow Editor内のWorkflowドロップダウンメニュー](/img/run-and-analyze-builds/2026-07-14-workflow-editor-workflow-dropdown.png)
+1. <strong>Run Workflow</strong>ボタン（<strong>play</strong>アイコンが付いたボタン）をクリックします。
+
+   ![Workflowドロップダウンの横にあるRun Workflowボタン](/img/run-and-analyze-builds/2026-07-14-workflow-editor-run-button.png)
+1. ビルドするブランチを<strong>Branch</strong>フィールドに指定します。
+
+   ![BranchフィールドとStart buildボタンがあるRunダイアログ](/img/run-and-analyze-builds/2026-07-14-run-workflow-branch-dialog.png)
+1. <strong>Start build</strong>をクリックします。
+
+以上です。<strong>Start build</strong>ボタンをクリックするとすぐにビルドが開始され、ビルドのページが新しいタブで開きます。
+
+
+## ビルドの開始・スケジュール設定における高度な設定オプション {#advanced-configuration-options-for-startingscheduling-builds}
+
+<strong>Build configuration</strong>ウィンドウで<strong>Advanced</strong>を選択すると、you have、<strong>Basic</strong>で利用可能なすべてのオプションに加えて、いくつかの追加オプションを利用できます。
+
+<strong>Source</strong>ドロップダウンメニューでソースタイプを選択できます。デフォルトの<strong>Branch</strong>オプションに加えて、次のオプションも選択できます。
+
+- <strong>Git Tag</strong>: 入力したタグが付いた特定のブランチまたはコミットをビルドします。これを設定すると、コミットハッシュは設定できません。
+
+  :::important[Git Tagとコミットハッシュは競合するオプション]
+
+  Git Tagとコミットハッシュの両方を指定することはできません。一方を設定すると、もう一方は表示されなくなります。これにより、競合する入力値を入力できないようになっています。
+
+  :::
+- <strong>Commit Hash</strong>: 特定のコミットのハッシュをここにコピーすると、そのコミットをビルドできます。このオプションでは、ビルドのステータス更新をGitホスティングサービスに送信することもできます。これを設定すると、Git Tagは設定できません。
+
+  :::note[コミットハッシュはBranchオプションより優先されます]
+
+  <strong>Branch</strong>オプションで指定したブランチに選択したコミットハッシュが存在しない場合、Bitriseは指定されたコミットが含まれるブランチを見つけて、そのブランチでビルドを実行します。
+
+  :::
+
+![start-build-advanced.png](/img/_paligo/uuid-67f3a4f0-9315-bec3-0ea7-cca80d77b103.png)
+
+異なるソースに加えて、次の項目も追加できます。
+
+- <strong>Priority</strong>: build queue内でのビルドの優先度を決定します。数値が大きいほど、ビルドは早く実行されます。優先度は-100から100までの整数で指定する必要があります。default valueは0です。詳細については、[Build priority](/bitrise-ci/configure-builds/configuring-build-settings/build-priority)をご覧ください。
+- <strong>Custom Environment Variables</strong>: ビルドで使用するカスタム環境変数を作成します。[ビルド開始時のカスタムEnv Varの設定](/bitrise-ci/configure-builds/environment-variables#setting-a-custom-env-var-when-starting-a-build)を参照してください。
+- <strong>Generated cURL command</strong>: Build configurationウィンドウで設定したオプションに基づいて、自動的にgenerated cURL commandを提供します。これはコピー＆ペーストでき、cURLがインストールされている任意のプラットフォームで実行できます。
+
+## 失敗したビルドの再実行 {#rebuilding-failed-builds}
+
+手動でビルドを開始するもう1つの方法は、失敗したビルドを再実行することです。次のことができます。
+
+- Workflowビルドを再実行する: [失敗したWorkflowビルドの再実行](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/rebuilding-a-failed-build#rerunning-a-failed-workflow-build)。
+- <GlossTerm baseform="pipeline">Pipeline</GlossTerm>を再実行する（Pipeline全体、または失敗したWorkflowsのみ）: [失敗したPipelineの再実行](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/rebuilding-a-failed-build#rebuilding-a-failed-pipeline)。
+- Rebuild with remote access: [リモートアクセス](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/remote-access)。

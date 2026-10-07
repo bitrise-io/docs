@@ -1,0 +1,148 @@
+---
+title: "BitriseでのDartアナライザーの実行"
+sidebar_position: 2
+slug: /bitrise-ci/testing/testing-flutter-apps/running-the-dart-analyzer-on-bitrise
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+[Dartアナライザー](https://docs.flutter.dev/testing/debugging#the-dart-analyzer)を使うと、Bitrise上で<strong>Flutter Analyze</strong> Stepを使用してFlutterコードの静的解析を実行できます。Stepは`flutter analyze`コマンドを実行し、コード内の型アノテーションを活用して問題の特定に役立てます。
+
+アナライザーを実行するには:
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. <strong>Flutter Install</strong> StepをWorkflowに追加します。
+
+   このStepは、Flutter SDKの初期セットアップを実行し、不足しているコンポーネントをインストールします。
+1. <strong>Flutter Install</strong> Stepがアプリに適したバージョンのFlutter SDKをインストールすることを確認するには、<strong>Flutter SDK version or bundle URL</strong>入力を確認してください。
+
+   ![flutter-install-step.png](/img/2026-07-16-flutter-install-step.png)
+
+   入力のdefault valueは<strong>stable</strong>で、これは最新の安定版のSDKをインストールします。ただし、特定のバージョンタグ、ブランチラベル、またはFlutter SDKバンドルURLを値として設定することもできます。
+
+   - 利用可能なバージョンタグはこちらで確認できます: [Version tags](https://github.com/flutter/flutter/tags)。
+   - 利用可能なブランチラベルはこちらで確認できます: [Branch labels](https://github.com/flutter/flutter/branches)。
+
+   :::tip[インストールバンドル URL]
+
+   インストールバンドルURLからFlutter SDKをインストールすることもできます。同じ<strong>Flutter SDK version or bundle URL</strong>入力の値としてURLを設定します。例: `https://storage.googleapis.com/flutter_infra/releases/beta/macos/flutter_macos_v1.6.3-beta.zip`。
+
+   :::
+1. <strong>Flutter Analyze</strong> StepをWorkflowに追加します。
+1. <strong>Project Location</strong>入力がFlutterプロジェクトのルートディレクトリを指していることを確認してください。
+
+   - [アプリとして追加](/bitrise-ci/getting-started/adding-a-new-project)する際に、プロジェクトスキャナーが自動的にFlutterプロジェクトとして検出した場合、Bitriseでdefault valueを変更する必要はありません。
+   - アプリを手動で設定した場合は、場所が正しいことを確認してください。
+1. <strong>Fail Severity</strong>入力を目的のレベルに設定します。
+
+   この入力は、Stepを失敗させる最小の深刻度を決定します。指定した深刻度以上の問題があるとStepは失敗します。設定可能な値は次の3つで、深刻度の低い順から高い順に並んでいます:
+
+   - <strong>info</strong>: この設定を選択すると、info、warning、errorレベルのすべての問題でStepが失敗します。
+   - <strong>warning</strong>: この設定を選択すると、warningおよびerrorレベルの問題のみでStepが失敗します。
+   - <strong>error</strong>: これはdefault valueです。errorレベルの問題のみでStepが失敗します。
+
+   ![fail-severity.png](/img/2026-07-16-flutter-analyze-fail-severity.png)
+1. 必要に応じて、<strong>Additional Parameters</strong>入力で`flutter analyze`コマンドに追加のフラグを指定します。
+
+   利用可能なフラグの一覧を確認するには、`flutter help analyze`を実行してください。たとえば、エラー、警告、ヒント、lintがない場合に出力を表示したくない場合は、`--no-congratulate`フラグを使用できます。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. `flutter-installer` StepをWorkflowに追加します。
+
+   このStepは、Flutter SDKの初期セットアップを実行し、不足しているコンポーネントをインストールします。
+
+   ```yaml
+   primary:
+     description: |
+       Builds project and runs tests.
+     steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - flutter-installer:
+           inputs:
+   ```
+1. Stepがアプリに適したバージョンのFlutter SDKをインストールすることを確認するには、`version`入力でバージョンを指定できます。
+
+   入力のdefault valueは`stable`で、これは最新の安定版のSDKをインストールします。Configuration YAMLファイルに`version`入力が表示されない場合は、default valueに設定されています。ただし、特定のバージョンタグ、ブランチラベル、またはFlutter SDKバンドルURLを値として設定することもできます。
+
+   - 利用可能なバージョンタグはこちらで確認できます: [Version tags](https://github.com/flutter/flutter/tags)。
+   - 利用可能なブランチラベルはこちらで確認できます: [Branch labels](https://github.com/flutter/flutter/branches)。
+
+   ```yaml
+   # Installing version 3.7.7 of the Flutter SDK
+   - flutter-installer:
+       inputs:
+       - version: 3.7.7
+   ```
+
+   :::tip[インストールバンドル URL]
+
+   インストールバンドルURLからFlutter SDKをインストールすることもできます。同じ`version`入力の値としてURLを設定します。URLは`https://storage.googleapis.com/flutter_infra`で始まる必要があります。例:
+
+   ```yaml
+   - flutter-installer:
+       inputs:
+       - version: https://storage.googleapis.com/flutter_infra/releases/beta/macos/flutter_macos_v1.6.3-beta.zip
+   ```
+
+   :::
+1. `flutter-analyze` StepをWorkflowに追加します。
+
+   ```yaml
+   primary:
+     description: |
+       Builds project and runs tests.
+     steps:
+       - activate-ssh-key: {}
+       - git-clone: {}
+       - flutter-installer:
+           inputs: 
+           - version: stable
+       - flutter-analyze:
+           inputs:
+   ```
+1. `project_location`入力がFlutterプロジェクトのルートディレクトリを指していることを確認してください。
+
+   ```yaml
+   - flutter-analyze:
+       inputs:
+       - project_location: "$BITRISE_SOURCE_DIR"
+   ```
+
+   - [アプリとして追加](/bitrise-ci/getting-started/adding-a-new-project)する際に、プロジェクトスキャナーが自動的にFlutterプロジェクトとして検出した場合、Bitriseでdefault valueを変更する必要はありません。
+   - アプリを手動で設定した場合は、場所が正しいことを確認してください。
+1. `fail_severity`入力を目的のレベルに設定します。
+
+   この入力は、Stepを失敗させる最小の深刻度を決定します。指定した深刻度以上の問題があるとStepは失敗します。設定可能な値は次の3つで、深刻度の低い順から高い順に並んでいます:
+
+   - `info`: この設定を選択すると、info、warning、errorレベルのすべての問題でStepが失敗します。
+   - `warning`: この設定を選択すると、warningおよびerrorレベルの問題のみでStepが失敗します。
+   - `error`: これはdefault valueです。errorレベルの問題のみでStepが失敗します。
+
+   ```yaml
+   - flutter-analyze:
+       inputs:
+       - project_location: "$BITRISE_SOURCE_DIR"
+       - fail_severity: error
+   ```
+1. 必要に応じて、`additional_params`入力で`flutter analyze`コマンドに追加のフラグを指定します。
+
+   利用可能なフラグの一覧を確認するには、`flutter help analyze`を実行してください。たとえば、エラー、警告、ヒント、lintがない場合に出力を表示したくない場合は、`--no-congratulate`フラグを使用できます。
+
+   ```yaml
+   - flutter-analyze:
+       inputs:
+       - project_location: "$BITRISE_SOURCE_DIR"
+       - fail_severity: error
+       - additional_params: --no-congratulate
+   ```
+
+</TabItem>
+</Tabs>
+
+ビルドが実行されたら、[ビルドログ](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/build-logs)でStepの出力を確認できます。

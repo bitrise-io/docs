@@ -1,0 +1,259 @@
+---
+title: "サービスコンテナー"
+sidebar_position: 3
+slug: /bitrise-platform/infrastructure/docker-containers-on-bitrise/service-containers
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditor from '@site/i18n/ja/partials/opening-the-workflow-editor.mdx';
+
+サービスコンテナはDockerのコンテナで、Bitriseの<GlossTerm baseform="workflow">Workflow</GlossTerm>中にアプリのテストや操作に必要なサービスをホストします。サービスはバックグラウンドで実行され、すべての<GlossTerm baseform="step">Steps</GlossTerm>が終了するとコンテナはクリーンアップされます。
+
+サービスコンテナを定義する際に必要な項目は次のとおりです。
+
+- コンテナのID。
+- コンテナのタイプ: `service`。
+- サービスのイメージ名とバージョン。
+
+  :::important[イメージの取得]
+
+  任意のパブリックなDockerイメージを[Docker Hub](https://hub.docker.com/)から使用できます。
+
+  :::
+
+その後、StepまたはStep bundle内でコンテナを参照できます。これらのStepsまたはStep bundlesの実行中に、コンテナが実行されます。
+
+詳細な設定オプションについては、[Docker container properties](/bitrise-ci/references/configuration-yaml-reference#docker-container-properties)をご覧ください。
+
+
+## サービスコンテナの定義 {#defining-a-service-container}
+
+`container`プロパティを使用して、BitriseWorkflows用にサービスコンテナを定義します。コンテナは<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>で定義することも、<GlossTerm baseform="configuration yaml">設定YAML</GlossTerm>ファイルに直接記述することもできます。
+
+サービスコンテナを1つ以上定義すると、Stepの実行中にバックグラウンドサービスを実行できます。詳しくは[サービスコンテナの実行](/bitrise-platform/infrastructure/docker-containers-on-bitrise/service-containers#running-a-service-container)をご覧ください。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. 左側で<strong>Containers</strong>を選択します。
+1. <strong>Service containers</strong>タブに移動し、<strong>Add container</strong>をクリックします。
+1. コンテナに必要なプロパティを設定します。設定項目は次のとおりです。
+
+   - <strong>Unique ID</strong>: このIDは、設定YAMLファイルでコンテナを参照する際に使用します。
+   - <strong>Image:</strong> Dockerイメージの名前とバージョン。[Docker Hub](https://hub.docker.com/)にあるイメージや、他のレジストリのイメージを使用できます。
+
+     Docker Hubのイメージの場合は`[name]:[version]`形式を使用します。他のレジストリの場合は`[registry server]/[owner]/[name]:[version]`を使用します。
+
+   ![SCR-20260313-ptnr.png](/img/_paligo/uuid-b793f623-9381-97af-5a8b-72719a0223fa.png)
+1. 必要に応じて、<strong>Ports</strong>フィールドに`[HostPort01]:[ContainerPort01]`形式でポートマッピングを追加します。
+
+   ポートの公開とポートマッピングについて詳しくは、[Dockerの公式ドキュメント](https://docs.docker.com/engine/network/port-publishing/)をご覧ください。
+1. <strong>Show more options</strong>をクリックすると、Dockerの認証情報、コンテナのEnvironment Variables、Docker create optionsにアクセスできます。
+1. 必要に応じて、Dockerの認証情報を設定します。
+
+   この認証情報は`docker login`コマンドで使用されます。設定できる項目は次のとおりです。
+
+   - <strong>Registry server</strong>: 完全修飾されたレジストリサーバーのURLを指定します。イメージ参照にすでにサーバーが含まれている場合、これは任意です。
+   - <strong>Username</strong>。
+   - <strong>Password</strong>。
+
+   :::tip
+
+   Dockerの認証情報を設定に渡すには、[secrets](/bitrise-ci/configure-builds/secrets)を使用する必要があります。
+
+   :::
+1. 必要に応じて、<strong>Docker create options</strong>フィールドにオプションを追加します。
+
+   これらはDockerコンテナのリソースオプションで、`docker container create`コマンドに渡されるパラメーターです。
+
+   使用できるすべてのオプションの一覧については、[Dockerのドキュメント](https://docs.docker.com/reference/cli/docker/container/create/#options)をご覧ください。
+1. 完了したら、<strong>Create コンテナ</strong>をクリックします。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. 設定YAMLのトップレベルに`containers`プロパティを追加します。
+1. コンテナのIDを設定します。
+
+   このIDは設定内で一意である必要があります。IDはStepsまたはStep bundlesでコンテナを参照する際に使用されます。
+
+   ```yaml
+   containers:
+     postgres:
+   ```
+1. コンテナに必要なプロパティを設定します。設定項目は次のとおりです。
+
+   - Dockerイメージの名前とバージョンを`name:version`形式で指定します。[Docker Hub](https://hub.docker.com/)にあるイメージを使用できます。
+   - コンテナのタイプ: `service`。
+
+   ```yaml
+   containers:
+     postgres:
+       type: service
+       image: postgres:16
+   ```
+1. 必要に応じて、`[HostPort01]:[ContainerPort01]`形式でポートマッピングを設定します。
+
+   ポートの公開とポートマッピングについて詳しくは、[Dockerの公式ドキュメント](https://docs.docker.com/engine/network/port-publishing/)をご覧ください。
+
+   ```yaml
+   containers:
+     postgres:
+       type: service
+       image: postgres:16
+       ports: 
+       - 5432:5432
+   ```
+1. 必要に応じて、Dockerの認証情報を設定します。
+
+   この認証情報はdocker loginコマンドで使用されます。設定できる項目は次のとおりです。
+
+   - サーバー。イメージ参照にすでにサーバーが含まれている場合、これは任意です。
+   - ユーザー名。
+   - パスワード。
+
+   :::tip
+
+   Dockerの認証情報を設定に渡す際は、secretsの使用をお勧めします。
+
+   :::
+
+   ```yaml
+   containers:
+     postgres:
+       type: service
+       image: postgres:16
+       credentials:
+         username: $DOCKER_USERNAME
+         password: $DOCKER_PASSWORD
+         server: us-central1-docker.pkg.dev
+   ```
+1. 必要に応じて、`options`プロパティを使用して追加のDockerコンテナリソースオプション(`docker container create`コマンドに渡されるパラメーター)を設定します。
+
+   この例では、サービスに[healthchecks](https://docs.docker.com/engine/reference/run/#healthchecks)が設定されています。
+
+   ```yaml
+   containers:
+     postgres
+       type: service
+       image: postgres:16
+       options: >-
+         --health-cmd pg_isready
+         --health-interval 10s
+         --health-timeout 5s
+         --health-retries 5
+   ```
+
+   使用できるすべてのオプションの一覧については、[Dockerのドキュメント](https://docs.docker.com/reference/cli/docker/container/create/#options)をご覧ください。
+
+</TabItem>
+</Tabs>
+
+
+## サービスコンテナの実行 {#running-a-service-container}
+
+サービスコンテナは、StepまたはStep bundleの実行中に実行できます。StepまたはStep bundleの設定でコンテナを参照すると、Stepの実行中に定義済みのサービスがバックグラウンドで実行されます。
+
+次のことができます。
+
+- Workflow内のStepまたはStep bundleでコンテナを参照する。そのWorkflowが実行されると、参照先のコンテナがバックグラウンドサービスを実行します。
+- Step bundleの定義でコンテナを参照する。そのStep bundleがWorkflowに追加されると、それらのサービスコンテナが実行されます。
+
+:::note[コンテナのネスト]
+
+コンテナは異なるレベルで定義できます。StepsとStep bundlesはどちらも独自のコンテナ設定をサポートしています。これにより、レベル間で階層が形成されます。この階層を管理する原則については、[Container nesting rules](/bitrise-platform/infrastructure/docker-containers-on-bitrise/about-docker-containers-on-bitrise#container-nesting-rules)をご覧ください。
+
+:::
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Workflow Editorを開きます。
+1. Workflow内でStepまたはStep bundleを選択します。
+
+   または、左側のナビゲーションメニューで<strong>Step Bundles</strong>を選択し、Step bundleの定義でコンテナを設定することもできます。その後のStepsは同じです。
+
+   :::important[バンドルの定義]
+
+   デフォルトでは、Step bundleはバンドルの定義で定義されているすべてのサービスコンテナを実行します。特定のWorkflowでバンドルにサービスコンテナを設定すると、そのリストはバンドル定義のサービスコンテナを完全に<strong>置き換えます</strong>。バンドル定義のコンテナを自分のコンテナと一緒に実行し続けたい場合は、Workflowレベルのリストに再度それらを含めてください。
+
+   :::
+1. <strong>Containers</strong>を選択します。
+1. <strong>Service Container</strong>で<strong>Add container</strong>をクリックし、メニューからコンテナを選択します。
+
+   複数のコンテナを追加できます。
+1. サービスコンテナがすでに実行中でも、コンテナのクリーンなインスタンスでサービスを実行したい場合は、<strong>Recreate container</strong>オプションをオンにします。
+
+   デフォルトでは、StepまたはStep bundleは、すでに実行中のコンテナがあればそれを使用します。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. 必要なStepまたはStep bundleに`service_containers`プロパティとコンテナ名を追加します。YAMLの配列構文を使用すると、複数のサービスコンテナを追加できます。
+
+   Stepにサービスコンテナを追加します。
+
+   ```yaml
+   workflows:
+     ci:
+       steps:
+       - git-clone: {}
+       - script:
+           service_containers:
+           - postgres
+           - redis
+   ```
+
+   Step bundleにサービスコンテナを追加します。
+
+   ```yaml
+   workflows:
+     ci:
+       steps:
+       - git-clone: {}
+       - script: {}
+       - bundle::test-bundle-id:
+           service_containers:
+           - postgres
+           - redis
+   ```
+1. サービスコンテナがすでに実行中でも、コンテナのクリーンなインスタンスでサービスを実行したい場合は、`recreate`プロパティを`true`に設定します。
+
+   デフォルトでは、StepまたはStep bundleは、すでに実行中のコンテナがあればそれを使用します。このデフォルトの動作を変更するには、このプロパティを使用します。
+
+   ```yaml
+   workflows:
+     ci:
+       steps:
+       - git-clone: {}
+       - script:
+           service_containers:
+           - postgres
+       - bundle::test-bundle-id:
+           service_containers:
+           - postgres
+               recreate: true
+           - redis
+   ```
+
+</TabItem>
+</Tabs>
+
+## サービスコンテナのネットワークアクセス {#network-access-for-service-containers}
+
+サービスコンテナはすべて、`bitrise`という名前の同じ[docker network](https://docs.docker.com/network/)に参加します。これにより、他のすべてのサービスコンテナやStepの実行コンテナからアクセスできるようになります。
+
+:::tip[独自のバックグラウンドワーカーの実行]
+
+Dockerコマンドを自分で実行するか、`docker-compose`のようなものを使用することで、独自のバックグラウンドワーカーを実行できます。ただし、必ず同じネットワークを使用してください。
+
+:::
+
+StepグループがStepの実行コンテナを使用していない場合でも、サービスコンテナを使用できます。唯一の違いは、サービスへのアクセス方法です。
+
+Stepの実行コンテナを使用している場合は、`<service_id>`(サービスの名前)を使用してアクセスします。例: `http://postgres:5432`。
+
+Stepの実行コンテナを使用していない場合は、localhostを使用してサービスにアクセスします。例: `http://localhost:5432`。

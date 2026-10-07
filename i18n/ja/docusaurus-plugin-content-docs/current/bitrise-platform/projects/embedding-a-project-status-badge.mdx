@@ -1,0 +1,43 @@
+---
+title: "プロジェクトステータスバッジの埋め込み"
+sidebar_position: 6
+slug: /bitrise-platform/projects/embedding-a-project-status-badge
+sidebar_label: "サイトへのbuild status badgeの埋め込み"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/i18n/ja/partials/getting-to-the-project-settings-page.mdx';
+
+Bitriseステータスバッジをサイトに埋め込んで、訪問者に最新のビルドの状態を表示できます。ビルドの状態は、ビルド元のリポジトリブランチに関わらず任意のビルドを表示することも、特定のブランチを選択して表示することもできます。
+
+埋め込みコードは、status image API tokenを使ってアプリの<strong>Project settings</strong>ページから取得できます。
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で<strong>Builds</strong>を選択します。
+1. <strong>Build status badge</strong>セクションまでスクロールし、<strong>Get code</strong>をクリックします。
+
+   ![build-status-badge.png](/img/_paligo/uuid-b2225b17-758e-9676-2e0a-615aebd28335.png)
+1. 必要に応じて、<strong>Branch</strong>フィールドにbranch nameを入力します。
+
+   有効なbranch nameを入力すると、そのブランチのビルドの状態が表示されます。フィールドを空欄のままにすると、プロジェクトの任意のビルドの状態が表示されます。
+
+   ![status-badge-dialog.png](/img/_paligo/uuid-a3ebc86e-b8db-eedf-bcff-64947885e344.png)
+1. <strong>Format</strong>メニューで埋め込みコードの形式を選択します。<strong>Image URL</strong>（画像への単純なHTTPS URL）または<strong>Markdown</strong>を選択できます。
+1. <strong>Embed</strong>セクションから埋め込みコードをコピーします。
+1. コードをサイトに貼り付けます。
+
+## status image API token {#the-status-image-api-token}
+
+status image API tokenは、ステータスバッジの更新にのみ使用できる特別なトークンです。このトークンでは他の情報を取得することはできません。単純なJSONオブジェクトを返します。例えば、最新のビルドが成功している場合は次のようになります。
+
+```json
+{ "status": "success" }
+```
+
+考えられるステータスのレスポンスは次のとおりです。
+
+- `success`: 直前に完了したビルドが成功した場合。
+- `error`: 直前に完了したビルドが失敗または中止された場合。
+- `unknown`: それ以外の場合。例えば、完了したビルドがない場合など。

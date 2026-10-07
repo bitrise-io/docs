@@ -1,0 +1,64 @@
+---
+title: "インサイト"
+sidebar_position: 5
+slug: /bitrise-build-cache/insights
+sidebar_label: "Build Cacheのインサイト"
+sidebar_custom_props:
+  icon: Insights
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+[Bitrise Insights](/insights)では、Build Cacheのパフォーマンスに関する詳細なメトリクスを確認できます。invocation count、コマンド実行時間、キャッシュヒット率などが含まれます。任意のインボケーションからexplore Insightsできます。
+
+1. Build Cacheを開きます。
+1. [Invocation details](/bitrise-build-cache/getting-started-with-the-build-cache/invocations)ページを開きます。
+1. <strong>Explore Insights</strong> をクリックします。
+
+   または、カード上のいずれかのメトリクスをクリックして Insights に移動することもできます。
+
+   ![cache-insights-explore.png](/img/_paligo/uuid-299959e9-b519-88a2-05a2-ee89fa6963cd.png)
+
+キャッシュのメトリクスは、build cacheメトリクスとコマンドメトリクスとして提供されます。
+
+
+## Build cacheメトリクス {#build-cache-metrics}
+
+Build cacheメトリクスにより、[Bitrise Build Cache](https://bitrise.io/platform/devops/build-caching)システムの状況をデータに基づいて把握できます。非効率なキャッシュによる予測不能な挙動を減らし、より一貫性のある信頼性の高いCI/CDワークフローを実現できます。
+
+Bitrise Build Cacheが正しく設定されていれば、Insights のデータにアクセスするために追加の設定は不要です。次のBuild Cacheメトリクスを利用できます。
+
+- <strong>Invocation count</strong>: このメトリクスは、ビルドでキャッシュがどの程度の頻度で使用されているかを示し、実行されているコマンドの頻度と種類を把握するのに役立ちます。invocation countが高い場合はキャッシュが十分に活用されていることを示し、低い場合はキャッシュが十分に活用されていない可能性があります。
+- <strong>Uploads/ダウンロード</strong>: このメトリクスは、コマンドごとのbuild cacheとの間のデータ転送量を示します。データ転送量が多い場合は、過剰なアップロードやダウンロードが発生し、ビルドが遅くなっている可能性があります。ダウンロードがアップロードより大幅に少なくない場合は、キャッシュが非効率である可能性があります。Insights には、アップロードとダウンロードの両方について、インボケーションごとの p50（中央値）と p90 の値が表示されます。つまり、1 回のインボケーションがアップロードおよびダウンロードするデータ量です。
+
+  ![p90-uploads.png](/img/_paligo/uuid-cb1811cf-42dd-3707-9288-42d1291a9780.png)
+- <strong>Cache hit rate</strong>: このメトリクスは、build cacheで処理できたデータリクエストの割合を示します。Insights には、p10 のヒット率（ヒット率がそれ以下になるケースが全体の 10% のみであることを意味します）と、中央値（p50）のヒット率が表示されます。ヒット率が低い場合はキャッシュ設定が最適でないか、cache keysが正しく定義されていないことを示唆するため、特に p10 の値が重要です。
+
+Build Cacheメトリクスでは、Insights の他のメトリクスと同様に、次の操作を行えます。
+
+- [ダッシュボードを作成する](/insights/getting-started-with-insights#creating-a-new-dashboard)。
+- 特定のしきい値に対して[アラートを設定する](/insights/configuring-alerts-in-insights)。
+
+### build cacheメトリクスの一般的なユースケース {#common-use-cases-for-build-cache-metrics}
+
+メトリクスが急激かつ大きく変動している場合は、関連する各インボケーションを確認して、問題がいつ始まったかを調べられます。対象の項目や期間で絞り込み、<strong>Related invocations</strong> タブを選択してください。アップロード/ダウンロードにもキャッシュヒット率にも役立ちます。
+
+たとえば、ダウンロードに比べてアップロードが急増している場合は、データが繰り返し生成・保存されているものの、ほとんど再利用されておらず、効率が下がっている可能性があります。
+
+![trends.png](/img/_paligo/uuid-5d4f1f7c-0ca9-93fb-251c-4b63c26f1f4b.png)
+
+![issues-list.png](/img/_paligo/uuid-7d6dc7a5-d2ad-0a24-e940-6ce654e08db4.png)
+
+別の例として、特定の<GlossTerm baseform="workflow">Workflow</GlossTerm>でキャッシュヒット率が急に変化しているケースがあります。これはキャッシュ設定に弱点があることを示唆しています。
+
+![cache-hit-rate-workflow.png](/img/_paligo/uuid-cf5db37b-0d3a-2292-c706-28a35c9c342e.png)
+
+invocation countを確認すると、Build Cacheを使って、プロジェクトでキャッシュの使用がいつ始まったか（invocation countが急に増加した時点）、またはいつ止まったか（invocation countが急に減少した時点）を特定できます。
+
+![started-build-cache.png](/img/_paligo/uuid-d2661447-265a-5f94-41dc-40c36c7acad6.png)
+
+![stopped-using-cache.png](/img/_paligo/uuid-8f7bf7cb-1d82-dacf-ecc0-b3e98438c118.png)
+
+これにより、たとえば、キャッシュ設定を壊している構成上の問題を検出して修正できます。

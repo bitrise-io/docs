@@ -1,0 +1,262 @@
+---
+title: "BitriseAMI用のEC2インスタンスの起動"
+sidebar_position: 3
+slug: /bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/launching-an-ec2-instance-for-the-bitrise-ami
+sidebar_label: "BitriseAMI用のEC2 MacまたはLinuxインスタンスの起動"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+独自のAmazonEC2MacまたはLinuxインスタンスでBitriseエージェントを実行するために、専用のBitriseAmazon Machine Image(AMI)を提供しています。
+
+このドキュメントでは、AmazonEC2コンソールUIでインスタンスを起動する手順について説明します。このプロセスには3つの主なフェーズがありますが、一度で完了できます。
+
+1. [EC2のMacまたはLinuxインスタンスを準備する。](#preparing-your-ec2-mac-and-linux-instance)
+1. [AWSでインスタンスを設定する。](#configuring-the-instance)
+1. [インスタンスをBitriseのworkspaceに接続する。](#connecting-the-ec2-mac-or-linux-instance-to-your-bitrise-workspace)
+
+
+## EC2のMacとLinuxインスタンスの準備 {#preparing-your-ec2-mac-and-linux-instance}
+
+<Tabs>
+<TabItem value="mac-instance" label="Mac instance" default>
+
+1. [ランナープールを設定]](/bitrise-platform/infrastructure/configuring-runner-pools)し、認証に必要なトークンをコピーします。
+1. Bitriseでランナープールを追加する際に、トークンを取得します。
+1. [AWS Secrets Manager シークレットを作成](https://docs.aws.amazon.com/secretsmanager/latest/userguide/create_secret.html)し、そのシークレットにトークンを保存します。
+1. [IAMロールを作成](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html)し、シークレットを読み取る権限を付与します。このロールはEC2インスタンスにアタッチする必要があります。
+1. [AWSで専用ホストを割り当て]](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/allocating-a-dedicated-host-for-mac-instances)ます。自動生成されたホストIDが必要になります。
+
+</TabItem>
+<TabItem value="linux-instance" label="Linux instance">
+
+1. [ランナープールを設定]](/bitrise-platform/infrastructure/configuring-runner-pools)し、認証に必要なトークンをコピーします。
+1. Bitriseでランナープールを追加する際に、トークンを取得します。
+1. [AWS Secrets Manager シークレットを作成](https://docs.aws.amazon.com/secretsmanager/latest/userguide/create_secret.html)し、そのシークレットにトークンを保存します。
+1. [IAMロールを作成](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html)し、シークレットを読み取る権限を付与します。このロールはEC2インスタンスにアタッチする必要があります。
+
+</TabItem>
+</Tabs>
+
+
+## インスタンスの設定 {#configuring-the-instance}
+
+<Tabs>
+<TabItem value="mac-instance" label="Mac instance" default>
+
+1. AWS Marketplaceページに移動し、左側で<strong>Manage subscription</strong>を選択します。
+1. 必要なAMIを選択し、<strong>Launch new instance</strong>を選択します。
+
+   ![aws-markplace-amis.png](/img/_paligo/uuid-81bb90b8-85ea-ae9e-7349-3783f7af230e.png)
+1. ソフトウェアバージョンとリージョンが正しいことを確認し、<strong>Continue to launch through EC2</strong>をクリックします。
+1. <strong>Launch an instance</strong>ページで必須項目を入力します:
+
+   <strong>Name and tags</strong> セクション:
+
+   - <strong>Name</strong>: インスタンスの名前です。
+
+   <strong>Instance type</strong> セクション:
+
+   - <strong>Instance type</strong>: サポートされているタイプは、`mac-m4.metal`、`mac-m4pro.metal`、`mac2.metal`、`mac2-m2.metal`、`mac2-m2pro.metal`です。
+
+     :::important[専用ホストタイプ]
+
+     選択したinstance typeは、専用ホストのタイプと一致している必要があります。
+
+     :::
+
+   <strong>Key pair (login)</strong> セクション:
+
+   - <strong>Key pair name - <em>required</em></strong>:
+
+   <strong>Network settings</strong> セクション - <strong>Edit</strong>をクリックして設定を変更します:
+
+   - <strong>VPC - <em>required</em></strong>: ドロップダウンメニューから仮想プライベートクラウドを選択します。
+   - <strong>Subnet</strong>: ドロップダウンメニューから使用するサブネットを選択するか、<strong>No preference</strong>のままにします。
+   - <strong>Firewall (security groups)</strong>: 新しいセキュリティグループを作成するか、既存のものを選択します。
+
+   <strong>Configure storage</strong> セクション:
+
+   - ストレージボリュームのサイズをギガバイト単位で設定します:
+
+     ベアメタルmacOSAMIの場合、最小値は400GBですが、450GB以上を推奨します。
+
+     仮想化macOSAMIの場合、ホストあたり1台のVMでは700GB、ホストあたり2台のVMでは1000GBを推奨します。
+
+     :::note[ディスクサイズの増加]
+
+     デフォルトの400GBからディスクサイズを増やす必要がある場合は、macOSが割り当てられたストレージをすべて使用できるようにディスクを再パーティション化してください。これは、インスタンスのセットアップ時に<strong>Advanced details</strong>セクションの<strong>User data</strong>にスクリプトを追加することで行えます。詳しくは[Macインスタンスでのディスクサイズの増加]](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#increasing-disk-size-on-an-ec2-mac-instance)を参照してください。
+
+     :::
+   - ドロップダウンメニューからルートボリュームタイプを選択します。
+
+     :::note[ストレージタイプ]
+
+     少なくとも<strong>gp3</strong>のルートボリュームを使用することを推奨します。IOPSは高いほど良好です。
+
+     :::
+
+   <strong>Advanced details</strong> セクション:
+
+   - <strong>Tenancy</strong>: ドロップダウンメニューから<strong>Dedicated host - launch this instance on a dedicated Host</strong>オプションをSelect。
+   - <strong>Target host</strong>: ドロップダウンメニューから<strong>Host ID</strong>オプションをSelect。
+   - <strong>Tenancy host ID</strong>: 事前に作成した専用ホストのホストIDを選択します。
+
+</TabItem>
+<TabItem value="linux-instance" label="Linux instance">
+
+1. [ランナープールを設定]](/bitrise-platform/infrastructure/configuring-runner-pools)し、認証に必要なトークンをコピーします。
+1. EC2 Dashboardに移動します。
+1. AWS Marketplaceページに移動し、左側で<strong>Manage subscription</strong>を選択します。
+1. 必要なAMIを選択し、<strong>Launch new instance</strong>を選択します。
+
+   ![aws-markplace-amis.png](/img/_paligo/uuid-81bb90b8-85ea-ae9e-7349-3783f7af230e.png)
+1. ソフトウェアバージョンとリージョンが正しいことを確認し、<strong>Continue to launch through EC2</strong>をクリックします。
+
+   :::important[サービスクォータ]
+
+   必要な数のインスタンスを起動できるよう、選択したリージョンで十分なサービスクォータがあることを確認してください。
+
+   - [現在のクォータを表示](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-resource-limits.html#view-limits)。
+   - [引き上げをリクエスト](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-resource-limits.html#request-increase)。
+
+   :::
+1. <strong>Launch an instance</strong>ページで必須項目を入力します:
+
+   <strong>Name and tags</strong> セクション:
+
+   - <strong>Name</strong>: インスタンスの名前です。
+
+   <strong>Instance type</strong> セクション:
+
+   - <strong>Instance type</strong>: x86_64のLinux metalインスタンスを選択します。
+
+   <strong>Key pair (login)</strong> セクション:
+
+   - <strong>Key pair name - <em>required</em></strong>:
+
+   <strong>Network settings</strong> セクション - <strong>Edit</strong>をクリックして設定を変更します:
+
+   - <strong>VPC - <em>required</em></strong>: ドロップダウンメニューから仮想プライベートクラウドを選択します。
+   - <strong>Subnet</strong>: ドロップダウンメニューから使用するサブネットを選択するか、<strong>No preference</strong>のままにします。サブネットは、NAT GatewayまたはInternet Gateway経由でインターネットにアクセスできる必要があります。
+   - <strong>Firewall (security groups)</strong>: 新しいセキュリティグループを作成するか、既存のものを選択します。
+
+   <strong>Configure storage</strong> セクション:
+
+   - ストレージボリュームのサイズをギガバイト単位で設定します。最小値は450GBです。
+   - ドロップダウンメニューからルートボリュームタイプを選択します。
+
+</TabItem>
+</Tabs>
+
+
+## EC2のMacまたはLinuxインスタンスをBitriseのWorkspaceに接続する {#connecting-the-ec2-mac-or-linux-instance-to-your-bitrise-workspace}
+
+<Tabs>
+<TabItem value="mac-bare-metal-instance" label="Mac bare metal instance" default>
+
+1. インスタンスが以下のエンドポイントにアクセスできることを確認します:
+
+   - https://den.services.bitrise.io
+   - https://build-log.services.bitrise.io
+1. [インスタンスのUser dataを変更](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-cloud-init)し、AWS Secrets Managerで作成したSecretを使用してBitriseランナーを起動するコマンドを追加します:
+
+   :::important
+
+   EC2 Macインスタンス用にuser dataスクリプトを変更する場合は、スクリプトの先頭に空白がないことを確認してください。最初の行は必ず`#!/bin/bash`である必要があります。この行の前に空白があると、インスタンスが動作しません。
+
+   :::
+
+   ```bash
+   TOKEN=$(aws secretsmanager get-secret-value --secret-id MY_SECRET | jq -r '.SecretString | fromjson | .["MY_SECRET"]')
+
+   sudo sed -i '' "s/BITRISE_AGENT_TOKEN/$TOKEN/" /Users/ec2-user/Library/LaunchDaemons/io.bitrise.self-hosted-agent.plist
+   sudo launchctl load -w /Users/ec2-user/Library/LaunchDaemons/io.bitrise.self-hosted-agent.plist
+   ```
+1. <strong>User data</strong>セクションで、シェルスクリプトやその他のカスタムデータを設定することもできます。
+
+   [EC2 MacおよびLinuxインスタンスの詳細設定]](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances)セクションでは、user dataでインスタンスを最適化するための推奨事項を確認できます:
+
+   - [インスタンスのパスワード]](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#connectivity-and-security-of-your-ec2-mac-and-linux-instance)
+   - [起動後のディスクのプリウォーム]](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#pre-warming-the-disk-after-booting)
+   - [Macインスタンスでのディスクサイズの増加]](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#increasing-disk-size-on-an-ec2-mac-instance)
+
+</TabItem>
+<TabItem value="mac-virtualized-instance" label="Mac virtualized instance">
+
+1. インスタンスが以下のエンドポイントにアクセスできることを確認します:
+
+   - https://den.services.bitrise.io
+   - https://build-log.services.bitrise.io
+1. [インスタンスのUser dataを変更](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-cloud-init)し、AWS Secrets Managerで作成したSecretを使用してBitriseランナーを起動するコマンドを追加します。また、実行したい同時実行数と<GlossTerm baseform="stack">スタック</GlossTerm>も指定する必要があります。
+
+   :::important
+
+   macOSインスタンス用にuser dataスクリプトを変更する場合は、スクリプトの先頭に空白がないことを確認してください。最初の行は必ず`#!/bin/bash`である必要があります。この行の前に空白があると、インスタンスが動作しません。
+
+   :::
+
+   利用可能なスタックの一覧は、以下のコマンドで取得できます:
+
+   ```bash
+   /opt/virtualization-cli/bin/virtualization-cli list
+   ```
+
+   同時実行数の設定として使用できる値は、1または2です。
+
+   - 1 CCの場合、ランナーは8 vCPU・12 GB RAMのVMを1台スケジュールします。
+   - 2 CCの場合、ランナーはそれぞれ4 vCPU・6 GB RAMのVMを2台スケジュールします。
+
+   ```bash
+   TOKEN=$(aws secretsmanager get-secret-value --secret-id MY_SECRET | jq -r '.SecretString | fromjson | .["MY_SECRET"]')
+   sudo sed -i '' 's/BITRISE_AGENT_CC/<YOUR_CONCURRENCY_PREFERENCE>/' /Users/ec2-user/Library/LaunchDaemons/io.bitrise.self-hosted-agent.plist
+   sudo sed -i '' 's/BITRISE_AGENT_STACK/<YOUR_DESIRED_STACK>/' /Users/ec2-user/Library/LaunchDaemons/io.bitrise.self-hosted-agent.plist
+   sudo sed -i '' "s/BITRISE_AGENT_TOKEN/$TOKEN/" /Users/ec2-user/Library/LaunchDaemons/io.bitrise.self-hosted-agent.plist
+   sudo launchctl load -w /Users/ec2-user/Library/LaunchDaemons/io.bitrise.self-hosted-agent.plist
+   ```
+1. <strong>User data</strong>セクションで、シェルスクリプトやその他のカスタムデータを設定することもできます。
+
+   [EC2インスタンスの詳細設定]](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances)セクションでは、user dataでインスタンスを最適化するための推奨事項を確認できます:
+
+   - [インスタンスのパスワード]](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#connectivity-and-security-of-your-ec2-mac-and-linux-instance)
+   - [起動後のディスクのプリウォーム]](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#pre-warming-the-disk-after-booting)
+   - [Macインスタンスでのディスクサイズの増加]](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#increasing-disk-size-on-an-ec2-mac-instance)
+
+</TabItem>
+<TabItem value="linux-instance" label="Linux instance">
+
+1. インスタンスが以下のエンドポイントにアクセスできることを確認します:
+
+   - https://den.services.bitrise.io
+   - https://build-log.services.bitrise.io
+1. [インスタンスのUser dataを変更](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-cloud-init)し、AWS Secrets Managerで作成したSecretを使用してBitriseランナーを起動するコマンドを追加します:
+
+   ```bash
+   TOKEN=$(aws secretsmanager get-secret-value --secret-id MY_SECRET | jq -r '.SecretString | fromjson | .["MY_SECRET"]')
+   /opt/bitrise/releases/bitrise-den-agent-configure.sh $TOKEN
+   ```
+
+   :::caution[Linuxのイメージバージョン]
+
+   Linuxのイメージバージョンが`v2025W10`より前の場合、必要なコマンドが少し異なります:
+
+   ```bash
+   TOKEN=$(aws secretsmanager get-secret-value --secret-id MY_SECRET | jq -r '.SecretString | fromjson | .["MY_SECRET"]')
+
+   sudo sed -i “s/BITRISE_AGENT_TOKEN/$TOKEN/” /etc/systemd/system/bitrise-den-agent.service
+   sudo systemctl start bitrise-den-agent.service
+   ```
+
+   :::
+1. <strong>User data</strong>セクションで、シェルスクリプトやその他のカスタムデータを設定することもできます。
+
+   [EC2インスタンスの詳細設定]](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances)セクションでは、user dataでインスタンスを最適化するための推奨事項を確認できます:
+
+   - [インスタンスのパスワード]](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#connectivity-and-security-of-your-ec2-mac-and-linux-instance)
+   - [起動後のディスクのプリウォーム]](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#pre-warming-the-disk-after-booting)
+   - [Macインスタンスでのディスクサイズの増加]](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances#increasing-disk-size-on-an-ec2-mac-instance)
+
+</TabItem>
+</Tabs>

@@ -1,0 +1,133 @@
+---
+title: "workspacesのロールと権限"
+description: "Bitriseworkspacesでは、workspaceレベルのロール、プロジェクトレベルのロール、スタンドアロン製品へのアクセスを使って各メンバーができることを決定します。ここでは、この3つがどのように組み合わさるかを説明します。"
+sidebar_position: 1
+slug: /bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkspaceSettingsPage from '@site/i18n/ja/partials/opening-the-workspace-settings-page.mdx';
+
+ロールは、<GlossTerm baseform="workspace">workspace</GlossTerm>メンバーの権限を決定します。workspaceメンバーに割り当てられるロールには、主に2つのタイプがあります。
+
+- <strong>Workspaceレベルのロール</strong>: これらのロールは、ユーザーがworkspace内で実行できる操作を決定します。Workspaceレベルのロールは、workspaceの個々のメンバーに割り当てることができます。
+- <strong>プロジェクトレベルのロール</strong>: これらのロールは、ユーザーがプロジェクト上で実行できる操作を決定します。プロジェクトレベルのロールは、workspaceグループに割り当てることができます。ロールは製品によって異なり、Bitrise CIとRelease Managementにはそれぞれ独自のロールセットがあります。
+- <strong>スタンドアロンproduct access</strong>: 一部の製品はプロジェクトに紐づいていません。これらへのアクセス権は、オン/オフの単一の設定でworkspace全体に対して付与します。詳細は[スタンドアロン製品](#standalone-products)をご覧ください。
+
+
+## Workspaceレベルのロール {#workspace-level-roles}
+
+workspaceには主に4つのロールがあります:
+
+| Role | What it can do |
+|---|---|
+| Owner | すべてのCIプロジェクトとRelease Managementアプリにアクセスでき、それらを完全に制御できます。 |
+| Manager | 連携済みのサービスアカウントなどworkspace settingsにアクセスして変更でき、メンバーを管理できますが、請求情報にはアクセスできず、workspaceを削除することもできません。Workspace Managerは新しいBitrise<GlossTerm baseform="project">プロジェクト</GlossTerm>を作成できます。作成したプロジェクト内では、CIの設定やRelease Managementconnected appsを作成できます。ユーザーまたはグループのアクセス設定で直接アクセス権を付与されていないBitriseprojectのCI設定やconnected appsにはアクセスまたは変更できません。 |
+| Contributor | workspace settingsにアクセスできず、新しいメンバーの追加や既存メンバーの管理もできません。 |
+| Viewer | workspaceに新しいプロジェクトやRelease Managementアプリを追加できません。 |
+
+これらのロールは主に、workspace内でのユーザーの権限を決定します。ただし、workspaceのOwnerとworkspaceのManagerの場合は、上記のとおりプロジェクトレベルでも追加の権限が付与されます。とはいえ、プロジェクトへのアクセスは主にプロジェクトレベルのロールによって決まります。
+
+これら4つのロールで要件を満たせない場合、Enterpriseプランでは、上記のデフォルトロールではなく、ビジネスやコンプライアンスのニーズに合わせて正確な権限セットを付与する[カスタムロール](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/custom-roles/custom-roles-overview)を作成できます。
+
+
+## プロジェクトレベルのロール {#project-level-roles}
+
+メンバー、workspaceグループ、外部のコントリビューターに対して、さまざまなプロジェクトのロールを割り当てることができます。これは、次のいずれかのタイミングで行えます:
+
+- グループを作成するとき。
+- グループの設定を変更するとき。
+- メンバーの詳細を変更するとき。
+
+プロジェクトレベルのロールは、特定のプロジェクトにのみ関係します。具体的なロールとその権限は製品によって異なり、Bitrise CIとRelease Managementにはそれぞれ独自のロールと権限があります:
+
+- [Bitrise CIのロールと権限](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)。
+- [Release Managementのロールと権限](/release-management/configuring-connected-apps/release-management-roles-and-permissions)。
+
+個々のメンバーとworkspaceグループのどちらにも、workspaceのプロジェクトのロールを割り当てることができます。設定できる項目は次のとおりです:
+
+- <strong>Admin access</strong>: ユーザーまたはグループは、project admin ロールでselected projectsのBitrise CIとRelease Managementの両方にアクセスできます。
+- <strong>Bitrise CIアクセス</strong>: ユーザーまたはグループは、selected projectsのBitrise CI設定にアクセスできます。プロジェクトごとに異なるロールを割り当てることができます。
+- <strong>Release Managementアクセス</strong>: ユーザーまたはグループは、selected projectsのRelease Managementアプリにアクセスできます。
+
+  :::note[新しいプロジェクトとRelease Managementアプリ]
+
+  新しいプロジェクトがworkspaceに追加されても、ユーザーが自動的にそのプロジェクトのメンバーになることはありません。
+
+  同様に、新しいRelease Managementアプリが既存のプロジェクトに追加された場合も、そのプロジェクトの他のアプリにアクセスできるという理由だけで、ユーザーまたはグループが自動的にそのアプリにアクセスできるようになるわけではありません。
+
+  :::
+
+
+## スタンドアロン製品 {#standalone-products}
+
+スタンドアロン製品にはプロジェクトレベルのロールがありません。これらへのアクセス権はworkspace全体に適用されるため、選択するプロジェクトもロールもなく、アクセスを許可するかしないかのみを設定します。
+
+Bitriseには、スタンドアロン製品が1つあります:
+
+- <strong>Remote Dev Environments</strong>: ユーザーまたはグループは、<strong>RDE User</strong>ロールでworkspace内に独自の<GlossTerm baseform="rde session">セッション</GlossTerm>を作成および管理できます。
+
+このアクセス権は、メンバーの招待時、グループの作成時、または既存のメンバーやグループのアクセス管理時に、製品アクセス設定の<strong>スタンドアロン製品</strong>セクションで付与します。project admin アクセスにはこれは含まれません。詳細は[RDEアクセスの管理](/bitrise-rde/configuration/managing-rde-access)をご覧ください。
+
+
+## workspaceでのロールと権限の管理 {#managing-roles-and-permissions-in-a-workspace}
+
+workspaceのメンバーやworkspaceグループに割り当てられたロールと権限は、いつでも更新できます。
+
+### メンバーのworkspaceロールの更新 {#updating-workspace-roles-for-a-member}
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. 左側で<strong>Collaboration</strong>を選択します。
+1. <strong>Members</strong>タブを選択し、リストから必要なworkspaceメンバーを見つけます。
+1. 名前の横にあるオプションメニュー(⋮)をクリックし、<strong>Manage access</strong>をクリックします。
+1. <strong>Overview</strong>タブで<strong>Workspace role</strong>カードを見つけ、<strong>Change</strong>をクリックします。
+1. 新しいロールを選択し、<strong>Save changes</strong>をクリックします。
+
+### メンバーの製品およびプロジェクトアクセスの管理 {#managing-product-and-project-access-for-a-member}
+
+workspaceの個々のメンバーの製品およびプロジェクトアクセスは、いつでも変更できます。ユーザーがアクセスできるすべてのプロジェクトのアクセス権を変更することも、特定のプロジェクトのみを変更することもできます。
+
+<Tabs>
+<TabItem value="all-projects" label="All projects" default>
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. 左側で<strong>Collaboration</strong>を選択します。
+1. <strong>Members</strong>タブを選択し、リストから必要なworkspaceメンバーを見つけます。
+1. 名前の横にあるオプションメニュー(⋮)をクリックし、<strong>Manage access</strong>をクリックして詳細ページを開きます。
+1. <strong>Overview</strong>タブで<strong>Manage access</strong>をクリックします。
+1. 該当する製品タイプで<strong>Change settings</strong>をクリックします:
+
+   - <strong>Admin access</strong>: すべての製品へのアクセス権を付与し、project admin ロールでselected projectsのあらゆる側面を管理します。
+   - <strong>Bitrise CI</strong>: ユーザーはBitrise CIのみにアクセスでき、[Bitrise CIのロール](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)を割り当てることができます。
+   - <strong>Release Management</strong>: ユーザーはRelease Managementのみにアクセスでき、[Release Managementのロール](/release-management/configuring-connected-apps/release-management-roles-and-permissions)を割り当てることができます。
+1. Set upプロジェクトアクセスとアクセスロールを設定します。ロールは製品によって異なります。
+1. <strong>スタンドアロン製品</strong>の下で、<strong>Remote Dev Environments</strong>をオンまたはオフにします。これには設定するプロジェクトやロールがありません。詳細は[スタンドアロン製品](#standalone-products)をご覧ください。
+1. 完了したら、<strong>Confirm changes</strong>をクリックします。
+
+</TabItem>
+<TabItem value="specific-project" label="Specific project">
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. 左側で<strong>Collaboration</strong>を選択します。
+1. <strong>Members</strong>タブを選択し、リストから必要なworkspaceメンバーを見つけます。
+1. 名前の横にあるオプションメニュー(⋮)をクリックし、<strong>Manage access</strong>を選択します。
+1. <strong>プロジェクト</strong>タブを選択し、リストから必要なプロジェクトを見つけます。
+1. 名前の横にあるオプションメニュー(⋮)をクリックし、<strong>Changeプロジェクトアクセス</strong>を選択します。
+1. 該当する製品タイプで<strong>Change settings</strong>をクリックします:
+
+   - <strong>Admin access</strong>: すべての製品へのアクセス権を付与し、project admin ロールでselected projectsのあらゆる側面を管理します。
+   - <strong>Bitrise CI</strong>: ユーザーはBitrise CIのみにアクセスでき、[Bitrise CIのロール](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)を割り当てることができます。
+   - <strong>Release Management</strong>: ユーザーはRelease Managementのみにアクセスでき、[Release Managementのロール](/release-management/configuring-connected-apps/release-management-roles-and-permissions)を割り当てることができます。
+1. Set upプロジェクトアクセスとアクセスロールを設定します。ロールは製品によって異なります。
+1. 完了したら、<strong>Confirm changes</strong>をクリックします。
+
+:::note[スタンドアロン製品]
+
+<strong>Remote Dev Environments</strong>はここには表示されません。これは単一のプロジェクトではなくworkspace全体に適用されるため、<strong>All projects</strong>のフローからのみ変更できます。
+
+:::
+
+</TabItem>
+</Tabs>

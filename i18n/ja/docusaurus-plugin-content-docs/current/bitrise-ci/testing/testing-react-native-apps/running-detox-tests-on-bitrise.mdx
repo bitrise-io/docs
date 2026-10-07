@@ -1,0 +1,123 @@
+---
+title: "BitriseでのDetoxテストの実行"
+description: "Detoxは、React Nativeで構築されたモバイルアプリ向けの、グレーボックスのエンドツーエンドテストおよび自動化ライブラリです。Bitrise上にReact Nativeアプリがある場合は、Detoxテストを実行できます。"
+sidebar_position: 2
+slug: /bitrise-ci/testing/testing-react-native-apps/running-detox-tests-on-bitrise
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Detoxは、React Nativeで構築されたモバイルアプリ向けのグレーボックスE2Eテストおよび自動化ライブラリです。iOSとAndroidの両方のアプリをサポートしています。Bitrise上にReact Nativeアプリがある場合、Detoxテストを実行できます。
+
+
+## 開始する前に {#before-you-start}
+
+Detoxの実行には、次のものが必要です:
+
+- macOS(El Capitan 10.11以降)を搭載したMac。
+- Xcodeのコマンドラインツールを含むXcode 8.3以降。
+- 動作するReact Nativeアプリ。
+
+[プロジェクトにDetoxをインストールしてセットアップします](https://wix.github.io/Detox/docs/introduction/getting-started/)。Homebrew、Node.js、applesimutilsに加えて、Detoxのコマンドラインツールをインストールする必要があります。プロジェクトにDetoxを追加し、Detoxテストをローカルで作成して実行します。Androidアプリを使用している場合は、初期セットアッププロセスの後に[このガイド](https://wix.github.io/Detox/docs/guide/android-dev-env/)を参照してください。
+
+完了したら、BitriseでDetoxを設定したプロジェクトをテストできます。
+
+
+## Detoxテストを実行する {#running-a-detox-test}
+
+1. `package.json`ファイルの`detox`セクション内、または別のDetox設定ファイルでリリースデバイスの設定を作成します。Detoxの設定方法の詳細については、ドキュメント[プロジェクトのセットアップ](https://wix.github.io/Detox/docs/introduction/project-setup/)を確認してください。
+
+   例:
+
+   ```yaml
+   "detox": {
+    "configurations": {
+      "ios.sim.debug": {
+        "binaryPath": "ios/build/Build/Products/Debug-iphonesimulator/SampleProjectReactNative.app",
+        "build": "xcodebuild -project ios/SampleProjectReactNative.xcodeproj -scheme SampleProjectReactNative -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build -UseNewBuildSystem=NO",
+        "type": "ios.simulator",
+        "name": "iPhone 8"
+      },
+      "ios.sim.release": {
+        "binaryPath": "ios/build/Build/Products/Release-iphonesimulator/SampleProjectReactNative.app",
+        "build": "xcodebuild -project ios/SampleProjectReactNative.xcodeproj -scheme SampleProjectReactNative -configuration Release -sdk iphonesimulator -derivedDataPath ios/build -UseNewBuildSystem=NO",
+        "type": "ios.simulator",
+        "name": "iPhone 8"
+      }
+    },
+   ```
+1. [bitrise.io](https://www.bitrise.io/)でプロジェクトに移動し、<strong><GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm></strong>を開きます。
+1. 使用する<GlossTerm baseform="workflow">Workflow</GlossTerm>に切り替えます。
+1. Workflowに<strong>Run npm command</strong><GlossTerm baseform="step">Step</GlossTerm>を追加します。
+1. <strong>npm command with arguments to run</strong>入力を使用して、DetoxのCLIとReact NativeCLIをインストールします:
+
+   ```bash
+   install -g detox-cli
+   install -g react-native-cli
+   ```
+1. テストランナーをインストールします。
+
+   たとえば、[サンプルアプリ](https://github.com/bitrise-samples/sample-project-react-native)では、`yarn`Stepを使用してインストールされた`mocha`を使用しています。yarnの依存関係をインストールするには、<strong>The yarn command to run</strong>入力の値を`install`に設定するだけです。
+1. 必要なユーティリティをインストールしてDetoxを実行するために、<strong>Script</strong>Stepを追加します。
+
+   ```bash
+   #!/bin/bash
+
+   # applesimutils is a collection of utils for Apple simulators
+   brew tap wix/brew
+   brew install applesimutils
+
+   # we are building and testing a release device configuration
+   detox build --configuration ios.sim.release
+   detox test --configuration ios.sim.release --cleanup
+   ```
+
+   もちろん、モジュール性を保つために、これらの各コマンドを個別のScriptStepsに配置することもできます。
+1. ビルドを実行します。
+
+ビルドが失敗した場合は、`bitrise.yml`のサンプルファイルを確認してください:
+
+```yaml
+---
+workflows:
+  primary:
+    steps:
+    - activate-ssh-key: {}
+    - git-clone:
+        inputs:
+        - clone_depth: ''
+        title: Git Clone Repo
+    - yarn:
+        inputs:
+        - command: install
+    - npm:
+        inputs:
+        - command: install -g detox-cli
+        title: Install Detox CLI
+    - script:
+        inputs:
+        - content: |-
+            #!/bin/bash
+            brew tap wix/brew
+            brew install applesimutils
+            
+            detox build --configuration ios.sim.release
+            detox test --configuration ios.sim.release --cleanup
+        title: Detox - Build and Test Release App
+    - deploy-to-bitrise-io: {}
+```
+
+
+## Detoxテストのトラブルシューティング {#troubleshooting-detox-tests}
+
+BitriseでDetoxの使用に問題がある場合は、テストを実行する前にDetoxパッケージ全体を再ビルドすることをお勧めします。
+
+そのためには、Bitriseビルドで次のコマンドを実行します:
+
+```text
+`npm rebuild detox`
+```
+
+それでもDetoxテストが失敗またはハングする場合は、サポートまでお問い合わせください。

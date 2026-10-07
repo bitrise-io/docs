@@ -1,0 +1,43 @@
+---
+title: "1つのワークフローでの複数フレーバーAPKの生成とデプロイ"
+description: "Gradle RunnerStepを使用して、1つのワークフローで複数のフレーバー(マルチフレーバー)のAPK/AABを生成し、コード署名し、デプロイできます。"
+sidebar_position: 3
+slug: /bitrise-ci/deploying/android-deployment/generate-and-deploy-multiple-flavor-apks-in-a-single-workflow
+sidebar_label: "1つのWorkflowでの複数フレーバーAPKの生成とデプロイ"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditor from '@site/i18n/ja/partials/opening-the-workflow-editor.mdx';
+
+<GlossTerm baseform="Workflow">Workflow</GlossTerm>で、複数のフレーバー(マルチフレーバー)のAPK/AABを生成し、コード署名してデプロイできます。これには[<strong>Gradle Runner</strong>](https://github.com/bitrise-io/steps-gradle-runner)<GlossTerm baseform="Step">Step</GlossTerm>を使用します。フレーバーとは、アプリのコアコードに機能を追加することで同じアプリの異なるバージョンを作成することを意味します(代表的な例としては、無料版/有料版、デモ版/フル版などがあります)。詳細については、公式のAndroid Studioガイド[ビルドタイプ、フレーバー、ビルドバリアント](https://developer.android.com/studio/build/build-variants)をご確認ください。このチュートリアルでは、[<strong>Android Sign</strong>](https://github.com/bitrise-steplib/steps-sign-apk)と[<strong>Google Play Deploy</strong>](https://github.com/bitrise-io/steps-google-play-deploy)Stepsにいくつか設定が必要になりますので、見逃さないようにしてください。
+
+
+## マルチフレーバーAPKの生成 {#generating-multi-flavor-apks}
+
+複数の異なるフレーバー用にAPKファイルを生成するには:
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. AndroidのテストStepsの後に<strong>Gradle Runner</strong> Stepを挿入します。<strong>Android Build</strong> Stepも<strong>Variant</strong>入力を使って複数のバリアントに対応できます(改行で区切ってリストを指定します)が、このチュートリアルでは<strong>Gradle Runner</strong>を使用して進めます。
+1. Stepの<strong>Config</strong>セクションをクリックします。
+1. <strong>Gradle task to run</strong> Step入力フィールドにビルドバリアントのタスク名を追加して、<strong>assemble</strong> Gradleタスクを指定します。1つのワークフローでビルドしたいビルドバリアントの数だけタスク名を指定してください。各タスク名は、Android Studioの<strong>Build Variant</strong>ウィンドウに表示されているビルドバリアント名と完全に一致している必要があります。区切りにはスペースのみを使用し、カンマは不要です。たとえば、2つのビルドバリアントがある場合:
+
+   `assembleDemo`と`assembleFull`(APKの場合)、または`bundleDemo`と`bundleFull`(AABの場合)
+1. <strong>Gradle Runner</strong>は、上記で定義したすべてのビルドバリアント用にビルドされたAPK/AABを含む`$BITRISE_APK_PATH_LIST` / `$BITRISE_AAB_PATH_LIST` 環境変数の出力を生成します。この出力環境変数は後で使用します。
+
+
+## マルチフレーバーAPKの署名とデプロイ {#signing-and-deploying-multi-flavor-apks}
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. Workflowに<strong>Gradle Runner</strong> Stepがない場合は、<strong>Android Sign</strong> Step AFTERを1つ追加します。
+1. 前の<strong>Gradle Runner</strong> Stepでビルドしたアプリの形式に応じて、<strong>App ファイルパス</strong>入力を`$BITRISE_APK_PATH_LIST`または`$BITRISE_AAB_PATH_LIST`に設定します。
+
+   これにより、すべてのAPKまたはAABが、<strong>Code Signing</strong>タブにアップロードしたキーストアファイルでget code署名されるようになります。Stepは、各ビルドバリアントの署名済みアプリファイルのパスを含む`$BITRISE_SIGNED_APK_PATH_LIST`または`$BITRISE_SIGNED_AAB_PATH_LIST`環境変数の出力をエクスポートします。
+1. <strong>Android Sign</strong> Stepで、以下の入力フィールドを必ず設定してください:
+
+   - <strong>Keystore url</strong>
+   - <strong>Keystore password</strong>
+   - <strong>Key alias</strong>
+1. <strong>Android Sign</strong> Stepに<strong>Google Play Deploy</strong> StepAFTERを追加します。
+1. <strong>Google Play Deploy</strong> Stepがすべてのビルドバリアントをアプリストアにリリースできるように、<strong>APKまたはApp Bundle ファイルパス</strong> Step入力フィールドに`$BITRISE_SIGNED_APK_PATH`または`$BITRISE_SIGNED_AAB_PATH`環境変数を設定します。

@@ -1,0 +1,74 @@
+---
+title: "差分アップデート"
+description: "CodePush はパッケージバージョン間の差分アップデートを自動的に計算するため、アップデートのダウンロードとインストールが速くなり、転送コストも抑えられます。"
+sidebar_position: 6
+slug: /release-management/codepush/delta-updates
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+over-the-air アップデートをデバイスに配信する際は、アップデートのダウンロードとインストールにかかる時間が、スムーズなユーザーエクスペリエンスにとって重要です。
+
+CodePush でデプロイされるアップデートは、通常、アプリのコードのごく一部しか変更しないため、バンドル全体をダウンロードしてインストールするのは非効率です。CodePush はパッケージのバージョン間の差分アップデートを自動的に計算するため、変更部分のみがダウンロードおよびインストールされます。
+
+## 差分アップデートの仕組み {#delta-update-mechanisms}
+
+差分アップデートパッケージには、新しいバージョン全体ではなく、デバイスにインストール済みのバージョンとインストールするバージョンとの間の変更のみが含まれます。
+
+![ファイル単位の差分とバイナリ差分のアップデートパッケージを比較した図](/img/codepush/file-vs-binary-diffing.png)
+
+<strong>ファイル単位の差分:</strong> CodePush は 2 つのリリースをファイルごとに比較します。アップデートパッケージには、新たに追加されたファイルと変更されたファイルの全体、および削除するファイルの一覧のみが含まれます。変更のないファイルはパッケージに含まれません。
+
+<strong>バイナリ差分:</strong> より効率的な差分の仕組みです。ファイル単位の差分と同様に、変更のないファイルはパッケージに含まれず、パッケージには削除するファイルの一覧が含まれます。2 つのバージョン間で変更されたファイルについては、CodePush はそのファイルの旧バージョンと新バージョンの間のバイトレベルのパッチを計算し、ファイル全体の代わりにそのパッチを配信します。ほとんどの React Native アップデートでは、バージョン間で JS バンドルが必ず変更されるため、この手法により JS バンドルファイル全体の取得を避けられます。
+
+## CodePush での差分アップデート {#delta-updates-with-codepush}
+
+CodePush はパッケージのバージョン間の差分アップデートを自動的に計算します。これはデフォルトで有効になっており、クライアントが SDK ダウンロードおよびインストールできる、より小さなアップデートが得られます。データ転送コストの削減にもつながります。
+
+ファイル単位の差分はデフォルトで有効になっており、一般的なすべての CodePush SDK 実装で動作します。より効率的なバイナリ差分は、バージョン 10.6.0 以降の [Bitrise CodePush SDK](https://github.com/bitrise-io/react-native-code-push)でサポートされています。
+
+バイナリ差分は現在オプトイン方式です。有効にするには、アプリの設定で `CodePushEnableDeltaUpdates` を `true` に設定してください。
+
+<Tabs>
+  <TabItem value="expo-cng" label="Expo CNG">
+    Expo の [Continuous Native Generation](https://docs.expo.dev/workflow/continuous-native-generation/) 機能を使用する場合は、次のキーを `app.json` ファイルに追加してください。設定の全体については、[Expo アプリ向けの CodePush の設定](/release-management/codepush/configuring-your-app-for-codepush#configuring-codepush-for-expo-apps)を参照してください。
+
+    ```diff
+    [
+    "@bitrise/code-push-sdk/expo",
+    {
+      "ios": {
+        "CodePushDeploymentKey": "...",
+        "CodePushServerURL": "https://<workspace-slug>.codepush.bitrise.io",
+    +   "CodePushEnableDeltaUpdates": true
+      },
+      "android": {
+        "CodePushDeploymentKey": "...",
+        "CodePushServerURL": "https://<workspace-slug>.codepush.bitrise.io",
+    +   "CodePushEnableDeltaUpdates": true
+      }
+    }
+    ]
+    ```
+  </TabItem>
+  <TabItem value="ios" label="iOS">
+    `Info.plist` に次のキーを追加してください。
+    ```xml
+    <key>CodePushEnableDeltaUpdates</key>
+    <true/>
+    ```
+  </TabItem>
+  <TabItem value="android" label="Android">
+    `res/values/strings.xml` に次を追加してください。
+    ```xml
+    <bool name="CodePushEnableDeltaUpdates">true</bool>
+    ```
+  </TabItem>
+</Tabs>
+
+### アップデート間の差分の作成方法 {#how-deltas-are-created-between-updates}
+
+CodePush の差分は、new update が作成されるときに、サーバー側で自動的に計算されます。差分は常に以前のアップデートを基準とし、Bitrise は新しく作成されたアップデートと直前の 5 つのアップデートとの間の差分を生成します。具体例は次のとおりです。
+
+アップデート `v8` が作成されると、`v8` について、`v7`、`v6`、`v5`、`v4`、`v3` を基準とした差分パッケージが生成されます。これらの以前のバージョンのいずれかから `v8` にアップグレードするアプリは、より小さな差分パッケージを受信します。`v1`、`v2`、またはストアリリース (バイナリのアプリストアリリースの一部として配布されたバンドル) からアップグレードするアプリは、完全なアップデートを受信します。

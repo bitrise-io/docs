@@ -1,0 +1,63 @@
+---
+title: "Apple IDを使ったAppleサービスへの接続"
+description: "iOSのcode signingとデプロイを管理するために、Apple IDを使ってAppleサービスに接続します。"
+sidebar_position: 3
+slug: /bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/i18n/ja/partials/getting-to-the-project-settings-page.mdx';
+
+Apple IDを使用してAppleサービス（App Store ConnectやApple Developer Portalなど）に接続するには、まず<strong>Connected accounts</strong>ページでApple IDとパスワードを追加し、次にビルド実行中にApple ID認証を使用するアプリを選択する必要があります。
+
+APIキー認証を使用できない場合は、このオプションを試すことをお勧めします。Bitriseに接続できるApple IDは1つのみである点にご注意ください。
+
+:::important[二段階認証が有効なAppleアカウント]
+
+Appleアカウントで二段階認証が有効になっている場合、この過程でApp-specific passwordを入力する必要があります。[Apple IDアカウントページのSecurityセクションでapp-specific passwordを生成する方法](https://support.apple.com/en-us/HT204397)をご確認ください。
+
+![appspecificpassword.jpg](/img/_paligo/uuid-635b3416-2294-9063-b841-674935c2f4ab.jpg)
+
+:::
+
+
+## BitriseでApple ID認証データを追加する {#adding-apple-id-authentication-data-on-bitrise}
+
+1. BitriseにLog inし、左側のナビゲーションメニューから<strong>Bitrise CI</strong>を選択します。
+1. 右上隅にあるプロフィール画像をクリックして、ドロップダウンメニューを開きます。
+1. <strong>Account settings</strong>オプションを選択します。
+
+   ![account-settings-page.png](/img/_paligo/uuid-b08c42b9-affd-b40d-3c6e-87410001d2fb.png)
+1. 左側で<strong>Connected accounts</strong>を選択します。
+1. <strong>Apple services</strong>タブで<strong>Connect</strong>をクリックします。
+1. ダイアログに<strong>Apple ID</strong>、<strong>Password</strong>、<strong>app-specific password</strong>を入力し、<strong>Next</strong>をクリックします。
+1. <strong>Two factor authentication</strong>ダイアログに<strong>verification code</strong>を入力し、<strong>Verify</strong>をクリックします。
+1. 認証の有効期限は30日間で、期限が切れると再度認証が必要になります。その場合は、<strong>Connected accounts</strong>ページに移動して<strong>Re-authenticate</strong>をクリックしてください。これにより、再認証のための二段階認証（2FA）コードの入力が自動的に求められます。
+1. アプリにAppleデベロッパーアカウントを割り当てる手順に進みます。
+
+
+## アプリへのApple ID認証の割り当て {#assigning-apple-id-authentication-to-your-app}
+
+Apple ID認証を使用してAppleサービス（App Store ConnectやApple Developer Portalなど）に接続するには、まずbitrise.ioでAppleサービスの認証データを追加し、次にAppleの認証情報をアプリに割り当てる必要があります。この方法を使用すると、Appleサービスに接続する<GlossTerm baseform="step">Steps</GlossTerm>を使用する際に認証を気にする必要がありません。Apple認証に関連するStep inputsはすべて自動的に入力されます。
+
+:::important[他のユーザーのApple認証情報は割り当てられません]
+
+アプリに設定できるApple ID認証データは、自分自身のユーザーアカウントのものだけです。他のユーザーのApple認証情報が必要なアプリがある場合は、そのユーザー自身がログインして変更する必要があります。
+
+:::
+
+アプリにApple ID認証データを割り当てるには:
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で<strong>Integrations</strong>を選択します。
+1. 下にスクロールして<strong>Connection to Apple services</strong>セクションに移動します。
+1. <strong>Apple ID authentication</strong>オプションを見つけます。
+
+   ![add-api-key-apple.png](/img/_paligo/uuid-95e5fcc6-46bd-1efe-69a0-538ef9c8c8cb.png)
+1. <strong>Change to me</strong>をクリックします。
+
+   このオプションが見つからない場合、bitrise.ioでAppleの認証情報を設定していない可能性があります。選択したユーザーを変更すると、以前のユーザーが削除される点にご注意ください。以前のユーザーのApple認証情報を再度使用する必要がある場合は、そのユーザー自身がログインして変更する必要があります。
+
+これで、Stepsはビルド中にAppleサービスに接続できるようになりました。

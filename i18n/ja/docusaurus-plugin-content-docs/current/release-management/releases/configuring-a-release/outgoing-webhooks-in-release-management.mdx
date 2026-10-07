@@ -1,0 +1,205 @@
+---
+title: "Release Management の送信 Webhook"
+sidebar_position: 5
+slug: /release-management/releases/configuring-a-release/outgoing-webhooks-in-release-management
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+outgoing Webhookは、特定のイベントが発生したときにBitriseから指定されたURLに送信される自動化されたメッセージです。Release Managementの場合、これらのWebhookを使用すると、Bitriseを外部サービスやツールと統合し、開発パイプライン全体でシームレスなコミュニケーションと自動化を実現できます。
+
+:::note[Standardプランのみ]
+
+outgoing Webhookを<GlossTerm baseform="workspace">Workspace</GlossTerm>に追加できますが、[Release Management](/release-management)プロジェクトでの接続は、[standardライセンス](https://bitrise.io/pricing#release-management)を持つプロジェクトでのみ可能です。
+
+:::
+
+
+## リリースへのアウトゴーイングWebhookの追加 {#adding-an-outgoing-webhook-to-a-release}
+
+リリースへアウトゴーイングWebhookを追加する方法は2つあります。
+
+- 個々のリリースにWebhookを追加する。
+- リリースプリセットテンプレートにWebhookを追加する。そのテンプレートを使用するすべてのリリースで、設定されたWebhookが使用されます。
+
+<Tabs>
+<TabItem value="individual-release" label="Individual release" default>
+
+1. 外部サービスがWebhookリクエストを受信して処理できる状態になっていることを確認してください。これには通常、次のことが含まれます。
+
+   - BitriseからのHTTP POSTリクエストを受信するための、パブリックにアクセス可能なURLを作成する。
+   - JSONペイロードを処理する: JSONのデータを解析し、関連情報を抽出する。
+   - 受信したイベントに基づいて、サービスが実行するアクションを定義する。
+1. Bitriseで[アウトゴーイングWebhookを作成](/bitrise-platform/integrations/webhooks/adding-outgoing-webhooks)します。
+1. Release Managementを開きます。
+1. your appを選択します。
+1. 完了していないリリースを選択します。
+
+   ![2025-10-29-releases.png](/img/_paligo/uuid-77ae83b9-c3d4-60a7-9997-ad0a27832d58.png)
+1. <strong>Configuration</strong>に移動します。
+1. <strong>Outgoing webhooks</strong>カードを見つけて、<strong>Show details</strong>をクリックします。
+
+   ![2025-10-29-outgoing-webhooks-rm.png](/img/_paligo/uuid-28b052ba-a18f-12ee-7a9a-04720bb6fdd1.png)
+1. <strong>Add webhook</strong>をクリックします。
+1. <strong>Webhook configuration</strong>メニューからWebhookを選択します。
+
+   ![2025-10-29-rm-add-outgoing-webhook.png](/img/_paligo/uuid-f9d557bf-8cd0-2856-4555-61352d73ca56.png)
+1. Webhookを<GlossTerm baseform="trigger">トリガー</GlossTerm>するイベントを選択します。
+
+   イベントの全一覧とそのペイロード情報については、[Webhookイベント](/release-management/releases/configuring-a-release/outgoing-webhooks-in-release-management#webhook-events)を参照してください。
+
+</TabItem>
+<TabItem value="release-preset" label="Release preset">
+
+1. 外部サービスがWebhookリクエストを受信して処理できる状態になっていることを確認してください。これには通常、次のことが含まれます。
+
+   - BitriseからのHTTP POSTリクエストを受信するための、パブリックにアクセス可能なURLを作成する。
+   - JSONペイロードを処理する: JSONのデータを解析し、関連情報を抽出する。
+   - 受信したイベントに基づいて、サービスが実行するアクションを定義する。
+1. Bitriseで[アウトゴーイングWebhookを作成](/bitrise-platform/integrations/webhooks/adding-outgoing-webhooks)します。
+1. Release Managementを開きます。
+1. your appを選択します。
+1. <strong>Release presets</strong>に移動します。
+
+   ![2025-10-29-release-presets.png](/img/_paligo/uuid-05179598-b31c-84ba-3b1d-03720f842acc.png)
+1. [新しいテンプレートを作成](/release-management/releases/release-presets)するか、既存のテンプレートを変更します。
+1. テンプレートページで<strong>Outgoing webhooks</strong>カードを見つけて、<strong>Show details</strong>をクリックします。
+1. <strong>Add webhook</strong>をクリックします。
+1. <strong>Webhook configuration</strong>メニューからWebhookを選択します。
+
+   ![2025-10-29-rm-add-outgoing-webhook.png](/img/_paligo/uuid-f9d557bf-8cd0-2856-4555-61352d73ca56.png)
+1. Webhookをトリガーするイベントを選択します。
+
+   イベントの全一覧とそのペイロード情報については、[Webhookイベント](/release-management/releases/configuring-a-release/outgoing-webhooks-in-release-management#webhook-events)を参照してください。
+
+</TabItem>
+</Tabs>
+
+
+## リリースからのアウトゴーイングWebhookの削除 {#removing-an-outgoing-webhook-from-a-release}
+
+個々のリリースまたはリリースプリセットテンプレートから、アウトゴーイングWebhookを削除できます。
+
+<Tabs>
+<TabItem value="individual-release" label="Individual release" default>
+
+1. Release Managementを開きます。
+1. your appを選択します。
+1. 完了していないリリースを選択します。
+
+   ![2025-10-29-releases.png](/img/_paligo/uuid-77ae83b9-c3d4-60a7-9997-ad0a27832d58.png)
+1. <strong>Configuration</strong>に移動します。
+1. <strong>Outgoing webhooks</strong>カードを見つけて、<strong>Show details</strong>をクリックします。
+1. remove configurationアイコンをクリックします。
+
+   ![2025-10-29-remove-webhooks-rm.png](/img/_paligo/uuid-32cdcf4a-27ea-2a5c-a439-3828a31fec7c.png)
+
+</TabItem>
+<TabItem value="release-preset" label="Release preset">
+
+1. Release Managementを開きます。
+1. your appを選択します。
+1. 左側で<strong>Release presets</strong>を選択します。
+
+   ![2025-10-29-release-presets.png](/img/_paligo/uuid-05179598-b31c-84ba-3b1d-03720f842acc.png)
+1. 必要なリリースプリセットテンプレートを見つけてオプションメニュー（⋮）をクリックし、<strong>Change</strong>を選択します。
+1. <strong>Outgoing webhooks</strong>カードを見つけて、<strong>Show details</strong>をクリックします。
+1. remove configurationアイコンをクリックします。
+
+</TabItem>
+</Tabs>
+
+
+## Webhookイベント {#webhook-events}
+
+複数のリリース自動化イベントがWebhookをトリガーする可能性があります。すべてのWebhookには、次のフィールドが含まれます。
+
+| `Field name` | `Format` |
+| --- | --- |
+| `app_id` |  |
+| `project_id` |  |
+| `release_candidate_artifact_id` |  |
+| `release_id` |  |
+| `sent_at` | ナノ秒精度のUNIXタイムスタンプ |
+| `store_app_id` |  |
+| `triggered_at` | ナノ秒精度のUNIXタイムスタンプ |
+| `triggered_by` | user slug、または次のいずれか: `Automation`、`Apple App Store`、`Google Play Store` |
+| `trigger_event` |  |
+| `webhook_config_id` |  |
+| `webhook_event_unique_id` | `WEBHOOK_ID@TRIGGER_TIMESTAMP_NANO` |
+| `workspace_id` |  |
+
+次のWebhookイベントを使用できます。<strong>フィールド</strong>列には、トリガーとなるイベントがWebhookペイロードに追加する追加フィールドが記載されています。
+
+| Webhook名 | トリガーイベント | フィールド |
+| --- | --- | --- |
+| アプリバージョンの追加 | `app_version_added` | - `description` - `preset_template_id` |
+| リリース説明の変更 | `release_description_changed` | - `description` |
+| 自動アップロードの有効化 | `auto-upload_enabled` |  |
+| 自動アップロードの無効化 | `auto-upload_disabled` |  |
+| Slack接続の変更 | `slack_connection_changed` |  |
+| Microsoft Teams接続の変更 | `microsoft_teams_connection_changed` |  |
+| 自動化の追加 | `automation_added` | - `event_name` - `pipeline_name` - `workflow_name` |
+| 自動化の削除 | `automation_removed` | - `event_name` - `pipeline_name` - `workflow_name` |
+| アウトゴーイングWebhookの追加 | `outgoing_webhook_added` | - `all_events`    使用可能な値: `true/false` - `events`: `all_events`がfalseの場合にのみ表示されます。 - `webhook_configuration_id` |
+| アウトゴーイングWebhookの更新 | `outgoing_webhook_updated` | - `all_events` true/false - `events`: `all_events`がfalseの場合にのみ表示 - `webhook_configuration_id` |
+| アウトゴーイングWebhookの削除 | `outgoing_webhook_deleted` | - `all_events`    使用可能な値: `true/false` - `events` `all_events`がfalseの場合にのみ表示 - `webhook_configuration_id` |
+| Stopped managing release | `stopped_managing_release` | - `reason_for_stopping`    使用可能な値: `abandoned/completed externally` |
+| リリース候補ソースの変更 | `release_candidate_source_changed` | - `from_source`    使用可能な値: `ci/api/empty string` - `to_source`    使用可能な値: `ci/api` - `from_branch`: `from_source`の値が`ci`の場合のみ - `from_workflow`: `from_source`の値が`ci`の場合のみ。 - `to_branch`: `to_source`の値が`ci`の場合のみ。 - `to_workflow`: `to_source`の値が`ci`の場合のみ。 |
+| リリース候補の最新ビルド自動選択の無効化 | `release_candidate_auto_select_latest_build_disabled` |  |
+| リリース候補の最新ビルド自動選択の有効化 | `release_candidate_auto_select_latest_build_enabled` |  |
+| リリース候補ビルドの選択 | `release_candidate_build_selected` | - `file_name` - `version` - `version_code` |
+| TestFlightアップロードの開始 | `testflight_upload_started` | - `file_name` - `version` - `version_code` |
+| TestFlightアップロードの失敗 | `testflight_upload_failed` | - `file_name` - `version` - `version_code` |
+| TestFlightアップロードの完了 | `testflight_upload_completed` | - `file_name` - `version` - `version_code` |
+| TestFlight processing failed | `testflight_processing_failed` | - `file_name` - `version` - `version_code` |
+| TestFlight処理の完了 | `testflight_processing_completed` | - `file_name` - `version` - `version_code` |
+| TestFlight what to testの追加 | `testflight_what_to_test_added` | - `language` - `what_to_test` |
+| TestFlight what to testの変更 | `testflight_what_to_test_changed` | - `language` - `what_to_test` |
+| TestFlight what to testの削除 | `testflight_what_to_test_deleted` | - `language` |
+| TestFlightアプリレビューの送信 | `testflight_app_review_submitted` | - `testflight_beta_build_id` |
+| TestFlightアプリレビューの承認 | `testflight_app_review_approved` | - `testflight_beta_build_id` |
+| TestFlightアプリレビューの却下 | `testflight_app_review_rejected` | - `testflight_beta_build_id` |
+| TestFlight配布の開始 | `testflight_distribution_started` | - `group_id` - `testflight_beta_build_id` |
+| TestFlight配布開始の失敗 | `testflight_distribution_start_failed` | - `group_id` - `testflight_beta_build_id` |
+| TestFlight配布の停止 | `testflight_distribution_stopped` | - `group_id` - `testflight_beta_build_id` |
+| Google Playアップロードの開始 | `google_play_upload_started` | - `file_name` - `version` - `version_code` |
+| Google Playアップロードの完了 | `google_play_upload_completed` | - `file_name` - `version` - `version_code` |
+| Google Playアップロードの失敗 | `google_play_upload_failed` | - `file_name` - `version` - `version_code` |
+| Google Playテストトラックリリースの完了 | `google_play_testing_track_release_completed` | - `file_name` - `track_name` - `version` - `version_code` |
+| Google Playテストトラックリリースの失敗 | `google_play_testing_track_release_failed` | - `file_name` - `track_name` - `version` - `version_code` |
+| 承認タスクの完了 | `approval_tasks_completed` | - `approval_task_ids` - `skipped_with_zero_tasks (boolean)` |
+| 承認タスクの追加 | `approval_task_added` | - `approval_id` - `assigned_to` - `created_by` - `description` - `due_date` - `title` |
+| 承認タスクの変更 | `approval_task_changed` | - `approval_id` - `assigned_to` - `created_by` - `description` - `due_date` - `title` |
+| 承認タスクの完了 | `approval_task_completed` | - `approval_id` - `assigned_to` - `created_by` - `description` - `due_date` - `title` |
+| 承認タスクの削除 | `approval_task_deleted` | - `approval_id` - `assigned_to` - `created_by` - `description` - `due_date` - `title` |
+| 承認タスクの再オープン | `approval_task_reopened` | - `approval_id` - `assigned_to` - `created_by` - `description` - `due_date` - `title` |
+| App Storeバージョンの作成 | `app_store_version_created` | - `version` |
+| App Storeバージョンの更新 | `app_store_version_updated` | - `version` |
+| メタデータローカライズの追加 | `metadata_localization_added` | - `language` - `added_values` |
+| メタデータローカライズの変更 | `metadata_localization_changed` | - `language` - `changed_values` |
+| メタデータローカライズの削除 | `metadata_localization_removed` | - `language` |
+| リリース設定の変更 | `release_settings_changed` | - `earliest_release_date` - `phased_release` - `release_type` - `version_string` |
+| 段階的リリースの有効化 | `phased_release_enabled` |  |
+| 段階的リリースの無効化 | `phased_release_disabled` |  |
+| App Storeレビューの送信 | `app_store_review_submitted` | - `file_name` - `version` - `version_code` |
+| App Storeレビューのキャンセル | `app_store_review_cancelled` | - `file_name` - `version` - `version_code` |
+| App Storeレビューの却下 | `app_store_review_rejected` | - `file_name` - `reason` - `version` - `version_code` |
+| App Storeレビューの承認 | `app_store_review_approved` | - `file_name` - `version` - `version_code` |
+| App Storeリリースのキャンセル | `app_store_release_cancelled` | - `file_name` - `version` - `version_code` |
+| 段階的リリースの一時停止 | `phased_release_paused` | - `percentage_of_users` |
+| 段階的リリースの再開 | `phased_release_resumed` | - `percentage_of_users` |
+| App Storeリリースの開始 | `app_store_release_started` |  |
+| App Storeリリースの完了 | `app_store_release_completed` |  |
+| Google Playリリースノートローカライズの追加 | `google_play_release_notes_localization_added` | - `language` - `release_notes` |
+| Google Playリリースノートローカライズの変更 | `google_play_release_notes_localization_changed` | - `language` - `release_notes` |
+| Google Playリリースノートローカライズの削除 | `google_play_release_notes_localization_removed` | - `language` - `release_notes` |
+| Google Playリリースの開始 | `google_play_release_started` | - `release_method` - `staged_release` |
+| Google Play rollout percentageの変更 | `google_play_rollout_percentage_changed` | - `release_method` - `rollout_percentage_from` - `rollout_percentage_to` |
+| Google Play自動ロールアウトの設定 | `google_play_automated_rollout_configured` | - `rollout_start_time` |
+| Google Play自動ロールアウトの一時停止 | `google_play_automated_rollout_paused` | - `rollout_percentage` |
+| Google Play自動ロールアウトの再開 | `google_play_automated_rollout_resumed` | - `rollout_percentage` |
+| Google Play自動ロールアウトのキャンセル | `google_play_automated_rollout_cancelled` |  |
+| Google Playリリースの完了 | `google_play_release_completed` |  |

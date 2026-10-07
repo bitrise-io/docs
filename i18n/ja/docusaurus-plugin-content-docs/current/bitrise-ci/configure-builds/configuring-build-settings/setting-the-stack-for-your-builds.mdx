@@ -1,0 +1,192 @@
+---
+title: "ビルド用スタックの設定"
+description: "ビルドスタックは、Bitriseがビルドの実行に使用する仮想マシンのバージョンを示します。すべてのビルドに対してスタックを設定することも、Workflow Editorまたはbitrise.ymlファイルでWorkflowごとのスタックを設定することもできます。"
+sidebar_position: 1
+slug: /bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditor from '@site/i18n/ja/partials/opening-the-workflow-editor.mdx';
+import Partial_BuildMachineTypes from '@site/i18n/ja/partials/build-machine-types.mdx';
+
+[ビルドスタック](/bitrise-build-hub/infrastructure/build-stacks/about-build-stacks)は、ビルドの実行に使用する仮想マシンのバージョンを示します。すべてのビルドに対して<GlossTerm baseform="Stack">スタック</GlossTerm>を設定することも、<GlossTerm baseform="Workflow">Workflow</GlossTerm>ごとにスタックを設定することもできます。
+
+:::tip[APIを使用したマシンタイプの変更]
+
+1人のユーザーまたは<GlossTerm baseform="workspace">Workspace</GlossTerm>が所有するすべてのアプリのbuild machineタイプを、APIを使用して変更することもできます: [すべてのアプリのマシンタイプを一括で変更する](/bitrise-ci/api/adding-and-managing-apps#changing-machine-types-in-all-apps-at-the-same-time)。
+
+:::
+
+
+## Workflow Editorでのスタックの設定 {#setting-the-stack-in-the-workflow-editor}
+
+[ビルドスタック](/bitrise-build-hub/infrastructure/build-stacks/about-build-stacks)を設定する最も簡単な方法は、<GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>で設定することです。デフォルトスタックと、Workflowごとのスタックの両方を設定できます。
+
+### デフォルトスタックの設定 {#setting-the-default-stack}
+
+プロジェクトのデフォルトスタックは、Workflowに特定のスタックを設定していない場合に使用されるスタックです。
+
+:::note[プロジェクトタイプ]
+
+アプリの <strong>Settings</strong> タブでプロジェクトタイプを、選択したデフォルトスタックと互換性のないタイプに変更すると、スタックは自動的に互換性のあるスタックに変更されます。
+
+:::
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. 左側のメニューで <strong>Stacks & Machines</strong> を選択します。
+1. <strong>Default stack & machine</strong> セクションでドロップダウンメニューを開き、必要なスタックを選択します。
+1. 右上の <strong>Save changes</strong> をクリックします。
+
+### Workflowごとのスタックの設定 {#setting-a-workflow-specific-stack}
+
+Workflowにスタックを設定すると、デフォルトスタックに関係なく、そのWorkflowは常にそのスタックで実行されます。
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. 左側のメニューで <strong>Stacks & Machines</strong> を選択します。
+1. <strong>Workflows</strong> タブを選択します。
+
+   ![Stacks & MachinesページのWorkflowsタブ](/img/configure-builds/2026-07-08-stacks-workflows-tab.png)
+1. 必要なWorkflowを見つけて、スタックを選択します。
+1. 右上の <strong>Save changes</strong> をクリックします。
+
+### Workflow Editorでのマシンタイプの設定 {#setting-the-machine-type-in-the-workflow-editor}
+
+ビルドで使用するマシンタイプをWorkflow Editorで定義できます。利用可能なマシンタイプは、使用するスタックの種類によって異なります: [Build machineタイプ](/bitrise-build-hub/infrastructure/build-machine-types)。
+
+マシンタイプを設定するには、次の手順を実行します。
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. 左側のメニューで <strong>Stacks & Machines</strong> を選択します。
+1. <strong>Default stack & machine</strong> セクションで、マシンタイプセレクターからマシンタイプを選択します。
+
+   ![Default stack & machineセクションのマシンタイプセレクター](/img/configure-builds/2026-07-08-stacks-default-machine-type.png)
+1. 必要に応じて、Workflowごとのスタックが設定されているWorkflowに対して、Workflowごとのマシンタイプを選択します。
+
+
+## Configuration YAMLでのスタックの設定 {#setting-the-stack-in-the-configuration-yaml}
+
+プロジェクトの Configuration YAMLで、デフォルトスタックとWorkflowごとのタスクの両方を設定できます。適切なstack IDとともに `meta` フィールドを使用します。
+
+```yaml
+meta:      
+  bitrise.io:       
+    stack: <stack-id>
+```
+
+これは、[`bitrise.yml` ファイルをアプリのリポジトリに保存している](/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml#storing-the-bitriseyml-file-in-your-repository)場合に特に便利です。
+
+:::note[Stack ID]
+
+stack IDは、各スタックレポートの上部に記載されています: [Bitriseスタックレポート](https://stacks.bitrise.io/stack_reports/)。または、Workflow Editorでスタックを設定し、<strong><GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm></strong> タブの `meta` フィールドでIDを確認することもできます。Bitrise CLIを使用すると、`bitrise stack list`がWorkspaceで利用可能なスタックのIDを出力します: [stack IDの確認](/bitrise-ci/bitrise-cli/working-with-bitrise-yml-via-the-bitrise-cli#finding-stack-ids)を参照してください。
+
+スタックレポートには、そのスタックで利用可能なすべての[プリインストールツール](/bitrise-platform/infrastructure/build-stacks/preinstalled-tools-on-bitrise-stacks)も表示されます。
+
+:::
+
+### 最新の Stable スタックの使用 {#using-the-latest-stable-stack}
+
+新しいスタックが Stable になるたびに(たとえば、新しいXcodeバージョンがリリースされたときに)stack IDを手動で更新したくない場合は、バージョン固有のstack IDの代わりに `latest-stable` エイリアスを使用してください。
+
+- macOS: `osx-xcode-latest-stable`
+- Linux: `ubuntu-latest-stable`
+
+```yaml
+meta:
+  bitrise.io:
+    stack: osx-xcode-latest-stable
+```
+
+これらのIDは常にプラットフォームの現在の Stable スタックに解決されるため、configuration YAMLを変更しなくても、ビルドは引き続きそのスタックで実行されます。Workflow Editorのスタックドロップダウンの <strong>Stacks & Machines</strong> からも選択できます。 
+
+:::note
+
+この設定では、Stable スタックが切り替わるたびに、基盤となるXcodeまたは Ubuntu のバージョンが変わる可能性があります。再現可能なビルド環境が必要な場合は、代わりにバージョン固有のstack IDを使用してください。
+
+:::
+
+### Configuration YAMLでのデフォルトスタックの設定 {#setting-the-default-stack-in-the-configuration-yaml}
+
+プロジェクトのデフォルトスタックは、Workflowに特定のスタックを設定していない場合に使用されるスタックです。
+
+1. プロジェクトの Configuration YAMLを開きます。
+1. `workflows`プロパティの外側、または Configuration YAMLの末尾に `meta` エントリを追加します。
+
+   ```yaml
+   meta:      
+     bitrise.io:       
+       stack:
+   ```
+
+   インデントは2段階にしてください。
+1. stack IDを追加します。
+
+   stack IDは[スタックレポートページ](https://stacks.bitrise.io/stack_reports/)で確認できます。`.log`拡張子を除いたファイル名がstack IDです。
+
+   ```yaml
+   meta:      
+     bitrise.io:       
+       stack: <stack-id>
+   ```
+
+### Configuration YAMLでのWorkflowごとのスタックの設定 {#setting-workflow-specific-stacks-in-the-configuration-yaml}
+
+Workflowにスタックを設定すると、デフォルトスタックに関係なく、そのWorkflowは常にそのスタックで実行されます。
+
+1. プロジェクトの Configuration YAMLを開きます。
+1. `workflows`プロパティを見つけ、その中から必要なWorkflowの名前を探します。
+1. Workflow自体の下に `meta` エントリを追加します。
+
+   ```yaml
+   workflows:
+     deploy:  
+       meta:      
+         bitrise.io:       
+           stack:
+   ```
+1. stack IDを追加します。
+
+   stack IDは、各[スタックレポートページ](https://stacks.bitrise.io/stack_reports/)の上部に記載されています。
+
+   ```yaml
+   workflows:
+     deploy:  
+       meta:      
+         bitrise.io:       
+           stack: <stack-id>
+   ```
+
+### Configuration YAMLでのマシンタイプの設定 {#setting-the-machine-type-in-the-configuration-yaml}
+
+プロジェクトの Configuration YAMLで、ビルドで使用するマシンタイプを定義することもできます。マシンタイプとは、ビルドで使用されるハードウェアリソースを指します。たとえば、Elite マシンは Standard マシンよりも多くの CPU コアと利用可能な RAM を備えています。
+
+Configuration YAML ファイルでマシンタイプを設定するには、`meta` エントリで `machine_type_id` 属性を使用する必要があります。
+
+:::note[利用可能なマシンID]
+
+利用可能なマシンタイプIDは次のページで確認できます: [Build machineタイプ](/bitrise-build-hub/infrastructure/build-machine-types)。
+
+:::
+
+1. プロジェクトの Configuration YAML ファイルを開きます。
+1. `workflows`プロパティを見つけ、その中から必要なWorkflowの名前を探します。
+1. `meta` エントリを追加します。
+
+   ```yaml
+   # setting an 8-core Gen2 machine for an Xcode stack as the default machine type of the app:
+   meta:
+     bitrise.io:
+       machine_type_id: g2.8core
+   # setting a 12-core Gen2 machine as a Workflow-specific machine type
+   workflows:
+     deploy:  
+       meta:      
+         bitrise.io:       
+           machine_type_id: <machine-id>
+   ```
+
+
+## Build machineタイプ {#build-machine-types}
+
+<Partial_BuildMachineTypes />

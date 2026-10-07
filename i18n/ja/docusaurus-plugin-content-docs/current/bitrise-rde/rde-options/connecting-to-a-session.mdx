@@ -1,0 +1,47 @@
+---
+title: "セッションへの接続"
+description: "実行中のRemote Dev Environmentのセッションに、Webターミナル、SSH、VNC、またはVS Code Remote - SSH拡張機能で接続し、ファイルを転送します。"
+sidebar_position: 3
+slug: /bitrise-rde/rde-options/connecting-to-a-session
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+<GlossTerm baseform="rde session">セッション</GlossTerm>が実行されると、いくつかの方法で接続できます。利用できる方法はオペレーティングシステムによって異なります。macOSのセッションはVNC経由でグラフィカルデスクトップを追加しますが、LinuxセッションはターミナルとIDEのみです。
+
+## Webターミナル {#web-terminal}
+
+[Bitrise RDE UI](/bitrise-rde/rde-options/bitrise-rde-ui)には、セッション詳細ページにブラウザベースのターミナルが含まれています。マシンに直接接続し、複数のタブに対応していて、ローカル環境の設定も不要です。セッションでコマンドを実行する最も手早い方法です。
+
+## SSH
+
+各セッションにはSSHアドレスとワンタイムパスワードがあり、セッション詳細ページに表示されるほか、CLIから`bitrise-cli rde session view`で確認できます。これらは任意のSSHクライアントで使用できます。
+
+パスワードなしでアクセスするには、SSH公開鍵を[保存された入力](/bitrise-rde/configuration/saved-inputs)として登録します。Bitriseがそれをセッションの許可された鍵に追加するため、毎回パスワードをコピーしなくても接続できます。macOSのセッションは`vagrant`ユーザーとして、Linuxセッションは`ubuntu`ユーザーとしてサインインします。
+
+インタラクティブシェルを開かずに単一のコマンドを実行するには、[`bitrise-cli rde session exec`](/bitrise-rde/rde-options/bitrise-rde-cli#running-commands-in-a-session)を使用してください。
+
+## VNC
+
+macOSのセッションはVNC経由でグラフィカルデスクトップを公開するため、シミュレーターやGUIアプリを確認する際に便利です。セッション詳細ページにはVNCアドレスと認証情報が表示され、VNCビューアーを開く`vnc://`リンクも生成されます。CLIから`bitrise-cli rde session open-vnc SESSION_ID`を実行するとビューアーを直接開くことができ、`bitrise-cli rde session vnc SESSION_ID`を実行すると接続情報を表示できます。セッションへの直接のネットワーク経路がない場合は、`bitrise-cli rde session vnc SESSION_ID --forward 5901`がVNCエンドポイントをSSH経由でローカルポートにトンネリングします。
+
+Linuxセッションにはデスクトップがないため、VNCは利用できません。
+
+## デバイスビュー {#device-view}
+
+iOSシミュレーターまたはAndroidエミュレーターを起動するセッションは、どちらのプラットフォームでもブラウザにストリーミングされ、SSHトンネリング用にデバイスポートを公開します。詳細は[デバイスセッション](/bitrise-rde/devices/device-sessions#watching-the-device-in-the-browser)を参照してください。
+
+## VS Code Remote - SSH
+
+VS Codeからセッション内のコードを編集するには、セッション詳細ページの<strong>Open in VS Code</strong>を使用します。これにより、セッションに接続された[Remote - SSH](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh)拡張機能付きでVS Codeが開きます。セッションのテンプレートでworkspaceリンクが定義されている場合は、特定のフォルダーを直接開くことができます。
+
+専用の[Bitrise VS Codeプラグイン](/bitrise-rde/rde-options/bitrise-vscode-plugin)を使えば、セッションの作成と管理も行えます。
+
+## ファイルの転送 {#transferring-files}
+
+いつでも自分のマシンとセッションの間でファイルを移動できます。
+
+- CLIでは、`bitrise-cli rde session upload`と`bitrise-cli rde session download`を使用します。
+- `bitrise-cli rde claude`で起動したAIコーディングエージェントを使用している場合は、ファイルのアップロードまたはダウンロードをエージェントに依頼するだけです。詳細は[クイックスタート](/bitrise-rde/getting-started/quickstart#let-the-agent-reach-your-machine)を参照してください。

@@ -1,4 +1,5 @@
 import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
+import {translate} from '@docusaurus/Translate';
 import siteConfig from '@generated/docusaurus.config';
 
 if (ExecutionEnvironment.canUseDOM) {
@@ -61,7 +62,7 @@ if (ExecutionEnvironment.canUseDOM) {
         ) as HTMLInputElement | null;
         if (searchInput && !searchInput.dataset.handled) {
           searchInput.dataset.handled = 'true';
-          searchInput.placeholder = 'Press Enter to search';
+          searchInput.placeholder = translate({id: 'searchWidget.placeholder', message: 'Press Enter to search', description: 'Placeholder inside the search dialog'});
         }
       }
     }, 50);

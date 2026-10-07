@@ -3,6 +3,7 @@ import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import useBaseUrl from '@docusaurus/useBaseUrl';
+import {translate} from '@docusaurus/Translate';
 import {
   BitkitProvider,
 
@@ -33,124 +34,124 @@ type Section = {
 const sections: Section[] = [
   {
     id: 'bitrise-platform',
-    title: 'Bitrise as a Platform',
-    description: 'Learn the fundamentals of your Mobile DevOps platform.',
+    title: translate({id: 'portal.bitrise-platform.title', message: 'Bitrise as a Platform'}),
+    description: translate({id: 'portal.bitrise-platform.description', message: 'Learn the fundamentals of your Mobile DevOps platform.'}),
     href: '/bitrise-platform',
     icon: IconDashboard,
     iconBg: '#f6eaff',
     iconColor: '#7b3ba5',
     columns: [
       [
-        {label: 'Getting started with Bitrise', href: '/bitrise-platform/getting-started/getting-started-with-the-bitrise-platform'},
-        {label: 'Integrations', href: '/bitrise-platform/integrations/about-integrations'},
-        {label: 'Migrating from Jenkins', href: '/bitrise-ci/getting-started/migrating-to-bitrise/migrating-from-jenkins-to-bitrise'},
+        {label: translate({id: 'portal.bitrise-platform.link.getting-started-with-bitrise', message: 'Getting started with Bitrise'}), href: '/bitrise-platform/getting-started/getting-started-with-the-bitrise-platform'},
+        {label: translate({id: 'portal.bitrise-platform.link.integrations', message: 'Integrations'}), href: '/bitrise-platform/integrations/about-integrations'},
+        {label: translate({id: 'portal.bitrise-platform.link.migrating-from-jenkins', message: 'Migrating from Jenkins'}), href: '/bitrise-ci/getting-started/migrating-to-bitrise/migrating-from-jenkins-to-bitrise'},
       ],
       [
-        {label: 'Workspaces', href: '/bitrise-platform/workspaces/workspaces-overview'},
-        {label: 'Migrating from App Center', href: '/bitrise-ci/getting-started/migrating-to-bitrise/migrating-from-app-center-to-bitrise'},
-        {label: 'Bitrise AI FAQs', href: '/bitrise-platform/ai/ai-faq---how-bitrise-leverages-ai-technologies-in-its-features-and-services'},
+        {label: translate({id: 'portal.bitrise-platform.link.workspaces', message: 'Workspaces'}), href: '/bitrise-platform/workspaces/workspaces-overview'},
+        {label: translate({id: 'portal.bitrise-platform.link.migrating-from-app-center', message: 'Migrating from App Center'}), href: '/bitrise-ci/getting-started/migrating-to-bitrise/migrating-from-app-center-to-bitrise'},
+        {label: translate({id: 'portal.bitrise-platform.link.bitrise-ai-faqs', message: 'Bitrise AI FAQs'}), href: '/bitrise-platform/ai/ai-faq---how-bitrise-leverages-ai-technologies-in-its-features-and-services'},
       ],
     ],
   },
   {
     id: 'bitrise-ci',
-    title: 'Bitrise CI',
-    description: 'Automate builds and tests, and deploy your mobile apps.',
+    title: translate({id: 'portal.bitrise-ci.title', message: 'Bitrise CI'}),
+    description: translate({id: 'portal.bitrise-ci.description', message: 'Automate builds and tests, and deploy your mobile apps.'}),
     href: '/bitrise-ci',
     icon: IconCi,
     iconBg: '#ffd7c9',
     iconColor: '#d45202',
     columns: [
       [
-        {label: 'Getting started with CI', href: '/bitrise-ci/getting-started/getting-started'},
-        {label: 'Workflows and Pipelines', href: '/bitrise-ci/workflows-and-pipelines/workflows/workflows-overview'},
-        {label: 'Builds', href: '/bitrise-ci/run-and-analyze-builds/starting-builds/starting-builds-manually'},
+        {label: translate({id: 'portal.bitrise-ci.link.getting-started-with-ci', message: 'Getting started with CI'}), href: '/bitrise-ci/getting-started/getting-started'},
+        {label: translate({id: 'portal.bitrise-ci.link.workflows-and-pipelines', message: 'Workflows and Pipelines'}), href: '/bitrise-ci/workflows-and-pipelines/workflows/workflows-overview'},
+        {label: translate({id: 'portal.bitrise-ci.link.builds', message: 'Builds'}), href: '/bitrise-ci/run-and-analyze-builds/starting-builds/starting-builds-manually'},
       ],
       [
-        {label: 'Code signing', href: '/bitrise-ci/code-signing/ios-code-signing/ios-code-signing'},
-        {label: 'Testing', href: '/bitrise-ci/testing/testing-android-apps/android-unit-tests'},
-        {label: 'Bitrise API', href: '/bitrise-ci/api/authenticating-with-the-bitrise-api'},
+        {label: translate({id: 'portal.bitrise-ci.link.code-signing', message: 'Code signing'}), href: '/bitrise-ci/code-signing/ios-code-signing/ios-code-signing'},
+        {label: translate({id: 'portal.bitrise-ci.link.testing', message: 'Testing'}), href: '/bitrise-ci/testing/testing-android-apps/android-unit-tests'},
+        {label: translate({id: 'portal.bitrise-ci.link.bitrise-api', message: 'Bitrise API'}), href: '/bitrise-ci/api/authenticating-with-the-bitrise-api'},
       ],
     ],
   },
   {
     id: 'bitrise-build-cache',
-    title: 'Build Cache',
-    description: 'Speed up your builds on any CI/CD platform or in a local environment.',
+    title: translate({id: 'portal.bitrise-build-cache.title', message: 'Build Cache'}),
+    description: translate({id: 'portal.bitrise-build-cache.description', message: 'Speed up your builds on any CI/CD platform or in a local environment.'}),
     href: '/bitrise-build-cache',
     icon: IconBuildCache,
     iconBg: '#fff4cd',
     iconColor: '#b27e00',
     columns: [
       [
-        {label: 'Build Cache for Xcode', href: '/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-the-bitrise-ci-environment'},
-        {label: 'Build Cache for Gradle', href: '/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-the-bitrise-ci-environment'},
-        {label: 'Build Cache for Bazel', href: '/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-the-bitrise-ci-environment'},
+        {label: translate({id: 'portal.bitrise-build-cache.link.build-cache-for-xcode', message: 'Build Cache for Xcode'}), href: '/bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-the-bitrise-ci-environment'},
+        {label: translate({id: 'portal.bitrise-build-cache.link.build-cache-for-gradle', message: 'Build Cache for Gradle'}), href: '/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-the-bitrise-ci-environment'},
+        {label: translate({id: 'portal.bitrise-build-cache.link.build-cache-for-bazel', message: 'Build Cache for Bazel'}), href: '/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-the-bitrise-ci-environment'},
       ],
     ],
   },
   {
     id: 'release-management',
-    title: 'Release Management',
-    description: 'Test and release your mobile apps in an automated and transparent way.',
+    title: translate({id: 'portal.release-management.title', message: 'Release Management'}),
+    description: translate({id: 'portal.release-management.description', message: 'Test and release your mobile apps in an automated and transparent way.'}),
     href: '/release-management',
     icon: IconRelease,
     iconBg: '#d7f5ff',
     iconColor: '#2582d0',
     columns: [
       [
-        {label: 'Build distribution for testing', href: '/release-management/build-distribution/distributing-builds-to-testers'},
-        {label: 'Bitrise CodePush', href: '/release-management/codepush/about-codepush'},
-        {label: 'Distribution API', href: '/release-management/release-management-api'},
+        {label: translate({id: 'portal.release-management.link.build-distribution-for-testing', message: 'Build distribution for testing'}), href: '/release-management/build-distribution/distributing-builds-to-testers'},
+        {label: translate({id: 'portal.release-management.link.bitrise-codepush', message: 'Bitrise CodePush'}), href: '/release-management/codepush/about-codepush'},
+        {label: translate({id: 'portal.release-management.link.distribution-api', message: 'Distribution API'}), href: '/release-management/release-management-api'},
       ],
     ],
   },
   {
     id: 'insights',
-    title: 'Insights',
-    description: 'Explore analytics, monitor trends, and set up alerts to improve efficiency.',
+    title: translate({id: 'portal.insights.title', message: 'Insights'}),
+    description: translate({id: 'portal.insights.description', message: 'Explore analytics, monitor trends, and set up alerts to improve efficiency.'}),
     href: '/insights',
     icon: IconInsights,
     iconBg: '#dbfff3',
     iconColor: '#2a9d4c',
     columns: [
       [
-        {label: 'Metrics', href: '/insights/available-metrics-in-insights/bitrise-ci-metrics'},
-        {label: 'Alerts', href: '/insights/configuring-alerts-in-insights'},
-        {label: 'Insights tutorials', href: '/insights/insights-tutorials/monitoring-and-optimizing-your-slowest-mobile-builds'},
+        {label: translate({id: 'portal.insights.link.metrics', message: 'Metrics'}), href: '/insights/available-metrics-in-insights/bitrise-ci-metrics'},
+        {label: translate({id: 'portal.insights.link.alerts', message: 'Alerts'}), href: '/insights/configuring-alerts-in-insights'},
+        {label: translate({id: 'portal.insights.link.insights-tutorials', message: 'Insights tutorials'}), href: '/insights/insights-tutorials/monitoring-and-optimizing-your-slowest-mobile-builds'},
       ],
     ],
   },
   {
     id: 'bitrise-build-hub',
-    title: 'Build Hub',
-    description: 'Use high-performance build infrastructure for GitHub Actions, purpose-built for mobile app development.',
+    title: translate({id: 'portal.bitrise-build-hub.title', message: 'Build Hub'}),
+    description: translate({id: 'portal.bitrise-build-hub.description', message: 'Use high-performance build infrastructure for GitHub Actions, purpose-built for mobile app development.'}),
     href: '/bitrise-build-hub',
     icon: IconCpu,
     iconBg: '#efebef',
     iconColor: '#7d7184',
     columns: [
       [
-        {label: 'Build Hub overview', href: '/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview'},
-        {label: 'Creating machine pools for GitHub Actions', href: '/bitrise-build-hub/build-hub-for-github-actions/creating-machine-pools-for-github-actions'},
-        {label: 'Machine types', href: '/bitrise-build-hub/infrastructure/build-machine-types'},
+        {label: translate({id: 'portal.bitrise-build-hub.link.build-hub-overview', message: 'Build Hub overview'}), href: '/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview'},
+        {label: translate({id: 'portal.bitrise-build-hub.link.creating-machine-pools-for-github-actions', message: 'Creating machine pools for GitHub Actions'}), href: '/bitrise-build-hub/build-hub-for-github-actions/creating-machine-pools-for-github-actions'},
+        {label: translate({id: 'portal.bitrise-build-hub.link.machine-types', message: 'Machine types'}), href: '/bitrise-build-hub/infrastructure/build-machine-types'},
       ],
     ],
   },
   {
     id: 'bitrise-rde',
-    title: 'Remote Dev Environments',
-    description: 'Spin up on-demand macOS and Linux cloud dev machines, and connect from your terminal, IDE, or AI agent.',
+    title: translate({id: 'portal.bitrise-rde.title', message: 'Remote Dev Environments'}),
+    description: translate({id: 'portal.bitrise-rde.description', message: 'Spin up on-demand macOS and Linux cloud dev machines, and connect from your terminal, IDE, or AI agent.'}),
     href: '/bitrise-rde',
     icon: IconRemoteAccess,
     iconBg: '#e6e9ff',
     iconColor: '#3f51d4',
     columns: [
       [
-        {label: 'Remote Dev Environments overview', href: '/bitrise-rde/getting-started/remote-dev-environments-overview'},
-        {label: 'Quickstart', href: '/bitrise-rde/getting-started/quickstart'},
-        {label: 'Bitrise RDE CLI', href: '/bitrise-rde/rde-options/bitrise-rde-cli'},
-        {label: 'RDE API', href: '/bitrise-rde/configuration/rde-api'},
+        {label: translate({id: 'portal.bitrise-rde.link.remote-dev-environments-overview', message: 'Remote Dev Environments overview'}), href: '/bitrise-rde/getting-started/remote-dev-environments-overview'},
+        {label: translate({id: 'portal.bitrise-rde.link.quickstart', message: 'Quickstart'}), href: '/bitrise-rde/getting-started/quickstart'},
+        {label: translate({id: 'portal.bitrise-rde.link.bitrise-rde-cli', message: 'Bitrise RDE CLI'}), href: '/bitrise-rde/rde-options/bitrise-rde-cli'},
+        {label: translate({id: 'portal.bitrise-rde.link.rde-api', message: 'RDE API'}), href: '/bitrise-rde/configuration/rde-api'},
       ],
     ],
   },
@@ -188,7 +189,7 @@ function ProductCard({section}: {section: Section}) {
 
         <div className={styles.cardFooter}>
           <hr className={styles.cardDivider} />
-          <Link to={section.href} className={styles.viewAllLink}>View all</Link>
+          <Link to={section.href} className={styles.viewAllLink}>{translate({id: 'portal.viewAll', message: 'View all'})}</Link>
         </div>
       </div>
     </div>
@@ -200,16 +201,16 @@ export default function Home(): React.JSX.Element {
   const heroIllustrationSrc = useBaseUrl('/img/brand/portal-header-illustration.png');
 
   return (
-    <Layout title="Home" description={siteConfig.tagline}>
+    <Layout title={translate({id: 'portal.pageTitle', message: 'Home'})} description={siteConfig.tagline}>
       <BitkitProvider>
         <div className={styles.page}>
           {/* Purple hero */}
           <div className={styles.hero}>
             <div className={styles.heroContent}>
               <div className={styles.titleBlock}>
-                <h1 className={styles.heroTitle}>Welcome to Bitrise Documentation</h1>
+                <h1 className={styles.heroTitle}>{translate({id: 'portal.hero.title', message: 'Welcome to Bitrise Documentation'})}</h1>
                 <p className={styles.heroSubtitle}>
-                  Find product documentation, code samples, API &amp; CLI references, and more.
+                  {translate({id: 'portal.hero.subtitle', message: 'Find product documentation, code samples, API & CLI references, and more.'})}
                 </p>
               </div>
               <div className={styles.heroSearch}>
@@ -220,7 +221,7 @@ export default function Home(): React.JSX.Element {
                   <input
                     className={styles.heroSearchInput}
                     type="text"
-                    placeholder="Search all documentation"
+                    placeholder={translate({id: 'portal.hero.searchPlaceholder', message: 'Search all documentation'})}
                     id="searchWidgetTrigger"
                     readOnly
                   />
@@ -238,10 +239,10 @@ export default function Home(): React.JSX.Element {
           <div className={styles.tagline}>
             <div className={styles.taglineInner}>
               <h2 className={styles.taglineHeading}>
-                Learn how to use Bitrise, the Mobile DevOps Platform tailored for mobile engineering teams
+                {translate({id: 'portal.tagline.heading', message: 'Learn how to use Bitrise, the Mobile DevOps Platform tailored for mobile engineering teams'})}
               </h2>
               <p className={styles.taglineText}>
-                Bitrise&apos;s Mobile DevOps Platform equips you for success every step of the way, from planning to monitoring.
+                {translate({id: 'portal.tagline.text', message: 'Bitrise\'s Mobile DevOps Platform equips you for success every step of the way, from planning to monitoring.'})}
               </p>
             </div>
           </div>

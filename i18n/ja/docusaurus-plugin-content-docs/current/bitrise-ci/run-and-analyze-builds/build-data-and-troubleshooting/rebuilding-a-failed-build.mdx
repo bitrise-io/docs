@@ -1,0 +1,72 @@
+---
+title: "失敗したビルドの再ビルド"
+description: "Bitriseのビルドが失敗した場合は、いつでも再ビルドしてエラーから素早く復旧できます。単一のWorkflows、またはPipeline全体を再ビルドできます。"
+sidebar_position: 2
+slug: /bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/rebuilding-a-failed-build
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+ビルドが失敗した場合は、いつでも再ビルドしてエラーからすばやく復旧できます。単一の<GlossTerm baseform="Workflow">Workflows</GlossTerm>、または<GlossTerm baseform="Pipeline">Pipeline</GlossTerm>全体を再ビルドできます。再ビルドでは常に現在の<GlossTerm baseform="bitrise.yml">設定 YAML</GlossTerm>ファイルが使用されます。ビルドが失敗した後に設定を変更してから再ビルドすると、再ビルドは新しい設定で実行されます。
+
+
+## 失敗したWorkflowビルドの再実行 {#rerunning-a-failed-workflow-build}
+
+失敗したWorkflowはいつでも再ビルドできます。再ビルドとは、現在の<GlossTerm baseform="configuration yaml">設定 YAML</GlossTerm>ファイルを使用して新しいビルドをすぐに開始することです。
+
+1. Bitrise CIを開き、プロジェクトのビルドページを見つけます。
+1. 右上隅にある<strong>Rebuild</strong>をクリックします。
+
+   :::tip[リモートアクセス]
+
+   リモートアクセスを使用して再ビルドすることもできます。下向き矢印をクリックしてドロップダウンメニューを開き、<strong>Rebuild with Remote Access</strong>をクリックします。詳しくは、[リモートアクセス](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/remote-access)をご覧ください。
+
+   :::
+
+
+## 失敗したPipelineの再ビルド {#rebuilding-a-failed-pipeline}
+
+Pipeline全体、またはその一部をいつでも再ビルドできます。ビルドの実行中、PipelineのビルドページにはPipeline内のすべてのWorkflowのステータスが表示されます。Workflowが失敗した場合は、Pipeline全体ではなく失敗したWorkflowのみを再実行することで時間を節約できます。
+
+:::important[部分的な再実行の期限]
+
+部分的なパイプラインの再実行は、元のパイプライン実行から30日間利用できます。完全な再実行はいつでも実行できます。
+
+:::
+
+### 失敗したPipelineの再ビルド {#rebuilding-a-failed-pipeline-1}
+
+Pipeline全体、または失敗したWorkflowsのみを、ボタン1つで再ビルドできます。
+
+1. Bitrise CIを開きます。
+1. プロジェクトの完了したPipelineビルドをクリックします。
+1. Pipelineのサマリー画面で<strong>Rebuild</strong>をクリックして、再ビルドのドロップダウンメニューを表示します。
+1. Select an option:
+
+   - <strong>Rebuild unsuccessful Workflows</strong>: このオプションでは、失敗したWorkflowsのみが再ビルドされます。`parallel`プロパティを使用するバリアントWorkflowsでは、このオプションを使用できない場合があります: [異なるWorkflowバリアントを使用するPipelinesの再ビルド](#rebuilding-pipelines-using-different-workflow-variants)。
+   - <strong>Rebuild Pipeline全体</strong>: このオプションでは、Pipeline全体を最初から最後まで再ビルドします。
+   - <strong>Rebuild unsuccessful Workflows with remote access</strong>: リモートアクセスを使用すると、ビルドの実行中にbuild machineへリモートでアクセスできます。詳しくは、[リモートアクセス](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/remote-access)をご覧ください。
+   - <strong>Rebuild entire Pipeline with remote access</strong>: 上記を参照してください。
+
+### 失敗したWorkflowからPipelineを再ビルドする {#rebuilding-a-pipeline-from-a-failed-workflow}
+
+特定の失敗したWorkflowからPipelineを再ビルドできます。これにより、Pipeline内で失敗したWorkflowより後にあるすべてのWorkflowsが再ビルドされます。
+
+`parallel`プロパティを使用するバリアントWorkflowsでは、このオプションを使用できない場合があります: [異なるWorkflowバリアントを使用するPipelinesの再ビルド](#rebuilding-pipelines-using-different-workflow-variants)。
+
+1. Bitrise CIを開きます。
+1. プロジェクトの完了したPipelineビルドをクリックします。
+1. Pipelineのグラフまでスクロールダウンします。
+1. 失敗したWorkflowを見つけて、カードの右側にカーソルを合わせます。
+1. <strong>Rebuild from here</strong>ボタンをクリックします。
+
+### 異なるWorkflowバリアントを使用するPipelinesの再ビルド {#rebuilding-pipelines-using-different-workflow-variants}
+
+Pipelinesが`parallel`プロパティを使用して[同じWorkflowの異なるバリアントを使用する](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow)場合、使用可能な再ビルドオプションは、並列実行数を定義する環境変数によって異なります。
+
+- 並列実行数を設定するWorkflowが失敗したビルド中にすでに完了している場合は、Pipeline全体を再ビルドする必要があります。
+- ビルド中にまだ数値が設定されていない場合は、部分的な再ビルドを使用できます。失敗したWorkflowから再ビルドするか、失敗したすべてのWorkflowsを再ビルドします。
+
+これは、再ビルドが元のビルドと同じPipeline設定で実行される場合にのみ、Bitriseが部分的な再ビルドを許可するためです。2つのPipeline設定は、Workflowsの数が同じで、Workflowsの名前が同じであれば同一とみなされます。並列数が設定されている場合、再ビルド時にその数値が同じになるかどうかをBitriseが把握する方法はありません。数値が異なる場合、2つのWorkflow設定も異なるため、完全な再ビルドしか選択肢がありません。

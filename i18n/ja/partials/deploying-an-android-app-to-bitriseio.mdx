@@ -1,0 +1,86 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Androidアプリを bitrise.io にデプロイする {#deploying-an-android-app-to-bitriseio}
+
+このセクションでは、Android <GlossTerm baseform="Project">プロジェクト</GlossTerm>を [bitrise.io](https://www.bitrise.io/) にデプロイする方法を説明します。
+
+[bitrise.io](https://www.bitrise.io) にデプロイすると、ビルド中に生成されたビルドアーティファクトを、ビルドの完了後にダウンロードできるようになります。たとえば、これを利用して、Androidアプリを自分のテストデバイスでテストできます。
+
+アプリを [bitrise.io](https://www.bitrise.io/) にデプロイするには、次の手順を実行します。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. <GlossTerm baseform="Workflow">Workflow</GlossTerm>に、アプリをビルドするための <strong>[Android Build](https://www.bitrise.io/integrations/steps/android-build)</strong> <GlossTerm baseform="Step">Step</GlossTerm>が含まれていることを確認します。
+
+   必要に応じて、<strong>[Gradle Runner](https://www.bitrise.io/integrations/steps/gradle-runner)</strong> Stepでアプリをビルドすることもできます。この場合は追加の設定が少し必要になりますが、より幅広いカスタマイズが可能です。
+1. <strong>[Deploy to Bitrise.io](https://www.bitrise.io/integrations/steps/deploy-to-bitrise-io)</strong> Stepを Workflowに追加します。
+
+   :::tip[他のユーザーへの通知]
+
+   Stepの <strong>Notify: User Roles</strong> 入力と <strong>Notify: Emails</strong> 入力を使用して、デプロイに関する通知を設定できます。入力名をクリックすると、設定方法の詳細が表示されます。
+
+   :::
+1. 必要に応じて、Stepの <strong>Enable public page for the App?</strong> 入力を <strong>true</strong> に設定すると、Stepがアプリの[公開インストールページを有効化](/bitrise-ci/deploying/bitrise-ota-app-deployment#deploying-with-the-deploy-to-bitriseio-step)します。
+1. ビルドを実行します。
+
+</TabItem>
+<TabItem value="bitriseyml" label="Configuration YAML">
+
+1. アプリの `bitrise.yml` ファイルを開きます。
+1. Workflowに、アプリをビルドするための `android-build` Stepが含まれていることを確認します。
+
+   ```yaml
+   workflows:
+     example-workflow:
+       steps:
+       - android-build@1:
+   ```
+
+   必要に応じて、`gradle-runner` Stepでアプリをビルドすることもできます。この場合は追加の設定が少し必要になりますが、より幅広いカスタマイズが可能です。
+1. `module` 入力や `variant` 入力を設定して、Stepに何をビルドするかを指定します。
+
+   この例では、Androidプロジェクトのデバッグバリアントをビルドしています。
+
+   ```yaml
+   workflows:
+     example-workflow:
+       steps:
+       - android-build@1:
+           inputs:
+           - variant: debug
+       - deploy-to-bitrise-io: {}
+   ```
+1. `deploy-to-bitrise-io` Stepを Workflowに追加します。
+
+   ```yaml
+   workflows:
+     example-workflow:
+       steps:
+       - android-build@1:
+           inputs:
+           - variant: debug
+       - deploy-to-bitrise-io: {}
+   ```
+
+   :::tip[他のユーザーへの通知]
+
+   Stepの `notify_user_groups` 入力と `notify_email_list` 入力を使用して、デプロイに関する通知を設定できます。
+
+   - `notify_user_groups` 入力では、ユーザーに付与された[アクセスロール](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)に基づいて通知を送信できます。たとえば、<strong>Admin</strong> ロールと <strong>Developer</strong> ロールを持つすべてのユーザーに通知するよう設定できます。複数のロールを指定する場合は、カンマで区切ります: `- notify_user_groups: admins, testers`
+   - `notify_email_list` 入力は <GlossTerm baseform="secret">Secrets</GlossTerm>のみを受け付けます。また、Secret にはメールアドレスをカンマ区切りで指定する必要があります。
+
+   :::
+1. 必要に応じて、Stepの <strong>Enable public page for the App?</strong> 入力を <strong>true</strong> に設定すると、Stepがアプリの[公開インストールページを有効化](/bitrise-ci/deploying/bitrise-ota-app-deployment#deploying-with-the-deploy-to-bitriseio-step)します。
+1. ビルドを実行します。
+
+</TabItem>
+</Tabs>
+
+<strong>Deploy to Bitrise.io</strong> Stepがアプリをデプロイします。生成されたバイナリは、ビルドの URL を使用してチームメンバーと共有できます。
+
+<strong><GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>: Androidアプリを Bitrise にデプロイする</strong>
+
+この例では、Androidアプリの `debug` バリアントをビルドし、bitrise.io にデプロイします。

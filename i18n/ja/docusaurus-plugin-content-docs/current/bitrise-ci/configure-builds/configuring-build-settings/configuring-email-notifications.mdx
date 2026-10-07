@@ -1,0 +1,98 @@
+---
+title: "メール通知の設定"
+description: "Bitriseの組み込みメール通知システムは、アプリの担当に割り当てられたすべてのユーザーに、ビルドに関するメールを送信します。メールはビルドの完了時に送信され、成功したビルドと失敗したビルドのそれぞれについて設定できます。"
+sidebar_position: 6
+slug: /bitrise-ci/configure-builds/configuring-build-settings/configuring-email-notifications
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/i18n/ja/partials/getting-to-the-project-settings-page.mdx';
+
+通知は、Bitrise上でのアクティビティに関する更新情報です。通常はビルドの状態に関するものですが、それ以外にもさまざまな種類の通知を受け取ることができます。
+
+組み込みのメール通知システムは、アプリケーションの作業担当者として割り当てられているすべてのユーザーに、ビルドに関するメールを送信します。メールはビルドが完了した際に送信され、ビルド成功時と失敗時の両方について設定できます。
+
+:::important[アプリのウォッチ]
+
+自動メールを受け取るには、[アプリをウォッチしている必要があります](/bitrise-ci/configure-builds/configuring-build-settings/configuring-email-notifications#watching-a-project)。ウォッチをオフにすると、自動メールは届かなくなります。
+
+:::
+
+メール通知は、アプリケーションを最初に作成する際に自動的に設定されますが、通知設定はいつでも変更できます: [メール通知設定の変更](#changing-your-email-notification-settings)
+
+別の方法として、専用の<GlossTerm baseform="Step">Step</GlossTerm>を使用してメールを送信することもできます。この方法では、通知についてさらに多くのカスタマイズが可能です: [Stepを使用したメール送信](#sending-emails-with-a-step)
+
+
+## プロジェクトのウォッチ {#watching-a-project}
+
+Bitrise<GlossTerm baseform="project">プロジェクト</GlossTerm>をウォッチすると、そのプロジェクトのメール通知を受け取れるようになります。プロジェクトのウォッチをオフにすると、自動通知は届かなくなります。
+
+ウォッチを有効にするには:
+
+1. [Bitrise CI](https://app.bitrise.io/ci)を開きます。
+1. 右側のプロジェクトリストから、対象のプロジェクトを選択します。
+1. 左側で<strong>Watching</strong>を切り替えます。
+
+   ![watching-app.png](/img/_paligo/uuid-ed3b91d2-8138-ca73-f9f2-048ab808f5ca.png)
+
+
+## メール通知設定の変更 {#changing-your-email-notification-settings}
+
+メール通知は、プロジェクトを最初に作成する際に自動的に設定されます。ビルド成功時とビルド失敗時のそれぞれについて、次の3つの設定を選択できます。
+
+- <strong>常に</strong>。これはビルド失敗時のデフォルト設定です。
+- <strong>Never</strong>。
+- <strong>同一ブランチでビルドステータスが変化したときにメールを送信</strong>。これはビルド成功時のデフォルト設定です。つまり、ビルド#1とビルド#2がともに成功した場合、ビルド#2についての通知は届きません。ただし、ビルド#3が失敗し、その後ビルド#4が再度成功した場合は通知されます。
+
+メール通知設定はいつでも変更でき、完全に無効にすることもできます。
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で<strong>Notifications</strong>を選択します。
+1. 下にスクロールしてメール通知の項目を表示します。
+
+   ![notifications.png](/img/_paligo/uuid-c56aac7c-384f-7b63-c38e-216a32143c86.png)
+1. ビルド成功時とビルド失敗時それぞれについて、該当するドロップダウンメニューから必要な設定を選択します。
+
+   たとえば、通知の受信を無効にしたい場合は、両方のオプションを<strong>Never</strong>に設定します。
+
+
+## Stepを使用したメール送信 {#sending-emails-with-a-step}
+
+<strong>Send Email with Mailgun</strong> Stepを使用すると、HTML形式またはプレーンテキスト形式でカスタマイズした内容のメールを、任意のメールアドレスに送信できます。environment variablesを使用して情報を送信したり、メールにファイルを添付したりすることもできます。
+
+Stepを使用するには、次のものが必要です。
+
+- Mailgunアカウント。
+- MailgunのAPIキー。
+- Mailgunのドメイン名。
+
+:::important[Stepが必ず毎回のビルドで実行されるようにしてください]
+
+ワークフローで<strong>Send Email with Mailgun</strong> Stepを使用する場合は、[前のStepが失敗した場合でも必ず実行されるように設定してください](/bitrise-ci/workflows-and-pipelines/steps/skipping-steps)！これはStepのデフォルト設定です。この設定を変更すると、ビルドが失敗した場合にメールを受信できなくなります。
+
+:::
+
+1. MailgunのAPIキーを保持する<GlossTerm baseform="secret">Secret</GlossTerm>環境変数を作成します。
+
+   キー名には`$MAILGUN_API_KEY`を使用することをお勧めします。これはStepの該当する入力のdefault valueです。
+1. Mailgunのドメインを保持するSecret環境変数を作成します。
+
+   キー名には`$MAILGUN_DOMAIN`を使用することをお勧めします。これはStepの該当する入力のdefault valueです。
+1. ワークフローの最後に<strong>Send Email with Mailgun</strong> Stepを追加します。
+1. Stepの<strong>Send To emails</strong>入力を見つけます。その入力をクリックし、<strong>Select secret variable</strong>をクリックします。
+1. メールアドレスのリストを含む新しいSecret環境変数を作成します。
+
+   キー名は任意のものを選択できます。アドレスはカンマで区切ります。
+
+   ![Configuring_notifications.png](/img/_paligo/uuid-a7bfa471-3a28-7bb4-0335-cffbacb0bd8a.png)
+1. メールの件名と、2種類のメール本文(ビルド成功時用とビルド失敗時用)を設定します。
+
+   - 件名や本文などの入力項目にはenvironment variablesを挿入できます。メールには変数の値が表示されます。
+   - デフォルトのメッセージには、アプリ名、ビルド番号、およびビルドが成功したか失敗したかが送信されます。
+1. 必要に応じてファイルを添付します。<strong>File attachments</strong>入力には、ファイルパスまたは環境変数を指定できます。
+
+   複数のファイルを添付する場合は、パスをカンマで区切ります。
+
+ビルドを実行して、メールを確認しましょう！

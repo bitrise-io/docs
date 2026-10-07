@@ -1,0 +1,30 @@
+---
+title: "ビルドステータス"
+description: "Buildsページでは、すべてのビルドの現在のステータスを確認できます。ビルドステータスは、保留中(on hold)、開始中(starting)、実行中(running)、中止(aborted)、失敗(failed)、成功(success)の6種類です。"
+sidebar_position: 4
+slug: /bitrise-ci/run-and-analyze-builds/build-statuses
+---
+プロジェクトの <strong>Builds</strong> ページでは、すべてのビルドの現在のステータスを確認できます。ビルドステータスは6種類あります。
+
+- <strong>On hold</strong>: your current planで許可されている数よりも多くのビルドが開始されています。ほとんどの場合、これはレガシーの同時実行数ベースのプランにのみ関係します。別のビルドを開始するのに十分な同時実行数がないことを意味します。
+
+  :::note[Time limit]
+
+  保留中のビルドはすべて、ビルドが永久に停止したままにならないよう、30日後に中止されます。
+
+  :::
+- <strong>Starting</strong>: ビルドがトリガーされると、Bitriseはビルドを実行する仮想マシンを作成します。コンピューティングリソースがすぐに利用できない場合、ビルドはキューに入れられます。ワーカーが利用可能になると、仮想マシンの作成を割り当てられたワーカーがビルドリクエストを処理します。
+- <strong>Running</strong>: 仮想マシンの準備が整うと、ビルドの実行が始まります。これは、Workflowで定義されたすべてのStepsをBitriseが実行している状態を意味します。
+- <strong>Aborted</strong>: ビルドは、ユーザーが手動で中止するか、[Rolling builds機能](/bitrise-ci/configure-builds/configuring-build-settings/rolling-builds)またはビルド時間の上限に達したことで自動的に中止されます。
+
+  :::note[Aborted with success]
+
+  Aborted with success という特別なステータスがあります。これは、APIまたはBitrise CLIでビルドが中止されたものの、Git ホスティングプロバイダーには成功として報告されることを意味します。
+
+  abort_with_success パラメーターを[Bitrise API コールでビルドを中止する](/bitrise-ci/api/triggering-and-aborting-builds#aborting-a-build)際に使用すると、ビルドを中止しつつ、成功したビルドとして扱えます。Bitrise CLIでは、`bitrise build abort BUILD-SLUG --app APP-SLUG --abort-with-success`を実行します。詳しくは、[ビルドの中止](/bitrise-ci/bitrise-cli/managing-builds-with-the-bitrise-cli#aborting-a-build)をご覧ください。
+
+  :::
+- <strong>Failed</strong>: ほとんどの場合、いずれかのStepsが失敗すると、ビルドは失敗します。例外として、[キャッシュSteps](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching)などがあります。また、[Stepsをスキップ可能として設定](https://support.bitrise.io/hc/en-us/articles/4405252562577)すると、失敗してもビルドは実行され続けます。
+- <strong>Success</strong>: スキップ可能として設定されていないすべてのStepsをBitriseが正常に実行すると、ビルドは成功としてマークされます。
+
+ビルドステータスは、プロジェクトの <strong>Builds</strong> ページでいつでも確認でき、ステータスレポートも送信できます。詳しくは、[Git ホスティングプロバイダーへのビルドステータスの報告](/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider)をご覧ください。

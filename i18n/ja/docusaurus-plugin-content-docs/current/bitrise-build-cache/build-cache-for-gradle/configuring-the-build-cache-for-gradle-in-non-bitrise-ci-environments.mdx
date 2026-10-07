@@ -1,0 +1,50 @@
+---
+title: "非Bitrise CI環境でのBuild Cache for Gradleの設定"
+sidebar_position: 3
+slug: /bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-non-bitrise-ci-environments
+---
+
+import Partial_BuildCacheNonBitriseCiToken from '@site/i18n/ja/partials/build-cache-non-bitrise-ci-token.mdx';
+
+Bitrise Build Cache では、Bitrise CI を使用する必要はありません。他の CI/CD サービスを使用しながら、キャッシュを活用して Gradle ビルド時間を短縮できます。
+
+そのためには、ビルド中に Bitrise Build Cache CLI をダウンロードするよう CI 環境を設定し、続いて CLI を実行して Bitrise Build Cache を有効にします。
+
+手動で手順を進める代わりに、AIコーディングエージェントを使用してセットアップすることもできます。[Getting started with AI](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai) を参照してください。
+
+:::tip[GitHub Actions の使用]
+
+GitHub Actions のワークフロー例を掲載した専用ガイドがあります。[Configuring the Build Cache for Gradle in GitHub Actions](/bitrise-build-cache/build-cache-for-gradle/configuring-the-build-cache-for-gradle-in-github-actions) を参照してください。
+
+:::
+
+<Partial_BuildCacheNonBitriseCiToken />
+
+## キャッシュの設定 {#configuring-the-cache}
+
+1. [workspace API トークン](/bitrise-platform/workspaces/workspace-api-token) を作成し、その値をコピーします。
+
+   トークンには、少なくとも <strong>viewer</strong> workspace ロールを付与してください。これは Build Cache にアクセスできる最も低いロールです。
+1. [workspace のスラッグを取得します](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs)。<strong>Workspace settings</strong> ページを開き、左側のナビゲーションメニューで <strong>General settings</strong> を選択します。
+1. CI の設定に、次の Environment Variables を設定します。
+
+   - `BITRISE_BUILD_CACHE_AUTH_TOKEN`: workspace API トークン。
+   - `BITRISE_BUILD_CACHE_WORKSPACE_ID`: Bitrise workspace スラッグ。
+1. 高速化したいステップの前に、CI の設定へ次のスクリプトを追加します。
+
+   :::important[環境]
+
+   高速化したい Gradle コマンドと同じ環境でスクリプトを実行してください。たとえば、ビルド全体で複数の Docker コンテナーを使用する場合は、Bitrise Build Cache CLI が、その Gradle コマンドと同じ Docker コンテナーで実行されるようにしてください。
+
+   :::
+
+   ```bash
+   #!/usr/bin/env bash
+   set -euxo pipefail
+
+   # download Bitrise Build Cache CLI
+   curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+
+   # run the CLI to enable Bitrise build cache for Gradle
+   /tmp/bin/bitrise-build-cache activate gradle --cache --cache-push
+   ```

@@ -1,0 +1,113 @@
+---
+title: "Bitrise CLIの設定"
+description: "プロジェクト、Workspace、出力形式など、Bitrise CLIのdefault valueを、グローバル設定ファイルまたはディレクトリごとの.bitrise-cli.ymlファイルに保存し、bitrise configコマンドで管理します。"
+sidebar_position: 4
+slug: /bitrise-ci/bitrise-cli/configuring-the-bitrise-cli
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitrise CLIは設定ファイルからdefault valueを読み取るため、すべてのコマンドに同じフラグを毎回渡す必要はありません。たとえば、リポジトリが属する<GlossTerm baseform="project">project</GlossTerm>を保存したり、すべてのコマンドでJSONを出力するように設定したりできます。
+
+:::important[Bitrise CLI 3.0.0 以降]
+
+このページのコマンドと設定キーには、`bitrise config` Bitrise CLI 3.0.0 以降が必要です。更新するには、`bitrise update`を実行してください。
+
+:::
+
+## 設定ファイルの場所 {#configuration-file-locations}
+
+CLIは、最大3つのファイルから設定を読み取ります。優先順位は高い順に次のとおりです。
+
+1. レガシー設定ファイル `~/.bitrise/config.json`。[レガシー設定ファイル](#the-legacy-config-file)を参照してください。
+1. ディレクトリごとの設定ファイル `.bitrise-cli.yml`。CLIは、カレントディレクトリから順に各親ディレクトリを探し、最初に見つかったものを使用します。
+1. グローバル設定ファイル `~/.config/bitrise/cli/config.yml`。`~/.config`以外の場所から読み取る場合は、`$XDG_CONFIG_HOME`を設定してください。場所を確認するには、`bitrise config path`を実行します。
+
+いずれのファイルにも値が設定されていない場合、CLIは組み込みのデフォルト値を使用します。
+
+フラグとEnvironment Variablesは、すべての設定ファイルより優先されます。たとえば、CLIは次の順序でコマンドのプロジェクトを決定します。
+
+1. `--app`フラグ。
+1. `BITRISE_APP_ID` Environment Variable、次に`BITRISE_APP_SLUG`。
+1. `.bitrise-cli.yml`ファイルの`app_id`キー。
+1. グローバル設定ファイルの`app_id`キー。
+
+`~/.config`(`$XDG_CONFIG_HOME`を設定している場合はそちら)が書き込み可能であることを確認してください。書き込みできないと、`bitrise local setup`やプラグインのコマンドが失敗することがあります。
+
+## 設定キー {#config-keys}
+
+| キー | 設定内容 | Environment Variable | デフォルト |
+| --- | --- | --- | --- |
+| `app_id` | `--app`を渡さない場合にコマンドが対象とするプロジェクト。 | `BITRISE_APP_ID`、`BITRISE_APP_SLUG` | なし |
+| `default_workspace_id` | `--workspace`を渡さない場合にコマンドが対象とする<GlossTerm baseform="workspace">Workspace</GlossTerm>。 | `BITRISE_WORKSPACE_ID` | 1つだけある場合はそのWorkspace |
+| `output` | [出力形式](/bitrise-ci/bitrise-cli/bitrise-cli-overview#output-formats): `raw`、`json`、`yml`のいずれか。 | `BITRISE_OUTPUT` | `raw` |
+| `theme` | カラーテーマ: `auto`、`dark`、`light`、`none`のいずれか。 | `BITRISE_CLI_THEME` | `auto` |
+| `api_base_url` | Bitrise APIホスト。 | `BITRISE_API_BASE_URL` | `https://api.bitrise.io/v0.1` |
+| `web_base_url` | Bitrise websiteホスト。メールアドレスとパスワードでのログインや、`bitrise app view --web`でのプロジェクトの表示に使用されます。 | `BITRISE_WEB_BASE_URL` | `https://app.bitrise.io` |
+| `rde_api_base_url` | Remote Dev Environment APIホスト。 | `BITRISE_RDE_API_BASE_URL` | `https://api.bitrise.io/rde` |
+
+Bitriseビルド内では、`BITRISE_APP_SLUG`と`BITRISE_WORKSPACE_ID`が常に設定されるため、フラグを渡さない限り、コマンドはそのビルド自身のプロジェクトとWorkspaceを対象に動作します。
+
+アクセストークンは設定キーではなく、別のファイルに保存されます。[Authenticating with the Bitrise CLI](/bitrise-ci/bitrise-cli/authenticating-with-the-bitrise-cli)を参照してください。
+
+### ベースURL {#base-urls}
+
+設定の優先順位には3つの例外があります。ベースURLを定義するキーは、グローバル設定ファイルでのみ設定できます。CLIは、`.bitrise-cli.yml`ファイル内のこれらのキーを無視します。
+
+- `api_base_url`
+- `web_base_url`
+- `rde_api_base_url`
+
+対応するEnvironment Variablesは、グローバル設定ファイルよりも優先されます。
+
+- `BITRISE_API_BASE_URL`
+- `BITRISE_WEB_BASE_URL`
+- `BITRISE_RDE_API_BASE_URL`
+
+3つとも、CLIが認証情報の送信先とするホストを設定するものです。また、CLIは、確認なしに任意の親ディレクトリの`.bitrise-cli.yml`を読み取ります。これらのキーをそこから読み取る場合、クローンしただけのリポジトリによって、ログインが制御できないサーバーにリダイレクトされるおそれがあります。
+
+## グローバル設定ファイルの管理 {#managing-the-global-config-file}
+
+グローバル設定ファイルの読み取りと書き込みには、`bitrise config`コマンドを使用します。
+
+| コマンド | 動作 |
+| --- | --- |
+| `bitrise config set KEY VALUE` | キーを設定します。 |
+| `bitrise config get KEY` | キーの値を出力します。 |
+| `bitrise config unset KEY` | キーを削除します。 |
+| `bitrise config list` | ファイルに保存されているすべてのキーを出力します。`--format json`または`--format yml`を指定できます。 |
+| `bitrise config path` | ファイルの場所を出力します。 |
+
+たとえば、`my-app-id`をデフォルトのプロジェクトにするには、次のようにします。
+
+```bash
+bitrise config set app_id my-app-id
+```
+
+:::note
+
+`bitrise app create`は、新しいプロジェクトのIDも`app_id`として保存します。
+
+:::
+
+`bitrise config list`が表示するのは、グローバル設定ファイルに保存されている内容のみです。コマンドの実行時には、フラグ、Environment Variables、`.bitrise-cli.yml`ファイルによってこれらの値が上書きされることがあります。
+
+## リポジトリをプロジェクトに固定する {#pinning-a-repository-to-a-project}
+
+リポジトリのルートに`.bitrise-cli.yml`ファイルを追加すると、そのリポジトリ内で実行するすべてのコマンドに対して、プロジェクトとworkspaceを設定できます。`bitrise config`コマンドはこのファイルを書き込まないため、手動で作成してください。
+
+```yaml
+app_id: my-app-id
+default_workspace_id: my-workspace-id
+```
+
+これで、リポジトリ内のどこで実行しても、`bitrise build list`や`bitrise yml get`は、`--app`フラグなしで`my-app-id`を対象に動作します。
+
+`app_id`と`default_workspace_id`のほかに、このファイルでは`output`と`theme`も設定できます。[ベースURL](#base-urls)は設定できません。
+
+## レガシー設定ファイル {#the-legacy-config-file}
+
+3.0.0より前のBitrise CLIのバージョンは、設定を`~/.bitrise/config.json`に保存していました。このファイルには内部状態のみが含まれます。最後の`bitrise local setup`のバージョンと、CLIが自身およびプラグインの更新を最後に確認した日時です。編集する必要はありません。
+
+このファイルが存在する場合、CLIはそれを引き続き読み取り、その値が優先されます。CLIがこれらの値のいずれかを更新するときは、`config.json`と`config.yml`の両方に書き込みます。新規インストールでは、`config.json`は作成されません。

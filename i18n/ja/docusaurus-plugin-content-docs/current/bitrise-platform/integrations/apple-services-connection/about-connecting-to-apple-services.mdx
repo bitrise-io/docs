@@ -1,0 +1,118 @@
+---
+title: "Appleサービスへの接続について"
+description: "iOSのcode signingとデプロイを管理するために、APIキー認証またはApple ID認証のいずれかを使って、BitriseビルドをAppleサービスに接続します。"
+sidebar_position: 1
+slug: /bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+[Bitrise CI](/bitrise-ci)と[Release Management](/release-management)は、どちらもAppleのオンラインサービスを必要とするMobile DevOpsプロセスの自動化に役立ちます。Apple Developer PortalやApp Store Connectなどのこれらのサービスに接続するには、Bitriseに認証データを提供し、プロジェクトに合わせて確立された認証方法を選択する必要があります。
+
+Appleの公式APIキー、またはApple IDとパスワードで認証できます。
+
+
+## Appleの二要素認証要件 {#apple-two-factor-authentication-requirements}
+
+Appleの[二要素認証](https://developer.apple.com/support/authentication/)（2FA）は、Appleアカウントに追加のセキュリティレイヤーを提供します。
+
+これまでAPIキーで認証していた場合、この二要素認証の要件による影響はありません。
+
+ただし、Apple IDとパスワードで認証しており、[新しい2FAの要件](https://developer.apple.com/support/authentication/)の対象となる場合は、Bitriseプロファイルの<strong>Connected accounts</strong>ページでApple Developer Accountを再接続する必要があります。また、二要素認証（二段階認証）コードとapp-specific passwordの入力も必要です。app-specific passwordの生成方法については、[公式のAppleドキュメント](https://support.apple.com/en-us/HT204397)を参照してください。
+
+
+## Apple Developer accountへの接続が必要なSteps {#steps-that-require-connecting-to-your-apple-developer-account}
+
+以下のStepsは、Appleサービス（App Store ConnectやApple Developer Portalなど）への接続が必要です。これらのStepsのいずれかを使用している場合は、適切な方法で接続を確立してください。
+
+| Steps | Connection type |
+| --- | --- |
+| Manage iOS Code Signing | APIキー認証、Apple ID認証、Step inputs経由のAPIキー認証 |
+| Xcode Archive & Export for iOS | APIキー認証、Apple ID認証、Step inputs経由のAPIキー認証 |
+| iOSおよびtvOSのXcode archiveのエクスポート | APIキー認証、Apple ID認証、Step inputs経由のAPIキー認証 |
+| Xcode Build for testing for iOS | APIキー認証、Apple ID認証、Step inputs経由のAPIキー認証 |
+| fastlane | APIキー認証、Apple ID認証、Step inputs経由のAPIキーまたはApple ID認証 |
+| Deliverを使用したDeploy to App Store Connect（旧iTunes Connect） | APIキー認証、Apple ID認証、Step inputs経由のAPIキーまたはApple ID認証 |
+| Deploy to App Store Connect - Application Loader（旧iTunes Connect） | APIキー認証、Apple ID認証、Step経由のAPIキーまたはApple ID認証 |
+
+プロジェクトで使用できる認証方法に応じて、以下のオプションがあります。
+
+- API key認証: 可能であれば、この認証方法の使用をお勧めします。二要素認証は不要です。<strong>Name</strong>、<strong>Issuer ID</strong>、<strong>Key ID</strong>を入力し、<strong>Private Key（.p8）</strong>をアップロードしてから、アプリの設定の<strong>Stores</strong>タブでアカウントを選択するだけで、Appleサービスに接続できます。入力したデータは、APIキー認証で動作するStepsの該当フィールドに自動的に反映されます。
+- Apple ID authentication: APIキー認証を使用できない場合は、Apple IDとパスワードで認証できます。<strong>Apple ID</strong>、<strong>パスワード</strong>、<strong>2FAコード</strong>、<strong>app-specific password</strong>を入力し、アプリの設定の<strong>Stores</strong>タブでselect an accountします。入力したデータは、Apple ID認証で動作するStepsの該当フィールドに自動的に反映されます。
+- Step inputs経由のAPI keyまたはApple Id認証: 複数のチームにデプロイしたい場合や、これまで接続していた認証とは異なる認証のチームにデプロイしたい場合は、任意の認証情報をStepの入力項目に追加できます。Xcode Archive & Export for iOSのようにAPIキー認証の上書きオプションしかないStepsもあれば、fastlaneのようにAPIキーとApple IDStepレベルの認証の両方を上書きできるオプションを持つStepsもあります。
+
+
+## Appleサービスの権限 {#apple-service-permissions}
+
+BitriseをAppleサービスに正しく接続するには、AppleアカウントでApple IDおよびAPIキーに適切なロールとアクセス権を設定する必要があります。次のことを行うには、適切なアクセス権を設定する必要があります。
+
+- automatic code signingを使用する。
+- アプリをApp Storeにデプロイする。
+
+必要な正確なロールとアクセス権は、認証方法、Xcode管理署名を使用するかどうか、アプリのデプロイプロセスの詳細など、複数の要因によって異なります。
+
+このガイドでは、2つの主な[認証方法](/bitrise-platform/integrations/apple-services-connection/steps-requiring-apple-authentication)、APIキー認証とApple ID認証をもとにロールを紹介します。
+
+### APIキー認証で必要なアクセス権 {#required-access-with-api-key-authentication}
+
+Apple APIキー認証でBitrise Stepsを使用するには、適切なアクセスレベルを持つApp Store Connect APIキーを作成する必要があります。適切なレベルは、行う必要のある作業によって異なります。
+
+たとえば、プロジェクトでXcode管理署名を使用し、生成されたIPAファイルをDistribution証明書とApp Storeプロビジョニングプロファイルでエクスポートしたい場合、App Store Connect APIキーには<strong>Admin</strong>アクセス権が必要です。
+
+次の表は、automatic code signingに必要なアクセス権を示しています。この表では、エクスポートしようとするIPAファイルの種類に基づいてcode signingのアクションをグループ化しています。主な種類は2つあります。
+
+- Development IPA: <strong>development</strong>メソッドでエクスポートされたIPAです。
+- Distribution IPA: <strong>app-store</strong>、<strong>ad-hoc</strong>、または<strong>enterprise</strong>distribution methodでエクスポートされたIPAです。
+
+| Code signingアクション | Xcode管理署名がONの場合に必要なアクセス権 | Xcode管理署名がOFFの場合に必要なアクセス権 |
+| --- | --- | --- |
+| Development IPAのエクスポート。以下が含まれます。  - 開発用プロビジョニングプロファイルの作成。 - 開発用プロビジョニングプロファイルの削除。 - プロビジョニングプロファイルのダウンロード。 - App IDの登録と設定。 - デバイスUDIDの追加 | Developer | Developer |
+| App Store IPAのエクスポート。以下が含まれます。  - 開発用および配布用プロビジョニングプロファイルの作成。 - 開発用および配布用プロビジョニングプロファイルの削除。 - プロビジョニングプロファイルのダウンロード。 - App IDの登録と設定。 - デバイスUDIDの追加 | Admin | Developer |
+
+次の表は、アプリをApp Storeにデプロイするために必要なロールを示しています。
+
+App Storeへのデプロイでは、生成されたIPAファイルをどのようにアップロードするかによって必要なアクセス権が異なります。次のいずれかを行えます。
+
+- 追加の手順なしでIPAのみをアップロードする。
+- メタデータとスクリーンショットを含めてIPAをアップロードし、アプリを審査に提出する。
+
+| App Storeデプロイのアクション | APIキーに必要なアクセス権 |
+| --- | --- |
+| メタデータなしで新しいIPAをアップロード | Developer |
+| 新しいIPAをアップロードし、以下を行う場合:  - アプリのメタデータの更新。 - スクリーンショットのアップロード。 - App Store審査へのアプリの提出。 | App Manager |
+
+### Apple ID認証で必要なアクセス権 {#required-access-with-apple-id-authentication}
+
+Apple ID認証でBitrise Stepsを使用するには、Apple IDがApple Developerチームで適切なロールを持っていることを確認する必要があります。
+
+次の表は、Bitriseでautomatic code signingを使用するために必要なロールを示しています。この表では、エクスポートしようとするIPAファイルの種類に基づいてcode signingのアクションをグループ化しています。主な種類は2つあります。
+
+- Development IPA: <strong>development</strong>メソッドでエクスポートされたIPAです。
+- Distribution IPA: <strong>app-store</strong>、<strong>ad-hoc</strong>、または<strong>enterprise</strong>distribution methodでエクスポートされたIPAです。
+
+さまざまなdistribution methodの詳細については、[Xcodeプロジェクト用の署名済みIPAの作成](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)を参照してください。
+
+:::note[Xcodeの管理署名]
+
+BitriseでApple ID認証を使用する場合、プロジェクトのXcode管理署名は自動的にオフになります。代わりに、Bitriseは独自のautomatic code signingロジックを使用します。
+
+:::
+
+| Code signingアクション | 必要なロール |
+| --- | --- |
+| development IPAのエクスポート。以下が含まれます。  - 開発用プロビジョニングプロファイルの作成。 - 開発用プロビジョニングプロファイルの削除。 - プロビジョニングプロファイルのダウンロード。 - App IDの登録と設定。 - デバイスUDIDの追加 | App Manager |
+| App Store IPAのエクスポート。以下が含まれます。  - 開発用および配布用プロビジョニングプロファイルの作成。 - 開発用および配布用プロビジョニングプロファイルの削除。 - プロビジョニングプロファイルのダウンロード。 - App IDの登録と設定。 - デバイスUDIDの追加 | App Manager |
+
+次の表は、アプリをApp Storeにデプロイするために必要なロールを示しています。
+
+App Storeへのデプロイでは、生成されたIPAファイルをどのようにアップロードするかによって必要なアクセス権が異なります。次のいずれかを行えます。
+
+- 追加の手順なしでIPAのみをアップロードする。
+- メタデータとスクリーンショットを含めてIPAをアップロードし、アプリを審査に提出する。
+
+| App Storeデプロイのアクション | Apple IDに必要なロール |
+| --- | --- |
+| メタデータなしで新しいIPAをアップロード | Developer |
+| 新しいIPAをアップロードし、以下を行う場合:  - アプリのメタデータの更新。 - スクリーンショットのアップロード。 - App Store審査へのアプリの提出。 | App Manager |

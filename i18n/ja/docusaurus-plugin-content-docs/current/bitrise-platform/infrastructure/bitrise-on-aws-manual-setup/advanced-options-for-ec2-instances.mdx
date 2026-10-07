@@ -1,0 +1,154 @@
+---
+title: "EC2インスタンスの詳細オプション"
+sidebar_position: 4
+slug: /bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances
+sidebar_label: "Amazon EC2 MacLinuxインスタンスの詳細オプション"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+EC2 Mac および Linux インスタンスを最適に利用するために、インスタンスがBitriseビルドを実行するために必須ではありませんが、追加の設定を行うことをお勧めします。これらの設定オプションの一部は、インスタンス作成時に設定するのが最適です。
+
+
+## EC2 Mac および Linux インスタンスの接続とセキュリティ {#connectivity-and-security-of-your-ec2-mac-and-linux-instance}
+
+EC2 Mac または Linux インスタンスの準備ができたら、インスタンスに接続できること、およびインスタンスが関連するBitriseサービスに接続できることを確認してください。インスタンスへの接続にはSSHを使用できます。また、EC2 Mac インスタンスの場合はVNCも使用できます。
+
+インスタンスのパスワードを設定することもできます。
+
+### インスタンスのパスワード {#instance-passwords}
+
+:::note[User data]
+
+インスタンスの動作をすべてのインスタンスで一貫させるため、[インスタンス作成](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/launching-an-ec2-instance-for-the-bitrise-ami)の一環として[user data](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-console)を設定することをお勧めします。
+
+User dataは、プレーンテキストまたはbase64エンコード形式のいずれかで提供されます。
+
+:::
+
+デフォルトでは、Bitrise AMIにはユーザーパスワードが設定されていません。希望するパスワードを設定するのは、サブスクライバーの責任です。
+
+EC2 Mac インスタンスの場合、ユーザーパスワードとデフォルトの`login.keychain`パスワードを設定する必要があります。
+
+```bash
+sudo /usr/bin/dscl . -passwd /Users/ec2-user
+security set-keychain-password  -o "" -p "<new password>" ~/Library/Keychains/login.keychain-db
+```
+
+Linuxインスタンスの場合:
+
+```bash
+sudo passwd
+```
+
+### インスタンスへの接続 {#connecting-to-the-instance}
+
+SSHを使用してインスタンスに接続するには、TCPポート22を使用することをお勧めします。SSH経由でインスタンスに接続するには:
+
+<Tabs>
+  <TabItem value="macos" label="macOS">
+
+  - ```bash
+    ssh -i "&lt;your-ssh-key&gt;" ec2-user@&lt;your-mac2-instance&gt;
+    ```
+
+    VNCでも接続できます。TCPポート5900を使用することをお勧めします。接続するには:
+
+    ```bash
+    open vnc://ec2-user@&lt;aws-mac2-instance&gt;
+    ```
+
+  </TabItem>
+  <TabItem value="linux" label="Linux">
+
+  - ```bash
+    ssh -i ~/.ssh/key   ubuntu@<your-aws-instance>
+    ```
+
+  </TabItem>
+</Tabs>
+
+:::important[セキュリティグループの設定]
+
+インスタンスの[セキュリティグループの設定](https://docs.aws.amazon.com/cli/latest/userguide/cli-services-ec2-sg.html)で、両方のポートの使用を必ず有効にしてください。
+
+:::
+
+
+## 起動後のディスクのプレウォーミング {#pre-warming-the-disk-after-booting}
+
+:::note[User data]
+
+インスタンスの動作をすべてのインスタンスで一貫させるため、[インスタンス作成](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/launching-an-ec2-instance-for-the-bitrise-ami)の一環として[user data](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-console)を設定することをお勧めします。
+
+User dataは、プレーンテキストまたはbase64エンコード形式のいずれかで提供されます。
+
+:::
+
+起動直後にディスクをプレウォーミングすることで、Amazon EBSのパフォーマンスを向上させることができます。これは一度だけ行えば十分です。
+
+:::important[仮想化を使用する場合の推奨事項]
+
+仮想化オファリングを使用している場合は、ディスクのプレウォーミングを強くお勧めします。
+
+:::
+
+<Tabs>
+  <TabItem value="mac" label="Mac instance">
+
+  - ```bash
+    export cnt=$(($(df -h | grep "/$" | awk '{print $4}' | grep -oE "[0-9]+")-2))
+    sudo dd if=/dev/random of=bigfile bs=1g count=$cnt
+    ```
+
+  </TabItem>
+  <TabItem value="linux" label="Linux instance">
+
+  - ```bash
+    sudo dd if=/dev/xvdf of=/dev/null bs=1M
+    ```
+
+    :::note[dev/xvfd]
+
+    `xvdf`はお使いのマシンによって異なる場合があるのでご注意ください
+
+    :::
+
+  </TabItem>
+</Tabs>
+
+
+## EC2 Mac インスタンスのディスクサイズの拡張 {#increasing-disk-size-on-an-ec2-mac-instance}
+
+:::note[User data]
+
+インスタンスの動作をすべてのインスタンスで一貫させるため、[インスタンス作成](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/launching-an-ec2-instance-for-the-bitrise-ami)の一環として[user data](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-console)を設定することをお勧めします。
+
+User dataは、プレーンテキストまたはbase64エンコード形式のいずれかで提供されます。
+
+:::
+
+EC2 Mac インスタンスにデフォルト(400 GB)より大きいAmazon EBSストレージを設定している場合は、macOSが利用可能なディスク容量をすべて使用できるようパーティションのサイズを変更してください。
+
+```bash
+PDISK=$(diskutil list physical external | head -n1 | cut -d" " -f1)
+APFSCONT=$(diskutil list physical external | grep "Apple_APFS" | tr -s " " | cut -d" " -f8)
+yes | sudo diskutil repairDisk $PDISK
+
+sudo diskutil apfs resizeContainer $APFSCONT 0
+```
+
+詳細については、[AWS macOS EC2のドキュメント](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-mac-instances.html#mac-instance-increase-volume)を参照してください。
+
+
+## AWSビルド環境のクリーンアップ {#cleaning-up-your-aws-build-environment}
+
+セルフホストエージェントを実行する場合、1つのエージェントが複数のビルドを(順番に)実行します。これにより、ローカルファイルシステム上でビルド間のデータ共有が可能になりますが、あるビルドが別のビルドに影響を与えないよう注意が必要です。
+
+この問題を回避するには、ビルドの合間にビルド環境をクリーンアップできます。そのためには、セルフホストマシン上でエージェントモードで[Bitrise CLI](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli)を実行する必要があります。[永続的なビルド環境のクリーンアップ](/bitrise-platform/infrastructure/cleaning-up-persistent-build-environments)
+
+## AWSで実行されるビルドでのシークレットの使用 {#using-secrets-in-your-builds-running-on-aws}
+
+組織のセキュリティポリシーによりbitrise.ioでのホストが許可されていない場合でも、シークレットEnvironment Variablesを使用できます。[セルフホスト環境におけるSecrets](/bitrise-ci/configure-builds/secrets#secrets-in-self-hosted-environments)

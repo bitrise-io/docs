@@ -1,0 +1,210 @@
+---
+title: "Bitrise CLIによるbitrise.ioのビルド管理"
+description: "Bitrise CLIからBitriseのビルドをトリガー、監視、一覧表示、表示、中止し、ビルド結果をスクリプトで使用します。"
+sidebar_position: 10
+slug: /bitrise-ci/bitrise-cli/managing-builds-with-the-bitrise-cli
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+`bitrise build`コマンドは、bitrise.io上でビルドをトリガーし、完了するまで追跡します。ビルドの一覧表示、詳細の確認、中止もできます。お使いのコンピューター、スクリプト、他のビルドの内部から利用できます。
+
+ローカルビルドを実行するには、[最初のローカルビルドの実行: CLI](/bitrise-ci/bitrise-cli/running-your-first-local-build-with-the-cli)を参照してください。
+
+:::important[Bitrise CLI 3.0.0以降]
+
+`bitrise build`コマンドには、Bitrise CLI 3.0.0以降とアクセストークンが必要です。[認証: Bitrise CLI](/bitrise-ci/bitrise-cli/authenticating-with-the-bitrise-cli)を参照してください。
+
+:::
+
+すべてのコマンドは1つの<GlossTerm baseform="project">project</GlossTerm>に対して実行されます。`--app`で指定するか、デフォルトを保存してください。[選択: Workspaceとプロジェクト](/bitrise-ci/bitrise-cli/bitrise-cli-overview#selecting-the-workspace-and-the-project)を参照してください。このページの例では、毎回`--app`を指定しています。
+
+## コマンドリファレンス {#command-reference}
+
+| コマンド | 機能 | プロジェクトのチームで必要なロール |
+| --- | --- | --- |
+| `bitrise build trigger` | 新しいビルドをトリガーします。 | Owner、Admin、またはDeveloper |
+| `bitrise build watch` | ビルドが完了するまで追跡します。 | Developer |
+| `bitrise build list` | プロジェクトのビルドを一覧表示します。 | Tester/QA |
+| `bitrise build view` | ビルドの詳細を表示します。 | Tester/QA |
+| `bitrise build log` | ビルドのログを出力します。 | Developer |
+| `bitrise build yml` | ビルドの実行時に使われた<GlossTerm baseform="bitrise.yml">`bitrise.yml`</GlossTerm>を出力します。 | Developer |
+| `bitrise build abort` | 実行中またはキュー内のビルドを中止します。 | Owner、Admin、またはDeveloper |
+
+ロールの一覧については、[ロールと権限: Bitrise CI](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)を参照してください。
+
+## ビルドのトリガー {#triggering-a-build}
+
+`bitrise build trigger`は、新しいビルドを開始してその詳細を出力します。
+
+```bash
+bitrise build trigger --app my-app-id --workflow primary
+```
+
+実行する対象は、`--workflow`と<GlossTerm baseform="workflow">Workflow</GlossTerm>のID、または`--pipeline`と<GlossTerm baseform="pipeline">Pipeline</GlossTerm>のIDで選択します。両方は使用できません。どちらも指定しない場合、Bitriseは、Webhookによるビルドと同様に、プロジェクトの<GlossTerm baseform="trigger">triggers</GlossTerm>からWorkflowまたはPipelineを選択します。[ビルドトリガーのYAML構文](/bitrise-ci/run-and-analyze-builds/build-triggers/yaml-syntax-for-build-triggers)を参照してください。
+
+### ブランチ、コミット、タグの設定 {#setting-a-branch-commit-or-tag}
+
+ビルドするコードは、次のフラグで選択します。
+
+| フラグ | 設定内容 |
+| --- | --- |
+| `--branch` | ビルドするブランチ。ブランチ、タグ、コミットハッシュのいずれも設定しない場合、CLIは`main`をビルドします。 |
+| `--commit-hash` | ビルドする特定のコミット。 |
+| `--tag` | ビルドするGitタグ。 |
+| `--commit-message` | ビルドに表示するコミットメッセージ。 |
+
+```bash
+bitrise build trigger --app my-app-id --workflow deploy --branch release/1.2
+bitrise build trigger --app my-app-id --workflow primary --tag v1.2.3
+```
+
+`--commit-hash`、`--tag`、`--branch`を複数設定した場合、Git Clone <GlossTerm baseform="step">Step</GlossTerm>は最も具体的なものをチェックアウトします。優先順位は、コミット、タグ、ブランチの順です。
+
+### pull requestビルドのパラメーター設定 {#setting-parameters-for-pull-request-builds}
+
+pull requestをビルドするには、`--branch`でsource branch、`--branch-dest`でターゲットブランチ、`--pull-request-id`で番号を設定します。
+
+```bash
+bitrise build trigger --app my-app-id --workflow primary --branch my-feature --branch-dest main --pull-request-id 42
+```
+
+### Environment Variablesと優先度の設定 {#setting-environment-variables-and-priority}
+
+`--env`を使用して、追加の[Environment Variables](/bitrise-ci/configure-builds/environment-variables)をJSONオブジェクトとしてビルドに渡します。
+
+```bash
+bitrise build trigger --app my-app-id --workflow primary --env '{"MY_VAR":"hello","OTHER":"world"}'
+```
+
+これらの変数は<GlossTerm baseform="secret">Secrets</GlossTerm>を上書きできますが、設定で定義されたEnvironment Variablesは上書きできません。
+
+Bitriseは、値の中の`$VAR`参照を展開します。値をそのまま渡すには、`"is_expand": false`を持つオブジェクトとして指定します。これは、[ビルドを手動で開始する](/bitrise-ci/run-and-analyze-builds/starting-builds/starting-builds-manually)際に<strong>Replace variables in input</strong>のチェックを外すことに相当します。
+
+```bash
+bitrise build trigger --app my-app-id --workflow primary --env '{"API_URL":"https://staging.example.com","PRICE":{"value":"$5","is_expand":false}}'
+```
+
+キュー内のビルドの位置は、-100から100の範囲で`--priority`を使って設定します。この値は、`bitrise.yml`およびトリガーで設定された優先度を上書きします。値が`0`の場合も同様です。それらの設定を維持するには、このフラグを省略してください。[Build priority](/bitrise-ci/configure-builds/configuring-build-settings/build-priority)を参照してください。
+
+```bash
+bitrise build trigger --app my-app-id --pipeline my-pipeline --priority 0
+```
+
+### スタック、マシンタイプ、ライセンスプールの設定 {#setting-the-stack-machine-type-and-license-pool}
+
+ビルドを実行する場所と方法は、次のフラグで上書きします。
+
+| フラグ | 設定内容 |
+| --- | --- |
+| `--stack` | ビルドを実行する<GlossTerm baseform="stack">stack</GlossTerm>のID(例: `osx-xcode-16.0.x`)。Workflowのスタックを上書きします。[ビルドのスタックの設定](/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds)を参照してください。 |
+| `--machine-type` | ビルドを実行するマシンタイプのID(例: `g2-m1.4core`)。Workflowのマシンタイプを上書きします。[Build machineのタイプ](/bitrise-build-hub/infrastructure/build-machine-types)を参照してください。 |
+| `--license-pool` | ビルドの実行に使用するライセンスプールのID。 |
+
+```bash
+bitrise build trigger --app my-app-id --workflow primary --stack osx-xcode-16.0.x --machine-type g2-m1.4core
+```
+
+## ビルドの完了待ち {#waiting-for-a-build-to-finish}
+
+デフォルトでは、Bitriseがビルドを受け付けると、`bitrise build trigger`はすぐに戻ります。ビルドの結果を待つには、次のいずれかのフラグを追加します。
+
+| フラグ | 待機中にCLIが表示する内容 |
+| --- | --- |
+| `--wait` | 何も表示しません。 |
+| `--watch` | ビルドの進行状況。インタラクティブなターミナルではステータス表示、それ以外ではプレーンテキストのビルドログです。 |
+
+```bash
+bitrise build trigger --app my-app-id --workflow primary --watch
+```
+
+どちらのフラグを使っても、CLIは、ビルドが成功した場合または成功として中止された場合は終了コード0で、それ以外の場合は終了コード1で終了します。これにより、スクリプトや別のビルドは、トリガーしたビルドが失敗した時点で停止できます。
+
+すでに実行中のビルドを追跡するには、ビルドのIDを指定して`bitrise build watch`を使用します。
+
+```bash
+bitrise build watch abc123 --app my-app-id
+```
+
+`--watch`と同様に動作し、同じ終了コードで終了します。
+
+CLIがビルドを待機する場合は、次のとおりです。
+
+- `--format json`または`--format yml`を使用すると、ビルドの完了時に、CLIがビルドの最終的な詳細を標準出力に書き込みます。`--watch`と`bitrise build watch`は、ビルドログを標準エラー出力(stderr)に出力するため、結果を別のツールにパイプで渡すこともできます。
+- `--interval`は、CLIがビルドを確認する間隔を設定します。デフォルトは`3s`です。
+- Ctrl+Cを押すとCLIは停止しますが、ビルドは停止しません。
+
+## ビルドの一覧表示 {#listing-builds}
+
+`bitrise build list`は、プロジェクトのビルドを新しい順に一覧表示します。
+
+```bash
+bitrise build list --app my-app-id
+```
+
+一覧は、次のフラグで絞り込めます。
+
+| フラグ | フィルター |
+| --- | --- |
+| `--branch` | ビルドのブランチ。 |
+| `--workflow` | ビルドのWorkflow。 |
+| `--status` | ビルドのステータス: `in-progress`、`success`、`failed`、`aborted`、または`aborted-with-success`。 |
+| `--trigger-event-type` | ビルドをトリガーしたもの: `push`、`pull-request`、または`tag`。 |
+| `--pull-request-id` | pull requestの番号。 |
+| `--build-number` | ビルド番号。 |
+| `--commit-message` | コミットメッセージ。 |
+| `--pipeline-build` | ビルドがPipelineの一部かどうか。 |
+| `--after`、`--before` | ビルドがトリガーされた日時(RFC 3339タイムスタンプ形式。例: `2026-09-01T00:00:00Z`)。 |
+
+たとえば、`main`ブランチの失敗したビルドを一覧表示するには、次のようにします。
+
+```bash
+bitrise build list --app my-app-id --branch main --status failed
+```
+
+実行中のビルドを先頭に表示するには、`--sort-by running_first`を追加します。
+
+一覧はページ分割されています。さらに結果を取得するには、`--limit`、`--cursor`、`--all`を使用します。[ページネーション](/bitrise-ci/bitrise-cli/bitrise-cli-overview#pagination)を参照してください。
+
+:::note[200日間のビルド保持]
+
+プロジェクトの<strong>Builds</strong>ページと同様に、`bitrise build list`は過去200日間のビルドのみを返します。ビルドのIDがわかっていれば、それより古いビルドも表示できます。
+
+:::
+
+## ビルドの表示 {#viewing-a-build}
+
+ビルドの詳細を表示するには、そのIDを`bitrise build view`に渡します。代わりにビルドのページをブラウザーで開くには、`--web`を追加します。
+
+```bash
+bitrise build view abc123 --app my-app-id
+bitrise build view abc123 --app my-app-id --web
+```
+
+ビルドログを出力するには、`bitrise build log`を使用します。ビルドがまだ実行中の場合は、`--wait`を追加すると、ビルドの完了後にログを出力します。ログはプレーンテキストなので、ファイルに保存できます。
+
+```bash
+bitrise build log abc123 --app my-app-id --wait > build.log
+```
+
+ビルドの実行時に使われた`bitrise.yml`を出力するには、`bitrise build yml`を使用します。ビルドの実行後に誰かが変更した場合、このファイルはプロジェクトの現在の設定と異なることがあります。[Bitrise CLIによるbitrise.ymlの操作](/bitrise-ci/bitrise-cli/working-with-bitrise-yml-via-the-bitrise-cli#downloading-the-bitriseyml-file)を参照してください。
+
+```bash
+bitrise build yml abc123 --app my-app-id > bitrise.yml
+```
+
+## ビルドの中止 {#aborting-a-build}
+
+`bitrise build abort`は、実行中またはキュー内のビルドを中止します。
+
+```bash
+bitrise build abort abc123 --app my-app-id --reason "no longer needed"
+```
+
+| フラグ | 動作 |
+| --- | --- |
+| `--reason` | 中止の理由を記録します。ビルドのページに表示されます。 |
+| `--abort-with-success` | 中止したビルドを成功として扱います。Gitプロバイダーに送信されるステータスレポートではビルドが成功として表示されますが、Bitriseでは[Aborted with success](/bitrise-ci/run-and-analyze-builds/build-statuses)として表示されます。 |
+| `--skip-notifications` | 中止したビルドに関する通知を送信しません。 |
+| `--skip-git-status-report` | 中止をGitプロバイダーに報告しません。 |

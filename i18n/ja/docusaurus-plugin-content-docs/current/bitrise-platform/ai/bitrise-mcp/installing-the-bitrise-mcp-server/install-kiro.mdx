@@ -1,0 +1,151 @@
+---
+title: "AWS KiroへのBitrise MCPサーバーのインストール"
+sidebar_label: "AWS Kiro"
+sidebar_position: 4
+slug: /bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-kiro
+---
+# AWS Kiro に Bitrise MCP サーバーをインストールする {#install-bitrise-mcp-server-in-aws-kiro}
+
+## 前提条件 {#prerequisites}
+- AWS Kiro IDE がインストールされていること
+
+## 認証 {#authentication}
+
+Kiro は現在、MCP サーバーに対して環境変数ベースの認証を使用しているため、標準的な Power のインストールでは Bitrise Personal Access Token（PAT）を使用します。[Account Settings → Security](https://app.bitrise.io/me/account/security)で[Bitrise API トークンを作成してください](https://devcenter.bitrise.io/api/authentication)。
+
+MCP OAuth に対応した Kiro のビルドを使用しており、そちらを使用したい場合は、以下の[OAuth ベースの Kiro 設定](#oauth-based-configuration-experimental)セクションを参照してください。
+
+## Kiro Power を使用したインストール {#installation-via-kiro-power}
+
+AWS Kiro では、Bitrise MCP サーバーを Power としてインストールできます。これにより、コンテキストとキーワードに基づいた自動アクティベーションが提供されます。
+
+### Steps
+
+1. <strong>Powers パネルを開く</strong>
+   - Kiro IDE で、サイドバーから Powers パネルを開きます
+
+2. <strong>GitHub から Add Power</strong>
+   - 「Add power from GitHub」をクリックします
+
+3. <strong>Repository URL を入力する</strong>
+   ```
+   https://github.com/bitrise-io/bitrise-mcp/tree/main/kiro-powers/bitrise-ci
+   ```
+
+4. <strong>Set Up Authentication</strong>
+   - Kiro を起動する前に、シェルプロファイル（`.zshrc` または `.bashrc`）で `BITRISE_TOKEN` 環境変数を設定します。
+     ```bash
+     export BITRISE_TOKEN="your-actual-token-here"
+     ```
+   - ターミナルを再起動するか、`source ~/.zshrc`（または `source ~/.bashrc`）を実行します
+   - Kiro を起動します。起動時に環境変数が読み込まれます
+   - Kiro の起動時に、環境変数を信頼するかどうかを確認するポップアップが表示される場合があります。アクセスを許可するには承認してください
+
+5. <strong>インストールのVerify</strong>
+   - Powers リストに Bitrise Power が表示されるようになります
+   - 「bitrise」「ビルド」「ci」「cd」「mobile」「ios」「android」などのキーワードに言及すると自動的にアクティベートされます
+
+## 使用方法 {#usage}
+
+インストールが完了すると、Bitrise Power は関連する場面で自動的にアクティベートされます。以下のことができます。
+
+- Bitrise アプリの管理
+- ビルドのトリガーと監視
+- ビルドアーティファクトの処理
+- workspaces とチームの管理
+- パイプラインの設定
+- Set up release management
+
+この power は、63 個すべての Bitrise ツールへのアクセスを提供します。利用可能なツールとそのパラメータの完全な一覧については、[ツールのドキュメント](/bitrise-platform/ai/bitrise-mcp/tools)を参照してください。
+
+## OAuth ベースの設定（実験的機能） {#oauth-based-configuration-experimental}
+
+MCP OAuth に対応した Kiro のビルドでは、`BITRISE_TOKEN` の要件を完全に省略できます。`~/.kiro/settings/mcp.json`（ユーザーレベル）または `.kiro/settings/mcp.json`（workspace レベル）を編集し、`headers` ブロックを削除します。
+
+```json
+{
+  "mcpServers": {
+    "bitrise": {
+      "type": "http",
+      "url": "https://mcp.bitrise.io"
+    }
+  }
+}
+```
+
+初回のツール使用時に、Kiro は Bitrise のサインインフローのためにブラウザを開きます。
+
+## 高度な設定 {#advanced-configuration}
+
+API グループを設定することで、公開するツールを制限できます。これは、トークン使用量の最適化や特定の機能への絞り込みに役立ちます。
+
+利用可能な API グループ:
+- `apps` - アプリ管理
+- `builds` - ビルド操作
+- `artifacts` - アーティファクト管理
+- `workspaces` - Workspace 管理
+- `pipelines` - Pipeline 操作
+- `outgoing-webhooks` - Webhook configuration
+- `cache-items` - キャッシュ管理
+- `release-management` - リリースと配布
+- `group-roles` - ロール管理
+- `account` - ユーザーアカウント操作
+- `read-only` - 読み取り専用操作
+
+デフォルトでは、すべてのグループが有効になっています。カスタマイズするには、インストール後に Power の設定を変更してください。
+
+## トラブルシューティング {#troubleshooting}
+
+### 環境変数が機能しない {#environment-variable-not-working}
+
+Kiro IDE は、Kiro の起動<strong>前</strong>にシェルプロファイル（`.zshrc` または `.bashrc`）に設定された environment variables のみを読み取ることができます。VS Code とは異なり、Kiro はトークンの値を入力するよう求めません。環境変数がすでに利用可能であることを前提としています。
+
+<strong>オプション1: シェルプロファイルに設定する(推奨)</strong>
+1. シェルプロファイルに export を追加します。
+   ```bash
+   # Add to ~/.zshrc or ~/.bashrc
+   export BITRISE_TOKEN="your-actual-token-here"
+   ```
+2. ターミナルを再起動するか、プロファイルを再読み込みします: `source ~/.zshrc`
+3. <strong>Kiro を再起動します</strong>。これは、Kiro が新しい環境変数を認識するために必要です
+4. プロンプトが表示されたら、環境変数を信頼するかどうかを確認するポップアップを承認します
+
+<strong>オプション2: 手動設定</strong>
+環境変数の方法がうまくいかない場合は、トークンをハードコードできます。
+1. `~/.kiro/settings/mcp.json`（ユーザーレベル）または `.kiro/settings/mcp.json`（workspace レベル）を開きます
+2. Bitrise サーバーのエントリを見つけます
+3. `${BITRISE_TOKEN}` を実際のトークンの値に置き換えます
+4. ファイルを保存して Kiro を再起動します
+
+<strong>オプション3: OAuth を使用する</strong>
+Kiro のビルドが MCP OAuth に対応している場合は、上記の[OAuth ベースの設定](#oauth-based-configuration-experimental)セクションを参照してください。
+
+<strong>Environment 変数の構文に関する注意</strong>
+environment variables の構文は、Kiro CLI と IDE で異なります。
+- <strong>Kiro CLI</strong>: `env:` プレフィックス付きの `${env:BITRISE_TOKEN}` を使用します
+- <strong>Kiro IDE</strong>: プレフィックスなしの `${BITRISE_TOKEN}` を使用します
+
+この不整合は既知の問題です。この Power は、IDE で動作する `${BITRISE_TOKEN}` で設定されています。
+
+### Power がアクティベートされない {#power-not-activating}
+- `/tree/main/power` パスを含む正しいリポジトリの URL を入力しているか確認してください
+- `BITRISE_TOKEN` が有効であることを確認してください
+- 会話の中で「bitrise」のような明示的なキーワードに言及してみてください
+
+### 認証の問題 {#authentication-issues}
+- Personal Access Token が引き続き有効であることを確認してください
+- Bitrise account settings でトークンの権限を確認してください
+- 必要に応じてトークンを再生成してください
+
+### 接続の問題 {#connection-problems}
+- この power は `https://mcp.bitrise.io` に接続します
+- インターネット接続があることを確認してください
+- ファイアウォールの制限がないか確認してください
+
+## 関連情報 {#additional-resources}
+
+- [Bitrise API ドキュメント](https://devcenter.bitrise.io/api/api-index/)
+- [Kiro Powers ドキュメント](https://kiro.dev/docs/powers/)
+- [MCP プロトコルドキュメント](https://modelcontextprotocol.io/)
+</content>
+</invoke>

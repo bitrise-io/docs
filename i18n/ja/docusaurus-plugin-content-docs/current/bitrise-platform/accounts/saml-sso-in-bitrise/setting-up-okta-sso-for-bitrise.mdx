@@ -1,0 +1,228 @@
+---
+title: "OktaSSO"
+description: "Oktaを使って、BitriseWorkspaceにSAMLSSOを追加します。"
+sidebar_position: 9
+slug: /bitrise-platform/accounts/saml-sso-in-bitrise/setting-up-okta-sso-for-bitrise
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_SAMLSSOBeforeYouStart from '@site/i18n/ja/partials/saml-sso-before-you-start.mdx';
+import Partial_CAUTIONSAMLSSORestrictions from '@site/i18n/ja/partials/caution-saml-sso-restrictions.mdx';
+
+このガイドでは、[Okta](https://www.okta.com/)でBitriseをSAMLアプリケーションとして設定する手順を段階的に説明します。
+
+<Partial_CAUTIONSAMLSSORestrictions />
+
+SAML SSOを<GlossTerm baseform="workspace">Workspace</GlossTerm>に接続する前に:
+
+- OktaにログインしているOkta管理者がすぐに対応できる状態にしてください。
+- <Partial_SAMLSSOBeforeYouStart />
+
+1. [BitriseをOktaに追加する](#adding-bitrise-to-okta)。
+1. [BitriseをSAMLアプリとして設定する](#configuring-bitrise-as-a-saml-app-for-okta)。
+1. [SCIMのプロビジョニングをOktaで設定する](/bitrise-platform/accounts/saml-sso-in-bitrise/setting-up-okta-sso-for-bitrise#setting-up-scim-provisioning-in-okta)。
+
+
+## BitriseをOktaに追加する {#adding-bitrise-to-okta}
+
+BitriseはOktaに統合されたアプリではありません。まずBitriseをOktaに手動で追加してから、その上でSAML SSOを設定します。
+
+Bitrise WorkspaceアカウントとOktaを行き来するため、両方のページを開いておいてください。具体的には、WorkspaceのオーナーがBitriseにログインし、Oktaの管理者がOktaにログインしている状態にします。
+
+1. Oktaにログインし、<strong>Admin</strong>をクリックします。
+
+   ![okta_2.png](/img/_paligo/uuid-1640f128-3b4d-356a-f7d0-5d40e60fa6b3.png)
+1. 左側のメニューから、<strong>Applications</strong>セクションの下にある<strong>Applications</strong>を選択します。
+1. <strong>Create App Integration</strong>ボタンをクリックします。
+
+   ![app_integration_okta.png](/img/_paligo/uuid-aa579855-a0d6-a545-6a4f-24f543dd36ab.png)
+
+   これにより、<strong>Create a new app integration</strong>ウィンドウが開きます。
+1. <strong>Sign-in method</strong>として<strong>SAML 2.0</strong>オプションを選択し、<strong>Next</strong>をクリックします。
+
+   ![create_new_app_integration.png](/img/_paligo/uuid-a52e93de-ff50-544e-c914-5aa20dbdeadd.png)
+1. <strong>General Settings</strong>の手順で、<strong>App name</strong>フィールドにBitriseを入力します(必要に応じて、アプリのロゴを追加することもできます)。<strong>Next</strong>をクリックします。
+
+   ![general_settings_okta.png](/img/_paligo/uuid-e0ec0de8-1ae0-a3e9-ea57-fb0fa50b58df.png)
+1. Bitrise Workspaceに移動し、左側のメニューにある<strong>Single Sign-on</strong>タブをクリックします。
+1. <strong>Copy</strong>ボタンをクリックして、<strong>Assertion Consumer Service URL (ACS URL)</strong>をコピーします。
+1. Oktaの<strong>Configure SAML</strong>ページに戻り、<GlossTerm baseform="step">Step</GlossTerm> 7でコピーしたURLを<strong>Single sign-on URL</strong>の入力フィールドに貼り付けます。
+1. <strong>Audience URI (SP Entity ID)</strong>にBitriseを入力します。
+
+   今すぐOkta証明書ファイルをダウンロードし、その内容をBitrise Workspaceの<strong>Single Sign-On</strong>ページにある<strong>SAML SSO provider certificate</strong>フィールドに貼り付けるか、ファイル自体をアップロードできます。どのみちBitriseで<strong>Assertion Consumer Service URL (ACS URL)</strong>を入力する必要があるため、後回しにしてしまう方が簡単です。これはOktaでBitriseをSAMLアプリとして設定する際に取得します。Bitriseの<strong>Single Sign-on</strong>ページで、まだ<strong>Configure SSO</strong>をクリックしないでください。
+1. <strong>Name ID format</strong>を<strong>EmailAddress</strong>に設定します。
+
+   ![saml_sso_config.png](/img/_paligo/uuid-26903c72-7c1d-66a1-37d7-15be1fbd6379.png)
+1. <strong>Next</strong>をクリックします。
+1. <strong>Feedback</strong>セクションを入力します。Hit <strong>Finish</strong>。
+1. <strong>Applications</strong>内で<strong>Sign-on</strong>タブに移動し、<strong>Settings</strong>の隣にある<strong>Edit</strong>をクリックします。
+1. <strong>Credential Details</strong>セクションまでスクロールし、<strong>Application username format</strong>が<strong>Email</strong>に設定されていることを確認します。
+
+   ![credential_details_2.png](/img/_paligo/uuid-23aa2f50-cde3-e87d-c8bd-0c2b1d512540.png)
+1. <strong>Save</strong>をクリックします。
+
+お疲れさまでした!BitriseがOktaにアプリとして正常に追加されました。
+
+
+## Okta向けにBitriseをSAMLアプリとして設定する {#configuring-bitrise-as-a-saml-app-for-okta}
+
+1. Bitriseアプリの<strong>Assignments</strong>タブをクリックします。
+
+   ここでは、個人またはグループにBitriseを割り当てられます。SAML経由でBitrise WorkspaceにアクセスするすべてのWorkspaceメンバーにBitriseを割り当ててください。
+
+   ![assignments_okta.png](/img/_paligo/uuid-1c93dfa7-c82d-5694-1717-62b9239fe667.png)
+1. Bitriseアプリの<strong>Sign-On</strong>タブをクリックします。SAMLの設定がまだ完了していないことが表示されます。下にスクロールし、<strong>View SAML setup instructions</strong>をクリックします。
+
+   ![saml_sso_config_samlsso2.png](/img/_paligo/uuid-22736f46-339f-3986-05c1-cbbcf7eb57f6.png)
+
+   <strong>How to Configure SAML 2.0 for Bitrise application</strong>ページが表示されます。このページには、BitriseとOktaの間でSAML接続を設定するために必要なすべての情報がまとめられています。
+
+   ![configure-bitrise-okta-1.jpg](/img/_paligo/uuid-a01cfa75-834c-9ffe-57bc-0a097a6df676.jpg)
+1. <strong>Identity Provider Single Sign-On URL</strong>をコピーし、Bitrise Workspaceの<strong>SSO URL</strong>フィールドに貼り付けます。
+
+   Bitrise Workspaceの<strong>SAML SSO provider certificate</strong>フィールドに証明書の内容をまだ貼り付けていない、またはファイル自体をまだアップロードしていない場合は、ここで行ってください。
+
+   ![saml_sso_url.png](/img/_paligo/uuid-bce20b25-c8cc-fed6-c43c-627647f4c5a4.png)
+1. 必要に応じて、<strong>SSO Logout URL</strong>フィールドを入力し、複数のWorkspacesが同じOktaインスタンスを使用する場合は<strong>Application Identifier</strong>フィールドも入力します。
+1. Bitrise Workspaceで<strong>Configure SSO</strong>をクリックします。
+
+以上です!これ以降、<strong>Single Sign-on</strong>ページにアクセスするたびに、SAML SSOの設定を行えます。
+
+
+## OktaでSCIMプロビジョニングを設定する {#setting-up-scim-provisioning-in-okta}
+
+Oktaを使用して、Bitrise向けにSCIMプロビジョニングを設定できます。
+
+:::important[Workspaceグループの管理]
+
+SCIMはBitrise Workspacesに対するユーザーのアクセスを管理する優れた方法ですが、SCIMのプロビジョニングの設定が完了した後、Bitriseでグループの初期設定を行う必要があります。グループの設定方法の詳細については、[Workspaceグループをプロジェクトに追加する](/bitrise-platform/projects/managing-user-access-to-a-project#adding-workspace-groups-to-a-project)をご覧ください。
+
+:::
+
+Bitrise WorkspaceアカウントとOktaを行き来するため、両方のページを開いておいてください。具体的には、WorkspaceのオーナーがBitriseにログインし、Oktaの管理者がOktaにログインしている状態にします。
+
+1. Bitriseで、[ドメインコントロールを設定してSCIMの認証情報を生成します](/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-scim)。以下が必要です:
+
+   - 検証済みのドメイン。
+   - SCIMのベースURLとSCIMの認証トークン。
+
+   後の手順で必要になるため、これらを両方とも保存しておいてください。
+1. Oktaにログインし、<strong>Admin</strong>をクリックします。
+1. 左側のメニューから、<strong>Applications</strong>セクションの下にある<strong>Applications</strong>を選択します。
+1. Bitriseアプリを選択します。
+1. Bitriseアプリの<strong>General</strong>タブをクリックします。
+1. <strong>App Settings</strong>セクションの隣にある<strong>Edit</strong>をクリックし、<strong>Provisioning</strong>の隣にあるラジオボタンを使って<strong>SCIM</strong>オプションを選択します。
+
+   ![scim_setting.png](/img/_paligo/uuid-61cf9962-6cb6-6c24-74d4-132f9a1c066d.png)
+1. <strong>Save</strong>をクリックします。
+
+   <strong>Provisioning</strong>という新しいタブが表示されます。
+1. Oktaに戻り、<strong>Provisioning</strong>タブを選択してから、<strong>Edit</strong>をクリックします。
+1. BitriseからコピーしたSCIMのベースURLを、<strong>SCIM connector base URL</strong>フィールドに貼り付けます。
+1. <strong>Unique identifier field for users</strong>フィールドに<strong>userName</strong>を追加します。
+
+   ![scim_connection_2.png](/img/_paligo/uuid-96dabdf1-1006-5bdc-4457-92dfb91b8c70.png)
+1. <strong>Supported provisioning actions</strong>の隣にあるチェックボックスを使って、有効にするプロビジョニングアクションを選択します。
+
+   :::important[Push Groupsは必須]
+
+   Push Groupsを必ず有効にしてください。これは、BitriseではWorkspaceのメンバーシップがグループ経由で機能するため、Okta/SCIMがPush Groupsを通じてWorkspaceグループを制御できるからです。
+
+   :::
+1. <strong>Authorization Mode</strong>ドロップダウンメニューから<strong>HTTP Header</strong>を選択します。
+1. <strong>Authorization</strong>フィールドにSCIMの認証トークンをコピーして貼り付けます。
+1. <strong>Test Connector Configuration</strong>をクリックして、すべてが正しく機能しているかテストします。
+
+   ![test_connector.png](/img/_paligo/uuid-0d2d2b23-f9a9-d57d-3b14-44f085bfcc5f.png)
+1. <strong>Test Connector Configuration</strong>ウィンドウを閉じて、<strong>Save</strong>をクリックします。
+1. Bitriseアプリの<strong>Provisioning</strong>タブをクリックし、<strong>Provisioning to App</strong>セクションの隣にある<strong>Edit</strong>をクリックします。
+
+   ![scim_provisioning.png](/img/_paligo/uuid-87a6ec99-9380-826b-9176-13034fefa22a.png)
+1. 有効にするプロビジョニングオプションを選択し、<strong>Save</strong>をクリックします。
+
+   :::note[パスワードを同期]
+
+   <strong>Sync Password</strong>設定は無効のままにしておくことをお勧めします。
+
+   :::
+
+以上です!これで、OktaでSCIMプロビジョニングを使用して、Bitriseへのユーザーアクセスを管理できるようになりました。
+
+
+## SCIMを使用してOktaグループをBitriseにプッシュする {#pushing-okta-groups-to-bitrise-using-scim}
+
+SCIMプロビジョニングを使用して、OktaからBitriseへpush groupsできます。グループをプッシュすると、Oktaグループが既存のBitriseグループにリンクされるか、Bitrise Workspaceに新しいグループが作成されます。
+
+いずれの場合も、グループをプッシュすることで、OktaグループとBitriseグループの間で同期を設定できます。
+
+1. Oktaにログインし、<strong>Admin</strong>をクリックします。
+1. 左側のメニューから、<strong>Applications</strong>セクションの下にある<strong>Applications</strong>を選択します。
+1. Bitriseアプリを選択します。
+1. <strong>Push Groups</strong>タブをクリックします。
+1. <strong>Push Groups</strong>をクリックし、フィルタリング方法を選択します。
+
+   ![push_groups.png](/img/_paligo/uuid-da9ac0ed-a8fe-0d52-3e66-a8195414d1fa.png)
+1. プッシュしたいグループを見つけます。
+1. 新しいグループを作成してBitrise Workspaceにまったく新しいグループを作成するか、Oktaグループを既存のBitriseグループにリンクする必要があります。
+
+   <strong>Match result & push action</strong>の下にあるドロップダウンメニューを使って、これらの方法から選択できます。
+
+   :::caution[グループのリンク]
+
+   Oktaグループを既存のBitriseグループにリンクすることにした場合は、以下の点に注意してください:
+
+   - OktaとBitriseのグループ名が異なる場合、Bitriseグループの名前はOktaグループの名前と一致するように自動的に変更されます。
+   - 既存のBitriseグループにリンクされたグループを手動でプッシュする場合、Bitriseのみで追加されOktaグループに含まれていなかったメンバーがいると、Oktaが信頼できる唯一の情報源となるため、そのメンバーは削除されます。
+
+   :::
+
+   ![linkGroup.png](/img/_paligo/uuid-e94688f6-c068-8c29-201a-bba3c7373dca.png)
+1. <strong>Save</strong>をクリックします。
+
+   <strong>Push Status</strong>が<strong>Active</strong>に変わると、OktaとBitriseの間の同期が完了した状態になります。数秒後には、Bitrise Workspace側でもグループが更新されるはずです。
+
+   ![push_status_active.png](/img/_paligo/uuid-28f245c4-7eb3-89b2-1e4d-18d922bbc0a5.png)
+
+
+## OktaとBitriseの間でグループとユーザーを同期する {#synchronizing-groups-and-users-between-okta-and-bitrise}
+
+[OktaグループをBitriseにプッシュした](/bitrise-platform/accounts/saml-sso-in-bitrise/setting-up-okta-sso-for-bitrise#pushing-okta-groups-to-bitrise-using-scim)後、OktaとBitriseの間でグループとユーザーを同期できます。そのためには、Oktaでアプリ統合の割り当てを管理する必要があります:
+
+1. Oktaにログインし、<strong>Admin</strong>をクリックします。
+1. 左側のメニューから、<strong>Applications</strong>セクションの下にある<strong>Applications</strong>を選択します。
+1. Bitriseアプリを選択します。
+1. <strong>Provisioning</strong>タブで、<strong>Create Users</strong>と<strong>Deactivate Users</strong>のオプションが有効になっていることを確認します。
+
+   ![provisioning_settings.png](/img/_paligo/uuid-d8a157ed-518f-ad9c-67bb-e66a50263ab7.png)
+
+   :::note[ユーザーのデプロビジョニング]
+
+   SCIMでユーザーをデプロビジョニングすると、そのユーザーはBitriseから自動的にログオフされ、PATが無効になります。
+
+   :::
+1. <strong>Assignments</strong>タブに移動します。
+1. <strong>Assign</strong>をクリックし、個々のユーザーを同期する場合は<strong>Assign to People</strong>を、グループを同期する場合は<strong>Assign to Groups</strong>を選択します。
+
+   ![assign_people.png](/img/_paligo/uuid-d6dbb0ec-3447-10ab-ba08-1bf5731153be.png)
+1. 同期したいユーザーまたはグループを選択し、<strong>Done</strong>をクリックします。
+
+   :::important[ドメイン検証]
+
+   検証済みドメインを持たない新規ユーザーには、Workspaceへの参加を招待するメールが送信されます。
+
+   会社のドメインを検証しない限り、既存のユーザーにも検証メールが送信されます。[SCIMを設定する](/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-scim)。
+
+   :::
+1. グループとユーザーを同期した後、<strong>Push Groups</strong>タブで同期が完了したかどうかを確認できます。
+
+   <strong>Push Status</strong>列のドロップダウンメニューをクリックし、<strong>Push now</strong>を選択することで、更新を手動でプッシュすることもできます。
+
+   ![push_now.png](/img/_paligo/uuid-71166a22-3341-0ee5-6599-6b190f83e717.png)
+
+   :::caution["Push now" はBitriseグループを上書きします]
+
+   Oktaグループに含まれていないユーザーは、リンクされたBitriseグループから自動的に削除されます。
+
+   :::

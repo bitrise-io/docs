@@ -1,0 +1,234 @@
+---
+title: "Gitホスティングプロバイダーへのビルドステータスの報告"
+description: "ビルドステータスレポートをGitプロバイダーに送り返すには、アプリのApp settingsページでBitriseを認証し、Service credential userを指定する必要があります。"
+sidebar_position: 9
+slug: /bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/i18n/ja/partials/getting-to-the-project-settings-page.mdx';
+
+Bitriseは、ビルドステータスレポートをGitプロバイダー(GitHub/GitLab/Bitbucket)に送信できます。これにより、開発者は迅速に情報に基づいた判断を下せるようになり、プラットフォーム間を切り替える必要がなくなります。
+
+同じコミットが複数のビルドを<GlossTerm baseform="trigger">トリガー</GlossTerm>しても、ビルドごとにステータスレポートを送信します。変数を使用してレポートをカスタマイズし、より詳細な情報や具体的な内容を伝えることができます。
+
+ステータスレポートは、プロジェクトレベルまたは<GlossTerm baseform="workflow">Workflows</GlossTerm>、<GlossTerm baseform="pipeline">Pipelines</GlossTerm>のレベルで設定できます。
+
+:::important[Pipelineレポート]
+
+トリガーされたエンティティがPipelineの場合、そのビルドステータスは報告されますが、Pipeline内の個々のWorkflowsは個別のステータスを報告しません。Pipelineのステータスレポートに加えて、Bitriseはテスト結果をエクスポートしている<GlossTerm baseform="step">Steps</GlossTerm>のテスト結果ステータスも報告します。
+
+:::
+
+
+## ビルドステータスレポートの設定 {#setting-up-build-status-reporting}
+
+BitriseでGitステータスレポートを設定する方法は2つあります。
+
+- [GitHub Appインテグレーション](/bitrise-platform/repository-access/github-app-integration)を使用する方法。レポートを必要に応じてカスタマイズする以外に、追加の設定なしで自動的にステータスレポートを送信します。
+- [service credential user](/bitrise-platform/integrations/the-service-credential-user)を使用する方法。[OAuthの認証をリポジトリアクセスに使用](/bitrise-platform/repository-access/repository-access-with-oauth)している場合、この方法でステータスレポートを送信できます。service credential userは、BitriseアカウントをGitプロバイダーアカウントに連携し、Gitリポジトリへのアクセス権を持っている必要があります。必要な権限は次のとおりです。
+
+  - GitHub: <strong>Write</strong>
+  - Bitbucket: <strong>Write</strong>
+  - GitLab: <strong>Developer</strong>。
+
+  service credential userの接続はいつでもテストできます。[ビルドステータスレポートのトラブルシューティング](/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#troubleshooting-build-status-reporting)。
+
+:::tip[Bitrise websiteIPアドレスを許可リストに追加する]
+
+コードの保存に何らかの形のセルフホスト型ソリューションを使用している場合、Bitrise websiteとそのバックグラウンドワーカーの静的IPアドレスを許可リストに追加する必要がある場合があります。これにより、<GlossTerm baseform="bitrise.yml">`bitrise.yml`</GlossTerm>ファイルを自分のリポジトリに保存したり、Bitriseからビルドステータスの更新を受信したりといった機能を使用できるようになります。[Bitrise websiteのIPアドレス](/bitrise-platform/infrastructure/build-machines/configuring-your-network-to-access-our-build-machines#ip-address-ranges-for-bitrise-backend-workers)。
+
+:::
+
+どちらの方法でも、プロジェクトレベルとWorkflowまたはPipelineレベルの両方のレポートを送信できます。
+
+### ブランチ保護ルール {#branch-protection-rules}
+
+ビルドステータスレポートの設定を更新する際、Gitプロバイダーでブランチ保護ルールを変更する必要がある場合があります。
+
+[Workflow/Pipelineレベルのステータスレポート](/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#custom-status-reports)を使用する場合、または`target-id`の[動的変数](/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#custom-status-reports)を使用する場合、実行されたWorkflowまたはPipelineごとに異なるステータスチェックが作成されます。つまり、すべてのプルリクエストですべてのチェックが必須である場合、複数のブランチ保護ルールが必要になることがあります。
+
+
+## カスタムステータスレポート {#custom-status-reports}
+
+カスタムGitステータスレポートを作成できます。コミットステータスメッセージは、チームの好みや要件に合わせて調整できます。レポートに名前を付けることで、Gitプロバイダーのサイトですぐに識別できるようになります。ステータスレポートの名前には、プロジェクトのタイトルやWorkflowの名前など、動的変数を使用できます。
+
+デフォルトのステータスレポート名は`ci/bitrise/<project_slug>/<event_type>`です。レガシーのGitHub Checksレポートの場合、デフォルト名は`Bitrise`です。
+
+カスタムレポートは、次の2つのレベルで設定できます。
+
+- プロジェクトレベルのレポートは、プロジェクト内のすべてのWorkflowsとPipelinesに適用されます。これにより、同じプロジェクト内のすべてのビルドのステータスに一貫した形式が提供されます。
+- 個々のWorkflowsまたはPipelinesのレベル。これらのカスタムレポートは、一般的なプロジェクトレベルのステータスレポートより優先されます。これは、特定のビルドステージについてより詳細な情報を提供したい場合や、ビルドの種類を区別したい場合に役立ちます。
+
+:::important[文字数制限と使用可能な文字]
+
+ステータスメッセージは簡潔にしてください。上限は100文字で、BitBucketでは40文字までしか使用できません。
+
+次の文字がサポートされています: `, . / ( ) : - _ (space) (a-z) (A-Z) (0-9) &lt; &gt; [ ] |`
+
+:::
+
+### プロジェクトレベルのステータスレポート {#project-level-status-reports}
+
+プロジェクトレベルでカスタムステータスレポートを作成するには、<GlossTerm baseform="configuration yaml">設定YAML</GlossTerm>ファイルの`app`の下に`status_report_name`プロパティを追加します。これには静的な値を指定できます。
+
+```yaml
+app:
+  status_report_name: 'Bitrise build'
+```
+
+または、動的な値を使用することもできます。
+
+```yaml
+app:
+  status_report_name: 'PR check for <project_title>'
+```
+
+複数の動的な値を組み合わせることもできます。
+
+```yaml
+app:
+  status_report_name: 'Executing <target_id> for <project_title>'
+```
+
+`target_id`の使用をお勧めします。これは、ビルドが使用するWorkflowまたはPipelineの名前です。この変数を使用すると、同じコミットに対する異なるWorkflows/PipelinesからのGitコミットステータスが互いに上書きされることはありません。
+
+使用可能な変数については、こちらをご覧ください: [動的変数](#dynamic-variables)。
+
+### Workflow/Pipelineレベルのステータスレポート {#workflowpipeline-level-status-reports}
+
+Workflowレベルでカスタムステータスレポートを作成するには、設定YAMLファイル内のWorkflowの名前の下に`status_report_name`プロパティを追加します。
+
+```yaml
+workflows:
+  build-ios:
+    status_report_name: build-report
+```
+
+同様に、Pipelineレベルで作成するには、Pipelineの名前の下にプロパティを追加します。
+
+```yaml
+pipeline:
+  deploy-pipeline:
+    status_report_name: build-report
+```
+
+:::important[追加のレポートなし]
+
+Pipeline内のWorkflowに`status_report_name`プロパティが設定されている場合、WorkflowがPipelineの一部として実行されても、追加の個別ステータスレポートは生成されません。Workflowが単独のビルドとして実行された場合にのみ、ステータスレポートにカスタム名が追加されます。
+
+:::
+
+複数の動的な値を組み合わせることもできます。
+
+```yaml
+pipeline:
+  deploy-pipeline:
+    status_report_name: 'Executing <target_id> for <project_title>'
+```
+
+`target_id`の使用をお勧めします。これは、ビルドが使用するWorkflowまたはPipelineの名前です。この変数を使用すると、同じコミットに対する異なるWorkflows/PipelinesからのGitコミットステータスが互いに上書きされることはありません。
+
+使用可能な変数については、こちらをご覧ください: [動的変数](#dynamic-variables)。
+
+:::note[ブランチ保護ルール]
+
+プロジェクトベースのステータスレポートからWorkflowレベルのステータスレポートに切り替える場合、[ブランチ保護ルール](/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider#setting-up-build-status-reporting)を更新する必要がある場合があります。
+
+:::
+
+<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>でWorkflowレベルのステータスレポートを設定することもできます。Workflowを開き、<strong>Properties</strong>タブに移動して、<strong>Git status name</strong>の入力欄を見つけてください。
+
+![workflow-level-status-report.png](/img/_paligo/uuid-5e4c921b-80ff-3392-c91f-22e7389ce5e3.png)
+
+### 動的変数 {#dynamic-variables}
+
+ステータスレポートには、次の動的変数を使用できます。
+
+| 変数名 | 説明 |
+| --- | --- |
+| `project_slug` | Bitrise上のプロジェクトの一意の英数字識別子で、プロジェクトのURLの一部です。 |
+| `project_title` | プロジェクトの人間が読める形式のタイトル。 |
+| `target_id` | ビルドに使用された特定のWorkflowまたはPipelineの名前。 |
+| `event_type` | ステータスレポートをトリガーしたイベントの種類を表します。指定できる値は次のとおりです。  - `pr`: プルリクエスト(GitHub、Bitbucket) - `mr`: マージリクエスト(GitLab) - `push`: コードプッシュ(GitLab、GitHub、Bitbucket - `tag`: Gitタグ(GitLab、GitHub、Bitbucket) |
+
+
+## ドキュメントのみのプルリクエストで必須チェックを通過させる {#passing-a-required-check-on-documentation-only-pull-requests}
+
+Gitプロバイダーのブランチ保護ルールでステータスレポートが必須チェックとして設定されている場合、すべてのプルリクエストはマージされる前にそのチェックを生成する必要があります。これは、ドキュメントやMarkdownファイルのみを編集するプルリクエストなど、CIを必要としない変更では問題になります。ビルドがトリガーされない場合、ステータスは報告されず、必須チェックは保留のままとなり、マージがブロックされます。
+
+ビルドをスキップしないでください。スキップされたビルドは何も報告しません。代わりに、必須チェックを報告しつつ実際の処理は行わないPipelineをトリガーしてください。この中のすべてのWorkflowは、[`run_if`式](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#conditional-workflow-execution-in-a-pipeline)によってスキップされます。スキップされたWorkflowは成功としてカウントされるため、Pipelineは正常に終了してグリーンのステータスを報告します。また、スキップされたWorkflowsはbuild machineを起動しないため、クレジットは消費されません。
+
+このPipelineには実際のCIPipelineと同じ`status_report_name`を設定し、両方が同じ必須チェックを満たすようにします。それぞれを`changed_files`でスコープしてください。
+
+```yaml
+pipelines:
+  # Real CI. Runs on code changes.
+  ci:
+    status_report_name: ci
+    triggers:
+      pull_request:
+      - changed_files: "app/**"
+    workflows:
+      build: {}
+
+  # Documentation-only pull requests. Reports the same ci check, but does no work.
+  docs-only:
+    status_report_name: ci
+    triggers:
+      pull_request:
+      - changed_files: "**/*.md"
+    workflows:
+      no-op:
+        run_if:
+          expression: "false"
+workflows:
+  build:
+    steps:
+    - git-clone@8: {}
+    # ... your build and test Steps ...
+  no-op:
+    steps: []
+```
+
+:::warning[ドキュメントの変更とコードの変更は別々のプルリクエストに分ける]
+
+このパターンが確実に機能するのは、プルリクエストにドキュメントの変更<strong>または</strong>コードの変更の<strong>どちらか一方のみ</strong>が含まれている場合に限られます。`changed_files`条件は、変更されたファイルのいずれかがそのパターンに一致すると一致するため、Markdownファイルとコードファイルの両方に変更を加えたプルリクエストは、<strong>両方の</strong>Pipelinesをトリガーします。すると両方が同じコミットに対して同じ`ci`チェックを報告し、成功した`docs-only`のレポートが実際のビルドの結果を上書きしてしまい、失敗したビルドがマージされてしまう可能性があります。ドキュメントのみの変更は、専用のプルリクエストにまとめてください。両方を含める必要がある場合は、`docs-only`Pipelineに頼るのではなく、完全なCIを実行してください。
+
+:::
+
+
+## ビルドステータスレポートのトラブルシューティング {#troubleshooting-build-status-reporting}
+
+ビルドがGitホスティングプロバイダー(GitHub、GitLab、またはBitbucket)にステータスレポートを送信しない場合は、原因を調査する必要があります。考えられる問題を見ていきましょう。
+
+### service credential userの確認 {#checking-the-service-credential-user}
+
+[bitrise.io](https://www.bitrise.io)上のアプリのservice credential user](/bitrise-platform/integrations/the-service-credential-user)は、自分のBitriseアカウントをGitホスティングアカウントに連携し、そのGitアカウントでのアプリのリポジトリへのアクセス権を持っている必要があります。
+
+service credential userを確認し、Git接続をテストできます。
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. [bitrise.io](https://www.bitrise.io)でyour appのページに移動します。
+1. <strong>Service credential user</strong>セクションを見つけます。
+
+   :::note[現在のユーザー]
+
+   図では、現在アクティブなユーザーはservice credential userです。service credential userが別のユーザーである場合、ボタンのテキストを含め、見た目が少し異なります。
+
+   :::
+1. <strong>Test &lt;Git provider&gt; connection</strong>ボタンをクリックして、ユーザーのGit接続をテストします。
+
+### リポジトリの権限とURLの確認 {#checking-repository-permissions-and-repository-url}
+
+<GlossTerm baseform="workspace">Workspace</GlossTerm>またはチームにBitriseアクセスを付与していることを確認してください。リポジトリを所有するGitHubWorkspaceまたはBitbucketチームにBitriseアクセスを付与していない、あるいはアクセスを拒否している可能性があります。
+
+URLリポジトリが最新であることを確認してください。
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で<strong>General</strong>を選択します。
+1. リポジトリのURLを確認し、正しいことを確認します。
+
+   ![apps-repository-url.png](/img/_paligo/uuid-0d8102bf-6e48-8787-cfe2-d24617d96950.png)

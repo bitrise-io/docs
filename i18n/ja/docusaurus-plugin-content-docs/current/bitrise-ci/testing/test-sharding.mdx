@@ -1,0 +1,115 @@
+---
+title: "テストシャーディング"
+description: "Bitriseは、プロジェクトタイプと、シャーディング最適化の計算をBitriseに任せるかどうかに応じて、使いやすいテストシャーディング最適化機能を標準で提供します。"
+sidebar_position: 6
+slug: /bitrise-ci/testing/test-sharding
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+テストシャーディングとは、自動テストの大規模なスイートを小さな単位(シャード)に分割し、異なるランナー上で並列実行できるようにするプロセスです。これにより、変更に対するフィードバックを開発者に提供するまでの時間を大幅に短縮し、集中力を保ちながら素早く反復作業を行えるようになります。
+
+Bitriseはプロジェクトの種類や、シャーディングの最適化計算をBitriseに行わせたいかどうかに応じて、すぐに使える簡単なテストシャーディング最適化機能を提供します。
+
+| Project type | Sharding with your own shard optimization calculation | Sharding with shard optimization calculation provided by Bitrise |
+| --- | --- | --- |
+| iOS | [Parallelism](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow) | Parallelism + Xcode Test Shard Calculation <GlossTerm baseform="step">Step</GlossTerm> |
+| Android | [Parallelism](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow) | Parallelism + [Gradle Runner](https://github.com/bitrise-io/steps-gradle-runner) Step |
+
+
+## 独自のテスト分割計算によるシャーディング {#sharding-with-your-own-test-split-calculation}
+
+すでにシャーディング用の最適なテスト分割を計算する手段をお持ちの場合は、<GlossTerm baseform="Pipeline">Pipelines</GlossTerm>の[parallelism](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow)機能を使ってテストシャーディングを設定できます。
+
+Parallelismは、同じ<GlossTerm baseform="Workflow">Workflow</GlossTerm>を別々の仮想マシン上で並列実行します。必要なコピー数は、Workflowの`parallel`プロパティを設定することで手動で指定します。
+
+```yaml
+...
+workflows:
+  test-without-building:
+    depends_on: [build-for-testing]
+    parallel: 5
+...
+```
+
+各コピーには、2つの新しいEnvironment Variablesが渡されます。
+
+- $BITRISE_IO_PARALLEL_INDEX: Workflowの各コピーに割り当てられる、0から始まるインデックスです。
+- $BITRISE_IO_PARALLEL_TOTAL: コピーの総数です。
+
+これらのEnvironment Variablesを活用してテストシャーディングを実行できます。例えば、Jestの場合:
+
+```bash
+jest --shard=$((BITRISE_IO_PARALLEL_INDEX + 1))/$BITRISE_IO_PARALLEL_TOTAL
+```
+
+または、yarnの場合:
+
+```bash
+yarn test --ci --silent --shard=$((BITRISE_IO_PARALLEL_INDEX + 1))/$BITRISE_IO_PARALLEL_TOTAL
+```
+
+parallelismの設定方法について詳しくは、ガイドをご確認ください: [Parallelism in Pipelines](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow)。
+
+
+## Bitrise Stepがテスト分割を計算するシャーディング {#sharding-with-a-bitrise-step-calculating-the-test-split}
+
+Bitrise Stepsが提供する最適化アルゴリズムに基づいて自動的にテストをシャーディングするPipelineを用意できます。これはiOSとAndroidの両方のプロジェクトでサポートされています。
+
+以下を行う必要があります:
+
+- アプリのビルドとテストの両方を行うPipelineを作成します。
+- シャード計算を行うStepsを、アプリをビルドするWorkflowに追加します。iOSプロジェクトの場合は<strong>[Xcode test shard calculation](https://bitrise.io/integrations/steps/xcode-test-shard-calculation)</strong> Step、Androidプロジェクトの場合は<strong>Gradle Runner</strong> Stepです。
+- テスト用のWorkflowの複数のコピーが並列実行されるよう、parallelismを設定します。
+
+<Tabs>
+<TabItem value="ios" label="iOS" default>
+
+1. 必要なシャード数を格納する[環境変数](/bitrise-ci/configure-builds/environment-variables)を作成します。例えばNUMBER_OF_SHARDSのようにします。
+1. アプリ(Xcode)をビルドするWorkflowに、[<strong>Xcode test shard calculation</strong>](https://bitrise.io/integrations/steps/xcode-test-shard-calculation) Stepを追加します。
+1. Stepをクリックしてオプションメニューを開き、<strong>Configuration</strong>タブに移動します。
+1. <strong>Product path</strong>入力欄に、新しく作成した環境変数を追加します。
+
+   ![shard-calculate-product-path.png](/img/_paligo/uuid-3474472d-9f45-e08c-37a0-82dcc3516481.png)
+1. 同じWorkflowに<strong>Deploy to Bitrise.io</strong>Stepを追加します。
+1. <strong>Pipeline Intermediate File Sharing</strong>の入力グループを見つけます。
+1. <strong>Files to share between Pipeline Workflows</strong>入力欄に、環境変数を2つ追加します。
+
+   - BITRISE_TEST_SHARDS_PATH
+   - BITRISE_TEST_BUNDLE_PATH
+
+   これらは自動生成される出力変数です。
+
+   ![shards-deploy-to-bitrise.png](/img/_paligo/uuid-2b040c7d-cbee-1050-4c6e-731d228fb547.png)
+1. <strong>Pipelines</strong>を開き、Pipeline内でテストを実行するWorkflowを見つけて、歯車アイコンをクリックしWorkflowの編集メニューを開きます。
+1. <strong>Configuration</strong>タブで、<strong>Pipeline Conditions</strong>セクションを開きます。
+1. <strong>Parallel copies</strong>入力欄にNUMBER_OF_SHARDS環境変数を追加します。
+
+   ![shards-pipeline.png](/img/_paligo/uuid-abd6b335-ae55-f91a-4cea-4a9df270ce2b.png)
+
+   parallelismの設定方法について詳しくは、[Parallelism in Pipelines](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow)をご覧ください。
+
+</TabItem>
+<TabItem value="android" label="Android">
+
+1. Pipelineを開き、<strong>Pipeline conditions</strong>セクションの<strong>Parallel copies</strong>入力欄に必要なシャード数を追加します。
+
+   parallelismの設定方法について詳しくは、[Parallelism in Pipelines](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow)をご覧ください。
+1. Workflowに<strong>Gradle Runner</strong>Stepを追加します。
+1. Stepのオプションを開き、<strong>Configuration</strong>タブに移動します。
+1. <strong>Config</strong>入力グループで<strong>Gradle task to run</strong>入力欄を見つけ、次のタスクを追加します:
+
+   ```bash
+   connectedAndroidTest \
+     -Pandroid.testInstrumentationRunnerArguments.numShards=$BITRISE_IO_PARALLEL_TOTAL \
+     -Pandroid.testInstrumentationRunnerArguments.shardIndex=$BITRISE_IO_PARALLEL_INDEX
+   ```
+
+   $BITRISE_IO_PARALLEL_TOTALと$BITRISE_IO_PARALLEL_INDEXのenvironment variablesが、各シャードに適用するテストをGradleに伝えます。
+
+   ![gradle-runner.png](/img/_paligo/uuid-b3349767-289a-0a77-f7d6-0ae2c4752ef2.png)
+
+</TabItem>
+</Tabs>

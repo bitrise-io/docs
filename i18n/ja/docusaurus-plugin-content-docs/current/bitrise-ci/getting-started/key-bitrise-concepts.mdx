@@ -1,0 +1,51 @@
+---
+title: "Bitriseの主要な概念"
+description: "Bitriseは、Steps、Workflows、Pipelinesを使用して、CI/CDのビルドを管理します。データの保存とアクセスには、Environment VariablesとSecretsを使用できます。すべての設定はYAML形式で行います。"
+sidebar_position: 2
+slug: /bitrise-ci/getting-started/key-bitrise-concepts
+sidebar_label: "Bitrise CIの主要な概念"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitriseは、<GlossTerm baseform="step">Steps</GlossTerm>、<GlossTerm baseform="workflow">Workflows</GlossTerm>、<GlossTerm baseform="pipeline">Pipelines</GlossTerm>でビルドを管理します。
+
+- Stepsは個々のビルドタスクです。たとえば、リポジトリのクローン、単体テストの実行、インストール可能なバイナリの作成は、すべて個々のビルドタスクです。
+- WorkflowsはStepsの連なりです。Bitriseビルドを実行する際、各StepはWorkflowで定義された順序で実行されます。
+- PipelinesはBitrise CI/CD設定の最上位に位置します。Pipelinesを使用すると、CI/CDプロセス全体を整理し、複数の異なるタスクを並列や順次に実行する高度な設定を構築できます。
+
+設定はすべてBitriseまたは独自のリポジトリに保存できる`bitrise.yml`ファイルで定義されます。また、ビルドに使用するインフラも定義します。Bitriseビルドはクリーンな仮想マシン上で実行され、ほとんどのモバイル開発のユースケースに対応するツールやサービスがあらかじめインストールされています。これらは定期的に更新される<GlossTerm baseform="stack">スタック</GlossTerm>によって定義されます。
+
+## StepsとWorkflows {#steps-and-workflows}
+
+[Workflows](/bitrise-ci/workflows-and-pipelines/workflows/workflows-overview)は、順番に実行される[Steps](/bitrise-ci/workflows-and-pipelines/steps/steps-overview)の集まりです。この順序は<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>で設定するか、`bitrise.yml`ファイルを直接編集することで設定できます。
+
+各Bitriseビルドは、少なくとも1つのWorkflowを実行します。特定のWorkflowをトリガーすることでビルドを開始できます。このようなビルドでは、Workflowsを連結できますが、順次実行されます。Pipelineでは、Workflowsはステージごとに整理され、各ステージ内でWorkflowsが並列に実行されます。
+
+Bitriseで新しいアプリを追加すると、default Workflowsが自動的に作成されます。これらには、アプリのプラットフォームで最もよく使用されるStepが含まれています。StepsはWorkflowからいつでも追加・削除できます。StepsはStep inputsを介して設定でき、同じWorkflow内の後続のStepsで使用できるデータを生成できます。
+
+Bitrise Stepsはオープンソースです。既存のStepsに対する改善を提案したり、独自のものを開発、共有、使用したりできます。
+
+## Pipelines
+
+[Pipelines](/bitrise-ci/workflows-and-pipelines/build-pipelines/pipelines-with-stages/configuring-a-pipeline-with-stages)を使用すると、高度なユースケース向けに複雑なCI/CD設定が可能になります。Pipelinesを使用すると、CI/CDプロセス全体を整理し、複数の異なるタスクを並列や順次に実行する高度な設定を構築できます。
+
+Pipelineを使用すると、Workflows間の依存関係を設定できます。各Workflowは、親のWorkflowsが完了すると実行を開始します。同じレベルのWorkflowsは並列に実行されます。
+
+ビルド<GlossTerm baseform="trigger">トリガー</GlossTerm>を設定して、Pipelineを直接トリガーできます。Pipelineがトリガーされると、build machineは最初のステージのすべてのWorkflowsの実行を開始します。
+
+## Environment VariablesとSecrets {#environment-variables-and-secrets}
+
+設定データやその他のデータを、[Environment Variables](/bitrise-ci/configure-builds/environment-variables)と呼ばれるキーと値のペアとして保存し、使用できます。これにより、複数の異なるアプリにわたってビルド設定を再利用できるようになります。各アプリでは、同じキーを持つ環境変数に異なる値を保存できます。
+
+環境変数にはさまざまなスコープがあります。アプリレベルおよびWorkflowレベルの環境変数を設定できるほか、ビルド中に新しい変数を作成し、ビルド内の後続のStepsやWorkflowsに渡すことができます。何らかの出力を生成するBitrise Stepは、その出力を環境変数の形式で後続のStepsが使用できるようにします。
+
+Secretsは特定の種類の環境変数です。暗号化された形式で保存され、その値はビルドログや`bitrise.yml`ファイルに公開されることはありません。
+
+## Build machinesとスタック {#build-machines-and-stacks}
+
+Bitriseビルドはクリーンな仮想マシン上で実行され、ビルドが完了すると破棄されるため、コードのセキュリティが確保されます。build machineの種類、つまりオペレーティングシステム(macOSまたはLinux)とマシンが提供する計算リソースの量を選択できます。
+
+ビルドスタックは、ビルドを実行するVMにどのツールとサービスがインストールされるかを定義します。たとえば、Xcodeスタックにはそれぞれ異なるバージョンのXcodeが搭載されています。

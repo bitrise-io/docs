@@ -1,0 +1,63 @@
+---
+title: "BrowserstackのApp Automateによるアプリのテスト"
+description: "[BrowserStack](https://www.browserstack.com/)のApp Automate Espressoを使用すると、さまざまなAndroidのモバイルデバイスやタブレットデバイスでネイティブアプリやハイブリッドアプリをテストできます。専用のインテグレーションを利用して、BitriseビルドでApp Automateを使用できます。"
+sidebar_position: 4
+slug: /bitrise-ci/testing/testing-android-apps/testing-your-app-with-browserstack-s-app-automate
+---
+
+[BrowserStack](https://www.browserstack.com/)のApp Automate Espressoを使用すると、さまざまなAndroidのモバイルおよびタブレットデバイスでネイティブアプリやハイブリッドアプリをテストできます。専用のインテグレーションを利用することで、BitriseのビルドでApp Automateを使用できます。
+
+## App Automate Espressoの設定 {#setting-up-app-automate-espresso}
+
+Browserstackインテグレーションを設定するには、次の手順に従います。
+
+1. BrowserstackのユーザーネームとAccess keyを用意します。
+1. BitriseでWorkflow Editorを開き、<strong>UIテスト用のAndroid Build</strong> StepをWorkflowに追加します。
+1. <strong>Project location</strong>インプットがAndroidアプリのルートディレクトリを指していることを確認します。
+1. ビルドしたいモジュールとバリアントを<strong>Module</strong>インプットと<strong>Variant</strong>インプットで設定します。
+
+   :::note[Gradle 引数]
+
+   必要に応じて、<strong>Additional Gradle Arguments</strong>インプットでビルドタスクにadditional Gradle argumentsを渡すことができます。
+
+   :::
+1. <strong>BrowserStack App Automate - Espresso</strong> StepをWorkflowに追加します。これは<strong>UIテスト用のAndroid Build</strong> Stepに従う必要があります。
+1. 必要なStep inputsを設定します。
+
+   | Input group | Input name | Input value |
+   | --- | --- | --- |
+   | <strong>Authentication</strong> | <strong>BrowserStack username</strong> | 文字列形式のBrowserStackのユーザーネーム。 |
+   | <strong>BrowserStack access key</strong> | BrowserStackのAccess Key。 |  |
+   | <strong>App & Test Suite</strong> | <strong>テスト対象のAndroidアプリ</strong> | テスト用APKファイルへのパス。デフォルトでは変更する必要はありません。<strong>UIテスト用のAndroid Build</strong> Stepがこのパスを環境変数としてエクスポートし、それがdefault valueとして使用されます。 |
+   | <strong>Espresso test suite</strong> | テストスイートファイルへのパス。デフォルトでは変更する必要はありません。<strong>UIテスト用のAndroid Build</strong> Stepがこのパスを環境変数としてエクスポートし、それがdefault valueとして使用されます。 |  |
+   | <strong>Devices</strong> | <strong>Devices</strong> | 1つ以上のデバイスとOSの組み合わせを改行区切りで設定します。可能な組み合わせは[こちらのリスト](https://www.browserstack.com/list-of-browsers-and-platforms/app_automate)で確認できます。 |
+1. 必要に応じて、[高度な設定オプションを設定](#advanced-configuration-for-app-automate-espresso)します。
+
+## App Automate Espressoの高度な設定 {#advanced-configuration-for-app-automate-espresso}
+
+<strong>BrowserStack App Automate - Espresso</strong> Stepでは、高度な設定オプションを利用できます。これらのオプションはすべて<strong>Test configuration</strong>インプットグループで使用できます。
+
+| Input name | Description | Values |
+| --- | --- | --- |
+| <strong>Filterテスト</strong> | サポートされているフィルタリング戦略に従って、クラス名またはテスト名をカンマ区切りのリストで指定します。フィルタリングされたテストケースのみが実行されます。 | フィルタのキーと値のペア。指定できるフィルタにはclass、package、annotation、sizeがあります。例: `class com.foo.AddToCartClass,class com.foo.CheckoutClass` |
+| <strong>Project name</strong> | テストに対して[project name](https://www.browserstack.com/docs/app-automate/espresso/organize-tests)を指定します。複数のEspressoテストの実行を1つのプロジェクトの下に論理的にグループ化できます。これにより、Browserstack上のApp Automateダッシュボードで関連するすべてのテスト実行に簡単にアクセスできます。 | 文字列。使用できる文字は、英字(A-Z、a-z)、数字(0-9)、ピリオド(.)、コロン(:)、ハイフン(-)、角括弧([])、スラッシュ(/)、アットマーク(@)、アンパサンド(&amp;)、シングルクォート(')、アンダースコア(_)です。それ以外の文字は無視されます。 |
+| <strong>Test sharding</strong> | 順番に実行する代わりにテストケースを異なるグループに分割するため、[test sharding](https://www.browserstack.com/docs/app-automate/espresso/test-sharding)を有効にします。 | シャード数を指定し、その動作を設定するためにキーと値のペアを設定します。シャーディング戦略には3種類あり、それぞれ異なる設定が必要です。  - Auto戦略:    ```   {"numberOfShards": 2},    "devices": ["Google Pixel 3-9.0"]   ``` - Package戦略:    ```   {"numberOfShards": 2, "mapping":    [{"name": "Shard 1",    "strategy": "package",    "values": ["com.foo.login", "com.foo.logout"]},    {"name": "Shard 2",    "strategy": "package",    "values": ["com.foo.dashboard"]}]}   ``` - Class戦略:    ```   {"numberOfShards": 2, "mapping":    [{"name": "Shard 1",    "strategy": "class",    "values": ["com.foo.login.user", "com.foo.login.admin"]},    {"name": "Shard 2",    "strategy": "class",    "values": ["com.foo.logout.user"]}]}   ``` |
+| <strong>Single runner invocation</strong> | ビルド全体の時間を短縮するため、すべてのテストを単一のインストルメンテーションプロセスで実行する[single runner invocation](https://www.browserstack.com/docs/app-automate/espresso/single-runner-invocation)を有効にします。 | `true`または`false`  default valueは`false`です。 |
+| <strong>Local testing</strong> | ローカル/プライベートサーバーでホストされているアプリデータを取得するため、[Local testing](https://www.browserstack.com/docs/app-automate/espresso/get-started-with-local-testing)を有効にします。 | `true`または`false`  `false`  default valueは`false`です。 |
+| <strong>Mock server</strong> | モックWebサーバーは、実際のリモートサーバーの動作を模倣します。これにより、リモートサーバーに依存したり変更を加えたりすることなく、さまざまなシナリオを簡単にテストできます。Local testingはモックサーバーでは機能しません。 | `true`または`false`  default valueは`false`です。 |
+| <strong>Clear app data</strong> | 各テスト実行後にアプリのストレージをクリアし、各テストケースがクリーンなアプリの状態から開始されるようにします。 | `true`または`false`  default valueは`false`です。 |
+| <strong>Notify project status</strong> | 特定のプロジェクト配下のすべてのビルドが完了したときにBrowserStackが呼び出すコールバックURLです。5分間新しいビルドがトリガーされず、既存のすべてのビルドが完了すると、コールバックを受け取ります。<strong>Project name</strong>も設定する必要があります。 | URL。 |
+| <strong>Test capabilities</strong> | BrowserStackが提供する追加のcapabilitiesを、改行区切りのキーと値のペアで指定します(例: `coverage=true`)。[詳細はこちら](https://www.browserstack.com/docs/app-automate/api-reference/espresso/builds#execute-a-build)。 | キーと値のペアを1行ずつ指定します。 |
+| <strong>Build Status</strong> | BrowserStackが実行を完了しテスト結果を取得するまで待機します。 | `true`または`false`  default valueは`true`です。 |
+
+## App Automate Espressoのロギングオプション {#logging-options-for-app-automate-espresso}
+
+<strong>BrowserStack App Automate - Espresso</strong> Stepでは、ロギングおよび診断オプションも提供されており、<strong>Debug logs</strong>インプットグループで使用できます。
+
+| Input name | Description | Values |
+| --- | --- | --- |
+| <strong>Instrumentation logs</strong> | Espressoテストの実行に関する包括的な記録で、テスト内で実行されたすべてのステップを特定するのに役立ちます。 | `true`または`false`  default valueは`true`です。 |
+| <strong>Network Logs</strong> | ネットワークトラフィック、レイテンシー、HTTPのリクエストとレスポンスをHAR(HTTP Archive)形式でキャプチャします。 | `true`または`false`  default valueは`false`です。 |
+| <strong>Android logcat logs</strong> | Androidのlogcatによって生成される、アプリケーション固有のシステムログで、テストのクラッシュをデバッグするのに役立ちます。 | `true`または`false`  default valueは`false`です。 |
+| <strong>Capture Screenshots</strong> | スクリーンショットをキャプチャし、テスト内で失敗が発生した正確なステップを特定しやすくします。 | `true`または`false`  default valueは`false`です。 |
+| <strong>Video recording</strong> | テスト実行全体を確認し、失敗したテストをデバッグするのに役立つよう、テスト実行のビデオを記録します。 | `true`または`false`  default valueは`true`です。 |

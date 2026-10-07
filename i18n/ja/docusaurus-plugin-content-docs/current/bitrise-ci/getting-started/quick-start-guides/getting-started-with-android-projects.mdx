@@ -1,0 +1,99 @@
+---
+title: "Androidプロジェクトを使い始める"
+description: "メールまたはGitプロバイダーでサインアップし、リポジトリを接続して、Androidアプリの最初のビルドを実行することで、Bitriseを使い始めます。"
+sidebar_position: 2
+slug: /bitrise-ci/getting-started/quick-start-guides/getting-started-with-android-projects
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_DeployingAnAndroidAppToBitriseIo from '@site/i18n/ja/partials/deploying-an-android-app-to-bitriseio.mdx';
+import Partial_NOTEDoYouHaveABitriseAccount from '@site/i18n/ja/partials/note-do-you-have-a-bitrise-account.mdx';
+import Partial_DeployingToGooglePlay from '@site/i18n/ja/partials/deploying-to-google-play.mdx';
+import Partial_SettingUpGooglePlayDeploymentForTheFirstTime from '@site/i18n/ja/partials/setting-up-google-play-deployment-for-the-first-time.mdx';
+import Partial_GettingToTheProjectSettingsPage from '@site/i18n/ja/partials/getting-to-the-project-settings-page.mdx';
+import Partial_OpeningTheWorkflowEditor from '@site/i18n/ja/partials/opening-the-workflow-editor.mdx';
+
+このガイドでは、AndroidアプリをBitriseに追加する方法、デフォルトの<GlossTerm baseform="Workflow">Workflows</GlossTerm>でできること、そして最後にアプリを[bitrise.io](https://www.bitrise.io/)とGoogle Play Storeにテストおよびデプロイする方法について説明します。
+
+<Partial_NOTEDoYouHaveABitriseAccount />
+
+
+## BitriseにAndroidプロジェクトを追加する {#adding-an-android-project-to-bitrise}
+
+プロジェクトの追加方法は他の場合と同じです。ウィザードの完全な手順については、[Adding a new project](/bitrise-ci/getting-started/adding-a-new-project)をご覧ください。このセクションでは、Androidに固有の内容について説明します。
+
+### スキャナーがAndroidプロジェクトを検出する仕組み {#how-the-scanner-detects-an-android-project}
+
+<GlossTerm baseform="project scanner">プロジェクトスキャナー</GlossTerm>は、リポジトリ内でGradleのラッパースクリプト（`gradlew`）を探し、その隣にあるGradleのビルドスクリプトで`com.android.application`プラグインを確認します。このプラグインが`build.gradle`または`build.gradle.kts`ファイルの少なくとも1つで見つかった場合、プロジェクトはAndroidとして登録されます。
+
+スキャナーは、`.git`、`.gradle`、`.idea`、`build`、`node_modules`などの一般的な非ソースディレクトリをスキップします。また、リポジトリがすでにFlutter、React Native、Cordova、Ionic、またはKotlin Multiplatformとして検出されている場合も処理を行いません。これらのスキャナーは、それぞれのAndroid設定を独自に処理するためです。
+
+### 設定できる項目 {#what-you-can-configure}
+
+<strong>CI configuration</strong>の段階では、ウィザードに以下が表示されます。
+
+- <strong>Project location</strong>: `gradlew`ファイルが含まれるディレクトリです。スキャナーが複数見つけた場合は、使用するものを選択できます。
+- <strong>Module</strong>: ビルド対象のGradleモジュールです（例: `app`）。
+- <strong>Variant</strong>: 使用するビルドバリアントです（例: `Debug`）。空欄のままにして、後からバリアントを追加することもできます。
+
+## Androidプロジェクトの依存関係を管理する {#managing-dependencies-for-android-projects}
+
+Gradleビルドシステムでは、外部のバイナリやその他のライブラリモジュールを依存関係として含めることができます。Bitriseは、ビルドプロセス中にプロジェクトのこれらの依存関係をインストールできます。
+
+:::tip[ビルド依存関係の追加]
+
+Androidプロジェクトへの依存関係の追加については、こちらをご覧ください: [https://developer.android.com/studio/build/dependencies](https://developer.android.com/studio/build/dependencies)
+
+:::
+
+1. プロジェクトの`build.gradle`ファイルにすべての依存関係が記載されていることを確認してください。
+1. <Partial_OpeningTheWorkflowEditor />
+1. Workflowに<strong>Android Build</strong>の<GlossTerm baseform="step">Step</GlossTerm>が含まれていることを確認してください。
+
+   アプリを初めて追加したときにプロジェクトスキャナーが<strong>build_apk</strong>というWorkflowを生成した場合、そのWorkflowにはStepが含まれています。追加の設定なしに、`build.gradle`ファイルに記載されているすべての依存関係をインストールします。
+1. Workflowに<strong>Install missing Android SDK components</strong> Stepが含まれていることを確認してください。
+
+   Stepは、Workflow内で<strong>Android Build</strong> Stepより前に配置する必要があります。これにより、プロジェクトに必要なAndroid SDKツールがすべてインストールされます。
+
+
+## Androidアプリをテストする {#testing-your-android-app}
+
+CIプロセス中にAndroidアプリのテストを支援する、専用のStepsを複数用意しています。
+
+- <strong>[Android Lint](https://www.bitrise.io/integrations/steps/android-lint)</strong> Stepは、Androidのproject sourceファイルに対してLintを実行し、コードにエラーがないように潜在的な構文エラーを検出します。
+- <strong>[Android Unit Test](https://www.bitrise.io/integrations/steps/android-unit-test)</strong> Stepは、プロジェクトのユニットテストを実行します。さまざまなモジュールやフレーバーすべてに対して実行できます。[Androidユニットテスト](/bitrise-ci/testing/testing-android-apps/android-unit-tests)
+- [<strong>Virtual Device Testing for Android</strong>](https://www.bitrise.io/integrations/steps/virtual-device-testing-for-android)は、Firebase TestLabを使用して仮想デバイス上でAndroidテストを実行します。[Androidのデバイステスト](/bitrise-ci/testing/device-testing-with-firebase/device-testing-for-android)
+
+<strong>[Android Unit Test](https://www.bitrise.io/integrations/steps/android-unit-test)</strong> Stepと[<strong>Virtual Device Testing for Android</strong>](https://www.bitrise.io/integrations/steps/virtual-device-testing-for-android) Stepは、どちらも結果を[テストレポート](/bitrise-ci/testing/deploying-and-viewing-test-results)にエクスポートできます。そのためには、Workflowの一番最後にWorkflowの<strong>Deploy to Bitrise.io</strong> Stepが含まれていることを確認するだけです。
+
+
+## Androidアプリに署名する {#signing-your-android-app}
+
+AndroidアプリをGoogle Playに公開するには、アプリにデジタル署名する必要があります。Bitriseでもこれを行うことができます。keystoreファイルをアップロードし、必要な認証情報を入力するだけです。
+
+:::note[その他のcode signingオプション]
+
+このセクションでは、Android Sign Stepを使用してAndroidアプリに署名する方法について説明します。アプリに署名する方法は他にもあります。関連ガイドの他のオプションをご確認ください: [Android code signing](/bitrise-ci/code-signing/android-code-signing/android-code-signing-using-the-android-sign-step)。
+
+:::
+
+1. [keystoreファイルの生成](https://developer.android.com/studio/publish/app-signing#generate-key)[keystoreファイルの生成](https://reactnative.dev/docs/signed-apk-android#generating-an-upload-key)。
+
+   1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側のメニューから<strong>Code signing</strong>を選択します。
+1. keystoreファイルを<strong>ANDROID KEYSTORE FILE</strong>フィールドにドラッグ＆ドロップします。
+1. <strong>Keystore password</strong>、<strong>Keystore alias</strong>、<strong>Private key password</strong>の各フィールドに入力し、<strong>Save metadata</strong>をクリックします。
+
+   ![keystore-alias.png](/img/_paligo/uuid-0b79fc48-3861-0744-0f53-53a6c65ffc2c.png)
+1. <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>を開きます。
+1. Workflowに<strong>Android Sign</strong> Stepを追加します。
+
+以上です。次回ビルドを実行すると、<strong>Android Sign</strong> Stepが生成されたバイナリに署名します。
+
+<Partial_DeployingAnAndroidAppToBitriseIo />
+
+<Partial_SettingUpGooglePlayDeploymentForTheFirstTime />
+
+<Partial_DeployingToGooglePlay />

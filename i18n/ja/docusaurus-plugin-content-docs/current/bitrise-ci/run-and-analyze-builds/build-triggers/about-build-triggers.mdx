@@ -1,0 +1,109 @@
+---
+title: "ビルドトリガーについて"
+description: "ビルドトリガーを使用して、1つ以上のBitriseビルドを自動的に開始します。トリガーの定義には、コードイベントと、ビルドをトリガーするためにそのイベントが満たす必要のある1つ以上の条件が含まれます。"
+sidebar_position: 1
+slug: /bitrise-ci/run-and-analyze-builds/build-triggers/about-build-triggers
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+ビルド<GlossTerm baseform="trigger">トリガー</GlossTerm>を使用すると、1つ以上のBitriseビルドを自動的に開始できます。トリガーの定義には、コードイベントと、そのイベントがビルドをトリガーするために満たす必要がある1つ以上の条件が含まれます。
+
+トリガーは<GlossTerm baseform="workflow">Workflow</GlossTerm>または<GlossTerm baseform="pipeline">Pipeline</GlossTerm>内で定義できます。これにより、単一のコードイベントで複数の異なるWorkflowsやPipelinesをトリガーできるため、すべてを単一のWorkflowやPipelineにまとめることなく、コード変更の範囲に応じてCIプロセスの関連部分をまとめて実行できます。各ビルドは独立して実行され、それぞれ個別の結果を返します。
+
+トリガーの詳細な構文と正確なトリガー条件については、[ビルドトリガーのYAML構文](/bitrise-ci/run-and-analyze-builds/build-triggers/yaml-syntax-for-build-triggers)を参照してください。
+
+## コードイベント {#code-events}
+
+ビルドをトリガーするには、次の3種類のコードイベントを使用できます。
+
+- <strong>コードプッシュ</strong>: トリガー条件に一致するコミットでコードをプッシュするたびに、自動的にビルドがトリガーされます。たとえば、プロジェクトのリポジトリの指定されたブランチへのコミットがビルドをトリガーします。
+- <strong>Pull request</strong>: プルリクエストがトリガー条件に一致するたびに、自動的にビルドがトリガーされます。たとえば、任意のプルリクエストがビルドをトリガーするソースブランチや宛先ブランチを指定できます。
+
+  :::important[最初のPRイベント]
+
+  プルリクエストは、最初のイベント時に一度だけビルドをトリガーします。ほとんどの場合、その最初のイベントはプルリクエストの作成です。たとえば、PRをドラフトPRに変換しても、別のビルドがトリガーされることはありません。プルリクエストの更新に対してビルドをトリガーするには、新しいコミット用にコードプッシュトリガーを設定してください。
+
+  :::
+- [<strong>Git Tag</strong>](https://github.com/Itelios/bitrise-steps-git-tag): 特定のタグが付いたコミットがビルドをトリガーするたびに、自動的にビルドがトリガーされます。
+
+## 条件 {#conditions}
+
+トリガー条件は、コードイベントに対するフィルターです。すべてのプルリクエストでビルドをトリガーする代わりに、特定のブランチを対象とするプルリクエストに対してトリガーを設定できます。
+
+Gitプロバイダーによってサポートされる条件は異なります。詳細な一覧については、[サポートされているトリガー条件](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers#supported-trigger-conditions)を参照してください。
+
+トリガー条件は、1つのトリガー内で組み合わせることができます。たとえば、PRが特定のブランチを対象とし、かつ特定のラベルを含む場合にのみビルドをトリガーするプルリクエストトリガーを設定できます。
+
+
+## トリガーの優先度 {#trigger-priority}
+
+トリガーには優先度を設定できます。これにより、特定のトリガーによってトリガーされたビルドの優先度が決まります。優先度が高いほど、ビルドはbuild queueの上位に配置されます。
+
+優先度は、<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>、またはプロジェクトの<GlossTerm baseform="configuration yaml">configuration YAML</GlossTerm>ファイルのいずれかで設定できます。優先度は常に-100から100までの整数で、数値が大きいほど優先度が高くなります。デフォルトの優先度は0です。
+
+build priorityの詳細、および優先度の種類間の優先順位については、[Build priority](/bitrise-ci/configure-builds/configuring-build-settings/build-priority)をご覧ください。
+
+
+## トリガー変数 {#trigger-variables}
+
+自動的にトリガーされたビルド中は、ビルドトリガーに関連する多くのEnvironment Variablesを使用できます。これらの変数は、ビルドトリガーやプルリクエストの属性について詳細なコンテキストを提供します。トリガー変数は、次のような用途に使用できます。
+
+- コメント、ラベル、変更されたファイルなどのプルリクエストデータを使用して、複雑なワークフローや意思決定プロセスを自動化する。
+- 誰がどのようにビルドをトリガーしたかを把握し、それを活用してワークフローのデバッグを改善する。
+- 正確なビルド条件を実装して不要な実行を減らし、時間とリソースを節約する。
+
+すべてのトリガー変数とその定義は、リファレンステーブル[利用可能なenvironment variables](/bitrise-ci/references/available-environment-variables)で確認できます。
+
+トリガー変数は、要件を満たしている場合にのみ使用できます。たとえば、BITRISE_GIT_PULL_REQUEST_COMMENT変数は、ビルドがPRコメントによってトリガーされた場合、つまりビルドトリガーに`pr_comment`条件がある場合にのみ使用できます。正確な条件については、[利用可能なenvironment variables](/bitrise-ci/references/available-environment-variables)をご覧ください。
+
+### トリガー変数のユースケース {#use-cases-for-trigger-variables}
+
+以下は、トリガー変数のユースケースの例です。これらはあくまで提案であり、変数を試しながら自分のニーズに最適なものを見つけることができます。
+
+<strong>PRコメントへの返信</strong>
+
+BITRISE_GIT_PULL_REQUEST_COMMENT_ID: プルリクエストのコメントIDを使用して、プルリクエストの元のコメントに直接ステータス更新を投稿します。これには、成功、失敗、ログ、その他の関連情報などの詳細を含めることができます。
+
+<strong>条件付きテスト実行</strong>
+
+BITRISE_GIT_CHANGED_FILES: コードベースの変更された部分を特定し、その変更に基づいて特定のテストスイートをトリガーします。たとえば、UIの変更に対してはフロントエンドテストを、APIの変更に対してはバックエンドテストを実行します。
+
+<strong>コミットメッセージやラベルに基づいて異なる環境にデプロイする</strong>
+
+BITRISE_GIT_COMMIT_MESSAGESとBITRISE_GIT_PULL_REQUEST_LABELSを使用して、デプロイ環境を決定します。たとえば、コミットメッセージに「[staging]」が含まれている場合や、「ready-for-staging」ラベルが付いている場合は、コードをステージング環境にデプロイします。
+
+
+## マージキューのサポート {#merge-queue-support}
+
+GitHubのマージキューを使用すると、複数のプルリクエスト（PR）をブランチに自動的にマージできます。ブランチフィルターとして`gh-readonly-queue/*`を設定したトリガーを構成することで、各PRの変更をBitriseビルドで検証できます。このプレフィックスの詳細については、[GitHubドキュメント](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue#triggering-merge-group-checks-with-third-party-ci-providers)をご覧ください。
+
+マージキューは、キュー用にトリガーされたビルドがPRビルドと同じステータス名を報告する場合にのみ正しく機能します。
+
+たとえば、以下の設定では、マージキューからマージされたすべてのブランチが、`ci-pipeline` Pipelineでビルドをトリガーします。
+
+```yaml
+pipelines:
+  ci-pipeline:
+    triggers:
+      push:
+      - branch: "gh-readonly-queue/*"
+    status_report_name: ci/bitrise/<project_slug>/pr
+```
+
+## GitHubのスタックされたプルリクエスト {#github-stacked-pull-requests}
+
+[GitHubスタック](https://docs.github.com/en/pull-requests/get-started/about-stacked-prs)は、大きな変更を一連の小さく順序付けられたプルリクエストに分割します。スタック内の各プルリクエストは、その下にあるプルリクエストのブランチを対象とし、スタック全体は1つのベースブランチに統合されます。
+
+たとえば、3つのプルリクエストからなるスタックは、次のようになります。
+
+- `feature/part-1`は`main`を対象とします。
+- `feature/part-2`は`feature/part-1`を対象とします。
+- `feature/part-3`は`feature/part-2`を対象とします。
+
+3つのプルリクエストはすべて、最終的に`main`に統合されます。
+
+- トリガーは、プルリクエストが直接対象とするブランチではなく、スタックのベースブランチ（上記の例では`main`）に対してターゲットブランチ条件を照合します。プルリクエストトリガーには、`feature/part-1`や`feature/part-2`ではなく`target_branch: main`を設定してください。
+- `$BITRISEIO_GIT_BRANCH_DEST`には、スタック内のすべてのプルリクエストについて、スタックのベースブランチ（`main`）が格納されます。

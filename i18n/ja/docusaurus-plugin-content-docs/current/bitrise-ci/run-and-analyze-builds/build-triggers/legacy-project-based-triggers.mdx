@@ -1,0 +1,181 @@
+---
+title: "レガシーのプロジェクトベーストリガー"
+description: "レガシーまたはプロジェクトベースのトリガーは、プロジェクトレベル、つまり設定YAMLファイルの最上位で定義します。このトリガーは、特定のコードイベントが発生したときに実行するWorkflowまたはPipelineを定義します。1つのコードイベントでトリガーできるビルドは1つだけです。"
+sidebar_position: 7
+slug: /bitrise-ci/run-and-analyze-builds/build-triggers/legacy-project-based-triggers
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditor from '@site/i18n/ja/partials/opening-the-workflow-editor.mdx';
+
+:::important[レガシートリガー]
+
+このページでは、プロジェクトレベルで定義するレガシートリガーについて説明します。新規ユーザーには、より柔軟にトリガーを設計できる<GlossTerm baseform="workflow">Workflows</GlossTerm>および<GlossTerm baseform="pipeline">Pipelines</GlossTerm>のレベルで定義するターゲットベースのビルドトリガーの使用を強くおすすめします。詳しくは[ビルドトリガーの設定](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers)をご覧ください。
+
+:::
+
+レガシートリガー（プロジェクトベースのトリガー）は、プロジェクトレベル、つまり<GlossTerm baseform="configuration yaml">設定YAML</GlossTerm>ファイルの最上位で定義します。トリガーは、特定のコードイベントが発生したときに、どのWorkflowまたはPipelineを実行するかを定義します。1つのコードイベントがトリガーできるビルドは1つだけです。
+
+
+## プロジェクトベースのトリガーを作成する {#creating-project-based-triggers}
+
+プロジェクトベースのトリガーは、プロジェクトレベル、つまり設定YAMLファイルの最上位で定義します。トリガーは、特定のコードイベントが発生したときに、どのWorkflowまたはPipelineを実行するかを定義します。1つのコードイベントがトリガーできるビルドは1つだけです。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. 左側で<strong>Triggers</strong>を選択します。
+1. <strong>Legacy triggers</strong>セクションを見つけます。
+
+   ![TriggersページのLegacy triggersセクション](/img/run-and-analyze-builds/2026-07-14-legacy-triggers-section.png)
+1. trigger typeを選択し、<strong>Add trigger</strong>ボタンをクリックします。
+
+   たとえば、プルリクエストイベント用のトリガーを設定する場合は、Pull Requestタブを選択して<strong>Add pull request trigger</strong>ボタンをクリックします。
+1. ダイアログでトリガーを設定します。
+
+   複数の条件を設定する場合、ビルドを開始するにはすべての条件を満たす必要があります。いずれの条件タイプにも正規表現を使用できます。
+
+   サポートされているトリガー条件の一覧については、こちらをご覧ください。[サポートされているトリガー条件](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers#supported-trigger-conditions)。
+1. 完了したら、<strong>Add trigger</strong>をクリックします。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. 設定YAMLファイルを開きます。
+1. Workflow内で`trigger_map`プロパティを見つけ、その下にトリガーを設定します。必要な項目は次のとおりです。
+
+   - コードイベントの種類を定義する`type`プロパティ。
+   - トリガー条件。たとえば、`commit_message`。
+   - トリガーしたいWorkflowまたはPipeline。
+
+   ```yaml
+   trigger_map:
+   - type: push
+     commit_message: your_message
+     workflow: my-workflow
+   ```
+
+   トリガーの種類ごとの正確な構文については、こちらをご覧ください。[ビルドトリガーのYAML構文](/bitrise-ci/run-and-analyze-builds/build-triggers/yaml-syntax-for-build-triggers)。
+1. 設定を保存します。
+
+</TabItem>
+</Tabs>
+
+## プロジェクトベースのトリガーを無効にする {#disabling-a-project-based-trigger}
+
+プロジェクトベースのビルドトリガーを無効にするには、次の手順に従います。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Bitriseで<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>を開きます。
+1. 左側で<strong>Triggers</strong>を選択します。
+1. 無効にしたいトリガーに応じて、適切なタブを選択します。
+
+   ![トリガー行にActiveチェックボックスがあるLegacy triggersタブ](/img/run-and-analyze-builds/2026-07-14-legacy-triggers-active-checkbox.png)
+1. <strong>Active</strong>チェックボックスのチェックを外してトリガーを無効にします。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. 設定YAMLファイルを開きます。
+1. `trigger_map`プロパティと、無効にしたいトリガーを見つけます。
+1. そこに`enabled: false`を追加します。
+
+   ```yaml
+   trigger_map:
+   - type: push
+     push_branch: main
+     workflow: primary
+     enabled: false
+   ```
+
+</TabItem>
+</Tabs>
+
+## プロジェクトベースのトリガーの構文 {#project-based-trigger-syntax}
+
+プロジェクトベースのトリガーのYAML構文には、主に3つの要素があります。
+
+- トリガーの種類：`push`、`pull_request`、または`tag`。
+- トリガー条件。たとえば、プルリクエストのsource branch。
+- トリガーされるWorkflowまたはPipeline。
+
+1つのトリガーは1つのビルドのみをトリガーします。1つのプロジェクトベースのトリガーがトリガーできるのは、1つのWorkflowまたはPipelineだけです。[Workflowsを連結する](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together)、1つのトリガーから複数のWorkflowsを連続して実行できます。
+
+以下は、任意のブランチからプルリクエストが開かれたときに、`primary`Workflowでビルドをトリガーする単一のトリガーの例です。
+
+```yaml
+trigger_map:
+- pull_request_source_branch: "*"  
+  type: pull_request  
+  workflow: primary
+```
+
+### 複数の条件に一致するトリガー {#multiple-matching-triggers}
+
+プロジェクトベースのトリガーでは、条件が一致する最初のトリガーがビルドをトリガーします。つまり、トリガーの順序が重要です。
+
+```yaml
+trigger_map:
+- type: push
+  push_branch: main
+  workflow: primary
+- type: push
+  commit_message: deploy
+  workflow: deploy
+```
+
+最初のトリガーは、appのリポジトリの`main`ブランチにコードがプッシュされると、`primary`Workflowをトリガーします。
+
+2番目のトリガーは、コミットメッセージが`deploy`であるコミットが、リポジトリの任意のブランチにプッシュされると、`deploy`Workflowをトリガーします。
+
+コミットメッセージが`deploy`であるコミットが`main`ブランチにプッシュされた場合はどうなるでしょうか。このコミットは最初のトリガーのすべての条件に一致するため、`primary`Workflowがトリガーされます。このシナリオでは、コミットが2番目のトリガーのすべての条件にも一致しているにもかかわらず、`deploy`Workflowはトリガーされません。
+
+### 複数のトリガー条件 {#multiple-trigger-conditions}
+
+1つのプロジェクトベースのトリガーに複数のトリガー条件を定義した場合、ビルドをトリガーするにはすべての条件が一致する必要があります。例：
+
+```yaml
+trigger_map:
+- pull_request_target_branch: "main"
+  pull_request_source_branch: "develop"
+  type: pull_request
+  workflow: primary
+```
+
+これは、プルリクエストのsource branchが`develop`、かつターゲットブランチが`main`の場合にのみ、`primary`ワークフローを選択します。
+
+
+## プロジェクトベースのトリガーのコンポーネント {#project-based-trigger-components}
+
+このページに記載されているコンポーネントは、レガシーのプロジェクトベースのトリガーに対して有効です。
+
+| コンポーネント | 説明 | 使用できる値 | Default value |
+| --- | --- | --- | --- |
+| `type` | プロジェクトベースのトリガーの種類を定義します。特定の種類のトリガーは、その種類に属するトリガー条件のみを受け付けます。 | - `push` - `pull_request` - `tag` | N/A |
+| `enabled` | トリガーが現在有効かどうかを定義するブール値のプロパティです。 | - `true` - `false` | `true` |
+| `workflow`または`pipeline` | トリガーされるWorkflowまたはPipelineです。両方を設定することはできません。 | WorkflowまたはPipelineの正確な名前。 | N/A |
+
+| コンポーネント | 説明 | Default value |
+| --- | --- | --- |
+| `push_branch` | ビルドをトリガーするためにコードがプッシュされるリポジトリのブランチです。 | `*` |
+| `commit_message` | ビルドをトリガーするコミットメッセージです。 | `*` |
+| `changed_files` | 変更によってビルドをトリガーするファイルまたはフォルダーへのパスです。 | `*` |
+
+| コンポーネント | 説明 | Default value |
+| --- | --- | --- |
+| `pull_request_source_branch` | プルリクエストの作成元のブランチです。 | `*` |
+| `pull_request_target_branch` | プルリクエストのマージ先ブランチです。GitHubスタック内のプルリクエストの場合、Bitriseはこれをスタックのベースブランチと照合します。 | `*` |
+| `pull_request_label` | プルリクエストのラベルです。 | `*` |
+| `draft_pull_request_enabled` | ドラフトのプルリクエストでビルドをトリガーするかどうかを定義するブール値のプロパティです。 | `true` |
+| `pull_request_comment` | プルリクエストに投稿されたコメントです。 | `*` |
+| `commit_message` | プルリクエストへのプッシュにおける特定のコミットメッセージです。 | `*` |
+| `changed_files` | プルリクエストで変更される特定のファイルです。 | `*` |
+
+| コンポーネント | 説明 | Default value |
+| --- | --- |
+| `tag` | タグの値です。文字列値または`regex`プロパティを使用できます。 | `*` |

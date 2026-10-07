@@ -1,0 +1,231 @@
+---
+title: "テストデバイスの登録"
+description: "iOSデバイスでSafariを開き、Account settingsからTest devicesページにアクセスすると、テストデバイスを簡単に登録できます。他のブラウザーでは、Register device manuallyボタンを使用して手動で登録できます。"
+sidebar_position: 5
+slug: /bitrise-ci/testing/testing-ios-apps/registering-a-test-device
+sidebar_label: "iOSアプリ用のテストデバイスの登録"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/i18n/ja/partials/getting-to-the-project-settings-page.mdx';
+import Partial_OpeningTheWorkflowEditor from '@site/i18n/ja/partials/opening-the-workflow-editor.mdx';
+
+[bitrise.io](http://bitrise.io)にはテストデバイスを登録する方法が複数用意されています。
+
+- [iOSデバイスでSafariを開き、<strong>Account settings</strong>ページの<strong>Test devices</strong>タブにアクセスします](#register-an-ios-device-using-safari)。
+- [<strong>Account settings</strong>ページの<strong>Test devices</strong>タブからデバイスを手動で登録します](#register-a-test-device-manually)。
+
+Bitriseにデバイスを登録したら、必ず[Apple Developer Portal](https://developer.apple.com/)にも登録してください。<GlossTerm baseform="step">Step</GlossTerm>である[Xcode Archive & Export for iOS](https://github.com/bitrise-steplib/steps-xcode-archive)の使用をお勧めします。これは次のことができます。
+
+- [アプリで利用可能なテストデバイスをすべて登録します](#registering-all-devices-on-the-apple-developer-portal)。
+- [UDIDの一覧を記載したテキストファイルで指定した、選択したテストデバイスを登録します](#registering-a-selection-of-devices-on-the-apple-developer-portal)。
+
+:::important[Apple Developer Portalのデバイス上限数]
+
+デバイスを登録する際は、必ず事前に[アプリで利用可能なテストデバイスの一覧を確認](/bitrise-ci/testing/testing-ios-apps/registering-a-test-device#checking-the-available-test-devices-for-an-app)してから、[Xcode Archive & Export for iOS](https://github.com/bitrise-steplib/steps-xcode-archive)のStepを使用してください。Apple Developer Portalに登録できるデバイス数には上限があるのでご注意ください。
+
+:::
+
+
+## Safariを使用したiOSデバイスの登録 {#register-an-ios-device-using-safari}
+
+[bitrise.io](https://www.bitrise.io)にiOSテストデバイスを登録する最も簡単な方法は、Safariで[bitrise.io](https://www.bitrise.io)を開くことです。この方法では、デバイスの設定を開いて一時的なプロファイルを作成し、Unique Device Identifier(UDID)を取得できます。そのため、ご自身で探してコピー&ペーストする必要がありません。
+
+:::important[キャッシュのクリア]
+
+公開インストールページからアプリをインストールしようとする際は、キャッシュをクリアする必要があります。<strong>古いデバイスから設定を同期した場合は、キャッシュをクリアして新しいデバイスを登録する必要があります</strong>という行に表示されているリンクをクリックしてください。このリンクをクリックすると<strong>Account settings</strong>ページに移動し、以下の手順に従って操作できます。
+
+公開インストールページからのアプリのインストールについて詳しくは、[iOSアプリをBitrise.ioにデプロイする](/bitrise-ci/deploying/ios-deployment/deploying-an-ios-app-to-bitrise-io)ガイドをご覧ください。
+
+:::
+
+
+1. iOSデバイスで<strong>非シークレットモード</strong>でSafariを開き、[bitrise.io](https://www.bitrise.io)にログインします。
+1. <strong>Profile</strong>に移動します。
+1. <strong>Account Settings</strong>をタップします。
+1. 左側の<strong>Test devices</strong>をタップします。
+1. <strong>Register this device</strong>をタップします。
+1. ポップアップウィンドウで<strong>Allow</strong>をタップすると、[bitrise.io](https://www.bitrise.io)が設定プロファイルを表示できるようになります。
+1. <strong>Install Profile</strong>ダイアログが表示されたら、<strong>Install</strong>をタップします。
+1. デバイスのパスコードを入力します。
+1. <strong>Install Profile</strong>の<strong>Install</strong>を再度タップします。<strong>Register device</strong>ダイアログにUDIDとiOSのdevice nameが表示されます。
+1. <strong>Register device</strong>をタップします。
+1. 正しいプロビジョニングプロファイルをデバイスに追加した上で、このテストデバイスを[Apple Developer Portal](https://developer.apple.com/)に登録するか、プロファイル生成を有効にした[Auto Provisioning](/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning) Stepを使用してください。
+
+`Test devices`に戻ると、登録済みデバイスを確認できます。
+
+<strong>Remove</strong>ボタンをクリックすると、いつでも登録済みデバイスを削除できます。
+
+:::note[デフォルトブラウザとしてのSafari]
+
+登録済みデバイスで問題が発生した場合は、Safariをデフォルトブラウザに設定することをお勧めします。
+
+:::
+
+
+## テストデバイスの手動登録 {#register-a-test-device-manually}
+
+1. bitrise.ioで右上のアカウント選択メニューを開き、<strong>Account settings</strong>を選択します。
+1. 左側のメニューで<strong>Test devices</strong>を選択します。
+1. <strong>Register device manually</strong>をクリックします。
+1. <strong>Register device</strong>ダイアログで、<strong>Title</strong>フィールドと<strong>Identifier</strong>フィールドにデバイスのUDIDを入力します。
+1. <strong>Register Device</strong>をクリックします。
+
+   デバイスをコンピュータに接続してiTunesを開くと、<strong>UDIDを取得</strong>できます。<strong>Summary</strong>の下にシリアル番号が表示されます。それをクリックすると、デバイスの<strong>UDID</strong>が表示されるので、それを[Test Devices](https://app.bitrise.io/users/sign_in#/test_devices)ページの<strong>Identifier</strong>フィールドに貼り付けます。
+1. 正しいプロビジョニングプロファイルをデバイスに追加した上で、このテストデバイスを[Apple Developer Portal](https://developer.apple.com/)に登録するか、プロファイル生成を有効にした[Auto Provisioning Step](/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning)を使用してください。
+
+<strong>Registered test devices</strong>セクションに登録済みのテストデバイスが表示されます。
+
+オレンジ色の<strong>x</strong>アイコンをクリックすると、いつでもこの登録済みデバイスを削除できます。
+
+
+## アプリで利用可能なテストデバイスの確認 {#checking-the-available-test-devices-for-an-app}
+
+Bitriseアプリでは、<strong>App Settings</strong>ページで利用可能な登録済みテストデバイスを確認できます。このページには、ロールに関係なく、アプリにアクセス権を持つユーザーに関連付けられた登録済みテストデバイスの一覧がまとめて表示されます。これらのデバイスを使用して、アプリのテストを実行できます。
+
+登録済みデバイスの一覧は、`.json`ファイルとしてダウンロードすることもできます。
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側のメニューで<strong>Test devices</strong>を選択します。
+1. 必要に応じて、<strong>Download as json</strong>ボタンをクリックすると、一覧全体を`.json`ファイルとしてダウンロードできます。
+
+
+## Xcode Archive Stepを使用したApple Developer Portalへのデバイス登録 {#registering-devices-on-the-apple-developer-portal-with-the-xcode-archive-step}
+
+<strong>Xcode Archive & Export for iOS</strong> Stepを使用すると、テストデバイスをApple Developer Portalに自動的に登録できます。デフォルトでは、StepはBitriseアカウントに登録済みのすべてのテストデバイスを登録しますが、特定のデバイスのみを登録するように設定することもできます。
+
+:::important[Apple Developer Portalの上限]
+
+Apple Developer Portalには、テスト用に登録できるデバイス数に上限があり、通常はアカウントごとに100台に設定されている点にご注意ください。<strong>Xcode Archive & Export for iOS</strong> Stepで登録したデバイスもこの上限にカウントされ、登録済みデバイスの削除は年に1回のみ可能です。
+
+:::
+
+### Apple Developer Portalへのすべてのデバイスの登録 {#registering-all-devices-on-the-apple-developer-portal}
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Bitriseにデバイスを登録します。
+
+   - [iOSデバイスを使用して登録します](/bitrise-ci/testing/testing-ios-apps/registering-a-test-device#register-an-ios-device-using-safari)。
+   - [<strong>Account settings</strong>ページで手動で登録します](/bitrise-ci/testing/testing-ios-apps/registering-a-test-device#register-a-test-device-manually)。
+1. <Partial_OpeningTheWorkflowEditor />
+1. <strong>Xcode Archive & Export for iOS</strong> StepをWorkflowに追加します。
+1. <strong>Automatic code signing</strong>の入力グループで、<strong>Apple Developer Portalにtest devicesを登録</strong>入力を`yes`に設定します。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. Bitriseにデバイスを登録します。
+
+   - [iOSデバイスを使用して登録します](/bitrise-ci/testing/testing-ios-apps/registering-a-test-device#register-an-ios-device-using-safari)。
+   - [<strong>Account settings</strong>ページで手動で登録します](/bitrise-ci/testing/testing-ios-apps/registering-a-test-device#register-a-test-device-manually)。
+1. <GlossTerm baseform="configuration yaml">Configuration YAML</GlossTerm>ファイルで、`xcode-archive` StepをWorkflowに追加します。
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-archive:
+           inputs:
+   ```
+1. `register_test_devices`入力を`yes`に設定します。
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-archive:
+           inputs:
+           - register_test_devices: 'yes'
+   ```
+
+</TabItem>
+</Tabs>
+
+### Apple Developer Portalへの選択したデバイスの登録 {#registering-a-selection-of-devices-on-the-apple-developer-portal}
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. 登録するデバイスのUDIDを取得します。[アプリで利用可能なテストデバイスの確認](/bitrise-ci/testing/testing-ios-apps/registering-a-test-device#checking-the-available-test-devices-for-an-app)を参照してください。
+1. `.txt`ファイルを作成し、登録するすべてのデバイスのUDIDをカンマ区切りのリストでファイルに追加します。
+
+   ```text
+   00000000-0000000000000001,00000000-0000000000000002,00000000-0000000000000003
+   ```
+1. BitriseがWorkflowでこのファイルにアクセスできることを確認します。
+
+   リポジトリにコミットできます。
+
+   [Generic File Storageにアップロードし、<strong>File Downloader</strong> Stepを使用してアクセスすることもできます](/bitrise-ci/run-and-analyze-builds/managing-build-files/using-files-in-your-builds#downloading-a-file-using-the-file-downloader-step)。
+
+   ビルド中にファイルを動的に生成することもできます。
+1. <Partial_OpeningTheWorkflowEditor />
+1. <strong>Xcode Archive & Export for iOS</strong> StepをWorkflowに追加します。
+1. <strong>Automatic code signing</strong>の入力グループで、<strong>Apple Developer Portalにtest devicesを登録</strong>入力を<strong>yes</strong>に設定します。
+1. 同じ入力グループで、<strong>UDID</strong>を含む`.txt`ファイルへのパスを<strong>登録するデバイスを含むファイルのPath</strong>入力に追加します。
+
+   :::note[Bitriseに登録済みのデバイス]
+
+   この入力は、Bitriseアカウントに登録されているデバイスよりも優先されます。
+
+   :::
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. 登録するデバイスのUDIDを取得します。[アプリで利用可能なテストデバイスの確認](/bitrise-ci/testing/testing-ios-apps/registering-a-test-device#checking-the-available-test-devices-for-an-app)を参照してください。
+1. `.txt`ファイルを作成し、登録するすべてのデバイスのUDIDをカンマ区切りのリストでファイルに追加します。
+
+   ```text
+   00000000-0000000000000001,00000000-0000000000000002,00000000-0000000000000003
+   ```
+1. BitriseがWorkflowでこのファイルにアクセスできることを確認します。
+
+   リポジトリにコミットできます。
+
+   [Generic File Storageにアップロードし、<strong>File Downloader</strong> Stepを使用してアクセスすることもできます](/bitrise-ci/run-and-analyze-builds/managing-build-files/using-files-in-your-builds#downloading-a-file-using-the-file-downloader-step)。
+
+   ビルド中にファイルを動的に生成することもできます。
+1. Configuration YAMLファイルで、`xcode-archive` StepをWorkflowに追加します。
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-archive:
+           inputs:
+   ```
+1. `register_test_devices`入力を`yes`に設定します。
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-archive:
+           inputs:
+           - register_test_devices: 'yes'
+   ```
+1. UDIDを含む`.txt`ファイルへのパスを`test_device_list_path`入力に設定します。
+
+   :::note[Bitriseに登録済みのデバイス]
+
+   この入力は、Bitriseアカウントに登録されているデバイスよりも優先されます。
+
+   :::
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - xcode-archive:
+           inputs:
+           - register_test_devices: 'yes'
+           - test_device_list_path: path/to/the/file
+   ```
+
+</TabItem>
+</Tabs>

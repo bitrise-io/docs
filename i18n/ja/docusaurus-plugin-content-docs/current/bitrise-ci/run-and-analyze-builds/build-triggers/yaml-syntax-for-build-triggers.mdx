@@ -1,0 +1,146 @@
+---
+title: "ビルドトリガーのYAML構文"
+description: "設定YAMLファイルには、ビルドトリガーの定義が含まれています。オンラインのWorkflow Editorを使用せずに、YAMLで直接設定できます。"
+sidebar_position: 2
+slug: /bitrise-ci/run-and-analyze-builds/build-triggers/yaml-syntax-for-build-triggers
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+:::important[既存のトリガー設定]
+
+このページでは、<GlossTerm baseform="workflow">Workflow</GlossTerm>または<GlossTerm baseform="pipeline">Pipeline</GlossTerm>内で定義される、ターゲットベースのビルドトリガーについて説明します。より詳細で柔軟なビルドトリガーシステムを提供するため、新規ユーザーにはこの方法をお勧めします。
+
+既存の設定では、レガシーのプロジェクトベースのトリガーが使用されている場合があります。詳細については、[レガシーのプロジェクトベースのトリガー](/bitrise-ci/run-and-analyze-builds/build-triggers/legacy-project-based-triggers)をご覧ください。
+
+:::
+
+<GlossTerm baseform="configuration yaml">設定YAML</GlossTerm>ファイルには、ビルドトリガーの定義が含まれています。オンラインの<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>を使用しなくても、YAML内で直接設定できます。
+
+
+## トリガーの構文 {#trigger-syntax}
+
+トリガーは、WorkflowまたはPipeline内の`triggers`要素に含める必要があります。`triggers`要素内の有効なトリガーには、トリガーのタイプと少なくとも1つのトリガー条件が含まれます。
+
+例えば、以下のトリガーは、`release`ブランチにコードがプッシュされたときにビルドを起動します。
+
+```yaml
+workflows:
+  pipeline-tests:
+    triggers:
+      push:
+      - branch: "release"
+```
+
+### 複数の一致するトリガー {#multiple-matching-triggers}
+
+設定YAML内のすべてのトリガーを解析し、一致するすべてのトリガーでビルドを開始します。つまり、トリガーの順序は重要ではありません。
+
+例えば、同じ`branch`条件を持つ`push`トリガーが設定されたWorkflowsが2つある場合、そのブランチにコミットがプッシュされると両方がトリガーされます。以下の設定では、`release`ブランチにコミットがプッシュされると、両方のトリガーがビルドを起動します。
+
+- `pipeline-tests` Workflowは`release`ブランチを指定します。
+- `pipeline-build` Workflowは[ワイルドカード](#wildcards-and-regex)を使用しているため、どのコミットでもビルドがトリガーされます。
+
+```yaml
+workflows:
+  pipeline-tests:
+    triggers:
+      push:
+      - branch: "release"
+    [...]
+  pipeline-build:
+    triggers:
+      push: 
+      - branch: "*"
+```
+
+### 複数のトリガー条件 {#multiple-trigger-conditions}
+
+複数のトリガー条件を定義した場合、ビルドをトリガーするにはすべての条件が一致する必要があります。以下の例では、次の場合にビルドがトリガーされます。
+
+- `release`ブランチにコミットがプッシュされた場合。
+- コミット内で特定のファイルが変更された場合。
+
+```yaml
+workflows:
+  pipeline-builds:
+    triggers:
+      push:
+      - branch: release
+        changed_files: path/to/library-a/.*
+```
+
+### ワイルドカードと正規表現 {#wildcards-and-regex}
+
+すべての種類のトリガー内でのシンプルなテキストマッチングには、ワイルドカード（`*`）を使用できます。正規表現の高度なパターンマッチング機能が不要な場合は、ワイルドカードが適しています。例えば、`fix`で始まるコミットメッセージに基づくトリガーは、ワイルドカードを使用して実現できます。これには`pattern`プロパティの使用をお勧めします。
+
+```yaml
+my_awesome_workflow
+  triggers:
+    push:
+      - branch: main
+      - commit_message:
+          pattern: "hello"
+```
+
+:::note[代替の構文]
+
+ワイルドカードパターンを`commit_message`フィールドのすぐ隣に追加することもできます：`commit_message: "hello"`。この構文も引き続きサポートされます。
+
+:::
+
+ワイルドカードは、入力に現れる特定の固定値に一致させるのに便利です。複数の代替値、否定、特定の文字グループや特定の文字タイプ（数字のみなど）のキャプチャが必要な場合は、正規表現の使用をお勧めします。
+
+トリガー条件に正規表現を使用するには、その値に`regex:`を追加する必要があります。
+
+```yaml
+workflows: 
+  deploy:
+    triggers:
+      tag:
+      - name:
+          regex: '^\d\.\d\.\d$'
+      pull_request:
+      - comment: "[workflow: deploy]"
+        commit_message:
+          regex: '.*\[workflow: deploy\].*'
+```
+
+
+## トリガーのコンポーネント {#trigger-components}
+
+| コンポーネント | 説明 | 使用できる値 | Default value |
+| --- | --- | --- | --- |
+| `pull request`  `push`  `tag` | トリガーのタイプを定義します。ターゲットベースのトリガーのトリガー条件は、これらの要素の子要素です。 | 該当なし | 該当なし |
+| `enabled` | トリガーが現在有効かどうかを定義するブール値のプロパティです。 | - `true` - `false` | `true` |
+
+| コンポーネント | 説明 | Default value |
+| --- | --- | --- |
+| `branch` | ビルドをトリガーするためにコードがプッシュされるリポジトリのブランチです。 | `*` |
+| `commit_message` | ビルドをトリガーするコミットメッセージです。 | `*` |
+| `changed_files` | 変更によってビルドをトリガーするファイルまたはフォルダーのパスです。 | `*` |
+| `last_commit` | Bitriseが、コードプッシュ内のすべてのコミットメッセージや変更されたファイルを評価するか、最新のコミットに属するもののみを評価するかを定義するブール値のプロパティです。 | `false` |
+
+| コンポーネント | 説明 | Default value |
+| --- | --- | --- |
+| `source_branch` | プルリクエストの作成元となるブランチです。 | `*` |
+| `target_branch` | プルリクエストのマージ先となるブランチです。 | `*` |
+| `label` | プルリクエストのラベルです。 | `*` |
+| `draft_enabled` | ドラフトのプルリクエストでビルドをトリガーするかどうかを定義するブール値のプロパティです。 | `true` |
+| `comment` | プルリクエストに投稿されたコメントです。 | `*` |
+| `commit_message` | プルリクエストへのプッシュ内の特定のコミットメッセージです。 | `*` |
+| `changed_files` | プルリクエストで変更される特定のファイルです。 | `*` |
+
+:::important[GitHub スタックされたプルリクエスト]
+
+[GitHub スタック](https://docs.github.com/en/pull-requests/get-started/about-stacked-prs)内のプルリクエストの場合、Bitriseはターゲットブランチの条件を、プルリクエストが直接ターゲットとするブランチではなく、スタックのベースブランチと照合します。
+
+`feature/part-2`が`feature/part-1`をターゲットとし、スタック全体が`main`にマージされるスタックを例に考えます。`target_branch: main`条件は、スタック内のすべてのプルリクエストに一致します。`feature/part-1`に設定された条件は、それらのいずれにも一致しません。
+
+:::
+
+| コンポーネント | 説明 | Default value |
+| --- | --- | --- |
+| `name` | タグの値です。文字列値または`regex`プロパティを使用できます。 | `*` |

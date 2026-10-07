@@ -1,0 +1,69 @@
+---
+title: "SSHキーの設定"
+description: "アプリのリポジトリにアクセスするには、BitriseにSSHキーが必要です。Bitriseに最初にアプリを追加するときにSSHキーを追加できますが、キーはApp settingsでいつでも更新できます。"
+sidebar_position: 7
+slug: /bitrise-platform/repository-access/configuring-ssh-keys
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/i18n/ja/partials/getting-to-the-project-settings-page.mdx';
+
+SSH キーは主な認証方法です。<GlossTerm baseform="Project">project</GlossTerm>のリポジトリにアクセスするには、Bitrise に公開鍵と秘密鍵からなる SSH キーペアが必要です。公開鍵はプロジェクトの Git リポジトリに登録します。
+
+これには1つ例外があります。[Bitrise GitHub App](/bitrise-platform/repository-access/github-app-integration)を使って Bitrise <GlossTerm baseform="workspace">Workspace</GlossTerm>を GitHub に接続する場合は、SSH キーは不要です。
+
+:::tip[HTTPS URLの使用]
+
+HTTPS Git URLを使用し、個人アクセストークンで認証することもできます。この場合、SSH キーは不要です。[HTTPS の認証情報を設定する](/bitrise-platform/repository-access/configuring-https-authorization-credentials)。
+
+:::
+
+Bitrise にプロジェクトを最初に追加する際に SSH キーを追加できますが、キーはいつでも更新できます。プロジェクトを追加する際に SSH キーの設定をスキップし、後から SSH キーを登録することもできます。
+
+:::tip[複数のリポジトリへのアクセス]
+
+プロジェクトがビルド中に複数のリポジトリへアクセスする必要がある場合は、SSH キーペアを生成し、必要なすべてのリポジトリに公開鍵を登録することがベストプラクティスです。または、マシンユーザーを作成し、そのユーザーに SSH キーを登録することもできます。詳細については、[サブモジュールまたはプライベートリポジトリ依存関係を持つアプリ](/bitrise-platform/repository-access/apps-with-submodules-or-private-repo-dependencies)を参照してください。
+
+:::
+
+
+## 独自の SSH キーペアを生成する {#generating-your-own-ssh-keypair}
+
+自分のデバイスで独自の SSH キーペアを生成し、生成された公開鍵と秘密鍵を Bitrise の <GlossTerm baseform="project">project</GlossTerm> で使用することもできます。これは完全に任意です。Bitrise にプロジェクトを追加する過程で、または後から <strong>Project settings</strong> メニューで、Bitrise が SSH キーを生成して自動的に登録できるためです。
+
+コマンドライン/ターミナルの簡単なコマンドで、独自の SSH キーペアを生成します。
+
+```bash
+ssh-keygen -t rsa -b 4096 -P '' -f ./bitrise-ssh -m PEM
+```
+
+これにより、カレントディレクトリ(コマンドを実行したディレクトリ)に2つのファイルが生成されます。
+
+- `bitrise-ssh`(秘密鍵)
+- `bitrise-ssh.pub`(公開鍵)
+
+<strong>公開鍵</strong>をコピーして、Git ホスティングサービス(例: GitHub)に貼り付けます。[bitrise.io](https://www.bitrise.io) でプロジェクトを追加する際には、<strong>秘密鍵</strong>を入力する必要があります。
+
+
+## Bitrise project の SSH キーを設定する {#configuring-ssh-keys-for-your-bitrise-project}
+
+[bitrise.io](https://www.bitrise.io/) で SSH キーを設定するには、次の手順に従います。
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で <strong>Repository</strong> を選択します。
+1. <strong>Authorization</strong> セクションの <strong>Authorization method</strong> カードを見つけます。
+1. SSH キーの横にある <strong>Replace</strong> をクリックします。
+
+   以前に SSH キーを追加したことがない場合、ボタンには代わりに <strong>Add SSH key</strong> と表示されます。
+
+   ![SCR-20260401-pvvq.png](/img/_paligo/uuid-f021126a-47d0-41a9-56f7-79b9c8461a0e.png)
+1. 次の3つのオプションから選択します。
+
+   <strong>Auto-add a generated SSH key to your repository</strong>: Bitrise が公開 SSH キーを GitHub リポジトリに自動的に登録します。リポジトリの管理者権限がある場合はこちらを選択してください。
+
+   <strong>Copy a generated SSH key to your Git provider manually</strong>: Bitrise が SSH キーペアを生成します。公開鍵は Git リポジトリに手動で登録する必要があります。
+
+   <strong>Add 独自の SSH key</strong>: 認証用に独自の SSH キーペアを用意し、公開鍵を Git リポジトリに手動で登録する必要があります。
+1. 自動追加オプションを選択した場合は <strong>Auto-add SSH key</strong> を、それ以外の2つのオプションの場合は <strong>Save changes</strong> をクリックします。

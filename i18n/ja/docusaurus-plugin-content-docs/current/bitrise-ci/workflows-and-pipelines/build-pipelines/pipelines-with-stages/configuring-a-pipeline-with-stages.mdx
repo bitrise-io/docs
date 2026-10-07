@@ -1,0 +1,117 @@
+---
+title: "ステージを持つPipelineの設定"
+sidebar_position: 1
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+ステージを含む<GlossTerm baseform="Pipeline">Pipeline</GlossTerm>の設定は、<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>ファイルを直接編集する方法でのみ可能です。<GlossTerm baseform="Workflow">Workflows</GlossTerm>はグラフィカルな<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>で作成・変更できますが、PipelinesとステージはYAML形式で定義する必要があります。
+
+
+## ステージを使ったPipelinesの定義 {#defining-pipelines-with-stages}
+
+`bitrise.yml`ファイルにはPipelinesの全体設定が含まれます。他のすべての`bitrise.yml`ファイルと同様に、まずフォーマットバージョンとプロジェクトタイプを定義する必要があります。
+
+```yaml
+---
+format_version: '8'
+default_step_lib_source: 
+project_type: android
+```
+
+これは`bitrise.yml`の最小限の設定です。Pipelinesを定義するには、`pipelines`属性を使用する必要があります。
+
+```yaml
+pipelines:  
+  pipeline-successful:
+    stages:
+    - stage-successful-1: {}
+    - stage-successful-2: {}
+    - stage-successful-3: {}
+```
+
+この例では、`pipeline-successful`という名前のPipelineがあり、3つのステージが順番に実行されます。つまり、`stage-successful-1`が正常に終了すると`stage-successful-2`が開始します。いずれかのステージが失敗した場合、後続のステージは開始されません。その代わりに、Pipelineは中止され、失敗としてマークされます。
+
+各ステージは`stages`属性の下で個別に定義する必要があります。ステージを定義するとは、そのステージに含まれるWorkflowsを指定することを意味します。
+
+```yaml
+stages:
+  stage-successful-1:
+    workflows:
+    - test-1: {}
+  stage-successful-2:
+    workflows:
+    - build-1: {}
+    - build-2: {}
+  stage-successful-3:
+    workflows:
+    - deploy-1: {}
+    - deploy-2: {}
+```
+
+この例では、ステージは`test-1`、`build-1`、`build-2`、`deploy-1`、`deploy-2`のWorkflowsを実行します。
+
+
+## 常に実行されるようにステージを設定する {#configuring-a-stage-to-always-run}
+
+デフォルトでは、ステージが失敗した場合(Workflowsのいずれかが失敗したため)、Pipelineの後続のステージは実行されません。ただし、Pipelineが中止されない限り特定のステージを実行するようにPipelineを設定できます。
+
+そのためには、ステージのshould_always_run属性をtrueに設定するだけです。
+
+```yaml
+stages:
+  stage-always-run-successful-1:
+    should_always_run: true
+    workflows:
+    - deploy-1: {}
+    - deploy-2: {}
+```
+
+上記の例では、`stage-always-run-successful-1`という名前のステージは、それ以前のステージの状態にかかわらず常に実行されます。これらのステージが実行されない唯一のケースは、ユーザーがPipelineビルドを中止した場合です。
+
+
+## 失敗したステージのWorkflowsを中止する {#aborting-the-workflows-of-a-failed-stage}
+
+デフォルトでは、特定のステージ内のWorkflowが失敗しても、同じステージ内の他のWorkflowsは自動的には中止されません。これらのWorkflowsは実行されますが、次のステージは開始されません。ただし、この動作を変更して、同じステージ内の他のすべてのWorkflowsを即座に自動的に中止することもできます。
+
+そのためには、abort_on_fail属性を`true`に設定する必要があります。
+
+```yaml
+stages:
+  stage-abort-on-fail-1:
+    abort_on_fail: true
+    workflows:
+    - deploy-1: {}
+    - deploy-2: {}
+```
+
+
+## Pipelineステージ間での環境変数の共有 {#sharing-env-vars-between-pipeline-stages}
+
+[Share Pipeline variables](https://github.com/bitrise-steplib/bitrise-step-share-pipeline-variable)<GlossTerm baseform="Step">Step</GlossTerm>を使用すると、Workflowの任意の環境変数を後続のWorkflowsで再利用できます。
+
+:::tip[run_if条件を使用したオプションのWorkflows]
+
+<strong>Share Pipeline variables</strong>Stepと`run_if`式を組み合わせることで、オプションのWorkflowsを持つPipelinesを簡単に作成できます。詳細については、[Stepを条件付きで有効化または無効化する](/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally)をご確認ください。
+
+:::
+
+その方法は次のとおりです。
+
+1. <strong>Share Pipeline variables</strong>StepをWorkflowに追加します。
+1. 必要に応じて、<strong>Additional run conditions</strong>入力でadditional run conditionsを定義できます。ここで指定した条件がtrueの場合にのみ、Stepが実行されます。
+1. 後続のWorkflowsで使用したい環境変数を、<strong>PipelineWorkflows間で共有するVariable</strong>入力に追加します。
+
+   :::tip[環境変数キーの使用]
+
+   環境変数は`{key}={value}`構文を使用して定義できます。例えば、`MY_ENV_KEY=value`または`INSTALL_PAGE_URL=$BITRISE_PUBLIC_PAGE_URL`のようになります。
+
+   デフォルトの環境変数キーを使用する場合は、省略構文を使用できます。例えば、`EXISTING_ENV_KEY`のようになります。
+
+   このStepを使用して環境変数を共有しても、アプリで定義済みの既存の環境変数は上書きされません。
+
+   :::
+
+以上です。これで、後続の任意のステージで環境変数を使用できるようになります。

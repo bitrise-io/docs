@@ -1,0 +1,47 @@
+---
+title: "Stepの出力リファレンス"
+description: "Stepの出力は、特定のStepを実行した結果となる環境項目です。Stepのデフォルトの出力は、[bitrise.io](https://www.bitrise.io)の`Workflow Editor`、またはStepの`step.yml`ファイルで確認できます。"
+sidebar_position: 6
+slug: /bitrise-ci/references/steps-reference/step-outputs-reference
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+<GlossTerm baseform="Step">Step</GlossTerm>の出力は、特定のStepを実行した結果である環境項目です。たとえば、[<strong>Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files</strong>](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) Stepはデフォルトで5つの出力環境変数を生成します。
+
+- $BITRISE_PUBLIC_INSTALL_PAGE_URL
+- BITRISE_PUBLIC_INSTALL_PAGE_URL_MAP
+- BITRISE_PERMANENT_DOWNLOAD_URL_MAP
+- BITRISE_ARTIFACT_DETAILS_PAGE_URL
+- BITRISE_ARTIFACT_DETAILS_PAGE_URL_MAP
+
+[bitrise.io](https://www.bitrise.io)の<GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>、またはStepの`step.yml`ファイルで、Stepのデフォルトの出力を確認できます。
+
+Stepの出力は、プロジェクトの`step.yml`ファイルで`outputs`属性を設定することで定義できます。これは、他のすべての環境プロパティと同じ構文を持ちます。主に2つの部分で構成されます:`KEY: value`のペアと`opts`フィールドです。キーと値は必須で、`opts`フィールドは任意です。
+
+```yaml
+- MY_KEY_FOR_THE_ENV: my value for the env
+  opts:
+    title: An example env var item
+    is_dont_change_value: false
+    category: example
+```
+
+- `MY_KEY_FOR_THE_ENV`：環境項目のキー（必須）。
+- `my value for the env`：項目の値（必須）。
+- `opts`：任意の属性。
+
+Stepのデフォルト出力は、プロジェクトの`bitrise.yml`ファイルではユーザーが変更できません。`step.yml`ファイルでのみ変更できます。ただし、出力はカスタム[環境変数](/bitrise-ci/configure-builds/environment-variables)としてエクスポートできます。たとえば、<GlossTerm baseform="Workflow">Workflow</GlossTerm>内に同じステップを2回使用していて、両方のステップで生成された出力を使いたい場合に便利です:
+
+```yaml
+workflows:
+  primary:
+    steps:
+    - gradle-runner:
+        outputs:
+        - BITRISE_APK_PATH: ALIAS_APK_PATH
+```
+
+この例では、`BITRISE_APK_PATH`環境変数の値が`ALIAS_APK_PATH`キーでエクスポートされます。

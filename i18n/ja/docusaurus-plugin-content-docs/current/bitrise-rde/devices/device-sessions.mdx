@@ -1,0 +1,137 @@
+---
+title: "デバイスセッション"
+description: "iOSシミュレーターまたはAndroidエミュレーターを起動するRemote Dev Environmentのセッションを作成します。必要に応じてアプリをプリインストールでき、ブラウザー、CLI、またはAIコーディングエージェントから操作できます。"
+sidebar_position: 2
+slug: /bitrise-rde/devices/device-sessions
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+<GlossTerm baseform="device session">デバイスセッション</GlossTerm>は、マシンと一緒に仮想デバイスを起動する Remote Dev Environment の<GlossTerm baseform="rde session">セッション</GlossTerm>です。Bitriseがデバイスを起動し、必要に応じてアプリのビルドをインストールして起動し、準備ができたら通知し、その画面をブラウザーにストリーミングします。マシン上のデバイスは通常のシミュレーターまたはエミュレーターで、`xcrun simctl`、`adb`、または任意のモバイルテストツールで操作できます。
+
+特定の画面サイズとOSバージョンでCIビルドをテストする場合、セッション上でアプリをビルドして実行する場合、またはビルド、インストール、UIのタップ操作、スクリーンショットの取得までをAIコーディングエージェントに任せ、その様子をブラウザーで確認する場合に、デバイスセッションを使用します。
+
+## デバイスセッションの作成 {#creating-a-device-session}
+
+通常どおりセッションを作成し、デバイスを指定します。Stack and machine typeは省略できます。省略すると、Bitriseがプラットフォームに適した動作確認済みの組み合わせを使用します。
+
+<Tabs>
+<TabItem value="rde-ui" label="RDE UI" default>
+
+選択したスタックまたはテンプレートがデバイスをサポートしている場合、<strong>New session</strong> フォームにデバイスのセクションが表示されます。iOSの場合は macOS スタック、Androidの場合は Linux Android スタックです。
+
+1. Remote Dev Environmentsセクションで、<strong>New session</strong> をクリックします。
+1. <strong>Stack</strong> を選択します。使用できるシミュレーターまたはエミュレーターはこれによって決まります。macOS スタックでは iOS シミュレーター、Linux Android スタックでは Android エミュレーターを使用できます。
+1. <strong>Start an iOS simulator</strong> または <strong>Start an Android emulator</strong> をオンにします。
+1. 必要に応じて、<strong>Device</strong> または <strong>Device profile</strong>、<strong>iOS version</strong> または <strong>System image</strong>、ダウンロードURLとしての <strong>App to install</strong> を設定します。
+1. <strong>Create</strong> をクリックします。
+
+</TabItem>
+<TabItem value="cli" label="CLI">
+
+`bitrise-cli rde session create`に `--device-platform ios` または `--device-platform android` を渡します。`--wait`を指定すると、マシンが起動した時点ではなく、デバイスの準備ができた時点でコマンドが戻ります。
+
+```bash
+bitrise-cli rde session create ios-check --device-platform ios --wait
+```
+
+デバイスを選択してビルドをプリインストールするには、署名済みのURLがシェルの履歴に残らないよう、ダウンロードURLをファイルから読み込みます。
+
+```bash
+bitrise-cli rde session create android-check --device-platform android \
+  --device-model pixel_7 --artifact-url-stdin --wait < artifact-url.txt
+```
+
+最初のデバイスセッションの前に、`bitrise-cli rde device-guide`を読み、続いて`bitrise-cli rde device-guide ios`または`android`を読んでください。[Guides for AI agents](#guides-for-ai-agents)を参照してください。
+
+</TabItem>
+<TabItem value="mcp" label="AI agent (MCP)">
+
+エージェントに、たとえば次のように普通の言葉で依頼します。*「iPhone 16 シミュレーターでデバイスセッションを作成し、このビルドをインストールして、ログイン画面が表示されることを確認してください。」* エージェントは、`device_spec`を指定して`bitrise_devenv_create`を呼び出します。
+
+```json
+{
+  "name": "ios-check",
+  "device_spec": { "platform": "ios", "device_model": "iPhone 16" },
+  "artifact": { "url": "https://…/App.zip", "app_name": "My App" }
+}
+```
+
+</TabItem>
+<TabItem value="api" label="API">
+
+[create session request body](/bitrise-rde-api/api-reference/codespaces-service-create-session)に `device_spec` を追加し、必要に応じて `artifact` も追加します。
+
+```json
+{
+  "name": "android-check",
+  "device_spec": { "platform": "android", "device_model": "pixel_7" },
+  "artifact": { "url": "https://…/app.apk", "app_name": "My App" }
+}
+```
+
+</TabItem>
+</Tabs>
+
+[template](/bitrise-rde/configuration/templates#declared-device)でデバイスを宣言することもできます。その場合、そのテンプレートから作成したセッションは、個別のデバイス設定なしでデバイスを起動します。
+
+## デバイスのオプション {#device-options}
+
+プラットフォーム以外のオプションはすべて省略できます。
+
+| Option | Applies to | Description |
+| --- | --- | --- |
+| Platform | Both | `ios`は macOS スタックでシミュレーターを起動し、`android`は Linux Android スタックでエミュレーターを起動します。 |
+| Device model | Both | 画面プロファイルです。シミュレーターのデバイスタイプ(`iPhone 16`、`iPad Pro 13-inch (M4)`など)、またはエミュレーターのデバイスプロファイル(`pixel_7`、`pixel_tablet`、`pixel_fold`など)を指定します。デフォルトは `iPhone 15` または `pixel_7` です。 |
+| OS version | iOS | `18.2` などの iOS バージョンです。デフォルトは、スタックにインストールされている最新の iOS ランタイムです。 |
+| System image | Android | `system-images;android-34;google_apis;x86_64` などの SDK システムイメージパッケージです。これにより Android API レベルを選択します。デフォルトは、スタックのデフォルトイメージです。 |
+| App to install | Both | zip 圧縮されたシミュレーター `.app`(iOS)または `.apk`(Android)のダウンロードURLです。デバイスの準備ができると、Bitriseがアプリをインストールして起動します。署名付きで有効期限のあるURLも使用でき、セッションに暗号化されて保存されます。 |
+| Emulator RAM, cores, cold boot | Android | APIとMCPサーバーからのみ利用できます。デフォルトでは、エミュレーターのサイズはマシンに合わせて設定されます。 |
+
+起動できるのは、スタックにプリインストールされているものだけです。スタックにない OS バージョン、システムイメージ、またはデバイスモデルを指定した場合、Bitriseは代わりにデフォルトを起動し、置き換えた内容をデバイスノートに記録します。デバイスノートはセッションページと `bitrise-cli rde session view` に表示されます。特定の OS バージョンが必要な場合は、事前にデバイスノートを確認してください。
+
+## デバイスの準備を待つ {#waiting-for-the-device}
+
+セッションのステータスは、マシンが起動すると <strong>running</strong> になりますが、デバイスはバックグラウンドで起動するため、通常はさらに1～3分かかります。プラットフォームの負荷が高い場合はもっと長くかかります。セッションの詳細ページ、`bitrise-cli rde session view`、および API の `device` フィールドで、デバイスの状態を確認できます。
+
+| State | Meaning | What to do |
+| --- | --- | --- |
+| Booting | マシンは実行中で、デバイスを起動しているところです。 | 待ちます。デバイスに対して何も実行せず、再起動や再作成もしないでください。 |
+| Ready | デバイスが起動し、ストリーミングされています。 | 作業を開始します。特定の OS やモデルを指定した場合は、デバイスノートを確認してください。 |
+| Failed | この起動は失敗したか、ビデオストリームのみが失敗しました。 | デバイスノートを読んでください。ストリームのみの失敗の場合、デバイスは `adb` や `xcrun simctl` で引き続き動作し、失われるのはブラウザービューだけです。それ以外の場合は、セッションを削除して新しく作成してください。 |
+
+アプリのインストールを指定した場合は、同じ場所にインストールのステータスも表示されます。インストールに失敗してもデバイスは引き続き使用できます。アプリを自分でインストールするか、セッションをリストアして再試行してください。
+
+## ブラウザーでデバイスを確認する {#watching-the-device-in-the-browser}
+
+セッションの詳細ページで、<strong>Device</strong> 行の <strong>Open device view</strong> をクリックします。ビューアーはデバイスの画面をストリーミングし、タップ、入力、スワイプ、回転、ライトとダークの外観の切り替え、スクリーンショットの取得を行えます。これは [device preview link](/bitrise-rde/devices/device-preview-links)が開くものと同じビューアーで、このセッションに接続されています。
+
+デバイスビューには、Bitriseのログインとセッションへのアクセス権が必要です。個人のセッションの場合はその所有者、workspaceが所有するセッションの場合は workspace のメンバーであればアクセスできます。デバイスセッションへの匿名リンクはありません。Bitriseアカウントを持たない人にアプリを渡すには、代わりにプレビューリンクを発行してください。
+
+あなたのタップとエージェントのコマンドは、同じデバイスに送られます。交代で操作してください。
+
+## デバイスを操作する {#working-with-the-device}
+
+マシン上のすべてのものは、何もインストールしなくてもすぐに使えます。
+
+- `bitrise-cli rde session exec`でセッション上でコマンドを実行するか、AIエージェントに MCP サーバーの execute ツールで実行させます。`xcrun simctl`と`adb`は、起動済みのデバイスを認識します。
+- 自動化する際は、スクリーンショットよりもアクセシビリティツリーを優先してください。iOSでは、マシン上のストリーミングサービスが、最前面のアプリのアクセシビリティツリーを JSON として公開し、タップや入力のためのコマンドラインツールも提供します。Androidでは、入力に `adb shell`、ビュー階層に `uiautomator dump` を使用します。
+- 独自のツールも使用できます。XCUITest、Espresso、Maestro、Appium、Detox はいずれも動作しますが、独自にデバイスを作成させるのではなく、起動済みのデバイスを UDID またはシリアルで指定してください。
+- ローカルのツールを使用するには、SSHでご自身のマシンから接続します。`bitrise-cli rde session ssh`が SSH コマンドとパスワードを出力します。セッションのサービスポートに記載されているデバイスのポートを転送してください。両方のプラットフォームでブラウザービュー、Androidでは `adb` を転送すると、ご自身のマシンから `adb connect` が動作します。
+- ファイルの移動には `bitrise-cli rde session upload` と `download` を使用します。たとえば、ビルドを持ち込んだり、スクリーンショットを取り出したりできます。
+
+Bitriseが起動したデバイスをシャットダウン、消去、再作成しないでください。また、2台目のデバイスを起動しないでください。準備状態とブラウザービューは元のデバイスに連動しており、ツールが勝手に作成したシミュレーターは、誰にも見えないデバイス上で動くことになります。
+
+## AIエージェント向けのガイド {#guides-for-ai-agents}
+
+デバイスを効率的に操作するためのノウハウはツールに同梱されているため、エージェントは自力で見つけて、すぐに使い始めることができます。
+
+- <strong>CLI</strong>: `bitrise-cli rde device-guide`がメインのガイドを出力し、`bitrise-cli rde device-guide ios`または`android`がプラットフォーム固有の内容を出力します。`bitrise-cli rde session create`のヘルプからもこのガイドを参照できます。
+- <strong>MCP サーバー</strong>: 同じガイドが `bitrise-devenv://guides/device-sessions`、`.../ios`、`.../android` リソースとして提供され、リソースを読み取らないクライアント向けには `bitrise_devenv_device_guide` ツールが返します。セッションツールは、デバイスを作成または操作する前にガイドを読むようエージェントに指示します。
+
+ガイドでは、どのくらい待つか、アクセシビリティツリーの読み方と入力の送り方、インストール、起動、スクリーンショットの取得、ログの読み取りの方法、デバイスを壊す操作、起動に失敗した場合の復旧方法を説明しています。
+
+## 終了、リストア、削除 {#terminating-restoring-and-deleting}
+
+デバイスセッションは通常の [session lifecycle](/bitrise-rde/getting-started/key-concepts#session-lifecycle)に従いますが、2点が追加されます。終了するとデバイスの状態が消去されるため、停止したセッションが準備完了のデバイスを報告することはありません。リストアするとデバイスが再び起動し、アプリが設定されていた場合は再インストールされます。

@@ -1,0 +1,137 @@
+---
+title: "AIビルド修正"
+description: "ビルドが失敗した場合、Bitrise AIビルド修正は、他のツールやプロセスに切り替えることなく、ビルドの詳細ページでそのまま修正します。AIビルド修正は、提案されたコード変更を実行し、PRをGitHubリポジトリにプッシュします。"
+sidebar_position: 9
+slug: /bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/ai-build-fixer
+---
+
+失敗したビルドがある場合、AI ビルド修正機能はほかのツールやプロセスに切り替えることなく、ビルドの詳細ページ上で直接修正します。AI ビルド修正機能は提案されたコードの変更を実行し、PRをGitHubリポジトリにプッシュします。変更内容はリポジトリへのリンクから確認できます。設定されたビルドトリガーに基づいて、Bitriseが AI による変更を検証するための新しいCIビルドを開始します。これにより、作業の分断が減り、デバッグも迅速になります。
+
+:::note[AI ビルド修正機能のクレジット消費]
+
+AI ビルド修正機能を1回実行するたびに、AI クレジットを2つ消費する点にご注意ください。
+
+:::
+
+## AI ビルド修正機能を設定する {#configuring-the-ai-build-fixer}
+
+AI ビルド修正機能を実行するには、次の操作が必要です。
+
+- [AI ビルドサマリー](/bitrise-platform/ai/ai-features-on-bitrise#ai-build-summary)を有効にします。AI ビルド修正機能は、ビルドサマリーの出力や提案をもとに構築されています。
+- <strong>Project settings</strong>ページでEnable theAI ビルド修正機能を有効にします。
+- ビルド修正機能の設定に、信頼するドメインを追加します。
+
+これらを行うには、次の手順に従います。
+
+1. workspaceの<strong>Dashboard</strong>で、左側の<strong>Settings</strong>をクリックします。
+1. [AI 機能を有効にする](/bitrise-platform/ai/enabling-ai-features-on-bitrise)。
+1. プロジェクトの<strong>Project settings</strong>ページで、<strong>Bitrise AI</strong>を選択します。
+1. [AI ビルドサマリーを有効にするには、トグルを切り替えます](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/ai-build-summary)。
+
+   これを有効にしないと、AI ビルド修正機能は AI ビルドサマリーの結果に依存しているため使用できません。
+1. <strong>AI Build fixer</strong>の横にあるトグルを切り替えます。
+
+   ![2026-01-20-ai-build-fixer.png](/img/_paligo/uuid-311c03e1-c104-9bed-9744-f751497444a1.png)
+1. Bitrise AIビルド修正機能が使用できるドメインを設定するには、トグルを有効にした後に表示される<strong>Configure agent internet access</strong>ダイアログで希望のオプションを選択します。選択できるオプションは次の2つです。
+
+   - <strong>Use Bitrise trusted domains</strong>: プリセットのドメインリストから開始し、必要に応じて追加できます。プリセットドメインの一覧は次のとおりです。
+
+     ```
+     alpinelinux.org
+     anaconda.com
+     apache.org
+     apt.llvm.org
+     archlinux.org
+     azure.com
+     bitbucket.org
+     bower.io
+     centos.org
+     cocoapods.org
+     continuum.io
+     cpan.org
+     crates.io
+     debian.org
+     docker.com
+     docker.io
+     dot.net
+     dotnet.microsoft.com
+     eclipse.org
+     fedoraproject.org
+     gcr.io
+     ghcr.io
+     github.com
+     githubusercontent.com
+     gitlab.com
+     golang.org
+     google.com
+     goproxy.io
+     gradle.org
+     hashicorp.com
+     haskell.org
+     hex.pm
+     java.com
+     java.net
+     jcenter.bintray.com
+     json-schema.org
+     json.schemastore.org
+     k8s.io
+     launchpad.net
+     maven.org
+     mcr.microsoft.com
+     metacpan.org
+     microsoft.com
+     nodejs.org
+     npmjs.com
+     npmjs.org
+     nuget.org
+     oracle.com
+     packagecloud.io
+     packages.microsoft.com
+     packagist.org
+     pkg.go.dev
+     ppa.launchpad.net
+     pub.dev
+     pypa.io
+     pypi.org
+     pypi.python.org
+     pythonhosted.org
+     quay.io
+     ruby-lang.org
+     rubyforge.org
+     rubygems.org
+     rubyonrails.org
+     rustup.rsrvm.io
+     sourceforge.netspring.io
+     swift.orgubuntu.com
+     visualstudio.com
+     yarnpkg.com
+     ```
+   - <strong>Add domains manually:</strong> ビルド修正機能にアクセスさせたいドメイン(たとえば、ホスト型の Git プロバイダーや依存関係ストアなど)を追加できます。ここに Git プロバイダーを追加しないと、Build エージェントがアクセスできなくなるのでご注意ください。
+
+     ![configure-agent-internet-access-bitrise.png](/img/_paligo/uuid-f2b44f50-8b8a-8c8e-48dd-c12a800692d0.png)
+
+Bitrise AIを有効にし、Bitriseビルド修正機能とドメインを設定すると、AI ビルド修正機能も使用できるようになります。
+
+:::note[お客様のコードは安全に保護されます]
+
+Bitrise AIビルド修正機能は、コードの修正やリポジトリへのPRのプッシュを行う際に、シークレットや認証情報を一切保存しません。修正を試みるたびに、実行終了後に破棄される使い捨ての仮想マシンを使用します。
+
+:::
+
+## AI ビルド修正機能を実行する {#running-the-ai-build-fixer}
+
+これで、プロジェクトで AI ビルド修正機能を実行する準備が整いました。
+
+1. your projects<strong>Builds</strong>ページに移動し、失敗したビルドを選択します。
+1. <strong>Build log</strong>タブで<strong>Bitrise AI</strong>に移動し、<strong>Show details</strong>をクリックします。
+1. <strong>失敗の理由</strong>の下にある<strong>Fix with AI</strong>をクリックします。
+
+   ![fix-with-ai.png](/img/_paligo/uuid-e3205cde-6fb9-f316-9666-a22617129183.png)
+1. Bitrise AIにビルド修正機能エージェントを起動し、現在のブランチへ変更をプッシュさせたい場合は、<strong>Continue with fix</strong>をクリックします。
+
+   ![fix-build-with-ai.png](/img/_paligo/uuid-49707b16-e6a3-6f4e-ea0a-869f23923758.png)
+1. AI ビルド修正機能の実行が完了すると、確認して承認できるように、<strong>Triggeredビルド</strong>、<strong>GitHubへのプッシュ済みの変更</strong>、および<strong>エージェントログ</strong>へのリンクが生成されます。PRをプロジェクトのリポジトリにマージする準備が整いました。
+
+   ![produced_links-ai-build-fixer.png](/img/_paligo/uuid-623c579f-869c-110a-da28-346d2a574ac0.png)
+</content>
+</invoke>

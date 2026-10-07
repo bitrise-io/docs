@@ -1,0 +1,113 @@
+---
+title: "Insightsでのアラートの設定"
+description: "Insightsでは、アラートを設定できます。アラートは指定したメトリクスを監視し、しきい値に達すると通知します。たとえば、いずれかのアプリのビルドが15分を超えた場合や、1000クレジットを超えて消費した場合に通知するアラートを設定できます。"
+sidebar_position: 3
+slug: /insights/configuring-alerts-in-insights
+sidebar_label: "アラート"
+sidebar_custom_props:
+  icon: Siren
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Insightsでは、アラートを設定できます。アラートは指定されたメトリクスを監視し、一定のしきい値に達したときに通知します。たとえば、いずれかのアプリのビルドが15分を超えた場合や、1000クレジットを超えて消費した場合に通知するアラートを設定できます。
+
+次の項目に対してアラートを設定できます。
+
+- ビルド
+- テスト
+- Credit usage
+
+各カテゴリーについて、利用可能な[Bitrise CIメトリクス](/insights/available-metrics-in-insights/bitrise-ci-metrics)のいずれかに対してアラートを設定できます。
+
+アラートごとに、通知の受信方法を選択する必要があります。次の3つのオプションがあります。
+
+- Microsoft Teams: アラートは選択したTeamsチャンネルに通知を投稿します。[Teamsで受信Webhookを設定する必要があります](https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook?tabs=dotnet)。
+- Slack: アラートは選択したSlackチャンネルに通知を投稿します。[受信Webhookが有効になっているSlackアプリ](https://api.slack.com/messaging/webhooks)が必要です。
+- Email: アラートはメールで通知します。
+
+
+## 新しいアラートを作成する {#creating-a-new-alert}
+
+Insightsでは、いつでも新しいアラートを作成できます。
+
+1. プロジェクトのInsightsを開きます。
+1. <strong>Create alert</strong>ページに移動します。これには2つの方法があります。
+
+   - 左メニューから<strong>Alerts</strong>を選択し、<strong>Create alert</strong>をクリックします。
+
+     ![create-alert-button.png](/img/_paligo/uuid-6df6ae6a-869d-58a9-dbea-2fa93fba24e2.png)
+   - <strong>Builds</strong>、<strong>Tests</strong>、または<strong>Credits</strong>内の任意のメトリクスの上にあるベルアイコンをクリックします。
+
+     ![bell.png](/img/_paligo/uuid-d7b270fb-8c64-ce2d-c083-c1dbcfdde87f.png)
+1. <strong>Metric type</strong>セクションで、メトリクスタイプとそのタイプ内の特定のメトリクスを選択します。
+
+   ![metric-type.png](/img/_paligo/uuid-3cab36a0-7c43-5fb3-40cb-d7c03cd8ab00.png)
+1. <strong>Filter</strong>セクションで、select a project、次に<strong>Add filter</strong>をクリックしてフィルター条件を追加します。プロジェクトを選択しない場合、アラートはフィルターなしで<GlossTerm baseform="workspace">workspace</GlossTerm>内のすべてのプロジェクトに適用されます。
+
+   特定の[Pipeline](/bitrise-ci/workflows-and-pipelines/build-pipelines/pipelines-with-stages/configuring-a-pipeline-with-stages)、<GlossTerm baseform="Workflow">Workflow</GlossTerm>、さらには<GlossTerm baseform="Step">Step</GlossTerm>に対してフィルターを作成できます。また、ブランチ、[スタック](/bitrise-build-hub/infrastructure/build-stacks/about-build-stacks)、[マシンタイプ](/bitrise-platform/infrastructure/build-machines/about-build-machines)でフィルターすることもできます。
+
+   ![alert-filters.png](/img/_paligo/uuid-918b42a8-4b92-3f05-5514-1b137c85e283.png)
+1. <strong>Conditions</strong>セクションで、アラート条件を設定します。
+
+   - <strong>Direction</strong>: 指定したしきい値が一定の制限を上回る、等しい、または下回る場合にアラートを作成するかどうかを選択します。
+   - <strong>しきい値</strong>: 方向が適用される値です。この正確な性質は選択したメトリクスによって異なります。たとえば、クレジット使用量を選択した場合、アラートを<GlossTerm baseform="trigger">トリガーする</GlossTerm>ために消費されるクレジットの量を設定できます。
+   - <strong>Monitored window</strong>: アラートが監視する期間です。
+1. <strong>Notifications</strong>セクションで、<strong>Alert name</strong>フィールドにname the alert。
+1. <strong>Notification providers</strong>セクションで、<strong>Add new</strong>をクリックし、ドロップダウンメニューから3つのnotification providersの中から選択します。
+
+   - <strong>Slack</strong>: 選択したチャンネルに投稿する受信Webhookを作成し、webhook URLを貼り付けます。そのためには、Slackアプリを作成し、アプリで受信Webhookを有効にする必要があります。[受信Webhookを使用したメッセージの送信](https://api.slack.com/messaging/webhooks)。
+   - <strong>Teams</strong>: 選択したTeamsチャンネル用の受信Webhookを作成し、webhook URLを貼り付けます。[Teams用の受信Webhookを作成する](https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook?tabs=dotnet)。
+   - <strong>Email</strong>: 有効なメールアドレスを設定します。アラートはそのアドレスに通知を送信します。
+1. 準備ができたら、<strong>Create</strong>をクリックしてアラートを完了します。
+
+
+## 既存のアラートを編集する {#editing-an-existing-alert}
+
+アラートがInsightsに設定されると、<strong>Alerts</strong>ページからいつでも変更できます。しきい値、粒度(アラートが適用される期間)を変更したり、notification providersを変更したりできます。
+
+:::important[メトリクスタイプは変更できません]
+
+アラートが監視するメトリクスタイプは変更できません。たとえば、アラートがビルドの失敗率を監視している場合、代わりにクレジット使用量を監視するように変更することはできません。同様に、フィルタリングも変更できません。特定のアプリを監視していた場合、別のアプリを監視するようにアラートを変更することはできません。
+
+別のメトリクスや別のフィルターで同様のアラートが必要な場合は、既存のアラートを複製してください。[既存のアラートを複製する](/insights/configuring-alerts-in-insights#duplicating-an-existing-alert)。
+
+:::
+
+アラートを編集するには、次の手順に従います。
+
+1. アプリのInsightsを開きます。
+1. 左側で<strong>Alerts</strong>を選択します。
+
+   ![alerts.png](/img/_paligo/uuid-3c75e562-bf1f-266f-ec68-910589ed408e.png)
+1. 必要なアラートを選択し、右側の<strong>アラートを表示</strong>ボタンをクリックします。
+
+   ![existing-alert.png](/img/_paligo/uuid-387f919f-49c9-14ae-cb62-1bc4f47cda1e.png)
+1. アラートのページで、右上隅の省略記号をクリックしてコンテキストメニューを開きます。
+
+   ![edit-alert.png](/img/_paligo/uuid-a493c03e-ab64-9b02-748d-556fdd1c1b1a.png)
+1. <strong>Edit alert</strong>を選択します。
+1. しきい値、粒度、または通知プロバイダーを変更します。
+1. <strong>Save</strong>をクリックします。
+
+
+## 既存のアラートを複製する {#duplicating-an-existing-alert}
+
+既存のアラートを複製し、アラート作成プロセス中に変更できます。これにより、ユーザーは既存のアラートに基づいて新しいアラートをすばやく作成できます。
+
+アラートを複製するには、次の手順に従います。
+
+1. アプリのInsightsを開きます。
+1. 左側で<strong>Alerts</strong>を選択します。
+
+   ![alerts.png](/img/_paligo/uuid-3c75e562-bf1f-266f-ec68-910589ed408e.png)
+1. 必要なアラートを選択し、右側の<strong>アラートを表示</strong>ボタンをクリックします。
+
+   ![existing-alert.png](/img/_paligo/uuid-387f919f-49c9-14ae-cb62-1bc4f47cda1e.png)
+1. アラートのページで、右上隅の省略記号をクリックしてコンテキストメニューを開きます。
+
+   ![edit-alert.png](/img/_paligo/uuid-a493c03e-ab64-9b02-748d-556fdd1c1b1a.png)
+1. <strong>Duplicate</strong>を選択します。
+1. 複製機能により、既存のアラートの値が設定された状態で[<strong>Create alert</strong>ページに移動](/insights/configuring-alerts-in-insights#creating-a-new-alert)します。変更を加えた後、ページ下部の<strong>Create</strong>をクリックします。

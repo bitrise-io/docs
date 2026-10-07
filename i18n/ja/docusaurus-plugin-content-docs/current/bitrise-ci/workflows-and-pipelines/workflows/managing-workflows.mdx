@@ -1,0 +1,125 @@
+---
+title: "Workflowsの管理"
+description: "BitriseWorkflow Editorで、複数のWorkflowsを連結したり、連結内のWorkflowsの順序を並べ替えたりできます。ユーティリティWorkflowsを活用して、さまざまなコンテキストでコンポーネントを再利用できます。"
+sidebar_position: 4
+slug: /bitrise-ci/workflows-and-pipelines/workflows/managing-workflows
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditor from '@site/i18n/ja/partials/opening-the-workflow-editor.mdx';
+import Partial_OfflineWorkflowEditor from '@site/i18n/ja/partials/offline-workflow-editor.mdx';
+
+Bitriseの<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>では、複数の<GlossTerm baseform="workflow">Workflows</GlossTerm>をチェーンさせたり、チェーン内のWorkflowsの順序を並べ替えたりできます。ユーティリティWorkflowsを活用すれば、複数の異なるコンテキストでコンポーネントを再利用できます。
+
+<Partial_OfflineWorkflowEditor />
+
+
+## Workflowsをチェーンする {#chaining-workflows-together}
+
+複数のWorkflowsを設定して、順番に実行できます。これらのWorkflowsの順序はいつでも並べ替えることができ、新しいWorkflowsをチェーンに追加したり、既存のWorkflowsをチェーンから削除したりすることもできます。
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. Workflowカードにカーソルを合わせ、表示される<strong>Chain Workflows</strong>アイコンボタンをクリックします。
+
+   ![Chain WorkflowsアイコンボタンがハイライトされたWorkflowカード](/img/workflows-and-pipelines/2026-07-06-chain-workflows-button.png)
+1. <strong>Chain Workflows</strong>ドロワーで、select a Workflowをリストから選択し、<strong>Add before</strong>または<strong>Add after</strong>をクリックします。
+1. 右上にある<strong>Save changes</strong>をクリックします。
+
+<strong>YAMLでのWorkflowsのチェーン</strong>
+
+この例では、before_runおよびafter_runパラメーターを使用して、3つのWorkflows（`test`、`deploy`、`ci`）をチェーンさせています。
+
+```yaml
+workflows:
+  test:
+    envs:
+    - IS_TEST: "true"
+    steps:
+    # test Steps to run
+
+  deploy:
+    before_run:
+    - test
+    steps:
+    # steps to deploy
+
+  ci:
+    before_run:
+    - test
+    after_run:
+    - deploy
+```
+
+`bitrise.yml`ファイルで直接Workflowsを管理する方法については、[Workflowレベルのプロパティ](/bitrise-ci/references/configuration-yaml-reference#workflow-level-properties)をご確認ください。
+
+
+## チェーンされたWorkflowsの並べ替え {#rearranging-chained-workflows}
+
+チェーンを作成すると、ドラッグ&ドロップメニューでWorkflowsの順序を簡単に並べ替えられます。
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. Workflowカードで、チェーンされたWorkflowの左側にあるドラッグハンドルを押しながら、目的の位置までドラッグします。
+
+   ![左側にドラッグハンドルがあるチェーンされたWorkflowカード](/img/workflows-and-pipelines/2026-07-06-chain-workflows-drag-handle.png)
+1. 右上にある<strong>Save changes</strong>をクリックします。
+
+
+## Workflowの優先度 {#workflow-priority}
+
+個々のWorkflowごとに優先度を設定できます。この優先度設定によって、build queue内でのWorkflowの単独ビルドの位置が決まります。優先度が高いほど、Workflowのビルドがより早く実行されます。
+
+優先度は、Workflow Editor内、またはプロジェクトの<GlossTerm baseform="configuration yaml">configuration YAML</GlossTerm>ファイルのいずれかで割り当てることができます。優先度は必ず-100から100までの整数で指定し、数値が大きいほど優先度が高くなります。デフォルトの優先度は0です。
+
+build priorityや、さまざまな種類の優先度間の優先順位については、[Build priority](/bitrise-ci/configure-builds/configuring-build-settings/build-priority)をご覧ください。
+
+
+## ユーティリティWorkflows {#utility-workflows}
+
+:::important[Step bundles]
+
+ユーティリティWorkflowsの代わりに、[Step bundles](/bitrise-ci/workflows-and-pipelines/steps/step-bundles)の使用を強くおすすめします。これにより、複数のStepsを1つの単位にまとめ、Workflowの任意の場所で再利用できます。
+
+:::
+
+Bitriseは、ユーティリティWorkflowと呼ばれる特別な種類のWorkflowをサポートしています。ユーティリティWorkflowのIDは常にアンダースコア文字で始まります。例：`_setup`。これらは通常、複数の異なるWorkflowsの開始時または終了時に必要なタスクを実行するために使用されます。たとえば、gitのクローン作成とSSHキーの有効化を、アプリのすべてのWorkflowにStepsを追加する代わりに、ユーティリティWorkflowに分離できます。
+
+ユーティリティWorkflowは、通常のものを作成するのと[まったく同じ方法](/bitrise-ci/workflows-and-pipelines/workflows/creating-a-workflow)で作成できます。ユーティリティWorkflowとして指定するには、名前の先頭にアンダースコアを付けるだけです。
+
+:::important[ユーティリティWorkflowsは単独で実行できません]
+
+ユーティリティWorkflowsは、単独のWorkflowsとして実行することはできません。Workflowの前または後に、通常のWorkflowとチェーンさせる必要があります。[Workflowsをチェーンする](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together)をご覧ください。
+
+:::
+
+<strong>YAMLでのユーティリティWorkflow</strong>
+
+この例では、`_setup`と`_send-notifications`という2つのユーティリティWorkflowsがあります。これらは、before_runおよびafter_runパラメーターを使用して、`test`と`ci`という2つのWorkflowsとチェーンされています。
+
+```yaml
+workflows:
+  _send-notifications:
+    steps:
+    # send notifications
+
+  _setup:
+    steps:
+    # setup Steps to run
+
+  test:
+    before_run:
+    - _setup
+    envs:
+    - IS_TEST: "true"
+    steps:
+    # test Steps to run
+
+  ci:
+    before_run:
+    - test
+    after_run:
+    - _send-notifications
+```
+
+`bitrise.yml`ファイルで直接Workflowsを管理する方法については、[Workflowレベルのプロパティ](/bitrise-ci/references/configuration-yaml-reference#workflow-level-properties)をご確認ください。

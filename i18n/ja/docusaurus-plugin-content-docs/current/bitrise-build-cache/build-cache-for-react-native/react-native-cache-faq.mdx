@@ -1,0 +1,62 @@
+---
+title: "React Native Cache FAQ"
+sidebar_position: 7
+---
+
+## キャッシュされる対象 {#what-exactly-gets-cached}
+
+- <strong>Android:</strong> リモートbuild cacheを介して、Gradleタスクの出力（コンパイル、リソース処理、dex 生成）をキャッシュします。
+- <strong>iOS:</strong> LLVM CAS ベースのキャッシュを介して、Xcodeのコンパイル出力（オブジェクトファイル、モジュールのアーティファクト）をキャッシュします。
+- <strong>C++ ネイティブモジュール:</strong> Bitriseのリモートストレージを利用する`ccache`を介して、コンパイル済みのネイティブブリッジコードとサードパーティのネイティブモジュールをキャッシュします。
+
+## キャッシュされない対象 {#what-does-not-get-cached}
+
+- <strong>Metro JS バンドル</strong>: JavaScriptのバンドル処理は、この設定の影響を受けません。
+- <strong>`node_modules`</strong>: パッケージのインストール（`yarn` / `npm` / `pnpm`）は、このツールではキャッシュされません。`node_modules`をキャッシュする場合は、Bitriseの標準のキャッシュ Step を使用してください。
+
+## すべてのコマンドをラップする必要はありますか {#do-i-need-to-wrap-every-command}
+
+ラップが必要なのは、*ネイティブビルド*をトリガーするコマンドのみです。次のコマンドはラップ不要です。
+
+- `yarn install` / `npm install` / `pnpm install`
+- `yarn test` / `npm test`（JS のみのテスト）
+- GradleやXcodeを呼び出さないコマンド
+
+`npx react-native run-android`、`npx react-native run-ios`、`./gradlew assembleRelease`、`fastlane build`のようなコマンドや、最終的に`xcodebuild`またはGradleを呼び出すスクリプトはラップしてください。
+
+## テストは高速化されますか {#will-this-speed-up-my-tests}
+
+Build Cacheが短縮するのは*コンパイル*時間です。テストの Workflow にビルド Step（例: `xcode-build-for-test`）が含まれている場合は、その Step が高速になります。テスト自体の実行時間は変わりません。
+
+## スタンドアロンのGradleやXcodeBuild Cache Step と併用できますか {#can-i-use-this-alongside-the-standalone-gradle-or-xcode-build-cache-steps}
+
+いいえ。<strong>Build Cache for React Native</strong> Step は、Gradle、Xcode、C++ のキャッシュを一度に設定します。スタンドアロンの <strong>Build Cache for Gradle</strong> Step または <strong>Build Cache for Xcode</strong> Step をすでに使用している場合は、設定の競合を避けるため、この Step に置き換えてください。
+
+## 特定のバックエンドだけを無効にできますか {#can-i-selectively-disable-one-of-the-backends}
+
+はい。アクティベーション Step には、GradleとXcodeの入力があります（どちらもデフォルトは`true`です）。CLIでは、`bitrise-build-cache activate react-native`に`--gradle=false`、`--xcode=false`、または`--cpp=false`を渡してください。Gradleを無効にすると、Android側の C++/`ccache`フローも無効になります。C++ バックエンドは`--cpp`フラグに従います。
+
+## ccache の設定を細かく調整できますか {#can-i-still-fine-tune-ccache-configuration}
+
+はい。React Nativeのアクティベーションが設定するのは、`ccache`がBitriseのリモートストレージを参照するようにするための、次のenvironment variablesのみです。
+
+- CCACHE_BASEDIR
+- CCACHE_NOHASHDIR
+- CCACHE_REMOTE_ONLY
+- CCACHE_REMOTE_STORAGE
+- CMAKE_CXX_COMPILER_LAUNCHER
+- CMAKE_C_COMPILER_LAUNCHER
+
+それ以外の設定（`ccache.conf`を含む）は、自由にカスタマイズできます。上記の環境変数は、設定ファイルから読み込まれる同じパラメーターよりも優先されるので注意してください。
+
+## 問題をトラブルシューティングするには {#how-do-i-troubleshoot-issues}
+
+- Activate Step の <strong>Verbose logging</strong> 入力を設定するか、CLIに`--debug`を渡して、詳細ログを有効にします。キャッシュ設定とバックグラウンドのストレージヘルパーに関する追加の詳細がログに出力されます。
+- アクティベーション Step が、ビルドコマンドと*同じ環境*で実行されたことを確認してください（Bitrise CI以外では同じコンテナー／シェル）。
+- ネイティブビルドコマンドが`bitrise-build-cache react-native run`でラップされていることを確認してください。
+- build detailsページの <strong>Build Cache</strong> タブで、ラップした呼び出しが登録されたかどうかを確認してください。
+- iOS の場合は、スタックが <strong>Xcode 26 or later</strong> を使用していることを確認してください。
+
+## 公式のBitrise stepでアプリをビルドしています。ラッパーは引き続き必要ですか {#im-using-an-official-bitrise-step-to-build-my-app-do-i-still-need-the-wrapper}
+
+いいえ。<strong>Gradle Runner</strong>、<strong>Android Build</strong>、<strong>Xcode Archive</strong> のlatest versionを使用している場合、ラップは Step 自体が処理します。これらの Step が最新であることだけ確認してください。ビルドを実行する別の公式Bitrise stepを使用している場合は、サポートを追加できるよう、[お知らせください](https://github.com/bitrise-io/bitrise-build-cache-cli/issues)。

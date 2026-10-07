@@ -1,0 +1,217 @@
+---
+title: "JenkinsからBitriseへの移行"
+description: "JenkinsからBitriseに切り替えると、すぐに使える機能を備えた、クラウドベースでモバイルファーストのCI/CDプラットフォームの快適さを体験できます。"
+sidebar_position: 2
+slug: /bitrise-ci/getting-started/migrating-to-bitrise/migrating-from-jenkins-to-bitrise
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+モバイルCI/CDフローを高速化し、専任の人員を減らすために [Jenkins](https://www.jenkins.io/) から Bitrise への移行を検討している場合は、このガイドが役立ちます。このガイドでは、Bitrise の最も重要な機能と、Jenkins の環境から Bitrise にすばやく移行する方法を紹介します。
+
+
+## 移行するメリット {#why-bother-migrating}
+
+Jenkins はセルフホスト型の CI サーバーで、ビルドを実行する前に、ほとんどの機能を手動でインストールして保守する必要があります。また、定期的なメンテナンスに専任のエンジニアリングリソースも必要です。Bitrise に切り替えると、モバイル開発に必要な機能をすべて 1 つのプラットフォームで提供する、クラウドベースでモバイルファーストの CI/CD プラットフォームを手軽に利用できます。つまり、次のとおりです。
+
+- 何もダウンロードする必要がありません。
+- オンプレミスのサーバーやプラグインは不要です。
+- インフラストラクチャ、ツール、仮想化について心配する必要がありません。
+
+上記のすべてを Bitrise が処理します。自動化された <GlossTerm baseform="step">Steps</GlossTerm>、[API](/bitrise-ci/api/api-overview)、[CLI](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli)、そして直感的な GUI を備えた最新の [Stacks](https://stacks.bitrise.io)（<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>）が豊富に用意されており、すべてすぐに利用できます。
+
+セキュリティ対策の詳細については、[Security のページ](https://bitrise.io/platform/devops/security)をご覧ください。製品、データ、アプリケーション、ネットワーク、物理、ビジネスの各セキュリティに関する詳細が記載されています。
+
+Bitrise で自動化されたモバイル開発の世界をぜひご体験ください。
+
+:::note[Bitrise が大手企業の移行をどのように支援したか]
+
+- 決済大手の PagSeguro が、Jenkins から Bitrise に移行してモバイルCIを最適化した方法をご覧ください: [事例を読む](https://bitrise.io/blog/post/smart-ways-to-optimize-your-ci)。
+- Bitrise と Jenkins の機能別の比較をお探しですか？ [比較ページをご覧ください](https://bitrise.io/resources/compare/jenkins)。
+
+:::
+
+
+## クイックスタートガイド {#quick-start-guide}
+
+このクイックスタートガイドでは、最小限の設定で Bitrise で最初のビルドを開始する手順を説明します。
+
+1. まだアカウントをお持ちでない場合は、[Bitrise にサインアップ](/bitrise-platform/getting-started/signing-up-for-bitrise)してください。
+1. [リポジトリを接続](/bitrise-platform/getting-started/getting-started-with-the-bitrise-platform)し、任意のプロジェクトで自動構成された標準の <GlossTerm baseform="workflow">Workflow</GlossTerm> を実行します。
+1. 生成された YML を確認したら、必要な変更を加えます。カスタムコードを使用する場合は、[Script Step](https://www.bitrise.io/integrations/steps/script)に追加して最初のビルドを実行してください。または、[Step Library](https://www.github.com/bitrise-io/bitrise-steplib)で Steps を見つけて、Jenkinsfile の動作を再現できます。Bitrise のオープンソースランナーである [Bitrise CLI](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli)をインストールして、ご自身のコンピューター上でローカルにビルドを実行することもできます。
+1. 新しい Workflow で最初のグリーンビルドが成功したら、[自動トリガー](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers)または[スケジュールビルド](/bitrise-ci/run-and-analyze-builds/starting-builds/scheduling-builds)を設定して、他のジョブを構成します。
+1. [キー ベースのキャッシュ](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching)を使用して Workflows を最適化すると、ビルドがより高速で安全になり、再現性も高まります。
+1. サポートが必要な場合は、[お問い合わせください](https://support.bitrise.io/hc/en-us)。
+
+Jenkins と Bitrise の主な違いや、Bitrise がモバイル開発プロセスをどのように強化するかに関心がある場合は、以下のガイドをお読みください。
+
+
+## Jenkins と Bitrise でのビルドの管理 {#managing-builds-on-jenkins-and-on-bitrise}
+
+Bitrise のビルドは、アプリの [Workflow](/bitrise-ci/workflows-and-pipelines/workflows/workflows-overview)で指定されたプロセスです。これは、Workflow で定義された一連の [Steps](/bitrise-ci/workflows-and-pipelines/steps/steps-overview)で構成され、クリーンな仮想マシン上またはローカルマシン上で [Bitrise CLI](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli)によって実行されます。アプリのビルドは Bitrise の <strong>Dashboard</strong> で確認できます。また、アプリ専用の <strong>Builds</strong> ページで[ビルドログ](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/build-logs)を分析することもできます。
+
+### Jenkins と Bitrise でのビルドのトリガー {#triggering-builds-on-jenkins-and-bitrise}
+
+このセクションでは、Bitrise でビルドをトリガーする方法を説明します。
+
+- Jenkins の <strong>Build Now</strong> 機能は、[ビルドの手動開始](/bitrise-ci/run-and-analyze-builds/starting-builds/starting-builds-manually)に相当します。ビルドページのボタンをクリックして、新しいビルドをそのまま開始するか、[詳細設定オプション](/bitrise-ci/run-and-analyze-builds/starting-builds/scheduling-builds#advanced-configuration-options-for-startingscheduling-builds)で細かく調整します。
+- Jenkins の <strong>Build periodically</strong> 機能は、Bitrise の[ビルドのスケジュール](/bitrise-ci/run-and-analyze-builds/starting-builds/scheduling-builds)機能に相当します。Bitrise の大きな利点は、Jenkins のように特定の時刻にスケジュールするための `cron` ジョブを設定する必要がないことです。代わりに、ビジュアルスケジューラーで曜日と時刻を選択するか、必要に応じて `cron` 式を直接入力できます。
+- コードのプッシュ、プルリクエスト、Git タグなど、Git に関連するイベントについては、Bitrise でビルドを自動的に開始する[トリガーを設定](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers)できます。
+- Jenkins の <strong>Build after other projects</strong> 機能は、Workflows を順次実行する Bitrise の [Workflows の連結](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows)に相当します。Bitrise では、Workflows を驚くほど簡単に連結できます。
+- 他のリモートシステムからもビルドをトリガーできます。[Webhooks の概要](/bitrise-platform/integrations/webhooks/webhooks-overview)をご覧ください。GitHub、Gitlab、Bitbucket、Gogs、Slack、Visual Studio、Assembla、Deveo と連携しています。
+- Git プロバイダー（GitHub/GitLab/Bitbucket）に[ビルドステータスレポートを送り返す](/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider)こともできます。
+
+### Bitrise の Environment Variables と Secrets {#environment-variables-and-secrets-on-bitrise}
+
+[Environment Variables](/bitrise-ci/configure-builds/environment-variables)（キーと値のペア）は、アプリ、Workflow、Steps の各レベルで定義できます。
+
+Env Vars を使って、さまざまなことができます。
+
+- [Env Vars を公開して、別の Step で再利用します。](/bitrise-ci/configure-builds/environment-variables#setting-and-managing-env-vars-during-a-build)
+- Env Var を別のキーにコピーします。
+- Env Var を上書きします。
+- ビルドにカスタム Env Vars を追加して、ビルドをパラメーター化します。
+- <strong>Env Vars</strong> タブで Set up Workflow 固有の Env Vars を使用すると、その Workflow でのみ利用できる Env Vars で Workflows を実行できます。
+
+Secrets は Environment Variables の一種ですが、特別なものです。機密情報を暗号化された形式で保持し、入力した非公開の内容がビルドログや `bitrise.yml` に公開されないようにします。シークレット Environment Variables（略して Secrets）は、Workflow Editor の <strong>Secrets</strong> タブでキーと変数を追加して設定できます。これも Bitrise の組み込み機能で、次の点を保証します。
+
+- シークレットが `bitrise.yml` に表示されません。
+- シークレットは暗号化されて保存されます。
+- シークレットを保護対象にすることで、UI での公開を防止できます。
+- プルリクエストを使った回避策でシークレットの値をログに出力できてしまう場合があるため、PR でシークレットを公開しないことを推奨します。
+
+### ビルドのキャッシュ {#build-caching}
+
+Bitrise のすべてのビルドはクリーンな仮想マシン上で実行されますが、毎回すべてを一からやり直す必要はありません。[重要なファイルの内容をキャッシュして、ビルド間で保持できます。](/bitrise-ci/dependencies-and-caching/dependencies-and-caching-overview)
+
+
+## Jenkins のプラグインと Bitrise Steps {#jenkins-plugins-and-bitrise-steps}
+
+[Step](/bitrise-ci/workflows-and-pipelines/steps/steps-overview)は、Jenkins Steps と同様に Bitrise で事前に定義されたタスクですが、Bitrise Step は直感的な UI で簡単に設定できます。また、リポジトリから独自の Step を取り込むこともできます。Step のタスクを定義する入力とパラメーターを設定し、Step が生成する出力を確認して再利用できます。出力を再利用するとは、同じ Workflow 内の別の Step が、その出力を自身の入力の値として使用できることを意味します。
+
+Jenkins は継続的インテグレーションツールであるため、プラグインの助けを借りて他のサービスと integrates with します。Jenkins のユーザーは、<strong>Manage plugins</strong> という一元的な場所でプラグインを管理し、Jenkins サーバーにグローバルにインストールしてから、各プロジェクトで使用する必要があります。Jenkins が新しいバージョンのプラグインを通知しても、プラグインの更新にはサーバーの再起動が必要なため、Jenkins の管理者はビルドを実行中かどうかをチームに確認する必要があります。Jenkins のプラグインでは、最新の latest version しか利用できないため、以前のバージョンに戻すことはできません。一方、Bitrise では、事前に Steps をインストールする必要はありません。Bitrise Workflow に Step を好きなときに追加または削除でき、プロジェクトの実行中のビルドがブロックされることもありません。必要に応じて、以前の Step のバージョンに戻すこともいつでもできます。
+
+さらに、<strong>Workflow Editor</strong> で Workflow を編集するときに、<strong>Step Library</strong> で目的の機能やプラットフォームに基づいて Step を検索し、すぐに Workflow に追加できます。Workflow を設定する前にインストールする必要はありません。
+
+[独自のカスタム Step](/bitrise-ci/workflows-and-pipelines/developing-your-own-bitrise-step/developing-a-new-step)を作成してリポジトリに保存し、Workflow で URL によって参照することもできます。
+
+:::tip[Step の万能カード: Script Step]
+
+Workflow で実行したい[カスタムスクリプト](https://bitrise.io/integrations/steps/script)はありますか？ Step Library から <strong>Script</strong> Step を選択し、<strong>Script content</strong> 入力にカスタムコードを追加します。
+
+:::
+
+Steps は、[Integrations](https://www.bitrise.io/integrations/steps) ページで、または Workflow の編集中に確認できます。
+
+Steps でできるその他のことについては、次をご覧ください。
+
+- [Workflow への Steps の追加](/bitrise-ci/workflows-and-pipelines/steps/adding-steps-to-a-workflow)。
+- [Step のバージョン](/bitrise-ci/workflows-and-pipelines/steps/step-versions)。
+- [Step の条件付きの有効化または無効化](/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally)。
+- [独自の Bitrise Step の開発](/bitrise-ci/workflows-and-pipelines/developing-your-own-bitrise-step/creating-your-own-bitrise-project-scanner)。
+
+:::note[Jenkins で fastlane を使用していますか？]
+
+fastlane の lane は Bitrise でも簡単に動かせます。Bitrise の [<strong>Fastlane</strong>](https://www.bitrise.io/integrations/steps/fastlane) Step を Workflow に追加し、lane 名を Step に入力するだけです。ビルドを開始すると、lane が Bitrise で実行されます。
+
+:::
+
+
+## Jenkins Pipeline - Bitrise Workflow
+
+Jenkins Pipeline は [Bitrise Workflow](/bitrise-ci/workflows-and-pipelines/workflows/workflows-overview)に相当しますが、Bitrise Workflows の方がはるかに簡単に管理できます。既存のものをもとに新しい Workflows をすばやく作成したり、複数の Workflows を 1 つのビルドで連結したり、不要になった Workflows を削除したりできます。
+
+Bitrise <strong>Workflow</strong> は、テスト、コード署名、APK/ipa のビルド、デプロイなどの一連の Steps です。Bitrise にプロジェクトを追加すると、<GlossTerm baseform="project scanner">プロジェクトスキャナー</GlossTerm>の検出結果に基づいて作成されたプライマリ Workflow が自動的に開始（トリガー）されます。
+
+1 つのプロジェクトに複数の Workflows を設定できます。例:
+
+- PR イベントごとに、トリガーされると高速に実行され、スモークテストなどの基本的なテストのみを実行する Workflow を作成します。
+- すべてのテストを実行する本格的な Workflow には、別の Workflow を作成して夜間に実行するか、6/12/24 時間間隔でスケジュールすることを推奨します。
+
+<strong>Workflow Editor</strong> は、Workflow を設定するための主要な場所です。Jenkins <strong>Stage</strong> は、メインの Workflow 内で連結された複数の Bitrise Workflows に相当します。Bitrise では、おもちゃの電車を連結するように Workflows を連結するのを Workflow Editor が支援します。
+
+Workflow Editor には、モバイル開発を支援するその他の強力な機能が組み込まれています。
+
+- [Code signing](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects): 証明書、プロビジョニングプロファイル、キーストアを Bitrise にアップロードし、[iOS](/bitrise-ci/code-signing/ios-code-signing/ios-code-signing)および [Android](/bitrise-ci/code-signing/android-code-signing/android-code-signing-using-the-android-sign-step)の署名 Steps を使用して、アプリをアプリストアにリリースする前に、すべての code signing を自動的に処理します。
+- [Secrets](/bitrise-ci/configure-builds/secrets): プロジェクトのシークレット Environment Variables を確認したり、新しく追加したりできます。
+- [Environment Variables](/bitrise-ci/configure-builds/environment-variables): Bitrise では、シークレットと Env Vars が混在することはありません。別々のタブにわかりやすく整理されているため、どこに何があるかが一目でわかります。ここでプロジェクトの Env Vars や Workflow 固有の Env Vars を追加できます。Secrets を $ を付けて Env Vars として参照することもできます。
+- [Triggers](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers): トリガーを設定できます。コードのプッシュイベント、プルリクエスト、タグのいずれも、Bitrise でビルドを自動的に開始するように設定できます。
+- [Stack](/bitrise-build-hub/infrastructure/build-stacks/about-build-stacks): プロジェクトのデフォルトのスタックを確認したり、ドロップダウンメニューから新しいスタックを選択したり、Workflows の 1 つに特定のスタックを選択したりできます。
+
+
+## Jenkins と Bitrise の Dashboards {#dashboards-in-jenkins-and-bitrise}
+
+これは、Bitrise にログインしたときに表示されるメインのランディングページです。ここから、[プロジェクト](/bitrise-ci/getting-started/the-bitrise-dashboard#checking-project-details)、[ご自身の CI ビルド](/bitrise-ci/getting-started/getting-started)、[Bitrise Build Cache](/bitrise-ci/dependencies-and-caching/dependencies-and-caching-overview)、[Release Management](/release-management/getting-started-with-release-management/getting-started-with-release-management)に移動できます。
+
+![bitrisedashboard.png](/img/_paligo/uuid-59d1dcd7-7e29-7221-cbfb-b648ab73102b.png)
+
+Jenkins では、ビルドステータスは <strong>Build Executor Status</strong> または Blue Ocean の <strong>Dashboard</strong> に一覧表示されます。Bitrise を使用すると、最初から使いやすいグラフィカルインターフェースを利用できますが、Jenkins では最初にプラグインをインストールする必要があります。Bitrise のビルドステータスは、<strong>Dashboard</strong> とアプリの <strong>Builds</strong> ページの両方に表示されます。
+
+### Bitrise への新しいアプリの追加 {#adding-a-new-app-to-bitrise}
+
+Jenkins における <strong>New item</strong> は、Bitrise の <strong>adding a new project flow</strong> に相当し、[Web UI](/bitrise-ci/getting-started/adding-a-new-project)または[CLI から](/bitrise-ci/bitrise-cli/adding-a-new-project-from-a-cli)実行できます。これは高度に自動化されたフローで、必要な設定は最小限であり、文字どおり 1 分以内に新しいビルドが開始されます。このフローでは、プライバシーの設定、リポジトリの接続、リポジトリアクセスの設定、ブランチの選択、プロジェクトの構成、ビルド構成の設定、[Webhooks の設定](/bitrise-platform/integrations/webhooks/adding-incoming-webhooks)など、すべての重要なフェーズを順に進めます。
+
+### Bitrise の Webhooks {#webhooks-on-bitrise}
+
+Bitrise は Webhooks を幅広く活用しており、プロジェクトを Bitrise に接続するときに、ワンクリックで有効にできます。初期設定のときに Webhook を追加しておけば、プロジェクトをすばやく軌道に乗せようとするときにこの機能を探し回る必要がなくなります。
+
+[Webhooks](/bitrise-ci/api/incoming-and-outgoing-webhooks)には、大きく分けて 2 種類があります。
+
+- Incoming webhooks は、Git サービスプロバイダーに登録され、Bitrise でビルドを自動的にトリガーするために使用されます。
+- Outgoing webhooks は、ビルドイベントのレポートを Slack などの他のサービスに送信するために使用されます。Web サイトから、または [API の概要](/bitrise-ci/api/api-overview)から追加できます。
+
+
+## Jenkinsfile - Bitrise YAML
+
+Jenkins Pipeline は groovy コードを使用しますが、Bitrise はより構造化された YAML 形式を使用します。すべての Workflows は、YAML 形式の `bitrise.yml` ファイルで定義されます。このファイルは、Workflow Editor の <strong><GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm></strong> タブをクリックして編集できます。
+
+アプリの `bitrise.yml` ファイルは、[bitrise.io](http://bitrise.io/) または[リポジトリ内](/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml#storing-the-bitriseyml-file-in-your-repository)に保存できます。シークレット（認証情報や ID など）は安全に保護されますので、ご安心ください。
+
+`bitrise yml get` でアプリの現在の `bitrise.yml` 構成をダウンロードし、[Bitrise CLI](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli)でローカルに実行することもできます。[Bitrise CLI による bitrise.yml の操作](/bitrise-ci/bitrise-cli/working-with-bitrise-yml-via-the-bitrise-cli#downloading-the-bitriseyml-file)をご覧ください。
+
+### Jenkinsfile と Bitrise yml ファイルの比較 {#jenkinsfile---bitrise-yml-file-comparison}
+
+Jenkins で Jenkinsfile（Pipeline プロジェクト）を使用していて、Bitrise への切り替えを検討している場合は、Jenkinsfile のステージを Bitrise Steps と簡単に対応付けられます。従来の Freestyle プロジェクトを使用している場合は、構成の設定を、対応する Bitrise Step または Bitrise の機能にマッピングする必要があります。たとえば、Freestyle プロジェクトの <strong>Build</strong> セクションを、[Android Build](https://app.bitrise.io/integrations/steps/android-build) Step などの Bitrise ビルド Step に対応させたり、Jenkins の <strong>Build Trigger</strong> セクションを、Bitrise の [Triggers](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers)機能にマッピングしたりします。さらにヒントが必要な場合は、[Step Library](https://www.bitrise.io/integrations/steps)もご覧ください。
+
+:::tip[Android アプリを Jenkins から Bitrise に移行する: ステップバイステップガイド]
+
+Android プロジェクトを Jenkins から Bitrise に移行する方法については、[ブログ記事](https://blog.bitrise.io/post/migrate-your-android-app-from-jenkins)をご覧ください。
+
+:::
+
+
+## Jenkins のマスターとエージェント - Bitrise スタック {#master-and-agent-on-jenkins---bitrise-stack}
+
+スタックは、ビルドの実行に使用する仮想マシンの種類です。たとえば、ネイティブ iOS アプリには、Xcode スタックのいずれかが最適です。Stacks には必要なツールがすべてプリインストールされており、あらゆるニーズに対応できるよう定期的に更新されています。そのため、マスターやエージェントのインスタンスを保守したり、特定のプラットフォームでビルドを実行するために groovy コードにノードマシンを追加したりする必要がありません。
+
+Bitrise にアプリを追加すると、プロジェクトセレクターがプロジェクトの種類を自動的に検出し、そのプラットフォームの種類に基づいてデフォルトのスタックを追加します。最初のビルドは、必要なツールがすべてプリインストールされた仮想マシンであるこのスタックで実行されます。別のスタックを使用する場合は、<strong>Stacks & Machines</strong> タブの <strong>Default Stack</strong> ドロップダウンメニューから選択するだけです。<strong>More information</strong> リンクをクリックすると、プリインストールされているツールとそのバージョンを確認できます。
+
+Xcode の最新バージョンは、公式リリースの直後にサポートしています。
+
+[システムレポート](https://bitrise.io/stacks)では、各スタックにインストールされているツールとそのバージョンを確認できます。
+
+[macOS スタックの更新ポリシー](/bitrise-build-hub/infrastructure/build-stacks/macos-stack-update-policy)について詳しくご確認ください。
+
+AWS 環境で Bitrise が管理するインフラストラクチャを利用することに関心がある場合は、[ガイド](/bitrise-platform/infrastructure/bitrise-on-aws--cloud-controller/bitrise-on-aws-overview)をご覧ください。[こちらのガイド](/bitrise-platform/infrastructure/running-bitrise-builds-on-premise)に従って、self-hosted infrastructure で Bitrise を実行することもできます。
+
+
+## Jenkins と Bitrise でのチームとロールの管理 {#managing-teams-and-roles-in-jenkins-and-bitrise}
+
+Bitrise ユーザーは、Bitrise アカウントを持つ個人で、1 つ以上の <GlossTerm baseform="workspace">workspace</GlossTerm> に所属します。workspace は、プロジェクトで共同作業を行うユーザーのグループです。複数の workspaces を作成でき、コントリビューターは他の Bitrise のコントリビューターによって複数の workspaces に招待できます。コントリビューターは、プロジェクトで作業するために、そのプロジェクトに割り当てられている必要があります。
+
+既存の workspace メンバーを追加するか、外部のコントリビューターを招待して、Web UI で[プロジェクトにコントリビューターを追加](/bitrise-platform/projects/managing-user-access-to-a-project)する方法をご確認ください。
+
+コントリビューターには、実行できることと実行できないことを決めるさまざまなロールを workspaces で割り当てることができます。
+
+- Bitrise CI に関しては、[Owner、Admin、Platform Engineer、Developer、Testers/QA](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)のロールがあります
+- [Release Management](/release-management/configuring-connected-apps/release-management-roles-and-permissions)に関しては、workspace レベルのロール（Workspace Owner、Workspace Manager、Contributor、Viewer）と Release レベルのロール（Release Manager、App tester）があります。ロールと権限の表については、[Release management アプリ](/release-management/configuring-connected-apps/release-management-roles-and-permissions#roles-and-permissions-for-release-management-apps)および[ビルド配布とリリース](/release-management/configuring-connected-apps/release-management-roles-and-permissions)をご覧ください。
+
+Bitrise で[有料のサブスクリプションプラン](https://bitrise.io/pricing?utm_medium=paid_search&utm_source=google&utm_campaign=all_misc_signup_paid_search_all_2025-04-10&utm_content=branding_pricing_emea&utm_source=google&utm_medium=cpc&utm_campaign=&utm_term=bitrise%20pricing&gad_source=1&gad_campaignid=22492269029&gbraid=0AAAAADEBC46C3y8wDrPzZEypPjE85IZGF&gclid=Cj0KCQiAq7HIBhDoARIsAOATDxDmUOF1Nw6xSIWC_imk3x-MBAxQW3VVSarlhc14CuKm4jV2yT3UDxMaApjPEALw_wcB)を利用するには、workspace が必要です。workspaces ごとに異なるサブスクリプションプランを設定でき、workspace のプロジェクトで使用できるクレジット数が決まります。
+
+[SAML SSO または SCIM](/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-saml-sso-on-bitrise)を使用すると、エンタープライズを workspace に安全にオンボーディングまたはオフボーディングできます。
+
+
+## Bitrise の統合された SSO 管理 {#integrated-sso-management-on-bitrise}
+
+Jenkins では SSO 管理のために認可プラグインをインストールする必要がありますが、Bitrise では[有料プラン](https://bitrise.io/pricing)に不可欠な要素として含まれています。このようなプランを利用している Workspace は、Bitrise 上の Workspace への唯一のゲートウェイとして、[SAML SSO](/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-saml-sso-on-bitrise)を設定できます。ユーザー名や認証情報を覚えておく必要はもうありません。Workspace のオーナーは、SAML SSO プロバイダーで Bitrise を SAML SSO アプリとして設定し、Workspace のメンバーを Bitrise Org に招待するだけです。手順については、[さまざまな SAML SSO プロバイダー](/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-saml-sso-on-bitrise)ごとのガイドをご用意しています。

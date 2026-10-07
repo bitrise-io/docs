@@ -1,0 +1,160 @@
+---
+title: "BitriseのUnity"
+sidebar_position: 8
+slug: /bitrise-ci/getting-started/unity-on-bitrise
+sidebar_label: "BitriseでのUnityソフトウェアインテグレーション"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkspaceSettingsPage from '@site/i18n/ja/partials/opening-the-workspace-settings-page.mdx';
+
+Bitriseは、当社のbuild machines上で[Unity](https://unity.com/)ソフトウェアを使用するための完全なサポートを提供します。便利なライセンス管理、最大40GBのディスク容量、そしてiOS版とAndroid版の両方のUnityプロジェクトを簡単に作成できるモバイル向けビルド環境が含まれます。
+
+BitriseでUnityアプリをビルドできるようにするには、次の作業が必要です。
+
+- [Bitriseアプリとしてプロジェクトを追加する](/bitrise-ci/getting-started/unity-on-bitrise#adding-a-unity-project-as-a-bitrise-app)。
+- [ビルドを実行する仮想マシンにUnityをダウンロードしてインストールする](/bitrise-ci/getting-started/unity-on-bitrise#downloading-and-installing-unity-software-on-bitrise)。
+- [Bitriseにライセンスを追加し、ビルド中にアクティベートする](/bitrise-ci/getting-started/unity-on-bitrise#setting-up-unity-licenses-on-bitrise)。
+- [プロジェクトをビルドする](/bitrise-ci/getting-started/unity-on-bitrise#running-a-build-using-unity-software)。
+
+
+## UnityプロジェクトをBitriseアプリとして追加する {#adding-a-unity-project-as-a-bitrise-app}
+
+Unityプロジェクトを[新しいアプリとして追加](/bitrise-ci/getting-started/adding-a-new-project)します。<GlossTerm baseform="Project scanner">プロジェクトスキャナー</GlossTerm>はUnityソフトウェアをサポートしていないため、プロジェクトをUnityプロジェクトとして検出しません。そのため自動設定をスキップし、プロジェクトを<strong>Other</strong>として登録できます。
+
+Xcodeの<GlossTerm baseform="Stack">スタック</GlossTerm>の使用をおすすめします。こちらには重要なAndroidツールも含まれています。当社のXcodeスタックでは、UnityアプリのiOS版とAndroid版の両方をビルドできます。
+
+
+## BitriseにUnityソフトウェアをダウンロードしてインストールする {#downloading-and-installing-unity-software-on-bitrise}
+
+BitriseでUnityプロジェクトをビルドできるようにするには、ビルド開始時に仮想マシンへUnityソフトウェアをインストールする必要があります。これはクラウドでUnityソフトウェアを実行する際の標準的な方法であり、数分で完了します。
+
+:::note[Xcodeスタック]
+
+Unityビルドの実行には、必ずXcodeスタックを使用してください。このページの手順は、当社のXcodeスタックにUnityをインストールする場合に有効です。
+
+:::
+
+1. ダウンロードしたいUnityソフトウェアのバージョンを、[Unityダウンロードアーカイブ](https://unity.com/releases/editor/archive)で確認します。
+1. 必要なバージョンのUnity Editorを見つけて、ダウンロードリンクをコピーします。
+
+   リンクは次のような形式になります: https://download.unity3d.com/download_unity/b16b3b16c7a0/MacEditorInstallerArm64/Unity.pkg.
+1. 2つのプラットフォームサポートパッケージ(iOSとAndroid)のダウンロードリンクも必要です。これらは[LTS Releasesページ](https://unity.com/releases/editor/qa/lts-releases)で確認できます。
+1. <GlossTerm baseform="workflow">Workflow</GlossTerm>の先頭に <strong>Script</strong> <GlossTerm baseform="step">Step</GlossTerm>を追加します。
+1. <strong>Content</strong>入力に、必要なUnityパッケージをダウンロードするcurlコマンドを追加します。例:
+
+   ```bash
+   #workaround for .NET issue https://github.com/dotnet/runtime/issues/64103
+   export COMPlus_ReadyToRun=0
+   envman add --key COMPlus_ReadyToRun --value 0
+
+   #download unity pkg for Apple Silicon
+   curl -o ./unity.pkg http://download.unity3d.com/download_unity/8af3c3e441b1/MacEditorInstallerArm64/Unity-2021.3.12f1.pkg
+
+   #download android support platform
+   curl -o ./android.pkg http://download.unity3d.com/download_unity/8af3c3e441b1/MacEditorTargetInstaller/UnitySetup-Android-Support-for-Editor-2021.3.12f1.pkg
+
+   #download iOS support platform
+   curl -o ./ios.pkg http://download.unity3d.com/download_unity/8af3c3e441b1/MacEditorTargetInstaller/UnitySetup-iOS-Support-for-Editor-2021.3.12f1.pkg
+   ```
+
+   ダウンロードリンクを、必要なバージョンのリンクに置き換えてください。
+1. 必要に応じて、[Rosetta](https://developer.apple.com/documentation/apple-silicon/about-the-rosetta-translation-environment)に対応したAppleシリコン向けのUnityソフトウェアバージョンをインストールすることもできます。
+
+   ```bash
+   #download unity pkg for Apple Silicon with Rosetta support
+   curl -o ./unity.pkg http://download.unity3d.com/download_unity/8af3c3e441b1/MacEditorInstaller/Unity-2021.3.12f1.pkg
+   ```
+
+成功すると、`/Applications/Unity/Unity.app/Contents/MacOS/Unity`にUnityソフトウェアが見つかるはずです。
+
+
+## BitriseでUnityライセンスを設定する {#setting-up-unity-licenses-on-bitrise}
+
+Unityのポリシーに従い、コマンドラインをサポートしているのは有料プランのみです。そのため、UnityプロジェクトをビルドするにはBitriseにUnityライセンスプールを追加する必要があります。build machinesがWorkflowのライセンスを見つけますが、Unityのメールアドレスとパスワードを入力してアクティベートする必要があります。
+
+:::important[複数のライセンスが必要]
+
+複数のビルドを同時に実行するには、ビルドごとに個別のlicense keysが必要です。たとえば、Unityアプリのビルドを3つ同時に実行したい場合、少なくとも3つの個別のUnityライセンスが必要です。
+
+:::
+
+### Unityライセンスプールを追加する {#adding-unity-license-pools}
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. 左側で <strong>Integrations</strong> を選択します。
+1. <strong>License pool</strong> カードをクリックします。
+1. <strong>Add license pool</strong> をクリックします。
+
+   ![license_pools.png](/img/_paligo/uuid-260b6d8c-c6ae-d008-a72a-8b0552a1e348.png)
+1. 各項目を入力します。
+
+   次の項目を設定する必要があります:
+
+   - 名前: <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>でプールを見つけるために使用します。
+   - [環境変数](/bitrise-ci/configure-builds/environment-variables)キー: ビルドスクリプトでライセンスを使用する方法です。
+   - license keysそのもの。ライセンスキーには、スペースやアンダースコア以外の特殊文字を含めることはできません。
+1. <strong>Save</strong> をクリックします。
+1. 必要なアプリのWorkflow Editorを開き、<strong>Licenses</strong> タブに移動します。
+1. ライセンスプールが必要なWorkflowごとに選択します。
+
+   ![license-wfe.png](/img/_paligo/uuid-bfc830a8-c22d-2fc3-1dab-16fba07460fa.png)
+
+### Unityライセンスをアクティベートする {#activating-a-unity-license}
+
+ビルドを実行する際は、まずUnityライセンスをアクティベートする必要があります。これにはUnityのメールアドレスとパスワードの入力が必要です。これらの保存には[Secrets](/bitrise-ci/configure-builds/secrets)の使用をおすすめします。
+
+:::note[ライセンスを非アクティブ化する]
+
+ビルドが完了したら、再利用できるようにUnityライセンスを非アクティブ化することを強くおすすめします:
+
+```bash
+/Applications/Unity/Unity.app/Contents/MacOS/Unity -quit -batchmode -logFile -returnlicense
+```
+
+:::
+
+1. メールアドレスとパスワードを保存するために、2つのSecretsを作成します。次のキーを使用することをおすすめします:
+
+   - UNITY_EMAIL: 値としてメールアドレスを設定します。
+   - UNITY_PW: 値としてUnityパスワードを設定します。
+1. [Workflow内の、UnityソフトウェアをインストールするStep](/bitrise-ci/getting-started/unity-on-bitrise#downloading-and-installing-unity-software-on-bitrise)の後に配置した <strong>Script</strong> Stepに、次のコードを追加します:
+
+   ```bash
+   /Applications/Unity/Unity.app/Contents/MacOS/Unity -quit -batchmode -serial "$UNITY_SERIAL" -username "$UNITY_EMAIL" -password "$UNITY_PW" -logfile
+   ```
+
+   :::tip[Utility Workflowを使用する]
+
+   ベストプラクティスとして、このStepを含む[utility Workflow](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#utility-workflows)を作成し、Unityが必要な各Workflowの前に[実行する](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together)ようにします。
+
+   :::
+
+
+## Unityソフトウェアを使用してビルドを実行する {#running-a-build-using-unity-software}
+
+設定が完了すると、BitriseでUnityソフトウェアを使用してビルドを実行できます。同じWorkflow内であっても、アプリのAndroid版とiOS版の両方をビルドできます。
+
+BitriseでUnityソフトウェアを使用してビルドを実行するには:
+
+1. [BitriseにUnityライセンスプールを追加する](/bitrise-ci/getting-started/unity-on-bitrise#setting-up-unity-licenses-on-bitrise)。
+1. [ビルド内でUnityライセンスをアクティベートする](/bitrise-ci/getting-started/unity-on-bitrise#setting-up-unity-licenses-on-bitrise)。
+1. [仮想マシンにUnityをダウンロードしてインストールする](/bitrise-ci/getting-started/unity-on-bitrise#downloading-and-installing-unity-software-on-bitrise)。
+1. アプリのAndroid版をビルドするには、<strong>Script</strong> Stepを追加し、<strong>Content</strong>入力に次の内容を追加します:
+
+   ```bash
+   /Applications/Unity/Unity.app/Contents/MacOS/Unity -nographics -quit -batchmode -logFile -projectPath "$BITRISE_SOURCE_DIR" -executeMethod BitriseUnity.Build -androidSdkPath "$ANDROID_HOME" -buildOutput "$BITRISE_DEPLOY_DIR/mygame.apk" -buildPlatform android
+   ```
+1. アプリのiOS版用にXcodeプロジェクトを作成するには、<strong>Script</strong> Stepに次の内容を追加します:
+
+   ```bash
+   /Applications/Unity/Unity.app/Contents/MacOS/Unity -nographics -quit -batchmode -logFile -projectPath "$BITRISE_SOURCE_DIR" -executeMethod BitriseUnity.Build -buildOutput "$BITRISE_SOURCE_DIR/xcodebuild" -buildPlatform ios
+   ```
+1. [XcodeプロジェクトからIPAを作成してエクスポートする](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)。
+1. 完了したら、ライセンスを非アクティブ化します:
+
+   ```bash
+   /Applications/Unity/Unity.app/Contents/MacOS/Unity -quit -batchmode -logFile -returnlicense
+   ```

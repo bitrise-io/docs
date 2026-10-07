@@ -1,0 +1,56 @@
+---
+title: "BitriseからDeployGateへのアプリのデプロイ"
+description: "DeployGateは、iOSとAndroid向けのモバイルアプリ配布プラットフォームで、開発中のiOS/Androidアプリを、開発チーム、メンバー、従業員、組織内のQAテストチーム、または社外のテスターに配信します。"
+sidebar_position: 5
+slug: /bitrise-ci/deploying/deploying-apps-to-deploygate-from-bitrise
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+[<strong>DeployGate</strong>](https://deploygate.com?locale=en)は、iOSおよびAndroid向けのモバイルアプリ配信プラットフォームです。開発中のiOS/Androidアプリを、組織内の開発チーム、メンバー、従業員、QAテストチーム、または社外のテスターに配信します。
+
+DeployGateには、QAテストやベータテスターのフィードバックによるアプリ改善など、アプリ開発サイクルを加速するための多くの機能があります。
+
+DeployGateは以下を提供します。
+
+- テスターにアカウントを要求することなく、自動バージョン管理によるリアルタイムのアプリ配信
+- きめ細かなアクセス制御による柔軟なユーザーアカウント管理
+- Gitのようなマルチトラック配信により、同じアプリに対してバージョン/ユーザー/デバイスごとの個別管理が可能
+
+DeployGateとBitriseを使用すると、チーム向けの完全に自動化された社内ドッグフーディング環境をすばやく構築できます。詳細については、[DeployGate Features](https://deploygate.com/features?locale=en)をご覧ください。
+
+![Automated_app_distribution_workflow.png](/img/_paligo/uuid-541a72f2-6396-7422-0446-823ce23549a0.png)
+
+DeployGateにアプリをアップロードするには、bitriseの<GlossTerm baseform="Workflow">Workflow</GlossTerm>に`DeployGate Upload` <GlossTerm baseform="Step">Step</GlossTerm>を追加します。
+
+![new-dg-step.png](/img/_paligo/uuid-b69592cf-9d58-0267-7327-c3265b1e4462.png)
+
+このStepは、アップロードするアプリのバイナリをビルドするStepの後に追加する必要があります。以下のように、いくつかの必須パラメータを設定する必要があります。
+
+| Input Variables | Description |
+| --- | --- |
+| API Key | Account SettingsからアップロードユーザーのDeployGateAPI Keyを設定します。組織アカウントとしてアプリをアップロードする場合は、組織のAPI Keyを使用してください。アップロードに使用したアカウントはアクティビティタイムラインに表示されます。 |
+| Owner Name | DeployGateにおけるアプリ所有者のアカウント名です。ユーザー名または組織名を使用できます。 |
+| App file path | アップロードするアプリのバイナリファイル(IPA/APK)です。デフォルト設定では、Androidには$BITRISE_APK_PATHを、iOSには$BITRISE_IPA_PATHを使用します |
+
+以下のように、高度な機能を使用するためのオプション変数を設定することもできます。
+
+| Input Variables | Description |
+| --- | --- |
+| Short Message | DeployGateに表示される更新内容の概要です。コミットメッセージ、プルリクエストのタイトル、またはビルドを手動でトリガーした際に指定したメッセージを使用したい場合は$BITRISE_GIT_MESSAGEを使用できます。 |
+| Distribution Key | 同じアプリの異なるバージョンのアプリバイナリに対して、複数の公開インストールリンク(Distribution Pageと呼びます)を作成できます。配信ページのハッシュを指定すると、そのページが同時に更新されます。https://deploygate.com/distributions/xxxxのような配信ページのURLの「xxxx」部分です |
+| Distribution Name | 更新する配信ページの名前を指定します。存在しない場合は、新しい配信ページが作成されます。Gitのbranch nameごとに配信ページを作成するといった使い方が可能です。(例: $BITRISE_GIT_BRANCH) |
+| Release Note | 配信ページにおける新しいリリースのメッセージです。このメッセージは配信ページのテスターに通知されます |
+| Disable Notify(iOS Only) | iOSプラットフォームにはDeployGateクライアントアプリがありません。デフォルトでは、リリースの更新にメール通知を使用します。メール通知が不要な場合は、このオプションをtrueに設定してください |
+
+これらのオプションは[<strong>DeployGate API</strong>](https://docs.deploygate.com/docs/api/)に基づいています。詳細については、[DeployGate.com](https://deploygate.com?locale=en)のリファレンスをご覧ください。
+
+DeployGateの<strong>Distribution Page</strong>(共有可能なリンク)機能を使用して、特定バージョンのアプリインストール用のランディングページを生成できます。
+
+![Distribution_Page.png](/img/_paligo/uuid-b1dd1c66-369b-691d-8842-752bd6f33919.png)
+
+アプリをDeployGateにアップロードすると、システムはアップロードされた各ビルドに連番(`**Revision Number**`と呼びます)を自動的に割り当てます。Distribution Pageでは、テスターのグループごとに配信するアプリの特定のリビジョンを選択できます。この機能は、QA、ドッグフーディング、テストマーケティングなど、さまざまな目的で複数のテスターグループにアプリを配信する場合に便利です。
+
+[DeployGate Upload](https://github.com/DeployGate/upload-app-bitrise-step) Stepを使用してBitriseからアプリをアップロードする際にも、配信ページを生成できます。上記のオプション変数を参照してください。

@@ -1,0 +1,137 @@
+---
+title: "テスターへのビルドの配布"
+sidebar_position: 1
+slug: /release-management/build-distribution/distributing-builds-to-testers
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Release Managementは、TestFlightやGoogle Playを利用しなくても、モバイルアプリのビルドをテスターに配布できる、便利で安全なソリューションを提供します。インストール可能なアーティファクトがあれば、Bitriseはプライベートおよびパブリックのインストールリンクを生成でき、テスターや他の関係者はそのリンクを使って実機にOTA（Over-The-Air）でアプリをインストールできます。
+
+配布可能なビルドはすべて、<strong>Build distribution</strong>ページからアクセスできます。これらは、社内テスターに配布できるビルドです。配布可能なビルドは次のとおりです。
+
+- iOSアプリの場合は、Development、Ad-hoc、またはEnterpriseプロビジョニングのIPAです。
+- Androidアプリの場合、テスターに配布できるのはAPKのみです。AABは配布できません。
+
+配布可能な各ビルドには、インストール手順とメタデータを含む専用のページがあります。メタデータには、アーティファクトの取得元、作成日時、サイズ、supported device typesなどが含まれます。
+
+テスターがbuild detailsページにアクセスしてアプリをインストールできるように、テスターグループを設定できます。<GlossTerm baseform="workspace">Workspace</GlossTerm>オーナー、Workspaceマネージャー、およびプロジェクト管理者は、ビルドページからテスターグループに通知メールを送信することもできます。詳細については、[Tester groups](/release-management/build-distribution/tester-groups)をご覧ください。
+
+インストール可能なアーティファクトは、Bitrise CIビルドから、または専用のAPI経由でページにアップロードできます。詳細については、[Installable artifacts](/release-management/installable-artifacts)をご覧ください。
+
+## build detailsページへのアクセス {#accessing-the-build-details-page}
+
+Bitriseでbuild detailsページにアクセスするには：
+
+:::note[ログインが必要]
+
+build detailsページにアクセスするには、Bitriseユーザーアカウントが必要です。このアカウントは、プロジェクトのチームのメンバーである必要があります。
+
+:::
+
+1. 接続されたアプリをRelease Managementで開きます。
+1. 左側で<strong>Build distribution</strong>を選択します。
+1. <strong>Builds</strong>タブを選択します。
+1. 必要なビルドを見つけて、右側の矢印をクリックします。
+
+   ![build-details-access.png](/img/_paligo/uuid-55dc2023-f61b-5331-f1af-94924727ff25.png)
+
+## アーティファクトのインストール {#installing-artifacts}
+
+ビルドアーティファクトは、そのbuild detailsページからインストールできます。手順は以下のとおりです。
+
+1. ビルドの[build detailsページにアクセス](#accessing-the-build-details-page)します。
+
+   通知メールからbuild detailsページにアクセスすることもできます。
+1. 右上にある<strong>Download artifact</strong>をクリックします。
+
+   ![build-details-page.png](/img/_paligo/uuid-60a84ba2-ab5d-e077-877b-a2be85014efc.png)
+
+   - アプリがAndroidアプリの場合、ダウンロードがすぐに開始されます。
+   - アプリがiOSアプリの場合、デバイスへのインストール手順を示すダイアログが表示されます。
+
+     ![ios-download-rm.png](/img/_paligo/uuid-58a8bc7f-8220-32ed-3cc3-193aa78e8cf4.png)
+
+## パブリックインストールページの有効化 {#enabling-the-public-install-page}
+
+パブリックインストールページを使用すると、Bitriseアカウントを持たないテスターにも、インストール可能なアーティファクトを配布できます。
+
+1. ビルドのbuild detailsページにアクセスします。
+1. <strong>Install this version</strong>セクションで、<strong>Public install page</strong>オプションをオンに切り替えます。
+
+   :::important[必要なアクセス権限]
+
+   ビルドのパブリックインストールページを有効化または無効化できるのは、Workspaceオーナー、Workspaceマネージャー、およびプロジェクト管理者のみです。
+
+   :::
+
+   ![build-details-page.png](/img/_paligo/uuid-60a84ba2-ab5d-e077-877b-a2be85014efc.png)
+1. <strong>Get link</strong>をクリックすると、URLとQRコードの両方を含むダイアログが開きます。
+
+
+## カスタムアクセスリンク {#custom-access-link}
+
+APKまたはストア以外のIPAアーティファクトについて、有効期限やアクセスコードを任意で設定した、共有可能なインストールリンクをすばやく生成できます。このリンクを受け取った人は、Bitriseアカウントがなくてもビルドをインストールできます。
+
+:::note
+
+このリンクは[public install page](/bitrise-ci/deploying/ios-deployment/installing-an-ipa-file-from-the-public-install-page)リンクとは異なります。パブリックインストールページは恒久的なもので、アクセス制御はありません。
+
+:::
+
+次の[access roles](/release-management/configuring-connected-apps/release-management-roles-and-permissions)を持つユーザーは、カスタムアクセスリンクを作成できます。
+
+- Workspace owners
+- Workspaceマネージャー
+- リリースマネージャー
+- Project admin
+
+同じアーティファクトに対して、異なる有効期限を設定した、または有効期限を設定しない複数のアクセスリンクを作成できます。すべての共有リンクは、URLを持つ人であれば誰でも公開でアクセスできます。
+
+### カスタムアクセスリンクの作成 {#creating-a-custom-access-link}
+
+1. [ビルドのbuild detailsページにアクセス](/release-management/build-distribution/distributing-builds-to-testers)します。
+1. <strong>Public access</strong>タブに移動します。
+1. <strong>New custom link</strong>をクリックします。
+1. link nameを追加します。
+
+   ![SCR-20260529-kgaj.png](/img/_paligo/uuid-4099a4ad-c75e-1d78-ea84-7b05cd49d8f6.png)
+1. 必要に応じて、<strong>有効期限</strong>をオンにして、for theリンクの有効期限日を設定します。指定した日付を過ぎると、リンクにアクセスできなくなります。
+1. 必要に応じて、<strong>Access code</strong>をオンにして、入力欄にコードを設定します。テスターはこのリンクにアクセスするためにこのコードが必要になります。
+1. 準備ができたら、<strong>Create link</strong>をクリックします。
+
+
+## テスター向け手順の追加 {#adding-instructions-for-testers}
+
+インストール可能なアーティファクトごとに、テスター向けのテスト手順を設定できます。これにより、ビルドに何が追加されたか、また何をテストしてほしいかをテスターに伝えることができます。
+
+インストール可能なアーティファクトのbuild detailsページ、および[public install page](/bitrise-ci/deploying/ios-deployment/installing-an-ipa-file-from-the-public-install-page)で手順を確認できます。
+
+:::important[編集アクセス権限]
+
+次のロールを持つユーザーは、テスト手順を編集できます。
+
+- Workspaceオーナー
+- Project admin
+- リリースマネージャー
+
+Appテスターロールを持つユーザーは、読み取り専用アクセス権を持ちます。ロールの詳細については、[Release Management roles and permissions](/release-management/configuring-connected-apps/release-management-roles-and-permissions)を参照してください。
+
+:::
+
+インストール可能なアーティファクトにテスト手順を追加するには：
+
+1. [build detailsページにアクセス](/release-management/build-distribution/distributing-builds-to-testers)します。
+
+   通知メールからbuild detailsページにアクセスすることもできます。
+1. <strong>What to test</strong>セクションを見つけて、<strong>Edit</strong>をクリックします。
+
+   ![2025-09-04-rm-what-to-test.png](/img/_paligo/uuid-aac41e7c-0756-9d0b-d3a3-9fdf2db628dc.png)
+1. テスターへのメッセージを記入し、what to testを伝えます。
+
+   メッセージの文字数制限は4,000文字です。
+1. <strong>Save changes</strong>をクリックします。
+</content>
+</invoke>

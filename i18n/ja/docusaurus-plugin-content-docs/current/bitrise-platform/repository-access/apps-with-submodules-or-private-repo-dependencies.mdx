@@ -1,0 +1,135 @@
+---
+title: "サブモジュールまたはプライベートリポジトリの依存関係を持つアプリ"
+description: "ビルドを成功させるには、Bitriseがall repositoriesまたはサブモジュールにアクセスできる必要があります。そのため、プロジェクトにサブモジュールまたはプライベートリポジトリの依存関係がある場合は、それらにもBitriseのアクセスを許可する必要があります。"
+sidebar_position: 9
+slug: /bitrise-platform/repository-access/apps-with-submodules-or-private-repo-dependencies
+sidebar_label: "サブモジュールまたはプライベートリポジトリの依存関係を持つプロジェクト"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/i18n/ja/partials/getting-to-the-project-settings-page.mdx';
+
+:::note[GitHub Appの連携]
+
+プロジェクトでGitHub Appのインストールを使用してリポジトリに接続している場合は、[追加のリポジトリをリンク](/bitrise-platform/repository-access/github-app-integration#additional-linked-repositories-via-a-github-app)するだけで済みます。このドキュメントで説明されている回避策は一切必要ありません。
+
+:::
+
+プロジェクトに1つ以上のサブモジュールやその他のプライベートリポジトリの依存関係がある場合(たとえばCocoaPodsリポジトリなど)、ビルドを成功させるにはBitriseがall repositoriesまたはサブモジュールにアクセスできる必要があります。
+
+OAuth接続を使用するプライベートプロジェクトの場合、BitriseはGitリポジトリへのアクセスにSSHを使用します。アクセスを許可するには、[生成されたSSHキー](/bitrise-platform/repository-access/configuring-ssh-keys)がBitrise <GlossTerm baseform="project">プロジェクト</GlossTerm>の公開鍵であることを確認し、すべてのリポジトリでアクセスできるようにする必要があります。
+
+これを実現するには2つの方法があります。
+
+- アクセスする必要があるすべてのリポジトリに、同じ[SSHキー](/bitrise-platform/repository-access/configuring-ssh-keys)を登録する。
+- SSHキーをbotユーザーに登録し、そのユーザーをall repositoriesに追加する。
+
+すべてのリポジトリに同じSSHキーを登録する方法が最も安全でおすすめですが、すべてのサービスがこれをサポートしているわけではありません。GitLabとBitbucketはこれをサポートしていますが、GitHubはサポートしていません。コードがGitHubに保存されていて、OAuth接続を使用している場合は、このまま読み進めてください。
+
+もう一つの方法である、botユーザーまたはマシンユーザー(GitHubではマシンユーザーと呼ばれています)について詳しく見ていきましょう。要するに、考え方はシンプルです。Bitriseの公開SSHキーをユーザーに登録し、そのユーザーを、アクセスする必要があるall repositories(Bitriseビルド用)に追加します。
+
+:::note[読み取り専用アクセスのマシンユーザー]
+
+特別なbot/マシンユーザーを使用する必要はありません。gitホスティングサービス上の自分自身のアカウントにSSHキーを追加することもできます。ただし、ベストプラクティスとしては、ビルド中にアクセスしたいリポジトリに対して、読み取り専用アクセス権を持つマシンユーザーを使用することです。
+
+:::
+
+複数のリポジトリにアクセスする方法として、[GitHubはこの方法を推奨しています](https://docs.github.com/en/developers/overview/managing-deploy-keys#machine-users)。簡単な例を見てみましょう。
+
+<strong>MultiBitプロジェクト</strong>
+
+MultiBitと呼ぶBitrise projectがあるとします。メインリポジトリを1つ持ち、Bitriseビルド中に他の2つのプライベートリポジトリから追加のデータを取得する必要があります。メインユーザーはBitManという名前で、そのGitHubアカウントはBitriseアカウントにリンクされています。ビルド中にプライベートリポジトリへアクセスできるようにするため、BitManはGitHub上に別のユーザーを作成し、これをBitBotと呼びます。BitBotがマシンユーザーになります。
+
+次に、BitManは<strong>Project settings</strong>ページ(Bitrise project)にアクセスし、公開SSHキーをコピーします。続いてBitManは、SSHキーをGitHub上のBitBotユーザーに追加し、BitBotを2つのプライベートリポジトリにコラボレーターとして追加します。これでBitBotはBitriseの公開鍵を持ち、必要に応じてプライベートリポジトリにアクセスできるようになります。あとは、BitManの設定が機能するかどうかをテストするだけです。
+
+BitManはBitriseにアクセスし、<GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>を開きます。リポジトリには<strong>Activate SSH Key</strong>の<GlossTerm baseform="step">Step</GlossTerm>が設定されているため、SSHキーは機能します。BitManは、プライベートリポジトリをクローンするために[<strong>Script</strong>](https://github.com/bitrise-io/steps-script) Stepを追加します。<strong>Git Clone</strong> Stepはメインリポジトリでしか機能しないためです。これですべての設定が完了し、ビルドは期待どおりに動作するはずです。
+
+
+## マシンユーザーを使用してプライベートリポジトリにアクセスする {#using-a-machine-user-to-access-private-repositories}
+
+[マシンユーザーまたはbotユーザー](https://docs.github.com/en/developers/overview/managing-deploy-keys#machine-users)とは、人間ではなく自動化専用に使用されるGitHubユーザーのことです。これはプライベートリポジトリにアクセスするための最良の方法です。マシンユーザーを作成し、そのユーザーに公開SSHキーを追加してから、リポジトリへの読み取りアクセス権を付与します。
+
+### リポジトリにマシンユーザーを追加する {#adding-the-machine-user-to-your-repository}
+
+1. マシンユーザーとして機能する新しいGitHubユーザーアカウントを作成します。
+1. GitHub上の自分のリポジトリに移動し、<strong>Settings</strong>タブを選択します。
+1. 左側のメニューで<strong>Collaborators & teams</strong>を選択します。
+
+   ![Can_I_add_projects_with_submodules_or_with_private_repo_dependencies_.png](/img/_paligo/uuid-987a7495-6bb7-2c5e-0a19-6871b2ca8f1f.png)
+1. <strong>Collaborators</strong>ウィンドウまで下にスクロールします。
+1. 検索入力欄で、新しく作成したアカウントのユーザー名を検索します。
+1. <strong>Add Collaborator</strong>をクリックします。
+1. ユーザー権限を<strong>Read</strong>に変更します。
+
+   デフォルトでは、招待されたコラボレーターの権限は<strong>Write</strong>になっています。そのままにしておいても構いませんが、BitriseにはRead権限で十分です。
+
+### マシンユーザーにSSHキーを追加する {#adding-the-ssh-key-to-the-machine-user}
+
+Bitriseがマシンユーザーを使ってリポジトリにアクセスできるようにするには、同じSSHキーを、マシンユーザーとBitrise上のプロジェクトの両方に追加する必要があります。
+
+#### 新しいプロジェクトを追加する場合 {#when-adding-a-new-project}
+
+1. [Bitriseでのプロジェクトの追加](/bitrise-ci/getting-started/adding-a-new-project)のプロセスを開始します。
+1. リポジトリへのアクセスを設定するよう求められたら、次の3つのオプションから選択できます。
+
+   <strong>Auto-add a generated SSH key to your repository</strong>: Bitriseが自動的に公開SSHキーをGitHubリポジトリに登録します。
+
+   <strong>Copy a generated SSH key to your Git provider manually</strong>: BitriseがSSHキーペアを生成し、公開鍵をGitリポジトリに手動で登録する必要があります。
+
+   <strong>Add独自のSSH key</strong>: 独自のSSHキーペアを認証用に用意し、公開鍵をGitリポジトリに手動で登録する必要があります。
+1. プロセスを完了します。
+1. プロジェクトに追加したのと同じSSHキーをマシンユーザーにも追加します。
+
+#### 既存のプロジェクトの場合 {#when-your-project-already-exists}
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で<strong>Repository</strong>を選択します。
+1. <strong>Authorization</strong>セクションで<strong>Authorization method</strong>カードを見つけ、<strong>Copy public key</strong>をクリックします。
+
+   ![SCR-20260401-pvvq.png](/img/_paligo/uuid-f021126a-47d0-41a9-56f7-79b9c8461a0e.png)
+1. [GitHubマシンユーザーへの追加https://help.github.com/en/articles/adding-a-new-ssh-key-to-your-github-accountを行います。
+
+
+## サブモジュールとリポジトリの依存関係をgitクローンする {#git-cloning-submodules-and-repository-dependencies}
+
+Bitriseビルド中に複数のリポジトリにアクセスする方法には、3つの選択肢があります。
+
+- 仮想マシン上にすべてのリポジトリをクローンし、必要に応じてアクセスする。
+- 追加のリポジトリをメインリポジトリのサブモジュールとして追加する。
+- [GitHub App連携](/bitrise-platform/repository-access/github-app-integration)と[追加のリポジトリのリンク](/bitrise-platform/repository-access/github-app-integration#additional-linked-repositories-via-a-github-app)を使用する。
+
+後者の場合、クローンについて心配する必要はありません。[SSHアクセス](/bitrise-platform/repository-access/configuring-ssh-keys)を正しく設定していれば、<strong>Git Clone</strong>Stepがすべてを処理します。
+
+リポジトリの依存関係をサブモジュールとして追加したくない、または追加できない場合は、このまま読み進めてください。ここでは、それらをクローンする方法について説明します。
+
+:::note[Git Clone Stepについて]
+
+<strong>Git Clone</strong> Stepはメインリポジトリでしか機能しません。複数のプライベートリポジトリにアクセスする必要がある場合、複数の<strong>Git Clone</strong> Stepsを追加しないでください。<strong>Script</strong>Stepsを使用して、Bitrise仮想マシン上でこれらのリポジトリをクローンしてください。
+
+:::
+
+ビルド中に追加のプライベートリポジトリをクローンするには:
+
+1. Bitriseの公開SSHキーを持つユーザーを、すべてのリポジトリに追加していることを確認します。
+1. <strong>Activate SSH Key</strong>Stepと<strong>Git Clone</strong>Stepが、<GlossTerm baseform="workflow">Workflow</GlossTerm>の先頭にあることを確認します。
+1. 追加のプライベートリポジトリをビルドにクローンするための<strong>Script</strong>Stepsを1つ以上追加します。
+1. ビルドを実行します。
+
+:::note[クローンに関する問題]
+
+gitクローンで問題が発生した場合(たとえば、一部のサブモジュールがクローンされないなど)、クローン後に次のコマンドを試してください。
+
+```bash
+git submodule update –recursive –remote –merge –force
+```
+
+:::
+
+### パブリックプロジェクトとプライベートプロジェクト {#public-vs-private-projects}
+
+Bitrise projectに対して、すべてのサブモジュールやプライベートリポジトリの依存関係へのアクセスを許可する際に、覚えておくべき重要なポイントが1つあります。それは、プロジェクトの公開設定によって[使用すべきgit URLが決まる](/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch#changing-the-repository-url)という点です。
+
+- プライベートプロジェクトの場合: どこでもSSH URLを使用してください。ほとんどのサービスは、SSHキーによる認証をSSH URL(たとえば`git@github.com:bitrise-io/bitrise.git`)に対してのみサポートしています。そのため、使用したいすべてのプライベートリポジトリはSSH URLで指定する必要があります。CocoaPods Podfile内にプライベートなgitリポジトリへの直接参照がある場合、そこでもSSH URLを使用する必要があります。同じことは、URLのサブモジュールや他のすべてのプライベートgitリポジトリにも当てはまり、[登録するSSHキー](/bitrise-platform/repository-access/configuring-ssh-keys)を使って[bitrise.io](https://www.bitrise.io/)上で利用します。
+- パブリックプロジェクトの場合: どこでもHTTPS URLを使用してください。SSH URLは、リポジトリが公開されている場合でもSSHキーを必要とします。セキュリティ上の理由から、パブリックプロジェクトにはSSHキーを設定できません。HTTPS git clone URLはパブリックリポジトリの場合認証を必要としないため、パブリックなBitrise projectに対して使用してください。

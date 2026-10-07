@@ -1,0 +1,187 @@
+---
+title: "AWS向けOIDC"
+description: "Bitriseビルド中にOIDCトークンを生成し、スコープ付きアクセストークンと交換します。"
+sidebar_position: 2
+slug: /bitrise-platform/integrations/oidc-authentication/oidc-for-aws
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitriseのビルド中にOpenID Connect(OIDC)トークンを生成し、それらをAWSスコープの権限を持つAWS Identity and Access Management(IAM)ロールと交換します。
+
+AWSにOIDCトークンを使用するには、次の作業が必要です。
+
+- AWSアカウントにIAM OIDCプロバイダーを作成します。
+- カスタム信頼ポリシーを追加します。これは、IDトークンのルールを記述することを意味します。
+
+Bitriseでは、[<strong>OIDC IDトークンを取得</strong>](https://github.com/bitrise-steplib/bitrise-step-get-identity-token)<GlossTerm baseform="step">Step</GlossTerm>、または[<strong>Amazon Web Services(AWS)で認証</strong>](https://github.com/bitrise-steplib/bitrise-step-authenticate-with-aws)Stepのいずれかを使用してトークンを取得できます。
+
+
+## IAMにOIDC IDプロバイダーを追加する {#adding-an-oidc-identity-provider-in-iam}
+
+AWSアカウントにIAM OIDCプロバイダーをセットアップします。
+
+:::tip[AWS ユーザーガイド]
+
+IAM OIDCプロバイダーの詳細については、[公式AWSユーザーガイド](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html)をご覧ください。
+
+:::
+
+1. AWSアカウントにLog inします。
+1. <strong>IAM</strong>に移動します。
+1. 左側で<strong>Access Management</strong>を見つけ、<strong>Identity providers</strong>を選択します。
+1. <strong>Add Provider</strong>をクリックします。
+1. <strong>OpenID Connect</strong>を選択します。
+1. <strong>Provider URL</strong>フィールドにhttps://token.builds.bitrise.io.を設定します。
+1. <strong>Audience</strong>フィールドに`sts.amazonaws.com`を設定します。
+1. <strong>Add provider</strong>をクリックします。
+
+   ![2025-11-11-aws-iam-provider.png](/img/_paligo/uuid-019f250f-8d48-a51c-738b-db46d0829339.png)
+1. <strong>Identity providers</strong>ページで、新しく作成したIDプロバイダーを選択し、ARNをコピーします。
+
+   ARNは次のようになります：`arn:aws:iam::ACCOUNT_NUMBER:oidc-provider/token.builds.bitrise.io`。
+
+
+## カスタム信頼ポリシーを追加する {#adding-a-custom-trust-policy}
+
+Bitrise IDトークンのルールを記述するために、AWS IAMにカスタム信頼ポリシーを追加します。
+
+:::tip[AWS ドキュメント]
+
+このガイドでは、Bitriseビルド用のAWSポリシーの設定方法を説明します。信頼ポリシーの詳細については、AWSのドキュメントをご覧ください：[カスタム信頼ポリシーを使用してロールを作成する](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-custom.html)。
+
+:::
+
+1. AWSアカウントにLog inします。
+1. <strong>IAM</strong>に移動します。
+1. 左側で<strong>Access Management</strong>を見つけ、<strong>Roles</strong>を選択します。
+1. <strong>Create role</strong>をクリックします。
+
+   ![2025-11-11-aws-roles.png](/img/_paligo/uuid-8fc9a70b-c1a9-6ce2-4369-8701e891f0d5.png)
+1. <strong>Custom trust policy</strong>を選択します。
+
+   ![2025-11-11-custom-trust-policy.png](/img/_paligo/uuid-2aed5814-692a-476b-f993-617cdb2c338f.png)
+1. カスタム信頼ポリシーエディタでステートメントを作成し、OIDCトークンのルールを設定します：
+
+   :::tip[ポリシーの作成]
+
+   ポリシーの作成方法の詳細については、AWSのドキュメントをご覧ください：[IAMポリシーの作成](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_create-console.html#access_policies_create-start)。
+
+   :::
+
+   - `Principal`を追加します。タイプはフェデレーテッドユーザーセッションとし、先ほど作成したARNを使用します。下記の例の`Federated`を参照してください。
+   - `sts:AssumeRoleWithWebIdentity`の値を持つ`Action`を追加します。
+   - `Conditions`の下で、IDトークン内のクレームに対して一致させます。
+
+     :::important[制限事項]
+
+     Bitriseは汎用的なIDプロバイダーと見なされるため、AWSは当社のトークンから`aud`と`sub`の2つのクレームのみを保持します。ポリシーではこれらのみ使用できます。
+
+     クレームフィールドの詳細については、[AWSのドキュメント](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html#Conditions_String)を参照してください。
+
+     :::
+
+     下記の例では、オーディエンス、Bitrise <GlossTerm baseform="project">project</GlossTerm>スラグ、および<GlossTerm baseform="workflow">Workflow</GlossTerm>名を確認します：
+
+   ```json
+   {
+       "Version": "2012-10-17",
+       "Statement": [
+           {
+               "Effect": "Allow",
+               "Principal": {
+                   "Federated": "arn:aws:iam::ACCOUNT_NUMBER:oidc-provider/token.builds.bitrise.io"
+               },
+               "Action": "sts:AssumeRoleWithWebIdentity",
+               "Condition": {
+                   "StringEquals": {
+                       "token.builds.bitrise.io:aud": "sts.amazonaws.com",
+                       "token.builds.bitrise.io:sub": "app:APP_SLUG:workflow:run-tests"
+                   }
+               }
+           }
+       ]
+   }
+   ```
+
+   `StringEquals`の代わりに`StringLike`オペレーションでワイルドカードを使用することもできます：[ワイルドカードによる一致](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html#Conditions_String-wildcard)。
+1. 完了したら、<strong>Next</strong>をクリックします。
+1. ロールに必要な権限を選択します。
+
+   必要な権限は、AWSでアクセスしようとしているサービスによって異なります。たとえば、ビルド中にS3バケットにファイルをアップロードする場合は、<strong>AmazonS3FullAccess</strong>を選択できます。
+
+   :::note[カスタムアクセスポリシー]
+
+   必要な権限を正確に設定するために、AWSで独自のカスタムポリシーを作成することもできます。
+
+   :::
+1. 完了したら、<strong>Next</strong>をクリックします。
+1. ロールに名前を付け、必要に応じて説明を追加します。
+1. 完了したら、<strong>Create a role</strong>をクリックします。
+
+
+## トークンの取得と交換 {#fetching-and-exchanging-tokens}
+
+AWSでOIDC IDプロバイダーとカスタム信頼ポリシーの設定が完了すると、Bitriseビルドは選択したサービスとトークンを交換できるようになります。次の方法があります：
+
+- <strong>Authenticate with AWS</strong> Stepを使用して、プロセス全体を処理します。
+- <strong>Get OIDC Identity Token</strong> Stepでトークンを取得し、スクリプトで認証情報の交換を行います。
+
+:::note[OIDCトークンの情報]
+
+BitriseはOIDCトークンに次のクレームを含めます：[OIDCトークンの情報](/bitrise-platform/integrations/oidc-authentication/oidc-authentication-overview#information-in-the-oidc-token)。
+
+:::
+
+### Authenticate with AWS Stepを使用する {#using-the-authenticate-with-aws-step}
+
+<strong>Authenticate with AWS</strong> StepはOIDCトークンをリクエストし、AWSとの認証情報の交換を行います。つまり、認証を行うための独自のスクリプトを作成する必要はなく、Stepが代わりに処理します。
+
+1. Bitriseで<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>を開きます。
+1. <strong>Authenticate with AWS</strong> StepをWorkflowに追加します。
+1. <strong>Token audience</strong>入力を`sts.amazonaws.com`に設定します。
+1. <strong>AWS Role ARN</strong>に、先ほど作成したIAMロールARNの値を設定します。
+
+   :::tip[Docker ログイン]
+
+   Stepのもう一つの便利な機能として、DockerをEC2 Container Registryに自動的にログインさせることができます。Stepの設定で<strong>Docker</strong>入力グループを見つけ、`true`に設定します。
+
+   これはLinux <GlossTerm baseform="stack">stacks</GlossTerm>でのみサポートされています。
+
+   :::
+
+### Get OIDC Identity Token Stepを使用する {#using-the-get-oidc-identity-token-step}
+
+1. BitriseでWorkflow Editorを開きます。
+1. <strong>Get OIDC Identity Token</strong> StepをWorkflowに追加します。
+1. <strong>Token audience</strong>入力を`sts.amazonaws.com`に設定します。
+1. BITRISE_IDENTITY_TOKEN環境変数を使用します。これは任意のCLIツールやAPIエンドポイントに渡すことができます。
+
+   トークンの交換を行い、レスポンスから認証情報を抽出するスクリプトを、<strong>Script</strong> Step内に作成できます。認証情報として3つの環境変数が必要です：
+
+   - AWS_ACCESS_KEY_ID
+   - AWS_SECRET_ACCESS_KEY
+   - AWS_SESSION_TOKEN
+
+   これらがエクスポートされると、AWS CLIが自動的にそれらを取得して使用します。CLIを介したあらゆる操作が問題なく動作します。
+
+   たとえば、AWS CLIを使用して短期認証情報を取得し、現在認証されているセッションの詳細を出力する場合は、次のようになります：
+
+   ```bash
+   # Perform the token exchange and save the response
+   AWS_RESPONSE=$(aws sts assume-role-with-web-identity \
+     --role-arn "arn:aws:iam::065600603509:role/OIDC-TEST" \
+     --role-session-name "bitrise-${BITRISE_BUILD_NUMBER}" \
+     --web-identity-token "$BITRISE_IDENTITY_TOKEN" \
+     --output json)
+
+   # Extract the credentials from the reponse
+   export AWS_ACCESS_KEY_ID=$(echo "$AWS_RESPONSE" | jq -r '.Credentials.AccessKeyId')
+   export AWS_SECRET_ACCESS_KEY=$(echo "$AWS_RESPONSE" | jq -r '.Credentials.SecretAccessKey')
+   export AWS_SESSION_TOKEN=$(echo "$AWS_RESPONSE" | jq -r '.Credentials.SessionToken')
+
+   # The AWS cli will automatically pick up the env vars from the section above
+   aws sts get-caller-identity
+   ```

@@ -1,0 +1,35 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## OAuth接続からGitHubアプリへの切り替え {#switching-from-oauth-connection-to-the-github-app}
+
+:::tip[Using the API]
+
+ここでは、Bitrise websiteで機能を設定する方法を説明します。Bitrise APIからも設定できます。[GitHubアプリの設定 API](/bitrise-ci/api/github-app-configuration-api)
+
+:::
+
+Bitrise <GlossTerm baseform="project">プロジェクト</GlossTerm>に、GitHubアカウントへのOAuth接続が設定されている場合、機能を失うことなく、いつでもBitrise GitHubアプリに切り替えることができます。切り替えを強くお勧めします。Bitrise GitHubアプリをインストールすれば、Bitriseビルドの実行にservice credential user、SSHキー、Webhookは不要になります。
+
+:::important[HTTPS URL required]
+
+GitHubアプリでは、リポジトリに対してSSHのものではなく、HTTPS URLが必要です。通常は気にする必要はありません。GitHubアプリ接続を設定すると、プロジェクトのURLが変更されます。問題がある場合は、URLを手動で変更できます。[Changing the repository URL](/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch#changing-the-repository-url)
+
+:::
+
+切り替えるには、次の手順を実行します。
+
+1. 該当するガイドに従ってInstall the Bitrise GitHub Appします。[Installing the GitHub App integration](/bitrise-platform/repository-access/github-app-integration#installing-the-github-app-integration)
+1. プロジェクトに対する<strong>Admin</strong>[ロール](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)を持つユーザーで、Bitriseのプロジェクトを開きます。
+1. プロジェクトのメインページで、<strong>Project settings</strong>ボタンをクリックします。
+
+   ![project-settings-button.png](/img/_paligo/uuid-14defaa4-472c-2d09-84df-145dc3aef4f5.png)
+1. 左側のナビゲーションメニューで、<strong>Repository</strong>を選択します。
+1. GitHub Appのサポートに関する情報が表示された青いカードが表示されます。切り替えるには、<strong>Setup GitHub App</strong>をクリックします。
+
+   ![SCR-20260331-prho.png](/img/_paligo/uuid-3de8dcba-e678-997e-20f0-3055cd889bb0.png)
+1. GitHub Appの設定が完了したら、<strong>Webhooks</strong>タブの<strong>Incoming Webhooks</strong>ページから、既存の手動Webhookをすべて削除してください。
+
+   このページには、<strong>Project Settings</strong> → <strong>Integrations</strong> → <strong>Webhooks</strong>タブ → <strong>Incoming Webhooks</strong>の順に移動して開けます。削除しないと、ビルドが重複してトリガーされます。詳細については、[Event subscriptions](/bitrise-platform/repository-access/github-app-integration#event-subscriptions)を参照してください。
+1. 必要に応じて、service credential userと、OAuth接続に使用していたSSHキーやパーソナルアクセストークンを削除できます。

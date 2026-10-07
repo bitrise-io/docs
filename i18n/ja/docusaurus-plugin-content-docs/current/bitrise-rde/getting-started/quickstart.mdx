@@ -1,0 +1,106 @@
+---
+title: "クイックスタート"
+description: "Bitrise CLIをインストールし、3つのコマンドでRemote Dev EnvironmentのClaude Codeセッションを開始します。その後、エージェントにVNCを開かせたり、お使いのマシンとの間でファイルを移動させたりします。"
+sidebar_position: 2
+slug: /bitrise-rde/getting-started/quickstart
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Remote Dev Environmentsを試す最も手早い方法は、Bitrise RDE CLIです。3つのコマンドでCLIをインストールし、サインインするだけで、クラウドマシン上で動作し、あなたのリポジトリのクローンを使って作業する[Claude Code](https://www.anthropic.com/claude-code)に入れます。
+
+## 始める前に {#before-you-start}
+
+以下が必要です:
+
+- 作業するブランチをすでにリモートにプッシュ済みの、ローカルのGitリポジトリ。
+- エージェントがセッション内で実行できるようにするための、Claude CodeのサブスクリプションまたはAnthropicのAPIキー。
+
+## RDEアクセスの許可 {#granting-rde-access}
+
+セッションを開始する前に、workspaceのオーナーまたはマネージャーがあなたのためにRemote Dev Environmentsを有効にする必要があります。これはworkspace settings内の<strong>Collaboration</strong>ページから行います。
+
+詳しい手順については、[RDEアクセスの管理](/bitrise-rde/configuration/managing-rde-access)をご覧ください。
+
+## Claude Codeセッションの開始 {#start-a-claude-code-session}
+
+ターミナルで次のコマンドを実行します。
+
+1. Bitrise CLIをインストールします。
+
+   ```bash
+   curl -fsSL https://app.bitrise.io/cli/install.sh | bash
+   ```
+1. Bitriseアカウントにサインインします。認証のためにブラウザが開きます。
+
+   ```bash
+   bitrise-cli auth login
+   ```
+1. リポジトリフォルダから、Claude Codeでセッションを開始します。
+
+   ```bash
+   bitrise-cli rde claude
+   ```
+   :::note
+
+   複数のworkspaceに所属している場合、CLIが選択を求めます。プロンプトをスキップするには、`bitrise-cli config set default_workspace_id <id>`でデフォルトを設定するか、`--workspace`フラグを使用してください。
+
+   :::
+1. スタックとマシンタイプを選択します。
+1. プロンプトが表示されたらClaude Codeを認証します。まだ認証情報が保存されていない場合は、CLIがローカルのClaude Code認証情報を取得するか、ブラウザを開いてサブスクリプションまたはAPIキーでサインインできるようにします。認証情報は保存されるため、以降のセッションではClaude Codeがすでに認証済みの状態で開始されます。
+
+   :::tip
+
+   認証情報は[Bitrise RDE UI](/bitrise-rde/rde-options/bitrise-rde-ui#authentication)でも保存または更新できます。
+
+   :::
+
+CLIは、現在のリポジトリに対するあなたの選択を記憶します。<GlossTerm baseform="rde session">セッション</GlossTerm>を作成し、現在のブランチをそこにクローンして、クラウドマシン上でClaude Codeを起動します。すぐにエージェントの中に入り、そのまま作業を始められます。
+
+:::important[プッシュ済みのコミットのみがクローンされます]
+
+`bitrise-cli rde claude`は、現在のブランチのプッシュ済みの状態をクローンします。プッシュしていないローカルのコミットや未コミットの変更は、セッションには転送されません。
+
+:::
+
+:::tip[セッションにGitHubアクセスを許可する]
+
+[GitHub連携](/bitrise-rde/configuration/github-integration)を有効にすると、エージェントがあなたの代わりにpull、push、プルリクエストの作成を行えるようになります。gitとGitHub CLIは、新しいセッションのたびに自動的に認証されます。
+
+:::
+
+## エージェントからマシンにアクセスできるようにする {#let-the-agent-reach-your-machine}
+
+クラウドマシン上のClaude Codeで作業している間、CLIは安全な接続を維持し、エージェントが<strong>ローカル</strong>コンピューター上でいくつかの操作を実行できるようにします。Claude Codeに自然な言葉で依頼するだけです。
+
+- <strong>VNCビューアーを開く</strong>: エージェントがマシン上でリモートデスクトップビューアーを開き、セッションのmacOSデスクトップに接続します。これにより、シミュレーターやGUIアプリの様子を確認できます。VNCパスワードはローカルに保持され、セッションに送信されることはありません。
+- <strong>Downloadファイル</strong>: エージェントがセッションからファイルやフォルダをマシンに取得し、保存先を知らせます。
+- <strong>Upload file</strong>: エージェントがローカルのファイルやフォルダ(signing certificateなど)をセッションにプッシュします。
+
+たとえば、エージェントがアプリをビルドした後に、*「シミュレーターを見られるようにVNCを開いて」*や*「ビルド出力をDownloadsフォルダにダウンロードして」*と伝えると、マシン上でその操作が実行されます。
+
+:::note[VNCはmacOSのみ対応]
+
+VNCビューアーを開く機能は、グラフィカルデスクトップを持つmacOSセッションで利用できます。Linuxセッションにはデスクトップがないため、エージェントはファイル転送はできますが、VNCを開くことはできません。
+
+:::
+
+## 後でセッションを再開する {#resume-your-session-later}
+
+接続が切れた場合、CLIが自動的に再接続し、その間もClaude Codeはセッション内で実行され続けます。再接続中にCtrl-Cを押すと、マシンを実行したままデタッチできます。
+
+Claude Codeを終了すると、マシンを解放するためにセッションは自動的に終了しますが、後で戻れるように保持されます。同じリポジトリフォルダから、直近のセッションと会話を再開します。
+
+```bash
+bitrise-cli rde claude --continue
+```
+
+代わりにそのリポジトリの過去のセッションから選択するには、`bitrise-cli rde claude --resume`を使用します。
+
+## 次のステップ {#next-steps}
+
+- ターミナルからさらに操作する: [Bitrise RDE CLI](/bitrise-rde/rde-options/bitrise-rde-cli)。
+- 作成した内容を理解する: [主要な概念](/bitrise-rde/getting-started/key-concepts)。
+- ブラウザや別のIDEを使用する: [RDEの使い方](/bitrise-rde/getting-started/remote-dev-environments-overview#ways-to-use-rde)。

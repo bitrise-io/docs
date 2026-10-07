@@ -1,0 +1,167 @@
+---
+title: "iOSプロジェクトを使い始める"
+description: "メールまたはGitプロバイダーでサインアップし、リポジトリを接続して、iOSアプリの最初のビルドを実行することで、Bitriseを使い始めます。"
+sidebar_position: 1
+slug: /bitrise-ci/getting-started/quick-start-guides/getting-started-with-ios-projects
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_DeployingTheAppToAppStoreConnect from '@site/i18n/ja/partials/deploying-the-app-to-app-store-connect.mdx';
+
+iOS向けの開発は複雑ですが、できるだけ簡単に行えるようにすることを目指しています。このガイドでは、iOSプロジェクトをBitriseに追加する方法、Xcodeテストを実行する方法、code signingファイルを管理する方法、そして完成したアプリを[bitrise.io](https://www.bitrise.io/)とApp Storeにデプロイする方法について説明します。
+
+:::tip[Bitriseへのfastlaneの統合]
+
+Bitrise上でも、ローカルで使用するのと同じコマンドでfastlaneのlaneを実行できます。Bitriseの自動化された<GlossTerm baseform="step">Step</GlossTerm>により、laneに追加機能が提供され、ビルドが高速化されます。詳細は[fastlane](https://github.com/bitrise-io/steps-fastlane)をご覧ください。
+
+:::
+
+
+## iOSプロジェクトをBitriseに追加する {#adding-an-ios-project-to-bitrise}
+
+他のプロジェクトと同じ方法でプロジェクトを追加します。ウィザードの全手順については[新しいプロジェクトの追加](/bitrise-ci/getting-started/adding-a-new-project)を参照してください。このセクションでは、iOS固有の内容について説明します。
+
+### スキャナーがiOSプロジェクトを検出する仕組み {#how-the-scanner-detects-an-ios-project}
+
+<GlossTerm baseform="project scanner">プロジェクトスキャナー</GlossTerm>は`.xcodeproj`ファイルと`.xcworkspace`ディレクトリを探し、それぞれのビルド設定を確認します。`SDKROOT`が`iphoneos`に設定されている場合(または`SUPPORTED_PLATFORMS`にそれが含まれている場合)、スキャナーはそのプロジェクトをiOSとして登録します。すでにworkspaceのメンバーになっているプロジェクトは、workspaceがそれをカバーするため、個別には表示されません。
+
+リポジトリにXcodeプロジェクトもworkspaceもない場合、スキャナーは`Package.swift`ファイルにフォールバックし、それをSwiftパッケージとして扱います。また、CocoaPods用の`Podfile`やCarthage用の`Cartfile`も検出し、生成されるWorkflowを調整してこれらの依存関係をインストールします。
+
+### 設定できる項目 {#what-you-can-configure}
+
+<strong>CI configuration</strong>の段階では、ウィザードに以下が表示されます。
+
+- <strong>Project or workspace path</strong>: ビルド対象の`.xcodeproj`、`.xcworkspace`、または`Package.swift`ファイル。
+- <strong>Scheme name</strong>: プロジェクトまたはworkspace内で見つかった共有スキーム。スキャナーが検出できるのは共有スキームのみで、ユーザー固有のスキームは検出できません。
+- <strong>Distribution method</strong>: Bitriseがアプリをエクスポートする方法(App Store、Ad Hoc、Enterprise、Developmentなど)。Swiftパッケージはアーカイブされないため、このオプションは表示されません。
+
+## iOSアプリをテストする {#testing-your-ios-app}
+
+テストターゲットが定義されている場合、iOSプロジェクトのdefault Workflowsには、Xcodeテストを実行し、その結果を[bitrise.io](https://www.bitrise.io/)で確認するために必要な2つのStepsが含まれます。
+
+- <strong>Xcode Test for iOS</strong>
+- <strong>Deploy to Bitrise.io</strong>
+
+<strong>Xcode Test for iOS</strong>Stepは、あらかじめ定義されたXcodeテストを実行します。デフォルトの設定は変更する必要がなく、テストが正しく記述されていればそのまま動作します。同じ設定オプションはXcodeでも確認できます。
+
+:::tip[選択したスタックを確認する]
+
+プロジェクト用に選択したスタックが、プロジェクトのビルドに使用したものと同じXcodeバージョンであることを確認することをお勧めします。たとえば、シミュレーターテストがIneligible destinations for the schemeというメッセージで失敗する場合は、<strong>Stacks & Machines</strong>セクションのXcodeバージョンが正しいことを確認してください。スタックの詳細については、[ビルドスタック](/bitrise-build-hub/infrastructure/build-stacks/about-build-stacks)をご覧ください。
+
+:::
+
+Deploy to Bitrise.ioStepは、ビルドの<strong>Logs</strong>タブと<strong>Artifacts</strong>タブに以下をデプロイします。
+
+- Xcodeテスト結果。
+- xcodebuildoutputの生ログ。
+
+<strong>Deploy to Bitrise.io</strong>Stepは、<strong>Xcode Test for iOS</strong>Stepの結果を[テストレポート](/bitrise-ci/testing/deploying-and-viewing-test-results)にもエクスポートします。
+
+
+## Xcodeプロジェクト用の署名済みIPAを作成する {#creating-a-signed-ipa-for-xcode-projects}
+
+:::note[BitriseにおけるiOS code signingの概要]
+
+code signingアセット管理に利用できるStepsの全体像については、[iOS code signingページ](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)をご覧ください。
+
+:::
+
+Bitriseを使用すると、Xcodeプロジェクト用の署名済みIPAファイルを簡単に作成できます。
+
+- BitriseでYou haveが[Apple service connection](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)を設定済みです。
+- [code signingファイルが正しく管理されている](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)。
+- <strong>Xcode Archive & Export for iOS</strong>Stepの関連する入力を設定している。
+
+:::important[配布用および開発用のsigning certificateをアップロードする]
+
+プロジェクトの開発用と配布用の両方のsigning certificateをアップロードすることを強くお勧めします。開発用のsigning certificateがアップロードされていない場合、自動プロビジョニングオプションを使用したStepsは、ビルドを開始するたびにその場で1つ生成します。これが続くと、証明書の上限に達し、新しいビルドを開始できなくなる可能性があります。
+
+:::
+
+準備が整ったら、WorkflowでIPAのエクスポートを設定します。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. 必要な[code signingファイルが収集およびアップロードされている](/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning#uploading-ios-code-signing-certificates-to-bitrise)ことを確認します。
+1. Workflowに<strong>Xcode Archive & Export for iOS</strong>Stepがあることを確認します。
+1. Stepの<strong>Distribution method</strong>入力を設定します。
+
+   ![xcode-archive.png](/img/_paligo/uuid-fced107c-9b69-e5af-1472-4d96fbada364.png)
+
+   オプションは次のとおりです。
+
+   - `app-store`: アプリをApp Storeにデプロイする場合に選択します。Distribution証明書とApp Storeのプロビジョニングプロファイルが必要です。
+   - `ad-hoc`: アプリをアドホックテスターにデプロイする場合に選択します。Distribution証明書とAd Hocのプロビジョニングプロファイルが必要です。
+   - `enterprise`: AppleのEnterpriseアカウントを持っていて、それを使用してアプリを配布する場合に選択します。
+   - `development`: 社内テスト用に選択します。Developer証明書とDevelopmentのプロビジョニングプロファイルが必要です。
+1. <strong>Automatic code signing</strong>入力に、code signingに使用するApple service connectionを設定します。使用できるオプションは次のとおりです。
+
+   - automatic code signingを使用しない場合は`off`。
+   - [if you use API key authorization](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)を使用する場合は`api-key`。
+   - [if you use Apple ID authorization](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)を使用する場合は`apple-id`。
+1. Workflowを保存し、新しいビルドを開始します。
+
+</TabItem>
+<TabItem value="bitriseyml" label="Configuration YAML">
+
+1. ビルドに必要な[code signingファイル](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)がすべて揃っていることを確認します。
+1. アプリの`bitrise.yml`ファイルを開きます。
+1. Workflowに`xcode-archive`Stepがあることを確認します。
+
+   ```yaml
+   my-workflow:
+     steps:
+     - xcode-archive:
+         inputs:
+   ```
+1. `distribution_method`入力を正しい値に設定します。使用できるオプションは次のとおりです。
+
+   - `app-store`: アプリをApp Storeにデプロイする場合に選択します。Distribution証明書とApp Storeのプロビジョニングプロファイルが必要です。
+   - `ad-hoc`: アプリをアドホックテスターにデプロイする場合に選択します。Distribution証明書とAd Hocのプロビジョニングプロファイルが必要です。
+   - `enterprise`: AppleのEnterpriseアカウントを持っていて、それを使用してアプリを配布する場合に選択します。
+   - `development`: 社内テスト用に選択します。Developer証明書とDevelopmentのプロビジョニングプロファイルが必要です。
+
+   ```yaml
+   my-workflow:
+     steps:
+     - xcode-archive:
+         inputs:
+         - distribution_method: development
+   ```
+1. `automatic_code_signing`入力に、code signingに使用するApple service connectionを設定します。使用できるオプションは次のとおりです。
+
+   - automatic code signingを行わない場合は`off`。
+   - [if you use API key authorization](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)を使用する場合は`api-key`。
+   - [if you use Apple ID authorization](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)を使用する場合は`apple-id`。
+
+   ```yaml
+   my-workflow:
+     steps:
+     - xcode-archive:
+         inputs:
+         - automatic_code_signing: api-key
+         - distribution_method: development
+   ```
+
+</TabItem>
+</Tabs>
+
+以上で完了です。Xcodeは、プロジェクトのBundle IDとTeam IDの設定、および設定したエクスポート方法に基づいて、適切な署名ファイルを自動的に選択します。
+
+### 別のチームのcode signingファイルでIPAファイルに署名する {#signing-an-ipa-file-with-a-different-teams-code-signing-file}
+
+別のチームのcode signingファイルでIPAファイルに署名したい場合があります。例:
+
+- 社内ビルドには自社のcode signingファイルを使用するが、App Store配布にはクライアントのcode signingファイルを使用する場合。
+- automatic code signingにApple IDを使用していて、Apple IDが複数のチームに属している場合は、The Developer Portal team to use for this export入力を使用して、automatic code signingのアセット管理にどのチームを使用するかを指定します。
+
+これを行うには:
+
+1. 新しい開発チームの適切なcode signingファイルがBitriseにアップロードされていることを確認します。
+1. <strong>Distribution method</strong>に加えて、The Developer Portal team to use for this exportオプションも設定します。
+1. <strong>Distribution method</strong>を設定します。
+
+<Partial_DeployingTheAppToAppStoreConnect />

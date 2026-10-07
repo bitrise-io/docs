@@ -1,0 +1,89 @@
+---
+title: "リポジトリアクセスについて"
+description: "ビルドを実行するには、Bitrise CIがGitリポジトリにアクセスできる必要があります。ビルドが開始されると、仮想マシンが作成され、そこにリポジトリがクローンされます。このクローンには認証が必要です。"
+sidebar_position: 1
+slug: /bitrise-platform/repository-access/about-repository-access
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+ビルドを実行するには、Bitrise CIがGitリポジトリにアクセスできる必要があります。ビルドが開始すると、仮想マシンを作成してそこにリポジトリをクローンするため、認証が必要です。Bitriseは、次の3つの方法のいずれかでGitリポジトリに対して認証できます。
+
+- [GitHubアプリ](#github-app): Bitriseは、GitHub CloudとGitHub Enterpriseの両方に対応したGitHubアプリを提供しています。
+- [SSHキー](#ssh-key-authorization): 公開鍵と秘密鍵を作成し、公開鍵をGitプロバイダーに登録することで、ビルド実行時にBitriseが認証できるようになります。
+- [パーソナルアクセストークン](#https-authorization): Gitプロバイダーでパーソナルアクセストークンを生成し、Bitriseに登録します。これはHTTPS認証に使用できます。
+
+リポジトリアクセスは新規プロジェクトの追加時に設定しますが、認証方法やリポジトリURL自体を含め、すべての設定は後から変更できます。
+
+新規プロジェクトの追加時にリポジトリを選択する方法は2つあります。[新規プロジェクトの追加](/bitrise-ci/getting-started/adding-a-new-project):
+
+- リポジトリURLを手動で貼り付ける。
+- BitriseアカウントをGitプロバイダーのアカウントに接続する。これにより、新規プロジェクトの追加時に利用可能なリポジトリの一覧から選択できるようになります。
+
+リポジトリURLの選択は最終的なものではなく、いつでも[後で変更](/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch#changing-the-repository-url)できます。
+
+BitriseアカウントをGitプロバイダーのアカウントに接続する場合、認証はconnection typeによって異なります。
+
+- GitHubアプリは短期間有効なアクセストークンを使用するため、SSHキーもパーソナルアクセストークンも必要ありません。
+- OAuth接続では、リポジトリURLに応じてSSHキーまたはパーソナルアクセストークンのいずれかが必要です。
+
+
+## GitHubアプリ {#github-app}
+
+BitriseアカウントをGitHubリポジトリに接続する最良の方法は、[GitHubアプリ](https://docs.github.com/en/apps/overview)と連携することです。Bitrise GitHubアプリには、連携を容易にするさまざまな機能があります。
+
+- このアプリを使用すると、SSHキー、パーソナルアクセストークン、service credential userが不要になります。アクセスにあたっては、ビルドのたびに一時的なアクセストークンを生成するため、セキュリティが大幅に向上します。
+- リポジトリへの詳細なアクセス制御が可能です。GitHub組織全体にアクセス権を付与する必要はなく、アプリがアクセスできる特定のリポジトリを選択できます。
+- アプリをインストールすると、GitHub ChecksアプリによりBitriseのステータス更新が自動的にGitHub上に直接反映されます。ステータスレポートを個別に設定する必要はありません。なお、1つのBitrise <GlossTerm baseform="workspace">Workspace</GlossTerm>に接続できるGitHubアカウントは1つのみですが、GitHub Checksは他のGitHubアカウントが所有するリポジトリに対しても設定できます。
+
+:::important[HTTPS URLが必要]
+
+GitHubアプリでは、リポジトリにSSHのものではなくHTTPS URLが必要です。通常はこれを気にする必要はありません。GitHubアプリの連携を設定すると、プロジェクトのURLが変更されるためです。問題が発生した場合は、URLを手動で変更できます。[リポジトリURLの変更](/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch#changing-the-repository-url)。
+
+:::
+
+GitHubアプリを使用したリポジトリアクセスは、GitHub CloudユーザーとGitHub Enterpriseユーザーで設定方法が異なります。
+
+- [GitHub Cloudガイド](/bitrise-platform/repository-access/github-app-integration)
+- [GitHub Enterpriseガイド](/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise)
+
+
+## OAuth接続 {#oauth-connection}
+
+OAuth接続を使用すると、サードパーティアプリケーションはログイン認証情報を共有することなく、サービス上のユーザーデータにアクセスできます。Bitriseでは、OAuth接続はBitriseアカウントをGitプロバイダーのアカウントに接続することを意味します。
+
+Bitriseは、GitHub、GitLab、Bitbucketの3つのGitプロバイダーとのOAuth接続をサポートしています。OAuth接続を使用すると、Bitriseは次のことができます。
+
+- [新規プロジェクトの追加](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache#adding-a-new-connection-to-the-build-cache)時に、利用可能なリポジトリの一覧を取得して表示する。
+- [ウェブフックの自動登録](/bitrise-platform/integrations/webhooks/adding-incoming-webhooks#registering-an-incoming-webhook-automatically)。ウェブフックにより<GlossTerm baseform="Trigger">ビルドトリガー</GlossTerm>を設定できるほか、[Git Insights](/insights/git-insights)の利用が可能になります。
+- [SSHキーの自動登録](/bitrise-platform/repository-access/configuring-ssh-keys)。
+
+OAuth接続を設定するには、[OAuthを使用したリポジトリアクセス](/bitrise-platform/repository-access/repository-access-with-oauth)を参照してください。
+
+
+## SSHキー認証 {#ssh-key-authorization}
+
+リポジトリURLがSSH URLであり、OAuth接続を使用している場合、SSHキーでBitriseを認証できます。
+
+SSHキー認証には、公開鍵と秘密鍵のSSH鍵が必要です。公開鍵はBitrise <GlossTerm baseform="project">プロジェクト</GlossTerm>のGitリポジトリに登録されます。公開鍵で暗号化された情報を復号するには、Bitriseに登録された秘密鍵が必要です。
+
+Bitriseで新規プロジェクトを追加する際にSSHキーペアを追加できるほか、後から<strong>Project settings</strong>ページで設定することもできます。次のオプションがあります。
+
+- <strong>Auto-add a generated SSH key to your repository</strong>: Bitriseが公開SSH鍵をGitHubリポジトリに自動的に登録します。リポジトリの管理者権限がある場合はこちらを選択してください。
+- <strong>Copy a generated SSH key to your Git provider manually</strong>: BitriseがSSHキーペアを生成しますが、公開鍵はGitリポジトリに手動で登録する必要があります。
+- <strong>Add your own SSH key to Bitrise</strong>: 認証用に独自のSSHキーペアを用意し、公開鍵をGitリポジトリに手動で登録する必要があります。
+
+SSHキー認証を設定するには: [SSHキーの設定](/bitrise-platform/repository-access/configuring-ssh-keys)を参照してください。
+
+
+## HTTPS認証 {#https-authorization}
+
+リポジトリURLがHTTPS URLであり、OAuth接続を使用している場合、パーソナルアクセストークンでBitriseを認証できます。
+
+HTTPS認証では、プライベートプロジェクトにパーソナルアクセストークンが必要です。トークンはGitプロバイダーで作成し、Bitriseに登録します。
+
+OAuth接続を使用するほとんどのプロジェクトでは、SSH URLとSSHキー認証を推奨します。HTTPS URLの使用は、[パブリックプロジェクト](/bitrise-platform/projects/public-projects)にのみ推奨します。これらはSSHキーを持てないためです。
+
+HTTPS認証を設定するには: [HTTPS認証情報の設定](/bitrise-platform/repository-access/configuring-https-authorization-credentials)を参照してください。

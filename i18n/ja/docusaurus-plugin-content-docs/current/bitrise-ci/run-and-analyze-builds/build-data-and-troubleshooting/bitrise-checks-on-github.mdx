@@ -1,0 +1,169 @@
+---
+title: "GitHub上のBitriseチェック"
+description: "BitriseGitHubアプリは、BitriseがGitHubに送り返す従来のステータスチェックを拡張したバージョンを提供します。"
+sidebar_position: 5
+slug: /bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/bitrise-checks-on-github
+sidebar_label: "BitriseGitHubアプリによるGitHubチェック"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/i18n/ja/partials/getting-to-the-project-settings-page.mdx';
+
+:::important[GitHub アプリ連携]
+
+Bitrise GitHub Appを使用してBitrise <GlossTerm baseform="workspace">Workspace</GlossTerm>をGitHubアカウントまたは組織に接続している場合、このセクションで説明する操作を行う必要はありません。GitHub Checksが自動的に機能し、ステータスの更新を提供します。
+
+ただし、OAuth接続をアプリで引き続き使用し、GitHub AppでGitHub Checksを使用することもできます。
+
+:::
+
+Bitrise GitHub Appは、BitriseがGitHubに送信する従来のビルドステータスチェックの拡張版など、さまざまな機能を提供します。この拡張版には、Bitriseビルドサマリーとチェックステータスが含まれます。GitHub上のプルリクエストの<strong>Details</strong>リンクをクリックすると、チェックを表示できます。これにより、GitHubの<strong>Check</strong>タブでプルリクエストに添付される、GitHubアプリの詳細なビルドサマリーとビルドステータスが展開表示されます。
+
+![Bitrise_Checks_on_GitHub_Checks.png](/img/_paligo/uuid-d3db0692-cdd1-86cb-615a-955fd97587e9.png)
+
+![Bitrise_Checks_on_GitHub_Checks.jpg](/img/_paligo/uuid-0268c55e-cc52-4a65-4f01-f1db5f281a4e.jpg)
+
+チェックステータスには次の3つがあります。
+
+- 成功。
+- 失敗。
+- 操作が必要（プルリクエストを手動で承認する場合）。
+
+Bitriseアプリを使用してステータスチェックを送信するには、次の2つの操作を行う必要があります。
+
+1. [Bitriseアプリをインストールする](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/bitrise-checks-on-github#installing-the-bitrise-github-app-for-github-checks): これはGitHub.comユーザーにのみ必要です。[すでに連携を設定済み](/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise)のGitHub Enterprise Serverユーザーは、アプリでステータスチェックを有効にする手順に進むことができます。
+1. [Bitriseアプリを有効にする](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/bitrise-checks-on-github#enabling-github-checks-on-bitrise): Bitrise websiteで機能をオンにし、最初のビルドを実行すると、ブランチ保護ルールでBitriseアプリを選択できるようになります。
+
+
+## GitHub Checks用にBitrise GitHubアプリをインストールする {#installing-the-bitrise-github-app-for-github-checks}
+
+GitHub.comユーザーとしてBitrise Checksを使用するには、GitHubアプリとしてインストールする必要があります。
+
+Bitrise <GlossTerm baseform="project">プロジェクト</GlossTerm>を所有するworkspaceがBitrise GitHub Appを接続し、Bitrise projectのリポジトリへのアクセスを許可している場合は、ここで説明する手順をスキップしてGitHub Checksの使用を開始できます。
+
+:::important[GitHub.comユーザーのみ]
+
+GitHub Enterprise Serverユーザーの場合、この手順を行う必要はありません。GitHub Checksを有効にするには、次の操作が必要です。
+
+1. [GitHub Enterprise Server連携をインストールする](/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise)。
+1. [BitriseでGitHub Checksを有効にする](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/bitrise-checks-on-github#enabling-github-checks-on-bitrise)。
+
+:::
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側のメニューオプションから<strong>Integrations</strong>を選択します。
+1. トグルの下にあるリンクをクリックします。まずBitriseアプリをインストールする必要があるため、まだスイッチを切り替えないでください。
+
+   このリンクをクリックすると、GitHubの<strong>Bitrise</strong>インストールページに移動します。
+
+   ![github_checks_install.png](/img/_paligo/uuid-f07c26d9-ec9e-bcab-3f8e-184408ae7fc2.png)
+1. Bitriseアプリを追加するユーザーまたはGitHubOrganizationを選択します。
+1. Select an option、GitHubアプリのインストール先を選択します:
+
+   - <strong>All repositories</strong>: 現在および今後のすべてのリポジトリに適用されます。
+   - <strong>Only select repositories</strong>: 必要なリポジトリを選択します。
+
+   これにより、アクセス権のあるリポジトリを確認したり、GitHub Checksを使用してチェック結果を表示したりするなど、Bitriseがあなたに代わって操作することを許可します。
+1. <strong>Install and authorize</strong>をクリックします。
+1. GitHubのプロンプトで、GitHubのパスワードを入力します。
+
+問題がなければ、GitHubの<strong>Bitrise</strong>ページに移動します。ページの左上に、BitriseがGitHubアカウントに正常にインストールされたことを示す青いメモが表示されます。
+
+
+## BitriseでGitHub Checksを有効にする {#enabling-github-checks-on-bitrise}
+
+[BitriseアプリがGitHubにインストールされる](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/bitrise-checks-on-github#installing-the-bitrise-github-app-for-github-checks)と、[Bitrise](https://app.bitrise.io/ci)のproject settingsページでGitHub Checksを有効にする必要があります。
+
+:::important[GitHub Checksの有効化には制限があります]
+
+このトグルは、プロジェクトの<strong>Project settings</strong>ページでworkspaceの所有者とプロジェクト管理者のみが有効にできますのでご注意ください。
+
+:::
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で<strong>Repository</strong>を選択します。
+1. 下にスクロールして<strong>Build reporting</strong>セクションに移動し、<strong>GitHub Checks</strong>スイッチをオンにします。
+
+   :::important[スイッチを切り替えられない場合]
+
+   スイッチを切り替えられない場合は、[GitHub Checksを有効にできない](#cant-enable-github-checks)を確認してください。
+
+   :::
+1. ビルドを<GlossTerm baseform="trigger">トリガー</GlossTerm>します。自動でも手動でも実行できます。手動でビルドをトリガーする場合は、ビルド対象の特定のコミットハッシュを指定してください。
+
+   このビルドは、最初のBitriseチェックを実行するために必要です。チェックが完了すると、ブランチ保護ルールでBitrise Checksを選択できるようになります。
+
+以上で完了です。GitHub上でプロジェクトに対して開くプルリクエストは、Bitrise Checksで検証され、（Bitriseで[プルリクエストトリガー](/bitrise-ci/run-and-analyze-builds/build-triggers/yaml-syntax-for-build-triggers)が正しく設定されている場合）Bitriseで自動的にビルドが開始されます。
+
+### GitHub Checksを有効にできない {#cant-enable-github-checks}
+
+GitHub Checksを有効にするスイッチを切り替えられない主な理由は、次の2つです。
+
+- 最初にBitrise GitHubアプリをインストールしないと、スイッチを切り替えることはできません。インストールが完了したら、スイッチを右に切り替えて有効にできます。
+- すでにBitriseに追加され、Bitrise Checksをインストール済みのアプリのGitHubリポジトリの名前を変更したり移動したりした場合。この場合、リポジトリのGitHub URLは当然変更されています。<strong>GitHub Checks</strong>スイッチは、GithubとBitriseのURLが完全に一致する場合にのみ機能します（リダイレクトURLは許可されません）。そのため、この場合は[アプリの<strong>Repository URL</strong>を手動で更新する](/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch)必要があります。
+
+
+## GitHub Checksを無効にする {#disabling-github-checks}
+
+プロジェクトでGitHub Checksを無効にするには:
+
+プロジェクトの<strong>Settings</strong>ページで<strong>ENABLE GITHUB CHECKS</strong>スイッチを左に切り替えます。
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で<strong>Repository</strong>を選択します。
+1. <strong>Build reporting</strong>で<strong>GitHub Checks</strong>トグルを無効にします。
+
+
+## GitHub Checksのテストサマリー {#github-checks-test-summary}
+
+プロジェクトのリポジトリにUIまたはユニットテストが含まれている場合は、<GlossTerm baseform="workflow">Workflow</GlossTerm>内で適切なテスト用の<GlossTerm baseform="step">Steps</GlossTerm>を使用して実行できます。<strong>Deploy to Bitrise.io</strong> Stepを使用すると、test resultsが<strong>[テストレポート](/bitrise-ci/testing/deploying-and-viewing-test-results)</strong>ページに表示されるほか、GitHub Checksでも確認できます。
+
+たとえば、Androidアプリの場合、<strong>Virtual Unit Testing for Android</strong> Stepを使用すると、すべてのテスト結果をGitHub Checksで確認できます。
+
+![test_reports.png](/img/_paligo/uuid-6fb2370d-7bd0-a531-147b-deeb7a89c996.png)
+
+### StepによるStepのエラーレポート {#step-by-step-error-report}
+
+CIビルドが実行されると、GitHub Checksのテストサマリーには、左側のサイドバーの別々のタブにStepsの成功したテストと失敗したテストが表示されます。Stepをクリックすると、対応可能なエラーレポート付きで複数のテストが一覧表示された、より詳細なレポートサマリーが表示されます。ビルドサマリーはBitriseタブで確認できます。
+
+GitHub Checksのテストサマリーで詳細情報を表示できるのは、次のStepsのみですのでご注意ください。
+
+- <strong>Xcode Test for iOS</strong>
+- <strong>Android Unit Test</strong>
+- <strong>iOS Device Testing</strong>
+- <strong>Virtual Device Testing for Android</strong>
+- <strong>Flutter Test</strong>
+
+その他のStepで生成されたテスト結果を<strong>Deploy to Bitrise.io</strong> Stepにエクスポートするには、次の2つの方法があります。
+
+- <strong>Export test results to the Test Reports</strong> Stepの使用を強くおすすめします。このStepは、入力に基づいてテスト結果を検索します。
+- 必要なファイルを作成してエクスポートする独自のカスタム<strong>Script</strong> Stepを設定することもできます。
+
+### 失敗したStepのテスト結果を確認する {#checking-the-test-results-of-a-failed-step}
+
+ビルドに失敗したテストがある場合、GitHub Checksでそれらを確認する方法は次のとおりです。
+
+1. <strong>Bitrise Check</strong>ドロップダウンをクリックします。
+1. Stepをクリックして、特定のStepのエラーレポートを表示します。
+
+ここから、または、ビルドサマリーから他のStepsをクリックできます。<strong>View more details on Bitrise Checks</strong>リンクをクリックすると、Bitriseのビルドページに移動します。
+
+### GitHubチェックを使用してビルドを再実行する {#re-running-a-build-using-github-checks}
+
+:::important[ロール要件]
+
+GitHub Checksを使用してビルドを再実行するには、[GitHubアカウントがBitriseに接続されている](/bitrise-platform/repository-access/repository-access-with-oauth#connecting-a-git-provider-with-oauth-from-the-account-settings-page)必要があり、さらにアプリのチームで少なくともDeveloperロールを持っている必要があります。これらの条件が満たされていない場合、再実行チェックはエラーなしで失敗します。
+
+ユーザーロールとロールのチートシートの全一覧については、[アプリチームのユーザーロール](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)を確認してください。
+
+:::
+
+GitHub Checksを使用してビルドを再実行する場合:
+
+1. チェックを再実行したいプルリクエストをGitHubで開きます。
+1. <strong>Check</strong>タブを開きます。
+1. <strong>Re-run all checks</strong>をクリックします。
+
+   ![re_run_test.png](/img/_paligo/uuid-9f07fdaf-fccd-365f-c732-7e489e246580.png)

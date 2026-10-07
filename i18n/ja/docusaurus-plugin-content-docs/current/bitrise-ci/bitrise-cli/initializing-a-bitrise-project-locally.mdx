@@ -1,0 +1,46 @@
+---
+title: "Bitriseprojectのローカルでの初期化"
+description: "bitrise local initコマンドを使用すると、Bitriseのオンラインに追加せずに、お使いのコンピューター上で新しいBitriseアプリを初期化できます。"
+sidebar_position: 3
+slug: /bitrise-ci/bitrise-cli/initializing-a-bitrise-project-locally
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitriseに新しいアプリを追加すると、プロジェクトの種類が検出され、プロジェクトの種類に適した<GlossTerm baseform="Workflow">Workflows</GlossTerm>を含む基本的な<GlossTerm baseform="bitrise.yml">`bitrise.yml`</GlossTerm>ファイルが自動的に生成されます。
+
+Bitrise CLIを使うと、この処理を自分のコンピューターで実行できます。
+
+1. [Bitrise CLI](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli)をコンピューターにインストールします。
+1. `bitrise local init`の実行にはGoが必要です。
+
+   :::note[Goのインストール]
+
+   コンピューターにGoがインストールされていない場合、`bitrise local init`が自動的にインストールします。
+
+   :::
+1. `bitrise local init`コマンドを実行します。
+
+   ```bash
+   bitrise local init
+   ```
+1. コマンドが利用可能なすべてのスキャナーを実行してプロジェクトの種類を判定するまで待ちます。
+1. 検出されたプロジェクトの種類に応じて、スキャナーからいくつかの入力を求められます。指示に従ってください。
+
+   例えば、iOSプロジェクトの場合、エクスポート方法の指定を求められます。
+
+   ```yaml
+   Select: ipa export method
+   Please select from the list:
+   [1] : app-store
+   [2] : ad-hoc
+   [3] : enterprise
+   [4] : development
+   (type in the option's number, then hit Enter) :
+   ```
+
+スキャナーの出力に基づいて、コマンドは`bitrise.yml`ファイルを含むBitrise設定を生成します。自動生成されたWorkflowsでは、必須の入力項目すべてに有効な値が設定されます。
+
+このコマンドは`.bitrise.secrets.yml`ファイルも生成します。このファイルには<GlossTerm baseform="Secret">Secrets</GlossTerm>を保存できます。

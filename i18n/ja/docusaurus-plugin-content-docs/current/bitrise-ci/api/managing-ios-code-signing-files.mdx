@@ -1,0 +1,236 @@
+---
+title: "iOScode signingファイルの管理"
+description: "BitriseAPIを使用して、iOScode signingファイルのアップロード、更新、一覧表示、削除ができます。証明書とプロビジョニングプロファイルには、それぞれ別のエンドポイントがあります。"
+sidebar_position: 10
+slug: /bitrise-ci/api/managing-ios-code-signing-files
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+このガイドでは、Bitrise APIを使用してiOSのcode signingファイルを管理する方法について説明します。UIで同じことを行う方法について詳しく知りたい場合は、[iOS code signing](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)をご覧ください。
+
+APIを使用すると、iOSのcode signingファイルのアップロード、更新、一覧表示、削除を行えます。このガイドでは、それらのcode signingエンドポイントの使用方法と順序について説明します。
+
+| エンドポイント | 機能 | アプリチームで必要なロール |
+| --- | --- | --- |
+| POST/apps/\{app-slug\}/provisioning-profiles | プロビジョニングファイルを作成する | オーナーまたは管理者 |
+| POST/apps/\{app-slug\}/provisioning-profiles/\{provisioning-profile-slug\}/uploaded | アップロード処理を確認する | オーナーまたは管理者 |
+| PATCH/apps/\{app-slug\}/provisioning-profiles/\{provisioning-profile-slug\} | アップロード済みのプロビジョニングファイルを更新する | オーナーまたは管理者 |
+| GET/apps/\{app-slug\}/provisioning-profiles | アップロード済みのプロビジョニングファイルの一覧を取得する | オーナーまたは管理者 |
+| GET/apps/\{app-slug\}/provisioning-profiles/\{provisioning-profile-slug\} | 特定のプロビジョニングファイルのデータを取得する | オーナーまたは管理者 |
+| DELETE/apps/\{app-slug\}/provisioning-profiles/\{provisioning-profile-slug\} | アップロード済みのプロビジョニングファイルを削除する | オーナーまたは管理者 |
+
+| エンドポイント | 機能 | アプリチームで必要なロール |
+| --- | --- | --- |
+| POST/apps/\{app-slug\}/build-certificates | ビルド証明書を作成する | オーナーまたは管理者 |
+| POST/apps/\{app-slug\}/build-certificates/\{build-certificate-slug\}/uploaded | アップロード処理を確認する | オーナーまたは管理者 |
+| PATCH/apps/\{app-slug\}/build-certificates/\{build-certificate-slug\} | アップロード済みのビルド証明書を更新する | オーナーまたは管理者 |
+| GET/apps/\{app-slug\}/build-certificates | アップロード済みのビルド証明書の一覧を取得する | オーナーまたは管理者 |
+| GET/apps/\{app-slug\}/build-certificates/\{build-certificate-slug\} | 特定のビルド証明書のデータを取得する | オーナーまたは管理者 |
+| DELETE/apps/\{app-slug\}/build-certificates/\{build-certificate-slug\} | アップロード済みのビルド証明書を削除する | オーナーまたは管理者 |
+
+
+## iOSのcode signingファイルをアップロードする {#uploading-an-ios-code-signing-file}
+
+:::note[必要なロール]
+
+Bitrise APIを使用してiOSのcode signingファイルを管理するには、アプリチームで管理者またはオーナーのロールが必要です。
+
+詳細なユーザーロールの一覧とロールのチートシートについては、[Bitrise CIのロールと権限](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)をご確認ください。
+
+:::
+
+任意のBitriseアプリに、iOSのcode signingファイル(.p12証明書またはプロビジョニングプロファイルのいずれか)をアップロードできます。このプロセスでは新しいcode signingファイルは作成されません。既存のファイル(Apple Developer Portalで作成してダウンロードしたもの)をAWS URLにアップロードします。これは、Bitrise websiteでcode signingファイルをアップロードするのと機能的に同じです。[iOSのcode signingファイルの管理 - 手動プロビジョニング](/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---manual-provisioning)を参照してください。
+
+APIを使用してiOSのcode signingファイルをアップロードするには、次の手順に従います。
+
+1. `provisioning-profiles`または`build-certificates`エンドポイントのPOSTメソッドを呼び出して、10分で期限切れになる一時的な署名付きアップロードURLを作成します。
+
+   この呼び出しには、既存のcode signingファイル(証明書またはプロビジョニングプロファイル)と2つのパラメータが必要です。
+
+   - `upload_file_name`: 既存のcode signingファイルへのファイルパス。例: `/path/to/sample.p12`。
+   - `upload_file_size`: ファイルのサイズ(バイト単位)。
+
+   ```bash
+   // Calling the endpoint to create the temporary upload URL
+   curl -X POST -H 'Authorization: THE-ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/APP-SLUG/provisioning-profiles' -d '{"upload_file_name":"sample.provisionprofile","upload_file_size":2047}'
+   ```
+
+   ```json
+   // The successful response: you will need the "upload_url" and the "slug".
+   {
+     "data":{
+       "upload_file_name":"sample.provisionprofile",
+       "upload_file_size":2047,
+       "slug":"01C6FA6P6HRQT5PQ8RMMVVXE6W",
+       "processed":false,
+       "is_expose":true,
+       "is_protected":false,
+       "upload_url":"https://concrete-userfiles-production.s3-us-west-2.amazonaws.com/build_certificates/uploads/30067/original/certs.p12?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAIOC7N256G7J2W2TQ%2F20180216%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20180216T124240Z&X-Amz-Expires=600&X-Amz-SignedHeaders=content-length%3Bhost&X-Amz-Signature=2bf42176650f00405abfd7b7757635c9be16b43e98013abb7f750d3c658be28e"
+     }
+   }
+   ```
+1. 最初の呼び出しに対するレスポンスには、`upload_url`パラメータが含まれています。これと`upload_file_name`パラメータを使用して、`curl`呼び出しでファイルをAWSにアップロードする必要があります。
+
+   ```bash
+   curl -T sample.provisionprofile 'https://concrete-userfiles-production.s3-us-west-2.amazonaws.com/build_certificates/uploads/30067/original/certs.p12?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAIOC7N256G7J2W2TQ%2F20180216%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20180216T124240Z&X-Amz-Expires=600&X-Amz-SignedHeaders=content-length%3Bhost&X-Amz-Signature=2bf42176650f00405abfd7b7757635c9be16b43e98013abb7f750d3c658be28e'
+   ```
+1. `uploaded`エンドポイントへのPOST呼び出しでファイルのアップロードを確認します。最初のPOST呼び出しに対するレスポンスの`slug`を使用します。
+
+   これにより、ファイルの`processed`フラグが`true`に設定されます。このフラグは、その後変更できません。
+
+   ```bash
+   curl -X POST -H 'Authorization: THE-ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/APP-SLUG/provisioning-profiles/FILE-SLUG/uploaded'
+   ```
+
+
+## アップロード済みのiOSのcode signingファイルを更新する {#updating-an-uploaded-ios-code-signing-file}
+
+`PATCH`メソッドを使用して、アップロード済みのiOSのcode signingファイルに軽微な更新を行えます。ファイルを[Bitrise](https://www.bitrise.io)にアップロード済みの場合は、<strong>Code Signing & Files</strong>タブで変更内容を視覚的に確認できます。
+
+:::note[必要なロール]
+
+Bitrise APIを使用してiOSのcode signingファイルを管理するには、アプリチームで管理者またはオーナーのロールが必要です。
+
+詳細なユーザーロールの一覧とロールのチートシートについては、[Bitrise CIのロールと権限](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)をご確認ください。
+
+:::
+
+たとえば、<strong>プロビジョニングプロファイル</strong>を保護対象にするには、プロビジョニングプロファイルの`is_protected`フラグを`true`に設定します。
+
+```bash
+curl -X PATCH -H 'Authorization: THE-ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/APP-SLUG/provisioning-profiles/PROVISIONING-PROFILE-SLUG -d '{"is_protected":true}'
+```
+
+<strong>ビルド証明書</strong>の場合も上記と同じ属性を設定できますが、パスワードも変更できます。
+
+```bash
+curl -X PATCH -H 'Authorization: THE-ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/APP-SLUG/build-certificates/BUILD-CERTIFICATE-SLUG -d '{"certificate_password":"s0m3-v3ry-s3cr3t-str1ng"}'
+```
+
+:::note[`certificate_password`の利用可否]
+
+`download_url`と同様に、`certificate_password`は、ファイルの`is_protected`属性がfalseの場合にのみレスポンスに返される点に注意してください。
+
+:::
+
+:::warning[属性を設定する際の注意点]
+
+アップロードしたファイルの`is_protected`、`is_exposed`、`processed`属性を設定できます。
+
+- `is_protected`フラグが`true,`に設定されると、それ以降変更できません。
+- `is_protected`の値がtrueの場合、`is_expose`フラグを別の値に設定することはできません。
+- `processed`フラグがtrueに設定されると、その値はそれ以降変更できません。
+
+:::
+
+
+## 特定のiOSのcode signingファイルのデータを取得する {#getting-a-specific-ios-code-signing-files-data}
+
+:::note[必要なロール]
+
+Bitrise APIを使用してiOSのcode signingファイルを管理するには、アプリチームで管理者またはオーナーのロールが必要です。
+
+詳細なユーザーロールの一覧とロールのチートシートについては、[Bitrise CIのロールと権限](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)をご確認ください。
+
+:::
+
+`provisioning-profiles`および`build-certificates`エンドポイントのGETメソッドを使用して、特定のiOSのcode signingファイルのデータを取得します。返されるデータには、ファイルの名前、サイズ、ダウンロードURL、および現在のステータスなどが含まれます。
+
+必要なパラメータは次のとおりです。
+
+- アプリのslug
+- ファイルのslug
+
+<strong>プロビジョニングプロファイルのデータを取得する</strong>
+
+リクエスト:
+
+```bash
+curl -X GET -H  'Authorization: THE-ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/APP-SLUG/provisioning-profiles/PROVISIONING-PROFILE-SLUG'
+```
+
+レスポンス:
+
+```json
+{
+  "data": {
+    "upload_file_name":"sample.provisionprofile",
+    "upload_file_size":2047,
+    "slug":"01C6FA6P6HRQT5PQ8RMMVVXE6W",
+    "processed":false,
+    "is_expose":true,
+    "is_protected":false,
+    "download_url":"https://concrete-userfiles-production.s3-us-west-2.amazonaws.com/prov_profile_documents/uploads/80144/original/sample.provisionprofile?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAIOC7N256G7J2W2TQ%2F20180322%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20180322T091652Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host&X-Amz-Signature=6dd7bb3db72aafb2d434da7b1a8f80a82a3a7a0276e84620137ed64de5025ab2"
+  }
+}
+```
+
+:::note[`download_url`の利用可否]
+
+`download_url`は、ファイルの`is_protected`属性がfalseの場合にのみ生成される点に注意してください。
+
+:::
+
+
+## アプリのiOSのcode signingファイルを一覧表示する {#listing-the-ios-code-signing-files-of-an-app}
+
+:::note[必要なロール]
+
+Bitrise APIを使用してiOSのcode signingファイルを管理するには、アプリチームで管理者またはオーナーのロールが必要です。
+
+詳細なユーザーロールの一覧とロールのチートシートについては、[Bitrise CIのロールと権限](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)をご確認ください。
+
+:::
+
+アプリに属するiOSのcode signingファイルがいくつあるか気になりますか?`provisioning-profiles`および`build-certificates`エンドポイントの`GET`メソッドを使用して一覧を取得できます。
+
+必要なパラメータは次のとおりです。
+
+- アプリのslug
+
+オプションのパラメータは次のとおりです。
+
+- next: レスポンス内の最初のファイルのslug(文字列)
+- limit: 1ページあたりの要素数の最大数(整数)。デフォルトは50です。
+
+<strong>アプリのすべてのprovisioning profilesを取得する</strong>
+
+リクエスト:
+
+```bash
+curl -X GET -H 'Authorization: THE-ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/APP-SLUG/provisioning-profiles'
+```
+
+レスポンス:
+
+```json
+{
+  "data": [
+    {
+      "upload_file_name":"sample.provisionprofile",
+      "upload_file_size":2047,
+      "slug":"01C6FA6P6HRQT5PQ8RMMVVXE6W",
+      "processed":false,
+      "is_expose":true,
+      "is_protected":false
+    },
+    {
+      "upload_file_name":"sample2.provisionprofile",
+      "upload_file_size":2047,
+      "slug":"01C6FA6P6HRQT5PQ8RMMVVXE5T",
+      "processed":true,
+      "is_expose":true,
+      "is_protected":true
+    }
+  ],
+  "paging": {
+    "page_item_limit": 50,
+    "total_item_count": 2
+  }
+}
+```
+</content>
+</invoke>

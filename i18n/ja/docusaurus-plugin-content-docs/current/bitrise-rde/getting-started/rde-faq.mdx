@@ -1,0 +1,200 @@
+---
+title: "Remote Dev Environments のFAQ"
+description: "Bitrise Remote Dev Environmentsに関するよくある質問です。セッションとストレージ、接続、GitHub認証情報、AIコーディングエージェント、制限、料金について説明します。"
+sidebar_position: 4
+slug: /bitrise-rde/getting-started/rde-faq
+sidebar_label: "FAQ"
+---
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## はじめに {#getting-started}
+
+<strong>Remote Dev Environment とは何ですか?</strong>
+
+オンデマンドのクラウドマシンです。macOS または Linux を利用でき、Bitrise CI と同じインフラストラクチャ、<GlossTerm baseform="stack">スタック</GlossTerm>、キャッシュ上で動作します。<GlossTerm baseform="rde session">セッション</GlossTerm>は数秒で作成でき、ターミナル、IDE、またはAIコーディングエージェントから接続し、使い終わったら終了します。永続ディスクは保持されるため、後でセッションを復元して作業を再開できます。
+
+<strong>どうすれば利用できますか?</strong>
+
+RDE を利用する方法は2つあります。
+
+- <strong>セルフサービス:</strong> [Remote Dev Environments ページ](https://bitrise.io/platform/remote-dev-environments)でサインアップします。
+- <strong>Enterprise:</strong> Bitrise の営業チームを通じて、workspaceで RDE が有効化されます。Bitriseにお問い合わせください。
+
+どちらの場合も、workspaceで <strong>RDE User</strong> ロールが必要です。メンバーであるだけでは足りません。workspaceのオーナーまたはマネージャーが、<strong>Settings</strong> → <strong>Collaboration</strong> から、メンバーごとまたはグループごとにロールを付与します。workspaceで SCIM を使用している場合は、IDプロバイダーから `rde:rde_admin` ロールを割り当ててください。詳しくは、[Managing RDE access](/bitrise-rde/configuration/managing-rde-access)をご覧ください。
+
+<strong>最も手早く試す方法は何ですか?</strong>
+
+3つのコマンドで試せます。Bitrise CLIをインストールし、`bitrise-cli auth login` を実行し、リポジトリのフォルダーから `bitrise-cli rde claude` を実行します。これによりセッションが作成され、現在のブランチがクローンされ、クラウドマシン上の Claude Code に接続されます。詳しくは、[Quickstart](/bitrise-rde/getting-started/quickstart)をご覧ください。
+
+<strong>どのマシンを利用できますか?</strong>
+
+Apple シリコン上の macOS(M2 Pro、M4、M4 Pro)と、2〜48 vCPU の Linux を、共有クラスターまたは専用クラスターで利用できます。利用可能なスタックとマシンタイプは workspace によって異なります。セッションの作成時に、製品内の一覧で確認してください。RDE の各購入方法に含まれる内容については、セルフサービスの場合は [RDE pricing](https://bitrise.io/pricing#rde)、Enterprise の場合は [Bitrise pricing calculator](https://pricing-calculator.tools.bitrise.dev/calc) をご覧ください。
+
+## セッション、ストレージ、保持期間 {#sessions-storage-and-lifetime}
+
+<strong>セッションにはどのような状態がありますか?</strong>
+
+- <strong>Running</strong>: プロビジョニング済みで、接続可能な状態です。
+- <strong>Terminated</strong>: マシンは停止していますが、セッションと永続ディスクは保持されます。完全に元に戻せます。
+- <strong>Deleted</strong>: 完全に削除された状態です。削除できるのは、すでに終了しているセッションのみです。
+
+<strong>セッションは自動的にシャットダウンされますか?</strong>
+
+はい、2つの場合があります。すべてのセッションには自動終了タイマーがあり、デフォルトでは5日間操作がないと終了します。最大30日までの任意の期間に設定できるほか、タイマーをオフにしてセッションが自動終了しないようにすることもできます。無料トライアルの workspaces のセッションは8時間に制限されており、この設定は変更できません。
+
+このタイマーとは別に、Bitrise は、インフラストラクチャのメンテナンスのために、長時間稼働しているマシンを随時停止します。該当するセッションはドレイン(シャットダウン)され、後で再起動できます。自動終了タイマーをオフにしても、この対象から除外されることはありません。
+
+どちらの場合も、終了は削除ではありません。ディスクは保持されます。
+
+<strong>終了したセッションはどのくらいの期間保持されますか?</strong>
+
+削除しない限り、また、セッションの作成元のスタックが Bitrise で引き続き利用可能である限り、無期限に保持されます。終了したセッションが、操作がないことを理由に削除されることはありません。
+
+<strong>自分で削除していないのに、セッションが削除されることはありますか?</strong>
+
+はい、セッションの作成元のスタックが削除された場合です。セッションのディスクには、そのスタックイメージに対する変更内容のみが保存されているため、イメージがなくなるとセッションを起動できません。Stackの削除は、公開されている[stack deprecation and removal policy](/bitrise-build-hub/infrastructure/build-stacks/stack-deprecation-and-removal-policy)に従い、少なくとも4週間前に通知されます。今後削除予定のスタックは [upcoming stack deprecations](https://stacks.bitrise.io/announcements/upcoming-stack-deprecations/) ページに掲載されており、[subscribe to RSS updates](https://stacks.bitrise.io/tips/get-notified/) で更新情報を受け取れます。
+
+<strong>その場合、作業内容はどうなりますか?</strong>
+
+完全に消去され、復元できません。スタックの削除日までに、作業内容をリポジトリにコミットするか、エクスポートしてください。現行のスタックから、いつでも新しいセッションを作成できます。
+
+<strong>既存のセッションを新しいスタックに移行できますか?</strong>
+
+いいえ。セッションは、作成元のスタックのまま使用し続けます。新しいスタックに移行するには、そのスタックから新しいセッションを作成し、リポジトリを再度クローンしてください。
+
+<strong>セッションのディスクはバックアップされますか?</strong>
+
+いいえ。セッションのディスクは作業用のストレージであり、バックアップされません。サービスレベルの保証の対象外です。セッションのディスク上にのみ存在するデータは、未保存の作業として扱ってください。ブランチをプッシュしておきましょう。
+
+<strong>永続ディスクには実際に何が保存されますか?</strong>
+
+セッションの作成後に加えられた変更のみが、スタックイメージとの差分として保存されます。たとえば、クローンしたリポジトリ、ビルドの出力、ローカル設定などです。これにより復元が高速になりますが、同時に、セッションはそのイメージが存在し続けることに依存します。
+
+<strong>セッションのストレージには追加料金がかかりますか?</strong>
+
+現在、セッションのストレージは別途課金されません。Enterprise 契約では、ストレージの割り当て量と、それを超えた分の扱いが定められています。Enterprise 契約をご利用の場合は、Order Form をご確認ください。
+
+<strong>メンバーが workspace を離れた場合、セッションはどうなりますか?</strong>
+
+メンバーの RDE アクセス権を取り消しても、そのメンバーのセッションは削除されません。実行中のセッションは自動終了するまで継続し、終了済みのセッションは誰かが削除するまでディスクが保持されます。ストレージを解放するには、セッションを明示的に削除してください。
+
+<strong>セッションはメンテナンスの影響を受けますか?</strong>
+
+長時間稼働しているマシンは、インフラストラクチャのメンテナンスのために停止されることがあります。該当するセッションはドレイン(シャットダウン)され、後で再起動できます。
+
+<strong>復元にはどのくらい時間がかかりますか?</strong>
+
+イメージのサイズによりますが、通常は約20秒から数分です。
+
+## 接続 {#connecting}
+
+<strong>セッションに接続するにはどうすればよいですか?</strong>
+
+4つの方法があります。
+
+- セッションの詳細ページにある、ブラウザーベースの Web ターミナル。
+- SSH。そこに表示されるアドレスとワンタイムパスワード、または `bitrise-cli rde session view` で確認できる情報を使用します。
+- VS Code。<strong>Open in VS Code</strong> から、Remote-SSH 拡張機能を使用します。
+- macOS セッションでグラフィカルなデスクトップを使用するための VNC。Linux セッションにはデスクトップがないため、VNC は利用できません。詳しくは、[Connecting to a session](/bitrise-rde/rde-options/connecting-to-a-session)をご覧ください。
+
+<strong>毎回パスワードをコピーせずに接続できますか?</strong>
+
+はい。SSH の公開鍵を[saved input](/bitrise-rde/configuration/saved-inputs)として登録すると、Bitrise がその鍵をセッションの authorized keys に追加します。macOS セッションでは `vagrant` ユーザーとして、Linux セッションでは `ubuntu` ユーザーとしてサインインします。
+
+<strong>CLI からインタラクティブなシェルを利用できますか?</strong>
+
+`bitrise-cli rde session exec` は単一のコマンドを実行して出力をストリーミングで返すもので、インタラクティブなシェルではありません。インタラクティブなセッションには、SSH または Web ターミナルを使用してください。
+
+<strong>リモートコマンドがタイムアウトします。上限を引き上げられますか?</strong>
+
+はい。`session exec` は、デフォルトでは10分後にリモートコマンドを停止します。長時間のビルドには `--timeout 30m` を使用し、上限を無効にするには `--timeout 0` を使用してください。
+
+<strong>ファイルを送受信するにはどうすればよいですか?</strong>
+
+`bitrise-cli rde session upload` と `bitrise-cli rde session download` を使用します。`bitrise-cli rde claude` で起動した AIエージェント を使用している場合は、普通の言葉で依頼してください。ファイルの転送や、ローカルマシンでの VNC ビューアーの起動を行えます。
+
+セッションは SSH アクセスが可能な通常のマシンなので、すでに使い慣れているツールも利用できます。
+
+- 単一のファイルやフォルダーのコピーには `scp` を使用します。セッションの詳細ページまたは `bitrise-cli rde session view` で確認できる、セッションの SSH アドレスを指定します。
+- SSH 経由の `rsync` で、フォルダーを同期した状態に保ちます。ノートパソコンからでも、セッション内からでも、どちらの方向でも開始できます。
+- セッション内から、`curl`、`wget`、または `git clone` を使って、インターネットから直接取得します。セッションは Bitrise のインフラストラクチャ上にあるため、大きな依存関係やアーティファクトは、ノートパソコンからアップロードするよりも、通常はこの方法のほうがはるかに高速です。
+- セッション内から、オブジェクトストレージのバケットやアーティファクトサーバーなど、普段使っている保存先に結果をプッシュします。
+- 転送自体を省略し、セッション上のファイルを直接読み書きする [VS Code Remote - SSH](/bitrise-rde/rde-options/connecting-to-a-session#vs-code-remote---ssh)で、その場で編集します。
+
+まず、SSH の公開鍵を [saved input](/bitrise-rde/configuration/saved-inputs)として登録してください。パスワードなしでアクセスできるため、ワンタイムパスワードを毎回コピーすることなく、スクリプトによる転送や繰り返しの転送を現実的に行えます。
+
+<strong>VNC で macOS のデスクトップがロックされました。どうすれば再度ログインできますか?</strong>
+
+RDE UI のセッション詳細ページに表示されている VNC パスワードを使用してください。
+
+## Git と認証情報 {#git-and-credentials}
+
+<strong>プライベートリポジトリをクローンするにはどうすればよいですか?</strong>
+
+[GitHub integration](/bitrise-rde/configuration/github-integration)を有効にします。Bitrise は、新しいセッションごとに有効期間の短い GitHub トークンを配置します。このトークンは、個人の GitHub App 接続を通じて発行されるため、`git clone`、`git push`、および `gh` の CLI を、個人用アクセストークンや SSH キーなしで HTTPS 経由で利用できます。トークンの有効期間は最長8時間で、復元をまたいでも、セッションの存続期間中は自動的に更新されます。長期間有効な認証情報がマシンに保存されることはありません。
+
+<strong>有効にしましたが、クローンが「repository not found」で失敗します。</strong>
+
+Bitrise GitHub App が、そのリポジトリまたは Organization にインストールされていません。workspace レベルの GitHub App 接続は対象にならない点にご注意ください。この連携では、<strong>Account settings</strong> → <strong>Connected accounts</strong> にある<strong>個人</strong>の接続が使用されます。
+
+<strong>コミットは自分のものとして記録されますか?</strong>
+
+はい、あなたの GitHub アカウントに紐づけられます。その際は GitHub の noreply アドレスが使われるため、実際のメールアドレスが公開されることはありません。
+
+<strong>その他の認証情報はどのように保存すればよいですか?</strong>
+
+[saved inputs](/bitrise-rde/configuration/saved-inputs)として保存します。API トークン、SSH キー、エージェントの認証情報などが対象です。これらは単一の workspace ではなくユーザーアカウントにスコープされ、シークレット値は保存時に暗号化されます。
+
+## AIコーディングエージェント {#ai-coding-agents}
+
+<strong>どのエージェントを実行できますか?</strong>
+
+Claude Code は第一級のサポート対象です。`bitrise-cli rde claude` を実行すると、セッションが作成され、ブランチがクローンされ、エージェントが起動します。その他のエージェントは、[template](/bitrise-rde/configuration/templates)のウォームアップスクリプトからインストールできます。Model Context Protocol をサポートする AIエージェント であれば、[RDE MCP server](/bitrise-rde/rde-options/bitrise-rde-mcp-server)を通じてセッションを操作できます。
+
+<strong>自分の AI サブスクリプションが必要ですか?</strong>
+
+はい。エージェントは、ご自身のサブスクリプションまたは API キーで動作します。初回の使用時には、CLI がローカルの Claude Code 認証情報を取得するか、ブラウザーを開いてサインインを促します。認証情報は保存されるため、以降のセッションは認証済みの状態で起動します。
+
+<strong>エージェントはローカルマシンにアクセスできますか?</strong>
+
+はい。作業中に CLI が維持する安全な接続を通じてアクセスできます。エージェントは、セッションのデスクトップに接続した VNC ビューアーを開いたり、ファイルをアップロードまたはダウンロードしたりできます。VNC パスワードはローカルにのみ保持され、セッションに送信されることはありません。
+
+<strong>接続が切断された場合はどうなりますか?</strong>
+
+CLI が自動的に再接続し、エージェントはセッション内で実行され続けます。`bitrise-cli rde claude --continue` は、そのリポジトリで直近のセッションと会話を再開します。`--resume` では、以前のものから選択できます。
+
+## 機能と制限 {#capabilities-and-limits}
+
+<strong>Docker を実行できますか?</strong>
+
+- Linux: はい、Docker を完全にサポートしています。
+- macOS: いいえ。Apple の仮想化ではネストされた仮想化を利用できないため、Docker、OrbStack、Android エミュレーターは macOS セッション内で実行できません。コンテナーを使う作業には、Linux セッションを使用してください。
+
+<strong>iOS シミュレーターや Android エミュレーターを実行できますか?</strong>
+
+はい。[device session](/bitrise-rde/devices/device-sessions)では、セッションと同時にシミュレーターやエミュレーターが起動し、ブラウザーにストリーミングされます。また、[device preview link](/bitrise-rde/devices/device-preview-links)を使うと、Bitrise アカウントを持たない人でも、そのデバイス上でビルドを試せます。
+
+<strong>RDE を使用すると、CI のビルドクレジットを消費しますか?</strong>
+
+いいえ。RDE は別途課金され、ビルド時間やクレジットは消費されません。
+
+<strong>プライベートネットワークや VPN にアクセスできますか?</strong>
+
+はい。[template](/bitrise-rde/configuration/templates)のカスタムスクリプトを使用します。CI のマシンと同じ方法です。専用の Step やワンクリックでのセットアップは、まだありません。
+
+<strong>複数人で1つのセッションを共有できますか?</strong>
+
+個人用セッションは、作成したユーザーが所有し、そのユーザーのみが管理できます。`bitrise-cli rde session create --owner workspace` で作成された、または [device preview link](/bitrise-rde/devices/device-preview-links)によって生成された workspace 所有のセッションは、workspace のすべてのメンバーが、<strong>Workspace sessions</strong> で確認および管理できます。
+
+<strong>API はありますか?</strong>
+
+はい。セッション、テンプレート、saved input のライフサイクル全体を操作できます。詳しくは、[Remote Dev Environments API](/bitrise-rde/configuration/rde-api)をご覧ください。
+
+## 料金 {#pricing}
+
+<strong>RDE の料金体系はどうなっていますか?</strong>
+
+RDE は Bitrise CI とは別に課金され、ビルドクレジットは消費されません。購入方法は2つあります。
+
+- <strong>セルフサービス</strong>: 料金は公開されています。[RDE pricing](https://bitrise.io/pricing#rde) をご覧のうえ、そこからサインアップしてください。
+- <strong>Enterprise</strong>: 料金は確約された容量に基づき、Bitrise の営業チームを通じて決定されます。[Bitrise pricing calculator](https://pricing-calculator.tools.bitrise.dev/calc) で試算し、Bitrise に見積もりをご依頼ください。

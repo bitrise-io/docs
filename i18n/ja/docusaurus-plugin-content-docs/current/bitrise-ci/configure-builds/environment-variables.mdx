@@ -1,0 +1,338 @@
+---
+title: "Environment Variables"
+description: "環境変数(Env Var)は、データを保持するキーと値のペアです。Step inputsに挿入することで、ビルドで使用できます。"
+sidebar_position: 3
+slug: /bitrise-ci/configure-builds/environment-variables
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditor from '@site/i18n/ja/partials/opening-the-workflow-editor.mdx';
+
+環境変数 (Env Var) は、ビルドで使用できるデータを保持するキーと値のペアです。たとえば、プロジェクトのリポジトリの作業ディレクトリは、それを必要とする<GlossTerm baseform="Step">Step</GlossTerm>の入力ごとにパスを指定しなくて済むように、Env Var に保存されることがよくあります。
+
+Env Var は、プロジェクト全体、または特定の<GlossTerm baseform="pipeline">Pipelines</GlossTerm>や<GlossTerm baseform="Workflow">Workflows</GlossTerm>に対して設定できます。プロジェクトレベルの Env Var はアプリのすべてのWorkflowで利用できます。PipelineレベルおよびWorkflowレベルの Env Var は、該当するPipelineまたはWorkflowでのみ利用できます。
+
+:::note[Env Var リストのサイズ制限]
+
+デフォルトでは、Env Var リストのサイズは 120 KB です。この [Knowledge Base の記事](https://support.bitrise.io/en/articles/9676692-envman-environment-list-too-large-error)の説明に従い、[Script](https://github.com/bitrise-io/steps-script) Stepを使用すると、リストのサイズを簡単に増やせます。
+
+:::
+
+<GlossTerm baseform="secret">Secrets</GlossTerm>は環境変数の一種で、情報を暗号化された形式で隠し、その値はビルドログに公開されません。
+
+:::warning[機密情報を保護する]
+
+Secretsとは異なり、Env Var はプルリクエストによってトリガーされたビルドで完全に公開されます。そのため、機密情報を Env Var に追加しないでください。
+
+:::
+
+
+## Environment Variablesのスコープ {#scope-of-environment-variables}
+
+ユーザーは、3 つの異なるレベルでEnvironment Variablesを宣言できます。
+
+- アプリレベル。
+- Workflowレベル。
+- Stepレベル。
+
+ユーザーが宣言した Env Var に加えて、Bitrise CLIまたは bitrise.io が自動的に公開する Env Var があります。これらはすべてのビルドで常に利用できます。一覧は次のページで確認できます: [Available environment variables](/bitrise-ci/references/available-environment-variables)
+
+<strong>プロジェクトレベルの Env Var</strong> は、特定のアプリのすべてのビルドで利用できます。たとえば、新しいWorkflowを作成すると、すべてのプロジェクトレベルの Env Var にすぐに自動的にアクセスできます。
+
+<strong>Workflowレベルの Env Var</strong> は、それが定義された特定のWorkflowでのみ利用できます。`primary` WorkflowにキーTEST_ENVの Env Var がある場合、`deploy` Workflow からその Env Var にアクセスすることはできません。
+
+:::note[Workflowsの連結]
+
+`after_run`パラメーターを使用して[Workflowsを連結し](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together)、そのうちの 1 つのWorkflowsで Env Var を定義すると、連結内の後続のすべてのWorkflowsからその Env Var にアクセスできます。
+
+:::
+
+<strong>Stepレベルの Env Var</strong> は、ビルドの特定のStep内で定義されます。このような Env Var は、他のWorkflowsや、同じWorkflow内の前のStepsでは利用できません。ただし、後続のStepsからはアクセスできます。Stepの出力もEnvironment Variablesとして公開されます。
+
+レベルに関係なく、Environment Variablesは、<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>、アプリの`bitrise.yml`ファイル、またはビルド中に [envman](https://github.com/bitrise-io/envman/) ツールを使ったカスタム Script で設定できます。
+
+- [Workflow Editorでの Env Var の設定](/bitrise-ci/configure-builds/environment-variables#setting-an-env-var-in-the-workflow-editor)
+- [Env Var を公開して別のStepまたはWorkflowで使用する](/bitrise-ci/configure-builds/environment-variables#setting-and-managing-env-vars-during-a-build)
+
+Environment Variablesには、そのレベルに基づく処理順序があります: [Availability order of Environment Variables](/bitrise-ci/configure-builds/environment-variables#availability-order-of-environment-variables)
+
+
+## Environment Variablesの利用可能になる順序 {#availability-order-of-environment-variables}
+
+Environment Variables (Env Var) は、その Env Var が処理された後に利用可能になります。
+
+Bitrise CLIが公開する Env Var があります。これらは最初から利用できます。たとえば、`BITRISE_SOURCE_DIR`や`BITRISE_TRIGGERED_WORKFLOW_ID`です。
+
+それ以外のすべての Env Var は、ビルドの進行に合わせて処理され、利用可能になります。
+
+処理順序は次のとおりです。
+
+1. Bitrise CLIが公開するEnv Vars。
+1. [Secrets](/bitrise-ci/configure-builds/secrets): Workflowの開始前に処理されます。
+1. API、または [`bitrise build trigger`](/bitrise-ci/bitrise-cli/managing-builds-with-the-bitrise-cli#setting-environment-variables-and-priority)の`--env`フラグでビルドに指定した 1 回限りのEnvironment Variables。
+1. アプリのEnvironment Variables。
+1. Workflow Environment Variables: 指定したWorkflowの処理が始まると、そのWorkflowに指定された Env Var が利用可能になります。
+
+   Workflowの前後にWorkflowsが[連結されている場合](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows)、連結された Workflow のEnvironment Variablesは、Workflowの最初のStepが実行される直前に処理され、利用可能になります。
+1. Step inputs: 各Stepの開始直前に、Stepごとに公開されます。
+1. Stepの出力: 特定のStepによって公開されるため、そのStepの終了後、後続のStepsで利用できます。
+
+
+## Workflow Editorでの Env Var の設定 {#setting-an-env-var-in-the-workflow-editor}
+
+:::note[Env Var の値はすべて文字列]
+
+環境変数または Secret の値は文字列のみです。数値 (たとえば 7) を設定しても、文字列として渡されます。
+
+:::
+
+:::important[$ 文字の使用]
+
+Env Var または Secret の値 (たとえばパスワード) に`$`文字を使用できますが、その場合は <strong>Replace variables in inputs</strong> オプションを必ずオフのままにしてください。入力で変数のキーをその値に置き換えると、`$`文字が含まれているため、Bitrise CLIはその値を別の Env Var として扱います。
+
+:::
+
+Env Var は 2 つのレベルで設定できます: <strong>Project</strong> (すべてのWorkflowで利用可能) または <strong>Workflows</strong> (特定のWorkflowに限定)。これらの相互作用の詳細については、[Availability order of Environment Variables](/bitrise-ci/configure-builds/environment-variables#availability-order-of-environment-variables)を参照してください。
+
+<Tabs>
+<TabItem value="project" label="Project" default>
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. 左側のナビゲーションメニューから <strong>Env Vars</strong> を選択します。
+1. <strong>Project</strong> タブを選択します。
+
+   ![Project Environment Variables タブ (Workflow Editor内)](/img/configure-builds/2026-07-08-env-vars-project-tab.png)
+1. <strong>Add new</strong> をクリックします。
+1. キーと値を追加します。
+1. 右上の <strong>Save changes</strong> をクリックします。
+
+</TabItem>
+<TabItem value="workflows" label="Workflows">
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. 左側のナビゲーションメニューから <strong>Env Vars</strong> を選択します。
+1. <strong>Workflows</strong> タブを選択します。
+
+   ![Workflows Environment Variables タブ (Workflow Editor内)](/img/configure-builds/2026-07-08-env-vars-workflows-tab.png)
+1. Env Var を追加するWorkflowを選択します。
+1. <strong>Add new</strong> をクリックします。
+1. キーと値を追加します。
+1. 右上の <strong>Save changes</strong> をクリックします。
+
+</TabItem>
+</Tabs>
+
+これで完了です。新しい Env Var が保存され、使用できる状態になりました。
+
+
+## 入力内の変数の置き換え {#replacing-variables-in-inputs}
+
+入力内の変数を置き換えると、キーではなく Env Var の値がビルドに渡されます。詳細については、[入力内の変数の置き換え](/bitrise-ci/configure-builds/environment-variables#replacing-variables-in-inputs)を確認してください。
+
+このオプションをオンにすると、Env Var のキーではなく Env Var の値がビルドに渡されます。通常、これは必要ありません。
+
+`bitrise.yml`ファイルに直接新しい環境変数を追加し、`is_expand`プロパティを設定しない場合、default valueは`true`になります。この場合は、`is_expand`を明示的に設定することをお勧めします。
+
+```yaml
+envs:
+  - opts:
+      is_expand: false
+      KEY: VALUE
+```
+
+
+## ビルド開始時のカスタム Env Var の設定 {#setting-a-custom-env-var-when-starting-a-build}
+
+新しいビルドをスケジュールするとき、または手動で新しいビルドを開始するときに、カスタムEnvironment Variables (Env Var) を設定できます。これらの変数は、開始またはスケジュールしたビルドでのみ利用できます。
+
+:::caution[App Env Var と同じキーを使用しない]
+
+App Environment Variablesは、カスタムEnvironment Variablesより優先されます。つまり、App Env Var と同じキーでカスタム Env Var を定義した場合、ビルドでは App Env Var の値が使用されます。
+
+:::
+
+1. your appの <strong>Bitrise CI</strong> ページで <strong>Start build</strong> ボタンを見つけ、その横にある時計アイコンのボタンをクリックします。
+
+   ![scheduling-builds.png](/img/_paligo/uuid-ea158f34-25dc-4585-c7a3-0961c5ef5472.png)
+1. <strong>Build configuration</strong> ポップアップウィンドウで、<strong>Advanced</strong> タブを選択します。
+1. <strong>Custom Environment Variables</strong> セクションを見つけます。
+1. キーと値を入力します。
+
+   :::important[入力内の変数の置き換え]
+
+   入力内の変数を置き換えると、キーではなく Env Var の値がビルドに渡されます。詳細については、[入力内の変数の置き換え](/bitrise-ci/configure-builds/environment-variables#replacing-variables-in-inputs)を確認してください。
+
+   :::
+1. <strong>+ Add Environment Variable</strong> ボタンを押します。
+1. ビルドの開始またはスケジュールを完了します。
+
+
+## Stepの入力で Env Var を使用する {#using-an-env-var-in-a-step-input}
+
+多くの[Step inputs](/bitrise-ci/workflows-and-pipelines/steps/step-versions)は、入力値としてEnvironment Variables (Env Var) や [Secrets](/bitrise-ci/configure-builds/secrets)を受け付けます。
+
+:::important[機密性の高い入力]
+
+<strong>SENSITIVE</strong> とマークされた入力フィールドは、入力としてSecretsのみを受け付けます。通常、これらの入力の値を変更することはお勧めしません。
+
+:::
+
+Env Var または Secret をStepの入力値として使用するには、次の手順を実行します。
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. 左側のナビゲーションメニューから <strong>Env Vars</strong> を選択します。
+1. WorkflowからStepを選択します。たとえば、<strong>Git Clone Repository</strong> Stepです。
+1. Stepの入力を選択します。たとえば、<strong>Git Clone Repository</strong> Stepの <strong>Clone destination (local) directory path</strong> 入力です。
+1. 入力名の横にある <strong>Insert variable</strong> をクリックします。
+1. リストから Env Var を見つけて選択します。
+
+   <strong>Filter by key or source</strong> 検索フィールドにキー (またはその一部) を入力すると、Env Var を検索できます。
+
+   :::note[Stepsが生成する Env Var]
+
+   インタラクティブな Env Var のリストには、Workflowの前のStepsが生成した Env Var が表示されます。たとえば、Workflowの 3 番目のStepの入力のいずれかに Env Var を挿入する場合、1 番目と 2 番目のStepsが生成した Env Var から選択できます。
+
+   :::
+
+これで完了です。次回そのWorkflowのビルドを実行すると、Stepの入力には、挿入した Env Var の値がStepの入力値として使用されます。
+
+
+## Env Var の値に Env Var を使用する {#using-env-vars-in-the-value-of-an-env-var}
+
+Environment Variables (Env Var) には、通常、単純な文字列値が含まれます。ただし、他の Env Var を値として含む Env Var を設定することもできます。
+
+:::note[変数の値としてのSecrets]
+
+ここで説明する方法は、[Secrets](/bitrise-ci/configure-builds/secrets)にも当てはまります。Secret を Env Var に埋め込むこともできます。
+
+:::
+
+いつでも、別の環境変数を Env Var の値に使用できます。いわば、Env Var を埋め込む形です。たとえば、$BITRISE_AUTH Env Var の値を、別の Env Var である$PERSONAL_ACCESS_TOKENに設定するとします。
+
+そのためには、$BITRISE_AUTHのキーがその値に置き換えられるようにして、埋め込まれた Env Var がWorkflowsとStepsに渡されるようにする必要があります。
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. 左側のナビゲーションメニューから <strong>Env Vars</strong> を選択します。
+1. 必要な Env Var のキーの下で、<strong>Replace variables in inputs</strong> トグルをオンにします。
+
+
+## ビルド中の Env Var の設定と管理 {#setting-and-managing-env-vars-during-a-build}
+
+ビルド中に Env Var を設定するには、Step (通常は <strong>Script</strong> Step) で定義します。これには、[envman](https://github.com/bitrise-io/envman/) ツールを使用できます。
+
+:::important[新しい Env Var は次のStepから有効になる]
+
+`envman`ツールで作成した環境変数は、Workflowの後続のStepからのみ有効になります。つまり、新しく作成した環境変数を、それを作成したのと同じStepで使用することはできません。
+
+:::
+
+次は、`envman`を使用してキーMY_RELEASE_NOTEの新しい Env Var を追加する簡単な例です。
+
+```bash
+envman add --key MY_RELEASE_NOTE --value "This is the release note"
+```
+
+`envman`は、<strong>Script</strong> Stepを含む任意のStepで呼び出せます。`bitrise`ビルドから呼び出す場合は、(リポジトリに保存されている) 独自のスクリプトでも呼び出せます。
+
+値は`--value`パラメーターとして指定するか、パイプを使用して指定できます。
+
+```bash
+echo 'hi' | envman add --key MY_RELEASE_NOTE
+```
+
+ファイルから値を読み取ることもできます。
+
+```bash
+envman add --key MY_RELEASE_NOTE --valuefile ./some/file/path
+```
+
+Env Var を公開すると、他の Env Var と同様に使用できます。公開した Env Var は、他のStepsの入力でも使用できます。
+
+次は、リリースノートの Env Var を公開し、別の <strong>Script</strong> Stepと <strong>Send a Slack message</strong> Stepで使用する例です。
+
+```yaml
+workflows:
+  example:
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            envman add --key MY_RELEASE_NOTE --value "This is the release note"
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            echo "My Release Note: $MY_RELEASE_NOTE"
+    - slack:
+        inputs:
+        - channel: ...
+        - webhook_url: ...
+        - message: "Release Note: $MY_RELEASE_NOTE"
+```
+
+Env Var の値を別の Env Var のキーでアクセスできるように公開することもできます。
+
+たとえば、`BITRISE_BUILD_NUMBER`の値をキー`MY_BUILD_NUMBER`で公開するには、次のようにします。
+
+```bash
+envman add --key MY_BUILD_NUMBER --value "${BITRISE_BUILD_NUMBER}"
+```
+
+この後、後続のStepsは、`MY_BUILD_NUMBER` Env Var から`BITRISE_BUILD_NUMBER`の値を取得できます。この後で`BITRISE_BUILD_NUMBER`の値を変更しても、`MY_BUILD_NUMBER`の値は変更されず、元の値のままです。
+
+カスタム Env Var が定義されているかどうかを確認し、その値を上書きすることもできます。
+
+```bash
+#!/bin/bash
+set -ex
+if [ ! -z "$API_PROJECT_SCHEME" ] ; then
+  envman add --key PROJECT_SCHEME --value "$API_PROJECT_SCHEME"
+fi
+```
+
+このスクリプトは、`API_PROJECT_SCHEME` Env Var が定義されているかどうかを確認し、定義されている場合はその値を`PROJECT_SCHEME`環境変数に代入して、`PROJECT_SCHEME`の元の値を上書きします。
+
+
+## 設定YAMLでの Env Var の設定 {#setting-env-vars-in-the-configuration-yaml}
+
+アプリのYAML設定ファイルに、Env Var を直接設定できます。アプリの設定ファイルでは、アプリレベルとWorkflowレベルの両方の Env Var を設定できます。
+
+この例では、TEST_KEYというアプリレベルの Env Var を持つ設定を使用します。
+
+```yaml
+app:  
+  envs:  
+  - opts:      
+      is_expand: false    
+    TEST_KEY: test value
+```
+
+:::important[入力内の変数の置き換え]
+
+入力内の変数を置き換えると、キーではなく Env Var の値がビルドに渡されます。詳細については、[入力内の変数の置き換え](/bitrise-ci/configure-builds/environment-variables#replacing-variables-in-inputs)を確認してください。
+
+:::
+
+この例では、`deploy-alpha` WorkflowがENV_TYPEという Env Var を定義し、その Env Var を使用できる別のWorkflowを実行します。
+
+```yaml
+workflows:
+
+  deploy-alpha:
+    envs:
+    - ENV_TYPE: alpha
+    after_run:
+    - _deploy
+
+  _deploy:
+    steps:
+    - script:
+        inputs:
+        - content: |
+            #!/bin/bash
+            echo "ENV_TYPE: $ENV_TYPE"
+```
+
+`deploy-alpha` Workflowを実行すると、`ENV_TYPE` Env Var が`alpha`に設定され、続いてその Env Var を使用できる`deploy` Workflowが実行されます。この例では、その値を出力するだけです (出力されるテキストは`ENV_TYPE: alpha`です)。

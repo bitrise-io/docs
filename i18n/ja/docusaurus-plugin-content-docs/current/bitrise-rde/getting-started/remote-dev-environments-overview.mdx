@@ -1,0 +1,53 @@
+---
+title: "Remote Dev Environments の概要"
+description: "Remote Dev Environmentsは、Bitriseのインフラ上で動作する、オンデマンドのmacOSおよびLinuxクラウドマシンです。RDEとは何か、誰のためのものか、利用方法を紹介します。"
+sidebar_position: 1
+slug: /bitrise-rde/getting-started/remote-dev-environments-overview
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+<GlossTerm baseform="remote dev environment">Remote Dev Environment</GlossTerm>(RDE)は、macOS または Linux のオンデマンドクラウドマシンです。Bitrise CIと同じインフラストラクチャ、<GlossTerm baseform="stack">stacks</GlossTerm>、キャッシュで動作します。<GlossTerm baseform="rde session">session</GlossTerm>を数秒で起動し、ターミナル、IDE、またはAIコーディングエージェントから接続して、作業が終わったらアーカイブします。永続ディスクは保持されるため、作成元のスタックが利用可能である限り、セッションを復元して作業を再開できます。
+
+## RDE を使う理由 {#why-use-rde}
+
+Remote Dev Environment を使うと、自前のハードウェアを用意することなく、事前構成済みの高性能なマシンをクラウド上で利用できます。次のような場合に適しています。
+
+- ツールチェーンがインストール済みでキャッシュされた、ノートパソコンよりはるかに高性能なマシンで開発する。
+- Claude CodeなどのAIコーディングエージェントを、アプリのビルドとテストが可能なサンドボックスで、独自の API キーを使って実行する。
+- CIの失敗を、ビルドが実行される環境と一致する環境で再現する。
+- 短期間のタスク用に、並列で使い捨ての環境を起動し、終了後に破棄する。
+- セッションから直接ブランチをプッシュし、プルリクエストを作成する。[GitHub integration](/bitrise-rde/configuration/github-integration)を使うと、git と GitHub CLI があなたとして認証されます。
+- セッションと一緒に iOS シミュレーターまたは Android エミュレーターを起動してアプリをテストする。または、ブラウザー上でアプリを実行する[デバイスプレビューリンク](/bitrise-rde/devices/device-preview-links)を使って、ビルドを誰とでも共有する。[Virtual devices](/bitrise-rde/devices/virtual-devices)を参照してください。
+
+RDE は Bitrise CI と同じマシンとスタックを使用するため、コードを書く環境とコードをテストする環境が一致します。
+
+## サポートされるプラットフォーム {#supported-platforms}
+
+RDE は、米国と EU のデータセンターにある本番グレードの Bitrise インフラストラクチャで動作します。
+
+- <strong>macOS</strong>: iOS、macOS、クロスプラットフォーム開発向けの Apple シリコンマシン(M2 Pro、M4、M4 Pro)。macOS のセッションでは、VNC 経由のグラフィカルデスクトップも利用できます。
+- <strong>Linux</strong>: 専用クラスターと共有クラスターで、2 から 48 vCPU までのマシン。Dockerを完全にサポートします。
+
+マシンは、セッションの作成時に直接、またはテンプレートを通じて選択します。利用可能なスタックとマシンタイプの詳細は、[セッションを作成する](/bitrise-rde/rde-options/bitrise-rde-ui)際に、製品内の一覧で確認してください。
+
+## RDE の使い方 {#ways-to-use-rde}
+
+複数のクライアントからセッションを作成して接続できます。作業スタイルに合ったものを選んでください。どのクライアントでも、同じセッション、<GlossTerm baseform="rde template">templates</GlossTerm>、<GlossTerm baseform="saved input">saved inputs</GlossTerm>を共有します。
+
+- [Bitrise RDE CLI](/bitrise-rde/rde-options/bitrise-rde-cli): ターミナルからセッションを管理し、1 つのコマンドでセッション内の AIコーディングエージェントを起動します。最も手軽に始められる方法です。
+- [Bitrise RDE UI](/bitrise-rde/rde-options/bitrise-rde-ui): ブラウザーからセッション、テンプレート、saved inputs を作成・管理し、組み込みの Web ターミナルで接続します。
+- [MCP server](/bitrise-rde/rde-options/bitrise-rde-mcp-server): Model Context Protocol をサポートするAIエージェントが、ユーザーに代わってセッションを作成・操作できるようにします。
+- [Bitrise VS Code plugin](/bitrise-rde/rde-options/bitrise-vscode-plugin): 新しいセッションでリポジトリを開き、VS Code から編集します。このクライアントは近日公開予定です。
+
+どこから始めればよいかわからない場合は、[Quickstart](/bitrise-rde/getting-started/quickstart)に従ってください。
+
+## 必要なもの {#what-you-need}
+
+Remote Dev Environments を使用するには、次のものが必要です。
+
+- RDE にアクセスできる Bitrise <GlossTerm baseform="workspace">workspace</GlossTerm>。[Remote Dev Environments ページ](https://bitrise.io/platform/remote-dev-environments)でサインアップするか、営業経由で購入する場合は Bitrise にお問い合わせください。
+- そのworkspaceでの <strong>RDE User</strong> ロール。メンバーには自動的に付与されません。workspaceのオーナーまたはマネージャーが付与します。[Managing RDE access](/bitrise-rde/configuration/managing-rde-access)を参照してください。
+- 選択したクライアントに応じた接続手段: Bitrise CLI、MCPをサポートするAIエージェント、またはブラウザー。

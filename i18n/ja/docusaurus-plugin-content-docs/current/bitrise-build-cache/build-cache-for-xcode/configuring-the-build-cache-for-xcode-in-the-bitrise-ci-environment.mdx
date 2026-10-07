@@ -1,0 +1,49 @@
+---
+title: "Bitrise CI環境でのBuild Cache for Xcodeの設定"
+description: "XcodeプロジェクトでBuild Cacheを有効にするには、**Bitrise Build Cache for Xcode** Stepが必要です。Stepの実行後は、Xcodeタスクが自動的にbuild cacheから読み取り、新しいエントリもプッシュします。"
+sidebar_position: 1
+slug: /bitrise-build-cache/build-cache-for-xcode/configuring-the-build-cache-for-xcode-in-the-bitrise-ci-environment
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditor from '@site/i18n/ja/partials/opening-the-workflow-editor.mdx';
+
+Xcode プロジェクトのBuild Cacheを有効にするには、<strong>Bitrise [Build Cache for Xcode](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-xcode)</strong> <GlossTerm baseform="step">Step</GlossTerm>が必要です。Stepの実行後は、Xcodeタスクもbuild cacheから自動的に読み取り、新しいエントリーをプッシュします。
+
+手動で手順を実行する代わりに、AIコーディングエージェントを使ってセットアップすることもできます。[AI を使い始める](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai)を参照してください。
+
+<Tabs>
+  <TabItem value="workflow-editor" label="Workflow Editor">
+
+  1. ビルドが、Xcode 26 以降がインストールされた<GlossTerm baseform="stack">スタック</GlossTerm>で実行されることを確認してください: [ビルドのスタックを設定する](/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds)。
+  1. <Partial_OpeningTheWorkflowEditor />
+  1. [<strong>Build Cache for Xcode</strong>](https://github.com/bitrise-steplib/bitrise-step-activate-build-cache-for-xcode) Stepを<GlossTerm baseform="workflow">Workflow</GlossTerm>に追加します。
+
+     Stepは、Xcodeタスクを実行するStepよりも前に配置してください。たとえば、<strong>fastlane</strong> や [<strong>Xcode Archive & Export for iOS</strong>](https://github.com/bitrise-steplib/steps-xcode-archive) などです。
+  1. 必要に応じて、新しいキャッシュエントリーのプッシュを無効にできます。<strong>Push new cache entries</strong> 入力を <strong>false</strong> に設定してください。
+
+     読み取り専用モードでは、ビルドはキャッシュから読み取るだけで、キャッシュを更新しません。
+  1. <strong>Save changes</strong> をクリックします。
+
+  </TabItem>
+  <TabItem value="yaml" label="Configuration YAML">
+
+  1. ビルドが、Xcode 26 以降がインストールされたスタックで実行されることを確認してください: [ビルドのスタックを設定する](/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds)。
+  1. `activate-build-cache-for-xcode` StepをWorkflowに追加します。
+
+     Stepは、Xcodeタスクを実行するStepよりも前に配置してください。たとえば、`fastlane` や `xcode-archive` などです。
+
+     ```yaml
+     your-workflow:
+       meta:
+         bitrise.io:
+           stack: osx-xcode-26.0.x-edge
+       steps:
+         - git-clone: {}
+         - activate-build-cache-for-xcode: {}
+     ```
+
+  </TabItem>
+</Tabs>

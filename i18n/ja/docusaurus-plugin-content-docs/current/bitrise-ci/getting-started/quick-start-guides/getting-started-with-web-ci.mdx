@@ -1,0 +1,218 @@
+---
+title: "WebCIを使い始める"
+sidebar_position: 8
+slug: /bitrise-ci/getting-started/quick-start-guides/getting-started-with-web-ci
+sidebar_label: "WebCIプロジェクトを使い始める"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitriseはモバイルに特化したDevOpsプラットフォームです。ただし、それはBitrise上でモバイル以外のプロジェクトをビルドできないという意味ではありません。統合機能、デフォルトの<GlossTerm baseform="workflow">Workflows</GlossTerm>や<GlossTerm baseform="pipeline">Pipelines</GlossTerm>、専用のキャッシュソリューションによって、モバイル以外のプロジェクトタイプにも対応しています。
+
+WebCIにBitriseを使用すると、モバイルを含むすべてのプロジェクトをBitrise上に統合できます。Bitriseは複雑な領域であるモバイルCI/CDに優れているため、モバイル向けの汎用的なCIよりもWeb向けのBitriseを採用する方が容易であり、統合によって運用がシンプルになります。
+
+
+## WebCIプロジェクトの追加 {#adding-a-web-ci-project}
+
+プロジェクトの追加方法は他の場合と同じです。ウィザードの詳しい手順については、[新規プロジェクトの追加](/bitrise-ci/getting-started/adding-a-new-project)をご覧ください。このセクションでは、モバイル以外のプロジェクトに特有の内容を説明します。
+
+### スキャナーがプロジェクトタイプを検出する仕組み {#how-the-scanner-detects-your-project-type}
+
+<GlossTerm baseform="project scanner">プロジェクトスキャナー</GlossTerm>は、サポートされている各言語を識別するファイルがないか、リポジトリを確認します。
+
+- Node.js: `package.json`ファイル。
+- Ruby: `Gemfile`。
+- Python: `requirements.txt`、`pyproject.toml`、`Pipfile`、または`setup.py`ファイル。
+- JavaまたはKotlin: Gradleの場合は`gradlew`ファイル、Mavenの場合は`pom.xml`ファイル。
+
+Node.js、Ruby、Pythonの場合は、Workflowに適した言語バージョンを選択するために、`.nvmrc`、`.ruby-version`、`.python-version`などのバージョンファイル(またはプロジェクトのマニフェスト内の`engines`/`requires-python`フィールド)も読み取ります。これら2つのスキャナーの詳細については、[Rubyプロジェクトのデータベース設定](#database-configuration-for-ruby-projects)および[Pythonのパッケージマネージャー検出](#package-manager-detection-for-python)をご覧ください。
+
+### 設定できる項目 {#what-you-can-configure}
+
+<strong>CI configuration</strong>の段階では、ウィザードに検出された各プロジェクトの<strong>Project directory</strong>オプションと、該当する場合はパッケージマネージャーの選択肢が表示されます。スキャナーがロックファイルからパッケージマネージャーを検出できない場合は、手動で選択してください。Bitriseが、それに合った設定を生成します。
+
+## Rubyプロジェクトのデータベース設定 {#database-configuration-for-ruby-projects}
+
+Rubyプロジェクトを追加すると、プロジェクトスキャナーがデータベースgemを検出します: `pg`、`mysql2`、`redis`、`mongoid/mongo`、`sqlite3`。検出された各データベースgemに対して、スキャナーはPostgres、MySQL、Redis、MongoDBのいずれかの適切なサービスコンテナを生成します。各コンテナには正しいイメージ、ポートマッピング、ヘルスチェックが設定されており、テストが接続を試みる前にコンテナが完全に準備できた状態になります。
+
+スキャナーは、リレーショナルデータベース用の`config/database.yml`とMongoDB用の`config/mongoid.yml`も解析し、接続の詳細を抽出します。ERB式も解決します。`database.yml`に`ENV.fetch("DB_HOST", "localhost")`のような記述が含まれている場合、スキャナーは環境変数名とそのdefault valueの両方を取得します。これらはその後、Bitriseの設定内でアプリレベルのenvironment variablesとして設定されるため、テストWorkflowは手動での環境設定なしにサービスコンテナへ接続します。
+
+スキャナーは`database.yml`内の`test`環境セクションを優先し、testブロックが存在しない場合はdefaultにフォールバックします。これはRails自体が使用するのと同じルックアップ順序です。
+
+
+## 依存関係の管理 {#managing-dependencies}
+
+Bitriseは、依存関係を簡単に扱えるようにする専用の<GlossTerm baseform="step">Steps</GlossTerm>を通じて、複数の依存関係マネージャーをサポートしています。WebCIプロジェクトにおいて特に重要なのは次のとおりです。
+
+- [Run npm command](https://bitrise.io/integrations/steps/npm): Node.js用のDefault Workflowsには、`npm install`を実行する<strong>npm</strong>Stepが含まれています。このコマンドは、`package.json`ファイルに定義されているすべての必要なパッケージをインストールします。要件に合わせてインストール手順を設定するフラグを指定できます。
+
+  <strong>The npm command with arguments to run</strong>入力でコマンドを設定します。入力のデフォルト値は<strong>install</strong>です。<GlossTerm baseform="configuration yaml">設定YAML</GlossTerm>ファイルでは、`command`入力を探してください。
+
+  ```yaml
+  - npm:
+      inputs:
+      - command: install -g
+  ```
+- [Run yarn command](https://bitrise.io/integrations/steps/yarn): Yarnもnpmと同様に、`package.json`ファイル内で依存関係を探します。Stepを使用すると、実行したい`yarn`コマンドや追加の引数を指定できます。
+
+  <strong>The yarn command to run</strong>入力にコマンドを追加します。設定YAMLファイルでは、この入力は`command`と呼ばれます。依存関係をインストールするだけの場合は空のままにしてください。
+
+  ```yaml
+  - yarn:   
+      inputs:
+      - command:
+  ```
+
+  <strong>Arguments for running yarn commands</strong>入力でyarnコマンドの引数を指定します。設定YAMLファイルでは、この入力は`args`と呼ばれます。複数の引数はスペース文字で区切って追加できます。
+
+  ```yaml
+  - yarn:      
+      inputs:        
+      - args: "-dev"
+  ```
+- [Gradle Runner](https://bitrise.io/integrations/steps/gradle-runner): プロジェクトがGradleでビルドされている場合、このStepを使ってプロセス中に依存関係をインストールできます。そのためには、以下が必要です。
+
+  - Gradle Wrapper。
+  - 正しく設定されたGradleタスク。
+  - ビルドスクリプトで宣言された依存関係。
+
+  Stepには2つの入力が必要です。<strong>Gradle task to run</strong>入力は、ビルド中に実行されるGradleタスクを定義します。<strong>Gradle Wrapper path</strong>入力は、プロジェクト内の`gradlew`ファイルへのパスを定義します。設定YAMLファイルでは、これらの入力はそれぞれ`gradle_task`と`gradlew_path`と呼ばれます。
+
+  ```yaml
+  - gradle-runner:
+      inputs:
+      - gradlew_path: ./cool_project/
+      - gradle_task: install
+  ```
+
+### Pythonのパッケージマネージャー検出 {#package-manager-detection-for-python}
+
+Pythonプロジェクトの場合、Bitriseは次の順序でパッケージマネージャーのソースを確認したうえで、依存関係管理の設定を作成します。
+
+1. `uv`パッケージマネージャーの場合は`uv.lock`。
+1. `poetry`の場合は`poetry.lock`。
+1. `pip`の場合は`requirements.txt`。
+
+これらのいずれも見つからない場合、パッケージマネージャーは未検出のままになります。ユーザーはセットアップ時に1つを選択し、その選択に応じた設定が生成されます。
+
+
+## テストの実行 {#running-tests}
+
+すべてのBitrise<GlossTerm baseform="project">プロジェクト</GlossTerm>には、`run_tests`というデフォルトのテストWorkflowがあります。Workflowの内容は、正確なプロジェクトタイプによって異なります。
+
+### JavaおよびKotlin向けのGradleを使ったテスト {#testing-with-gradle-for-java-and-kotlin}
+
+GradleでビルドされたJavaおよびKotlinプロジェクトでは、テストは`test` Gradleタスクを中心に行われます。Bitriseには、これ専用のStepである<strong>Run Gradle Tests</strong>があり、これはデフォルトのWorkflowの一部です。
+
+- Stepには、プロジェクト内に[Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html)が必要です。このwrapperには、正しく設定されたテストタスクが少なくとも1つ含まれている必要があります。
+- 実行したいGradleタスクを設定するには、<strong>Test task</strong>入力を使用します。デフォルトではStepが`test`タスクを実行しますが、任意のGradleタスクを設定できます。
+- gradlewコマンドをさらにカスタマイズするには、<strong>Additional flags</strong>入力を使用します。たとえば、特定のテストクラスを実行するフラグを設定できます。
+
+### Java向けのMavenを使ったテスト {#testing-with-maven-for-java}
+
+MavenでビルドされたJavaプロジェクトでは、[Maven Wrapper's](https://maven.apache.org/tools/wrapper/)のテストコマンドである`./mvnw test`を実行するScript Stepを使用してテストが実行されます。
+
+Script Stepsは完全にカスタマイズ可能で、必要なMaven設定を自由に作成できます。デフォルトの設定は、目的に合わせていつでも自由に変更できます。Mavenを使ったテストの実行の詳細については、[Surefire](https://maven.apache.org/surefire/index.html)をご覧ください。
+
+### Node.jsプロジェクトのlintとテスト {#linting-and-testing-nodejs-projects}
+
+Node.jsプロジェクトの場合、デフォルトの`run_tests` Workflowは、テストスイートではなく、Node.jsのインストールとlintの実行という2つの処理をデフォルトで行います。
+
+- <strong>Script</strong>Step経由でNode.jsをインストールします。これはScript Stepであるため、設定を自由に変更・カスタマイズしてニーズに合わせることができます。デフォルトのソリューションでは、`asdf`を使用して単純にNode.jsをインストールします。
+
+  :::tip
+
+  Bitrise <GlossTerm baseform="stack">stacks</GlossTerm>には、さまざまなソフトウェアバージョンを自動的に切り替えるための[asdf](https://github.com/asdf-vm/asdf-nodejs)があらかじめインストールされています。`asdf`は`.tool-versions`、`.nvmrc`、`.node-version`といったファイルからNode.jsのバージョンを探すため、プロジェクトが別のNode.jsマネージャーを使用している場合でも、そのまま動作するはずです。
+
+  :::
+
+  ```bash
+  set -euxo pipefail
+
+  export ASDF_NODEJS_LEGACY_FILE_DYNAMIC_STRATEGY=latest_installed
+  envman add --key ASDF_NODEJS_LEGACY_FILE_DYNAMIC_STRATEGY --value latest_installed
+
+  pushd "${NODEJS_PROJECT_DIR:-.}" > /dev/null
+
+  asdf install nodejs
+
+  popd > /dev/null
+  ```
+- [npm Step](https://bitrise.io/integrations/steps/npm)を使って`npm run lint`を実行します。lintコマンドは、コードに潜在的なエラーがないか解析します。
+
+<strong>npm</strong> Stepでは、テストの実行も可能です。`package.json`ファイルに定義されたテストを実行するには、`test`コマンドを実行します。
+
+### Rubyプロジェクトのテスト {#testing-ruby-projects}
+
+Rubyプロジェクトの場合、適切なテストコマンドを備えたテストWorkflowが自動的に生成されます。Rubyプロジェクトを追加すると、スキャナーはテストフレームワークを探し、見つかった内容に基づいて適切なテストコマンドを選択します。
+
+- RSpec: `bundle exec rspec`(各テストコマンドではオプションで、Bundlerが検出された場合にのみ使用されます)。
+- Railsプロジェクト内のMinitest: `bundle exec rails test`
+- Rakefileを使用するMinitest(Rails以外): `bundle exec rake test`
+- RailsもRakefileもないMinitest: `bundle exec ruby -Itest test/**/*_test.rb`
+- テストフレームワークはないがRakefileが存在する場合: `bundle exec rake test`。
+
+
+## キャッシュ {#caching}
+
+Bitriseは、2つの異なるキャッシュソリューションを提供しています。
+
+- [Bitrise Build Cache](/bitrise-build-cache): BazelまたはGradleでプロジェクトをビルドしている場合、Bitrise Build Cacheが、以降のビルドでの作業量を最小限に抑えるためにビルドとテストの出力をキャッシュします。任意のCIツールと互換性があり、キャッシュインフラストラクチャを管理することなくビルドサイクルを高速化します。
+- [キーベースのキャッシュ](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching): キーベースのキャッシュは、キャッシュアーカイブをキーに関連付けることで機能します。Workflowは、そのキーを参照してキャッシュアーカイブを復元できます。Workflowの終了時には、そのキーが示すキャッシュアーカイブにビルドファイルを保存できます。これにより、キャッシュアーカイブが上書きされます。
+
+### Bitrise Build Cache
+
+Bitrise Build Cacheにnew connectionを追加するには、以下が必要です。
+
+- CIプロバイダーの選択: Bitriseまたは別のCIプロバイダーのいずれかを使用できます。
+- ビルドツールの選択: 現在、Bazel、Gradle、Xcodeがサポートされています。
+- CIプロバイダーとしてBitriseを使用する場合は、Bitrise projectを選択します。
+- 別のCIプロバイダーを使用する場合は、[パーソナルアクセストークン](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token)を追加して、Bitrise Build CacheがCIにアクセスできるようにします。
+- キャッシュ有効化スクリプトをCIプロセスに追加します。Bitriseでは、これ専用の[Steps](/bitrise-ci/workflows-and-pipelines/steps/steps-overview)を用意しています。
+
+### キーベースのキャッシュ {#key-based-caching}
+
+キーベースのキャッシュを使用するには、主に2つの方法があります。
+
+- 専用のキャッシュStepsを使用する方法です。依存関係に必要なcache keysを自動的に設定するため、構成は不要です。専用のStepsには、npm、Yarn、Gradleの依存関係をキャッシュするためのStepsが含まれます。[依存関係マネージャー向けの専用キャッシュSteps](/bitrise-ci/dependencies-and-caching/key-based-caching/dedicated-caching-steps-for-dependency-managers)をご覧ください。
+- <strong>Script</strong>Stepsを使用して、キャッシュアーカイブのキーを設定する方法です。これにより、キャッシュ設定を完全に制御できます。[キーベースのキャッシュの使用](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching)をご覧ください。
+
+
+## Dockerコンテナのサポート {#docker-container-support}
+
+Bitrise WorkflowsおよびPipelinesでDockerコンテナを使用できます。コンテナのサポートにより、バックグラウンドサービスも利用できるようになります。コンテナ内でビルドを実行すると、ビルド環境を完全に制御でき、ビルド中に依存関係をインストールする必要もなくなります。
+
+### Dockerイメージのビルド {#building-a-docker-image}
+
+コンテナを使用するには、Dockerイメージが必要です。[Docker Build & Push](https://bitrise.io/integrations/steps/docker-build-push) Stepを使用すると、独自のDockerイメージをビルドしてプッシュできます。Stepには、ビルドしたイメージに適用するイメージタグのリストが必要です。次のことも指定できます。
+
+- ビルドコンテキスト。
+- Dockerfileのパス。
+
+<strong>Docker Build & Push</strong> Stepには、[キーベースのキャッシュ](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching)が組み込みでサポートされています。つまり、Stepは、プリセットのcache keysを使用して、ビルドしたDockerイメージを自動的にキャッシュします。詳細については、[独自のDockerイメージのビルド](/bitrise-platform/infrastructure/docker-containers-on-bitrise/building-your-own-docker-image)をご覧ください。
+
+### コンテナの使用 {#using-containers}
+
+ビルドでコンテナを使用するには、次のことが必要です。
+
+- コンテナを定義します。コンテナIDと、Dockerイメージの名前およびバージョンが必要です。
+- WorkflowまたはPipeline内で、コンテナをそのIDによって参照します。同じWorkflow内の異なる部分を、異なるコンテナで実行できます。
+
+また、Dockerコンテナをサービスとして実行できるサービスコンテナを定義し、高度な統合テストを行うこともできます。
+
+詳細については、[BitriseにおけるDockerコンテナについて](/bitrise-platform/infrastructure/docker-containers-on-bitrise/about-docker-containers-on-bitrise)をご覧ください。
+
+
+## デプロイ {#deploying}
+
+WebCIプロジェクトは、次の3つの方法のいずれかでデプロイできます。
+
+- <strong>[Deploy to Bitrise.io](https://bitrise.io/integrations/steps/deploy-to-bitrise-io)</strong> Step: ファイルをBitriseにデプロイします。Stepの<strong>Deploy directory or file path</strong>入力に、デプロイしたいファイルのパスを設定します。ビルドが成功すると、[ビルドページ](/bitrise-ci/run-and-analyze-builds/finding-a-specific-build)の<strong>Artifacts</strong>タブでファイルを確認できます。ここからファイルをダウンロードできます。
+
+  詳細については、[オンラインのビルドアーティファクト](/bitrise-ci/run-and-analyze-builds/managing-build-files/build-artifacts-online)をご覧ください。
+- カスタマイズされた[Script Step](https://bitrise.io/integrations/steps/script): 独自のカスタムスクリプトを使用してプロジェクトをデプロイします。Stepは、一般的なスクリプト言語をすべてサポートしています。Stepでは、独自のEnvironment Variablesを作成してエクスポートし、以降のStepsからアクセスすることもできます。Script Stepsを使えば、すべてを完全に制御できます。
+- 専用のデプロイStep: これらのStepsは、Webプロジェクトを特定のサービスにデプロイします。たとえば、[Amazon S3 Bucket Sync Step](https://bitrise.io/integrations/steps/amazon-s3-upload)は、ローカルフォルダの内容をAmazon S3バケットにアップロードします。[Heroku Deploy](https://bitrise.io/integrations/steps/heroku-deploy) Stepは、Heroku ToolbeltでアプリをHerokuにデプロイします。
+
+  今後もできるだけ多くのユースケースに対応できるよう、新しいデプロイStepsを積極的に追加していきます。

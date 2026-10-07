@@ -1,0 +1,110 @@
+---
+title: "プロジェクト単位のキャッシュスコープ"
+description: "キャッシュを使用するプロジェクトにマークを付けることで、Build Cacheの有効化をプロジェクト単位のオプトインに切り替えます。それ以外のプロジェクトでは、キャッシュは完全にスキップされます。"
+sidebar_position: 8
+slug: /bitrise-build-cache/getting-started-with-the-build-cache/per-project-cache-scoping
+sidebar_label: "プロジェクト単位のスコープ"
+---
+Bitrise Build Cache をマシン上でアクティブ化すると、そのマシンでビルドするすべてのプロジェクトがキャッシュを経由します。マシン上に複数のプロジェクトがあり、一部のプロジェクトだけでキャッシュを使用したい場合は、CLI をオプトインモードに切り替えられます。オプトインモードでは、`.bitrise-build-cache.json` マーカーファイルがあるプロジェクトだけがキャッシュされ、それ以外のプロジェクトには影響しません。
+
+スコープ設定はローカル開発向けの機能です。Bitrise CI、GitHub Actions ランナー、その他の CI 環境では、CLI が 1 つのチェックアウトに対してジョブごとに 1 回アクティブ化されるため、デフォルトの `always` モードを使用してください。
+
+## 概要 {#overview}
+
+ビルドでキャッシュを使用するかどうかは、2 つの設定で決まります。
+
+- <strong>マシンモード</strong> は `~/.bitrise/cache/config.json` にあり、マシン上でアクティブ化されたすべてのツールに適用されます。値は `always`（デフォルト）と `opt-in` の 2 つです。
+- <strong>プロジェクトマーカー</strong> は、プロジェクトのルートに置く `.bitrise-build-cache.json` という名前の空の JSON ファイルです。CLI は、ビルドの作業ディレクトリからマーカーが見つかるか、ファイルシステムのルートに到達するまで上位ディレクトリをたどります。
+
+モードが `always` の場合、マーカーは無視され、すべてのビルドでキャッシュが使用されます。モードが `opt-in` の場合、CLI は、上位ディレクトリをたどってマーカーが見つかったときにのみ、そのビルドでキャッシュをアクティブ化します。マーカーのないビルドは、Build Cache がインストールされていないかのように実行されます。Gradle は `buildCache` の設定をスキップし、`xcodebuild` ラッパーはプロキシの起動をスキップし、Bazel の認証情報ヘルパーは空のヘッダーを返すため Bazel はキャッシュなしにフォールバックし、`ccache` ヘルパーは読み取りにミスを返し、書き込みはプッシュを無効にして応答します。
+
+## マシンをオプトインに切り替える {#switching-your-machine-to-opt-in}
+
+対話型ウィザードを実行し、<strong>Cache for all projects, or only opted-in ones?</strong> のステップでオプトインを選択します。
+
+```bash
+bitrise-build-cache activate --interactive
+```
+
+または、サポートされているいずれかのツールをアクティブ化するときに、非対話型で設定します。
+
+```bash
+bitrise-build-cache activate gradle --project-mode opt-in
+bitrise-build-cache activate xcode  --project-mode opt-in
+bitrise-build-cache activate bazel  --project-mode opt-in
+bitrise-build-cache activate c++    --project-mode opt-in
+```
+
+任意の activate コマンドで `--project-mode` を渡すと、マシン全体の設定が切り替わり、その値が保存されるため、設定は 1 回だけで済みます。このフラグを付けない場合は、保存済みの値がそのまま使われます。元に戻すには、次のコマンドを実行します。
+
+```bash
+bitrise-build-cache activate gradle --project-mode always
+```
+
+:::note[Reactivation applies the change]
+
+各ビルドツールは、モードをアクティベーションのアーティファクトに組み込みます。具体的には、Gradle の init スクリプト、`xcodebuild` ラッパーの設定、`.bazelrc` ブロック、`ccache` ヘルパーの設定です。モードを変更した後は、使用しているすべてのツールで `bitrise-build-cache activate` を再実行して、新しい設定を各アーティファクトに反映してください。`ccache` ヘルパーは、変更を検出すると自動的に再起動します。
+
+:::
+
+## プロジェクトをオプトインする {#opting-a-project-in}
+
+プロジェクトをオプトインするには、`project enable` コマンドを使用します。
+
+プロジェクトのルートで、次のコマンドを実行します。
+
+```bash
+cd path/to/your/project
+bitrise-build-cache project enable
+```
+
+このコマンドは、現在のディレクトリに空の `.bitrise-build-cache.json` を書き込みます。
+
+```json
+{}
+```
+
+ディレクトリを指定することもできます。
+
+```bash
+bitrise-build-cache project enable path/to/your/project
+```
+
+そのディレクトリがすでに上位ディレクトリのマーカーの対象になっている場合、`project enable` は何も行わず、既存のマーカーの場所を表示します。マーカーはリポジトリにコミットしても問題なく、プロジェクトのすべての開発者にオプトインが引き継がれます。
+
+## ディレクトリのスコープを確認する {#checking-a-directorys-scope}
+
+`bitrise-build-cache doctor` は、有効なモードと、現在のディレクトリでのビルドがキャッシュをスキップするかどうかを表示します。
+
+```bash
+bitrise-build-cache doctor
+```
+
+`opt-in` モードでマーカーがない場合、関連する行は次のように表示されます。
+
+```bash
+✓ project-scope           mode=opt-in; cache_push=true (machine config); no .bitrise-build-cache.json found in /Users/you/projects/one or parents.; would gate this directory: yes
+```
+
+`opt-in` モードで、上位ディレクトリのどこかにマーカーがある場合は、次のように表示されます。
+
+```bash
+✓ project-scope           mode=opt-in; cache_push=true (machine config); marker at /Users/you/projects/one/.bitrise-build-cache.json; would gate this directory: no
+```
+
+## ビルドツールの動作 {#build-tool-behavior}
+
+| ビルドツール | モードが `opt-in` でマーカーが見つからない場合の動作 |
+|---|---|
+| Gradle | init スクリプトは `[bitrise-build-cache] project-mode=opt-in, no marker found ...` を出力し、`buildCache` や分析リスナーを設定する前に処理を終了します。ビルドは、プロジェクト独自のキャッシュ設定で実行されます。 |
+| Xcode | `xcodebuild` ラッパーはプロキシの起動をスキップし、キャッシュを無効にしてシステムの `xcodebuild` に呼び出しを転送します。Bitrise dashboard は、`disabledBy: project-mode=opt-in` を付けて呼び出しを記録します。 |
+| Bazel | 認証情報ヘルパー（`bitrise-build-cache get`）は空のヘッダーセットを返すため、すべての RPC の認証ヘッダーが空になります。RPC は 401 を返し、Bazel はリモートキャッシュなしで実行するようにフォールバックします。 |
+| `ccache` | ストレージヘルパーは `GET` にミス（0 バイトのペイロード）を返し、`PUT` にはプッシュを無効にして応答するため、デーモンはキャッシュバックエンドにアクセスしません。 |
+| React Native | React Native のアクティベーションは Gradle、Xcode、`ccache` をラップします。それぞれ、上記のとおりモードに従います。 |
+
+## 元に戻す {#reverting}
+
+元に戻したい操作は 2 つあります。
+
+- <strong>マシン全体でオプトインをオフにする</strong>: ウィザードを再実行して <strong>Always</strong> を選択するか、`bitrise-build-cache activate <tool> --project-mode always` を実行します。その後、使用しているすべてのツールを再度アクティブ化して、新しいモードを各アーティファクトに反映してください。
+- <strong>オプトインモードを維持したまま、特定のプロジェクトをキャッシュの対象から外す</strong>: そのプロジェクトの `.bitrise-build-cache.json` ファイルを削除します。マーカーが上位ディレクトリにある場合は、そこで削除してください。CLI はツリー全体をたどります。

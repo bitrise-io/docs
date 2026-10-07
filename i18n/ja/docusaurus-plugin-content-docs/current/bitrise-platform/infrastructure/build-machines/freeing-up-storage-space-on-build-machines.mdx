@@ -1,0 +1,42 @@
+---
+title: "build machinesのストレージ容量の解放"
+description: "Bitrisebuild machinesのディスク容量をさらに解放するには、ビルド内でScriptStepを使って、不要なツールやリソースを削除します。"
+sidebar_position: 3
+slug: /bitrise-platform/infrastructure/build-machines/freeing-up-storage-space-on-build-machines
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditorAndSelectingAWorkflow from '@site/i18n/ja/partials/opening-the-workflow-editor-and-selecting-a-workflow.mdx';
+
+Bitrise build machinesの追加のディスク容量が必要な場合は、使用しないツールやリソースをいつでも削除できます。ビルドの開始時に<strong>Script</strong> <GlossTerm baseform="Step">Step</GlossTerm>を使用するだけです。
+
+:::note[java.io.IOException: No space left on device]
+
+ビルド中に`java.io.IOException: No space left on device`エラーが発生した場合は、以下の方法で追加の容量を確保できます。このエラーは、build machineに空き容量がないことを示しています。
+
+:::
+
+1. <GlossTerm baseform="Stack">スタック</GlossTerm>の[GitHubのSystem Report](http://stacks.bitrise.io/)を確認してください。
+
+   System Reportには[プリインストール済みのツール](/bitrise-platform/infrastructure/build-stacks/preinstalled-tools-on-bitrise-stacks)とスタックでのバージョンの一覧が含まれます。
+1. ビルドで不要なツールを見つけます。
+1. <Partial_OpeningTheWorkflowEditorAndSelectingAWorkflow />
+1. <GlossTerm baseform="workflow">Workflow</GlossTerm>の先頭に[<strong>Script</strong>](https://github.com/bitrise-io/steps-script) Stepを追加します。
+1. Stepの<strong>Script content</strong>入力に、ツールをアンインストールするために必要なコマンドを追加します。
+
+<strong>不要なツールのアンインストール</strong>
+
+アプリでAndroid SDKツールが不要な場合は、[<strong>Script</strong>](https://github.com/bitrise-io/steps-script) Step内の以下のコマンドで削除できます。
+
+```bash
+sudo rm -rf /usr/local/share/android-sdk 
+sudo rm -rf /opt/android-ndk
+```
+
+使用しないiOSシミュレータは削除できます:
+
+```bash
+sudo rm -rf ~/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS\\ 26.simruntime/
+```

@@ -1,0 +1,167 @@
+---
+title: "CodePush での Code signing"
+description: "Code signing は、CodePush バンドル (JavaScript の更新) にデジタル署名を追加するセキュリティ機構です。この署名により、クライアントアプリは、信頼できる提供元が更新を作成したこと、および配信中に改ざんされていないことを検証できます。"
+sidebar_position: 7
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Code signingは、CodePush バンドル（JavaScript アップデート）にデジタル署名を追加するセキュリティ機構です。この署名により、クライアントアプリは、アップデートが信頼できる提供元によって作成されたこと、および配信中に改ざんされていないことを検証できます。
+
+CodePush code signingは次の3つの段階で行います。
+
+1. RSA キーペアを生成します。
+
+   - 秘密鍵は、CodePush バンドルへの署名に使用します。
+   - 公開鍵は、署名を検証するためにモバイルアプリに埋め込みます。
+1. CodePush アップデートをリリースする際、Bitrise CodePush CLIが秘密鍵を使ってバンドルに署名します。バンドルのハッシュを含み、この秘密鍵でデジタル署名された JWT（JSON Web Token）が作成されます。
+1. モバイルアプリ（公開鍵を埋め込み済み）は、アップデートを適用する前に JWT 署名を検証します。検証に失敗した場合、アップデートは拒否されます。
+
+
+## アプリの署名 {#signing-your-app}
+
+<Tabs>
+<TabItem value="ios" label="iOS" default>
+
+1. アプリ SDK のバージョン 5.1.0 以降を使用してください。それより前のバージョンは code signing をサポートしていません。
+1. Bitrise CodePush CLI のバージョンが 1.0.0 以降であることを確認してください。これにより code signing 機能を利用できます。
+1. Open SSL を使用して、PEM 形式の RSA キーペアを生成します。
+
+   ```bash
+   openssl genrsa -out private_key.pem 2048
+   openssl rsa -in private_key.pem -pubout -out public_key.pem
+   ```
+
+   秘密鍵は安全に保管し、決して共有しないでください。公開鍵はアプリ自体に埋め込まれます。
+1. 公開鍵の文字列をアプリの `Info.plist` に追加します。
+
+   ```xml
+   <key>CodePushPublicKey</key>
+   <string>-----BEGIN PUBLIC KEY-----
+   MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArVJ2k...
+   -----END PUBLIC KEY-----</string>
+   ```
+1. code signing をサポートする、更新後のアプリ SDK（5.1.0 以降）で iOS アプリを再ビルドします。
+1. Bitrise CodePush CLI を使用して、アップデートをバンドルし署名します。
+
+   :::warning
+
+   出力ディレクトリの名前は、必ず `CodePush` にしてください。SDK は、パッケージハッシュの検証時にディレクトリ名をパスのプレフィックスとして使用します。それ以外の名前にするとハッシュが一致せず、デバイス上でアップデートが通知なく拒否されます。
+
+   :::
+
+   ```bash
+   bitrise :codepush bundle --platform ios --private-key-path ./private_key.pem
+   ```
+
+   署名済みの JWT（`.codepushrelease` ファイル）はバンドルディレクトリ内に生成され、サーバーにアップロードされます。アップロードされる `.zip` ファイルには、`.codepushrelease` ファイルとバンドル済みの出力ファイルの両方が含まれます。
+1. バンドル済みのアップデートをプッシュします。
+
+   ```bash
+   bitrise :codepush push ./CodePush \
+     --deployment Staging \
+     --app-version 1.0.0 \
+     --private-key-path ./private_key.pem
+   ```
+
+   :::tip
+
+   必要に応じて、バンドル、署名、プッシュを 1 つのコマンドで実行することもできます。
+
+   ```bash
+   bitrise :codepush push --bundle --platform ios \
+     --deployment Staging \
+     --app-version 1.0.0 \
+     --private-key-path ./private_key.pem
+   ```
+
+   :::
+
+</TabItem>
+<TabItem value="android" label="Android">
+
+1. アプリ SDK のバージョン 5.1.0 以降を使用してください。それより前のバージョンは code signing をサポートしていません。
+1. Bitrise CodePush CLI のバージョンが 1.0.0 以降であることを確認してください。これにより code signing 機能を利用できます。
+1. Open SSL を使用して、PEM 形式の RSA キーペアを生成します。
+
+   ```bash
+   openssl genrsa -out private_key.pem 2048
+   openssl rsa -in private_key.pem -pubout -out public_key.pem
+   ```
+
+   秘密鍵は安全に保管し、決して共有しないでください。公開鍵はアプリ自体に埋め込まれます。
+1. 公開鍵の文字列を `/android/app/src/main/res/values/strings.xml` に追加します。
+
+   ```xml
+   <resources>
+       <string name="CodePushPublicKey">-----BEGIN PUBLIC KEY-----
+   MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArVJ2k...
+   -----END PUBLIC KEY-----</string>
+   </resources>
+   ```
+1. CodePush クライアントインスタンスを設定します。
+
+   コンストラクターを使用できます。
+
+   ```java
+   new CodePush("deployment-key", getApplicationContext(), BuildConfig.DEBUG, R.string.CodePushPublicKey);
+   ```
+
+   または、ビルダーを使用できます。
+
+   ```java
+   new CodePushBuilder("deployment-key", getApplicationContext())
+       .setIsDebugMode(BuildConfig.DEBUG)
+       .setPublicKeyResourceDescriptor(R.string.CodePushPublicKey)
+       .build();
+   ```
+
+   React Native 0.61 以降の場合は、CodePush SDK リポジトリの [Android セットアップガイド](https://github.com/bitrise-io/react-native-code-push/blob/master/docs/setup-android.md)に従ってください。
+
+1. code signing をサポートする、更新後のアプリ SDK（5.1.0 以降）で Android アプリを再ビルドします。
+1. Bitrise CodePush CLI を使用して、アップデートをバンドルし署名します。
+
+   :::warning
+
+   出力ディレクトリの名前は、必ず `CodePush` にしてください。SDK は、パッケージハッシュの検証時にディレクトリ名をパスのプレフィックスとして使用します。それ以外の名前にするとハッシュが一致せず、デバイス上でアップデートが通知なく拒否されます。
+
+   :::
+
+   ```bash
+   bitrise :codepush bundle --platform android --private-key-path ./private_key.pem
+   ```
+
+   署名済みの JWT（`.codepushrelease` ファイル）はバンドルディレクトリ内に生成され、サーバーにアップロードされます。アップロードされる `.zip` ファイルには、`.codepushrelease` ファイルとバンドル済みの出力ファイルの両方が含まれます。
+1. バンドル済みのアップデートをプッシュします。
+
+   ```bash
+   bitrise :codepush push ./CodePush \
+     --deployment Staging \
+     --app-version 1.0.0 \
+     --private-key-path ./private_key.pem
+   ```
+
+   :::tip
+
+   必要に応じて、バンドル、署名、プッシュを 1 つのコマンドで実行することもできます。
+
+   ```bash
+   bitrise :codepush push --bundle --platform android \
+     --deployment Staging \
+     --app-version 1.0.0 \
+     --private-key-path ./private_key.pem
+   ```
+
+   :::
+
+</TabItem>
+</Tabs>
+
+
+## Code signing における Expo のサポート {#code-signing-support-for-expo}
+
+アプリ SDK と Bitrise CodePush CLI はどちらも、Expo プロジェクトでの code signing をサポートしています。全体の流れは標準的な React Native アプリと同じです。RSA キーペアを生成し、公開鍵をアプリに埋め込み、リリース時に --private-key-path フラグを使ってバンドルに署名します。
+
+マネージド Expo Workflow での主な違いは、公開鍵の埋め込み方法です。通常は [EAS Build](https://docs.expo.dev/build/introduction/) とカスタム config plugin が必要です。アップデートをバンドルしてプッシュする際は、通常どおり標準の `bitrise :codepush` コマンドを使用します。

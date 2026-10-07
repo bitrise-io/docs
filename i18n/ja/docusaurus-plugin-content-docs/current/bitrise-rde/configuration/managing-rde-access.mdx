@@ -1,0 +1,142 @@
+---
+title: "RDEアクセスの管理"
+description: "Collaborationページから、workspaceのメンバーとグループに対するRemote Dev Environmentsへのアクセスを付与または取り消します。SCIMで自動化することもできます。"
+sidebar_position: 6
+slug: /bitrise-rde/configuration/managing-rde-access
+sidebar_label: "アクセスの管理"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkspaceSettingsPage from '@site/i18n/ja/partials/opening-the-workspace-settings-page.mdx';
+
+Remote Dev Environments へのアクセスは、<GlossTerm baseform="workspace">workspace</GlossTerm>メンバーごとに付与されます。RDE を持つ workspace のメンバーであるだけでは十分ではありません。誰かがアクセスを付与するまで、<strong>Remote Dev Environments</strong> セクションは表示されません。
+
+## RDE アクセスの概要 {#rde-access-overview}
+
+RDE は<strong>スタンドアロン製品</strong>です。Bitrise CI や Release Management とは異なり、そのアクセスは<GlossTerm baseform="project">プロジェクト</GlossTerm>に紐づいていません。workspace全体に適用されるオン/オフのみの設定です。プロジェクトごとに設定する項目はなく、選択するロールもありません。
+
+- アクセスを付与すると、workspace に <strong>RDE User</strong> ロールが割り当てられます。これが唯一の RDE ロールです。
+- Admin access to projects には RDE は含まれません。別途付与する必要があります。
+- Workspace owners は常にアクセス権を持ちます。
+
+RDE User ロールを持つすべてのユーザーは、自分自身の<GlossTerm baseform="rde session">セッション</GlossTerm>、<GlossTerm baseform="rde template">テンプレート</GlossTerm>、<GlossTerm baseform="saved input">保存済みの入力</GlossTerm>を作成および管理できます。
+
+:::important[オーナーとマネージャーのみ]
+
+RDE アクセスを付与または取り消せるのは、workspace オーナーと workspace マネージャーのみです。workspace ロールの全体像については、[workspaces のロールと権限](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces)をご覧ください。
+
+:::
+
+アクセスは、workspace settings の <strong>Collaboration</strong> ページの 3 か所から付与できます。
+
+- 既存のメンバーに対して: [メンバーへのアクセス付与](#granting-access-to-a-member)。
+- workspaceグループ](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/workspace-groups)全体に対して: [グループへのアクセス付与](#granting-access-to-a-group)。
+- 招待するユーザーに対して: [workspacesへのメンバーの追加](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/workspace-collaboration#adding-members-to-workspaces)。
+
+workspace が ID プロバイダーを通じてユーザーをプロビジョニングしている場合は、ロールを自動的に割り当てることができます: [SCIM を使用した RDE アクセスの管理](#managing-rde-access-with-scim)。
+
+## メンバーへのアクセス付与 {#granting-access-to-a-member}
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. 左側で <strong>Collaboration</strong> を選択します。
+1. <strong>Members</strong> タブで対象のメンバーを見つけ、名前の横にあるオプションメニュー(⋮)をクリックして <strong>View details</strong> を選択します。
+1. <strong>Overview</strong> タブで <strong>Manage access</strong> をクリックします。
+1. <strong>Standalone products</strong> の下にある <strong>Remote Dev Environments</strong> をオンにします。
+1. <strong>Save changes</strong> をクリックします。
+
+これにより、メンバーには <strong>RDE User</strong> ロールが付与され、すぐに <strong>Remote Dev Environments</strong> セクションを開けるようになります。
+
+:::note[すべてのプロジェクトのみ]
+
+<strong>Standalone products</strong> セクションは、すべてのプロジェクトにわたってアクセスを管理する場合に表示されます。RDE アクセスはプロジェクト固有のものではないため、プロジェクトごとの <strong>Change アクセス</strong> フローの一部ではありません。
+
+:::
+
+## グループへのアクセス付与 {#granting-access-to-a-group}
+
+グループの各メンバーはこのアクセスを継承します。これは、後からグループに追加したメンバーにも適用されます。
+
+<Tabs>
+<TabItem value="existing-group" label="Existing group" default>
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. 左側で <strong>Collaboration</strong> を選択します。
+1. <strong>Groups</strong> タブを選択し、対象のグループを見つけます。
+1. グループの詳細を開き、<strong>Manage access</strong> をクリックします。
+1. <strong>Standalone products</strong> の下にある <strong>Remote Dev Environments</strong> をオンにします。
+1. <strong>Save changes</strong> をクリックします。
+
+</TabItem>
+<TabItem value="new-group" label="New group">
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. 左側で <strong>Collaboration</strong> を選択します。
+1. <strong>Groups</strong> タブを選択し、<strong>Create group</strong> をクリックします。
+1. <strong>Group name</strong> フィールドにグループ名を入力します。
+1. <strong>Standalone products</strong> の下にある <strong>Remote Dev Environments</strong> をオンにします。
+1. <strong>Create group</strong> をクリックします。
+
+</TabItem>
+</Tabs>
+
+## アクセス権の確認 {#checking-who-has-access}
+
+workspace settings では、いくつかの場所で RDE アクセスを確認できます:
+
+| 場所 | 表示内容 |
+|---|---|
+| <strong>Workspace settings</strong> > <strong>Collaboration</strong> > <strong>Members</strong> タブ | 各メンバーの <strong>Product access</strong> 列に <strong>Remote Dev Environments</strong> が表示されます。製品アクセス権を持たないメンバーは `(no access)` と表示されます。 |
+| <strong>Workspace settings</strong> > <strong>Collaboration</strong> > <strong>Members</strong> タブ > オプションメニュー(⋮) > <strong>View details</strong> > <strong>Overview</strong> タブ | <strong>Remote Dev Environments</strong> 行と <strong>RDE User</strong> タグを含む <strong>Product access</strong> テーブル。 |
+| <strong>Workspace settings</strong> > <strong>Collaboration</strong> > <strong>Groups</strong> タブ | 各グループの <strong>RDE User</strong> ロール。このロールでリストをフィルタリングすると、アクセス権を持つすべてのグループを確認できます。 |
+
+## アクセスの取り消し {#revoking-access}
+
+アクセスを取り消しても、そのユーザーのセッションは削除されません。実行中のセッションは自動終了するまで実行され続け、終了したセッションも、誰かが削除するか、作成元のスタックが削除されるまで、永続ディスクを保持し続けます。ストレージを解放するには、セッションを明示的に削除してください。
+
+:::note[グループからのアクセス]
+
+メンバーのアクセスを直接取り消した後も RDE アクセスが残っている場合は、そのメンバーの <strong>Groups</strong> タブを確認してください。所属しているグループがアクセスを付与している可能性があります。そのグループからメンバーを削除するか、グループの RDE をオフにしてください。
+
+:::
+
+<Tabs>
+<TabItem value="member" label="Member" default>
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. 左側で <strong>Collaboration</strong> を選択します。
+1. <strong>Members</strong> タブで対象のメンバーを見つけ、名前の横にあるオプションメニュー(⋮)をクリックして <strong>View details</strong> を選択します。
+1. <strong>Overview</strong> タブで <strong>Manage access</strong> をクリックします。
+1. <strong>Standalone products</strong> の下にある <strong>Remote Dev Environments</strong> をオフにします。
+1. <strong>Save changes</strong> をクリックします。
+
+</TabItem>
+<TabItem value="group" label="Group">
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. 左側で <strong>Collaboration</strong> を選択します。
+1. <strong>Groups</strong> タブを選択し、対象のグループを見つけます。
+1. グループの詳細を開き、<strong>Manage access</strong> をクリックします。
+1. <strong>Standalone products</strong> の下にある <strong>Remote Dev Environments</strong> をオフにします。
+1. <strong>Save changes</strong> をクリックします。
+
+</TabItem>
+</Tabs>
+
+## SCIM を使用した RDE アクセスの管理 {#managing-rde-access-with-scim}
+
+workspace が SCIM プロビジョニングを使用している場合、ID プロバイダーは標準の `roles` 属性を使用して RDE User ロールを割り当てられます。値は `rde:rde_admin` です:
+
+```json
+{
+  "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+  "userName": "user@example.com",
+  "roles": [
+    { "value": "workspace:workspace_contributor" },
+    { "value": "rde:rde_admin" }
+  ]
+}
+```
+
+`rde:` エントリを含まない `roles` 配列を送信すると、ユーザーの RDE アクセスが削除されます。各 ID プロバイダーが使用するリクエスト形式については、[SCIM の設定](/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-scim#managing-workspace-and-product-roles-via-scim)をご覧ください。

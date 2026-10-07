@@ -1,0 +1,68 @@
+---
+title: "Release Management API"
+description: "Bitrise は、Release Management 向けに REST API を提供しています。アプリの接続、プリセットの設定、リリースの管理、API を介したアプリの配布ができます。"
+sidebar_position: 1
+slug: /release-management/release-management-api
+sidebar_custom_props:
+  icon: Code
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitriseでは、Release Management向けのREST APIを提供しています。APIのベースURLは です。
+
+APIには、次の2つのバージョンがあります。
+
+- v1: https://api.bitrise.io/release-management/v1. 非推奨です。
+- v2: 現在のバージョンです。ドメイン固有のサブAPIがあり、そのURLについては[サブAPI](/release-management/release-management-api#sub-apis)で説明されています。
+
+APIでは、GUIで利用できるのと同じ機能を使用できます。次のことができます。
+
+- Connect app。
+- プリセットを設定します。
+- release candidate stageや承認ステージを含む、すべてのステージでリリースを管理します。
+- アプリを配布します。
+
+
+## サブAPI {#sub-apis}
+
+v2のAPIは4つのサブAPIに分かれており、それぞれに独自のベースURLがあります。
+
+| サブAPI | 説明 | ベースURL |
+| --- | --- | --- |
+| Apps | connected apps、インストール可能アーティファクト、プリセット、パブリックアセット、送信Webhook、Apple App Storeドラフトバージョンを扱います。 | `https://api.bitrise.io/release-management/v2/apps/v1` |
+| Build Distributions | テスターグループ、テスター、ビルド配布を扱います。 | `https://api.bitrise.io/release-management/v2/build-distributions/v1` |
+| Store Releases | アプリバージョン、承認、ベータ配布、App StoreとGoogle Playの両方のストアリリースを扱います。 | `https://api.bitrise.io/release-management/v2/store-releases/v1` |
+| Code Push | デプロイと更新を扱います。 | `https://api.bitrise.io/release-management/v2/code-push/v1` |
+
+
+## v1からv2への移行 {#migration-from-v1-to-v2}
+
+v1とv2の主な構造上の違いは次のとおりです。
+
+- アプリの識別: v1では、アプリIDはパスパラメータでした(例: `/apps/{app_id}/installable-artifacts`)。v2では、`app_id`が該当するサブAPIにクエリパラメータとして渡されます。
+- Tester groupとビルド配布: AppsサブAPIから、専用のBuild DistributionsサブAPIに移動しました。
+- Code Pushパッケージの名称変更: v1のCode Pushにおける`packages`リソースは、v2では`updates`と呼ばれます。
+- ストアリリース: Apple App StoreとGoogle Play storeのrelease managementは、現在Store ReleasesサブAPIに含まれています。
+
+非推奨となった各v1エンドポイントの説明には、使用すべき同等のv2エンドポイントが明記されています。詳細な一覧については、[APIのドキュメント](https://api.bitrise.io/release-management/api-docs/index.html)を参照してください。
+
+## 認証 {#authentication}
+
+認証は[Bitrise API](/bitrise-ci/api/authenticating-with-the-bitrise-api)と同じ方法で機能します。API呼び出しを認証するには、[パーソナルアクセストークン](/bitrise-platform/accounts/personal-access-tokens)または[Workspaceトークン](/bitrise-platform/workspaces/workspace-api-token)が必要です。
+
+一部のエンドポイントは、<strong>Release manager</strong>ロールを持つユーザーのみが利用できます。また、一部のエンドポイントはStandardプランでのみ利用できます。通常、これらのエンドポイントは、App Store審査へのアプリの提出や、App StoreまたはGoogle Playへのアプリのリリースなど、エンドユーザー向けの機能にアクセスするために使用されます。
+
+これらのロールに紐づくエンドポイントにアクセスしようとすると、`403 Permission denied`レスポンスが返されます。
+
+## ドキュメント {#documentation}
+
+APIエンドポイントの詳細なドキュメントは、[APIのドキュメント](https://api.bitrise.io/release-management/api-docs/index.html)で確認できます。サイト上ですべてのエンドポイントをテストできます。
+
+技術的な詳細に加えて、特定のBitrise支払いプランでエンドポイントが利用可能かどうかも確認できます。
+
+## App Store APIのローカリゼーションコード {#localization-codes-for-the-app-store-api}
+
+App Store APIへの特定の呼び出しでは、ローカリゼーションコードが必要になる場合があります。たとえば、iOSリリース用の<strong>What to test</strong>の説明を作成する際に、その説明を複数の言語で用意する必要がある場合があります。サポートされているローカリゼーションコードは、[Appleの資料](https://developer.apple.com/documentation/appstoreconnectapi/app_store/app_metadata/app_info_localizations/managing_metadata_in_your_app_by_using_locale_shortcodes)で確認できます。

@@ -1,0 +1,215 @@
+---
+title: "iOSアプリのユニットテストとUIテストの実行"
+description: "Xcodeテストを実行して結果を表示するには、2つのStepsが必要です。Xcode Test for iOSとDeploy to Bitrise.ioです。"
+sidebar_position: 1
+slug: /bitrise-ci/testing/testing-ios-apps/running-unit-and-ui-tests-for-ios-apps
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitriseでは、専用の<GlossTerm baseform="Step">Step</GlossTerm>を使って、iOSアプリのユニットテストとUIテストの両方を実行できます。Stepは、Xcodeプロジェクト内で[定義したテストターゲット](https://developer.apple.com/documentation/xctest/defining_test_cases_and_test_methods/)を実行し、[結果を詳細に確認できるようにエクスポートします](/bitrise-ci/testing/deploying-and-viewing-test-results)。
+
+BitriseでXcodeテストを実行するには、Xcodeテストを実行して結果を確認するために2つのStepsが必要です:
+
+[<strong>Xcode Test for iOS</strong>](https://github.com/bitrise-steplib/steps-xcode-test)。
+
+<strong>デプロイ先</strong>[<strong>Bitrise.io</strong>](http://Bitrise.io)。
+
+:::note[Code signingファイル]
+
+Xcodeテストの実行と、その結果をBitriseへデプロイする作業では、[code signing](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)ファイルは一切不要です。今は気にしなくても問題ありません!
+
+:::
+
+[<strong>Xcode Test for iOS</strong>](https://github.com/bitrise-steplib/steps-xcode-test) Stepは、テストを実行し、テスト結果、`.xcresult`ファイル、すべてのテスト添付ファイル、`xcodebuild test`コマンドのログをエクスポートします。
+
+:::tip[XcodeのHTML形式のテスト結果]
+
+[<strong>Generate Xcode test report html</strong>](https://github.com/bitrise-steplib/bitrise-step-generate-xcode-html-report) Stepを使うと、Xcodeのテスト結果をリッチなHTML形式で確認することもできます。[Xcodeのテスト結果をリッチなHTML形式で表示する](/bitrise-ci/testing/testing-ios-apps/viewing-xcode-test-results-in-rich-html-format)。
+
+:::
+
+Stepを使ってテストを実行するには:
+
+
+<Tabs>
+  <TabItem value="workflow-editor" label="Workflow Editor">
+
+  1. [you install all of the app's dependencies](/bitrise-ci/dependencies-and-caching/ios-dependencies/managing-dependencies-with-carthage)が<GlossTerm baseform="workflow">Workflow</GlossTerm>に含まれていることを確認してください。
+  1. [<strong>Xcode Test for iOS</strong>](https://github.com/bitrise-steplib/steps-xcode-test) StepをWorkflowに追加します。
+  1. <strong>Project path</strong>入力が正しい場所を指していることを確認してください。
+
+     この入力には、`.xcodeproj,``.xcworkspace`、または`Package.swift`ファイルへのパスを指定します。ほとんどの場合、この入力を変更する必要はありません。新しいアプリを追加すると、<GlossTerm baseform="project scanner">プロジェクトスキャナー</GlossTerm>が該当するファイルを自動的に検出し、その場所を入力のdefault valueである[環境変数](/bitrise-ci/configure-builds/environment-variables)に保存します。
+
+     ![xcode-test-for-ios.png](/img/_paligo/uuid-bba07440-4913-8b44-0391-1dd275534500.png)
+  1. <strong>Scheme</strong>入力が、アプリのビルドに使用するスキームを指していることを確認してください。
+
+     default valueは、アプリの初期設定時に指定したスキームを保存する[環境変数](/bitrise-ci/configure-builds/environment-variables)です。別のスキームを使用する場合は、その名前を入力フィールドに入力してください。
+
+     :::important[共有スキームのみ]
+
+     スキームは共有されたXcodeスキームである必要があります!
+
+     :::
+  1. <strong>Device destination specifier</strong>入力でデバイスの宛先を設定します。この入力にはカンマ区切りのキーと値のペアを指定します。たとえば、最新の利用可能なOSを搭載したiPhone 14でテストするアプリをビルドする場合は、次のようにします:
+
+     ```bash
+     platform=iOS,name=iPhone 14 Plus,OS=latest
+     ```
+
+     この入力は、`xcodebuild`の`-destination`オプションを設定します。指定可能なオプションの詳細については、[コマンドラインからユニットテストを実行するには?](https://developer.apple.com/library/archive/technotes/tn2339/_index.html#//apple_ref/doc/uid/DTS40014588-CH1-UNIT)を参照してください。
+  1. 必要に応じて、<strong>Test plan</strong>入力で特定の[テストプラン](https://developer.apple.com/documentation/xcode/organizing-tests-to-improve-feedback?changes=_8)を設定します。
+
+     この入力は、`xcodebuild`の`test`アクションの`-testPlan`オプションを設定します。空のままにした場合は、Xcodeスキームで指定されたテストプランが使用されます。
+  1. テスト結果やその他の出力にアクセスできるようにするため、[<strong>Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files</strong>](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) StepをWorkflowの最後に追加します: [テスト結果のデプロイと表示](/bitrise-ci/testing/deploying-and-viewing-test-results)。
+
+  </TabItem>
+  <TabItem value="yaml" label="Configuration YAML">
+
+  1. [you install all of the app's dependencies](/bitrise-ci/dependencies-and-caching/ios-dependencies/managing-dependencies-with-carthage)がWorkflowに含まれていることを確認してください。
+  1. `xcode-test` StepをWorkflowに追加します。
+
+     ```yaml
+     your-workflow:
+       steps:
+         - activate-ssh-key: {}
+         - git-clone: {}
+         - xcode-test:
+             inputs:
+     ```
+  1. `project_path`入力が正しい場所を指していることを確認してください。
+
+     この入力には、`.xcodeproj,``.xcworkspace`、または`Package.swift`ファイルへのパスを指定します。ほとんどの場合、この入力を変更する必要はありません。新しいアプリを追加すると、プロジェクトスキャナーが該当するファイルを自動的に検出し、その場所を入力のdefault valueである[環境変数](/bitrise-ci/configure-builds/environment-variables)に保存します。
+
+     ```yaml
+     your-workflow:
+       steps:
+         - activate-ssh-key: {}
+         - git-clone: {}
+         - xcode-test:
+             inputs:
+             - project_path: "$BITRISE_PROJECT_PATH"
+     ```
+  1. `scheme`入力が、アプリのビルドに使用するスキームを指していることを確認してください。
+
+     default valueは、アプリの初期設定時に指定したスキームを保存する[環境変数](/bitrise-ci/configure-builds/environment-variables)です。別のスキームを使用する場合は、その名前を入力フィールドに入力してください。
+
+     ```yaml
+     your-workflow:
+       steps:
+         - activate-ssh-key: {}
+         - git-clone: {}
+         - xcode-test:
+             inputs:
+             - project_path: "$BITRISE_PROJECT_PATH"
+             - scheme: test
+     ```
+
+     :::important[共有スキームのみ]
+
+     スキームは共有されたXcodeスキームである必要があります!
+
+     :::
+  1. `destination`入力でデバイスの宛先を設定します。この入力にはカンマ区切りのキーと値のペアを指定します。たとえば、最新の利用可能なOSを搭載したiPhone 14でテストするアプリをビルドする場合は、次のようにします:
+
+     ```yaml
+     your-workflow:
+       steps:
+         - activate-ssh-key: {}
+         - git-clone: {}
+         - xcode-test:
+             inputs:
+             - project_path: "$BITRISE_PROJECT_PATH"
+             - scheme: test
+             - destination: platform=iOS Simulator,name=iPhone 14 Plus,OS=latest
+     ```
+
+     この入力は、`xcodebuild`の`-destination`オプションを設定します。指定可能なオプションの詳細については、[コマンドラインからユニットテストを実行するには?](https://developer.apple.com/library/archive/technotes/tn2339/_index.html#//apple_ref/doc/uid/DTS40014588-CH1-UNIT)を参照してください。
+  1. 必要に応じて、`test_plan`入力で特定の[テストプラン](https://developer.apple.com/documentation/xcode/organizing-tests-to-improve-feedback?changes=_8)を設定します。
+
+     この入力は、`xcodebuild`の`test`アクションの`-testPlan`オプションを設定します。空のままにした場合は、Xcodeスキームで指定されたテストプランが使用されます。
+
+     ```yaml
+     your-workflow:
+       steps:
+         - activate-ssh-key: {}
+         - git-clone: {}
+         - xcode-test:
+             inputs:
+             - project_path: "$BITRISE_PROJECT_PATH"
+             - scheme: test
+             - destination: platform=iOS Simulator,name=iPhone 11 Plus,OS=latest
+             - test_plan: my_plan
+     ```
+  1. テスト結果やその他の出力にアクセスできるようにするため、`deploy-to-bitrise-io` StepをWorkflowの最後に追加します: [テスト結果のデプロイと表示](/bitrise-ci/testing/deploying-and-viewing-test-results)。
+
+     ```yaml
+     your-workflow:
+       steps:
+         - activate-ssh-key: {}
+         - git-clone: {}
+         - xcode-test:
+             inputs:
+             - project_path: "$BITRISE_PROJECT_PATH"
+             - scheme: test
+             - destination: platform=iOS Simulator,name=iPhone 11 Plus,OS=latest
+             - test_plan: my_plan
+         - deploy-to-bitrise-io:
+     ```
+
+  </TabItem>
+</Tabs>
+
+
+:::note[ヘッドレスモード]
+
+Xcode9以降では、デフォルトでテストがヘッドレスモードで実行されます。つまり、シミュレーターはバックグラウンドでのみ動作します。これを変更するには、StepのDebug入力グループに移動し、<strong>Run the simulator in headless mode</strong>入力の値を`no`に設定します。ただし、このオプションを使用すると、テストにより時間がかかります。
+
+```yaml
+- xcode-test:
+    inputs:
+      - headless_mode: 'no'
+```
+
+:::
+
+:::important[xcprettyの使用]
+
+`xcpretty`出力ツールは並列テストに対応していません。プロジェクトで並列テストが有効になっている場合は、Stepの<strong>xcodebuild log formatting</strong>入力グループに移動し、<strong>Log formatter</strong>入力の値を`xcodebuild`または`xcbeautify`に設定してください。
+
+```yaml
+- xcode-test:
+    inputs:
+      - log_formatter: xcbeautify
+```
+
+:::
+
+
+## 失敗したテストの再実行(Xcode 13では利用不可) {#rerunning-failed-tests-not-available-in-xcode-13}
+
+<strong>Xcode Test for iOS</strong> Stepの<strong>Test repetition</strong>セクションにある<strong>Should retry test on failure? (Not available in Xcode 13+)</strong>入力を使用すると、失敗したテストだけでなく、すべてのテストを自動的に再実行できます。この入力を`yes`に設定すると、テストが失敗した場合にStepが`xcodebuild`をもう一度実行します。
+
+Xcode13以降では、この機能は利用できなくなりました。代わりに、<strong>Test Repetitions Mode (Available in Xcode 13+)</strong>入力で`retry_on_failure`オプションを選択して使用します。これにより、すべてのテストを実行する代わりに、失敗したテストのみを再実行できます。このテスト再実行機能は、バージョン3.0.0以降の<strong>Xcode Test for iOS</strong> Stepで利用できます。
+
+
+## テストの繰り返し実行 {#test-repetitions}
+
+[Xcodeのテスト再実行モード](https://developer.apple.com/videos/play/wwdc2021/10296/)は、Bitrise上でXcode13以降を実行している<GlossTerm baseform="stack">スタック</GlossTerm>の[Xcode Test for iOS Step](https://www.bitrise.io/integrations/steps/xcode-test)で利用できます。テストの繰り返し実行を使うと、失敗時に再試行する、失敗するまで実行する、最大繰り返し回数まで実行するなど、さまざまな方法でテストを複数回実行できます。
+
+<strong>Xcode Test for iOS</strong> Stepの<strong>Test Repetitions Mode (Available in Xcode 13+)</strong>入力には、次のオプションがあります:
+
+- `none`: テストは繰り返されません。
+- `until_failure`: テストが失敗するか、最大繰り返し回数に達するまでテストを繰り返します。デフォルトのテスト実行回数は3回です。
+- `retry_on_failure`: 失敗したテストは、成功するか、指定した繰り返し回数に達するまで実行されます。デフォルトのテスト繰り返し回数は3回です。
+- `up_until_maximum_repetitions`: テスト結果にかかわらず、最大テスト繰り返し回数に達するまですべてのテストを再実行します。
+
+![test-repetition.png](/img/_paligo/uuid-d2ee7fd1-7743-7720-d114-5f38632cd2e1.png)
+
+これらのオプションは、<strong>Xcode Test for iOS</strong>バージョン3.0.0以降でのみ利用できる点にご注意ください。
+
+<strong>Maximum Test Repetitions (Available in Xcode 13+)</strong>入力を使用すると、テストの最大繰り返し回数を指定できます。<strong>Test Repetition Mode (Available in Xcode 13+)</strong>入力が`none`以外に設定されている場合は、1より大きい数値を指定する必要がある点にご注意ください。
+
+<strong>Relaunch Tests for Each Repetition (Available in Xcode 13+)</strong>入力を有効にすると、繰り返しごとに完全に新しいプロセスでテストを起動します。

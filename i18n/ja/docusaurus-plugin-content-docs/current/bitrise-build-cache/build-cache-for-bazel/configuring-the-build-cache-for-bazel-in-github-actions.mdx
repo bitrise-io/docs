@@ -1,0 +1,128 @@
+---
+title: "GitHub ActionsでのBuild Cache for Bazelの設定"
+description: "GitHub Actionsのワークフローで、GitHubホストランナーまたはBitrise Build Hubランナー上にBitrise Build Cache for Bazelを設定します。"
+sidebar_position: 2
+slug: /bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-github-actions
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Partial_BuildCacheGitHubActionsAuthentication from '@site/i18n/ja/partials/build-cache-github-actions-authentication.mdx';
+import Partial_BuildCacheGitHubActionsNotes from '@site/i18n/ja/partials/build-cache-github-actions-notes.mdx';
+import Partial_BuildCacheGitHubActionsVerifying from '@site/i18n/ja/partials/build-cache-github-actions-verifying.mdx';
+
+CI を Bitrise に移行しなくても、Bitrise Build Cache を使用して、GitHub Actions ワークフローでの Bazel ビルドを高速化できます。GitHub ホストランナーでも、[Bitrise Build Hub](/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview) ランナーでも同じように動作します。
+
+ワークフローには 2 つの追加ステップが必要です。1 つは Bitrise Build Cache CLI をインストールするステップ、もう 1 つは Bazel 用のキャッシュを有効にするステップです。同じジョブ内でその後に実行されるすべての Bazel ステップが、このキャッシュを使用します。
+
+手動で手順を進める代わりに、AIコーディングエージェントを使ってセットアップすることもできます。[Getting started with AI](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai)を参照してください。
+
+## 認証 {#authentication}
+
+<Partial_BuildCacheGitHubActionsAuthentication />
+
+## ワークフローへの Build Cache の追加 {#adding-the-build-cache-to-your-workflow}
+
+1. Bitrise Build Cache CLI をインストールするステップを追加します。
+
+   ```yaml
+   - name: Install the Bitrise Build Cache CLI
+     run: |
+       mkdir -p "$HOME/.local/bin"
+       curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b "$HOME/.local/bin" -d
+       echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+   ```
+1. Bazel を実行するステップの前に、Build Cache for Bazel を有効にするステップを追加します。
+
+   ```yaml
+   - name: Activate Bitrise Build Cache for Bazel
+     run: bitrise-build-cache activate bazel --cache --cache-push
+   ```
+
+   `--cache` はキャッシュからの読み取りを有効にし、`--cache-push` は書き込みを有効にします。CI は通常キャッシュを作成する環境であるため、両方を有効にしておいてください。
+
+   :::important[コンテナー]
+
+   ジョブがコンテナー内、または複数のコンテナー内で実行される場合、CLI は、高速化する Bazel コマンドと同じコンテナー内で実行する必要があります。
+
+   :::
+1. Workspace で Remote Build Execution が有効になっている場合は、`--rbe` フラグを追加することで、GitHub Actions からも使用できます。
+
+   :::note[RBE の有効化]
+
+   RBE を有効にする前に、Workspace 用のワーカーと、リポジトリの `.bazelrc` ファイル内のプール設定を用意しておく必要があります。詳細については、[Remote Build Execution for Bazel](/bitrise-build-cache/build-cache-for-bazel/remote-build-execution-for-bazel)を参照してください。
+
+   :::
+
+## ワークフローの例 {#example-workflow}
+
+<Tabs>
+<TabItem value="github-hosted" label="GitHub-hosted runners" default>
+
+```yaml
+name: build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      BITRISE_BUILD_CACHE_AUTH_TOKEN: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+      BITRISE_BUILD_CACHE_WORKSPACE_ID: ${{ vars.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the Bitrise Build Cache CLI
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b "$HOME/.local/bin" -d
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Activate Bitrise Build Cache for Bazel
+        run: bitrise-build-cache activate bazel --cache --cache-push
+
+      - name: Build
+        run: bazel build //...
+```
+
+</TabItem>
+<TabItem value="build-hub" label="Build Hub runners">
+
+このジョブには、トークンも environment variables も必要ありません。`runs-on` ラベルがプールを指定します。Bitrise はマシンプールごとに `bitrise-runner-<pool name>` ラベルを作成するため、`bazel-builds` という名前のプールは `bitrise-runner-bazel-builds` で指定します。
+
+```yaml
+name: build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: bitrise-runner-bazel-builds
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the Bitrise Build Cache CLI
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b "$HOME/.local/bin" -d
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Activate Bitrise Build Cache for Bazel
+        run: bitrise-build-cache activate bazel --cache --cache-push
+
+      - name: Build
+        run: bazel build //...
+```
+
+プールのカスタムラベルを使用することもできます。詳細については、[GitHub Actions ワークフローの設定](/bitrise-build-hub/build-hub-for-github-actions/configuring-your-github-actions-workflow)を参照してください。
+
+</TabItem>
+</Tabs>
+
+## ベストプラクティスと制限事項 {#best-practices-and-limitations}
+
+<Partial_BuildCacheGitHubActionsNotes />
+
+## セットアップの確認 {#verifying-the-setup}
+
+<Partial_BuildCacheGitHubActionsVerifying />

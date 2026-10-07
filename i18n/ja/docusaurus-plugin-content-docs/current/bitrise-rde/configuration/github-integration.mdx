@@ -1,0 +1,64 @@
+---
+title: "GitHub連携"
+description: "セッションがあなたとしてGitHubに認証できるようにします。Bitrise GitHub Appの接続による短期間有効なトークンを使用するため、gitとGitHub CLIはそのまま動作します。"
+sidebar_position: 4
+slug: /bitrise-rde/configuration/github-integration
+---
+
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToYourProfileSettings from '@site/i18n/ja/partials/getting-to-your-profile-settings.mdx';
+
+[Bitrise GitHub App](/bitrise-platform/repository-access/github-app-integration)連携を使って、<GlossTerm baseform="rde session">セッション</GlossTerm>を本人としてGitHubに対して認証します。新しいセッションではすべて、`git clone`、`git push`、およびGitHub CLI(`gh`)がHTTPS上でそのまま動作するため、個人アクセストークンを貼り付けたりSSHキーを管理したりする必要はありません。
+
+## 概要 {#overview}
+
+連携を有効にすると、Bitriseは新しいセッションマシンごとに短命なGitHubアクセストークンを設定します。これはBitrise上のGitHubアカウント接続(Bitrise GitHub App)を通じて発行されます:
+
+- トークンの有効期間は最大8時間で、再開(リストア)を含むセッションの存続期間中、自動的に更新されます。
+- 長期間有効な認証情報がマシンに保存されることはありません。
+- セッション内で作成したコミットはGitHubアカウントの作成としてひも付けられ、GitHubのno-replyメールアドレスを使用するため、実際のメールアドレスが公開されることはありません。
+
+## インテグレーションの有効化 {#enabling-the-integration}
+
+1. Bitriseを開きます。
+1. <Partial_GettingToYourProfileSettings />
+1. <strong>Connected accounts</strong>を選択し、Bitrise GitHub Appを通じて<strong>GitHub</strong>を接続します。
+
+   :::info[WorkspaceレベルのGitHub App接続は対象外]
+
+   この連携が確認するのは、WorkspaceレベルにインストールされたGitHub Appではなく、個人のGitHubアカウント接続です。組織の管理者がすでにCI用にBitrise GitHub Appを接続済みであっても、<strong>Connected accounts</strong>ページで自分自身のアカウントを接続する必要があります。
+
+   :::
+
+1. [Bitrise RDE UI](/bitrise-rde/rde-options/bitrise-rde-ui)で、左側の<strong>User settings</strong>の下にある<strong>Saved Inputs</strong>を選択します。
+1. <strong>GitHub</strong>カードで、アカウントが接続済みと表示されていることを確認し、enable theトグルを切り替えます。
+
+   ![Saved InputsページのGitHubカード。接続済みで有効化の準備ができている状態](/img/rde/2026-07-31-rde-github-integration-card.png)
+
+これ以降に作成する新しいセッションには、自動的にGitHubアクセスが付与されます。連携を有効にする前に作成したセッションは変更されません。
+
+## アクセス可能なリポジトリ {#repositories-you-can-access}
+
+セッションはBitrise GitHub Appを通じて本人として動作するため、次の両方の条件を満たすリポジトリにアクセスできます:
+
+- GitHub上のそのリポジトリへのYou haveアクセス権。
+- そのリポジトリにBitrise GitHub Appがインストールされていること。
+
+:::info[リポジトリが見つからない]
+
+ブラウザでは開けるリポジトリなのにクローンが「repository not found」で失敗する場合、そのリポジトリまたは組織にBitrise GitHub Appがインストールされていません。組織の管理者にそこへアプリをインストールしてもらってください。
+
+:::
+
+アプリがどのリポジトリにインストールされているかを確認するには:
+
+1. GitHubで、アカウント(アプリが組織レベルでインストールされている場合は組織)の[installed GitHub Apps](https://github.com/settings/installations)ページを開きます。
+1. 一覧で<strong>Bitrise</strong>を見つけて<strong>Configure</strong>を選択します。
+1. <strong>Repository access</strong>で、インストールの対象範囲となっているリポジトリを確認します。
+
+## インテグレーションの無効化 {#disabling-the-integration}
+
+連携を無効にすると、認証情報の発行は即座に停止します。新しいセッションは認証情報を受け取らなくなり、実行中のセッションはすぐにトークンを更新できなくなり、最後に発行されたトークンは8時間以内に失効します。
+
+1. [Bitrise RDE UI](/bitrise-rde/rde-options/bitrise-rde-ui)で、左側の<strong>User settings</strong>の下にある<strong>Saved Inputs</strong>を選択します。
+1. <strong>GitHub</strong>カードで、トグルをオフにします。

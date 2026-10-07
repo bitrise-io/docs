@@ -1,0 +1,221 @@
+---
+title: "公開インストールページからのipaファイルのインストール"
+description: ".ipaファイルは、公開インストールページから、またはビルドのArtifactsタブからインストールできます。"
+sidebar_position: 5
+slug: /bitrise-ci/deploying/ios-deployment/installing-an-ipa-file-from-the-public-install-page
+sidebar_label: ".ipaファイルのインストール"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitriseビルド中に生成された.ipaファイルをテストデバイスにインストールする方法は、次の2つです。
+
+- [パブリックインストールページの使用](#installing-an-ipa-file-on-test-devices-from-the-public-install-page)。パブリックインストールページは、プロビジョニングおよび登録済みのテストデバイスにアクセスできるユーザーに配布可能な生成されたURLです。
+- Bitriseのビルドページにある[<strong>Artifacts</strong>タブからファイルをダウンロードする](#installing-an-ipa-file-on-test-devices-from-the-artifacts-tab)方法。
+
+テストデバイスへの.ipaファイルのインストールは、デバイスの互換性チェックの開始、テストデバイスへの構成プロファイルのインストール、そしてデバイスへのアプリのインストールという3つのフェーズで構成されています。
+
+このチュートリアルでは、次の内容について説明します。
+
+- Bitriseアカウントなしで登録済みのテストデバイスにアプリをインストールする方法(Bitriseを契約していないが、アプリの現在のバージョンを確認したい方向け)。
+- Bitriseにまだ登録されていないテストデバイスにアプリをインストールする方法(Bitriseユーザー向け)。
+
+  :::note[Artifactsタブから.ipaファイルをインストールする]
+
+  <strong>Artifacts</strong>タブからの.ipaファイルのインストールは、Bitriseユーザーのみが実行できます。
+
+  :::
+
+
+## インストールの準備 {#prepping-for-installation}
+
+任意のテストデバイスにアプリをインストールする前に、アプリの開発者はアプリをビルドして誰とでも共有できるようにするために、いくつかの手順を完了する必要があります。
+
+- アプリをインストールするデバイスが、開発者のAppleアカウントにテストデバイスとして登録されていること。
+- デバイスがアプリのプロビジョニングプロファイルに含まれている必要があります。
+- デバイスがアプリの最小OS要件を満たしている必要があります。
+
+テストデバイスがApple Developer portalに登録されていない場合、開発者はデバイスリストにデバイスを手動で追加し、アプリをインストールできるテストデバイスが.ipaファイルに含まれるようにアプリを再ビルドする必要があることに注意してください。また、[Bitriseにテストデバイスを登録](/bitrise-ci/testing/testing-ios-apps/registering-a-test-device)することもお勧めします。
+
+:::tip[パブリックインストールページではどのブラウザを使用すればよいですか?]
+
+テストデバイスにアプリをインストールしたい方は、アプリのパブリックインストールページを、非シークレットモードのネイティブSafariセッションで開くようにしてください。
+
+:::
+
+### iPadOS搭載iPadでBitriseのパブリックインストールページから.ipaファイルをインストールする {#installing-an-ipa-file-from-bitrises-public-install-page-to-an-ipad-with-ipados}
+
+iPadOSを実行しているiPadを使用している場合は、Bitriseのパブリックインストールページをモバイルモードで開くようにしてください。
+
+.ipaファイルのパブリックインストールページを開くと、Bitriseはデバイスが埋め込まれたプロビジョニングプロファイルに保存されているかどうかを確認します。このチェックは、デスクトップ版ではなくモバイルモードでパブリックインストールページにアクセスした場合にのみ完了します。一時的にモバイルモードに切り替えることをお勧めします。
+
+Safariアドレスバーの左隅にあるᴀAアイコンをタップし、<strong>Show Mobile Website</strong>オプションをタップすると、簡単に一時的にモバイルモードに切り替えられます。
+
+
+## パブリックインストールページからテストデバイスに.ipaファイルをインストールする {#installing-an-ipa-file-on-test-devices-from-the-public-install-page}
+
+パブリックインストールページは、アプリのlatest versionをチームメンバーや、アプリを確認したいその他の関係者と共有するための便利な方法です。このページには、ファイル名、サイズ、バージョンコード、最小SDKバージョン、ビルド番号など、ビルドの重要な詳細がすべて含まれています。
+
+<strong>Deploy to Bitrise.io</strong> <GlossTerm baseform="step">Step</GlossTerm>を設定して、パブリックインストールページへのリンクを記載したメールをユーザーに送信できます。このリンクは誰とでも共有できます。
+
+この一連の流れでは、他のアプリ内ブラウザではなく、非シークレットモードのネイティブSafariセッションを使用してください。Bitriseから届いた通知メール内のリンクをたどると、パブリックインストールページは自動的にネイティブSafariセッションで開きます。
+
+  :::tip[アプリをダウンロードしたい場合]
+
+アプリをダウンロードして手動で他の場所にアップロードしたいだけの場合は、ビルドの<strong>Artifacts</strong>ページにダウンロードボタンがあります。アプリをダウンロードしても、テストデバイスにインストールできるわけではないことに注意してください。
+
+:::
+
+### Bitriseアカウントなしでテストデバイスにアプリをインストールする {#installing-an-app-on-a-test-device-without-a-bitrise-account}
+
+1. Bitriseから受け取ったリンクをロングタップします。ネイティブSafariでリンクを開くには、<strong>Open Link</strong>をタップします。ネイティブSafariセッションでパブリックインストールページが表示されます。メールからリンクをコピーする場合は、必ずネイティブSafariセッションに貼り付けてください。
+1. <strong>Click here to check device compatibility of this device with this app</strong>という黄色いメッセージボックス内のリンクをタップします。このメッセージが表示されない場合は、別のブラウザを使用している可能性が高いため、Safariに切り替えてください。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.png](/img/_paligo/uuid-a747ddb7-7aea-2ad2-8934-7540228c4ad8.png)
+1. ポップアップで<strong>Allow</strong>をタップして、デバイスに構成プロファイルをインストールします。この構成プロファイルにより、互換性チェックのためにデバイスのUDIDがBitriseで利用できるようになります。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-29d5ecf3-28a9-e914-1ffa-e8f8ffa9c744.jpg)
+1. 構成プロファイルがダウンロードされ、<strong>Settings</strong>アプリでインストールできることを確認するポップアップが表示されます。<strong>Close</strong>をタップします。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-d443aa9e-a514-c8ab-eb2c-3ffb05847a9d.jpg)
+1. <strong>Home</strong>ボタンをタップして、ホーム画面に移動します。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-a660119f-d305-200d-a30b-8dbf66e6a054.jpg)
+1. <strong>Settings</strong>を開きます。ダウンロードしたプロファイルは、<strong>Settings</strong>の一番上にあります。左側の<strong>Profile Downloaded</strong>メニュー項目をタップして、プロファイルをインストールします。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-0f079f8c-ae86-fcff-2b7b-978d7545e551.jpg)
+1. <strong>Install</strong>をタップします。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-de20be05-7f66-9b1d-fb5d-042d92b0af3c.jpg)
+1. <strong>Enter passcode</strong>ポップアップに、デバイスのパスコードを入力します。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-324132c7-6f52-185f-1d59-917938fd4174.jpg)
+1. もう一度<strong>Install</strong>をタップします。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-dd095ae4-b0b8-5e20-70db-91b30bf9b6eb.jpg)
+1. プロファイルがインストールされるまで待ちます。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-f13c2746-f8bf-10d2-0284-1090f23c47e0.jpg)
+1. プロファイルがインストールされると、パブリックインストールページに移動します。ご覧のとおり、<strong>Install</strong>ボタンが使用可能になっています。タップしましょう。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-bb823f44-e4f5-b338-c82f-e2175f034f30.jpg)
+1. 次のポップアップで<strong>OK</strong>をタップします。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.png](/img/_paligo/uuid-480a1aea-dba2-c5e7-ad91-f05c9d144541.png)
+1. 最終確認として<strong>Install</strong>をタップし、<strong>Home</strong>ボタンを押します。これで、テストデバイスへのアプリのインストールが始まります。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-6556fa37-6a3c-7358-f031-137d1ca1d26c.jpg)
+1. テストデバイスのホーム画面にアプリがインストールされるまで待ちます。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-b7e8b6d7-ad45-1950-e950-e6c37907d0d0.jpg)
+
+テストデバイスに正常にインストールされたアプリを確認してみましょう。
+
+#### Bitriseに登録されていないテストデバイスにアプリをインストールする {#installing-an-app-on-a-test-device-not-registered-to-bitrise}
+
+以下のメッセージが表示されるテストデバイスからパブリックインストールページにアクセスしている場合は、Bitriseにデバイスを登録する必要がありますが、これは上記のフローと数ステップ異なるだけです。
+
+テストデバイスをBitriseに追加できるのは、すでにBitriseアカウントを持っている場合のみであることに注意してください。
+
+![Installing_an_ipa_file_from_the_public_install_page.png](/img/_paligo/uuid-a747ddb7-7aea-2ad2-8934-7540228c4ad8.png)
+
+1. <strong>Click here</strong>をタップして、デバイス登録プロセスを開始します。
+1. <strong>Allow</strong>をタップして、構成プロファイルをダウンロードします。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-29d5ecf3-28a9-e914-1ffa-e8f8ffa9c744.jpg)
+1. 構成プロファイルがダウンロードされたら、<strong>Close</strong>をタップします。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-d443aa9e-a514-c8ab-eb2c-3ffb05847a9d.jpg)
+1. <strong>Home</strong>ボタンをタップして、テストデバイスのホーム画面にある<strong>Settings</strong>アプリに移動します。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-a660119f-d305-200d-a30b-8dbf66e6a054.jpg)
+1. <strong>Settings</strong>を開きます。ダウンロードしたプロファイルは、<strong>Settings</strong>の一番上にあります。左側の<strong>Profile Downloaded</strong>メニュー項目をタップして、プロファイルをインストールします。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-0f079f8c-ae86-fcff-2b7b-978d7545e551.jpg)
+1. <strong>Install</strong>をタップします。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-de20be05-7f66-9b1d-fb5d-042d92b0af3c.jpg)
+1. <strong>Enter Passcode</strong>ポップアップに、デバイスのパスコードを入力します。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-324132c7-6f52-185f-1d59-917938fd4174.jpg)
+1. <strong>Install Profile</strong>ポップアップで、もう一度<strong>Install</strong>をタップします。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-dd095ae4-b0b8-5e20-70db-91b30bf9b6eb.jpg)
+1. プロファイルのインストールが完了するまで待ちます。自動的に<strong>Register your test device</strong>ページにリダイレクトされます。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-f13c2746-f8bf-10d2-0284-1090f23c47e0.jpg)
+1. デバイスの名前とUDIDが自動的に入力されます。ここで変更できるのはdevice nameのみです。<strong>Register Device</strong>をタップします。
+1. パブリックインストールページに移動し、<strong>Install</strong>ボタンが使用可能になります。タップしましょう。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-bb823f44-e4f5-b338-c82f-e2175f034f30.jpg)
+1. プロンプトで<strong>OK</strong>をタップします。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.png](/img/_paligo/uuid-480a1aea-dba2-c5e7-ad91-f05c9d144541.png)
+1. テストデバイスにアプリをインストールするには、<strong>Install</strong>をタップします。次に<strong>Home</strong>ボタンを押して、アプリのインストール状況を確認します。
+
+問題がなければ、テストデバイスのHomeページにインストール済みのアプリが表示されます。
+
+![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-b7e8b6d7-ad45-1950-e950-e6c37907d0d0.jpg)
+
+### Bitriseに登録されていないテストデバイスにアプリをインストールする {#installing-an-app-on-a-test-device-not-registered-to-bitrise-1}
+
+以下のメッセージが表示されるテストデバイスからパブリックインストールページにアクセスしている場合は、Bitriseにデバイスを登録する必要がありますが、これは上記のフローと数ステップ異なるだけです。
+
+テストデバイスをBitriseに追加できるのは、すでにBitriseアカウントを持っている場合のみであることに注意してください。
+
+![Installing_an_ipa_file_from_the_public_install_page.png](/img/_paligo/uuid-a747ddb7-7aea-2ad2-8934-7540228c4ad8.png)
+
+1. <strong>Click here</strong>をタップして、デバイス登録プロセスを開始します。
+1. <strong>Allow</strong>をタップして、構成プロファイルをダウンロードします。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-29d5ecf3-28a9-e914-1ffa-e8f8ffa9c744.jpg)
+1. 構成プロファイルがダウンロードされたら、<strong>Close</strong>をタップします。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-d443aa9e-a514-c8ab-eb2c-3ffb05847a9d.jpg)
+1. <strong>Home</strong>ボタンをタップして、テストデバイスのホーム画面にある<strong>Settings</strong>アプリに移動します。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-a660119f-d305-200d-a30b-8dbf66e6a054.jpg)
+1. <strong>Settings</strong>を開きます。ダウンロードしたプロファイルは、<strong>Settings</strong>の一番上にあります。左側の<strong>Profile Downloaded</strong>メニュー項目をタップして、プロファイルをインストールします。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-0f079f8c-ae86-fcff-2b7b-978d7545e551.jpg)
+1. <strong>Install</strong>をタップします。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-de20be05-7f66-9b1d-fb5d-042d92b0af3c.jpg)
+1. <strong>Enter Passcode</strong>ポップアップに、デバイスのパスコードを入力します。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-324132c7-6f52-185f-1d59-917938fd4174.jpg)
+1. <strong>Install Profile</strong>ポップアップで、もう一度<strong>Install</strong>をタップします。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-dd095ae4-b0b8-5e20-70db-91b30bf9b6eb.jpg)
+1. プロファイルのインストールが完了するまで待ちます。自動的に<strong>Register your test device</strong>ページにリダイレクトされます。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-f13c2746-f8bf-10d2-0284-1090f23c47e0.jpg)
+1. デバイスの名前とUDIDが自動的に入力されます。ここで変更できるのはdevice nameのみです。<strong>Register Device</strong>をタップします。
+1. パブリックインストールページに移動し、<strong>Install</strong>ボタンが使用可能になります。タップしましょう。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-bb823f44-e4f5-b338-c82f-e2175f034f30.jpg)
+1. プロンプトで<strong>OK</strong>をタップします。
+
+   ![Installing_an_ipa_file_from_the_public_install_page.png](/img/_paligo/uuid-480a1aea-dba2-c5e7-ad91-f05c9d144541.png)
+1. テストデバイスにアプリをインストールするには、<strong>Install</strong>をタップします。次に<strong>Home</strong>ボタンを押して、アプリのインストール状況を確認します。
+
+問題がなければ、テストデバイスのHomeページにインストール済みのアプリが表示されます。
+
+![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-b7e8b6d7-ad45-1950-e950-e6c37907d0d0.jpg)
+
+
+## Artifactsタブからテストデバイスに.ipaファイルをインストールする {#installing-an-ipa-file-on-test-devices-from-the-artifacts-tab}
+
+アプリのビルドの<strong>Artifacts</strong>タブから.ipaファイルをインストールできます。これはパブリックインストールページに比べてより安全な方法ですが、Bitriseアカウントへのログインが必要となるため、外部テスターにはあまり適していません。
+
+<strong>Artifacts</strong>タブから.ipaファイルをインストールするには:
+
+1. Bitriseでアプリを開きます。
+1. インストールしたい.ipaファイルを含むビルドを選択します。
+1. <strong>Artifacts</strong>タブに移動します。
+1. .ipaファイルの隣にある<strong>Download</strong>をクリックします。
+
+   ![ipafile.png](/img/_paligo/uuid-caac5c40-bb61-c1fd-af8b-5e454a9680da.png)
+1. <strong>Install the app on your iOS device</strong>セクションの下にある<strong>Install</strong>をクリックします。

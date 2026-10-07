@@ -1,0 +1,169 @@
+---
+title: "GitHub EnterpriseとBitriseのインテグレーション"
+description: "Bitriseは、GitHub Enterprise Server(GHES)とのインテグレーションを提供しています。このインテグレーションの主なメリットは、GHESユーザーが`bitrise.yml`ファイルをリポジトリに保存できることです。"
+sidebar_position: 4
+slug: /bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise
+sidebar_label: "GitHub Enterprise Server向けGitHubアプリのインテグレーション"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/i18n/ja/partials/getting-to-the-project-settings-page.mdx';
+import Partial_OpeningTheWorkspaceSettingsPage from '@site/i18n/ja/partials/opening-the-workspace-settings-page.mdx';
+
+Bitriseは、セルフホストのGitHub Enterprise Server(GHES)インスタンス向けの統合機能を提供します。この統合の主なメリットは、セルフホストのGHESユーザーが[`bitrise.yml`ファイルをリポジトリに保存できる](/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml#storing-the-bitriseyml-file-in-your-repository)ことです。ファイルをリポジトリに保存することで、設定ファイルの完全なバージョン管理と保守が可能になります。
+
+
+## GitHub Enterprise Serverインテグレーションについて {#about-the-github-enterprise-server-integration}
+
+:::important[Enterprise Server ユーザー限定]
+
+このガイドはGitHub Enterprise Serverユーザー向けです。Bitrise GitHubアプリを使用してBitriseに接続したいGitHub Cloudユーザー向けには、別のガイドをご用意しています:[GitHubアプリの統合](/bitrise-platform/repository-access/github-app-integration)。
+
+:::
+
+この機能を使用するには、以下が必要です:
+
+- 統合を設定するためのBitrise[Workspaceオーナー](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/workspace-collaboration)
+- GitHubアプリをGHES上で作成し、選択したリポジトリにインストールするための十分な権限を持つ[GHES組織のオーナー](https://docs.github.com/en/enterprise-server@3.11/organizations/managing-peoples-access-to-your-organization-with-roles/roles-in-an-organization)
+- GHES instanceへのアクセス。Bitrise websiteがGHES上のリポジトリにアクセスできない場合、そこに保存された`bitrise.yml`ファイルを使用できません。セキュリティ上の理由でIPアドレスのアクセス制御リストを使用している場合は、[Bitrise websiteを許可リストに追加する](/bitrise-platform/infrastructure/build-machines/configuring-your-network-to-access-our-build-machines#ip-address-ranges-for-bitrise-backend-workers)必要があります。
+
+  :::important[Bitriseのバックグラウンドワーカーを許可リストに追加する]
+
+  app.bitrise.ioやBitrise build machinesなどを支えるBitriseのバックグラウンドワーカーは、異なるIPアドレス範囲を使用している点にご注意ください。この機能にはbuild machinesの許可リスト登録だけでは不十分です。
+
+  許可リストへの追加が難しい場合は、[Bitriseまでご連絡ください](https://www.bitrise.io/contact)。他の選択肢についてご相談いただけます。
+
+  :::
+
+統合を設定するには、以下の手順が必要です:
+
+1. [GitHubアプリを作成する](#creating-the-github-app-for-github-enterprise-server)
+
+   アプリを作成すると、GitHub Enterprise Serverユーザーは[BitriseのChecks機能](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/bitrise-checks-on-github)も利用できるようになります。アプリを作成したら、[BitriseでChecksを有効にする](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/bitrise-checks-on-github#enabling-github-checks-on-bitrise)だけで済みます。
+1. [GitHubアプリ経由でBitrise WorkspaceをGHESに接続する](#connecting-to-the-ghes-instance-via-the-github-app)
+
+
+## GitHub Enterprise Server用のGitHub Appの作成 {#creating-the-github-app-for-github-enterprise-server}
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. <strong>Workspace settings</strong>ページの左側で、<strong>Integrations</strong>を選択します。
+1. <strong>Git provider</strong>タブを選択し、<strong>GitHub Enterprise Server</strong>セクションまでスクロールします。
+1. ここに表示されているwebhook URLをコピーします。
+1. 別のブラウザタブでGHESを開き、組織の<strong>Settings</strong>ページに移動します。
+
+   :::note[対象のリポジトリ]
+
+   ここで指定する組織は、プロジェクトが使用するリポジトリを所有する組織にしてください。GitHubアプリは、後から他の組織でも再利用できます。
+
+   :::
+1. <strong>Settings</strong>ページで<strong>Developer</strong>設定セクションを見つけ、<strong>GitHub Apps</strong>を選択します。
+1. <strong>New GitHub App</strong>をクリックし、アプリ作成フォームに入力します。必要な情報はすべて次の表に記載されており、表に記載のない項目は空欄のままで構いません:
+
+   :::important[webhook secretを設定する]
+
+   この手順ではwebhook secretの設定が必須です。このシークレットは、後でBitrise WorkspaceをGHES instanceに接続する際に必要になります。
+
+   :::
+
+   | <strong>GitHub App name</strong> | Bitrise |
+   | --- | --- |
+   | <strong>Homepage URL</strong> | https://app.bitrise.io |
+   | <strong>Webhook URL</strong> | Workspace settingsページ(Bitrise上)からコピーしたものです。形式は次のとおりです:`https://app.bitrise.io/organization/<org_slug>/github_webhooks` |
+   | <strong>Webhook secret</strong> | GitHubではこの項目は任意とされていますが、webhookの完全性を確保するため、シークレットの設定を必須としています。webhook secretはエントロピーの高いランダムな文字列にしてください。後でBitriseと共有する必要があるため、シークレットを控えておいてください。 |
+   | <strong>Permissions</strong> | 以下の権限を設定します:  - リポジトリの権限    - Checks: 読み取り/書き込み   - Commit statuses: 読み取り/書き込み   - Contents: 読み取りのみ   - Metadata: 読み取りのみ   - Pull requests: 読み取りのみ  :::note[今後追加される機能]  Bitriseは、これらのイベントと権限を使用して、[GitHub Checks](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/bitrise-checks-on-github)や[selective builds](/bitrise-ci/configure-builds/configuring-build-settings/selective-builds)などをサポートする、完全に統合された体験を今後提供予定です。これらの機能は近日追加されます。  ::: |
+   | <strong>Subscribeするイベント</strong> | 以下のイベントを有効にします:  - Check run - Check suite - Pull request - Push |
+   | <strong>このGitHubアプリをインストールできる範囲</strong> | このGHES組織以外のリポジトリでも統合を有効にしたい場合は、<strong>Any account</strong>を選択します。 |
+1. 完了したら、<strong>Create GitHub App</strong>をクリックします。
+
+GitHubアプリを作成したら、次にBitrise上でGitHub Enterprise Server統合を設定します。
+
+
+## GitHubアプリを使用したGHESインスタンスへの接続 {#connecting-to-the-ghes-instance-via-the-github-app}
+
+新しいGitHubアプリを作成したら、そのアプリ経由でBitrise WorkspaceをGHES instanceに接続する必要があります:
+
+:::important[Webhook secretが必要です]
+
+[GitHubアプリ作成時の手順](/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise#creating-the-github-app-for-github-enterprise-server)で取得したwebhook secretを手元に用意してください。
+
+:::
+
+1. GitHubアプリのページを開きます。GitHub組織の<strong>Settings</strong>ページで<strong>GitHub apps</strong>を選択し、アプリ名の横にある<strong>Edit</strong>をクリックします。
+1. 左側で<strong>General</strong>を選択します。
+1. <strong>App ID</strong>と<strong>Client ID</strong>を控えておきます。後で必要になります。
+1. 新しいクライアントシークレットを生成します。<strong>Client secrets</strong>セクションを見つけて<strong>Generate a new client secret</strong>をクリックします。シークレットをコピーしてください。後で必要になります。
+1. <strong>Private keys</strong>セクションを見つけて<strong>Generate a private key</strong>をクリックします。これにより`.pem`ファイルがダウンロードされます。このファイルは、後の手順でBitriseにアップロードする必要があります。
+1. Bitriseで<strong>Workspace settings</strong>ページを開き、<strong>GitHub Enterprise Server</strong>セクションで<strong>Connect to Instance</strong>をクリックします。
+1. 接続フォームに入力します:
+
+   - <strong>Instance base URL</strong>には、サーバーのルートURLを指定します。
+   - 先ほど控えた<strong>App ID</strong>と<strong>Client ID</strong>を追加します。
+   - webhook secretと、先ほど生成したクライアントシークレットを追加します。
+   - `.pem`ファイルをアップロードします。
+1. 完了したら、<strong>Save credentials</strong>をクリックします。
+
+   :::note[即時フィードバック]
+
+   接続結果はすぐにフィードバックされ、失敗した場合は対処可能なエラーメッセージが表示されます。
+
+   :::
+1. Go backしてGHESに戻り、GitHubアプリのページを再度開きます。
+1. 左側で<strong>Install app</strong>を選択します。
+1. アプリをインストールする組織を選択します。
+1. <strong>Repository access</strong>で、Bitriseがアクセスできるようにしたいリポジトリを選択するか、all repositoriesを選択します。
+1. 完了したら、<strong>Save</strong>をクリックします。
+
+Bitriseはインストールに関するwebhookイベントを受け取り、該当するBitrise <GlossTerm baseform="project">プロジェクト</GlossTerm>が新しく設定されたGHES統合を自動的に使用できるようになります[app settingsページで確認できます](/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise#troubleshooting-the-ghes-integration)。完了すると、`bitrise.yml`ファイルをGHESリポジトリに保存できるようになります:[bitrise.ymlファイルをリポジトリに保存する](/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml#storing-the-bitriseyml-file-in-your-repository)。
+
+:::tip[統合をテストする]
+
+統合をテストするには、ダミーのプロジェクトを作成し、その`bitrise.yml`ファイルをGHESリポジトリに保存することをお勧めします。テスト用に[このデモプロジェクト](https://github.com/bitrise-io/android-demo-app)を利用できます。
+
+:::
+
+
+## GHESインテグレーションのトラブルシューティング {#troubleshooting-the-ghes-integration}
+
+GHES統合が機能しない場合は、以下を試してください:
+
+- Bitriseの<strong>Integrations</strong>ページで統合のステータスを確認する。
+- GitHub上でwebhook configurationとwebhookの配信状況を確認する。
+
+### Webhookの設定を確認する {#checking-the-webhook-configuration}
+
+1. GHES組織のページを開き、上部のナビゲーションバーで<strong>Settings</strong>を選択します。
+1. 左側で<strong>Developer settings</strong>を選択し、続けて<strong>GitHub Apps</strong>を選択します。
+1. GitHubアプリを見つけ、名前の横にある<strong>Edit</strong>をクリックします。
+1. 左側で<strong>Advanced</strong>を選択します。
+1. <strong>Recent deliveries</strong>セクションで、webhookの配信状況を確認します。
+
+   webhookが正しく設定されていれば、配信の横に緑のチェックマークと200 OKレスポンスが表示されます。
+1. webhookの配信に失敗した場合:
+
+   - BitriseとGitHubの両方でwebhook URLを確認します。
+   - 必要に応じて、GitHub上でwebhook secretを再作成し、新しいシークレットをBitrise上のGHES統合に貼り付けます。
+
+### Bitriseでの統合を確認する {#checking-the-integration-on-bitrise}
+
+GHES instanceに接続されているプロジェクトであれば、どれでも統合をテストできます。
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. <strong>Settings</strong>ページの左側で、<strong>Integrations</strong>を選択します。
+1. <strong>Git provider</strong>タブで、<strong>Git integration status</strong>セクションを見つけます。
+1. GitHub Enterprise Server Instanceの横にある<strong>Test connection</strong>ボタンをクリックして、接続をテストします。
+
+
+## GitHub Enterprise Serverの追加のリンク済みリポジトリ {#additional-linked-repositories-for-github-enterprise-server}
+
+GitHub Enterprise Serverを使用するプロジェクトには、追加のリポジトリをリンクできます。リポジトリをリンクするとは、[デフォルトのリポジトリ](/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch)に加えて、複数のリポジトリへのアクセス権をプロジェクトに与えることを意味します。
+
+設定の詳細については、こちらをご覧ください:[追加のリンクリポジトリ](/bitrise-platform/repository-access/github-app-integration#additional-linked-repositories-via-a-github-app)。
+
+
+## Enterprise Serverユーザー向けのGitHub Appの権限の拡張 {#extending-github-app-permissions-for-enterprise-server-users}
+
+Bitrise GitHubアプリは、アプリ経由でトリガーされるビルドごとに、短期間の一時トークンを生成します。このトークンにはデフォルトで`content:read`という1つの権限しかありません。つまり、ビルドはGitHubリポジトリにアクセスできますが、それ以外の操作はできません。
+
+GitHubアプリのすべての権限を拡張することで、ビルドトークンに追加の権限を付与できます。詳細については、[GitHubアプリの権限をビルドに拡張する](/bitrise-platform/repository-access/github-app-integration#extending-github-app-permissions-to-the-builds)をご覧ください。

@@ -1,0 +1,149 @@
+---
+title: "リモートアクセス"
+description: "リモートアクセスを使用すると、SSHまたはscreen shareアプリを介してビルドの仮想マシンに接続できます。ビルドのBuild detailsページからアクセスできます。"
+sidebar_position: 4
+slug: /bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/remote-access
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+リモートアクセスを使用すると、実行中のbuild machineに接続してデバッグを容易に行えます。失敗したビルドはリモートアクセスを有効にして再ビルドすることで、トラブルシューティングが格段に簡単になります。たとえば、ビルドログにエラーに関する十分な情報が含まれていない場合などに役立ちます。
+
+スタンドアロンビルドと[パイプラインビルド](/bitrise-ci/workflows-and-pipelines/build-pipelines/pipelines-with-stages/configuring-a-pipeline-with-stages)の両方をリモートアクセスで再ビルドできます。
+
+:::important[権限]
+
+アプリで<strong>Testers/QA</strong>ロールを持つユーザーは、リモートアクセスを使用できません。
+
+:::
+
+リモートアクセスを使用する方法は3つあります。
+
+- [Visual Studio Code](#remote-access-with-visual-studio-code): BitriseビルドをリモートリポジトリとしてローカルのVSCodeアプリに接続します。
+- <strong>SSH</strong>: ターミナルからの従来のリモートシェル接続です。
+- <strong>Screen share</strong>: 任意のVNCクライアントを使用したリモート画面共有です。macOSビルドでのみ動作します。
+
+どちらの方法でも、ビルド中およびビルド終了後10分間はbuild machineにリモートでアクセスできます。リモートアクセスの利用可能時間を延長したい場合は、失敗したStepの後に簡単なカスタム[スクリプト](https://github.com/bitrise-io/steps-script)<GlossTerm baseform="step">Step</GlossTerm>を追加することで対応できます。詳細については、[リモートアクセスの利用可能時間を延長する](/bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/remote-access#extending-the-availability-of-remote-access)を参照してください。
+
+:::important[ビルド時間]
+
+リモートアクセスを使用すると、合計ビルド時間に10分が追加されます。
+
+:::
+
+
+## Visual Studio Codeでのリモートアクセス {#remote-access-with-visual-studio-code}
+
+このリモートアクセスの仕組みでは、ローカルのVisual Studio CodeアプリをBitrisebuild machineに[リモートリポジトリ](https://code.visualstudio.com/docs/remote/ssh)として接続できます。
+
+ファイルをリアルタイムで閲覧・編集したり、組み込みのターミナルでコマンドを実行したり、VSCode extensionsの一部をインストールしたりすることもできます。
+
+1. Bitriseでプロジェクトを開きます。
+1. プロジェクトのメインページで、リモートアクセスを使用して再実行したいビルドを見つけてクリックします。
+1. <strong>Rebuild</strong>ボタンの下向き矢印をクリックして、ドロップダウンメニューを開きます。
+1. <strong>Rebuild with remote access</strong>を選択します。これにより、リモートでアクセスできる新しいビルドが開始されます。
+
+   ![RebuildドロップダウンメニューのRebuild with remote accessオプション](/img/run-and-analyze-builds/2026-07-14-rebuild-with-remote-access-button.png)
+1. ビルドのページで、<strong>VSCode</strong>タブを選択します。
+1. 画面の指示に従って、Bitrise CLIとそのリモートアクセス拡張機能、および接続コマンドをインストールします。
+
+   ![Bitrise CLI、リモートアクセスプラグイン、接続コマンドが表示されたVSCodeタブ](/img/run-and-analyze-builds/2026-07-14-remote-access-vscode-tab.png)
+
+
+## SSHでのリモートアクセス {#remote-access-with-ssh}
+
+SSHを使用してBitrisebuild machineにアクセスするには、コマンドラインインターフェースと正しいコマンドおよびパスワードが必要です。
+
+1. Bitriseでプロジェクトを開きます。
+1. プロジェクトのメインページで、リモートアクセスを使用して再実行したいビルドを見つけてクリックします。
+1. <strong>Rebuild</strong>ボタンの下向き矢印をクリックして、ドロップダウンメニューを開きます。
+1. <strong>Rebuild with remote access</strong>を選択します。これにより、リモートでアクセスできる新しいビルドが開始されます。
+
+   ![RebuildドロップダウンメニューのRebuild with remote accessオプション](/img/run-and-analyze-builds/2026-07-14-rebuild-with-remote-access-button.png)
+1. ビルドのページで、<strong>SSH</strong>タブを選択します。
+1. <strong>Command</strong>を見つけて、コマンドラインインターフェースで実行します。
+
+   ![Commandおよび PasswordフィールドがあるSSHタブ](/img/run-and-analyze-builds/2026-07-14-remote-access-ssh-tab.png)
+
+これで完了です。ビルドが実行されている仮想マシンにアクセスできるようになります。
+
+
+## screen shareでのリモートアクセス {#remote-access-with-screen-share}
+
+screen shareアプリでBitrisebuild machineにアクセスするには、正しいユーザー名、パスワード、URLに加えて、VNCscreen shareアプリが必要です。
+
+:::note[macOSのみ]
+
+screen shareを使用したリモートアクセスは、macOSベースの<GlossTerm baseform="stack">スタック</GlossTerm>で実行される<GlossTerm baseform="workflow">Workflows</GlossTerm>でのみ利用できます。Workflowのスタック(Workflow固有のスタックがない場合はアプリのデフォルトスタック)がLinuxベースのものである場合、screen shareの手順はまったく表示されません。
+
+:::
+
+1. Bitriseでプロジェクトを開きます。
+1. プロジェクトのメインページで、リモートアクセスを使用して再実行したいビルドを見つけてクリックします。
+1. <strong>Rebuild</strong>ボタンの下向き矢印をクリックして、ドロップダウンメニューを開きます。
+1. <strong>Rebuild with remote access</strong>を選択します。これにより、リモートでアクセスできる新しいビルドが開始されます。
+
+   ![RebuildドロップダウンメニューのRebuild with remote accessオプション](/img/run-and-analyze-builds/2026-07-14-rebuild-with-remote-access-button.png)
+1. ビルドのページで、<strong>Screen share</strong>タブを選択します。
+1. 必要な情報を確認します。
+
+   - URL
+   - ユーザー名
+   - パスワード
+
+   ![URL、ユーザー名、パスワードのフィールドがあるScreen shareタブ](/img/run-and-analyze-builds/2026-07-14-remote-access-screen-share-tab.png)
+1. VNCscreen shareアプリケーションを開きます。
+
+   最も簡単な方法は、macOSのデフォルトの<strong>Screen Sharing</strong>アプリケーションを使用することです。
+1. <strong>Screen share</strong>オプションの情報を使用して、必要なフィールドに入力します。
+
+これで完了です。これで、ビルドが実行されている仮想マシンにアクセスできるようになります。
+
+
+## VMでファイルを確認する {#finding-your-files-on-the-vm}
+
+ビルドを実行したBitrise仮想マシンへのログインに成功したら、ファイル自体を確認してリアルタイムで何が起こっているかを把握できます。BitriseがアプリをVMにクローンし終えると、常に次の場所からアクセスできます。
+
+```text
+/Users/vagrant/git
+```
+
+
+## リモートアクセスの利用可能時間を延長する {#extending-the-availability-of-remote-access}
+
+リモートアクセスは、ビルドの実行中およびビルド終了後10分間利用できます。これでは不十分な場合、リモートアクセスをより長く利用できるようにするための簡単な回避策があります。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. ビルドを失敗させるStepの後に、<strong>Script</strong>Stepを追加します。
+1. <strong>Run even if previous Step(s) failed</strong>オプションをオンにして、<strong>Script</strong>Stepが必ず実行されるようにします。
+1. 指定した秒数だけビルドを「スリープ」させるコマンドを追加します。
+
+   `sleep 5400`
+
+   この例では、ビルドを90分間実行させます。もちろん、ビルドの時間制限を超えないようにしてください。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+ビルドを失敗させるStepの後に`script`Stepを追加します。Stepが必ず実行されるように`is_always_run`を`true`に設定し、指定した秒数だけビルドを「スリープ」させるコマンドを追加します。
+
+```yaml
+workflows:
+  primary:
+    steps:
+    - script:
+        is_always_run: true
+        inputs:
+        - content: sleep 5400
+```
+
+この例では、ビルドを90分間実行させます。もちろん、ビルドの時間制限を超えないようにしてください。
+
+</TabItem>
+</Tabs>
+
+これで完了です。ビルドがまだ実行されている間に、失敗の原因となった可能性のある問題について仮想マシン上で調査できます。

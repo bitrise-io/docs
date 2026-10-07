@@ -1,0 +1,359 @@
+---
+title: "GitHubアプリのインテグレーション"
+description: "BitriseGitHub Appを使うと、ユーザーはBitriseWorkspaceをGitHubのアカウントまたは組織に、GitHub App経由で接続できます。これにより、きめ細かなアクセス制御、セキュリティの強化、ステータスの自動更新が実現します。"
+sidebar_position: 3
+slug: /bitrise-platform/repository-access/github-app-integration
+sidebar_label: "GitHub Cloud向けGitHubアプリのインテグレーション"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_SwitchingFromOAuthConnectionToTheGitHubApp from '@site/i18n/ja/partials/switching-from-oauth-connection-to-the-github-app.mdx';
+import Partial_GettingToTheProjectSettingsPage from '@site/i18n/ja/partials/getting-to-the-project-settings-page.mdx';
+
+:::important[GitHub Cloudユーザー向けにサポート]
+
+Bitrise GitHubアプリは、すべてのGitHub Cloudユーザーでサポートされています。GitHub Enterprise Serverユーザーは、[GH Enterprise 連携ガイド](/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise)で説明されているとおり、別のGitHubアプリを作成してインストールする必要があります。
+
+:::
+
+BitriseアカウントをGitHubリポジトリに接続する最も良い方法は、[GitHubアプリ](https://docs.github.com/en/apps/overview)と連携することです。Bitrise GitHubアプリには、連携を簡単にするさまざまな機能があります。
+
+- このアプリを使用すると、SSHキー、Personal Access Token、service credential userが不要になります。アクセスには、ビルドごとに一時的なアクセストークンを生成するため、セキュリティが大幅に向上します。
+- リポジトリへのきめ細かなアクセスを提供します。GitHub組織全体にアクセス権を付与する必要はなく、アプリがアクセスできる特定のリポジトリを選択できます。
+- アプリをインストールすると、GitHub Checksアプリにより、Bitriseのステータス更新がGitHub上に自動的に直接表示されます。ステータスレポートを別途設定する必要はありません。なお、1つのBitrise <GlossTerm baseform="workspace">Workspace</GlossTerm>に接続できるGitHubアカウントは1つのみですが、GitHub Checksは他のGitHubアカウントが所有するリポジトリに対しても設定できます。
+
+:::important[HTTPS URLが必要]
+
+GitHubアプリでは、リポジトリにSSHではなくHTTPS URLが必要です。通常はこの点を気にする必要はありません。GitHubアプリ連携を設定すると、プロジェクトのURLが変更されます。問題が発生した場合は、[リポジトリのURLを変更](/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch#changing-the-repository-url)する手順に従って手動でURLを変更できます。
+
+:::
+
+
+## イベントサブスクリプション {#event-subscriptions}
+
+リポジトリまたは組織にBitrise GitHubアプリをインストールすると、GitHubはそのインストールに対してイベントサブスクリプションを自動的に登録します。これらは、GitHubのリポジトリ設定で手動設定できるリポジトリレベルのWebhookとは別のものです。
+
+Bitrise GitHubアプリは、次のイベントをサブスクライブします。
+
+- `push`: ブランチへのプッシュおよびタグのプッシュでビルドをトリガーします。
+- `pull_request`: プルリクエストが作成、更新、または同期されたときにビルドをトリガーします。
+- `issue_comment`: プルリクエストでのコメントベースのビルドトリガーを有効にします。
+
+これらのサブスクリプションは、アプリのインストールレベルでGitHubにより管理されます。GitHubリポジトリの<strong>Settings → Webhooks</strong>にWebhookとして表示されることはありません。
+
+:::warning[GitHubアプリへの切り替え後は手動のWebhookを削除]
+
+リポジトリに`hooks.bitrise.io`を指す手動設定のWebhookがすでに存在する場合（たとえば、以前のOAuthベースのBitrise連携によるものなど）、該当する各イベントで2つのビルドがトリガーされます。1つはGitHubアプリのサブスクリプションから、もう1つは手動のWebhookからです。
+
+GitHubアプリに切り替えたあとは、ビルドの重複を避けるため、GitHub上のリポジトリの<strong>Settings → Webhooks</strong>ページから手動のBitriseWebhookをすべて削除してください。
+
+:::
+
+
+## GitHubアプリ連携のインストール {#installing-the-github-app-integration}
+
+このガイドは、Bitrise GitHubアプリをインストールし、Bitrise WorkspaceをアプリでGitHubアカウントまたは組織に接続したいGitHub Cloudユーザー（GitHub Enterprise Cloudユーザーを含む）を対象としています。
+
+GitHub Enterprise Serverユーザー向けには、別のガイド[GitHub EnterpriseとBitriseの連携](/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise)を用意しています。
+
+GitHubアプリ連携経由での接続には、2つの方法があります。
+
+- <strong>Workspace settings</strong>ページから。
+- 新しいBitrise <GlossTerm baseform="project">project</GlossTerm>を追加するとき。
+
+:::important[WorkspaceあたりのGitHubアプリインストール数]
+
+次の点に注意してください。
+
+- 1つのWorkspaceに接続できるGitHubアプリのインストールは最大10個までです。
+- 1つのGitHubアプリのインストールを複数のWorkspacesに接続することはできません。
+- アプリのGitHub Checks機能は、他のGitHubアカウントが所有するリポジトリでも利用できます。
+
+:::
+
+### Workspace settingsページからのGitHubアプリの接続 {#connecting-a-github-app-from-the-workspace-settings-page}
+
+Bitrise GitHubアプリのインストールはWorkspaceに紐づいています。インストールと接続状況の確認は、いつでも<strong>Workspace settings</strong>ページから行えます。
+
+:::note[GitHub上のSSO]
+
+SAML SSOが必要なGitHub組織向けにGitHubアプリ連携をインストールする場合、組織のリポジトリに接続するにはGitHub上でアクティブなSAML SSOセッションが必要です。
+
+インストール済みのGitHubアプリが本来アクセスできるはずのall repositoriesにアクセスできない場合は、アクティブなSAML SSOセッションがある状態でGitHub上でアプリを取り消してから再度認証する必要がある場合があります。
+
+詳細情報と手順については、[GitHubのドキュメントを確認してください](https://docs.github.com/en/enterprise-cloud@latest/apps/using-github-apps/saml-and-github-apps)。
+
+:::
+
+1. Bitriseのメインページで、ドロップダウンメニューからWorkspaceを選択します。
+1. 左側のナビゲーションメニューから<strong>Settings</strong>を選択します。
+1. <strong>Workspace settings</strong>ページで<strong>Integrations</strong>を選択します。
+1. <strong>GitHub</strong>を選択し、<strong>Connect</strong>をクリックします。
+
+   ![github-account-connection.png](/img/_paligo/uuid-1b49695a-ea36-fe03-f9a1-48a6bfc9a737.png)
+1. これまでにBitrise GitHubアプリを認証したことがない場合、この時点で認証を求められます。
+1. 接続したいGitHub accountまたは組織を選択するよう求められます。必要なものがリストに見つからない場合は、先にそのアカウントまたは組織にアプリをインストールする必要があります。アカウントのリストの下にあるリンクをクリックしてください。
+
+   ![install-the-app.png](/img/_paligo/uuid-cae94617-17e3-33ce-8cf7-99205e85bd22.png)
+1. リンクをクリックすると、アカウントまたは組織を選択するよう求められます。選択すると、<strong>Install & Authorize</strong>ページに移動します。
+1. <strong>Install & Authorize</strong>ページで、アクセスの種類を選択します。
+
+   - <strong>All repositories</strong>: Bitrise GitHubアプリが、そのアカウントまたは組織に属するall repositories（今後追加されるものを含む）にアクセスできるようになります。
+   - <strong>Only select repositories</strong>: Bitriseがアクセスできるようにするリポジトリを1つ以上選択します。あとから追加することもできますが、その場合はGitHub Appのページでリポジトリへのアクセスを再設定する必要があります。
+
+   ![authorizing-app.png](/img/_paligo/uuid-a25560d9-ce2a-4181-2dc6-59cc4318c577.png)
+1. 完了したら<strong>Install & Authorize</strong>をクリックします。<strong>Workspace settings</strong>ページにリダイレクトされます。
+
+   :::important[認証]
+
+   GitHub上でnot authorizedの場合でも、アプリのインストールをリクエストできます。GitHubの管理者がインストールを承認したら、戻ってリストから<strong>Appのインストール</strong>を選択してください。
+
+   :::
+1. OAuth連携を使用している既存のアプリがある場合は、[GitHubアプリ連携への切り替え](/bitrise-platform/repository-access/github-app-integration#switching-from-oauth-connection-to-the-github-app)をお勧めします。
+
+### 新しいプロジェクトを追加するときのGitHubアプリの接続 {#connecting-a-github-app-when-adding-a-new-project}
+
+:::note[GitHub上のSSO]
+
+SAML SSOが必要なGitHub組織向けにGitHubアプリ連携をインストールする場合、組織のリポジトリに接続するにはGitHub上でアクティブなSAML SSOセッションが必要です。
+
+インストール済みのGitHubアプリが本来アクセスできるはずのall repositoriesにアクセスできない場合は、アクティブなSAML SSOセッションがある状態でGitHub上でアプリを取り消してから再度認証する必要がある場合があります。
+
+詳細情報と手順については、[GitHubのドキュメントを確認してください](https://docs.github.com/en/enterprise-cloud@latest/apps/using-github-apps/saml-and-github-apps)。
+
+:::
+
+Bitriseで[新しいプロジェクトを追加](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache#adding-a-new-connection-to-the-build-cache)する過程で、Bitriseがリポジトリにどのようにアクセスするかを選択する必要があります。この過程で、GitHubアプリ経由でプロジェクトを接続できます。
+
+1. [新しいプロジェクトの追加](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache#adding-a-new-connection-to-the-build-cache)を開始します。
+1. <strong>Select a repository</strong>セクションで、<strong>Provider</strong>ドロップダウンメニューから<strong>GitHub App（推奨）</strong>を選択します。
+
+   ![select-repository.png](/img/_paligo/uuid-5fa460a4-aa40-627b-9ccd-d820ef1af5db.png)
+1. <strong>Connect account</strong>をクリックします。
+
+   ![connect-github-app.png](/img/_paligo/uuid-bbcc5c35-f82c-f026-b5a7-92bb3040d6da.png)
+1. 接続したいGitHub accountまたは組織を選択するよう求められます。必要なものがリストに見つからない場合は、先にそのアカウントまたは組織にアプリをインストールする必要があります。アカウントのリストの下にあるリンクをクリックしてください。
+
+   ![install-the-app.png](/img/_paligo/uuid-cae94617-17e3-33ce-8cf7-99205e85bd22.png)
+1. リンクをクリックすると、アカウントまたは組織を選択するよう求められます。選択すると、<strong>Install & Authorize</strong>ページに移動します。
+1. <strong>Install & Authorize</strong>ページで、アクセスの種類を選択します。
+
+   - <strong>All repositories</strong>: Bitrise GitHubアプリが、そのアカウントまたは組織に属するall repositories（今後追加されるものを含む）にアクセスできるようになります。
+   - <strong>Only select repositories</strong>: Bitriseがアクセスできるようにするリポジトリを1つ以上選択します。あとから追加することもできますが、その場合はGitHub Appのページでリポジトリへのアクセスを再設定する必要があります。
+
+   ![authorizing-app.png](/img/_paligo/uuid-a25560d9-ce2a-4181-2dc6-59cc4318c577.png)
+1. 完了したら<strong>Install & Authorize</strong>をクリックします。新しいBitrise projectの追加を続けるためにリダイレクトされます。
+
+:::note[複数のGitHub組織を1つのBitrise workspaceに接続する]
+
+メインのソースコードとは別のGitHub組織／アカウントに保存されているコードにビルドからアクセスしたい場合は、<strong>+ Add GitHub account</strong>ボタンを使用して複数のGitHub組織をBitrise Workspaceに接続できます。
+
+Workspaceの<strong>GitHub</strong>アプリページでは、Bitrise GitHubアプリをインストール済みのプロジェクト管理者が<strong>+ Add GitHub account</strong>ボタンを見つけられます。これにより、workspaceに最大<strong>10個のGitHub account／組織</strong>を接続できます。
+
+![multipleGithuborgs.png](/img/_paligo/uuid-6986251f-485b-cef8-01b9-c6110f4e4e4f.png)
+
+:::
+
+
+## ビルドへのGitHubアプリ権限の拡張 {#extending-github-app-permissions-to-the-builds}
+
+:::tip[APIの使用]
+
+このセクションでは、Bitrise websiteでこの機能を設定する方法について説明します。[GitHubアプリの設定API](/bitrise-ci/api/github-app-configuration-api)を使用して、Bitrise API経由で設定することもできます。
+
+:::
+
+Bitrise GitHubアプリは、アプリ経由でトリガーされたビルドごとに、短期間有効な一時トークンを生成します。このトークンにはデフォルトで`content:read`という権限のみが付与されています。つまり、ビルドはGitHubリポジトリにアクセスできますが、それ以外の操作は行えません。
+
+これらの権限を拡張すると、ビルド中に他の操作を実行できるようになります。たとえば、ビルドからGitタグをプッシュしたり、カスタムのステータスレポートを作成したり、プルリクエストにラベルを付けたり、新しいバージョン番号をプッシュしたりできるようになります。
+
+:::important[リンクされたリポジトリ]
+
+権限を拡張すると、すべての[追加でリンクされたリポジトリ](/bitrise-platform/repository-access/github-app-integration#additional-linked-repositories-via-a-github-app)にも権限が拡張されます。
+
+:::
+
+拡張できる正確な権限は、GitHubアカウントによって異なります。
+
+- GitHub Cloudでは、GitHubアプリに次の権限があります。
+
+  - issuesとメタデータへの読み取りアクセス
+  - checks、code、commit statuses、pull requestsへの読み取り・書き込みアクセス
+- [GitHub Enterprise Server](/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise)ユーザーは、アプリの作成時にGitHubアプリの権限を定義します。
+
+権限を拡張するには：
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. メニューから<strong>Repository</strong>を選択します。
+1. <strong>Extend GitHub App permissions to builds</strong>オプションを見つけて有効にします。これにより、デフォルトのリポジトリと追加でリンクされたすべてのリポジトリの両方に権限が拡張されます。
+
+
+## GitHubアプリ経由の追加リンクリポジトリ {#additional-linked-repositories-via-a-github-app}
+
+:::tip[APIの使用]
+
+このセクションでは、Bitrise websiteでこの機能を設定する方法について説明します。[GitHubアプリの設定API](/bitrise-ci/api/github-app-configuration-api)を使用して、Bitrise API経由で設定することもできます。
+
+:::
+
+各Bitrise projectには、プライマリのGitリポジトリがあります。プロジェクトのコードはここに保存され、ビルドを開始するとこのリポジトリがクローンされます。デフォルトでは、Bitrise projectは他のリポジトリにアクセスできません。
+
+しかし、プロジェクトによっては他のリポジトリが必要になる場合があります。たとえば、ビルド中にアクセスする必要があるプライベートなサブモジュールがある場合です。GitHubアプリを使用している場合は、追加のリポジトリをリンクすることでこれに対応できます。この機能はGitHub CloudとGitHub Enterprise Serverの両方で利用できます。
+
+:::note[他の接続方法]
+
+Bitrise GitHubアプリを使用していない場合でも、追加のリポジトリへのアクセスを設定できます。[サブモジュールやプライベートリポジトリの依存関係があるアプリ](/bitrise-platform/repository-access/apps-with-submodules-or-private-repo-dependencies)を参照してください。
+
+:::
+
+リンクされたリポジトリとは、Bitrise projectがGitHubアプリのインストールを使用してアクセスできるものの、プロジェクトのプライマリリポジトリではないリポジトリのことです。
+
+GitHubアプリのインストール経由で接続されたプロジェクトのビルドを実行すると、Bitriseはデフォルトでプライマリリポジトリにのみアクセスできる一時トークンを生成します。追加のリポジトリをリンクすると、ビルド用に生成されるトークンでその追加のリポジトリにもアクセスできるようになります。
+
+リポジトリをリンクするには、次の条件をすべて満たす必要があります。
+
+- GitHub上でそのリポジトリを所有するアカウントまたは組織にGitHubアプリがインストールされていること。
+- そのリポジトリに対してアプリのインストールが有効になっていること。
+- リポジトリをリンクしようとしているユーザーが、GitHub上でそのリポジトリにアクセスできること。GitHubのユーザーアカウントがリポジトリにアクセスできない場合は、Bitrise上でそのリポジトリをリンクできません。
+
+  :::note[GitHub Enterprise Server]
+
+  [GitHub Enterprise Server](/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise)インスタンスへの接続にGitHubアプリを使用している場合、アプリはユーザーのアクセス権をチェックしません。GitHubアプリがアクセスできるリポジトリであれば、どれでもリンクできます。
+
+  :::
+
+### 追加のリポジトリをリンクする {#linking-additional-repositories}
+
+GitHubアプリの連携がすでに確立されているプロジェクトに追加のリポジトリをリンクするには：
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で<strong>Repository</strong>を選択します。
+1. <strong>Authorization</strong>で、<strong>Additional repositories</strong>カードを見つけて<strong>Change</strong>をクリックします。
+1. <strong>Link additional repositories</strong>ダイアログで、リンクしたいリポジトリを選択します。
+
+   ![SCR-20260331-pmhi.png](/img/_paligo/uuid-324a0ec5-3e09-e10f-9e9e-7ae1359ffdc2.png)
+
+   追加のリポジトリは最大50個までリンクできます。
+
+   リポジトリの一覧が表示されます。リポジトリを一覧に表示するには：
+
+   - GitHub Cloud上では、GitHubユーザーがそのリポジトリにアクセスできる必要があります。[GitHub Enterprise Server](/bitrise-platform/repository-access/integrating-github-enterprise-with-bitrise)を使用している場合、ユーザー権限はチェックされません。
+   - GitHubアプリのインストールがそのリポジトリにアクセスできること。
+
+   :::important[リポジトリの無効化]
+
+   すでにリポジトリがリンクされている場合、それらのリポジトリへのアクセス権を本来持たないユーザーでも無効化はできますが、再度追加することはできない点に注意してください。
+
+   :::
+1. 完了したら<strong>Save changes</strong>をクリックします。
+
+### all repositoriesを自動的にリンクする {#linking-all-repositories-automatically}
+
+GitHub組織のオーナーは、<strong>Grant access to all current and future repositories</strong>トグルを切り替えることで、GitHubアプリがアクセスを許可されているすべてのGitHubリポジトリ（今後追加される新しいリポジトリを含む）にBitriseのビルドがアクセスできるようにできます。
+
+この機能を正しく使用するには：
+
+- セキュリティ上の理由から、組織のGitHub<strong>オーナー</strong>でもあるBitriseユーザーとしてログインしている必要があります。オーナーでない場合は、オーナーにBitriseにログインしてこの機能を有効にしてもらってください。
+- 必要なリポジトリにアクセスできるようにGitHubアプリを設定していることを確認してください。
+
+1. Bitriseで、プロジェクトの<strong>Project Settings</strong>ページに移動します。
+1. 左側で<strong>Repository</strong>を選択します。
+1. <strong>Authorization</strong>で<strong>Additional repositories</strong>を見つけて<strong>Change</strong>をクリックします。
+1. <strong>Grant access to all current and future repositories</strong>スイッチを右側に切り替えます。
+
+   ![linkadditionalrepositories.png](/img/_paligo/uuid-bfc425a6-84a8-0672-31bb-d3d7b07b56ce.png)
+
+   これで、プロジェクトのビルドは、Bitrise GitHubアプリがアクセスできる現在および将来のGitHubリポジトリすべてにアクセスできるようになります。
+
+:::note[権限の許可に関するGitHubのメール通知]
+
+Bitriseがこの機能をリリースした際、Bitrise GitHubアプリのユーザーは、Grant access to all current and future repositoriesトグルの使用に必要な新しい権限についてGitHubからメールを受け取りました。Bitrise GitHubアプリは、「read organization membership」と呼ばれる追加の権限をリクエストします。メール内のリンクをたどってこの機能をチームで利用可能にする権限を持つのは、GitHubの組織オーナーのみです。
+
+これはGitHubからの標準的かつ正規のメッセージであり、この権限を許可してもBitriseのビルドに悪影響を及ぼすことはありません。Bitriseが必要とする新しい権限の詳細は[こちら](https://docs.github.com/en/rest/orgs/members?apiVersion=2022-11-28#get-organization-membership-for-a-user)をご覧ください。
+
+:::
+
+
+## GitHubアプリ経由でプライベートなStepライブラリを使用する {#using-a-private-step-library-via-the-github-app}
+
+各Bitrise projectには、デフォルトのStepライブラリ（Stepsのリポジトリ）があります。Stepの正確な取得元が設定で指定されていない場合、Bitrise CLIはデフォルトのライブラリからStepデータを取得します。
+
+このライブラリは、プライベートなStepライブラリにすることもできます。GitHubアプリ経由でそのようなライブラリにアクセスするには、<GlossTerm baseform="workflow">Workflow</GlossTerm>内で最初に実行されるStepとして<strong>[Authenticate host with netrc](https://bitrise.io/integrations/steps/authenticate-host-with-netrc)</strong> Stepを追加する必要があります。
+
+```yaml
+format_version: "13"
+default_step_lib_source: https://github.com/my-private-org/my-bitrise-steplib.git
+project_type: ios
+workflows:
+  example:
+    steps:
+    - https://github.com/bitrise-io/bitrise-steplib.git::authenticate-host-with-netrc@0:
+```
+
+<strong>[Authenticate host with netrc](https://bitrise.io/integrations/steps/authenticate-host-with-netrc)</strong> Stepには、プライベートライブラリではなく公式のBitrise Stepライブラリから確実に取得されるように[完全なソース識別子](/bitrise-ci/references/steps-reference/step-reference-id-format)が指定されている点に注意してください。
+
+Stepを使用するには、host、Gitのユーザー名、Gitのパスワードという3つの入力を指定する必要があります。Bitrise GitHubアプリ連携ではトークンベースの認証が使用されます。各ビルドは、GIT_HTTP_PASSWORD環境変数の下で1回限りのトークンを受け取ります。この環境変数はパスワードとして使用できます。ユーザー名を空にするとStepが失敗するため空にはできませんが、実際には使用されないため、何を入力しても構いません。
+
+```yaml
+format_version: '13'
+default_step_lib_source: https://github.com/tothszabi/steplib.git
+project_type: ios
+workflows:
+  example:
+    steps:
+    - https://github.com/bitrise-io/bitrise-steplib.git::authenticate-host-with-netrc@0:
+        inputs:
+        - host: github.com
+        - username: username
+        - password: "$GIT_HTTP_PASSWORD"
+    - private-script@1: {}
+```
+
+
+## リンクされたリポジトリでgit cloneを実行する {#running-git-clone-with-linked-repositories}
+
+[リンクされたリポジトリ](/bitrise-platform/repository-access/github-app-integration#additional-linked-repositories-via-a-github-app)に対して`git clone`やその他のgitコマンドを実行しようとすると、ビルドが認証エラーで失敗することがあります。これは、認証情報がローカルの`netrc`ファイルに保存されているためです。このファイルは、公式の<strong>Git Clone</strong> Stepによって自動的に生成されます。
+
+ただし、独自のスクリプトで`git clone`を行う場合や、<strong>Git Clone</strong> Stepより前に認証が必要な他のGitコマンドを使用する場合は、`netrc`ファイルを作成する必要があります。方法は2つあります。
+
+- 手動で行う。
+- <strong>[Authenticate host with netrc](https://bitrise.io/integrations/steps/authenticate-host-with-netrc)</strong> Stepを使用する。これはWorkflowの最初のStepにする必要があります。
+
+:::important[HTTP URL]
+
+プライベートリポジトリの依存関係をクローンする際は、必ずHTTP URLを使用してください。
+
+:::
+
+Stepを使用するには、host、Gitのユーザー名、Gitのパスワードという3つの入力を指定する必要があります。Bitrise GitHubアプリ連携ではトークンベースの認証が使用されます。各ビルドは、GIT_HTTP_PASSWORD環境変数の下で1回限りのトークンを受け取ります。この環境変数はパスワードとして使用できます。ユーザー名を空にするとStepが失敗するため空にはできませんが、実際には使用されないため、何を入力しても構いません。
+
+```yaml
+workflows:
+  example:
+    steps:
+    - authenticate-host-with-netrc@0:
+        inputs:
+        - host: github.com
+        - username: "username"
+        - password: "$GIT_HTTP_PASSWORD"
+```
+
+<Partial_SwitchingFromOAuthConnectionToTheGitHubApp />
+
+
+## OAuth連携への切り戻し {#reverting-back-to-oauth-connection}
+
+GitHubアプリに切り替える前にリポジトリへのアクセスにOAuth連携を使用していた場合、いつでもその連携に戻すことができます。
+
+:::note
+
+OAuth連携では、authorization methodに応じて、Gitプロバイダー側でSSHキーまたはpersonal access tokenが必要です。GitHubアプリに切り替える際にこれらを削除する必要はありません。削除していなければ、OAuth連携に戻すときにそのまま使用できます。
+
+:::
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. <strong>Bitrise CI</strong>で<strong>Integrations</strong>を選択し、次に<strong>Git provider</strong>タブを選択します。
+1. <strong>Connection type</strong>カードを見つけて<strong>Change</strong>をクリックします。
+1. ダイアログで<strong>OAuth</strong>を選択し、<strong>Change</strong>をクリックします。

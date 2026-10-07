@@ -339,6 +339,14 @@ Anything reused across pages: a setup-prerequisites paragraph, a "how to open th
 - Don't paste a partial's content directly into a page. The whole point is one source of truth.
 - Don't put a section heading at the top of a partial that's used in list context — the preprocessor only extracts the first list block, and a heading would be left dangling.
 
+### Japanese translations of partials
+
+Every partial is also translated: `src/partials/<slug>.mdx` → `i18n/ja/partials/<slug>.mdx`, by `translate_docs.py` (the workflow watches `src/partials/` too). Translated pages import the Japanese copy (`@site/i18n/ja/partials/<slug>.mdx`) instead of the English one; list-context references are filled from the Japanese copy by `docusaurus.config.ts` for pages under `i18n/ja/`. Edit only the English partial — never the `i18n/ja/partials/` copy.
+
+### Japanese UI strings and frontmatter
+
+Not everything reader-visible is page prose. Frontmatter `title`, `description` and `sidebar_label`, plus `title` / `label` / `description` string props in JSX hub pages, are translated by `translate_docs.py` (`scripts/translatable_strings.py`); keep each such prop on its own line (`label: 'Text',`) or it stays English. Sidebar labels, navbar items and other UI strings live in `i18n/ja/*.json` and are translated by `scripts/translate_ui_strings.py` using the English-to-Japanese map in `localization/ja-ui-strings.yaml` (edit a value there to change it everywhere). New UI text in React code must go through `translate({id, message, description})` with literal arguments, or `write-translations` cannot see it.
+
 ---
 
 ## Glossary terms

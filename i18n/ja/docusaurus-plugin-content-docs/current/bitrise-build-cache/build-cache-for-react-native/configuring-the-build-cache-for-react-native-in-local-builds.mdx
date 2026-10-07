@@ -1,0 +1,231 @@
+---
+title: "ローカルビルドでのBuild Cache for React Nativeの設定"
+description: "ローカルのReact Nativeビルド用にBitrise Build Cacheを設定します。Gradle、Xcode、ccacheの各バックエンドを対象としています。"
+sidebar_position: 5
+slug: /bitrise-build-cache/build-cache-for-react-native/configuring-the-build-cache-for-react-native-in-local-builds
+sidebar_label: "ローカル環境でのBuild Cache for React Nativeの設定"
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+Bitrise Build Cacheは、ローカルのReact Nativeビルドでも使用できます。ローカルビルドはCIビルドと同じキャッシュから読み取るため、CIがすでにコンパイルしたネイティブコードを、お使いのマシンで再度コンパイルする必要はありません。
+
+React Nativeプロジェクトは3つのネイティブツールチェーンを通じてビルドされ、Bitrise Build Cache CLIはそのすべてをカバーします。AndroidにはGradle、iOSにはXcode、C++ネイティブモジュールには`ccache`を使用します。それぞれがキャッシュする内容の概要については、[Build Cache for React Nativeの概要](/bitrise-build-cache/build-cache-for-react-native/build-cache-for-react-native-overview)を参照してください。
+
+手動で手順を進める代わりに、AIコーディングエージェントを使ってセットアップすることもできます。[AIの利用開始](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai)を参照してください。
+
+## 開始する前に {#before-you-start}
+
+次の項目を確認してください。
+- iOS側にXcode 26 or laterを備えた、動作するReact Nativeプロジェクトがマシン上にあること。それより前のバージョンでは、CLIが必要とするコンパイルキャッシュのフラグが公開されておらず、ラッパーは何も行いません。
+- Build Cacheが有効なBitrise workspace。[Build Cacheページ](https://app.bitrise.io/build-cache/)で確認してください。
+- マシンがVPN、ファイアウォール、またはアウトバウンドプロキシの内側にある場合は、Build Cacheが使用するBitriseホストへのネットワークアクセス。[ファイアウォールとVPN向けのネットワークエンドポイント](/bitrise-build-cache/getting-started-with-the-build-cache/network-endpoints-for-firewalls-and-vpns)を参照してください。
+
+## CLIとccacheのインストール {#installing-the-cli-and-ccache}
+
+<Tabs>
+<TabItem value="homebrew" label="Homebrew" default>
+
+```bash
+brew install bitrise-io/bitrise-build-cache/bitrise-build-cache
+brew install ccache
+```
+
+</TabItem>
+<TabItem value="curl" label="curl">
+
+インストーラースクリプトでCLIをインストールし、[`ccache`を手動でダウンロード](https://ccache.dev/download.html)します。
+
+```bash
+curl --retry 5 -sSfL \
+  'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' \
+  | sh -s -- -b ~/.local/bin
+```
+
+</TabItem>
+</Tabs>
+
+両方のインストール先が`PATH`に含まれていることを確認し、インストールを確認してください。
+
+```bash
+bitrise-build-cache --version
+which ccache
+```
+
+## キャッシュのアクティベート {#activating-the-cache}
+
+対話型ウィザードを実行します。
+
+```bash
+bitrise-build-cache activate --interactive
+```
+
+ウィザードでは次の項目が尋ねられます。
+
+1. <strong>Sign in to Bitrise</strong>: 初回実行時に、認証のためブラウザーが開きます。CLIは認証情報をOSキーチェーンに保存し、自動的に更新するため、以降の実行ではこの手順はスキップされます。
+1. <strong>Select a workspace</strong>: Build Cacheを使用するworkspaceを選択します。アクセスできるものが1つだけの場合は、CLIが自動的に選択します。
+1. <strong>Which build tools should I set up</strong>: <strong>Gradle</strong>、<strong>Xcode</strong>、<strong>ccache (C/C++)</strong> が選択されていることを確認します。スペースキーでオプションを切り替え、Enterキーで確定します。
+1. <strong>Cache for all projects, or only opted-in ones?</strong>: このマシンに複数のプロジェクトがあり、その一部だけでキャッシュを使用したい場合を除き、デフォルトの <strong>Always</strong> のままにします。[プロジェクトごとのキャッシュスコープ](/bitrise-build-cache/getting-started-with-the-build-cache/per-project-cache-scoping)を参照してください。
+1. <strong>Display name for this machine's local invocations</strong>: Build Cacheダッシュボードにローカルビルドが表示される名前です。例: `local-<yourhandle>`。
+1. <strong>Enable cache push</strong>: デフォルトの <strong>Yes, push too</strong> のままにします。[キャッシュプッシュモード](#cache-push-mode)を参照してください。
+1. <strong>Keep the cache proxies running in the background</strong>: <strong>Yes, install + start</strong> を選択します。これにより、ヘルパープロセスがOSに登録され、シェルを再起動しても動作し続けます。
+
+:::important[Open a new terminal afterwards]
+
+Xcodeをアクティベートすると、シェルのrcファイルに1行が書き込まれ、`PATH`の先頭に`~/.bitrise-xcelerate/bin`が追加されます。現在のシェルはまだこれを読み込んでいないため、そのシェルで開始したビルドは`xcodebuild`ラッパーなしで実行され、`doctor`も警告しません。
+
+:::
+
+新しいターミナルを開くか、`source ~/.zshrc`を実行してから、ラッパーが有効になっていることを確認します。
+
+```bash
+which xcodebuild
+# → /Users/<you>/.bitrise-xcelerate/bin/xcodebuild
+```
+
+## セットアップの確認 {#verifying-the-setup}
+
+CLIのヘルスチェックを実行します。
+
+```bash
+bitrise-build-cache doctor
+```
+
+認証情報、バックエンドへの接続、ヘルパープロセス、ログディレクトリなど、ローカルセットアップのすべての部分の状態が報告され、最後に全体の判定が表示されます。
+
+```bash
+Bitrise Build Cache - doctor
+CLI version: 3.x.y
+
+Healthy:
+  ✓ auth                   OAuth login (keychain) (workspace <id>), token valid until <iso-timestamp>
+  ✓ keychain-smoke         Set/Get/Delete round-trip OK
+  ✓ auth-backend           latency <ms>, source=keychain, workspace=<id>
+  ✓ project-scope          mode=always; cache_push=true (machine config); no .bitrise-build-cache.json found in <cwd> or parents.; would gate this directory: no
+  ✓ ccache-binary          found at /opt/homebrew/bin/ccache
+  ✓ xcelerate-proxy        running (/var/folders/…/T/xcelerate-proxy.sock)
+  ✓ xcelerate-enrichment   no enrichment attempts yet
+  ✓ ccache-helper          running (~/.local/state/ccache/ccache.sock)
+  ✓ log-dirs               all log dirs present + writable
+
+Overall: ok
+```
+
+最初のビルドの後、`xcelerate-enrichment`は`no enrichment attempts yet`から`healthy`に変わります。CLIが自動的に修復できる問題を修復するには、`bitrise-build-cache doctor --fix --interactive`を実行してください。
+
+## Androidビルドの実行 {#running-an-android-build}
+
+1. ビルドがリモートキャッシュから取得するように、最初にプロジェクトのローカルビルド出力をクリーンアップします。アクティベーションの前に起動したGradleデーモンは新しい設定を読み込まないため、`--no-daemon`も指定してください。
+
+   ```bash
+   cd path/to/your/rn/project/android
+   ./gradlew clean --no-daemon
+   ```
+
+1. ビルドを実行します。
+
+   ```bash
+   cd ..
+   bitrise-build-cache react-native run -- npx react-native build-android
+   ```
+
+ウォームキャッシュにヒットしたビルドは、次のように終了します。
+
+```bash
+> Task :app:compileDebugKotlin FROM-CACHE
+
+BUILD SUCCESSFUL in 22s
+149 actionable tasks: 71 executed, 78 from cache
+
+[Bitrise Analytics] 155 tasks uploaded. Check invocation at
+    https://app.bitrise.io/build-cache/invocations/gradle/<uuid>
+```
+
+## iOSビルドの実行 {#running-an-ios-build}
+
+CLIのラッパーコマンドを通じてビルドを実行します。
+
+```bash
+bitrise-build-cache react-native run -- npx react-native build-ios
+```
+
+宛先と構成を完全に制御したい場合は、`xcodebuild`を直接呼び出します。
+
+```bash
+xcodebuild \
+  -workspace ios/<yourproject>.xcworkspace \
+  -scheme <yourscheme> \
+  -configuration Debug \
+  -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' \
+  CODE_SIGNING_ALLOWED=NO clean build
+```
+
+出力の最後に、ヒット数が0ではない`CompilationCacheMetrics`行と`[Bitrise Analytics] Invocation saved`リンクが表示されます。ネイティブモジュールは`ccache`を通じてコンパイルされ、その統計は同じ呼び出しに含まれます。
+
+ラップするコマンドとその理由の詳細については、[ネイティブビルドコマンドのラップ](/bitrise-build-cache/build-cache-for-react-native/wrapping-native-build-commands)を参照してください。
+
+## 動作の確認 {#checking-that-it-worked}
+
+| シグナル | 確認場所 | 成功時の状態 |
+|---|---|---|
+| `FROM-CACHE`と`Y from cache`のサマリー | Androidのビルド出力 | 0ではない`from cache`数 |
+| `CompilationCacheMetrics N / M (P%)` | iOSのビルド出力 | 0ではないヒット数 |
+| `[Bitrise Analytics] Invocation saved` | ビルド出力の最後の行 | 呼び出しリンクが表示される |
+| Dashboard | [Build Cacheページ](https://app.bitrise.io/build-cache/) | 表示名の下に、iOSビルドごとに1行、Androidビルドごとに1行 |
+| `bitrise-build-cache doctor` | お使いのシェル | `xcelerate-proxy`、`xcelerate-enrichment`、`ccache-helper`がすべて正常 |
+
+:::note[Explicit module build warnings]
+
+ラッパーが`SWIFT_ENABLE_EXPLICIT_MODULES=YES`を設定していても、`swift compiler caching requires explicit module build`の警告がいくつか表示されることがあります。Xcodeがラッパーのビルド設定が適用される前にこれらを出力するためであり、無視しても問題ありません。キャッシュヒット数から、キャッシュが機能していることを確認できます。
+
+:::
+
+プロジェクトによっては、explicit modulesでまったくビルドできず、`unable to resolve module dependency`で失敗することがあります。その場合は`--no-swift-cache`でアクティベートしてください。clangとObjective-Cのコンパイルのみがキャッシュされ、Swiftはキャッシュされません。ウィザードではこの点は尋ねられないため、非対話型のアクティベートコマンドを使用します。
+
+```bash
+bitrise-build-cache activate react-native --no-swift-cache
+```
+
+## キャッシュプッシュモード {#cache-push-mode}
+
+このガイドのセットアップでは、キャッシュプッシュを有効にしてBuild Cacheをアクティベートします。Android、iOS、ネイティブモジュールのビルドはすべて、共有キャッシュから読み取り、共有キャッシュに書き込みます。お使いのマシンがコンパイルしたものはすべて、チームメンバーやCIが再利用できるエントリになり、アクティビティは[Build Cacheページ](https://app.bitrise.io/build-cache/)に表示されます。
+
+ローカルビルドでキャッシュの読み取りのみを行いたい場合は、以下の[プルのみモードの選択](#opting-into-pull-only-mode)を参照してください。
+
+## プルのみモードの選択 {#opting-into-pull-only-mode}
+
+チームがすでにCIからキャッシュを蓄積していて、ローカルビルドでは読み取りのみを行いたい場合は、キャッシュプッシュをオフにします。トレードオフとして、ローカルビルドは何も提供しないため、CIがまだ実行されていないと、Androidビルドは`0 from cache`を報告し続け、iOSビルドは`0 / N (0%)`。
+
+ウィザードを再実行し、キャッシュプッシュのプロンプトで <strong>No, pull only</strong> と回答します。
+
+```bash
+bitrise-build-cache activate --interactive
+```
+
+これは3つのバックエンドすべてに一度に適用されるため、Android、iOS、ネイティブモジュールのビルドはキャッシュへの書き込みを停止します。
+
+ビルドが期待どおりに動作しない場合は、デバッグログを有効にしてウィザードを再実行します。
+
+```bash
+bitrise-build-cache activate --interactive --debug
+```
+
+## トラブルシューティング {#troubleshooting}
+
+まずCLIのヘルスチェックから始めてください。ローカルセットアップのすべての部分を検査し、自動的に修復できる問題を修復します。
+
+```bash
+bitrise-build-cache doctor --fix --interactive
+```
+
+それでも問題が解決しない場合は、次の表を確認してください。
+
+| 問題 | 対処方法 |
+|---|---|
+| ウィザードがターミナルが必要だと報告する | `TERM=dumb bitrise-build-cache activate --interactive`を実行して、行ベースモードを使用してください。 |
+| `which xcodebuild`が依然として`/usr/bin/xcodebuild`を指している | 新しいターミナルを開くか、`source ~/.zshrc`を実行してください。 |
+| iOSビルドにキャッシュのアクティビティがまったく表示されない | ラッパーを経由しないXcode.appからではなく、ターミナルから実行したことを確認してください。 |
+| Androidビルドが新しい設定を無視する | 実行中のGradleデーモンを`./gradlew --stop`で停止するか、`--no-daemon`を指定してください。 |
+| `doctor`が修復できない問題を報告する | `--debug`を付けて再実行し、詳細なコンテキストを確認してください。 |
+| ビルドがキャッシュに到達できない、またはキャッシュ呼び出しがタイムアウトする | VPN、ファイアウォール、またはプロキシがBitriseホストをブロックしている可能性があります。[ファイアウォールとVPN向けのネットワークエンドポイント](/bitrise-build-cache/getting-started-with-the-build-cache/network-endpoints-for-firewalls-and-vpns)と照らして確認してください。 |

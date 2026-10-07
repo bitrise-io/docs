@@ -1,0 +1,51 @@
+---
+title: "Bitrise.ioへのiOSアプリのデプロイ"
+description: "アプリをBitriseにデプロイすると、IPAファイルをダウンロードして、アプリのDevelopmentタイプのプロビジョニングプロファイルで指定されたデバイスにインストールできます。これにより、社内のテスターが簡単にアプリをテストできます。"
+sidebar_position: 1
+slug: /bitrise-ci/deploying/ios-deployment/deploying-an-ios-app-to-bitrise-io
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitriseにアプリをデプロイすると、IPAファイルをダウンロードし、アプリのDevelopment型プロビジョニングプロファイルで指定されたデバイスにインストールできるようになります。これにより、社内テスターは簡単にアプリをテストできます。
+
+:::note[キャッシュのクリア]
+
+公開インストールページからアプリをインストールしようとする際にキャッシュのクリアが必要な場合は、<strong>古いデバイスから設定を同期した場合は、キャッシュをクリアして新しいデバイスを登録する必要があります</strong>という行に表示されるリンクをクリックしてください。このリンクは<strong>Profile設定</strong>ページにリダイレクトされ、ガイドに記載されている手順に従うことができます。
+
+:::
+
+:::important[開発者証明書とDevelopmentプロファイル]
+
+iOSアプリを[bitrise.io](https://www.bitrise.io/)にデプロイするには、常にDeveloper型証明書とDevelopment型プロビジョニングプロファイルが必要です。App Storeにデプロイする場合でも、これらは引き続き必要です。これらは、IPAファイルをエクスポートする過程で、提供されたコードから.xcodearchiveファイルを作成するために使用されます。
+
+:::
+
+1. 自分のマシンで少なくとも一度はIPAファイルを生成します。
+1. [必要なcode signingファイルをすべてアップロード](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)し、Bitriseに登録します。
+1. 社内テスターにアプリをテストしてもらいたい場合は、[テストデバイスを登録](/bitrise-ci/testing/testing-ios-apps/registering-a-test-device)してください。
+1. <strong>Xcode Archive & Export for iOS</strong> <GlossTerm baseform="Step">Step</GlossTerm>が<GlossTerm baseform="Workflow">Workflow</GlossTerm>に含まれていることを確認してください。
+1. <strong>Automatic code signing</strong>の入力を、code signingに使用したいApple service connectionに設定します。使用可能なオプションは次のとおりです。
+
+   - automatic code signingを行わない場合: `off`
+   - [APIキー認証](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)を使用する場合: `api-key`
+   - [Apple ID認証](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)を使用する場合: `apple-id`
+1. Stepの<strong>Distribution method</strong>入力を`development`に設定します。
+
+   他のエクスポート方法を使用することもできますが、Bitriseにのみデプロイし、社内テスターの指定デバイスにアプリをインストールしたいだけであれば、`development`で十分です。
+1. [<strong>Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files</strong>](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) StepがWorkflowに含まれていることを確認してください。
+
+   デフォルトでは、<strong>Enable public page for the App?</strong>入力の値は`true`に設定されています。これにより、ビルドが実行されると、長くランダムなURLを持つ公開インストールページが利用可能になり、Bitriseに登録されていない他のユーザーと共有できます。このURLはメールでユーザーに送信されます。どのユーザーがメールを受け取るかは、<strong>Notify: User Roles</strong>と<strong>Notify: Emails</strong>の入力によって決まります。
+1. ビルドを開始します。
+1. ビルドが完了したら、アプリの<strong>Builds</strong>ページに移動し、最新のビルドをクリックします。
+1. <strong>Artifacts</strong>タブをクリックして、IPAファイルを見つけます。
+
+   公開インストールURLもここで確認できます。IPAファイルの横にある<strong>View artifact</strong>をクリックして詳細ページを開き、次に<strong>Manage access</strong>をクリックして、公開インストールリンクが<strong>Enabled</strong>に設定されていることを確認します。これにより、Bitriseに登録されていないユーザーにもリンクを送信できるようになります。
+
+   公開インストールページからアプリをインストールするには、iOSデバイスのネイティブSafariブラウザを使用する必要があります。サードパーティ製アプリからブラウジングしている場合、インストールリンクをクリックすることはできません。詳細については、[Artifactsタブからテストデバイスに.ipaファイルをインストールする](/bitrise-ci/deploying/ios-deployment/installing-an-ipa-file-from-the-public-install-page#installing-an-ipa-file-on-test-devices-from-the-artifacts-tab)をご覧ください。
+
+   ![Deploying_Android_apps_to_Bitrise_and_Google_Play.png](/img/_paligo/uuid-43ba1d01-1168-f540-9414-ace775c44ac5.png)
+
+以上です。これで、アプリのプロビジョニングプロファイルに含まれるすべてのデバイスにファイルをインストールできるようになりました。インストールリンクには必ずiOSデバイスのSafariブラウザからアクセスしてください。

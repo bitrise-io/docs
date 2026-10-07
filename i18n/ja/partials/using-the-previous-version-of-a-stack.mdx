@@ -1,0 +1,52 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## スタックの以前のバージョンを使用する {#using-the-previous-version-of-a-stack}
+
+Bitriseスタックは、ユーザーからのご要望や外部ツールの変更に基づいて定期的に更新されます。こうした更新は、避けるよう努めてはいますが、破壊的変更をもたらす可能性があります。
+
+そのような場合に備え、新しいバージョンのリリース後の数日間に限り、特定のスタックの以前のバージョンを使用できる一時的なオプションを提供しています。
+
+- これは一時的な仕組みにすぎません。インフラ上の理由から、以前のリリースを無期限に利用可能にしておくことはできません。通常、以前のバージョンはリリースの成功から数日後に削除されます。
+- 以前のバージョンが利用できなくなると、この機能が有効になっていても、新しいビルドはlatest versionで実行されます。
+- 特定のスタックについて、ある時点で以前のバージョンが利用できない場合、スイッチは無効になり、機能をオンにできません。その場合にトリガーされたビルドは、スタックの現在のバージョンで実行されます。
+
+スタックの以前のバージョンを使用するには、次の手順を実行します。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. BitriseにLog inし、左側の<strong>Bitrise CI</strong>を選択してから、プロジェクトを選択します。
+1. メインページの<strong><GlossTerm baseform="workflow">Workflows</GlossTerm></strong>ボタンをクリックします。
+
+   ![workflows-button.png](/img/_paligo/uuid-99bb894c-3e79-91c8-9e62-7e475573495d.png)
+1. <strong>Stacks & Machines</strong>タブに移動します。
+1. 設定するスタックを見つけます。デフォルトのスタックか、Workflow固有のスタックのいずれかです。
+1. 選択したスタックのマシンタイプの下にある<strong>Use previous version</strong>スイッチをオンにします。
+
+   これにより`bitrise.yml`ファイルが変更され、スタックの以前のバージョンが`meta`ブロックに追加されます。
+
+   ![prev-vers.png](/img/_paligo/uuid-eefe9d3d-ab41-f2c3-9657-97994dab1f73.png)
+
+</TabItem>
+<TabItem value="bitriseyml" label="Configuration YAML">
+
+1. `bitrise.yml`ファイルで`meta`ブロックを見つけます。
+1. 指定されたバージョン文字列を持つ`stack_rollback_version`フィールドを追加します。
+
+   :::tip[Finding out the previous version number]
+
+   以前のバージョン文字列を調べるには、古いビルドを開いて<strong>Details</strong>タブに切り替え、<strong>Stack image version</strong>フィールドを確認します。
+
+   :::
+
+   ```yaml
+   meta:
+     stack: osx-xcode-15.0.x
+     machine_type_id: g2-m1.8core
+     stack_rollback_version: 2-16-2
+   ```
+
+</TabItem>
+</Tabs>

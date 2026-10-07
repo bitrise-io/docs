@@ -1,0 +1,285 @@
+---
+title: "Copilot IDEへのBitrise MCPサーバーのインストール"
+sidebar_label: "Copilot IDE"
+sidebar_position: 5
+slug: /bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-other-copilot-ides
+---
+# Bitrise MCPサーバーを Copilot IDE にインストールする {#install-bitrise-mcp-server-in-copilot-ides}
+
+各種 IDE の GitHub Copilot における Bitrise MCPサーバーのクイックセットアップガイドです。VS Code での手順については、[Bitrise MCP サーバーを VS Code にインストールする](/bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-vscode)を参照してください。
+
+### 要件: {#requirements}
+1. GitHub Copilot ライセンス: Copilot へのアクセスには、いずれかの Copilot プラン(Free、Pro、Pro+、Business、Enterprise)が必要です
+2. Bitrise アカウント: Bitrise MCPサーバーへのアクセスには Bitrise アカウントが必要です
+3. MCP Servers in Copilot ポリシー: Copilot のシートを割り当てている組織は、Copilot for VS Code および Copilot Coding Agent におけるすべての MCP アクセスに対してこのポリシーを有効にする必要があります。他の Copilot IDE についても、今後数か月以内にこのポリシーへ移行される予定です
+4. ローカルセットアップの場合: [Go](https://go.dev/)(1.23 以上)がインストールされていること、および Bitrise Personal Access Token が必要です
+
+以下のリモートセットアップでは OAuth を使用します。初回のツール使用時に IDE がブラウザを開き、Bitrise にサインインするだけで、トークンを貼り付ける必要はありません。MCP OAuth に対応していない古い Copilot IDE ビルドについては、各 IDE ごとに PAT ベースのフォールバック構成を用意しています。
+
+## Visual Studio
+
+Visual Studio 2022 バージョン 17.14.9 以降が必要です。
+
+### リモートサーバー(推奨) {#remote-server-recommended}
+
+リモート Bitrise MCP サーバーは Bitrise によってホストされており、ローカルセットアップ不要で自動更新が提供されます。
+
+#### 構成 {#configuration}
+1. ソリューションまたは %USERPROFILE% ディレクトリに `.mcp.json` ファイルを作成します。
+2. 次の構成を追加します:
+
+   ```json
+   {
+     "servers": {
+       "bitrise": {
+         "url": "https://mcp.bitrise.io"
+       }
+     }
+   }
+   ```
+3. ファイルを保存します。CodeLens が更新され、新しいサーバーへの認証方法が表示されるまで待ってから、それを実行し、ブラウザで Bitrise サインインを完了します。
+4. GitHub Copilot Chat ウィンドウで、Agent モードに切り替えます。
+5. Chat ウィンドウでツールピッカーを開き、「bitrise」MCP サーバーから1つ以上のツールを有効にします。
+
+#### フォールバック: PAT ベースの認証 {#fallback-pat-based-authentication}
+
+```json
+{
+  "servers": {
+    "bitrise": {
+      "url": "https://mcp.bitrise.io",
+      "headers": {
+        "Authorization": "Bearer YOUR_BITRISE_PAT"
+      }
+    }
+  }
+}
+```
+
+[Account Settings → Security](https://app.bitrise.io/me/account/security)から [PAT を作成](https://devcenter.bitrise.io/api/authentication)します。
+
+### ローカルサーバー(Go が必要) {#local-server-go-required}
+
+#### 構成 {#configuration-1}
+1. ソリューションまたは %USERPROFILE% ディレクトリに `.mcp.json` ファイルを作成します。
+2. 次の構成を追加します:
+
+   ```json
+   {
+     "servers": {
+       "bitrise": {
+         "type": "stdio",
+         "command": "go",
+         "args": ["run", "github.com/bitrise-io/bitrise-mcp/v2@v2"],
+         "env": {
+           "BITRISE_TOKEN": "YOUR_BITRISE_PAT"
+         }
+       }
+     }
+   }
+   ```
+3. ファイルを保存します。CodeLens が更新され、ユーザー入力を行う方法が表示されるまで待ってから、それを実行し、[Bitrise Account Settings/Security](https://app.bitrise.io/me/account/security)で生成した PAT を貼り付けます。
+4. GitHub Copilot Chat ウィンドウで、Agent モードに切り替えます。
+5. Chat ウィンドウでツールピッカーを開き、「bitrise」MCP サーバーから1つ以上のツールを有効にします。
+
+<strong>Documentation:</strong> [Visual Studio MCP ガイド](https://learn.microsoft.com/visualstudio/ide/mcp-servers)
+
+## JetBrains IDE {#jetbrains-ides}
+
+Agent モードと MCP サポートは、IntelliJ IDEA、PyCharm、WebStorm などの JetBrains IDE でパブリックプレビューとして利用できます。
+
+### リモートサーバー(推奨) {#remote-server-recommended-1}
+
+#### Steps の構成 {#configuration-steps}
+1. GitHub Copilot プラグインをインストールまたは更新します。
+2. ステータスバーの <strong>GitHub Copilot アイコン</strong> → <strong>Edit Settings</strong> → <strong>Model Context Protocol</strong> → <strong>Configure</strong> の順にクリックします。
+3. Add configuration:
+
+   ```json
+   {
+     "servers": {
+       "bitrise": {
+         "url": "https://mcp.bitrise.io"
+       }
+     }
+   }
+   ```
+4. `Ctrl + S` または `Command + S` を押して保存するか、`mcp.json` ファイルを閉じます。初回のツール使用時に、IDE がブラウザを開いて Bitrise サインインを行います。
+
+#### フォールバック: PAT ベースの認証 {#fallback-pat-based-authentication-1}
+
+```json
+{
+  "servers": {
+    "bitrise": {
+      "url": "https://mcp.bitrise.io",
+      "requestInit": {
+        "headers": {
+          "Authorization": "Bearer YOUR_BITRISE_PAT"
+        }
+      }
+    }
+  }
+}
+```
+
+### ローカルサーバー(Go が必要) {#local-server-go-required-1}
+
+```json
+{
+  "servers": {
+    "bitrise": {
+      "command": "go",
+      "args": [
+        "run",
+        "github.com/bitrise-io/bitrise-mcp/v2@v2"
+      ],
+      "env": {
+        "BITRISE_TOKEN": "YOUR_BITRISE_PAT"
+      }
+    }
+  }
+}
+```
+
+<strong>Documentation:</strong> [JetBrains Copilot ガイド](https://plugins.jetbrains.com/plugin/17718-github-copilot)
+
+## Xcode
+
+Agent モードと MCP サポートは、Xcode 向けにパブリックプレビューとして利用できるようになりました。
+
+### リモートサーバー(推奨) {#remote-server-recommended-2}
+
+#### Steps の構成 {#configuration-steps-1}
+1. [Xcode 向け GitHub Copilot](https://github.com/github/CopilotForXcode)をインストールまたは更新します。
+2. <strong>Xcode アプリ向け GitHub Copilot</strong> → <strong>Agent Mode</strong> → <strong>🛠️ Tool Picker</strong> → <strong>Edit Config</strong> の順に開きます。
+3. MCP サーバーを構成します:
+
+   ```json
+   {
+     "servers": {
+       "bitrise": {
+         "url": "https://mcp.bitrise.io"
+       }
+     }
+   }
+   ```
+4. 初回のツール使用時に、ブラウザで Bitrise サインインフローを完了します。
+
+#### フォールバック: PAT ベースの認証 {#fallback-pat-based-authentication-2}
+
+```json
+{
+  "servers": {
+    "bitrise": {
+      "url": "https://mcp.bitrise.io",
+      "requestInit": {
+        "headers": {
+          "Authorization": "Bearer YOUR_BITRISE_PAT"
+        }
+      }
+    }
+  }
+}
+```
+
+### ローカルサーバー(Go が必要) {#local-server-go-required-2}
+
+```json
+{
+  "servers": {
+    "bitrise": {
+      "command": "go",
+      "args": [
+        "run",
+        "github.com/bitrise-io/bitrise-mcp/v2@v2"
+      ],
+      "env": {
+        "BITRISE_TOKEN": "YOUR_BITRISE_PAT"
+      }
+    }
+  }
+}
+```
+
+<strong>Documentation:</strong> [Xcode Copilot ガイド](https://devblogs.microsoft.com/xcode/github-copilot-exploring-agent-mode-and-mcp-support-in-public-preview-for-xcode/)
+
+## Eclipse
+
+MCP サポートは、Eclipse 2024-03 以降、および latest version の GitHub Copilot プラグインで利用できます。
+
+### リモートサーバー(推奨) {#remote-server-recommended-3}
+
+#### Steps の構成 {#configuration-steps-2}
+1. Eclipse Marketplace から GitHub Copilot 拡張機能をインストールします。
+2. <strong>GitHub Copilot アイコン</strong> → <strong>Edit Preferences</strong> → (<strong>GitHub Copilot</strong> の下にある)<strong>MCP</strong> の順にクリックします。
+3. Bitrise MCP サーバー構成を追加します:
+
+   ```json
+   {
+     "servers": {
+       "bitrise": {
+         "url": "https://mcp.bitrise.io"
+       }
+     }
+   }
+   ```
+4. 「Apply and Close」ボタンをクリックします。初回のツール使用時に、ブラウザで Bitrise サインインを完了します。
+
+#### フォールバック: PAT ベースの認証 {#fallback-pat-based-authentication-3}
+
+```json
+{
+  "servers": {
+    "bitrise": {
+      "url": "https://mcp.bitrise.io",
+      "requestInit": {
+        "headers": {
+          "Authorization": "Bearer YOUR_BITRISE_PAT"
+        }
+      }
+    }
+  }
+}
+```
+
+### ローカルサーバー(Go が必要) {#local-server-go-required-3}
+
+```json
+{
+  "servers": {
+    "bitrise": {
+      "command": "go",
+      "args": [
+        "run",
+        "github.com/bitrise-io/bitrise-mcp/v2@v2"
+      ],
+      "env": {
+        "BITRISE_TOKEN": "YOUR_BITRISE_PAT",
+        "PATH": "PATH to bin directory of go:PATH to directory of git"
+      }
+    }
+  }
+}
+```
+
+<strong>Documentation:</strong> [Eclipse Copilot プラグイン](https://marketplace.eclipse.org/content/github-copilot)
+
+## 使用方法 {#usage}
+
+セットアップ後:
+1. IDE を完全に再起動します
+2. Copilot Chat で Agent モードを開きます
+3. 試してみましょう: *「Bitrise アプリを一覧表示して」* — 最初の呼び出しでリモートサーバーの OAuth サインインがトリガーされます
+4. これで Copilot が Bitrise データにアクセスし、操作を実行できるようになります
+
+## 高度な構成 {#advanced-configuration}
+
+特定の API グループを有効化または無効化する方法については、[Tools](/bitrise-platform/ai/bitrise-mcp/tools) を参照してください。
+
+## トラブルシューティング {#troubleshooting}
+
+- <strong>OAuth flow doesn't open browser</strong>: Copilot の統合が MCP OAuth をサポートするビルドであることを確認してください。古いバージョンでは PAT ベースの認証にフォールバックしてください。
+- <strong>接続の問題</strong>: IDE のバージョンの互換性を確認してください
+- <strong>Authentication エラー</strong>: 組織で Copilot の MCP ポリシーが有効になっているかを確認してください
+- <strong>Tools not appearing</strong>: 構成変更後に IDE を再起動し、エラーログを確認してください

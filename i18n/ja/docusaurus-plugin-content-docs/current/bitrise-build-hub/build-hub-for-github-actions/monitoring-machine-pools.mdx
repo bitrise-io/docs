@@ -1,0 +1,90 @@
+---
+title: "machine poolsの監視"
+description: "マシンとステージのステータスを確認し、stdoutとstderrのログを表示し、リモートアクセスで実行中のマシンに接続し、Build Hubのmachine poolsをフィルターまたは検索します。"
+sidebar_position: 4
+slug: /bitrise-build-hub/build-hub-for-github-actions/monitoring-machine-pools-for-github-actions
+---
+
+import GlossTerm from '@site/src/components/GlossTerm';
+
+GitHub Actions のジョブがBuild Hub のmachine poolsのいずれかを対象にすると、Bitriseがそれを実行するマシンをプロビジョニングします。このページでは、マシンが稼働している間に確認・操作できる内容、つまりステータスの確認、ログの表示、リモート接続、そして目的のプールやマシンを見つける方法について説明します。
+
+左側のナビゲーションバーで<strong>Build Hub</strong>を選択し、マシンプールをクリックして開きます。各プールにはマシンの一覧が表示され、任意のマシン行を展開すると詳細を確認できます。
+
+## マシンとプールのステータス {#machine-and-pool-statuses}
+
+プールカードには、プール全体のステータスが表示されます。
+
+| ステータス | 説明 |
+| --- | --- |
+| Up-to-date | プール内のすべてのマシンが、プールの現在の設定で実行されています。 |
+| Updating... | プールが最近再設定され、一部のマシンがまだ置き換え中です。 |
+| Unspecified | プールのステータスを現在判定できません。 |
+
+プールのテーブル内の各マシンには、それぞれのステータスがあります。
+
+| ステータス | 説明 |
+| --- | --- |
+| Pending... | マシンがスケジュールまたは起動を待っています。 |
+| Running | マシンが実行中で、プールの設定と一致しています。 |
+| Out-of-date | マシンはまだ実行中ですが、起動後にプールの設定が変更されています。次回のプールのローリングアップデート時に置き換えられます。 |
+| Finished | マシンが正常に終了しました。 |
+| Failed | マシンが失敗して終了しました。 |
+| Unspecified | マシンのステータスを現在判定できません。通常は応答がないことが原因です。 |
+
+## WarmupステージとMainステージ {#warmup-and-main-stages}
+
+すべてのマシンは、2つのステージを経て進行します。
+
+- <strong>Warmup</strong>: マシンが依存関係をインストールし、環境を準備します。
+- <strong>Main</strong>: マシンのウォームアップが完了し、作業を実行します。このステージで、GitHub Actions ランナーがワークフローのジョブを実際に実行します。
+
+マシンテーブルの<strong>Stage</strong>列には、マシンが現在どのステージにあるかが表示されます。マシン行を展開すると、<strong>Warmup stage</strong>タブと<strong>Main stage</strong>タブが表示され、それぞれに個別のステータスがあります。
+
+| ステージのステータス | 説明 |
+| --- | --- |
+| Pending | ステージがスケジュールまたは開始を待っています。 |
+| Running | ステージが進行中です。 |
+| Complete | ステージが正常に完了しました。 |
+| Failed | ステージが失敗して終了しました。 |
+| Skipped | ステージがスキップされました。通常は、前のステージ中にマシンが終了したことが原因です。 |
+
+各ステージタブには、開始日時、終了日時、所要時間も表示されます。
+
+## ログの表示 {#viewing-logs}
+
+マシン行を展開し、<strong>Warmup stage</strong>または<strong>Main stage</strong>タブを開くと、そのステージの<strong>Logs</strong>セクションが表示されます。ログはステージが開始された後にのみ利用できるため、このセクションはステージが`Running`、`Complete`、または`Failed`の状態にある場合にのみ表示されます。ステージがまだ`Pending`の場合や`Skipped`だった場合には、表示する内容がありません。
+
+ログ出力の上にあるstdout/stderrの切り替えを使用して、2つのログストリームを切り替えます。
+
+- <strong>stdout</strong>: ステージのプロセスが実行中に出力される、通常の進行状況やステータスメッセージです。
+- <strong>stderr</strong>: 標準エラーストリームです。トラブルシューティングに使用します。エラーメッセージとデバッグログが含まれているため、ステージの問題をデバッグしやすくなります。
+
+ステージの実行中は、ログがリアルタイムでストリーミングされます。
+
+## リソース使用状況の確認 {#checking-resource-usage}
+
+<GlossTerm baseform="workspace">workspace</GlossTerm>でリソース使用状況のモニタリングが有効になっている場合、マシンの展開された行には<strong>Monitoring</strong>タブも表示され、CPU、メモリ、ロードアベレージ、スワップ、ネットワークインターフェース、マウントパス、ディスク使用量のチャートが確認できます。チャートの上にあるtime rangeセレクターを使用して、拡大・縮小できます。
+
+## リモートアクセスでマシンに接続する {#connecting-to-a-machine-with-remote-access}
+
+Build Hubでは、実行中のマシンに直接接続する2つの方法がサポートされています。SSHと、対応しているイメージ向けのVNC経由の画面共有です。どちらも、ワークフローを実行している間にマシンへ直接アクセスしてトラブルシューティングできます。
+
+マシンが<strong>Main stage</strong>にあり、終了も失敗もしていない間は、直接接続できます。
+
+1. マシンの行を展開し、<strong>Main stage</strong>タブを開きます。
+1. <strong>Remote access</strong>のトグルをオンにします。
+
+   接続をリクエストしてから4時間後に、自動的に停止します。
+1. 接続が開いたら、必要な認証情報をコピーします。
+
+   - <strong>SSH</strong>: すぐに使用できる`Command`と`Password`です。
+   - <strong>Screenshare (VNC)</strong>: `Address`、`Username`、`Password`です。VNCは対応しているイメージでのみ利用できます。
+
+マシンテーブルの<strong>Remote access</strong>列には<strong>On</strong>または<strong>Off</strong>バッジが表示されるため、現在接続が開いているマシンを一目で確認できます。
+
+## machine poolsのフィルタリングと検索 {#filtering-and-searching-machine-pools}
+
+<strong>Machine pools</strong>一覧ページで<strong>+ Add filter</strong>をクリックすると、<strong>Label</strong>でプールをフィルタリングできます。プール名、イメージ、マシンタイプのラベル(または追加したカスタムラベル)から1つ以上を選択して、一覧を絞り込みます。フィルターの隣にある検索ボックスを使用すると、名前でプールを検索できます。
+
+プールのマシンテーブル内で、<strong>Machine ID</strong>、<strong>Stage</strong>、または<strong>Status</strong>の列見出しをクリックすると、その列でマシンを並べ替えられます。

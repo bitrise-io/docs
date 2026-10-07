@@ -1,0 +1,100 @@
+---
+title: "Apple認証が必要なSteps"
+description: "APIキーまたはApple IDのいずれかを使ってAppleサービスへの接続を必要とするBitrise Stepsをすべて確認できます。"
+sidebar_position: 5
+slug: /bitrise-platform/integrations/apple-services-connection/steps-requiring-apple-authentication
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+このガイドでは、認証が必要なすべてのStepsと、アプリの要件に応じて選択できる認証方法について説明します。
+
+## [Manage iOS Code Signing](https://github.com/bitrise-steplib/bitrise-step-manage-ios-code-signing) Step
+
+[このStep](https://www.bitrise.io/integrations/steps/manage-ios-code-signing)は、プロジェクトがBitriseでビルドされる前に、必要なcode signingアセットのセットアップを行います。Stepは、APIキーまたはApple IDとパスワードによる認証を使用してAppleサービスに接続します。接続を設定すると、Stepは次のことを行います。
+
+- iOSプロジェクトに必要なプロビジョニングプロファイルを生成、更新、ダウンロードします。
+- Apple Developer Siteでプロジェクトのバンドル ID を確認し、登録します。
+- Bitriseアカウントに接続されている iOS デバイスをApp Store Connectに登録します。
+
+[APIキーを使用してAppleサービスに接続する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key)
+
+[Apple IDを使用してAppleサービスに接続する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id)
+
+[APIキーを使用してStepで認証する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-step-inputs#authenticating-in-a-step-with-api-key)
+
+## [Xcode Archive & Export for iOS](https://github.com/bitrise-steplib/steps-xcode-archive) Step
+
+Stepは、`xcodebuild archive`コマンドを実行してXcodeプロジェクトをアーカイブし、次に`xcodebuild -exportArchive`コマンドでアーカイブをIPAファイルにエクスポートします。このIPAファイルは共有したり、テストデバイスにインストールしたり、App Store Connectにアップロードしたりできます。
+
+<strong>Automatic code signing method</strong>入力でメソッドを指定した場合、Stepは iOS のcode signingも実行できます。デフォルトではオフになっています。iOS のcode signingを実行するには、APIキーまたはApple ID認証を使用できます。
+
+[APIキーを使用してAppleサービスに接続する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key)
+
+[Apple IDを使用してAppleサービスに接続する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id)
+
+[APIキーを使用してStepで認証する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-step-inputs#authenticating-in-a-step-with-api-key)
+
+## [iOS および tvOS Xcode archiveのエクスポート](https://github.com/bitrise-steplib/steps-export-xcarchive) Step {#export-ios-and-tvos-xcode-archive-step}
+
+既存の iOS および tvOS の .xcarchive ファイルからIPAをエクスポートします。<GlossTerm baseform="Workflow">Workflows</GlossTerm>に複数の[iOS および tvOS Xcode archiveのエクスポート](https://github.com/bitrise-steplib/steps-export-xcarchive)Stepsを追加することで、署名済みのIPAファイルを複数作成できます。
+
+<strong>Automatic code signing method</strong>入力でメソッドを指定した場合、Stepは iOS のcode signingも実行できます。デフォルトではオフになっています。iOS のcode signingを実行するには、APIキーまたはApple ID認証を使用できます。
+
+[APIキーを使用してAppleサービスに接続する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key)
+
+[Apple IDを使用してAppleサービスに接続する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id)
+
+[APIキーを使用してStepで認証する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-step-inputs#authenticating-in-a-step-with-api-key)
+
+## [Xcode Build for testing for iOS](https://github.com/bitrise-steplib/steps-xcode-build-for-test) Step
+
+Stepは、build-for-testing オプションを付けてXcodeの`xcodebuild`コマンドを実行します。これにより、アプリと関連するテストがビルドされるため、たとえばサードパーティのテストサービスにアップロードして実機でテストを実行できます。Stepは`.xctestrun`ファイルも作成します。実機でテストを実行するにはcode signingが必要です。
+
+<strong>Automatic code signing method</strong> Step入力を使用すると、Bitriseで指定したApple service connectionに基づいてApple Developer アカウントにログインし、<strong>Distribution method</strong>に基づいてプロジェクトに必要なプロビジョニングプロファイルをダウンロードできます。
+
+[APIキーを使用してAppleサービスに接続する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key)
+
+[Apple IDを使用してAppleサービスに接続する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id)
+
+[APIキーを使用してStepで認証する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-step-inputs#authenticating-in-a-step-with-api-key)
+
+## Deliver を使用したDeploy to App Store Connect Step {#deploy-to-app-store-connect-with-deliver-step}
+
+[このStep](https://www.bitrise.io/integrations/steps/deploy-to-itunesconnect-deliver)を使用すると、スクリーンショット、メタデータ、バイナリを[https://appstoreconnect.apple.com/](https://appstoreconnect.apple.com/)にアップロードし、fastlane の[deliver](https://docs.fastlane.tools/actions/deliver/)アクションを使用してアプリを App Store の審査に提出できます。[<strong>Deliver を使用したDeploy to App Store Connect (旧 iTunes Connect)</strong>](https://github.com/bitrise-steplib/steps-deploy-to-itunesconnect-deliver) Stepは、Apple IDまたはApp Store Connect API、あるいはStep inputsを使用してApple Developer アカウントに接続できます。2FAを有効にしたApple IDの場合、<strong>Deliver を使用したDeploy to App Store Connect (旧 iTunes Connect)</strong> StepはプロフィールのApple Serviceページで設定できるApple ID認証でのみ動作する点にご注意ください。デフォルトの方法はAPIキー認証です。プロジェクトに合ったconnection methodを選択してください。
+
+[APIキーを使用してAppleサービスに接続する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key)
+
+[Apple IDを使用してAppleサービスに接続する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id)
+
+[Step inputsを使用してAppleサービスに接続する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-step-inputs)
+
+## Deploy to App Store Connect - Application Loader (旧 iTunes Connect) Step {#deploy-to-app-store-connect---application-loader-formerly-itunes-connect-step}
+
+[このStep](https://www.bitrise.io/integrations/steps/deploy-to-itunesconnect-application-loader)を使用すると、バイナリ (.ipa または .pkg ファイル) を[https://appstoreconnect.apple.com/](https://appstoreconnect.apple.com/)にアップロードできます。[<strong>Deploy to App Store Connect - Application Loader (旧 iTunes Connect)</strong>](https://github.com/bitrise-steplib/steps-deploy-to-itunesconnect-application-loader) Stepは、App Store Connect API、Apple IDとパスワード、またはStep inputsのいずれかを使用してApple Developer アカウントに接続できます。プロジェクトに合ったconnection methodを選択してください。
+
+[APIキーを使用してAppleサービスに接続する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key)
+
+[Apple IDを使用してAppleサービスに接続する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id)
+
+[Step inputsを使用してAppleサービスに接続する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-step-inputs)
+
+## [fastlane](https://github.com/bitrise-io/steps-fastlane) Step
+
+このStepを使用すると、ローカルで実行する場合と同じように、[*fastlane*](https://fastlane.tools/)のレーンをBitrise上で実行できます。
+
+2FAを有効にしたApple IDの場合、[<strong>Fastlane</strong>](https://github.com/bitrise-io/steps-fastlane) Stepはプロフィールの<strong>Apple Service</strong>ページで設定できるApple ID認証でのみ動作する点にご注意ください。
+
+:::note[二要素認証がFastlane Stepで失敗する]
+
+場合によっては、[<strong>Fastlane</strong>](https://github.com/bitrise-io/steps-fastlane) StepがApple Developer portalへの接続を試みる際にFASTLANE_SESSION変数の値を正しく取得できず、二要素認証が失敗することがあります。この問題については[回避策の可能性](https://support.bitrise.io/hc/en-us/articles/360017174577)を確認してください。
+
+:::
+
+[APIキーを使用してAppleサービスに接続する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-api-key)
+
+[Apple IDを使用してAppleサービスに接続する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id)
+
+[Step inputsを使用してAppleサービスに接続する](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-step-inputs)

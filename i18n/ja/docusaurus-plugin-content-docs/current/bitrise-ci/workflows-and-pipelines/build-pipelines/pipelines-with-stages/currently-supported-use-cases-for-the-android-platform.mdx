@@ -1,0 +1,108 @@
+---
+title: "Androidプラットフォームで現在サポートされているユースケース"
+sidebar_position: 3
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+一般的なAndroidのユースケースに基づいて、いくつかの<GlossTerm baseform="Pipeline">Pipeline</GlossTerm>レシピを用意しています。これらには、ユーザーが実行する必要がある最も頻繁なタスクの一部が含まれています。この例には、ほとんどの場合そのままコピーして貼り付けられる<GlossTerm baseform="Workflow">Workflows</GlossTerm>全体が含まれています。
+
+
+## (Android) 複数のデバイスまたはシャードでUIテストを並列実行する {#android-run-ui-tests-in-parallel-on-multiple-devices-or-shards}
+
+### 説明 {#description}
+
+パイプラインを利用してWorkflows、単一モジュールのUI（インストルメンテーション）テストを並列実行します。テストはシャード単位、またはデバイス単位で並列実行できます。
+
+Pipelineには、直列に実行される2つのステージが含まれています。
+
+1. `build_for_ui_testing`: このステージでは、テストで使用するAPKをビルドするために`android-build-for-ui-testing` <GlossTerm baseform="step">Step</GlossTerm>を実行するWorkflow（`build_for_ui_testing`とも呼ばれます）を実行し、後続のステージで使用できるようにこれらのAPKを保存するために`deploy-to-bitrise-io` Stepを実行します。このステージを実際のテストと分離して実行することで、各テストステージがAPKを再ビルドする必要がなく、事前にビルドされたこれらのAPKを使用できるようになります。
+1. `run_ui_tests_on_devices`: このステージでは、3つのUIテストWorkflows（`ui_test_on_phone`、`ui_test_on_tablet`、`ui_test_on_foldable`）を並列実行し、それぞれ`android-instrumented-test` Stepを使用して、前のWorkflowでビルドされたAPKに対し、各デバイスタイプでUIテストを実行します。
+
+   ![android_example.png](/img/_paligo/uuid-f545c6a6-701f-485f-c852-70ed2222392a.png)
+
+### 手順 {#instructions}
+
+この設定を新しいBitriseのサンプルプロジェクトでテストするには、次の操作を行います。
+
+1. 新しいアプリを作成するには、[New App作成ページ](https://app.bitrise.io/apps/add)にアクセスしてください。
+1. gitリポジトリの選択を求められたら、<strong>Other/Manual</strong>を選択し、<strong>Git repository (clone) URL</strong>フィールドにサンプルプロジェクトリポジトリのURL（`https://github.com/bitrise-io/Bitrise-Android-Modules-Sample.git`）を貼り付けてください。
+1. 表示されるポップアップで、これがパブリックリポジトリであることを確認してください。
+1. スキャンする`main`ブランチを選択してください。
+1. <GlossTerm baseform="project scanner">プロジェクトスキャナー</GlossTerm>が完了するまでお待ちください。
+1. 指定するモジュールとして`app`を入力してください。
+1. 指定するバリアントとして`debug`を入力してください。
+1. 通常どおりプロンプトを進めてください。変更は必要ありません。
+1. 新しいBitrise <GlossTerm baseform="project">プロジェクト</GlossTerm>の<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>を開いてください。
+1. Workflow Editorの上部にある<strong>YAML</strong>に切り替え、既存のYAMLの内容をサンプルの`[bitrise.yml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-ui-tests-on-multiple-devices.md#bitriseyml)`の内容に置き換えてください。
+1. <strong>Start/Schedule a Build</strong>ボタンをクリックし、ポップアップ下部の<strong>Workflow, Pipeline</strong>ドロップダウンメニューで`ui_test_on_multiple_devices`オプションを選択してください。
+
+### bitrise.yml
+
+GitHubリンク: [https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-ui-tests-on-multiple-devices.md#bitriseyml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-ui-tests-on-multiple-devices.md#bitriseyml)
+
+
+## (Android) ユニットテストとUIテストの並列実行 {#android-running-unit-and-ui-tests-in-parallel}
+
+### 説明 {#description-1}
+
+Pipelinesを利用して、ユニットテストとUIテストを並列実行します。
+
+このPipelineには、2つのWorkflowsを並列実行する1つのステージ（`stage_unit_and_ui_test`）が含まれています。
+
+1. `unit_tests`: このWorkflowは、`android-unit-test` Stepを使用して、指定されたモジュールとバリアントのユニットテストを実行するだけです。
+1. `ui_tests`: このWorkflowは、`android-build-for-ui-testing`Stepを使用して指定されたモジュールとバリアントをビルドし、`avd-manager` Stepを使用してエミュレーターを起動し、`wait-for-android-emulator` Stepを使用してエミュレーターの起動を待ち、`android-instrumented-test` Stepを使用してUIテストを実行します。
+
+   ![android_example2.png](/img/_paligo/uuid-573f2524-97b7-94ea-38d4-c76306fafa29.png)
+
+### 手順 {#instructions-1}
+
+1. 新しいアプリを作成するには、[New App作成ページ](https://app.bitrise.io/apps/add)にアクセスしてください。
+1. gitリポジトリの選択を求められたら、<strong>Other/Manual</strong>を選択し、<strong>Git repository (clone) URL</strong>フィールドにサンプルプロジェクトリポジトリのURL（`https://github.com/bitrise-io/Bitrise-Android-Modules-Sample.git`）を貼り付けてください。
+1. 表示されるポップアップで、これがパブリックリポジトリであることを確認してください。
+1. スキャンする`main`ブランチを選択してください。
+1. プロジェクトスキャナーが完了するまでお待ちください。
+1. 指定するモジュールとして`app`を入力してください。
+1. 指定するバリアントとして`debug`を入力してください。
+1. 通常どおりプロンプトを進めてください。変更は必要ありません。
+1. 新しいBitrise projectのWorkflow Editorを開いてください。
+1. Workflow Editorの上部にある<strong>YAML</strong>に切り替え、既存のYAMLの内容をサンプルの`[bitrise.yml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-unit-and-ui-tests.md#bitriseyml)`の内容に置き換えてください。
+1. <strong>Start/Schedule a Build</strong>ボタンをクリックし、ポップアップ下部の<strong>Workflow, Pipeline</strong>ドロップダウンメニューで`pipeline_unit_and_ui_test`オプションを選択してください。
+
+### bitrise.yml
+
+GitHubリンク: [https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-unit-and-ui-tests.md#bitriseyml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-unit-and-ui-tests.md#bitriseyml)
+
+
+## (Android) モジュール単位でのユニットテストのシャーディング {#android-unit-test-sharding-by-module}
+
+### 説明 {#description-2}
+
+Pipelinesを利用してWorkflows、モジュール化されたアプリのユニットテストを並列実行します。
+
+このPipelineには、2つのWorkflowsを並列実行する1つのステージ（stage_unit_test）が含まれています。
+
+1. `unit_test_app`: このWorkflowは、`android-unit-test` Stepを使用してアプリモジュールのユニットテストを実行します。
+1. `unit_test_library`: このWorkflowは、`android-unit-test` Stepを使用して`lib-example`モジュールのユニットテストを実行します。
+
+   ![android_example_3.png](/img/_paligo/uuid-fb91dae2-cdfe-d531-2559-c02a58915ce3.png)
+
+### 手順 {#instructions-2}
+
+1. 新しいアプリを作成するには、[New App作成ページ](https://app.bitrise.io/apps/add)にアクセスしてください。
+1. gitリポジトリの選択を求められたら、<strong>Other/Manual</strong>を選択し、<strong>Git repository (clone) URL</strong>フィールドにサンプルプロジェクトリポジトリのURL（`https://github.com/bitrise-io/Bitrise-Android-Modules-Sample.git`）を貼り付けてください。
+1. 表示されるポップアップで、これがパブリックリポジトリであることを確認してください。
+1. スキャンする`main`ブランチを選択してください。
+1. プロジェクトスキャナーが完了するまでお待ちください。
+1. 指定するモジュールとして`app`を入力してください。
+1. 指定するバリアントとして`debug`を入力してください。
+1. 通常どおりプロンプトを進めてください。変更は必要ありません。
+1. 新しいBitrise projectのWorkflow Editorを開いてください。
+1. Workflow Editorの上部にある<strong>YAML</strong>に切り替え、既存のYAMLの内容をサンプルの`[bitrise.yml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-testing-unit-test-shards.md#bitriseyml)`の内容に置き換えてください。
+1. <strong>Start/Schedule a Build</strong>ボタンをクリックし、ポップアップ下部の<strong>Workflow, Pipeline</strong>ドロップダウンメニューで`pipeline_unit_test`オプションを選択してください。
+
+### bitrise.yml
+
+GitHubリンク: [https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-testing-unit-test-shards.md#bitriseyml](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/android-parallel-testing-unit-test-shards.md#bitriseyml)

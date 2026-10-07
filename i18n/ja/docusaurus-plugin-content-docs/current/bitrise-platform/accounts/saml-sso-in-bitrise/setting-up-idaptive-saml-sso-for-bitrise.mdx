@@ -1,0 +1,54 @@
+---
+title: "IdaptiveSAMLSSO"
+description: "Idaptiveを使って、BitriseWorkspaceにSAMLSSOを追加します。"
+sidebar_position: 8
+slug: /bitrise-platform/accounts/saml-sso-in-bitrise/setting-up-idaptive-saml-sso-for-bitrise
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_SAMLSSOBeforeYouStart from '@site/i18n/ja/partials/saml-sso-before-you-start.mdx';
+import Partial_CAUTIONSAMLSSORestrictions from '@site/i18n/ja/partials/caution-saml-sso-restrictions.mdx';
+
+このガイドでは、[Idaptive](https://docs.cyberark.com/remote-access-standard/latest/en/content/admin/settings-idaptive.htm)でBitriseをSAMLアプリケーションとして設定する手順を説明します。
+
+<Partial_CAUTIONSAMLSSORestrictions />
+
+SAML SSOを<GlossTerm baseform="workspace">Workspace</GlossTerm>に接続する前に、以下をご確認ください。
+
+- <Partial_SAMLSSOBeforeYouStart />
+- BitriseをSAML SSOアプリとして設定し、BitriseとIdaptiveの間の接続を確立するには、[Idaptive](https://docs.cyberark.com/remote-access-standard/latest/en/content/admin/settings-idaptive.htm)のAdmin Portalにログインしている必要があります。<strong>User Portal</strong>を使用している場合は、Idaptiveでアバターをクリックして<strong>Admin Portal</strong>に<strong>Switch</strong>してください。
+
+  ![Setting_up_Idaptive_SAML_SSO_for_Bitrise.jpg](/img/_paligo/uuid-27ceb4dd-22a3-a162-b569-73261ba2fef7.jpg)
+
+1. AdminとしてIdaptiveにログインします。
+1. <strong>Apps</strong>に移動し、続いて<strong>Web Apps</strong>に移動します。右側の<strong>Add Web Apps</strong>ボタンをクリックします。
+
+   ![Setting_up_Idaptive_SAML_SSO_for_Bitrise.png](/img/_paligo/uuid-9d5b8607-e8f3-2fa7-aa78-8891c184533e.png)
+1. <strong>Custom</strong>タブで<strong>SAML</strong>を選択し、<strong>Add</strong>をクリックします。<strong>Add Web App</strong>のポップアップで<strong>Yes</strong>を押します。ウィンドウを<strong>Close</strong>します。自動的に<strong>Settings</strong>ページに移動します。
+
+   ![Setting_up_Idaptive_SAML_SSO_for_Bitrise.png](/img/_paligo/uuid-7389987f-3a26-24d3-6298-787eb51002e0.png)
+1. <strong>Settings</strong>ページの<strong>Name</strong>フィールドと<strong>Application ID</strong>フィールドにBitriseを追加し、<strong>Save</strong>をクリックします。
+
+   ![Setting_up_Idaptive_SAML_SSO_for_Bitrise.jpg](/img/_paligo/uuid-81638e95-5198-7da7-ecb8-f2d9835f64be.jpg)
+
+   ![Setting_up_Idaptive_SAML_SSO_for_Bitrise.jpg](/img/_paligo/uuid-175bfd17-e0a5-d198-a2f9-36dc24735c28.jpg)
+1. 左側のメニューバーで<strong>Trust</strong>をクリックし、<strong>Identity Provider Configuration</strong>の下にある<strong>Manual configuration</strong>を選択します。
+1. <strong>Signing Certificate</strong>ドロップダウンをクリックして証明書をダウンロードします。証明書の全内容をコピーできるように、テキストエディタで開きます。ファイルをアップロードすることもできます。
+
+   ![Setting_up_Idaptive_SAML_SSO_for_Bitrise.jpg](/img/_paligo/uuid-904a51d4-081b-8a05-0b56-3522007e3a46.jpg)
+1. Bitriseの<strong>Enable Single Sign-On</strong>ページにある<strong>SAML SSO provider certificate</strong>テキストボックスに内容を貼り付けるか、ファイル自体をアップロードします。
+1. Idaptiveの<strong>Trust</strong>ページから<strong>Single Sign On URL</strong>をコピーします。それをBitriseの<strong>Single sign-on</strong>ページにある<strong>SSO URL</strong>フィールドに貼り付けます。
+1. Bitriseの<strong>Single Sign-Onページ</strong>で、<strong>Assertion Consumer Service URL (ACS URL)</strong> URLをコピーし、<strong>Configure SSO</strong>をクリックします。
+1. それではIdaptiveに戻りましょう。<strong>Service Provider Configuration</strong>の下で<strong>Manual Configuration</strong>をクリックします。<strong>SP Entity ID / Issuer / Audience</strong>に<strong>Bitrise</strong>をTypeし、Bitriseの<strong>Assertion Consumer Service URL (ACS URL)</strong>をIdaptiveの<strong>Assertion Consumer Service (ACS) URL</strong>に貼り付けます。
+
+   ![Setting_up_Idaptive_SAML_SSO_for_Bitrise.jpg](/img/_paligo/uuid-97ca8e78-eae6-ff2b-f6b5-523718161a8e.jpg)
+1. <strong>NameID Format</strong>までスクロールし、<strong>emailAddress</strong>を選択します。<strong>Save</strong>をクリックします。
+
+   ![Setting_up_Idaptive_SAML_SSO_for_Bitrise.jpg](/img/_paligo/uuid-5b529235-9f88-8b16-64c4-9438f3cc9498.jpg)
+1. <strong>Permissions</strong>に移動し、<strong>Add</strong>ボタンをクリックします。<strong>Select User, Group, or Role</strong>のポップアップで、SAMLアプリに追加したいユーザー名を入力します。それを選択して<strong>Add</strong>を押します。変更を保存します。これにより、Bitrise SAMLアプリのステータスが<strong>Deployed</strong>に変わります。
+
+   ![Setting_up_Idaptive_SAML_SSO_for_Bitrise.png](/img/_paligo/uuid-fb6f7300-1ac4-523d-0a04-b6c2850e5621.png)
+
+これで、Bitrise上でIdaptiveをSAML SSOプロバイダーとして使用する準備が整いました。

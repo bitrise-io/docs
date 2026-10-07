@@ -1,0 +1,157 @@
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+## Xcode スタックの更新 {#xcode-stack-updates}
+
+必要なXcodeのバージョンに基づいて、macOS スタックを選択できます。内部的には、1 つのVMイメージに複数のXcodeバージョンがインストールされており、リクエストしたXcodeのバージョンが、<GlossTerm baseform="workflow">Workflow</GlossTerm>の開始前に実行時に有効化されます。
+
+一般的な目安として、Xcode同じメジャーバージョンのマイナーバージョンは同じVMイメージを共有しますが、互換性の問題やその他の事情により例外がある場合があります。
+
+:::note[バージョニング]
+
+バージョンについて説明するときは、各ツールがバージョンをどのように定義しているかにかかわらず、[semver](https://semver.org/)の用語を使用します。
+
+:::
+
+Stacksにはライフサイクルがあり、Edge、Stable、Frozen、Removed の 4 つの状態があります。
+
+![stack-lifecycle.png](/img/_paligo/uuid-faa7bf60-0cae-0042-f910-e8e6240fc647.png)
+
+- <strong>Edge</strong>: これらのスタックは、今後のバージョンや変更をプレビューするためのものです。定期的にインプレースで更新され、Xcodeの最新の安定版リリース、Xcodeの最新のベータ版リリース(利用可能な場合)、およびプリインストールされたツールの最新の安定版が含まれます。毎週の定期更新では、ツールが追加または削除されたり、OSがアップグレードされたりする場合があります。Edge スタックでは、毎週の更新の後方互換性は保証されません。Edge スタックでビルドを実行すると、今後のツールバージョンの変更(Ruby 3.2 がデフォルトになるなど)をプレビューしたり、最新のプレリリース版のXcode(Xcode 15 Beta など)を利用したりできます。
+- <strong>Stable</strong>: これらのスタックは、Xcodeパッチバージョンと重大なセキュリティ修正でのみ更新されます。信頼性を最大限に高め、再現可能なビルドを実現するには、スタックのデフォルトに頼らず、Workflowsでツールの正確なバージョンを固定することをお勧めします(たとえば、Rubyのバージョンを固定します)。
+- <strong>Frozen</strong>: これらのスタックは更新されなくなり、[Stackの非推奨化および削除ポリシー](/bitrise-build-hub/infrastructure/build-stacks/stack-deprecation-and-removal-policy)に従って削除対象としてマークされています。スタックは引き続きビルドに使用できますが、最終的な削除日はUIに表示されます。プリインストールされたツールは更新されないため、バグ修正やセキュリティパッチへの対応はご自身の責任で行ってください。
+- <strong>Removed</strong>: これらのスタックは使用できなくなります。
+
+### Xcodeスタックの状態遷移 {#state-transitions-for-xcode-stacks}
+
+スタックのライフサイクルの中で、新しいXcodeや macOS のリリースをきっかけに、状態が遷移します。Stacks次のように遷移します。
+
+- Edge から Stable へ。
+- Stable から Frozen へ。
+- Frozen から Removed へ。
+
+#### Edge スタックの更新 {#edge-stack-updates}
+
+Edge スタックは、今後の変更をプレビューしてテストする手段を提供します。Xcodeベータ版は Edge スタックとして提供され、最終版のXcodeリリースは新しい Stable スタックとして提供されます。XcodeEdge スタックは、次の場合に変更されます。
+
+1. 新しいメジャーXcodeバージョンの最初のベータ版がリリースされたとき。
+1. 新しいマイナーXcodeバージョンの最初のベータ版がリリースされたとき。
+1. Xcodeベータ版の新しいバージョンがリリースされたとき。
+
+Xcodeマイナーバージョンがベータ版としてリリースされると、Edge スタックとして利用可能になります。他の Edge スタックは、該当するベータ版が GA バージョンとしてリリースされるまで Stable に遷移しません。
+
+<strong>新しいメジャーXcodeバージョンの最初のBetaバージョン</strong>
+
+この例では次のとおりです。
+
+- 現在の最新のXcodeバージョンは 15.3 です。
+- 新しいメジャーXcodeバージョンの新しいベータ版がリリースされます: Xcode 16.0 Beta 1。
+
+![stack-updates-edge.png](/img/_paligo/uuid-1aecaab6-06d6-4a03-4d67-f6e4e5efaf7e.png)
+
+新しいベータ版がリリースされると、スタックが更新されます。
+
+- 新しいXcodeリリースが、Bitriseで Edge スタックとして利用可能になります。この例では、Xcode 16.0 Beta 1 が Edge スタックとして利用可能になります。
+- 現在の Edge スタックは段階的に廃止され、ユーザーは自動的に新しい Edge スタックに移行されます。これは新しいXcodeリリースの数日後に行われます。この例では、Xcode 15.x の Edge スタックが段階的に廃止されます。
+- この時点では、Stable スタックは影響を受けません。
+
+<strong>新しいマイナーXcodeバージョンの最初のBetaバージョン</strong>
+
+この例では次のとおりです。
+
+- 現在の最新のXcodeバージョンは 15.2 です。
+- 新しいマイナーXcodeバージョンの新しいベータ版がリリースされます: Xcode 15.3 Beta 1。
+
+![stack-updates-edge-minor.png](/img/_paligo/uuid-1045ef58-753d-f496-2c8a-4e4c9542ad63.png)
+
+新しいベータ版がリリースされると、スタックが更新されます。
+
+- 新しいXcodeリリースが Edge スタックとして利用可能になります。この例では、Xcode 15.3 Beta 1 が Edge スタックとして利用可能になります。
+- この時点では、Stable スタックは影響を受けません。
+
+<strong>Xcodeベータ版の新しいBetaバージョン</strong>
+
+この例では次のとおりです。
+
+- 現在の最新のXcodeバージョンは 16.0 Beta 1 です。
+- 新しいベータ版がリリースされます: 16.0 Beta 2。
+
+![stack-updates-edge-beta.png](/img/_paligo/uuid-f91e8132-cff5-b5c3-142e-2184b4883382.png)
+
+新しいベータ版がリリースされると、スタックが更新されます。
+
+- Xcode 16.0 の Edge スタックで、Xcode 16.0 Beta 2 が 16.0 Beta 1 に置き換わります。
+- この時点では、Stable スタックは影響を受けません。
+
+#### Stable スタックの更新 {#stable-stack-updates}
+
+Stable スタックでは予期しない破壊的変更を避けたいため、Edge スタックよりも変更の頻度は低くなります。
+
+既存の Stable スタックは、次の場合に変更されます。
+
+1. 新しいメジャーXcodeバージョンがリリースされたとき。
+1. 新しいマイナーXcodeバージョンがリリースされたとき。
+
+<strong>新しいメジャーXcodeバージョン</strong>
+
+この例では次のとおりです。
+
+- 現在の最新のXcodeバージョンは 15.3.0 です。
+- 新しいメジャーXcodeバージョンがリリースされます: Xcode 16.0。
+
+![stable-stack.png](/img/_paligo/uuid-0d392a7d-4fcd-13cb-e67a-7326e954c87a.png)
+
+新しいメジャーバージョンがリリースされると、スタックが更新されます。
+
+- 新しい Stable スタック: Xcode 16.0 が、新しい Stable スタックとしてBitriseで利用可能になります。
+- 最も古い Stable スタックが Frozen になります。この例では、Xcode 14.x のスタックが Frozen になりますが、ビルドには引き続き使用できます。これらのスタックではツールのバージョンは変更されず、最新の状態のまま固定されます。
+- 古い Frozen スタックは削除されます。この例では、Xcode 13.x のスタックが削除されます。残っているユーザーは、新しいスタックに移行されます。
+
+<strong>新しいマイナーXcodeバージョン</strong>
+
+この例では次のとおりです。
+
+- 現在の最新のXcodeバージョンはXcode 15.2 です。
+- 新しいマイナーXcodeバージョンがリリースされます: Xcode 15.3。
+
+新しいマイナーバージョンがリリースされると、スタックが更新されます。
+
+- 新しい Stable スタック: Xcode 15.3 が、Stable スタックとしてBitriseで利用可能になります。
+- Xcode 15.3 の Edge スタックが、最終版のXcodeバージョンで更新されます。
+
+![stack-updates-stable-xcode-minor.png](/img/_paligo/uuid-166098b3-ad6e-d65e-fe83-e0819fcf52a3.png)
+
+#### macOS のリリース {#macos-releases}
+
+正確な macOS バージョンは、常に[スタックレポートページ](https://stacks.bitrise.io/stack_reports/)で強調表示されます。
+
+新しいメジャー macOS バージョンがリリースされると、社内テスト期間を経て、Edge スタックを新しいOSにアップグレードします。
+
+原則として、予期しないビルドの失敗を避けるため、Stable スタックの macOS はアップグレードしません。今後のXcodeリリースで新しいOSバージョンが必要になるまで待ちます(たとえば、Xcode 15.0、15.1、15.2 は macOS Ventura と互換性がありますが、15.3 は Sonoma を必要とします)。必要になった時点で、このXcodeバージョンの Stable スタックのバリアントは新しいメジャーOSバージョンをベースにしますが、それより古い Stable のXcodeスタックは古いOSバージョンのままとなります。
+
+新しいメジャーOSが Stable スタックとして提供されていない間は、Edge スタックのいずれかでテストすることをお勧めします。エッジケースやパフォーマンスの退行を含め、your feedbackをお待ちしています。
+
+#### 状態遷移のトリガーとならないイベント {#events-not-triggering-a-state-transition}
+
+すべてのXcodeリリースが遷移を<GlossTerm baseform="trigger">トリガー</GlossTerm>するわけではありません。たとえば、Xcodeベータ版のマイナーversion releaseは Edge から Stable へのスタック遷移のトリガーにはならず、新しいベータ版が古いベータ版に置き換わるだけです。Xcodeパッチリリースも、Edge から Stable へのスタック遷移のトリガーにはなりません。代わりに、Stable スタックが新しいパッチバージョンでインプレースに更新されます。
+
+### Xcodeスタックのシミュレーターランタイム {#simulator-runtimes-on-xcode-stacks}
+
+プリインストールされているツール(スタック上のシミュレーターランタイムを含む)の一覧は、[スタックレポートページ](https://stacks.bitrise.io/stack_reports/)で確認できます。
+
+次のシミュレーターランタイムがインストールされています。
+
+- 特定のXcodeバージョンに対応するランタイムバージョン: Xcodeが初回起動時にダウンロードを促す、iOS、watchOS、tvOS、visionOS のランタイムバージョンです。
+- iOS では、さらに 2 つのバージョンをインストールします。1 つ前と 2 つ前のメジャーバージョンで、それぞれ最新のマイナーバージョンがインストールされます。
+- watchOS では、1 つ前のメジャーリリースの最新のマイナーバージョンもインストールします。
+
+たとえば、Xcode 15.0 スタックを選択した場合は、次のとおりになります。
+
+- iOS 17.0: このXcodeに対応するランタイム。
+- iOS 16.4: 1 つ前のメジャー iOS バージョンの最新のマイナーリリース。
+- iOS 15.5: 2 つ前のメジャー iOS バージョンの最新のマイナーリリース。
+- watchOS 10.0: このXcodeに対応するランタイム。
+- watchOS 9.4: 1 つ前のメジャーバージョンの最新のマイナーリリース。
+- tvOS 17.0: このXcodeに対応するランタイム。
+- visionOS 1.0: このXcodeに対応するランタイム。

@@ -1,0 +1,99 @@
+---
+title: "Flutterの依存関係"
+description: "公式のBitrise Stepsを使用すると、DartパッケージやプラグインパッケージなどのFlutterの依存関係を簡単にインストールしてキャッシュできます。"
+sidebar_position: 4
+slug: /bitrise-ci/dependencies-and-caching/flutter-dependencies
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Flutterでは、共有パッケージをアプリの依存関係として使用できます。アプリで使用できるパッケージは、大きく2つの種類に分けられます。
+
+- Dartパッケージは、Dartコードのみを使用し、依存関係、アプリ、リソース、またはテストを含めることができます。
+- プラグインは特殊な種類のパッケージで、ネイティブのAndroidまたはiOSのコードとDartコードの両方を含みます。プラットフォームの機能をFlutterアプリで利用できるようにします。
+
+Bitrise <GlossTerm baseform="Step">Steps</GlossTerm>は、どちらの種類にも対応しており、Flutterのすべての依存関係に対して効率的なキャッシュソリューションを備えています。
+
+## Flutterアプリの依存関係のインストール {#installing-dependencies-for-flutter-apps}
+
+[<strong>Flutter Build</strong>](https://github.com/bitrise-steplib/bitrise-step-flutter-build) Stepは、Flutterプロジェクトの iOSアプリとAndroidアプリの両方をビルドできます。Stepは`flutter pub get`コマンドを実行し、プラグインパッケージを含め、プロジェクトの`pubspec.yaml`ファイルに記載されているすべての依存関係をインストールします。そのため、BitriseでFlutterアプリに依存関係を追加するのは非常に簡単です。
+
+:::tip[パッケージの相互依存関係]
+
+アプリの依存関係に、プラットフォーム固有のAPIへのアクセスを必要とするプラグインパッケージが含まれる場合は、プラットフォーム固有のビルドファイルに適切な依存関係の宣言を追加する必要があります。たとえば、`pubspec.yaml`ファイルおよびプロジェクトの`build.gradle`ファイルにも、Gradleの依存関係を宣言する必要がある場合があります。
+
+詳しくは、Flutterの公式ドキュメント「[Handling package interdependencies](https://docs.flutter.dev/development/packages-and-plugins/developing-packages#dependencies)」をご覧ください。
+
+:::
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Flutterプロジェクトの`pubspec.yaml`ファイルに[依存関係を追加](https://docs.flutter.dev/development/packages-and-plugins/using-packages#adding-a-package-dependency-to-an-app)します。
+1. Bitriseでは、Flutter SDKをインストールするために、<GlossTerm baseform="Workflow">Workflow</GlossTerm>に[<strong>Flutter Install</strong>](https://github.com/bitrise-steplib/bitrise-step-flutter-installer) Stepを追加します。
+
+   <strong>Flutter SDK version or bundle URL</strong>の入力欄で、常にそのチャンネルの最新リリースをインストールするにはチャンネル名(`stable`など)を設定し、インストールするバージョンを固定するには正確なバージョンタグを設定します。
+1. [<strong>Flutter Build</strong>](https://github.com/bitrise-steplib/bitrise-step-flutter-build) StepをWorkflowに追加します。
+
+   ![flutter-build-step.png](/img/_paligo/uuid-98bd1fcb-463a-c828-a627-5d3adaf78d32.png)
+
+   Stepは、Flutterプロジェクトの iOSアプリとAndroidアプリの両方をビルドできます。アプリのリポジトリに必要なビルドファイルが含まれている場合、必要な依存関係がすべてダウンロードされてインストールされます。
+
+</TabItem>
+<TabItem value="bitriseyml" label="Configuration YAML">
+
+1. Flutterプロジェクトの`pubspec.yaml`ファイルに[依存関係を追加](https://docs.flutter.dev/development/packages-and-plugins/using-packages#adding-a-package-dependency-to-an-app)します。
+1. Bitriseでは、Flutter SDKをインストールするために、`flutter-installer` StepをWorkflowに追加します。
+
+   <strong>Flutter SDK version or bundle URL</strong>(`version`)の入力欄で、常にそのチャンネルの最新リリースをインストールするには、チャンネル名(`stable`など)を設定します。
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - flutter-installer:
+           inputs:
+             - version: stable
+   ```
+
+   または、インストールするバージョンを固定するには、正確なバージョンタグを設定します。
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - flutter-installer:
+           inputs:
+             - version: 3.32.5
+   ```
+1. `flutter-build` StepをWorkflowに追加します。
+
+   ```yaml
+   your-workflow:
+     steps:
+       - git-clone: {}
+       - flutter-installer:
+           inputs:
+             - version: stable
+       - flutter-build: {}
+   ```
+
+   Stepは、Flutterプロジェクトの iOSアプリとAndroidアプリの両方をビルドできます。アプリのリポジトリに必要なビルドファイルが含まれている場合、必要な依存関係がすべてダウンロードされてインストールされます。
+
+</TabItem>
+</Tabs>
+
+## Flutterアプリの依存関係のキャッシュ {#caching-dependencies-for-flutter-apps}
+
+キーベースのキャッシュを使う場合、Dart依存関係をキャッシュするために必要なのは、[<strong>Restore Dart cache</strong>](https://github.com/bitrise-steplib/bitrise-step-restore-dart-cache)と[<strong>Save Dartキャッシュ</strong>](https://github.com/bitrise-steplib/bitrise-step-save-dart-cache) Stepsだけです。これらのStepsは、依存関係に必要なcache keysを自動的に設定するため、設定は不要です。
+
+1. [<strong>Flutter Build</strong>](https://github.com/bitrise-steplib/bitrise-step-flutter-build) Stepの前に、[<strong>Restore Dart cache</strong>](https://github.com/bitrise-steplib/bitrise-step-restore-dart-cache) Stepを追加します。
+
+   また、[<strong>Flutter Install</strong>](https://github.com/bitrise-steplib/bitrise-step-flutter-installer) Stepの後に配置することをお勧めします。
+
+   ![restore-dart-cache.png](/img/_paligo/uuid-48b2ff90-e029-0d70-f0d7-f0b05e989540.png)
+1. [<strong>Save Dartキャッシュ</strong>](https://github.com/bitrise-steplib/bitrise-step-save-dart-cache) StepをWorkflowの末尾に追加します。
+</content>
+</invoke>

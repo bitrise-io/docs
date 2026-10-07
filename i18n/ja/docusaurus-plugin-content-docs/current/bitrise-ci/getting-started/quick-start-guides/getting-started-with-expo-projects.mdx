@@ -1,0 +1,48 @@
+---
+title: "Expoプロジェクトを使い始める"
+description: "メールまたはGitプロバイダーでサインアップし、リポジトリを接続して、Expoアプリの最初のビルドを実行することで、Bitriseを使い始めます。"
+sidebar_position: 6
+slug: /bitrise-ci/getting-started/quick-start-guides/getting-started-with-expo-projects
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_InstallingJavaScriptDependenciesForReactNativeIonicCordovaAndExpo from '@site/i18n/ja/partials/installing-javascript-dependencies-for-react-native-ionic-cordova-and-expo.mdx';
+import Partial_TestingYourReactNativeApp from '@site/i18n/ja/partials/testing-your-react-native-app.mdx';
+
+React Nativeプロジェクトは[React Native CLIまたはExpo CLIを使って](https://facebook.github.io/react-native/docs/getting-started.html)生成できます。[Expo](https://docs.expo.dev/versions/latest/)は、XcodeやAndroid Studioでネイティブコードを使用せずにReact Nativeアプリをすばやく立ち上げられるツールチェーンです。
+
+このガイドでは、[Expo CLI](https://docs.expo.dev/get-started/installation/)でビルドしたReact Nativeプロジェクトのセットアップ、テスト、コード署名、デプロイの方法について説明します。
+
+
+## BitriseへのExpoプロジェクトの追加 {#adding-an-expo-project-to-bitrise}
+
+プロジェクトの追加方法は他の場合と同じです。ウィザードの詳しい手順については、[新しいプロジェクトの追加](/bitrise-ci/getting-started/adding-a-new-project)を参照してください。このセクションでは、Expoに固有の内容について説明します。
+
+### スキャナーがExpoプロジェクトを検出する仕組み {#how-the-scanner-detects-an-expo-project}
+
+<GlossTerm baseform="project scanner">プロジェクトスキャナー</GlossTerm>は、まず依存関係として`react-native`を記載した`package.json`ファイルを探します。`expo`も依存関係として記載されており、`package.json`と同じ場所に`app.json`、`app.config.js`、または`app.config.ts`ファイルが存在する場合、Bitriseはプロジェクトを単なるReact NativeではなくExpoベースとして登録します。このモードでは、スキャナーはネイティブの`ios/`ディレクトリと`android/`ディレクトリの確認をスキップします。
+
+### 設定できる項目 {#what-you-can-configure}
+
+<strong>CI configuration</strong>ステージでは、ウィザードに次の項目が表示されます。
+
+- <strong>Expoプロジェクトディレクトリ</strong>: `package.json`とExpo設定ファイルが含まれるディレクトリです。
+- <strong>Platform</strong>: EAS Buildでビルドするプラットフォーム(すべて、Android、またはiOS)です。
+
+<Partial_InstallingJavaScriptDependenciesForReactNativeIonicCordovaAndExpo />
+
+## Expoプロジェクトのデプロイ {#deploying-your-expo-project}
+
+BitriseはExpoプロジェクト向けに[Expo Application Services](https://expo.dev/eas)(EAS)をサポートしており、デフォルトのデプロイBitriseWorkflowは[Run Expo Application Services (EAS) build](https://www.bitrise.io/integrations/steps/run-eas-build)<GlossTerm baseform="step">Step</GlossTerm>を使用してEAS上でビルドを<GlossTerm baseform="trigger">トリガー</GlossTerm>します。
+
+EASを使用しない場合は、BitriseWorkflowsに[Turtle CLI](https://docs.expo.dev/eas/cli/)を使用できます。詳細については、GitHubの[Turtle CLIを使用したExpoビルド](https://github.com/bitrise-io/workflow-recipes/blob/main/recipes/react-native-expo-build-using-turtle-cli.md)のレシピを参照してください。
+
+:::note[CodePush]
+
+Bitrise CodePushを使用すると、ユーザーのデバイスにアップデートをデプロイできます。CodePushは[Release Management](/release-management)の一部であり、React NativeアプリとExpoアプリでサポートされています。
+
+CodePushの詳細については、公式ガイドをご覧ください: [CodePush](/release-management/codepush/about-codepush)。
+
+:::

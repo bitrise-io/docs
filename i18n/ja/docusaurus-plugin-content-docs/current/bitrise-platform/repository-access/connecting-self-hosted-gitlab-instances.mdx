@@ -1,0 +1,117 @@
+---
+title: "セルフホストのGitLabインスタンスの接続"
+description: "Workspacesでは、BitriseがセルフホストのGitLabインスタンスへの接続をサポートしています。接続が完了すると、プライベートにホストされているリポジトリからBitriseにアプリを追加できます。"
+sidebar_position: 5
+slug: /bitrise-platform/repository-access/connecting-self-hosted-gitlab-instances
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+<GlossTerm baseform="workspace">Workspaces</GlossTerm>の場合、BitriseはセルフホストのGitLabインスタンスへの接続をサポートしています。接続は簡単で、完了すると、プライベートでホストされているリポジトリからBitriseにプロジェクトを追加できます。パブリックにホストされているリポジトリで慣れ親しんだすべての機能をご利用いただけます。
+
+BitriseをGitLabインスタンス全体に対するアプリケーションとして承認する必要があり、その後、Bitrise OAuthアプリケーションに属する<strong>Application Id</strong>と<strong><GlossTerm baseform="secret">Secret</GlossTerm></strong>の値を[bitrise.io](https://www.bitrise.io)上のWorkspaceに追加する必要があります。
+
+
+## GitLab接続の設定 {#configuring-the-gitlab-connection}
+
+BitriseでプライベートにホストされているGitLabリポジトリにアクセスするには、GitLabアカウントで新しいOAuthアプリケーションを作成し、サーバーへのアクセスに必要な認証情報を割り当てる必要があります。
+
+:::warning
+
+新しいBitrise<GlossTerm baseform="project">プロジェクト</GlossTerm>を作成する際は、プロバイダー選択画面で専用の<strong>GitLab セルフホスト</strong>オプションを選択する必要があります。代わりにリポジトリのURLを<strong>Other</strong>フィールドに貼り付けると、Bitriseはそのプロジェクトを汎用的なCustomプロバイダーのリポジトリとして保存し、次の機能が警告なく利用できなくなります。
+
+- App Settingsにおける[Service Credential User](/bitrise-platform/integrations/the-service-credential-user) UI。
+- [bitrise.ymlをリポジトリに保存](/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml#storing-the-bitriseyml-file-in-your-repository)オプション。
+- GitLabのマージリクエストへのBuild statusの報告。
+
+これは後からリポジトリのURLを編集しても修正できません。すでにこの方法でプロジェクトを作成してしまった場合は、プロバイダーの種類を修正するためにcontact supportしてください。
+
+:::
+
+:::warning[パブリックに解決可能なIPアドレス]
+
+セルフホストインスタンスには、パブリックに解決可能なIPアドレスが必要です。そうでない場合、Bitriseは接続できません。
+
+:::
+
+接続には2つのURLが必要です。Bitrise OAuthのコールバックURLと、<strong>GitLab instance</strong> URLです。
+
+| URL | 入力先 | 例 |
+| --- | --- | --- |
+| BitriseのOAuthコールバックURL | GitLabで、OAuthアプリケーションの<strong>コールバックURL</strong>フィールドに | `https://app.bitrise.io/users/auth/gitlab/callback` |
+| GitLab instance URL | Bitriseで、WorkspaceのIntegrations <strong>GitLab instance URL</strong>フィールドに | `https://gitlab.example.com` |
+
+1. GitLabインスタンス用にBitriseバックエンドワーカーを許可リストに追加します。[build machinesにアクセスするためのネットワーク設定](/bitrise-platform/infrastructure/build-machines/configuring-your-network-to-access-our-build-machines)。
+
+   なお、app.bitrise.ioやBitrise build machinesなどを支えているBitriseバックエンドワーカーは、異なるIPアドレス範囲を使用します。build machinesを許可リストに追加するだけでは、この機能には不十分です。
+
+   バックエンドワーカーの許可リスト追加ができない場合は、[Bitriseに問い合わせ](https://www.bitrise.io/contact)て、他のオプションについてご相談ください。
+1. <strong>root</strong>権限でGitLabインスタンスにLog inします。<strong>root権限なしで</strong>Bitriseに接続すると、Workspaceの他のチームメンバーは<strong>GitLabインスタンス上のリポジトリにアクセスできなくなります</strong>。
+1. 上部メニューバーの小さいレンチアイコンをクリックして管理エリアに移動します。
+1. 左側のメニューバーで<strong>Applications</strong>を選択し、<strong>New Application</strong>をクリックします。
+
+   ![New_Application.png](/img/_paligo/uuid-c139a2c3-3f9a-980e-41f0-a85bc3ea6bbb.png)
+1. <strong>Name</strong>フィールドに、アプリケーションを明確に識別できる名前を入力します。わかりやすさのため、`Bitrise`を推奨します。
+1. <strong>Callback URL</strong>フィールドに`https://app.bitrise.io/users/auth/gitlab/callback`を入力します。
+
+   これはBitriseのURLです。認証後、GitLabはここにユーザーをリダイレクトします。
+1. <strong>Scope</strong>メニューで<strong>api</strong>をチェックします。
+
+   ![New_Application_settings.png](/img/_paligo/uuid-9e8a91b7-c03a-f513-62a7-0e91426f1676.png)
+1. <strong>Confidential</strong>オプションを<strong>No</strong>に設定します。
+
+   新規作成したアプリがconfidentialに設定されていると、Bitriseはアクセスできなくなります。
+1. <strong>Submit</strong>をクリックします。次のページに<strong>Application Id</strong>と<strong>Secret</strong>が表示されます。[bitrise.io](https://www.bitrise.io)でGitLabインスタンスに接続するには、この両方が必要です。
+
+   ![Connecting_self-hosted_GitLab_instances.png](/img/_paligo/uuid-94e2570d-ce4b-720a-db91-52b46de0a96a.png)
+1. BitriseにLog inし、workspaceを選択します。
+1. 左側で<strong>Integrations</strong>を選択します。
+1. <strong>GitLab self-managed</strong>セクションを見つけます。
+1. <strong>Add credentials</strong>をクリックし、セルフホストのGitLab認証情報を追加します。
+
+   - <strong>App ID</strong>
+   - <strong>Secret</strong>
+   - <strong>GitLab instance URL</strong>
+
+     これはGitLabインスタンスのURLです(たとえばhttps://gitlab.example.com)。GitLabインスタンス設定に貼り付けたBitriseコールバックURLとは異なりますのでご注意ください。
+
+   :::note
+
+   任意で、カスタムHTTPヘッダーを追加できます。[プロキシ経由の接続](/bitrise-platform/repository-access/connecting-self-hosted-gitlab-instances#connecting-through-a-proxy)。
+
+   :::
+
+以上で完了です。これでBitriseを使ってプライベートにホストされているリポジトリにアクセスできるようになります。
+
+
+## Service credential userのロール {#service-credential-user-role}
+
+Bitriseは、GitLabインスタンス上でWebhookの登録、マージリクエストへのコミットステータスの投稿、リポジトリ内容の読み取りを行うために[Service Credential User (SCU)](/bitrise-platform/integrations/the-service-credential-user)を使用します。セルフホストのGitLabでは、SCUはリポジトリに対して最低でも<strong>Maintainer</strong>ロールが必要です。
+
+| GitLabの操作 | 必要なロール |
+| --- | --- |
+| `bitrise.yml`の読み取り、ブランチの一覧表示 | Reporter |
+| Webhookの登録 | Maintainer |
+| コミット/マージリクエストステータスの投稿 | Maintainer |
+
+ReporterまたはDeveloperでは不十分です。ステータスの報告が警告なく失敗します。SCU設定の全体的な流れについては、[service credential user](/bitrise-platform/integrations/the-service-credential-user)を参照してください。
+
+
+## プロキシ経由の接続 {#connecting-through-a-proxy}
+
+プロキシ経由で接続できるように、セルフホストのGitLabインスタンスにカスタムHTTPヘッダーを追加できます。header valueは暗号化されて保存されます。
+
+カスタムHTTPヘッダーを追加するには、<strong>Workspace settings</strong>ページに移動し、<strong>Integrations</strong>を選択します。<strong>GitLab self-managed</strong>カードを見つけると、そこで認証情報を編集できます。
+
+たとえば、Cloudflare Accessをご利用のお客様は、クライアントIDとクライアントシークレットを設定できます: `CF-Access-Client-Id`と`CF-Access-Client-Secret`。
+
+
+## セルフホストのGitLabリポジトリから新規プロジェクトを追加する {#adding-a-new-project-from-a-self-hosted-gitlab-repository}
+
+1. [新規プロジェクトの追加](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache#adding-a-new-connection-to-the-build-cache)を開始します。
+1. Gitプロバイダーの選択を求められたら、<strong>Self-hosted GitLab</strong>オプションを選択します。
+1. <strong>Connect</strong>をクリックします。
+
+接続が完了したら、通常どおり進めます。[はじめてのプロジェクトを追加する](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache#adding-a-new-connection-to-the-build-cache)。

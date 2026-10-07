@@ -1,0 +1,58 @@
+---
+title: "Appliveryへのアプリのデプロイ"
+description: "Appliveryは、iOSとAndroid向けのモバイルアプリ配布プラットフォームで、強力なモバイルアプリ管理・配布システムを提供し、使いやすさを重視して、テスターと従業員の両方にとってのアプリ配信を簡素化します。"
+sidebar_position: 4
+slug: /bitrise-ci/deploying/deploying-apps-to-applivery
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+[Applivery](https://www.applivery.com) は、iOSおよびAndroid向けのモバイルアプリ配布プラットフォームです。テストユーザーと従業員の両方に向けたアプリ配信をシンプルにする強力なモバイルアプリ管理・配布システムを提供し、使いやすさを重視しています。
+
+Appliveryには、開発中および本番リリース向けのアプリをより適切に管理するための多くの機能があり、開発のスピードアップ、より良いフィードバックの取得、より優れたアプリケーションの提供に役立ちます。
+
+主な機能は次のとおりです。
+
+- 非技術者でもスムーズに利用できる、シングルまたはマルチアプリ対応のカスタマイズ可能なApp Store。
+- SSO、未登録ユーザー、パスワード保護、非公開アプリなど、複数のセキュリティ設定を備えたマルチトラックかつ完全にカスタマイズ可能なアプリ配布。
+- 自動および強制のアプリ内アップデート。
+- フィードバックとバグ報告。
+
+Bitriseと組み合わせることで、テストとビルドから配信、フィードバックまで、開発ライフサイクル全体をカバーできます。
+
+![App_life_cycle_with_Applivery_and_Bitrise.png](/img/_paligo/uuid-841839d9-140d-afa4-254a-5587922a594b.png)
+
+## Appliveryへアプリをデプロイする {#deploying-your-app-to-applivery}
+
+1. <strong>Applivery iOS Deploy</strong> または <strong>Applivery Android Deploy</strong> <GlossTerm baseform="Step">Step</GlossTerm>を<GlossTerm baseform="Workflow">Workflow</GlossTerm>に追加します。アプリをビルドするStepsの後にStepを追加するようにしてください。
+1. Applivery App Tokenを取得して、BitriseアプリとAppliveryアプリをリンクします。[App Tokenの取得方法について詳しくはこちら](https://www.applivery.com/docs/api/app-distribution/apps-api-authentication/)。
+1. Bitriseでアプリを開き、<strong>Workflows</strong> タブをクリックして<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>を開きます。
+1. <strong><GlossTerm baseform="secret">Secrets</GlossTerm></strong> タブに移動します。
+1. <strong>Add New</strong> をクリックし、キー入力欄に`APPLIVERY_APP_TOKEN`と入力します。
+1. 値の入力欄にAppliveryのApp Tokenを貼り付け、<strong>Save</strong> をクリックします。
+
+   ![Configuring_Applivery_App_Token.png](/img/_paligo/uuid-cf02074e-b629-4880-6b9c-92ee73910849.png)
+
+## Applivery Stepの設定 {#configuring-the-applivery-step}
+
+より詳細な連携のためにカスタマイズできるオプションのパラメーターが多数あります。
+
+| 入力変数 | タイプ | 説明 |
+| --- | --- | --- |
+| File path | ファイル | アプリのバイナリファイル。デフォルトでは$BITRISE_IPA_PATHまたは$BITRISE_APK_PATHを取得します。 |
+| App Token | 文字列 | Applivery App Token。デフォルトでは$APPLIVERY_APP_TOKENのSecret varを取得します。 |
+| Changelog | 文字列 | デプロイに添付する追加のビルド／リリースノートまたは変更履歴。 |
+| Notify Collaborators? | ブール値 | プロジェクトのCollaboratorsにメールで自動通知します。 |
+| Notify Employees? | ブール値 | プロジェクトのEmployeesにメールで自動通知します。 |
+| Notification message | 文字列 | メール通知と併せて送信する通知メッセージ。 |
+| Tags | 文字列 | ビルドやマルチトラックのApp Distributionを簡単に識別するためのカンマ区切りのタグ一覧 |
+| Version name | 文字列 | ビルドをより分かりやすく識別するための、人が読めるバージョン名。 |
+| Upload Certificates | ブール値 | Bitriseの <strong>Code Signing & Files</strong> タブからcode signingファイルをダウンロードし、Appliveryにアップロードします。 |
+
+## Appliveryでの配布 {#distribution-with-applivery}
+
+![Distribution_in_Applivery.png](/img/_paligo/uuid-62976d61-b5fa-6258-5880-7f55090b5881.png)
+
+Appliveryは、カスタマイズ可能なApp Store(公開または非公開)からDistribution Pages(公開、非公開、非公開限定、またはパスワード保護されたインストール用共有リンク)まで、アプリ配布のための多様な方法を提供します。また、Bitriseワークフローから収集した情報(GitHubのブランチ、タグ、カスタムラベルなど)に基づくマルチトラックのアプリ配信も可能にします。

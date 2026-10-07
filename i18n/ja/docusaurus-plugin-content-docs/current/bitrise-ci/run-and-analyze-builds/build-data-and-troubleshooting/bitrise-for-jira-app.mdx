@@ -1,0 +1,171 @@
+---
+title: "Jira用Bitriseアプリ"
+description: "Jira用Bitriseアプリは、BitriseのビルドとパイプラインのステータスをJiraの課題に直接表示するため、チームはJiraを離れることなく作業の状況を確認できます。"
+sidebar_position: 11
+slug: /bitrise-ci/run-and-analyze-builds/build-data-and-troubleshooting/bitrise-for-jira-app
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkspaceSettingsPage from '@site/i18n/ja/partials/opening-the-workspace-settings-page.mdx';
+
+Bitrise for Jira アプリは、Bitrise のビルドおよびパイプラインのステータスを Jira の課題上に直接表示するため、Jira を離れることなくチームが作業状況を確認できます。
+
+:::important[Jira Cloud のみ]
+
+Bitrise for Jira アプリは Jira Cloud にのみ対応しており、セルフホスト型の Jira(Jira Data Center や Jira Server)はサポートしていません。
+
+:::
+
+ビルド情報は、Jira の課題内の次の2つの場所に表示されます。
+
+- 専用の<strong>Bitrise build</strong>セクション。ここからビルドの再実行や中止も行えます。
+
+  ![Jira の課題上のBitrise buildセクション。パイプラインとビルドが表示されている様子](/img/2026-08-10-jira-app-new-bitrise-section-pipeline-build.png)
+
+- Jira の標準の開発パネルにある<strong>Builds</strong>タブ。
+
+  ![Jira の開発パネルのBuildsタブ。ビルドステータスが表示されている様子](/img/2026-08-10-jira-app-generic-development-section-builds-tab.png)
+
+:::important[課題キーが必要]
+
+ビルド情報が Jira の課題に表示されるのは、課題キー(例: `PROJ-123`)が次のいずれかに含まれている場合のみです。
+
+- branch name
+- Git タグ
+- プルリクエストのタイトル
+- pull request description
+- コミットメッセージ
+
+:::
+
+アプリのセットアップには2つの側面があります。
+
+- <strong>Jira 側</strong>: Jira 管理者がアプリをインストールし、接続を完了します。
+- <strong>Bitrise側</strong>: トークンを作成でき、該当する<GlossTerm baseform="project">プロジェクト</GlossTerm>に対して Platform Engineer(または Admin)権限を持つユーザーが、接続するプロジェクトを決定します。この権限レベルが必要な理由については、[トークンの作成](#creating-a-token)を参照してください。
+
+このページでは、両方の側の作業を最初から最後まで説明します。各セクションには担当者が明記されています。
+
+## セットアップの概要 {#setup-at-a-glance}
+
+| タスク | 実施場所 |
+|---|---|
+| Jira でのアプリのインストール | Jira、Jira 管理者が実施 |
+| トークンの作成 | Bitrise、トークンの作成者が実施 |
+| Bitrise projectの接続 | Bitrise、その後 Jira |
+| 接続の確認 | Jira、Jira 管理者が実施 |
+
+## Jira でのアプリのインストール {#installing-the-app-in-jira}
+
+Jira サイトでアプリをインストールおよび設定する権限が必要です。
+
+1. Jira で<strong>Apps > Explore more apps</strong>に移動し、<strong>Bitrise for Jira</strong>を検索します。
+1. アプリを選択し、<strong>Get it now</strong>をクリックしてインストールします。
+
+:::note
+
+Jira 管理者でない場合は、<strong>Request to install</strong>を使用して、管理者に承認をリクエストできます。
+
+:::
+
+## トークンの作成 {#creating-a-token}
+
+このアプリは、APIトークン(workspace APIトークンまたは Personal access token のいずれか)を使用してBitriseに対して認証を行います。誰がトークンを作成できるか、どのようなアクセス権が必要かは、トークンの種類によって異なります。
+
+| | Workspace API token | Personal access token |
+|---|---|---|
+| 所有者 | workspace | 個々のユーザー |
+| スコープ | 単一のworkspace。特定のプロジェクトに限定することも可能 | ユーザーがアクセスできる、すべてのworkspacesにわたるすべてのリソース |
+| 作成者 | workspaceの所有者、または Manager workspaceロールを持つメンバー | 任意のユーザー(自分のアカウント用) |
+| 各接続プロジェクトで必要な権限 | トークンのBitrise CIプロダクトアクセスロールとして Platform Engineer | トークン所有者自身のプロジェクトロールとして Platform Engineer(またはそれ以上) |
+| メンバーの離脱後も維持されるか | はい | いいえ — ユーザーがアクセス権を失うと接続が切断されます |
+| 推奨用途 | ほとんどのセットアップ | 複数のWorkspaceにまたがるアプリの接続 |
+
+:::tip[推奨事項]
+
+Workspace APIトークンを使用してください。個人ではなくWorkspaceに紐づいており、アプリに接続したいBitriseprojectだけにスコープを限定でき、チームメンバーが離脱しても接続が切れません。複数のWorkspaceにまたがるプロジェクトを接続する必要がある場合にのみ、Personal access token を選択してください。
+
+:::
+
+:::note[Platform Engineer が必要な理由]
+
+接続された各プロジェクトで、このアプリはアウトゴーイングウェブフックを登録し(`change_settings`権限が必要)、ビルドの再実行や中止を行います(`run_builds`が必要)。Platform Engineer は、この両方をカバーする最低限のBitrise CIロールです。Admin や Owner でも問題ありませんが、Developer や Tester/QA では権限が不足しています。
+
+- Personal access token の場合、これはトークン所有者自身のプロジェクトにおけるロールです。
+- Workspace APIトークンの場合、これはトークンに設定するBitrise CIプロダクトアクセスロールです。Workspaceロール(Viewer、Contributor、Manager)は別物で、トークンを管理できる人を制御するだけであり、接続されたプロジェクトでアプリが実行できる操作には関係しません。
+
+:::
+
+<Tabs>
+<TabItem value="workspace-api-token" label="Workspace API token" default>
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. 左側で<strong>Security</strong>を選択します。
+1. <strong>Create token</strong>をクリックし、次の設定で[Workspace APIトークンの作成](/bitrise-platform/workspaces/workspace-api-token)の手順に従います:
+
+   - <strong>Workspace role</strong>を<strong>Manager</strong>に設定します(これはトークンを管理できる人を制御するものであり、アプリが実行できる操作を制御するものではありません)。
+   - <strong>Configure access to products</strong>で<strong>Bitrise CI</strong>を有効にし、ロールを<strong>Platform Engineer</strong>に設定します。これが、接続されたプロジェクトでアプリが実際に使用するアクセス権です。
+   - トークンをすべてのプロジェクトに適用するか、選択したプロジェクトのみに適用するかを選択します。
+
+</TabItem>
+<TabItem value="personal-access-token" label="Personal access token">
+
+1. [Personal access token の作成](/bitrise-platform/accounts/personal-access-tokens)。
+1. 接続したいすべてのプロジェクトで、自分のアカウントが少なくとも Platform Engineer ロールを持っていることを確認します。
+
+</TabItem>
+</Tabs>
+
+:::important[トークンを保存する]
+
+トークンの値を確認できるのは、作成した瞬間のみです。<strong>Save トークン</strong>の手順を離れる前に、値をコピーして安全な場所に保管してください。
+
+:::
+
+:::tip
+
+トークンを無期限に設定することもできます。有効期限を設定した場合、トークンの有効期限が切れると Jira との接続が機能しなくなります。詳細は[接続の維持](#maintaining-the-connection)を参照してください。
+
+:::
+
+## Bitrise projectの接続 {#connecting-bitrise-projects}
+
+Bitrise projectを Jira に接続するには、APIトークンと、接続したいプロジェクトのリストが必要です。接続の完了作業は Jira 側で行うため、その部分は Jira 管理者が担当する必要があります。
+
+1. <strong>Bitrise側:</strong> どのBitrise projectから Jira に更新情報を送信するかを決定します。特定のプロジェクトのリストを作成するか、すべてのプロジェクトを接続するかを決めます。
+1. APIトークンとプロジェクトのリストは、パスワードマネージャーやシークレット管理ツールなどの安全なチャネルで Jira 管理者と共有してください。通常のメールやチャットでは共有しないでください。
+1. <strong>Jira 側:</strong> <strong>Apps > Manage your apps > Bitrise for Jira</strong>に移動し、設定ページを開きます。
+1. <strong>Bitrise API Token</strong>で、受け取ったトークンを貼り付け、<strong>Save</strong>をクリックします。
+1. <strong>Connected Bitrise Project</strong>で、指定されたプロジェクトを選択し、<strong>Save</strong>をクリックします。
+
+:::note
+
+接続された各プロジェクトについて、Bitrise内でアウトゴーイングウェブフックが自動的に作成されます。ウェブフックを手動で設定する必要はありません。
+
+:::
+
+## 接続の確認 {#verifying-the-connection}
+
+接続の確認は、Jira 管理者と一緒に行えます。
+
+1. 接続されたBitrise projectにおける作業のbranch name、Git タグ、プルリクエストのタイトル、pull request description、またはコミットメッセージにキーが含まれている Jira の課題を開きます。
+1. その課題の<strong>Bitrise build</strong>セクションと、開発パネルの<strong>Builds</strong>タブにBitriseのビルドステータスが表示されることを確認します。
+
+何も表示されない場合は、[トラブルシューティング](#troubleshooting)を参照してください。
+
+## 接続の維持 {#maintaining-the-connection}
+
+- <strong>Tokenの有効期限切れまたは変更:</strong> APIトークンの有効期限が切れた場合、再生成された場合、または置き換えられた場合、接続が機能しなくなります。アプリの設定ページでトークンを更新し、接続されたプロジェクトを再確認してください。
+- <strong>New Bitrise project:</strong> Jira に表示したい新しいプロジェクトをBitriseに追加した場合は、アプリの設定ページに戻り、<strong>Connected Bitrise Project</strong>の下に追加してください。
+
+## トラブルシューティング {#troubleshooting}
+
+- <strong>課題にbuild statusが表示されない:</strong> 課題キーがbranch name、Git タグ、プルリクエストのタイトル、pull request description、またはコミットメッセージに含まれていることを確認してください。次に、トークンがまだ有効であること、そして該当するプロジェクトが<strong>Connected Bitrise Project</strong>の下で選択されていることを確認してください。
+- <strong>プロジェクトがリストにない:</strong> トークンがそのプロジェクトにアクセスできていません。トークン(Personal access token の場合はその所有者のプロジェクトロール)がそのプロジェクトを含んでいるかを確認するか、トークンを作成した担当者に更新を依頼してください。
+- <strong>これまで表示されていたBuild statusが表示されなくなった:</strong> よくある原因は、Bitrise内の、接続されたプロジェクトのアウトゴーイングウェブフックで<strong>Attach Bitrise OIDC token</strong>のチェックが外されていることです。拒否された配信については、アプリの Jira 設定ページの<strong>Activity</strong>セクションを確認してください。
+
+## 関連ページ {#related-pages}
+
+- [Workspace APIトークン](/bitrise-platform/workspaces/workspace-api-token)
+- [Personal access tokens](/bitrise-platform/accounts/personal-access-tokens)

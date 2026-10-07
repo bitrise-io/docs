@@ -1,0 +1,82 @@
+---
+title: "AIコードレビュアー"
+description: "Bitrise AIのコードレビュアーは、GitHubで新しいプルリクエストが作成されるたび、およびユーザーがプルリクエストに新しいコミットを追加するたびに、コメントを作成します。"
+sidebar_position: 7
+slug: /bitrise-platform/integrations/ai-code-reviewer
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_GettingToTheProjectSettingsPage from '@site/i18n/ja/partials/getting-to-the-project-settings-page.mdx';
+
+Bitriseは、AIコードレビュー機能を通じてすべてのプルリクエストに役立つ情報や提案を提供することで、チームのブロック解消を支援します。
+
+AIコードレビュー機能は、GitHubで新しいプルリクエストが作成されるたびに、またユーザーがプルリクエストに新しいコミットを追加するたびにコメントを作成します。
+
+コードレビュー機能では、次の機能を利用できます。
+
+- サマリー: 主要なコードの変更点とその影響をハイライトします。
+- ウォークスルー: コンテキストを考慮したドキュメントを生成し、チームメンバーがコードの変更をすばやく理解できるようにします。
+- Code review: 潜在的な問題を検出し、改善案を提案して、コードの品質を向上させます。
+
+コードレビューを有効にする際に、上記の機能から使用するものを選択できます。
+
+
+## コードレビュー機能の仕組み {#how-the-code-reviewer-works}
+
+AIコードレビュー機能を使用するには、次のいずれかのconnection typeを備えたGitHubリポジトリが必要です。
+
+- [GitHub app integration](/bitrise-platform/repository-access/github-app-integration)（<strong>write</strong> 権限を有効にしたもの）。コメントはBitrise GitHub アプリが投稿します。この方法を強くお勧めします。
+- [GitHub OAuth connection](/bitrise-platform/repository-access/repository-access-with-oauth)。コメントは[service credential user](/bitrise-platform/integrations/the-service-credential-user)の名前で投稿されます。
+
+  :::tip[Bot user]
+
+  OAuth接続を使用する場合は、この目的のためにボットユーザーを作成し、Bitrise上でservice credential userとして接続することをおすすめします。これにより、プルリクエストへのコメントが実際のチームメンバーではなくボットからのものであることが明確になります。
+
+  :::
+
+:::important[HTTPS connection]
+
+AIコードレビュー機能はHTTPS接続では動作しません。GitHubアプリへの切り替えをおすすめします。
+
+:::
+
+AIコードレビュー機能は、Bitrise CIビルドの一覧に表示されるBitriseビルドを実行します。このビルドは次のとおりです。
+
+- クレジット、ビルド数、ビルド時間など、リソース制限には一切カウントされません。
+- concurrency limitにはカウントされません。
+- 実際の[ビルド番号](/bitrise-ci/run-and-analyze-builds/build-numbering-and-app-versioning)を増加させます。
+- [Insights](/insights)データに含まれます。
+
+プルリクエストに新しいコミットが追加されるたびに、コードレビュー機能は新しいレビューと新しいビルドを開始します。
+
+PRあたりのレビュー回数には10回までの制限があります。レビューできる新しいPRの数に制限はありません。
+
+:::important[Third-party API vendor]
+
+Bitrise AIはこの機能のためにサードパーティのAPIベンダーを使用しているため、PRレビューを生成する際にデータがBitriseの外部に送信されます。BitriseがどのようにAIを活用しているかについて詳しくは、[AI FAQ](/bitrise-platform/ai/ai-faq---how-bitrise-leverages-ai-technologies-in-its-features-and-services)をご覧ください。
+
+:::
+
+コードレビュー機能を設定するには、次の手順を行います。
+
+1. <GlossTerm baseform="workspace">workspace</GlossTerm>向けにEnable AI features: [Enabling AI features on Bitrise](/bitrise-platform/ai/enabling-ai-features-on-bitrise)を参照してください。
+1. 特定のプロジェクトでAIコードレビュー機能をEnable the: [Enabling the AI code reviewer](/bitrise-platform/integrations/ai-code-reviewer#enabling-the-ai-code-reviewer)を参照してください。
+
+
+## AIコードレビュー機能を有効にする {#enabling-the-ai-code-reviewer}
+
+プロジェクトでAIコードレビュー機能を有効にするには、次の手順を行います。
+
+1. <Partial_GettingToTheProjectSettingsPage />
+1. 左側で<strong>Bitrise AI</strong>を選択します。
+1. <strong>Code reviewer</strong>を有効にします。
+1. ダイアログで、有効にする機能を選択します。
+
+   - <strong>Summary</strong>
+   - <strong>Walkthrough</strong>
+   - <strong>Code review</strong>
+
+   少なくとも1つを有効にする必要があります。
+1. <strong>Save changes</strong>をクリックします。

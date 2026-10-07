@@ -1,0 +1,144 @@
+---
+title: "Androidユニットテスト"
+description: "Android Unit TestStepを使用してユニットテストを実行し、**Tests**タブで結果を確認できます。"
+sidebar_position: 1
+slug: /bitrise-ci/testing/testing-android-apps/android-unit-tests
+sidebar_label: "Androidユニットテストの実行"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+ユニットテストは、個々のコードブロックを検証したり、バグを検出したり、クラッシュをできるだけ早期に防いだりしたい場合に役立ちます。Bitriseでは、[<strong>Android Unit Test</strong>](https://github.com/bitrise-steplib/bitrise-step-android-unit-test) <GlossTerm baseform="Step">Step</GlossTerm>を使用して、Androidのユニットテストを簡単に実行できます。Stepは、Androidプロジェクトの指定したモジュールとバリアントに含まれるすべてのユニットテストを検出して実行します。
+
+:::tip[複数のテストを並列実行する]
+
+<GlossTerm baseform="pipeline">Pipelines</GlossTerm>機能を使用すると、異なるデバイスやシャードに対して複数のユニットテストを並列実行できます。[Androidプラットフォームでの現在サポートされているユースケース](/bitrise-ci/workflows-and-pipelines/build-pipelines/pipelines-with-stages/currently-supported-use-cases-for-the-android-platform)。
+
+:::
+
+ユニットテストを実行するには:
+
+
+<Tabs>
+  <TabItem value="workflow-editor" label="Workflow Editor">
+
+  1. Androidプロジェクトに[ユニットテスト](https://developer.android.com/training/testing/local-tests)が含まれていることを確認します。
+  1. [<strong>Android Unit Test</strong>](https://github.com/bitrise-steplib/bitrise-step-android-unit-test) Stepを<GlossTerm baseform="Workflow">Workflow</GlossTerm>に追加します。
+  1. <strong>Project Location</strong>入力がAndroidプロジェクトのルートディレクトリを指していることを確認します。
+
+     ルートディレクトリとは、`build.gradle`ファイルが存在するディレクトリです。Bitriseに[アプリとして追加する](/bitrise-ci/getting-started/adding-a-new-project)際にAndroidプロジェクトを自動的に設定した場合は、default valueを変更する必要はありません。
+  1. <strong>Module</strong>と<strong>Variant</strong>入力で、テストするモジュールとバリアントを設定します。すべてのモジュールやバリアントをテストする場合は、入力を空欄のままにします。
+
+     プロジェクトで使用可能なモジュールとバリアントは、[Android StudioのProjectウィンドウ](https://developer.android.com/studio/projects)で確認できます。
+
+     ![android-unit-test.png](/img/_paligo/uuid-6affd72d-61b9-8755-539a-5b26f62516a5.png)
+  1. <strong>Options</strong>入力グループでは、<strong>Additional Gradle Arguments</strong>入力を使って、ビルドタスクに[additional Gradle argumentsを渡す](https://docs.gradle.org/current/userguide/custom_tasks.html#sec:declaring_and_using_command_line_options)ことができます。
+  1. プロジェクト内のテストのテスト結果に対してカスタム出力ディレクトリを設定している場合は、エクスポート時に正しい場所からテスト結果を検索するようにStepを設定します。
+
+     <strong>Local unit test HTML result directory pattern</strong>入力は、HTMLテスト結果のディレクトリを設定します。
+
+     <strong>Local unit test XML result directory pattern</strong>入力は、XMLテスト結果のディレクトリを設定します。
+
+     ![local-result-pattern.png](/img/_paligo/uuid-2e0224cb-0d48-8c50-3bb4-c5a126fff586.png)
+
+     どちらのディレクトリもZIP圧縮され、BITRISE_DEPLOY_DIRにエクスポートされます。これにより、たとえば<strong>Tests</strong>タブでテスト結果を確認できるようになります。
+
+     カスタム出力ディレクトリを設定していない場合は、これらの入力を変更する必要はありません。default valueがそのまま機能します。
+  1. テスト結果を表示できるようにするには、[<strong>Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files</strong>](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) StepをWorkflowに追加します。[テスト結果のデプロイと表示](/bitrise-ci/testing/deploying-and-viewing-test-results)。
+
+  </TabItem>
+  <TabItem value="yaml" label="Configuration YAML">
+
+  1. Androidプロジェクトに[ユニットテスト](https://developer.android.com/training/testing/local-tests)が含まれていることを確認します。
+  1. `android-unit-test` StepをWorkflowに追加します。
+
+     ```yaml
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-unit-test:
+             inputs:
+     ```
+  1. `project_location`入力がAndroidプロジェクトのルートディレクトリを指していることを確認します。
+
+     ルートディレクトリとは、`build.gradle`ファイルが存在するディレクトリです。Bitriseに[アプリとして追加する](/bitrise-ci/getting-started/adding-a-new-project)際にAndroidプロジェクトを自動的に設定した場合は、default valueを変更する必要はありません。
+
+     ```yaml
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-unit-test:
+             inputs:
+             - project_location: $BITRISE_SOURCE_DIR
+     ```
+  1. `module`および`variant`入力で、テストするモジュールとバリアントを設定します。これらの入力を設定しない場合、Stepはすべてのモジュールやバリアントをテストします。
+
+     プロジェクトで使用可能なモジュールとバリアントは、[Android StudioのProjectウィンドウ](https://developer.android.com/studio/projects)で確認できます。
+
+     ```yaml
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-unit-test:
+             inputs:
+             - module: app
+             - variant: debug
+             - project_location: $BITRISE_SOURCE_DIR
+     ```
+  1. `arguments`入力では、ビルドタスクに[additional Gradle argumentsを渡す](https://docs.gradle.org/current/userguide/custom_tasks.html#sec:declaring_and_using_command_line_options)ことができます。
+
+     ```yaml
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-unit-test:
+             inputs:
+             - module: app
+             - variant: debug
+             - arguments: --task
+             - project_location: $BITRISE_SOURCE_DIR
+     ```
+  1. プロジェクト内のテストのテスト結果に対してカスタム出力ディレクトリを設定している場合は、エクスポート時に正しい場所からテスト結果を検索するようにStepを設定します。
+
+     `report_path_pattern`入力は、HTMLテスト結果のディレクトリを設定します。
+
+     `result_path_pattern`入力は、XMLテスト結果のディレクトリを設定します。
+
+     ```yaml
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-unit-test:
+             inputs:
+             - module: app
+             - variant: debug
+             - arguments: --task
+             - report_path_pattern: '*build/reports/tests'
+             - result_path_pattern: '*build/test-results'
+             - project_location: $BITRISE_SOURCE_DIR
+     ```
+
+     どちらのディレクトリもZIP圧縮され、BITRISE_DEPLOY_DIRにエクスポートされます。これにより、たとえば<strong>Tests</strong>タブでテスト結果を確認できるようになります。
+
+     カスタム出力ディレクトリを設定していない場合は、これらの入力を変更する必要はありません。default valueがそのまま機能します。
+  1. テスト結果を表示できるようにするには、`deploy-to-bitrise-io` StepをWorkflowに追加します。[テスト結果のデプロイと表示](/bitrise-ci/testing/deploying-and-viewing-test-results)。
+
+     ```yaml
+     my-workflow:
+       steps:
+         - git-clone: {}
+         - android-unit-test:
+             inputs:
+             - module: app
+             - variant: debug
+             - arguments: --task
+             - report_path_pattern: '*build/reports/tests'
+             - result_path_pattern: '*build/test-results'
+             - project_location: $BITRISE_SOURCE_DIR
+         - deploy-to-bitrise-io: {}
+     ```
+
+  </TabItem>
+</Tabs>

@@ -1,0 +1,83 @@
+---
+title: "AI構成アシスタント"
+description: "AI構成アシスタントは、BitriseWorkflow Editorに組み込まれたチャット形式のアシスタントで、自然言語での説明を検証済みのYAMLに変換します。たとえば「Fastlaneを使ってiOSアプリをビルドし、アーティファクトをSlackに送信する」のように、やりたいことを平易な言葉で説明します。アシスタントは動作するWorkflowまたはPipelineを生成し、アシスタントの支援を受けながら、または手動で、改良や反復ができます。"
+sidebar_position: 5
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkspaceSettingsPage from '@site/i18n/ja/partials/opening-the-workspace-settings-page.mdx';
+
+:::note
+
+これはベータ機能であり、現在はStarterプランおよびProプランのお客様のみご利用いただけます。Enterpriseプランをご利用の場合は、有効化のためカスタマーサクセスマネージャーまでお問い合わせください。
+
+:::
+
+Bitriseには、あらゆるCI/CD用途に対応する数百種類のインテグレーションが用意されており、複雑なワークフローを実現できます。<GlossTerm baseform="step">Steps</GlossTerm>や<GlossTerm baseform="stack">スタック</GlossTerm>、<GlossTerm baseform="configuration yaml">設定YAML</GlossTerm>の複雑な仕組みに慣れるには時間がかかります。その時間があれば、アプリの開発に充てられるはずです。このプロセスを迅速化するため、AI設定アシスタントを導入しました。
+
+AI設定アシスタントは、Bitrise <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>に組み込まれたチャット形式のアシスタントで、自然言語による説明を検証済みのYAMLに変換します。「Fastlaneを使ってiOSアプリをビルドし、アーティファクトをSlackに送信する」のように、プレーンな言葉で要件を記述できます。アシスタントは、アシスタントの助けを借りて、または手動で調整・改善できる、動作する<GlossTerm baseform="workflow">Workflow</GlossTerm>または<GlossTerm baseform="pipeline">Pipeline</GlossTerm>を生成します。
+
+アシスタントは、特定のWorkflowやPipelineについて、各Stepが何を行うかを含めて、平易な言葉で説明することもできます。また、改善案を提案することも可能です。手動で作成した既存のWorkflowやPipelineについても、変更や改善をリクエストできます。
+
+
+## AI設定アシスタントの有効化 {#enabling-the-ai-configuration-assistant}
+
+AI設定アシスタントを利用するには、workspaceレベルとプロジェクトレベルの2つのトグルをそれぞれ有効にする必要があります。
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. <strong>AI settings</strong>を選択します。
+1. Enable the<strong>Enable AI features</strong>トグル。これにより、workspaceに対してBitrise AIが有効になります。個々のAI機能は、引き続き各プロジェクトの設定で個別に有効にする必要があります。
+
+   ![Workspace settings — Enable AI featuresトグルが表示されたAI settingsページ](/img/workflows-and-pipelines/2026-07-03-workspace-settings-ai-settings.png)
+
+1. Bitrise CIページでプロジェクトを開き、<strong>Project settings</strong>をクリックします。
+1. 左側のナビゲーションで<strong>Bitrise AI</strong>を選択します。
+1. <strong>Workflows and pipelines</strong>の下にあるenable the<strong>Configuration generator</strong>トグル。
+
+   ![Project settings — Configuration generatorトグルが有効になったBitrise AIページ](/img/workflows-and-pipelines/2026-07-03-project-settings-bitrise-ai-configuration-generator.png)
+
+:::note[AIクレジット]
+
+AI機能は月間のAIクレジットを消費します。利用可能なクレジット数はプランによって異なります。残りのクレジット数は、Project settingsの<strong>Bitrise AI</strong>ページで確認できます。
+
+:::
+
+両方のトグルを有効にすると、Workflow EditorでAI設定アシスタントを利用できるようになります。
+
+
+## WorkflowまたはPipelineの説明 {#explaining-a-workflow-or-a-pipeline}
+
+AIアシスタントに、Bitrise設定のあらゆる部分がどのように機能するかを説明させることができ、また既存のWorkflowsやPipelinesに対する改善案を提案させることもできます。
+
+説明を得るには、Workflow Editorを開いてWorkflowまたはPipelineを選択します。名前の横にある<strong>Explain</strong>をクリックします。AIアシスタントが、プロンプトを送信済みの状態で開きます。例えば、<strong>test</strong>という名前のWorkflowのボタンをクリックすると、プロンプトは<strong>Explain 'test' workflow</strong>になります。
+
+この説明では、設定のすべての要素を網羅することを目指しています。Workflowに属する<GlossTerm baseform="trigger">トリガー</GlossTerm>とEnvironment Variables、スタックやマシンタイプを含むインフラストラクチャ、そしてStepsについて、それぞれ個別に説明します。また、アシスタントはWorkflowが他のコンテキストでどのように使用されているかについての情報も提供します。例えば、それがPipelineの一部であるかどうかや、そこでどのような役割を果たしているかなどです。
+
+
+## AIアシスタントでWorkflowまたはPipelineを作成する {#creating-a-workflow-or-pipeline-with-the-ai-assistant}
+
+Bitrise AI設定アシスタントを使用すると、完全に検証済みで動作するWorkflowまたはPipelineを作成できます。平易な言葉で要件を記述するだけで、AIが設定を作成します。作成された設定はいつでも変更できます。他のWorkflowやPipelineと同様に、Workflow Editorおよび設定YAMLファイルで利用できます。
+
+1. Workflow Editorを開きます。
+1. 上部のバーで<strong>Ask AI</strong>をクリックします。
+1. <strong>Assistant</strong>ウィンドウで<strong>Create a new Workflow</strong>を選択します。
+
+   :::note
+
+   Workflowセレクターのドロップダウンを開き、リストの一番下にある<strong>Create Workflow with AI</strong>をクリックすることもできます。
+
+   :::
+
+1. 入力フィールドにプロンプトを入力します。
+
+   WorkflowまたはPipelineに何をさせたいかを、平易な言葉で説明してください。Stepの名前やBitrise固有の用語を使う必要はありません。プロンプトが詳細であるほど、AIの出力結果は向上します。
+
+   :::note
+
+   AIアシスタントが処理を行っている間も、設定を手動で変更できます。ただし、アシスタントの準備が整い、その変更を適用すると、手動での変更は上書きされます。
+
+   :::
+1. 必要に応じて変更を依頼してください。何度でも繰り返し調整できます。
+1. 完了したら、<strong>Apply changes</strong>をクリックします。これにより、設定YAMLファイルが上書きされます。

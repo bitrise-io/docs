@@ -1,0 +1,182 @@
+---
+title: "BitriseでのSAMLSSOの設定"
+description: "Workspaceのメンバーは、自身のSAMLSSOプロバイダーのシステムを使って、Bitriseworkspaceにログインできます。SAMLSSOを使うと、workspacesは、Bitriseworkspaceにアクセスするときに、SAMLSSOプロバイダーのセキュリティガイドラインを適用できます。"
+sidebar_position: 1
+slug: /bitrise-platform/accounts/saml-sso-in-bitrise/configuring-saml-sso-on-bitrise
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkspaceSettingsPage from '@site/i18n/ja/partials/opening-the-workspace-settings-page.mdx';
+
+<GlossTerm baseform="Workspace">Workspace</GlossTerm>のメンバーは、自身のSAML SSOプロバイダーのシステムを使用してBitrise workspaceにログインできます。SAML SSOを使用すると、workspacesはBitrise workspaceにアクセスする際に、SAML SSOプロバイダーのセキュリティガイドラインを適用できるようになります。
+
+SAML SSOはworkspaceに対して強制することもできます。強制すると、workspaceへのログイン方法はSAML SSOのみになります。
+
+
+## ドメインの確認 {#verifying-your-domain}
+
+Bitriseユーザーを管理する場所から、自社のドメインを追加して確認できます。Bitriseでは複数の確認済みドメインを持てますが、一度に追加できるドメインは1つだけです。Bitriseは完全一致を求めるため、同じドメインの複数のサブドメインは別々のドメインとしてカウントされます。
+
+ドメインの確認はSCIMを設定するための要件であり、ユーザーがSAML SSO経由でBitriseにサインアップ・ログインする際の利便性を大幅に向上させます。この処理には時間がかかる場合があるため、SAML SSOの設定はドメインの確認から始めることをお勧めします。
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. 左側で<strong>Single sign-on</strong>を選択します。
+1. <strong>Domains</strong>タブを選択します。
+1. <strong>Domain control</strong>セクションで<strong>Add domain</strong>をクリックします。
+1. ダイアログボックスにyour domain nameを入力し、<strong>Next</strong>をクリックします。
+
+   :::important[サブドメインの扱い]
+
+   Bitriseはドメイン名の完全一致を求めます。サブドメインを使用する場合は、サブドメインのフルネームを追加する必要があります。たとえば、mydomain.comを所有していて、そのサブドメインexternal.mydomain.comを使用したい場合、Bitriseでドメイン管理を設定する際にサブドメインの名前を書き出す必要があります。
+
+   :::
+1. ドメイン確認コードが表示されます。このコードをドメインプロバイダーでDNS TXTレコードとして追加する必要があります。
+1. <strong>Copy and close</strong>をクリックして確認コードをコピーし、ダイアログボックスを閉じます。
+
+ドメインプロバイダーにDNS TXTレコードを追加すると、ドメインの確認が開始されます。この処理には最大72時間かかる場合があります。完了するとメールが届きます。
+
+
+## Bitrise workspace向けにSAML SSOを設定する {#setting-up-saml-sso-for-a-bitrise-workspace}
+
+このチュートリアルでは、workspaceのオーナーがSAML SSOを設定し、workspaceのメンバーを招待して各自の接続を設定してもらう方法について説明します。
+
+SAML SSOをworkspaceに接続する前に、次のものが必要です。
+
+- Bitriseを接続できるSAML SSOプロバイダー(Identity Provider)と、SAML SSOプロバイダーの管理者への連絡手段。
+- [workspaceのオーナーまたはマネージャー](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/workspace-collaboration)。contributorまたはviewerロールのWorkspaceメンバーはSAML SSOを設定できません。
+
+SAML SSOの設定を開始するには、次の手順に従います。
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. 左側の<strong>Single Sign-On</strong>タブを選択します。
+1. <strong>Configure SSO</strong>をクリックします。<strong>Setup connection</strong>画面が開きます。
+1. SAML SSOプロバイダーにLog inし、Bitrise workspace settingsの<strong>Setup connection</strong>画面の値を使用して、BitriseをSAML SSOアプリケーションとして追加します。
+
+   ![sso-setup.png](/img/_paligo/uuid-baadaff0-fbae-febb-cca3-077a707b1676.png)
+
+   - <strong>Copy</strong>をクリックして<strong>Assertion Consumer Service URL (ACS URL)</strong>をコピーします。プロバイダーはACS URLにSAMLレスポンスを送信します。プロバイダーによっては、Reply URL、Callback URL、またはSingle Sign-On URLと呼ばれることもあります。
+   - <strong>Copy</strong>をクリックして<strong>Single Logout URL</strong>をコピーします。プロバイダーはSingle Logout URLにSAMLのログアウトレスポンスを送信します。
+
+   SAML SSOプロバイダーから設定値を受け取ります。
+1. SAML SSOプロバイダーの設定値を追加します。
+
+   - <strong>SSO URL</strong>: BitriseはSSO URLにSAMLリクエストを送信します。プロバイダーによってはLogin URLと呼ばれることもあります。
+   - <strong>SSO Logout URL (任意)</strong>: BitriseはSSO Logout URLにSAMLのログアウトリクエストを送信します。
+   - <strong>Application Identifier (任意)</strong>: 複数のworkspacesが同じidentity providerを使用する場合に必要です。Entity IDやAudience URIなど、別の名称で呼ばれることもあります。
+1. SAML SSO provider certificateをアップロードします。
+
+   ファイルをアップロードするか、証明書を手動で貼り付けることができます。
+
+   ![sso-certificate.png](/img/_paligo/uuid-e1e79927-bba9-65ca-01a5-24ef83efe442.png)
+1. <strong>Save changes</strong>をクリックします。
+
+手順を完了すると、あなたとworkspaceメンバーは、それぞれのworkspaceに接続されたSAML SSOに関する確認メールを受け取るはずです。
+
+
+## BitriseでSAML SSOのステータスを確認する {#checking-saml-sso-statuses-on-bitrise}
+
+WorkspaceのオーナーがWorkspace向けにSAML SSOを設定したので、Workspaceのオーナーを含むすべてのWorkspaceメンバーは、<strong>Collaboration</strong>タブで他のWorkspaceメンバーのSAML SSOのステータスを確認できます。
+
+Bitriseには2種類のSAML SSOのステータスがあり、Membersテーブルにアイコンとして表示されます。アイコンにカーソルを合わせると、ツールチップでステータスを確認できます。
+
+- <strong>SAMLが有効:</strong> SAML SSO経由のログインが有効になっています。
+- <strong>SAMLが無効:</strong> WorkspaceメンバーはまだSAML SSOの接続を有効にしていません。有効にするには、WorkspaceメンバーがBitriseからの確認メールの指示に従う必要があります。
+
+1. Workspaceのプロフィールページに移動します。
+1. 左側のメニューから<strong>Collaboration</strong>を選択します。
+1. Membersタブに移動し、WorkspaceメンバーのSAMLステータスを確認します。
+
+   ![saml_status.png](/img/_paligo/uuid-38cefb5d-2dc6-7a86-98cd-d1dac6484ded.png)
+
+
+## WorkspaceでSAML SSOを強制する {#enforcing-saml-sso-on-a-workspace}
+
+WorkspaceでSAML SSOを強制すると、セキュリティをさらに強化できます。Bitrise Workspaceに対して、独自のセキュリティガイドライン(パスワード形式の要件、二要素認証など)を適用できます。
+
+:::warning[強制されたSAML SSO]
+
+WorkspaceでSAML SSOを強制すると、Workspaceへのログイン・サインアップ方法はSAML SSOのみになります。
+
+:::
+
+:::caution[Workspaceは1つのみ]
+
+BitriseにSAML SSOを強制している2つのWorkspacesに同時にメンバーとして所属することはできません。
+
+:::
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. Workspaceの<strong>Single Sign On</strong>タブに移動します。
+1. <strong>Enforce SAML SSO</strong>チェックボックスをオンにして、SAML SSOを強制します。
+
+   ![enforce_saml.png](/img/_paligo/uuid-642c1745-3bb7-c296-bd5a-35a2368a3945.png)
+
+   :::note[SAML SSOを強制できない場合]
+
+   WorkspaceのメンバーがまだSAML SSOの接続を有効にしていない場合、またはSAML SSOを強制する別のWorkspaceでSAML SSOを有効にしている場合、WorkspaceのオーナーはWorkspaceにSAML SSOを強制できません。
+
+   :::
+1. <strong>Save changes</strong>をクリックします。
+
+これで、WorkspaceメンバーはSAML SSO経由でのみログインできるようになります。
+
+
+## SAML SSOが強制されたworkspaceに新しいユーザーを追加する {#adding-a-new-user-to-a-workspace-with-enforced-saml-sso}
+
+SAML SSOが強制されたworkspaceに新しいユーザーを追加できます。次の3つのケースがあります。
+
+- workspaceに確認済みドメインがある場合: [確認済みドメイン](/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-saml-sso-on-bitrise#verifying-your-domain)。他のworkspaceと同じ方法で、同じメールドメインを持つユーザーを招待できます: [Workspaceのコラボレーション](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/workspace-collaboration)。
+- workspaceに確認済みドメインがなく、まだBitriseアカウントを登録していないユーザーを招待したい場合: 他のworkspaceと同じ方法でユーザーを招待します。
+- workspaceに確認済みドメインがなく、既存のBitriseアカウントを持つユーザーを招待したい場合: [強制されたSAML SSO](/bitrise-platform/accounts/saml-sso-in-bitrise/configuring-saml-sso-on-bitrise#enforcing-saml-sso-on-a-workspace)をオフにし、ユーザーを招待した後、強制を再度オンにします。
+
+| ドメイン確認ステータス | 新規ユーザー | 既存ユーザー |
+| --- | --- | --- |
+| 確認済みドメイン | 通常の招待 | 通常の招待 |
+| 未確認のドメイン | 通常の招待 | SAML SSOの強制をオフにする  ユーザーを招待する  SAML SSOの強制を再度オンにする |
+
+
+## WorkspaceのSAML SSOを無効にする {#disabling-a-workspaces-saml-sso}
+
+SAML SSOを無効にすると、Workspaceメンバーは通常のサインイン手順でサインインできるようになります。
+
+1. <Partial_OpeningTheWorkspaceSettingsPage />
+1. <strong>Single Sign-On</strong>タブに移動します。
+1. 以前にWorkspaceでSAML SSOが強制されていた場合は、<strong>Enforce SAML SSO</strong>の下にある<strong>Enforce</strong>をオフに切り替えます。
+1. <strong>Disable SSO</strong>をクリックします。
+
+   確認用のポップアップが表示され、操作を確定またはキャンセルできます。<strong>Disable SSO</strong>ボタンをクリックすると、すべてのWorkspaceメンバーのSAML SSOが無効になる点にご注意ください。完了すると、Workspaceメンバーは通常のBitriseの認証情報でログインできるようになります。
+
+   ![disable_sso.png](/img/_paligo/uuid-ea11f723-edcb-2e88-0d83-c4c60f1cb794.png)
+
+Bitrise (letsconnect@bitrise.io)から<strong>SSOが無効になりました</strong>というメールが届き、WorkspaceのSAML SSOが無効になったことが確認できます。
+
+
+## WorkspaceメンバーのSAML SSOを無効にする {#disabling-a-workspace-members-saml-sso}
+
+Workspaceのオーナーであれば、Bitrise上でWorkspaceメンバーのWorkspaceへのSAML SSOの接続を無効にできます。方法は2つあります。
+
+- Workspaceからユーザーを削除する。
+- SAML SSOプロバイダーからユーザーを削除する。この場合、ユーザーはSAML SSOでログインできなくなります。
+
+
+## SAML SSOの設定を更新する {#updating-saml-sso-configuration}
+
+<strong>Single Sign-On</strong>ページの<strong>Configure SAML SSO provider</strong>ボタンを使用して、Workspaceに設定されているSAML SSOを更新できます。
+
+これは、SAML SSOプロバイダーの証明書の有効期限が切れており、Bitriseに新しい証明書を挿入したい場合に便利です。また、SAML SSOを以前に設定していて、現在の設定内容を確認したい場合にも役立ちます。
+
+:::important[更新用のSSOボタンにアクセスする]
+
+他のSAML SSOの設定と同様に、更新用のSSOボタンにアクセスして使用できるのはWorkspaceのオーナーのみです。
+
+:::
+
+1. Workspaceのオーナーとして、Workspaceの<strong>Single Sign-On</strong>タブをクリックします。
+1. <strong>Configure SAML SSO provider</strong>ボタンをクリックします。これで、WorkspaceのSAML SSOの設定内容にアクセスできます。
+
+   ![configure_update_sso.png](/img/_paligo/uuid-2b97d7ef-4512-cf79-868f-bc66e728b509.png)
+1. 変更を加えて<strong>Save changes</strong>をクリックします。
+
+   これ以降、SAML SSOのリクエストはすべて自動的に新しい設定を使用するようになります。

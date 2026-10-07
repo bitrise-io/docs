@@ -1,0 +1,272 @@
+---
+title: "モジュール式YAML構成"
+description: "モジュール式YAML構成により、大規模で複雑なYAMLファイルを、より小さなモジュール式コンポーネントに分割できます。複数のリポジトリ間での再利用が容易になります。"
+sidebar_position: 5
+slug: /bitrise-ci/configure-builds/configuration-yaml/modular-yaml-configuration
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+:::important[Enterprise only]
+
+モジュール式の YAML 構成は、Enterprise プランの <GlossTerm baseform="workspace">Workspaces</GlossTerm> でのみ利用できます。また、構成ファイルを bitrise.io ではなく、[ご自身のリポジトリに保存](/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml#storing-the-bitriseyml-file-in-your-repository)する必要があります。
+
+Enterprise プランをご利用でなく、モジュール式の YAML にご興味がある場合は、[お問い合わせください](http://www.bitrise.io/contact)。
+
+:::
+
+モジュール式の YAML 構成を使用すると、大規模で複雑な YAML ファイルを、より小さなモジュール式のコンポーネントに分割できます。複数のリポジトリ間での再利用も容易になります。YAML ファイルをモジュール化することで、構成をすばやく見つけて更新でき、エラーやマージコンフリクトのリスクを減らせます。
+
+モジュール式の YAML 構成には、次のものが含まれます。
+
+- リポジトリのルートにある `bitrise.yml` ファイル。
+- 同じリポジトリまたは別のリポジトリにあるその他の YAML ファイル。別のリポジトリのファイルをインクルードするには、そのリポジトリがプライマリリポジトリと同じ Git アカウントまたは組織に属している必要があります。
+- `bitrise.yml` ファイル内の 1 つ以上の `include` キーワード。これらは他の YAML ファイルを指し示し、その構成をメインのプロジェクト構成に取り込みます。
+
+追加の YAML ファイルを `bitrise.yml` ファイルにインクルードすると、そのファイルの <GlossTerm baseform="workflow">Workflows</GlossTerm> や <GlossTerm baseform="pipeline">Pipelines</GlossTerm> を、構成内の他の Workflow や Pipeline と同様に参照できます。
+
+
+## 複数の YAML ファイルから構成をインクルードする {#including-configuration-from-multiple-yaml-files}
+
+モジュール式の構成を作成するには、次の手順を実行します。
+
+1. `bitrise.yml` ファイルをリポジトリに保存します。
+1. `bitrise.yml` に加えて、さらに YAML ファイルを作成し、リポジトリにコミットします。これらのファイルを構成モジュールと呼びます。
+
+:::important[File limit]
+
+ルートレベルの `bitrise.yml` ファイルを含めて、合計 50 個の構成ファイルを使用できます。
+
+:::
+
+`bitrise.yml` では、`include` キーワードを使用して YAML 構成モジュールをインクルードできます。モジュールが `bitrise.yml` ファイルと同じリポジトリにある場合、`include` キーワードには、モジュールの場所を指す `path` というパラメーターが 1 つ必要です。
+
+指定するパスは、リポジトリのルートからの相対パスにする必要があります。
+
+```yaml
+include:
+  - path: file/path/common.yml
+```
+
+別のリポジトリにある YAML 構成モジュールをインクルードするには、そのファイルを含むリポジトリを指定します。`repository` プロパティに加えて、次のうち少なくとも 1 つも設定する必要があります。
+
+- `branch`: YAML 構成モジュールを含むブランチ。
+- `commit`: YAML 構成モジュールをインクルードする特定のコミットハッシュ。
+- `tag`: YAML 構成モジュールを指す Git タグ。
+
+リポジトリは、プロジェクトのプライマリリポジトリが属しているのと同じ Git アカウントまたは組織に属している必要があります。bitrise.io 上で、[Bitrise project のリポジトリ URL](/bitrise-platform/projects/configuring-the-repository-url-and-the-default-branch#changing-the-repository-url)を確認できます。たとえば、リポジトリ URL が git@github.com:MyOrg/main_repo.git の場合、GitHub 上で参照できるのは MyOrg に属するリポジトリのみです。
+
+参照する必要があるのはリポジトリ名のみです。たとえば、git@github.com:MyOrg/another_repo.git は、値 `another_repo` で参照できます。
+
+```yaml
+include:
+  - path: shared/common.yml
+    branch: test_branch
+    repository: another_repo
+```
+
+:::important[Accessing other repositories]
+
+Bitrise は、<GlossTerm baseform="configuration yaml">構成 YAML</GlossTerm> ファイルがホストされている all repositories への `read` アクセスを必要とします。Bitrise がリポジトリにアクセスできるようにする方法は 2 つあります。
+
+- [GitHub App](/bitrise-platform/repository-access/github-app-integration) 連携を使用している場合は、プロジェクトに[追加のリポジトリをリンク](/bitrise-platform/repository-access/github-app-integration#additional-linked-repositories-via-a-github-app)できます。
+- その他の認証方法については、次のガイドを参照してください: [Apps with submodules or private repo dependencies](/bitrise-platform/repository-access/apps-with-submodules-or-private-repo-dependencies)
+
+:::
+
+
+## `include` の形式 {#the-include-format}
+
+| Parameter | Required? | Description |
+| --- | --- | --- |
+| `path` | 必須 | インクルードする YAML ファイルの場所。パスは次のいずれかからの相対パスです。  - CI 環境では、リポジトリのルート。 - ローカル環境では、現在のディレクトリ。 |
+| `branch` | 任意 | YAML ファイルをインクルードするブランチ。 |
+| `tag` | 任意 | YAML ファイルをインクルードするタグ。`branch` と `tag` の両方を指定した場合は、タグが優先されます。 |
+| `commit` | 任意 | YAML ファイルをインクルードする特定のコミットハッシュ。  `branch`、`tag`、`commit` をすべて指定した場合は、コミットが優先されます。 |
+| `repository` | 任意 | YAML ファイルを取得するリポジトリ。設定が必要なのはリポジトリ名のみで、URL は不要です。 |
+
+
+## 構成モジュールを定義する {#defining-configuration-modules}
+
+構成モジュールは、完全な YAML 構成ファイルです。つまり、有効な `bitrise.yml` ファイルのすべての構成要素を利用できます。構成モジュール内で、`format_version`、アプリレベルの Environment Variables、デフォルトの <GlossTerm baseform="stack">stacks</GlossTerm> とマシンタイプ、そしてもちろん Pipelines、Stages、Workflows を定義できます。
+
+たとえば、別のモジュールを指し示すだけの最小限の `bitrise.yml` ファイルを作成できます。
+
+```yaml
+include:
+  - path: path/to/config_module.yml
+```
+
+この場合、`config_module.yml` にビルドの構成全体が含まれます。
+
+```yaml
+format_version: 13
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: android
+app:
+  envs:
+  - MY_NAME: My Name
+workflows:
+  test:
+    steps:
+    - script:
+        inputs:
+        - content: echo "Hello ${MY_NAME}!"
+```
+
+構成モジュールには、ルートレベルで定義されている任意の構成エンティティを含めることができます。たとえば、単一の Workflow のみ、またはアプリレベルの Environment Variables のみを定義する構成モジュールも有効です。
+
+`bitrise.yml` ファイル:
+
+```yaml
+format_version: 13
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+include:
+  - path: path/to/config_module.yml
+```
+
+`config_module.yml` ファイル:
+
+```yaml
+app:
+  envs:
+  - USER_NAME: UserName
+workflows:
+  test:
+    steps:
+    - script:
+        inputs:
+        - content: echo "Hello ${USERNAME}!"
+```
+
+ただし、ルートレベルでないエンティティも、別のモジュールファイルとして単独で存在することはできません。たとえば、次のように <GlossTerm baseform="step">Step</GlossTerm> の入力をインクルードすることはできません。
+
+### インクルードしたモジュールをネストする {#nesting-included-modules}
+
+インクルードした構成ファイルで `include` プロパティを使用できます。
+
+ルートレベルの `bitrise.yml` ファイル:
+
+```yaml
+format_version: 13
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+include:
+  - path: path/to/config_module.yml
+```
+
+`config_module.yml` ファイル:
+
+```yaml
+include:
+  - path: path/to/another_module.yml
+```
+
+`another_module.yml` ファイル:
+
+```yaml
+workflows:
+  ui_test:
+    steps:
+    - pull-intermediate-files@1:
+        inputs:
+        - artifact_sources: build_tests.build_for_ui_testing
+```
+
+この構成では、`ui_test` Workflow を実行できます。
+
+ネストには次の制限があります。
+
+- ルートレベルのファイルを含めて、深さは 10 までです。
+- ルートレベルのファイルを含めて、構成ファイルは合計で最大 50 個です。
+
+### インクルードしたモジュールのマージルール {#merge-rules-for-included-modules}
+
+Bitrise がビルドを実行するとき、構成モジュールは 1 つの `bitrise.yml` ファイルにマージされます。
+
+- インクルードしたモジュールは、ルートの `bitrise.yml` ファイルで定義された順序で読み込まれ、構成にマージされます。
+- インクルードしたモジュールが別のモジュールをインクルードしている場合は、ネストされたモジュールが再帰的に先にマージされます。
+- include で追加されたすべての構成ファイルがマージされた後、その結果の構成がルートレベルの `bitrise.yml` ファイルとマージされます。このため、ルートレベルで構成値を上書きできます。
+
+:::note[Switching back to bitrise.io]
+
+複数の YAML ファイルを使用するモジュール式の構成があり、[構成の保存先を bitrise.io に戻す](/bitrise-ci/configure-builds/configuration-yaml/storing-an-apps-configuration-yaml#moving-the-bitriseyml-file-back-to-bitriseio)場合は、同じマージルールを使用して、すべてのファイルが 1 つの `bitrise.yml` ファイルにマージされます。
+
+:::
+
+構成をマージするとき、重複が発生し、インクルードした構成値が上書きされることがあります。YAML モジュールをマージする場合、最後に読み込まれたファイルが、既存のマージ済み構成より優先されます。ルールは次のとおりです。
+
+- 単純な型の項目(整数やブール値など): 最後に読み込まれたファイルの値が使用されます。
+- オブジェクト型の項目(たとえば、Pipelines、Stages、Workflows):
+
+  - プロパティが既存のマージ済み構成にのみ存在する場合、その値は保持されます。
+  - プロパティが両方に存在し、それらの値がハッシュマップの場合、値はマージされます。
+  - それ以外の場合は、最後に読み込まれたファイルの値が使用されます。
+- 配列型の項目(たとえば、Environment Variables のリストや[トリガーマップ項目](/bitrise-ci/run-and-analyze-builds/build-triggers/yaml-syntax-for-build-triggers)): コレクションが最後に読み込まれたファイルと既存のマージ済み構成の両方に存在する場合、マージされた値は順序付き配列となり、マージ済み構成のすべての値の後に、最後に読み込まれたファイルの値が続きます。
+
+マージされた構成は、<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm> の <strong>Merged config</strong> タブで確認できます。そこから個々のモジュールを開いて編集する方法については、[Editing a modular configuration in the Workflow Editor](/bitrise-ci/configure-builds/configuration-yaml/editing-a-modular-configuration-in-the-workflow-editor)を参照してください。
+
+マージ結果をお使いのコンピューターで確認するには、[`bitrise yml merge`](/bitrise-ci/bitrise-cli/working-with-bitrise-yml-via-the-bitrise-cli#merging-a-modular-configuration)を実行します。このコマンドには Bitrise CLI 3.0.0 以降が必要です。
+
+<strong>マージルール</strong>
+
+ルートの `bitrise.yml` ファイルが `config_module.yml` ファイルをインクルードしています。
+
+`bitrise.yml`:
+
+```yaml
+format_version: 13
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: android
+
+include: 
+  - path: path/to/config_module.yml
+
+app:
+  envs:
+  - USER_ID: UserId
+  - PASSWORD: SecurePassphrase
+```
+
+`config_module.yml`:
+
+```yaml
+format_version: 10
+
+app:
+  envs:
+  - USERNAME: UserName
+
+workflows:
+  test:
+    steps:
+    - script:
+        inputs:
+        - content: echo "Hello ${USERNAME}!"
+```
+
+マージ時には、`config_module.yml` が読み込まれ、構成にマージされます。次に、ルートレベルの `bitrise.yml` が読み込まれ、マージされます。最終的な構成は次のようになります。
+
+```yaml
+format_version: 13
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: android
+
+app:
+  envs:
+  - USER_ID: UserId
+  - PASSWORD: SecurePassphrase
+  - USERNAME: UserName
+
+workflows:
+  test:
+    steps:
+    - script:
+        inputs:
+        - content: echo "Hello ${USERNAME}!"
+```
+
+- ルートレベルの `format_version` プロパティは両方のファイルに存在します。ルートレベルの `bitrise.yml` ファイルが全体の構成に最後にマージされるため、その値 `format_version` が使用されます。
+- `apps` プロパティは両方のファイルに存在するため、すべてのキーと値のペアが全体の構成に追加されます。
+- `test` Workflow は `config_module.yml` にのみ存在するため、全体の構成に追加され、`bitrise.yml` によって上書きされることはありません。

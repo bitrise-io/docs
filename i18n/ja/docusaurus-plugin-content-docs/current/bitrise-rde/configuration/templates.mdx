@@ -1,0 +1,59 @@
+---
+title: "テンプレート"
+description: "スタック、マシンタイプ、セットアップスクリプト、入力、IDEフォルダーリンクを使って再利用可能なRemote Dev Environmentの設定を定義し、そこからセッションを作成します。"
+sidebar_position: 1
+slug: /bitrise-rde/configuration/templates
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+<GlossTerm baseform="rde template">テンプレート</GlossTerm>は、再利用可能な Remote Dev Environment の設定です。マシンとそのセットアップを一度定義すれば、毎回同じ選択を繰り返すことなく、そこから一貫した<GlossTerm baseform="rde session">セッション</GlossTerm>を作成できます。
+
+## テンプレートの概要 {#template-overview}
+
+テンプレートには次の内容を含めることができます。
+
+- スタック、マシンタイプ、ターミナルが開始する作業ディレクトリ。
+- ツールのインストールや環境の準備を行うウォームアップスクリプトと起動スクリプト。
+- 環境に必要な値のためのテンプレート変数とセッション入力。
+- Workspaceリンク: IDE で特定のフォルダーを開くショートカットボタン。
+- 仮想デバイス: テンプレートから作成されるすべてのセッションが起動する、iOS シミュレーターまたは Android エミュレーター。
+
+## ウォームアップスクリプトと起動スクリプト {#warmup-and-startup-scripts}
+
+どちらのスクリプトも Bash で、セッションユーザーとして実行されますが、実行されるタイミングが異なります。
+
+- ウォームアップスクリプトは、セッションが最初に作成されるときに一度だけ実行されます。依存関係のインストールなど、時間がかかる一度限りのセットアップに使用してください。
+- 起動スクリプトは、復元後も含め、セッションが開始されるたびに実行されます。複数回実行されるため、冪等にしてください。
+
+## 変数と入力 {#variables-and-inputs}
+
+テンプレートには2種類の値があり、どちらもenvironment variablesとしてセッションに公開できます。
+
+- テンプレート変数は、固定値でテンプレートに組み込まれます。変数をシークレットとして設定すると、保存時に暗号化されます。
+- セッション入力は、セッションの作成時に入力されます。入力を必須にしたり、default valueを指定したりできます。セッション入力は、[保存済みの入力](/bitrise-rde/configuration/saved-inputs)から値を取得することもできるため、シークレットはサーバー側で解決され、UIに表示されることはありません。
+
+## Workspaceリンク {#workspace-links}
+
+Workspaceリンクは、セッション上のボタンで、指定したフォルダーパスを IDE で開きます。複数フォルダーのプロジェクトで、目的のディレクトリにすばやく移動するのに便利です。
+
+## 宣言済みデバイス {#declared-device}
+
+テンプレートで仮想デバイスを宣言すると、そこから作成されるすべてのセッションで、セッション側のデバイス設定なしに iOS シミュレーターまたはAndroidエミュレーターが起動します。テンプレートフォームで <strong>Boot a device with every session</strong> をオンにするか、CLIを使用してください。
+
+```bash
+bitrise-cli rde template create --file template.json --device-platform ios --device-model "iPhone 16"
+```
+
+テンプレートのstack and machine typeは、プラットフォームに適合している必要があります。iOS の場合は macOS スタック、Androidの場合は Linux Android スタックです。テンプレートからセッションを作成するときは、デバイスを宣言どおりに維持するか、そのセッションに限って個々のフィールドを変更するか、UIの <strong>Start an iOS simulator</strong> または <strong>Start an Android emulator</strong>、およびCLIの`--no-device`でオフにできます。テンプレートからすでに作成されたセッションは、作成時のデバイスを保持します。デバイスオプション自体については、[Device sessions](/bitrise-rde/devices/device-sessions#device-options)で説明しています。
+
+## テンプレートの管理 {#managing-templates}
+
+テンプレートの作成、編集、複製、削除は、[Bitrise RDE UI](/bitrise-rde/rde-options/bitrise-rde-ui)から、またはCLIで`bitrise-cli rde template`を使用して行います。
+
+セッションを作成すると、そのテンプレート設定はスナップショットとして保存されます。その後にテンプレートを編集または削除しても、すでに作成されたセッションが変更されたり、動作しなくなったりすることはありません。
+
+## Warm pools
+
+誰かが要求する前にテンプレートのセッションを準備しておくには、そのテンプレートから [warm pool](/bitrise-rde/configuration/warm-pools)を作成します。テンプレートのページで <strong>Create warm pool</strong> をクリックすると、そのテンプレートが選択された状態でプールのフォームが開きます。プールはテンプレートに追従するため、テンプレートを編集するとプールのウォームセッションが置き換えられ、テンプレートを削除するとそのプールも削除されます。

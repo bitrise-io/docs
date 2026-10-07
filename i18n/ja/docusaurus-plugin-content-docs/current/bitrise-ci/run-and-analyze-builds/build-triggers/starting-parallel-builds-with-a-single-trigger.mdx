@@ -1,0 +1,101 @@
+---
+title: "1つのトリガーでの並列ビルドの開始"
+description: "Bitriseの Start for Build とBitrise Wait for BuildStepsを使用して、複数の並列ビルドを開始できます。"
+sidebar_position: 4
+slug: /bitrise-ci/run-and-analyze-builds/build-triggers/starting-parallel-builds-with-a-single-trigger
+---
+
+:::tip[単一のトリガーで並列ビルドを開始するためのBuild Pipelinesの使用]
+
+クレジットベースのアカウントをお持ちで、単一のトリガーで複数のタスクを並列実行する予定がある場合は、Build Pipelinesの使用をお勧めします。詳しくは[Build Pipelines](/bitrise-ci/workflows-and-pipelines/build-pipelines/pipelines-with-stages/configuring-a-pipeline-with-stages)をご覧ください。
+
+:::
+
+同時実行数が2つ以上ある場合、またはクレジットベースのアカウントをお持ちの場合は、複数のビルドを同時に実行できます。作業をできるだけ簡単にするため、これらのビルドは単一のトリガーで自動的に開始できます。その仕組みを見ていきましょう。
+
+この例では、1つのアプリのWorkflowsを3つ同時に実行するように設定しています。これらのWorkflowsを<strong>Trigger</strong>、<strong>Building</strong>、<strong>Testing</strong>と呼ぶことにします。<strong>Trigger</strong>という名前のワークフローはプルリクエストによってトリガーされ、その後このワークフローが<strong>Building</strong>と<strong>Testing</strong>をトリガーし、これらは同時に実行されます。
+
+すべてのワークフローは、個別のクリーンな仮想マシン上で実行されます。また、異なるタイプのスタックで実行することもできます。Workflowのスタックを選択するには、アプリのWorkflow Editorに移動し、<strong>Stack</strong>タブを選択します。
+
+いずれかのビルドが失敗した場合、そのビルドは失敗したビルドと見なされます。ビルドがWebhookによってトリガーされた場合、Bitriseは[概要ビルド結果](/bitrise-ci/configure-builds/configuring-build-settings/reporting-the-build-status-to-your-git-hosting-provider)をGitプロバイダーに送信します。並列ビルドのいずれかが失敗した場合は、失敗ステータスが報告されます。
+
+:::important[「子」ビルドに対するレポートなし]
+
+Bitriseは、他のすべてのビルドをトリガーした元の「親」ビルドについてのみ、Gitステータスレポートを送信します。「子」ビルドは、Gitプロバイダーにステータスレポートを送り返しません。
+
+たとえば、ビルドAがビルドBとビルドCをトリガーする場合、Aが完了した時点でステータスレポートが送信されます。ただし、ビルドBとビルドCについては個別のステータスレポートは送信されません。
+
+:::
+
+必要なもの:
+
+- パーソナルアクセストークン。
+- トークンを保存するシークレット環境変数。
+- <strong>Bitrise Start Build</strong> Step。
+- <strong>Bitrise Wait for Build</strong> Step。
+
+:::important[CI上のBitrise Start Build Step]
+
+<strong>Bitrise Build Start</strong> Stepは、[see topic](urn:resource:component:43135)を呼び出すために、現在実行中のビルドのパラメーター(アプリスラッグ、ビルドスラッグ、ビルド番号など)に大きく依存しているため、<strong>Bitrise Build Start</strong> Stepをローカルで使用することはできません。
+
+:::
+
+:::tip[bitrise.yml例]
+
+`bitrise.yml`ファイルはWorkflow Editorの**bitrise.yml**タブで編集することも、ローカルで編集することもできます。以下の例はBitrise UIを中心に説明していますが、YAML形式を使用する場合は、[こちらの例をご覧ください](#bitriseyml-example)。
+
+:::
+
+1. ユーザー用の<strong>Personal Access Token</strong>を作成します。
+
+   <strong>Profile Settings</strong>に移動し、左側の<strong>Security</strong>オプションを選択します。<strong>Generate new</strong>ボタンをクリックします。
+
+   ![Starting_parallel_builds_with_a_single_trigger.png](/img/_paligo/uuid-35a66242-8cc5-8b66-380d-a996c3012825.png)
+
+   :::warning[トークンのコピー]
+
+   トークンが生成されたら、必ずコピーしてください。再度表示することはできません。
+
+   :::
+1. アプリのWorkflow Editorの<strong>Secrets</strong>タブでシークレット環境変数を作成し、そのトークンを値として追加します。
+
+   ![Starting_parallel_builds_with_a_single_trigger.png](/img/_paligo/uuid-d85ee7fd-2f40-5ae8-34ce-c79f638f3879.png)
+
+   シークレットのキーには任意の名前を使用できます。$ACCESS_TOKENのようなシンプルなものをお勧めします。
+1. <strong>Trigger</strong> Workflowに<strong>Bitrise Start Build</strong> Stepを追加します。
+
+   <strong>Bitrise Start Build</strong> Stepは、開始するすべてのビルドに環境変数$SOURCE_BITRISE_BUILD_NUMBERを設定する点に注意してください。Stepによってトリガーされた各ビルドはそれぞれ独自のビルド番号を持ちますが、ソースビルド番号はすべて同じになります。
+1. Stepの<strong>Bitrise Access Token</strong>インプットに、パーソナルアクセストークンを保存しているシークレット環境変数を追加します。<strong>Select secret variable</strong>ボタンをクリックし、作成したキーを選択します。
+
+   ![Starting_parallel_builds_with_a_single_trigger.png](/img/_paligo/uuid-f9f9d575-5b1f-73c1-53ae-94ae13e0da3f.png)
+1. Stepの<strong>Workflows</strong>インプットを見つけ、そこに`Building`と`Testing`を追加します。
+
+   ![Starting_parallel_builds_with_a_single_trigger.png](/img/_paligo/uuid-41d604b4-d929-893c-2ac9-aa44b3e01e85.png)
+1. <strong>Trigger</strong> Workflowの最後のStepとして<strong>Bitrise Wait for Build</strong> Stepを追加します。
+
+   :::important[ビルドステータスの確認]
+
+   Stepは、Stepで定義されたビルドのステータスを確認します。ビルドは<strong>Build slugs</strong>インプットで定義されており、このスラッグは<strong>Bitrise Start Build</strong> Stepの出力です。スラッグで定義されたビルドが実行されている間、Stepはそれが実行されているビルドを保持します。Stepに含まれるビルドのいずれかが失敗した場合、そのビルドは失敗します。
+
+   :::
+1. Stepの<strong>Bitrise Access Token</strong>インプットに、パーソナルアクセストークンを保存しているシークレット環境変数を追加します。<strong>Select secret variable</strong>ボタンをクリックし、作成したキーを選択します。
+
+   ![Starting_parallel_builds_with_a_single_trigger.png](/img/_paligo/uuid-ed66ae06-8ebc-cb93-e3e3-ce6c2e94b1de.png)
+
+これで完了です。<strong>Trigger</strong>ワークフローをトリガーすると、Workflowの<strong>Bitrise Start Build</strong> Stepが、同時に実行される2つのビルドをさらにトリガーします。これら2つのビルドが成功すると、<strong>Bitrise Wait for Build</strong> Stepによって最初のビルドが完了します。ビルドが成功したかどうかに関わらず、Gitホスティングプロバイダーには単一のステータスレポートが送信されます。
+
+## bitrise.ymlの例 {#bitriseyml-example}
+
+```yaml
+Trigger:
+  steps:
+  - build-router-start@0:
+      inputs:
+      - workflows: |-
+          Building
+          Testing
+      - access_token: "$BITRISE_API_KEY"
+  - build-router-wait@0:
+      inputs:
+      - access_token: "$BITRISE_API_KEY"
+```

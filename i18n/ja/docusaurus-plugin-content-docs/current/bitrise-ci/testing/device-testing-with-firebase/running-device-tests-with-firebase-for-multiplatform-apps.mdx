@@ -1,0 +1,34 @@
+---
+title: "Firebaseによるマルチプラットフォームアプリのデバイステストの実行"
+description: "Bitriseのデバイステストソリューションを使用して、FlutterおよびReact Nativeアプリのネイティブデバイステストを実行します。"
+sidebar_position: 3
+slug: /bitrise-ci/testing/device-testing-with-firebase/running-device-tests-with-firebase-for-multiplatform-apps
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitriseのデバイステストソリューションを使用して、FlutterおよびReact Nativeアプリのネイティブデバイステストを実行できます。
+
+## iOSアプリのテスト {#testing-the-ios-app}
+
+1. プロジェクトのiOSアプリに、[XCTest](https://developer.apple.com/documentation/xctest)フレームワークを使用してテストを追加します。
+1. [テスト用にアプリをビルド](/bitrise-ci/testing/testing-ios-apps/building-an-ios-app-for-testing)し、[<strong>Xcode Build for testing for iOS</strong>](https://github.com/bitrise-steplib/steps-xcode-build-for-test) <GlossTerm baseform="Step">Step</GlossTerm>を実行します。
+
+   Stepの<strong>Project path</strong>入力が、プロジェクトの`.xcodeproj`または`.xcworkspace`ファイルを指していることを確認してください。これらのファイルは`iOS`フォルダにあります。React NativeアプリをBitriseに自動設定で追加した場合は、この入力のdefault valueを変更する必要はありません($BITRISE_PROJECT_PATH。
+1. [<strong>iOS Device Testing</strong>](https://github.com/bitrise-steplib/steps-virtual-device-testing-for-ios) Stepを使用して、デバイステストを実行します。
+
+   iOSアプリをデバイステスト用に設定する方法の詳細については、[iOSアプリのデバイステストの実行](/bitrise-ci/testing/device-testing-with-firebase/device-testing-for-ios#running-device-tests-with-firebase-for-ios-apps)をご覧ください。
+
+## Androidアプリのテスト {#testing-the-android-app}
+
+[<strong>Virtual Device Testing for Android</strong>](https://github.com/bitrise-steplib/steps-virtual-device-testing-for-android) Stepを使用して、Robo、インストゥルメンテーション、Gameloopの各テストを実行できます。ただし、Stepの1つのインスタンスでは1種類のテストしか実行できません。複数の種類のテストを実行する必要がある場合は、Stepを複数インスタンス用意する必要があります。
+
+1. プロジェクトのAndroidアプリにテストを追加します。
+1. [<strong>Android Build for UI Testing</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing) Stepを使用して、UIテスト用にアプリをビルドします。
+
+   Stepの<strong>Project Location</strong>入力がAndroidアプリのルートディレクトリを指していることを確認してください。例: `./android`。
+1. [<strong>Virtual Device Testing for Android</strong>](https://github.com/bitrise-steplib/steps-virtual-device-testing-for-android) Stepを使用して、デバイステストを実行します。
+
+   Androidアプリをデバイステスト用に設定する方法の詳細については、[Androidのデバイステスト](/bitrise-ci/testing/device-testing-with-firebase/device-testing-for-android)をご覧ください。

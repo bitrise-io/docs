@@ -1,0 +1,194 @@
+---
+title: "アプリバージョンの作成"
+description: "Release Management API を使って、アプリのバージョンを作成して設定します。"
+sidebar_position: 3
+slug: /release-management/api/creating-an-app-version
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+アプリバージョンは、release candidate stage から承認、ストア申請、本番リリースを経て release process を通過します。
+
+Store Releases サブAPIのベースURL: `https://api.bitrise.io/release-management/v2/store-releases/v1`。エンドポイント、パラメータ、スキーマの全リストについては、[Store Releases APIリファレンス](/release-management-api/store-releases/api-reference/release-management-api-app-versions)を参照してください。
+
+## アプリバージョンを作成する {#creating-an-app-version}
+
+| エンドポイント | 機能 | 必要なロール |
+| --- | --- | --- |
+| [`POST /app-versions`](/release-management-api/store-releases/api-reference/create-release) | 新しいアプリバージョンを作成します。 | リリースマネージャー |
+| [`GET /app-versions`](/release-management-api/store-releases/api-reference/list-releases) | アプリのアプリバージョンを一覧表示します。 | 任意 |
+| [`GET /app-versions/{id}`](/release-management-api/store-releases/api-reference/get-release) | アプリバージョンの詳細を取得します。 | 任意 |
+| [`PATCH /app-versions/{id}`](/release-management-api/store-releases/api-reference/update-release) | アプリバージョンを更新します。 | リリースマネージャー |
+| [`DELETE /app-versions/{id}`](/release-management-api/store-releases/api-reference/delete-release) | アプリバージョンを削除します。 | リリースマネージャー |
+
+アプリバージョンを作成するには、次の手順に従います。
+
+1. 必要なフィールドを指定して `POST /app-versions` を呼び出します。
+
+   - `name`: このアプリバージョンのバージョン名です。
+   - `app_id`: Release Management 内のアプリのIDです([アプリを追加した際](/release-management/api/adding-and-connecting-an-app)に返されます)。
+
+   :::note[iOSのバージョン形式]
+
+   iOSアプリの場合、`name` は App Store Connect のバージョン文字列として使用され、`X.Y.Z` 形式に従う必要があります(例: `1.2.0`)。
+
+   :::
+
+   ```bash
+   curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions" \
+     -H "Authorization: YOUR_ACCESS_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "name": "1.5.0",
+       "app_id": "APP_ID",
+       "description": "Spring feature release",
+       "artifact_source": "ci"
+     }'
+   ```
+
+   レスポンスにはアプリバージョンの `id` が含まれており、これ以降の呼び出しで使用します。
+
+   ```json
+   {
+     "id": "YOUR_APP_VERSION_ID",
+     "name": "1.5.0",
+     "status": "scheduled",
+     "description": "Spring feature release",
+     "connected_app_id": "YOUR_APP_ID",
+     "artifact_source": "ci",
+     "platform": "android",
+     "store_app_id": "com.example.myapp",
+     "created_at": "2026-01-01T00:00:00.000Z",
+     "released_at": null,
+     "release_candidate_id": null,
+     "stages": [
+       { "name": "release-candidate", "status": "pending" },
+       { "name": "approvals", "status": "pending" },
+       { "name": "app-store-review", "status": "pending" },
+       { "name": "release", "status": "pending" }
+     ]
+   }
+   ```
+
+## リリース自動化を設定する {#configuring-release-automation}
+
+アプリバージョンが特定の段階に達したときに CI ビルドを自動的にトリガーする自動化ルールを定義できます。自動化の仕組みの詳細については、[Release automation](/release-management/releases/configuring-a-release/release-automation)をご覧ください。
+
+アプリバージョンの作成時または更新時に `automation` フィールドを設定します。
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "1.5.0",
+    "app_id": "APP_ID",
+    "artifact_source": "ci",
+    "release_branch": "release/1.5.0",
+    "workflow": "release",
+    "automation": [
+      {
+        "event_name": "release_candidate_set",
+        "workflow_name": "run-tests"
+      },
+      {
+        "event_name": "approvals_completed",
+        "workflow_name": "upload-to-store"
+      }
+    ]
+  }'
+```
+
+使用できる自動化 `event_name` の値はプラットフォームによって異なります。最新の全リストと各イベントのトリガー条件については、[Automation events](/release-management/releases/configuring-a-release/release-automation#automation-events)を参照してください。
+
+<Tabs groupId="platform">
+<TabItem value="ios" label="iOS">
+
+- `release_candidate_set`: 新しいリリース候補が選択されます。
+- `testflight_upload_finished`: アップロードされたビルドのTestFlight処理が完了します。
+- `beta_review_approved`: Apple がベータ版アプリレビューを承認します。
+- `beta_review_rejected`: Apple がベータ版アプリレビューを却下します。
+- `release_for_apple_app_store_testing_group`: ビルドがTestFlightのテストグループにリリースされます。
+- `approvals_completed`: すべての承認タスクが完了としてマークされます。
+- `submitted_for_review`: アプリバージョンがApp Storeレビューに申請されます。
+- `review_status_changed` / `review_cancelled`: レビュー申請のステータスが変化します。
+- `release_started`: App Storeへのロールアウトが開始します。
+- `release_completed`: アプリバージョンが完全にロールアウトされます。
+
+</TabItem>
+<TabItem value="android" label="Android">
+
+- `release_candidate_set`: 新しいリリース候補が選択されます。
+- `google_play_store_upload_finished`: ビルドの Google Play console へのアップロードが完了します。
+- `release_on_google_play_store_testing_track`: リリース候補が Google Play のテストトラックにリリースされます。
+- `approvals_completed`: すべての承認タスクが完了としてマークされます。
+- `release_started`: ロールアウトが開始します(完全リリース、または段階的ロールアウトの最初の段階)。
+- `release_completed`: アプリバージョンが完全にロールアウトされます。
+- `release_percentage_changed`: 段階的な rollout percentage が変化します(最初のロールアウトではトリガーされません)。
+
+</TabItem>
+</Tabs>
+
+## アプリバージョンに承認タスクを追加する {#adding-approval-tasks-to-an-app-version}
+
+| エンドポイント | 機能 | 必要なロール |
+| --- | --- | --- |
+| [`POST /app-versions/{id}/approvals`](/release-management-api/store-releases/api-reference/create-approval-task) | 承認タスクを作成します。 | リリースマネージャー |
+| [`GET /app-versions/{id}/approvals`](/release-management-api/store-releases/api-reference/list-approval-tasks) | 承認タスクを一覧表示します。 | 任意 |
+| [`PATCH /app-versions/{id}/approvals/{task_id}`](/release-management-api/store-releases/api-reference/update-approval-task) | 承認タスクを更新または完了します。 | 担当ユーザー |
+
+アプリバージョンを次に進める前に、チームメンバーが完了する必要がある承認タスクを作成できます。
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/APP_VERSION_ID/approvals" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "summary": "QA sign-off",
+    "description": "Verify all test cases pass on the release build",
+    "assigned_user_slug": "USER_SLUG",
+    "due_date": "2026-07-10"
+  }'
+```
+
+承認タスクを完了としてマークするには、次のようにします。
+
+```bash
+curl -X PATCH "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/APP_VERSION_ID/approvals/TASK_ID" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "completed": true
+  }'
+```
+
+## アプリバージョンにプリセットを適用する {#applying-a-preset-to-an-app-version}
+
+[release presets](/release-management/api/creating-presets)を設定済みの場合、アプリバージョンの作成時に適用すると、その自動化、承認、通知設定を継承できます。
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "1.5.0",
+    "app_id": "APP_ID",
+    "presets_id": "PRESET_ID"
+  }'
+```
+
+## アプリバージョンを削除する {#deleting-an-app-version}
+
+:::warning[削除は取り消せません]
+
+アプリバージョンを削除すると、そのアプリバージョンと関連するすべてのデータが削除されます。この操作は取り消せません。
+
+:::
+
+```bash
+curl -X DELETE "https://api.bitrise.io/release-management/v2/store-releases/v1/app-versions/APP_VERSION_ID" \
+  -H "Authorization: YOUR_ACCESS_TOKEN"
+```
+
+リクエストが成功すると、空のボディとともに `204 No Content` が返されます。

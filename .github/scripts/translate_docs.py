@@ -36,9 +36,19 @@ Design:
      writing the page — a bad translation can never be silently committed.
      This also gives protection a measurable guarantee: a token that
      survives verbatim IS the term surviving verbatim.
+  3b. PIN HEADING IDS — each translated heading is given its English heading's
+     anchor as an explicit {#id} (scripts/heading_ids.py), so links to
+     #anchors keep working after translation.
   4. WRITE — output goes to the Japanese i18n path. Front matter is split
      off and never sent to the model at all, so there's no risk of it
      touching the slug — only the body is translated.
+
+PARTIALS
+  Reusable partials (src/partials/*.mdx) are translated exactly like pages,
+  into i18n/ja/partials/ (--partials-src-root / --partials-dest-root). They
+  are processed first, and every translated page's `@site/src/partials/x.mdx`
+  import is repointed at `@site/i18n/ja/partials/x.mdx` when that translated
+  partial exists, so a JA page never renders the English partial.
 
 USAGE
   python3 translate_docs.py \
@@ -68,7 +78,9 @@ import yaml
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(REPO_ROOT, "scripts"))
 
+from heading_ids import add_english_heading_ids, untranslated_headings  # noqa: E402
 from nt_terms import TermMatcher  # noqa: E402
+import translatable_strings as ts  # noqa: E402
 
 TOKEN_RE = re.compile(r"⟦p\d+⟧")
 MAX_ATTEMPTS = 3
@@ -176,6 +188,12 @@ def verify_tokens(masked_text, translated):
 
 
 BOLD_SPAN_RE = re.compile(r"\*\*(.+?)\*\*")
+# **Key pair name - *required***: bold whose last words are italic, so the
+# span ends in a run of three asterisks. Left to BOLD_SPAN_RE alone, the
+# non-greedy match closes on the first two of the three and strands the third,
+# producing <strong>...*required</strong>* — an unbalanced emphasis that fails
+# MDX compilation.
+BOLD_ENDING_IN_ITALIC_RE = re.compile(r"\*\*([^*\n]+?)\*([^*\s][^*\n]*?)\*\*\*(?!\*)")
 
 
 def promote_bold_to_strong(text):
@@ -196,7 +214,11 @@ def promote_bold_to_strong(text):
     MUST run on the translated text BEFORE unmasking: at that point fenced
     code, inline code, and URLs are still placeholder tokens, so a literal
     ** inside restored code can never be caught by this rewrite. Matches one
-    non-greedy same-line pair at a time."""
+    non-greedy same-line pair at a time. A bold span that ends in an italic
+    (**text *italic***) is rewritten first, as <strong>text <em>italic</em>
+    </strong>, so its closing *** is not split."""
+    text = BOLD_ENDING_IN_ITALIC_RE.sub(
+        lambda m: f"<strong>{m.group(1)}<em>{m.group(2)}</em></strong>", text)
     return BOLD_SPAN_RE.sub(lambda m: f"<strong>{m.group(1)}</strong>", text)
 
 
@@ -220,6 +242,11 @@ def system_prompt(preferred):
         "Japanese doesn't inflect nouns for number). An English inflectional "
         "suffix left dangling right after a token (⟦p3⟧s, ⟦p3⟧'s) is English "
         "grammar, not content — drop it or express it in Japanese instead.",
+        "3a. Lines that start with %%name%% (for example `%%fm:title%% Selective builds`) "
+        "are separate short strings to translate (page title, description, UI labels). "
+        "Translate only the text after the marker, keep the %%name%% marker and put each "
+        "on its own line, in the same order. Keep a title short and noun-like, with no "
+        "trailing period.",
         "3. Preserve all Markdown/MDX structure: headings, lists, bold/italic, "
         "links, table structure, admonition (:::type[...]) syntax.",
     ]
@@ -286,6 +313,43 @@ def dest_path(src, src_root, dest_root):
     raise ValueError(f"{src!r} is not under src_root {src_root!r}")
 
 
+def route(src, a):
+    """Destination path for `src`: partials map to the translated-partials
+    root, everything else to the docs root."""
+    if src.startswith(a.partials_src_root.rstrip("/") + "/"):
+        return dest_path(src, a.partials_src_root, a.partials_dest_root)
+    return dest_path(src, a.src_root, a.dest_root)
+
+
+PARTIAL_IMPORT_RE = re.compile(r"@site/src/partials/([A-Za-z0-9_./-]+\.mdx?)")
+
+
+def point_imports_at_translated_partials(text, translated_dir, import_prefix):
+    """Repoint `@site/src/partials/x.mdx` imports at the translated copy.
+
+    A page's import lines are masked, so the model hands them back unchanged
+    and a translated page would keep rendering the ENGLISH partial. Rewrite an
+    import only when the translated partial exists, so a page can never end up
+    importing a file that isn't there."""
+    def sub(m):
+        if os.path.isfile(os.path.join(translated_dir, m.group(1))):
+            return f"{import_prefix}/{m.group(1)}"
+        return m.group(0)
+    return PARTIAL_IMPORT_RE.sub(sub, text)
+
+
+def english_really_changed(base_ref, src, new_raw):
+    """False only when the page at `base_ref` and now differ in whitespace alone.
+    Anything unknown (new file, git failure) counts as changed."""
+    import subprocess
+    try:
+        old = subprocess.run(["git", "show", f"{base_ref}:{src}"], capture_output=True,
+                             text=True, check=True).stdout
+    except (subprocess.CalledProcessError, OSError):
+        return True
+    return ts.normalized(old) != ts.normalized(new_raw)
+
+
 def is_relevant(path):
     return path.endswith((".md", ".mdx")) and "/api-reference/" not in path
 
@@ -340,6 +404,14 @@ def main():
                     help="ja-preferred-translations.yaml — optional terminology-consistency map")
     ap.add_argument("--src-root", default="docs")
     ap.add_argument("--dest-root", default="i18n/ja/docusaurus-plugin-content-docs/current")
+    ap.add_argument("--partials-src-root", default="src/partials",
+                    help="reusable partials; translated like pages")
+    ap.add_argument("--partials-dest-root", default="i18n/ja/partials")
+    ap.add_argument("--partials-import-prefix", default="@site/i18n/ja/partials",
+                    help="import path JA pages use for a translated partial")
+    ap.add_argument("--base-ref", default=None,
+                    help="git ref the changes are measured against; a page whose English text only "
+                         "changed in whitespace there is not re-translated")
     ap.add_argument("files", nargs="*")
     a = ap.parse_args()
 
@@ -350,7 +422,7 @@ def main():
     # before anything that needs an API key, so a PR that only deletes or
     # moves pages (no content changes) doesn't require one at all.
     for src in to_delete:
-        dst = dest_path(src, a.src_root, a.dest_root)
+        dst = route(src, a)
         if os.path.isfile(dst):
             os.remove(dst)
             print(f"  deleted {dst} (source {src} was deleted)")
@@ -358,8 +430,8 @@ def main():
             print(f"  skip delete (no JA counterpart): {src}")
 
     for old_src, new_src in to_rename:
-        old_dst = dest_path(old_src, a.src_root, a.dest_root)
-        new_dst = dest_path(new_src, a.src_root, a.dest_root)
+        old_dst = route(old_src, a)
+        new_dst = route(new_src, a)
         if not os.path.isfile(old_dst):
             # Renamed page was never translated in the first place — nothing
             # to move, but the content at its new path still needs a first
@@ -397,24 +469,55 @@ def main():
     model = os.environ.get("TRANSLATE_MODEL", "claude-sonnet-5")
     sysp = system_prompt(preferred)
 
-    failures = []
+    # Partials first: a page translated in the same run points its imports at
+    # the translated partial only if that file already exists.
+    partials_prefix = a.partials_src_root.rstrip("/") + "/"
+    files.sort(key=lambda p: not p.startswith(partials_prefix))
+
+    # Cost guard: say what this run will spend before spending it, and leave a
+    # page alone when its English only changed in whitespace (sync scripts that
+    # rewrite files cosmetically would otherwise re-translate everything).
+    todo = []
     for src in files:
         if not os.path.isfile(src):
             print(f"  skip (missing): {src}")
             continue
         raw = open(src, encoding="utf-8").read()
+        if a.base_ref and os.path.isfile(route(src, a)) and not english_really_changed(a.base_ref, src, raw):
+            print(f"  skip (English only changed in whitespace): {src}")
+            continue
+        todo.append((src, raw))
+    print(f"Plan: translating {len(todo)} file(s), {sum(len(r) for _, r in todo):,} characters of English.")
+
+    failures = []
+    for src, raw in todo:
         frontmatter, body = split_frontmatter(raw)
+        # Frontmatter values and JSX string props are readable text the masker
+        # would otherwise protect; send them as %%key%% lines instead.
+        fm_values = ts.extract_frontmatter(frontmatter)
+        body, jsx_strings = ts.extract_jsx_strings(body)
         store = {}
         masked, n = mask(body, patterns, store)
         masked, n = mask_terms(masked, matcher, store, n)
+        block = ts.build_block(fm_values, jsx_strings)
+        if block:
+            block, n = mask(block, patterns, store, n)
+            block, n = mask_terms(block, matcher, store, n)
+            masked = block + "\n\n" + masked
         translated = translate_verified(client, model, sysp, masked)
         if translated is None:
             print(f"  FAILED verification after {MAX_ATTEMPTS} attempts, not writing: {src}",
                   file=sys.stderr)
             failures.append(src)
             continue
-        translated = promote_bold_to_strong(translated)  # pre-unmask: code is still tokens
+        found, translated = ts.parse_block(translated)
+        left_english = untranslated_headings(masked, translated)
+        if left_english:
+            print(f"  warning: {len(left_english)} heading(s) left in English in {src}: "
+                  + "; ".join(h for h in left_english[:5]), file=sys.stderr)
+        translated = promote_bold_to_strong(translated.lstrip("\n"))  # pre-unmask: code is still tokens
         translated = unmask(translated, store)
+        found = {k: unmask(v, store) for k, v in found.items()}
         if TOKEN_RE.search(translated):
             # Can't happen if verify_tokens passed and the store is sound —
             # belt and braces against a placeholder leaking into the page.
@@ -422,7 +525,20 @@ def main():
                   file=sys.stderr)
             failures.append(src)
             continue
-        dst = dest_path(src, a.src_root, a.dest_root)
+        # Translated headings get new auto-generated anchors, which breaks
+        # every #anchor link written against the English heading. Pin each
+        # one to its English id. A page whose headings can't be paired is
+        # written unchanged and reported, never guessed at.
+        translated, heading_note = add_english_heading_ids(body, translated)
+        if heading_note:
+            print(f"  warning: heading ids not added to {src}: {heading_note}",
+                  file=sys.stderr)
+        translated = point_imports_at_translated_partials(
+            translated, a.partials_dest_root, a.partials_import_prefix)
+        fm_tr, js_tr = ts.split_block(found)
+        translated = ts.apply_jsx_strings(translated, jsx_strings, js_tr)
+        frontmatter = ts.apply_frontmatter(frontmatter, fm_tr)
+        dst = route(src, a)
         os.makedirs(os.path.dirname(dst) or ".", exist_ok=True)
         open(dst, "w", encoding="utf-8").write(frontmatter + translated)
         print(f"  translated {src} -> {dst}")

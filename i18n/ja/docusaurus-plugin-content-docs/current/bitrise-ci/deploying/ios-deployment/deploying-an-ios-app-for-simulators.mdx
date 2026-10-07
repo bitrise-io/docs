@@ -1,0 +1,172 @@
+---
+title: "シミュレーター用のiOSアプリのデプロイ"
+description: "たとえば、ブラウザーで披露したり、テストで使用したりするために、iOSアプリをシミュレーター向けにビルドしてデプロイできます。"
+sidebar_position: 4
+slug: /bitrise-ci/deploying/ios-deployment/deploying-an-ios-app-for-simulators
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditor from '@site/i18n/ja/partials/opening-the-workflow-editor.mdx';
+
+iOSアプリケーションをシミュレーターにビルド・デプロイし、たとえばブラウザーで動作を紹介できます。Bitriseでは、シミュレーター向けにビルドするための[専用のStep](https://www.bitrise.io/integrations/steps/xcode-build-for-simulator)を用意しています。[<strong>Xcode build for simulator</strong>](https://github.com/bitrise-steplib/steps-xcode-build-for-simulator) <GlossTerm baseform="Step">Step</GlossTerm>は、`xcodebuild`コマンドをiOSシミュレーターの送信先で実行し、.appファイルを生成します。
+
+.appファイルはどのシミュレーターでも実行できます。Bitriseでは、アプリをAppetize.ioにアップロードするためのStepを用意しています。[<strong>Appetize.io deploy</strong>](https://github.com/bitrise-steplib/steps-appetize-io-deploy) Stepです。このStepを使うと、ブラウザーで実行できるようにアプリをデプロイできます。
+
+シミュレーター向けにアプリをビルドする場合、code signingファイルは必要ありません。
+
+
+## シミュレーター向けにiOSアプリをビルドする {#building-an-ios-app-for-a-simulator}
+
+iOSまたはtvOSのシミュレータープラットフォーム向けにiOSアプリをビルドできます。
+
+これには<strong>Xcode Build for Simulator</strong> Stepが必要です。Stepは、任意のmacOSデバイスにインストールしたり、たとえばテスターに送付したりできる`.app`ファイルを作成します。これにはcode signingが一切不要なため、iOSアプリの配布可能なバージョンを簡単に作成する方法です。
+
+Stepは、テストの実行に使用できる`.xctestrun`ファイルも作成します。`.app`ファイルと`.xctestrun`ファイルはどちらも、その出力変数を参照する後続のStepsからアクセスでき、[ビルドアーティファクトとしてダウンロード](/bitrise-ci/run-and-analyze-builds/managing-build-files/build-artifacts-online)することもできます。
+
+シミュレーター向けにアプリをビルドするには:
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. <GlossTerm baseform="workflow">Workflow</GlossTerm>に必要な依存関係をすべてインストールしてください。
+
+   多くの依存関係マネージャー向けに専用のStepsを用意しています。以下はその例です:
+
+   - [Carthage](https://bitrise.io/integrations/steps/carthage)
+   - [CocoaPods](https://bitrise.io/integrations/steps/cocoapods-install)
+   - [Homebrew](https://bitrise.io/integrations/steps/brew-install)
+1. 依存関係をインストールするStepの後に、<strong>Xcode Build for Simulator</strong> StepをWorkflowに追加してください。
+1. <strong>Project path</strong>インプットが`.xcodeproj`または`.xcworkspace`ファイルのいずれかを指していることを確認してください。
+
+   このインプットは、`xcodebuild`コマンドの`-project`または`-workspace`オプションを設定します。ほとんどの場合、[アプリの追加プロセス](/bitrise-ci/getting-started/adding-a-new-project)中に<GlossTerm baseform="project scanner">プロジェクトスキャナー</GlossTerm>によってアプリが自動設定されていれば、default valueを変更する必要はありません。
+1. <strong>Scheme</strong>インプットに、アプリのビルドに使用する[Xcodeスキーム](https://developer.apple.com/documentation/xcode/customizing-the-build-schemes-for-a-project/)の名前を設定してください。
+
+   ![scheme-input.png](/img/_paligo/uuid-2700f022-4822-82fe-77e4-1a0995b41ab6.png)
+
+   このインプットは、`xcodebuild`コマンドの`-scheme`オプションを設定します。default valueは、アプリの追加と初回設定の実行時に作成される環境変数です。別のスキームを使用する必要がある場合は、ここにその名前を入力できます。
+
+   :::tip[ビルド構成]
+
+   デフォルトでは、Stepはスキームで指定されたビルド構成を使用します。ただし、これを上書きして別のビルド構成を使用することもできます。その場合は、使用したいビルド構成の名前を<strong>Configuration name</strong>インプットに追加してください。このインプットは任意で、選択したスキームで指定されたビルド構成を使用したくない場合にのみ必要です。
+
+   Xcodeプロジェクトでは、いつでも新しいビルド構成を作成できます: [プロジェクトへのビルド構成ファイルの追加](https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project)。
+
+   :::
+1. <strong>Device destination specifier</strong>インプットで、<strong>generic/platform=iOS Simulator</strong>を選択してください。
+
+   ![ios-simulator-destination.png](/img/_paligo/uuid-7235d345-4190-c1be-6ee3-fc25e1eb183e.png)
+1. 必要に応じて、<strong>Build settings (xcconfig), allow code signing</strong>インプットを<strong>CODE_SIGNING_ALLOWED=YES</strong>に設定してください。これにより、ビルド中にcode signingファイルをインストールできるようになります。
+
+   ほとんどの場合、シミュレーター向けにビルドしたアプリにcode signingは必要ありません。特定のテストケースやサードパーティの依存関係では必要になることがあります。code signingを設定するには、[iOS code signing](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)を参照してください。
+1. アプリにビルドアーティファクトとしてアクセスするには、<strong>Deploy to Bitrise.io</strong> StepをWorkflowの末尾に追加してください。デフォルトでは、Stepの設定を変更する必要はありません。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. Workflowに必要な依存関係をすべてインストールしてください。
+
+   多くの依存関係マネージャー向けに専用のStepsを用意しています。以下はその例です:
+
+   - [Carthage](https://bitrise.io/integrations/steps/carthage)
+   - [CocoaPods](https://bitrise.io/integrations/steps/cocoapods-install)
+   - [Homebrew](https://bitrise.io/integrations/steps/brew-install)
+1. 依存関係をインストールするStepの後に、`[xcode-build-for-simulator](https://github.com/bitrise-steplib/steps-xcode-build-for-simulator)` StepをWorkflowに追加してください。
+
+   ```yaml
+   workflows:    
+     primary:
+       steps:
+         - cocoapods-install
+         - xcode-build-for-simulator:
+             inputs:
+   ```
+1. `project_path`インプットが`.xcodeproj`または`.xcworkspace`ファイルのいずれかを指していることを確認してください。
+
+   このインプットは、`xcodebuild`コマンドの`-project`または`-workspace`オプションを設定します。ほとんどの場合、[アプリの追加プロセス](/bitrise-ci/getting-started/adding-a-new-project)中にプロジェクトスキャナーによってアプリが自動設定されていれば、default valueを変更する必要はありません。
+
+   ```yaml
+   - xcode-build-for-simulator:
+       inputs:
+         - project_path: $BITRISE_PROJECT_PATH
+   ```
+1. `scheme`インプットに、アプリのビルドに使用する[Xcodeスキーム](https://developer.apple.com/documentation/xcode/customizing-the-build-schemes-for-a-project/)の名前を設定してください。
+
+   このインプットは、`xcodebuild`コマンドの`-scheme`オプションを設定します。default valueは、アプリの追加と初回設定の実行時に作成される環境変数です。別のスキームを使用する必要がある場合は、スキーム名を正しく入力してください。
+
+   ```yaml
+   - xcode-build-for-simulator:
+       inputs:
+         - scheme: $BITRISE_SCHEME
+         - project_path: $BITRISE_PROJECT_PATH
+   ```
+
+   :::tip[ビルド構成]
+
+   デフォルトでは、Stepはスキームで指定されたビルド構成を使用します。ただし、これを上書きして別のビルド構成を使用することもできます。その場合は、使用したいビルド構成の名前を`configuration`インプットに追加してください。このインプットは任意で、選択したスキームで指定されたビルド構成を使用したくない場合にのみ必要です。
+
+   Xcodeプロジェクトでは、いつでも新しいビルド構成を作成できます: [プロジェクトへのビルド構成ファイルの追加](https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project)。
+
+   :::
+1. `destination`インプットを`generic/platform=iOS Simulator`に設定してください。
+
+   ```yaml
+   - xcode-build-for-simulator:
+       inputs:
+         - scheme: $BITRISE_SCHEME
+         - destination: generic/platform=iOS Simulator
+         - project_path: $BITRISE_PROJECT_PATH
+   ```
+1. 必要に応じて、`xcconfig_content`インプットに値`CODE_SIGNING_ALLOWED=YES`を設定してください。これにより、ビルド中にcode signingファイルをインストールできるようになります。
+
+   ほとんどの場合、シミュレーター向けにビルドしたアプリにcode signingは必要ありません。特定のテストケースやサードパーティの依存関係では必要になることがあります。code signingを設定するには、[iOS code signing](/bitrise-ci/code-signing/ios-code-signing/creating-a-signed-ipa-for-xcode-projects)を参照してください。
+
+   ```yaml
+   - xcode-build-for-simulator:
+       inputs:
+         - scheme: $BITRISE_SCHEME
+         - destination: generic/platform=iOS Simulator
+         - xcconfig_content: |-
+             CODE_SIGNING_ALLOWED=YES            
+             COMPILER_INDEX_STORE_ENABLE = NO
+         - project_path: $BITRISE_PROJECT_PATH
+   ```
+1. アプリにビルドアーティファクトとしてアクセスするには、`deploy-to-bitrise-io` StepをWorkflowの末尾に追加してください。デフォルトでは、Stepの設定を変更する必要はありません。
+
+   ```yaml
+   primary:
+     steps:
+       - generate-cordova-build-configuration@0: {}
+       - xcode-build-for-test@2: {}
+       - xcode-test@4: {}
+       - xcode-build-for-simulator@0.12:
+           inputs:
+             - scheme: $BITRISE_SCHEME
+             - destination: generic/platform=iOS Simulator
+             - configuration: debug
+             - xcconfig_content: |-
+                 CODE_SIGNING_ALLOWED=YES            
+                 COMPILER_INDEX_STORE_ENABLE = NO
+             - project_path: $BITRISE_PROJECT_PATH
+       - deploy-to-bitrise-io
+   ```
+
+</TabItem>
+</Tabs>
+
+
+## アプリをAppetize.ioにデプロイする {#deploying-the-app-to-appetizeio}
+
+<strong>Xcode build for simulator</strong> Stepでビルドした.appファイルは、ほぼどのシミュレーターでも動作します。ただし、ブラウザーでアプリを実行できるシミュレーターに簡単かつ迅速に統合したい場合は、<strong>Appetize.io deploy</strong> Stepの使用をおすすめします。これはアプリをAppetize.ioにアップロードし、ブラウザーでアプリを使用するための公開URLを提供します。
+
+1. Appetize.ioのAPIトークンをリクエストしてください。
+1. <Partial_OpeningTheWorkflowEditor />
+1. <strong>Xcode build for simulator</strong> StepをWorkflowに追加して設定してください。
+1. <strong>Appetize.io deploy</strong> StepをWorkflowに追加してください。
+
+   ![Deploying_an_iOS_app_for_simulators.png](/img/_paligo/uuid-d24fc560-4da7-49d1-f0b4-e14e365fba68.png)
+1. Appetize.ioのAPIトークンを<strong>Appetize.io token</strong>インプットに追加してください。
+1. <strong>Application path</strong>インプットに.appファイルへのパスを入力してください。最も簡単な方法は、<strong>Xcode build for simulator</strong> Stepの出力である`BITRISE_APP_DIR_PATH_LIST`環境変数を使用することです。また、必要に応じて詳細ログを有効にすると、デバッグを効率的に行えます。
+
+`Appetize.io deploy` Stepは、`APPETIZE_APP_URL`環境変数という1つの出力を生成します。これは、アプリにアクセスできる公開URLです。ぜひ活用して、アプリを披露してください。

@@ -1,0 +1,65 @@
+---
+title: "ホワイトラベルアプリのバージョンの作成"
+description: "ホワイトラベルプロジェクトの異なるバージョンを作成し、Workflowsを連結してEnvironment Variablesで差異を設定することで、すべてのバージョンまたは特定の1つのバージョンのみをビルドできます。"
+sidebar_position: 9
+slug: /bitrise-platform/projects/creating-white-label-app-versions
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+このガイドでは、ホワイトラベルプロジェクトの異なるバージョンを作成する方法と、<GlossTerm baseform="Workflow">Workflows</GlossTerm>をチェーンし、[Environment Variables](/bitrise-ci/configure-builds/environment-variables)で差分を設定することで、すべてのバージョンまたは1つだけのバージョンをビルドする方法を説明します。
+
+この記事では、ホワイトラベルプロジェクトの3つの個別バージョン(red、green、white)をビルドします。
+
+このセットアップに必要なもの:
+
+- 各バージョン固有のWorkflowを起動するメインのWorkflow
+- バージョンを互いに区別するすべてのパラメーターを設定できる、1つ以上のバージョン固有のWorkflow
+- ビルドロジックを記述し、バージョン固有のオプションをパラメーターとして参照するユーティリティWorkflowです。[ユーティリティWorkflowsは、WorkflowIDの前にアンダースコアが付いたWorkflows](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#utility-workflows)。ユーティリティWorkflowsは`bitrise_run`コマンドでは実行できません。`before_run`または`after_run`プロパティで参照する必要があります。[ユーティリティWorkflowsは、<GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>内で通常のWorkflows](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#chaining-workflows-together)とチェーンできます。
+
+
+## ホワイトラベルアプリのためのWorkflowsの準備 {#prepping-workflows-of-a-white-label-app}
+
+1. 通常の方法で、[プロジェクトをBitriseに追加](/bitrise-ci/getting-started/adding-a-new-project)します。
+1. [Bitrise CI](https://app.bitrise.io/ci)ページでプロジェクトを選択し、<strong>Workflows</strong>をクリックします。
+
+   ![getting-to-workflows.png](/img/_paligo/uuid-32b5ff3d-8431-8fe3-9971-89d8aca076f4.png)
+1. 利用可能なWorkflowsのドロップダウンメニューを開き、<strong>Create Workflow</strong>をクリックしてメインのWorkflowを作成します。
+
+   ![create-workflow.png](/img/_paligo/uuid-426d42b4-ca6f-d5de-d91a-b9e8a4fd8ba1.png)
+1. <strong>空のWorkflow</strong>を基に新しいWorkflowを追加します。
+
+   この例では、メインのWorkflowは<strong>allcolor</strong>という名前です。このWorkflowは、チェーン内でバージョン固有のWorkflowsの実行を開始します。
+1. 再度<strong>+</strong>をクリックして、バージョン固有のWorkflowを作成します。
+
+   作成したい異なるバージョンの数だけ、Workflowsを追加し続けてください。
+1. 左側のナビゲーションメニューで<strong>Env Vars</strong>を選択し、作成した各Workflowにバージョン固有のパラメーターを追加します。
+
+   この例では、<strong>green</strong>、<strong>red</strong>、<strong>white</strong>のWorkflowsにはWorkflow Environment Variablesを追加しますが、<strong>allcolor</strong>はそのままにしておきます。
+
+   ![env-ars-whitelabel.png](/img/_paligo/uuid-68837c3f-707c-19aa-86e2-bbac732be5a5.png)
+1. <strong>Workflows</strong>にGo backし、[ユーティリティWorkflow](/bitrise-ci/workflows-and-pipelines/workflows/managing-workflows#utility-workflows)を作成します。
+
+   必ずアンダースコアで始まる名前を付けてください(例:<strong>_runner</strong>)。そうしないと、Bitrise CLIはそれをユーティリティWorkflowとして扱いません。
+1. ユーティリティWorkflowに<GlossTerm baseform="step">Steps</GlossTerm>を追加します。
+
+   この例では、Workflowsから環境変数を継承し、その値をビルドログに出力する<strong>Script</strong>Stepを追加します。
+
+   ![script-param.png](/img/_paligo/uuid-52def735-231b-d0ea-e01e-b8b12cfbe86a.png)
+
+
+## ホワイトラベルアプリのためのWorkflowsのチェーン {#chaining-workflows-for-a-white-label-app}
+
+Workflowsがいくつか用意できたので、次は正しい順序でそれらをチェーンします。
+
+1. メインのWorkflowを選択します(この例では<strong>allcolor</strong>)。これは、[ビルドトリガー](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers)によってトリガーされるべきWorkflowです。
+1. Workflowのカードで<strong>Chain Workflows</strong>をクリックします。バージョンWorkflow(例:<strong>white</strong>)を選択し、<strong>Add after</strong>をクリックします。
+1. 同じ方法で各バージョン固有のWorkflowを追加し(この例ではwhite、green、redなど)、以下の画像のように、それぞれの後にユーティリティWorkflowを追加します。
+
+   ![chained-workflows.png](/img/_paligo/uuid-dada2b23-2bc7-5796-3d98-9131dbaa2a87.png)
+1. BuildのページにGo backし、<strong>Start build</strong>をクリックします。
+1. <strong>Start build</strong>ダイアログで、<strong>Target</strong>の下からメインのWorkflowを選択します。これにより、チェーンされたWorkflowsが開始され、ホワイトラベルアプリの各バージョンがビルドされます。
+</content>
+</invoke>

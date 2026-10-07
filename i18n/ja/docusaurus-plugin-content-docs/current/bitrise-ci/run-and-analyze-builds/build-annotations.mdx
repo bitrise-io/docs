@@ -1,0 +1,90 @@
+---
+title: "ビルドアノテーション"
+description: "ビルドアノテーションを使用すると、関連するビルド情報をBitrisebuild detailsページに直接追加できます。ビルドの進行中やデバッグ中に、重要なデータへアクセスする手順が簡単になります。"
+sidebar_position: 8
+slug: /bitrise-ci/run-and-analyze-builds/build-annotations
+sidebar_label: "ビルドアノテーション"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+ビルドアノテーションを使用すると、Bitrise build detailsページに関連するビルド情報を直接追加できるため、ビルドの進行中やデバッグ時に重要なデータへアクセスする作業が簡単になります。
+
+アノテーションはMarkdownのスタイルを使用して生成されます。主なユースケースは次のとおりです。
+
+- カスタムツールの詳細なテスト結果
+- 警告やエラーメッセージの強調
+- セキュリティおよび脆弱性スキャンレポート
+- 静的解析レポート
+- デプロイされたアーティファクトへのリンク
+
+
+## ビルドへのアノテーションの追加 {#annotating-a-build}
+
+アノテーションを使用するには、次の手順を行います。
+
+1. カスタムコマンドを実行できる<GlossTerm baseform="Step">Step</GlossTerm>を追加します。
+
+   例:<strong>Script</strong>や<strong>fastlane</strong>など。
+1. Bitrise Annotationsプラグインをインストールするコマンドを追加します。
+
+   ```bash
+   bitrise plugin install https://github.com/bitrise-io/bitrise-plugins-annotations.git
+   ```
+1. アノテーションを作成するには、プラグインの`annotate`コマンドを使用します。
+
+   このコマンドは次の形式で動作します:`bitrise :annotations annotate [markdown] [flags]`。これはデフォルトスタイルの基本的なMarkdownアノテーションです。
+
+   ```bash
+   bitrise :annotations annotate "**My Annotation**"
+   ```
+
+
+## アノテーションのスタイルと書式設定 {#styling-and-formatting-your-annotations}
+
+ビルドアノテーションはMarkdownのスニペットです。このスニペットの基本スタイルは、アノテーションコマンドの`--style`フラグによって決まります。指定できる値は次のとおりです。
+
+- `default`:
+- `warning`:
+- `error`:
+
+![annotation-styles.png](/img/_paligo/uuid-913fb5c6-4636-158b-0e87-8458323e0987.png)
+
+アノテーションはMarkdown構文に対応しています。単純な書式設定に加えて、~文字または4つのスペースによるインデントを使用したコードブロックにも対応しています。
+
+```bash
+bitrise :annotations annotate "
+~~~
+This is a codeblock
+~~~ 
+"
+
+bitrise :annotations annotate "
+    This is also a codeblock
+"
+```
+
+アノテーションには、展開可能な要素を追加できます。
+
+![annotations-expand.gif](/img/_paligo/uuid-b72c807f-04d5-72e5-9c85-670efa9bb40a.gif)
+
+- コンテンツをdetailsタグ内に配置すると、デフォルトで折りたたまれます。
+- カードをデフォルトで開いた状態にしたい場合は、details openを使用します。
+- summaryタグを使用して、セクション内に何が含まれているかをユーザーに知らせます。
+- 折りたたまれたセクション内には、見出し、画像、コードブロックなどを含めることができます。
+
+```yaml
+<details>
+
+<summary>Example summary</summary>
+
+### You can add a header
+
+You can add text within a collapsed section.
+
+You can add an image or a code block, too.
+
+</details>
+```

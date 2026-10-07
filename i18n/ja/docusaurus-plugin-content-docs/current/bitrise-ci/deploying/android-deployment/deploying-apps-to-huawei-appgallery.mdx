@@ -1,0 +1,73 @@
+---
+title: "Huawei AppGalleryへのアプリのデプロイ"
+description: "Deploy to Huawei App Galleryという検証済みのBitrise Stepを使用して、AndroidアプリをHuawei AppGalleryにデプロイできます。Stepは、Bitriseでビルドした任意のAPKファイルのデプロイに使用できます。"
+sidebar_position: 2
+slug: /bitrise-ci/deploying/android-deployment/deploying-apps-to-huawei-appgallery
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+検証済みのBitrise<GlossTerm baseform="Step">Step</GlossTerm>である[<strong>Deploy to Huawei App Gallery</strong>](https://github.com/FutureMind/bitrise-step-huawei-app-gallery-apk-distribution)を使用すると、Androidアプリを[Huawei AppGallery](https://appgallery.huawei.com/)にデプロイできます。このStepを使用すると、Bitriseでビルドした任意のAPKファイルをデプロイできます。
+
+Stepには、次のものが必要です。
+
+- アプリのApp ID。
+- APIクライアントのClient ID。
+- APIクライアント用に生成されたキー。
+
+アプリをHuawei AppGalleryに正常にデプロイするには、次の処理を行う<GlossTerm baseform="workflow">Workflow</GlossTerm>が必要です。
+
+- APKまたはAABファイルをビルドして署名する。
+- アプリをデプロイするための[<strong>Deploy to Huawei App Gallery</strong>](https://github.com/FutureMind/bitrise-step-huawei-app-gallery-apk-distribution) Stepを含む。
+
+<strong>Deploy to Huawei App Gallery Step</strong>を使用したデプロイを設定するには、次の手順を行います。
+
+1. [AppGallery Connectのウェブサイトインターフェースを使用して、アプリの最初のAPKをHuawei AppGalleryに手動でアップロードします。](https://developer.huawei.com/consumer/en/doc/distribution/app/agc-create_app)
+1. [AppGallery ConnectでチームレベルのAPIクライアントを作成します](https://developer.huawei.com/consumer/en/doc/distribution/app/appgallerykit-createapiclient)。
+
+   ![huawei_api.png](/img/_paligo/uuid-e444bc09-0aed-9c9d-6ebb-8531a391fb75.png)
+1. Bitriseで<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>を開きます。
+1. アプリのデプロイに使用するWorkflowに移動します。
+1. APKをビルドして署名するStepsの後に、[<strong>Deploy to Huawei App Gallery</strong>](https://github.com/FutureMind/bitrise-step-huawei-app-gallery-apk-distribution) Stepを追加します。
+
+   ![huawei_step.png](/img/_paligo/uuid-f1bdccd2-c501-e9ae-ace8-61c3c7e82a9b.png)
+1. <strong>Config</strong>インプットグループを開きます。
+1. 必須のインプットを入力します。
+
+   - <strong>File path</strong>: APKのビルド後に`BITRISE_APK_PATH`環境変数を自動的にエクスポートするStepを使用した場合は、この値を変更しないでください。たとえば、[<strong>Android Build</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build) StepはそのようなStepです。
+   - <strong>File name</strong>: APKファイルの一意の名前です。この名前は、AppGallery Connectへのアップロード時に使用されます。
+   - <strong>App ID</strong>: この識別子は、AppGallery Connectの<strong>App information</strong>セクションで確認できます。
+   - <strong>Client ID</strong>: AppGallery Connectで生成されたAPIクライアントIDです。
+   - <strong>Key</strong>: AppGallery connectでAPIクライアントを使用して生成されたキーです。
+
+アプリをデプロイするために[<strong>Deploy to Huawei App Gallery</strong>](https://github.com/ferPrieto/steps-app-gallery-deploy) Stepを使用する設定例については、次の<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm>ファイルを参照してください。
+
+```yaml
+workflows:
+  deploy:
+    steps:
+    - activate-ssh-key@4:
+        run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+    - git-clone@4: {}
+    - cache-pull@2: {}
+    - install-missing-android-tools@2:
+        inputs:
+        - gradlew_path: "$PROJECT_LOCATION/gradlew"
+    - gradle-runner@1.9:
+        inputs:
+        - gradle_file: "$GRADLE_BUILD_FILE_PATH"
+        - gradle_task: assembleRelease
+        - gradlew_path: "$GRADLEW_PATH"
+    - sign-apk@1.7: {}
+    - deploy-to-bitrise-io@1: {}
+    - cache-push@2: {}
+    - appgallery-deploy@0:
+        inputs:
+        - huawei_client_id: 'XXX'
+        - huawei_client_secret: "$CLIENT_SECRET"
+        - huawei_app_id: 'YYY'
+```
+
+ビルドを実行してください。すべてがうまくいけば、Huawei AppGalleryにアプリが表示されます。

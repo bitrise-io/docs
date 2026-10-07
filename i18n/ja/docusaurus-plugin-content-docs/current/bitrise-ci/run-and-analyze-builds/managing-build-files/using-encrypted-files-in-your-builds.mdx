@@ -1,0 +1,97 @@
+---
+title: "ビルドでの暗号化ファイルの使用"
+description: "Bitriseでは、暗号化ファイルを簡単に使用できます。コンピューター上でファイルを暗号化した後、Generic File Storageにアップロードし、[**Decrypt file**](https://github.com/bitrise-steplib/bitrise-step-decrypt-file)Stepまたは独自のカスタム復号ソリューションを使用して、必要なときに復号します。"
+sidebar_position: 3
+slug: /bitrise-ci/run-and-analyze-builds/managing-build-files/using-encrypted-files-in-your-builds
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditor from '@site/i18n/ja/partials/opening-the-workflow-editor.mdx';
+
+Bitriseでは、暗号化ファイルを簡単かつ安全に使用できます。必要な作業は、コンピューター上でファイルを暗号化し、[Generic File Storage にアップロードする](/bitrise-ci/run-and-analyze-builds/managing-build-files/uploading-files-for-your-builds)、そして必要なときに復号するために[<strong>Decrypt file</strong>](https://github.com/bitrise-steplib/bitrise-step-decrypt-file) <GlossTerm baseform="step">Step</GlossTerm> または独自のカスタム復号ソリューションを使用することだけです。
+
+:::note[GPG 暗号化]
+
+[<strong>Decrypt file</strong>](https://github.com/bitrise-steplib/bitrise-step-decrypt-file) Step は、GPG で暗号化されたファイルのみを復号できます。他の暗号化ソフトウェアを使用している場合、Step を使ってファイルを復号することはできません。もちろん、[<strong>Script</strong>](https://github.com/bitrise-io/steps-script) Step で独自の復号ソリューションを設定することもできます。
+
+:::
+
+
+## ファイルの暗号化 {#encrypting-your-files}
+
+この例では、パスワード生成ツールの <strong>pwgen</strong> と、暗号化ソフトウェアの <strong>GPG</strong> を使ってファイルを暗号化します。
+
+1. ターミナル/コマンドラインを開きます。
+1. 暗号化用に32文字のパスフレーズを作成します。
+
+   :::important[パスフレーズを保管する]
+
+   このパスフレーズは、Bitrise 上でファイルを復号する際に必要になります。
+
+   :::
+
+   ```bash
+   pwgen -s 32 1
+   ```
+1. ファイルを暗号化します。この例では、ファイル名を `my_secret_file` とします。
+
+   ```bash
+   gpg -c my_secret_file
+   ```
+
+   任意で、ファイルを非対話形式で暗号化することもできます。
+
+   ```bash
+   gpg --batch --passphrase <passphrase> -c my_secret_file
+   ```
+
+
+## ビルド中にファイルを復号してダウンロードする {#decrypting-and-downloading-your-files-during-a-build}
+
+ファイルの暗号化が完了したら、それを Bitrise にアップロードし、ビルド中に復号できるようにする必要があります。この手順では、ファイルの復号に <strong>Decrypt file</strong> Step を使用します。
+
+:::note[GPG 暗号化]
+
+<strong>Decrypt file</strong> Step は、GPG で暗号化されたファイルのみを復号できます。他の暗号化ソフトウェアを使用している場合、Step を使ってファイルを復号することはできません。もちろん、<strong>Script</strong> Step で独自の復号ソリューションを設定することもできます。
+
+:::
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. <strong><GlossTerm baseform="secret">Secrets</GlossTerm></strong> タブに移動し、復号用のパスフレーズを [Secret](/bitrise-ci/configure-builds/secrets) として追加します。
+1. [ファイルを Bitrise にアップロードします](/bitrise-ci/run-and-analyze-builds/managing-build-files/uploading-files-for-your-builds)
+1. アップロードしたファイルの名前の下にある環境変数(Env Var)をコピーします。この Env Var には、ファイルのダウンロード用 URL が保存されています。
+1. <strong>Workflows</strong> タブに移動します。
+1. <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm> を開きます。
+1. Workflow に <strong>Decrypt file</strong> Step を追加します。
+1. ファイルの Env Var を <strong>Encrypted file path</strong> 入力欄に貼り付けます。
+1. <strong>Output file path</strong> 入力欄で、復号したファイルを配置するパスを指定します。以降の Steps は、このパスでファイルにアクセスできるようになります。
+
+   :::tip[入力値として Env Var を使用する]
+
+   ファイルパスを入力欄に直接指定する代わりに、App Env Var に保存することもできます。こうすることで、他の Steps でも Env Var を通じてファイルを参照でき、毎回パスを指定する必要がなくなります。
+
+   たとえば、パスを `BITRISEIO_MY_FILE_LOCAL_PATH` Env Var に保存しておけば、それを入力値としてのパスに使用できるほか、以降のすべての Step でファイルにアクセスする際にも使用できます。
+
+   :::
+
+<strong>ファイルの復号に関する <GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm> の例</strong>
+
+```yaml
+---
+format_version: '11'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: macos
+workflows:
+  secret:
+    steps:
+    - activate-ssh-key@4: {}
+    - git-clone@6: {}
+    - decrypt-file@0:
+        inputs:
+        - encrypted_file_path: "./secret.txt.gpg"
+        - output_file_path: "./secret/"
+        - decrypt_passphrase: "$PASSWORD_FOR_ENCRYPT"
+    - deploy-to-bitrise-io@2: {}
+```

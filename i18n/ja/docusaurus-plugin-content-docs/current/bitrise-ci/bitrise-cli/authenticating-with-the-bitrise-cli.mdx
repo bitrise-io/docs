@@ -1,0 +1,112 @@
+---
+title: "Bitrise CLIでの認証"
+description: "ブラウザー、アクセストークン、メールアドレスとパスワードでBitrise CLIからBitriseにログインするか、CIでBITRISE_TOKEN環境変数を使用します。"
+sidebar_position: 3
+slug: /bitrise-ci/bitrise-cli/authenticating-with-the-bitrise-cli
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitrise CLIは、`bitrise build`や`bitrise app`など、Bitriseアカウントを操作するすべてのコマンドでアクセストークンを必要とします。`bitrise local run`など、お使いのコンピューター上でのみ実行されるコマンドには必要ありません。
+
+CLIは、次の2種類のトークンを受け付けます。
+
+- [パーソナルアクセストークン](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token): ユーザーアカウントとして動作します。
+- [workspace API トークン](/bitrise-platform/workspaces/workspace-api-token#creating-a-workspace-api-token): <GlossTerm baseform="workspace">workspace</GlossTerm>として動作します。
+
+次の方法でログインできます。
+
+- [ブラウザーを使う](#logging-in-with-your-browser)。
+- [作成したトークンを使う](#logging-in-with-a-token)。
+- [メールアドレスとパスワードを使う](#logging-in-with-your-email-and-password)。
+- [CI環境で `BITRISE_TOKEN` Environment Variable を設定する](#logging-in-in-a-ci-environment-by-setting-the-bitrise_token-environment-variable)。
+
+:::important[Bitrise CLI 3.0.0 以降]
+
+`bitrise auth`コマンドには Bitrise CLI 3.0.0 以降が必要です。更新するには、`bitrise update`を実行してください。
+
+:::
+
+## ブラウザーを使ってログインする {#logging-in-with-your-browser}
+
+対話型ターミナルでは、`bitrise auth login`を実行するとブラウザーが開き、Bitriseにログインできます。
+
+```bash
+bitrise auth login
+```
+
+ログイン後、CLIはパーソナルアクセストークンを保存して自動的に更新するため、再度ログインする必要はほとんどありません。セッションの有効期限が切れた場合は、CLIが再度 `bitrise auth login --oauth` を実行するよう案内します。
+
+ブラウザーはローカルアドレス経由でログイン結果をCLIに返すため、CLIと同じコンピューター上で実行する必要があります。SSHで接続するリモートコンピューターでは、代わりに[トークンを使ってログイン](#logging-in-with-a-token)してください。
+
+## トークンを使ってログインする {#logging-in-with-a-token}
+
+1. [パーソナルアクセストークン](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token)または [workspace API トークン](/bitrise-platform/workspaces/workspace-api-token#creating-a-workspace-api-token)を作成します。
+1. `bitrise auth login --with-token`を実行し、CLIにトークンの入力を求められたら貼り付けます。
+
+   CLIは、入力中のトークンを非表示にします。スクリプトからトークンを渡すには、標準入力に送ります。
+
+   ```bash
+   echo "$BITRISE_PAT" | bitrise auth login --with-token
+   ```
+
+   標準入力がターミナルでない場合、`--with-token`フラグがなくても `bitrise auth login` は標準入力からトークンを読み取ります。
+
+CLIは、貼り付けたトークンを更新しません。有効期限が切れたら、新しいトークンで再度ログインしてください。
+
+## メールアドレスとパスワードを使ってログインする {#logging-in-with-your-email-and-password}
+
+`bitrise auth login --email`は、アカウントのメールアドレスとパスワードでBitriseにログインし、CLI用の新しいパーソナルアクセストークンを作成します。メールアドレスが確認済みである必要があります。
+
+```bash
+bitrise auth login --email alice@example.com
+```
+
+CLIがパスワードの入力を求めます。代わりにスクリプトから渡すには、`--password-stdin`を追加し、パスワードを標準入力に送ります。
+
+```bash
+printf '%s' "$PASSWORD" | bitrise auth login --email alice@example.com --password-stdin
+```
+
+CLIはトークンの作成にのみパスワードを使用し、保存はしません。貼り付けたトークンと同様に、CLIはこのトークンも更新しません。
+
+:::note[CLIがパスワードを送信する先]
+
+CLIは、メールアドレスとパスワードを `web_base_url` 設定のホストに送信します。デフォルトは `app.bitrise.io` です。この設定はグローバル設定ファイルまたは Environment Variable でのみ変更でき、`.bitrise-cli.yml` ファイルでは変更できません。これにより、クローンしたリポジトリがパスワードを別のサーバーに送信することを防ぎます。[Base URLs](/bitrise-ci/bitrise-cli/configuring-the-bitrise-cli#base-urls)を参照してください。
+
+:::
+
+## BITRISE_TOKEN Environment Variable を使う {#using-the-bitrise_token-environment-variable}
+
+`BITRISE_TOKEN` Environment Variable が設定されている場合、CLIは保存済みのトークンの代わりにそれを使用します。誰も対話的にログインできないCIで使用してください。
+
+Bitriseは、ビルドで `BITRISE_TOKEN` を設定しません。ビルドでCLIを使用するには、次の手順を実行します。
+
+1. [パーソナルアクセストークン](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token)または [Workspace API トークン](/bitrise-platform/workspaces/workspace-api-token#creating-a-workspace-api-token)を作成します。
+1. キー `BITRISE_TOKEN` の<GlossTerm baseform="secret">Secret</GlossTerm>として、<GlossTerm baseform="project">project</GlossTerm>に追加します。[Secrets](/bitrise-ci/configure-builds/secrets)を参照してください。
+1. Script <GlossTerm baseform="step">Step</GlossTerm>でCLIを呼び出します。
+
+   ```bash
+   bitrise build list --status failed
+   ```
+
+   ビルド内では、`--app` フラグのないコマンドは、そのビルドが実行されるプロジェクトを対象に動作します。
+
+## 保存済みトークンの確認と削除 {#checking-and-removing-the-saved-token}
+
+`bitrise auth status`は、CLIにトークンがあるかどうか、およびその取得元(`BITRISE_TOKEN` Environment Variable または保存済みトークン)を表示します。トークンの種類と、ブラウザーログインの場合は有効期限も表示します。トークン自体は表示されません。
+
+```bash
+bitrise auth status
+bitrise auth status --format json
+```
+
+保存済みトークンを削除するには、`bitrise auth logout`を使用します。`BITRISE_TOKEN`で設定したトークンには影響しません。
+
+:::note
+
+CLIは、トークンを `~/.config/bitrise/cli/auth.yaml`(または `$XDG_CONFIG_HOME/bitrise/cli/auth.yaml`)に保存します。このファイルは、お使いのユーザーのみが読み取れます。新しくログインすると、以前のトークンは置き換えられます。このファイルは[CLIの設定ファイル](/bitrise-ci/bitrise-cli/configuring-the-bitrise-cli)とは別なので、トークンを共有せずに設定だけを共有できます。
+
+:::

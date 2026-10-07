@@ -1,0 +1,96 @@
+---
+title: "Stepのバージョン"
+description: "Bitrise Stepのバージョンはセマンティックバージョニングに従い、バージョン番号はMAJOR.MINOR.PATCHの形式です。たとえば、バージョン3.2.1は、メジャーバージョン3のマイナーバージョン2の最初のパッチを意味します。"
+sidebar_position: 3
+slug: /bitrise-ci/workflows-and-pipelines/steps/step-versions
+sidebar_label: "Stepのバージョニング"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_OpeningTheWorkflowEditor from '@site/i18n/ja/partials/opening-the-workflow-editor.mdx';
+
+Bitrise <GlossTerm baseform="Step">Step</GlossTerm>のバージョンはセマンティックバージョニングに従います。バージョン番号はMAJOR.MINOR.PATCHの形式です。たとえば、バージョン3.2.1は、3番目のメジャーバージョンの2番目のマイナーバージョンにおける最初のパッチです。
+
+<GlossTerm baseform="workflow">Workflows</GlossTerm>では、Stepの既存の任意のバージョンを使用できます。また、異なるWorkflowsで同じStepの異なるバージョンを使用することも可能です。
+
+Stepsはユーザーのニーズに十分対応できるよう、定期的に更新しています。ただし、必ずしもlatest versionを使用する必要はありません。古いバージョンが安定していて、ビルドと互換性がある場合は、そのまま使用を続けても、いつでもロールバックしても構いません。
+
+
+## Stepをメジャーバージョンまたはマイナーバージョンに固定する {#locking-a-step-to-a-major-or-minor-version}
+
+<GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>のグラフィカルなUIでは、任意のWorkflowsでStepをメジャーバージョンまたはマイナーバージョンのいずれかに固定できます。これにより、Workflowが使用するStepのバージョンが決まります。
+
+Stepをバージョンに固定すると、WorkflowはStepの選択したバージョンタイプ(メジャーまたはマイナー)の最新リリースを使用するように自動的に更新されますが、異なるメジャーバージョンまたはマイナーバージョンがリリースされても更新されません。
+
+- Stepがメジャーバージョンに固定されている場合、そのメジャーバージョンの新しいマイナーバージョンまたは新しいパッチがリリースされると自動的に更新されます。新しいメジャーバージョンがリリースされても更新されません。
+- Stepがマイナーバージョンに固定されている場合、そのマイナーバージョンの新しいパッチがリリースされたときのみ自動的に更新されます。新しいマイナーバージョンまたはメジャーバージョンがリリースされても更新されません。
+
+<strong>Versionの固定</strong>
+
+Workflow内のExample Stepの現在のバージョンは2.3.3です。新しいマイナーバージョン2.4.0がリリースされたとします。
+
+- Stepがメジャーバージョン2.x.xに固定されている場合、Stepは2.4.0に更新されます。
+- Stepがマイナーバージョン2.3.xに固定されている場合、Stepは2.4.0に更新されません。
+
+ここで、Example Stepに新しいメジャーバージョン3.0.0がリリースされたとします。
+
+この場合、いずれの設定でもStepは自動的に更新されません。新しいバージョンを使用したい場合は、Stepをメジャーバージョン3.x.xまたはマイナーバージョン3.0.xのいずれかに固定する必要があります。こうすることで、new updateがビルドを壊すことがないと確認できます。
+
+Stepの更新ポリシーを設定するには:
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. Stepを選択します。
+1. <strong>Properties</strong>タブに移動します。
+1. <strong>Version</strong>ドロップダウンメニューを開き、バージョンを選択します。
+
+   ![PropertiesタブのStep Versionドロップダウン](/img/workflows-and-pipelines/2026-07-06-step-version-dropdown.png)
+
+
+## 特定のStepバージョンを使用する {#using-a-specific-step-version}
+
+特定の固定されたStepバージョンを使用することもできます。たとえば、バージョン3.2.2です。これは、Stepに新しいバージョンがリリースされても、Workflow内のStepのバージョンが更新されないことを意味します。
+
+:::important[YAMLモードのみ！]
+
+グラフィカルなUIでは特定のStepバージョンを設定できないことにご注意ください。Stepをメジャーバージョンまたはマイナーバージョンに固定することのみ可能です。特定のStepバージョンの設定は、YAMLモードでのみ可能です。
+
+:::
+
+特定のStepバージョンを設定するには、アプリの<GlossTerm baseform="configuration yaml">設定 YAML</GlossTerm>ファイル内のStep参照にそのバージョンを追加する必要があります:
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. Workflow Editorの上部にある<strong>YAML</strong>に切り替えます。
+1. 必要なWorkflowとStepを見つけます。
+1. Step参照の一部としてStepバージョンを設定します。
+
+   この例では、<strong>primary</strong> Workflowの<strong>Activate SSH key</strong>Stepをバージョン4.0.3に設定します:
+
+   ```yaml
+   workflows:
+     primary:
+       steps:
+       - activate-ssh-key@4.0.3:
+   ```
+
+
+## Stepの最新の利用可能なバージョンを使用する {#using-the-latest-available-version-of-the-step}
+
+Stepの最新リリースに固定すると、Stepの新しいバージョンがリリースされた際に、ユーザーのWorkflowがそれを使用するように更新されます。これには新しいメジャーバージョンへの自動更新も含まれるため、ビルドが壊れる可能性があります。十分注意してください。
+
+Workflowが常に指定したStepの最新の利用可能なバージョンを使用するようにするには、アプリの`bitrise.yml`ファイル内のStep参照からバージョン情報を削除するだけです:
+
+1. <Partial_OpeningTheWorkflowEditor />
+1. Workflow Editorの上部にある<strong>YAML</strong>に切り替えます。
+1. 必要なWorkflowとStepを見つけます。
+1. Stepにバージョン情報が含まれていないことを確認します:
+
+   この例では、<strong>primary</strong> Workflowの<strong>Activate SSH key</strong>Stepをlatest versionに設定します:
+
+   ```yaml
+   workflows:
+     primary:
+       steps:
+       - activate-ssh-key:
+   ```

@@ -1,0 +1,173 @@
+---
+title: "プリセットの作成と管理"
+description: "Release Management API を使って、再利用可能なリリース設定テンプレート (プリセット) を作成します。"
+sidebar_position: 4
+slug: /release-management/api/creating-presets
+---
+
+プリセットは、再利用可能なリリース設定テンプレートです。自動化ルール、承認タスク、通知、CIのビルド設定を一度定義すれば、複数のリリースに一貫して適用できます。
+
+Apps サブAPIのベースURL: `https://api.bitrise.io/release-management/v2/apps/v1`。エンドポイント、パラメータ、スキーマの全一覧については、[Apps API リファレンス](/release-management-api/apps/api-reference/release-management-api)を参照してください。
+
+## プリセットの作成 {#creating-a-preset}
+
+| エンドポイント | 機能 | 必要なロール |
+| --- | --- | --- |
+| [`POST /presets`](/release-management-api/apps/api-reference/create-preset) | 新しいプリセットを作成します。 | リリースマネージャー |
+| [`GET /presets`](/release-management-api/apps/api-reference/get-presets-list) | アプリのプリセットを一覧表示します。 | 任意 |
+| [`GET /presets/{id}`](/release-management-api/apps/api-reference/get-presets) | 特定のプリセットを取得します。 | 任意 |
+| [`PUT /presets/{id}`](/release-management-api/apps/api-reference/update-presets) | プリセットを更新します。 | リリースマネージャー |
+| [`DELETE /presets/{id}`](/release-management-api/apps/api-reference/delete-preset) | プリセットを削除します。 | リリースマネージャー |
+
+プリセットを作成するには、少なくとも名前と所属するアプリを指定して`POST /presets`を呼び出します。
+
+必須フィールド:
+- `app_id`: Release Management内のアプリのID。
+- `template_name`: プリセットの説明的な名前。
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "APP_ID",
+    "template_name": "Standard release"
+  }'
+```
+
+## 完全な設定でプリセットを作成する {#creating-a-preset-with-full-configuration}
+
+プリセットは、自動化ルール、承認タスク、Slack通知、アップロード設定を1つの再利用可能なテンプレートにまとめることができます。
+
+### 自動化 {#automation}
+
+自動化ルールは、リリースが特定のステージに達するとCIワークフローをトリガーします。`automation`フィールドにイベントとワークフローのペアの配列を設定します:
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "APP_ID",
+    "template_name": "Standard release",
+    "automation": [
+      {
+        "event_name": "release_candidate_set",
+        "workflow_name": "run-tests"
+      },
+      {
+        "event_name": "approvals_completed",
+        "workflow_name": "upload-to-store"
+      }
+    ]
+  }'
+```
+
+### 承認タスク {#approval-tasks}
+
+承認タスクは、このプリセットを使用するすべてのリリースに対して自動的に作成されます。タスクを定義するには`approvals`フィールドを設定します:
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "APP_ID",
+    "template_name": "Standard release",
+    "approvals": [
+      {
+        "summary": "QA sign-off",
+        "description": "Verify all test cases pass on the release build"
+      }
+    ]
+  }'
+```
+
+### Slack通知 {#slack-notifications}
+
+リリースの主要なステージでSlack通知を送信するには、`notifications`フィールドに設定済みのSlack連携のIDを渡します。詳細については、[Slack 連携](/bitrise-platform/workspaces/workspace-slack-integration)を参照してください。
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "APP_ID",
+    "template_name": "Standard release",
+    "notifications": {
+      "slack_notification_integration_id": "YOUR_SLACK_INTEGRATION_ID"
+    }
+  }'
+```
+
+### ストアへの自動アップロード {#automatic-store-upload}
+
+手動でトリガーすることなく、準備ができ次第ビルドを自動的にストアにアップロードするには、`auto_upload: true`を設定します:
+
+```bash
+curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/presets" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "app_id": "APP_ID",
+    "template_name": "Standard release",
+    "auto_upload": true
+  }'
+```
+
+これらの設定はすべて1つのリクエストにまとめて指定できます。レスポンスから`id`を保存してください。これは[アプリバージョンの作成](/release-management/api/creating-an-app-version#applying-a-preset-to-an-app-version)時に使用します。
+
+:::note[デフォルトプリセット]
+
+`default: true`を設定すると、このプリセットが新しいリリースに自動的に適用されるプリセットとしてマークされます。アプリごとにデフォルトにできるプリセットは1つだけです。
+
+:::
+
+## アプリのプリセットを一覧表示する {#listing-presets-for-an-app}
+
+```bash
+curl -X GET "https://api.bitrise.io/release-management/v2/apps/v1/presets?app_id=APP_ID" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Accept: application/json"
+```
+
+## プリセットの更新 {#updating-a-preset}
+
+プリセットの設定を置き換えるには`PUT /presets/{id}`を使用します。すべてのフィールドは任意です。
+
+```bash
+curl -X PUT "https://api.bitrise.io/release-management/v2/apps/v1/presets/PRESET_ID" \
+  -H "Authorization: YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "default": true,
+    "auto_upload": false,
+    "automation": [
+      {
+        "event_name": "release_candidate_set",
+        "workflow_name": "run-extended-tests"
+      }
+    ],
+    "approvals": [
+      {
+        "summary": "QA sign-off"
+      },
+      {
+        "summary": "Security review"
+      }
+    ]
+  }'
+```
+
+## プリセットの削除 {#deleting-a-preset}
+
+```bash
+curl -X DELETE "https://api.bitrise.io/release-management/v2/apps/v1/presets/PRESET_ID" \
+  -H "Authorization: YOUR_ACCESS_TOKEN"
+```
+
+:::important[既存のリリースへの影響なし]
+
+プリセットを削除しても、それを使用して作成されたリリースには影響しません。設定は作成時にリリースにコピーされます。
+
+:::

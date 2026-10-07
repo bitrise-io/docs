@@ -1,4 +1,5 @@
 import React from 'react';
+import {translate} from '@docusaurus/Translate';
 import Link from '@docusaurus/Link';
 import {useDocsVersion, useDocsData} from '@docusaurus/plugin-content-docs/client';
 import IconBook from '@site/src/images/icon-book-16px.svg';
@@ -50,7 +51,7 @@ export default function SeeAlso({id}: {id?: string}): React.JSX.Element | null {
       <hr className={styles.divider} />
       <h2 className={styles.heading}>
         <IconBook width={16} height={16} className={styles.icon} />
-        See also
+        {translate({id: 'seeAlso.heading', message: 'See also', description: 'Heading of the related-pages list at the bottom of a doc'})}
       </h2>
       <ul className={styles.list}>
         {links.map((link) => (

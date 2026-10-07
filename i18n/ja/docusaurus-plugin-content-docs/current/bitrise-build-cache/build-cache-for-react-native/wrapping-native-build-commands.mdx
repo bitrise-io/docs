@@ -1,0 +1,46 @@
+---
+title: "ネイティブビルドコマンドのラップ"
+sidebar_position: 6
+---
+
+有効化した後は、ネイティブビルドをトリガーするすべてのコマンドの前に `bitrise-build-cache react-native run` を付けてください。このラッパーは次の処理を行います。
+
+- ビルドの実行中、`ccache` のストレージヘルパーが動作していることを保証します。
+- キャッシュヒット率を追跡し、ビルド分析情報を Bitrise に報告します。
+- `stdin`、`stdout`、`stderr`、およびコマンドの終了コードを、変更せずにそのまま渡します。
+
+<strong>変更前:</strong>
+
+```bash
+npx react-native run-android
+```
+
+<strong>After:</strong>
+
+```
+bitrise-build-cache react-native run npx react-native run-android
+```
+
+これは、あらゆるパッケージマネージャーやビルドツールで動作します。
+
+```
+# yarn
+bitrise-build-cache react-native run yarn build:android
+
+# npm
+bitrise-build-cache react-native run npm run build:ios
+
+# expo
+bitrise-build-cache react-native run expo build:ios
+
+# pnpm
+bitrise-build-cache react-native run pnpm run build:android
+
+# fastlane
+bitrise-build-cache react-native run fastlane beta
+
+# Direct Gradle invocation
+bitrise-build-cache react-native run ./gradlew assembleRelease
+```
+
+ラップする必要があるのは、最終的に Gradle または Xcode を呼び出すコマンドのみです。通常の JS コマンド (`yarn install`、`yarn test` など) はラップする必要はありません。

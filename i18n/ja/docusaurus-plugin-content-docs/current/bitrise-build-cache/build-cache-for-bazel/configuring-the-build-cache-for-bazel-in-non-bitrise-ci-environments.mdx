@@ -1,0 +1,60 @@
+---
+title: "非Bitrise CI環境でのBuild Cache for Bazelの設定"
+sidebar_position: 3
+slug: /bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-non-bitrise-ci-environments
+---
+
+import Partial_BuildCacheNonBitriseCiToken from '@site/i18n/ja/partials/build-cache-non-bitrise-ci-token.mdx';
+
+Bitrise Build Cache の利用に Bitrise CI は必須ではありません。他の CI/CD サービスを使用しながら、リモートキャッシュを活用して Bazel のビルド時間を短縮できます。
+
+そのためには、ビルド中に Bitrise Build Cache CLI をダウンロードするよう CI 環境を設定し、続いて CLI を実行して Bitrise Build Cache を有効にします。
+
+手順を手動で進める代わりに、AIコーディングエージェントを使ってセットアップすることもできます。[Getting started with AI](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai)を参照してください。
+
+:::tip[GitHub Actions の使用]
+
+GitHub Actions の Workflow 例を掲載した専用ガイドがあります。[Configuring the Build Cache for Bazel in GitHub Actions](/bitrise-build-cache/build-cache-for-bazel/configuring-the-build-cache-for-bazel-in-github-actions)を参照してください。
+
+:::
+
+<Partial_BuildCacheNonBitriseCiToken />
+
+## キャッシュの設定 {#configuring-the-cache}
+
+1. [workspace API token](/bitrise-platform/workspaces/workspace-api-token)を作成し、その値をコピーします。
+
+   トークンには、少なくとも <strong>viewer</strong> workspace ロールを付与してください。これは Build Cache にアクセスできる最も低いロールです。
+1. [workspace slug を取得します](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs)。<strong>Workspace settings</strong> ページを開き、左側のナビゲーションメニューで <strong>General settings</strong> を選択します。
+1. CI の設定で、次の Environment Variables を設定します。
+
+   - `BITRISE_BUILD_CACHE_AUTH_TOKEN`: workspace API トークン。
+   - `BITRISE_BUILD_CACHE_WORKSPACE_ID`: Bitrise workspace slug。
+1. 高速化したいステップの前に、次のスクリプトを CI の設定に追加します。
+
+   :::important[環境]
+
+   高速化したい Bazel コマンドと同じ環境でスクリプトを実行してください。たとえば、ビルド全体で複数の Docker コンテナーを使用する場合は、Bitrise Build Cache CLI が Bazel コマンドと同じ Docker コンテナーで実行されるようにしてください。
+
+   :::
+
+   ```bash
+   #!/usr/bin/env bash
+   set -euxo pipefail
+
+   # download Bitrise Build Cache CLI into the user-local bin dir so bazel can
+   # resolve it by name via `--credential_helper`
+   mkdir -p "$HOME/.local/bin"
+   curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b "$HOME/.local/bin" -d
+   export PATH="$HOME/.local/bin:$PATH"
+
+   # run the CLI to enable Bitrise build cache for Bazel
+   bitrise-build-cache activate bazel --cache --cache-push
+   ```
+1. workspace で Remote Build Execution を有効にしている場合は、`--rbe` フラグを追加することで、ローカルでも利用できます。
+
+   :::note[ローカルでの RBE の有効化]
+
+   ローカルで RBE を有効にする前に、workspace 用のワーカーと、リポジトリの `.bazelrc` ファイルにプール設定を用意しておく必要があります。
+
+   :::

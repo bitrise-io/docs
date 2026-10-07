@@ -1,0 +1,57 @@
+---
+title: "ユーティリティビルド"
+description: "ユーティリティビルドは、プランのビルドクォータに含まれない、短時間のLinuxビルドです。lintチェック、ユニットテスト、スクリプトなどの軽量なジョブ向けに設計されています。"
+sidebar_position: 10
+slug: /bitrise-ci/run-and-analyze-builds/utility-builds
+---
+
+import GlossTerm from '@site/src/components/GlossTerm';
+
+:::note[ベータ]
+
+ユーティリティビルドは、期間限定のベータ機能として、Pro プランおよび Pro Trial プランの<GlossTerm baseform="Workspace">Workspaces</GlossTerm>で利用できます。ベータの条件は暫定的なものであり、変更される場合があります。ベータ終了前に、今後の内容についてお知らせします。
+
+:::
+
+ユーティリティビルドは、プランのビルド数のクォータにカウントされない短時間のLinuxビルドです。lint チェック、ユニットテスト、スクリプト、変更検知、依存関係の監査など、1日に何度も実行される軽量なジョブ向けに設計されており、30秒のチェックがフルのアプリビルドと同じクォータを消費することはなくなります。
+
+ユーティリティビルドも、通常どおりビルド時間を消費します。除外されるのはビルド数のみです。
+
+## ユーティリティビルドの仕組み {#how-utility-builds-work}
+
+Bitriseは、ビルド完了時にそのビルドをユーティリティビルドとして分類します。次の両方の条件を満たす場合に、ビルドは対象となります。
+
+- ビルドが <strong>Linux Small</strong> マシンタイプ(2 vCPU、8 GB RAM)で実行された。
+- ビルドが5分未満で完了した。
+
+対象となるビルドは、ビルドのクォータにカウントされません。ビルド時間は、他のビルドと同様に引き続き計測されます。
+
+実行時の強制はありません。ビルドが5分を超えて実行された場合も、通常どおり完了し、単に通常のビルドとしてカウントされます。
+
+<strong>Builds</strong> ページでは、対象のビルドに <strong>Utility build</strong> ラベルが付きます。
+
+## ユーティリティビルドを使う {#using-utility-builds}
+
+特別な設定やオプトインは必要ありません。[Linux Small マシンタイプをWorkflow](/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds)に設定すると、対象のビルドは自動的にビルド数から除外されます。
+
+利用可能なマシンタイプとその仕様については、[Build machineタイプ](/bitrise-platform/infrastructure/build-machines/build-machine-types)を参照してください。
+
+## 提供状況 {#availability}
+
+ユーティリティビルドは、ベータ期間中、Pro プランおよび Pro Trial プランで利用できます。Enterprise プラン、レガシープラン、Hobby プランでは利用できません。
+
+## フェアユース {#fair-use}
+
+ユーティリティビルドは、自動化処理やチェック、スクリプトといった軽量なワークロードを対象としています。ビルド数のカウントを回避するために、リソースを大量に消費するビルドを短いステージに分割することは、本オファーの趣旨に反します。そのような利用が見られた場合、条件や対象となる条件を調整することがあります。
+
+:::caution
+
+ユーティリティマシンは、軽量なジョブ向けに用意されています。より大規模でリソースを多く消費するビルドをユーティリティマシンで実行する場合、テクニカルサポートは提供されません。
+
+:::
+
+## 関連情報 {#related}
+
+- [ビルドのスタックを設定する](/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds)
+- [Build machineタイプ](/bitrise-platform/infrastructure/build-machines/build-machine-types)
+- [Workspaceの請求と請求書発行](/bitrise-platform/workspaces/workspace-billing-and-invoicing)

@@ -1,0 +1,91 @@
+---
+title: "オンラインのビルドアーティファクト"
+description: "Bitriseのビルドでは、テストレポート、画像、実行可能バイナリなどのアーティファクトが生成されることがよくあります。アプリのビルドを選択し、**Artifacts**タブを開くと、ビルド中に生成されたアーティファクトを確認できます。"
+sidebar_position: 4
+slug: /bitrise-ci/run-and-analyze-builds/managing-build-files/build-artifacts-online
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+ビルドアーティファクトとは、Bitriseビルド中に生成されるすべてのファイルのことです。テスト結果、スクリーンショット、実行可能バイナリなどが含まれます。ビルドアーティファクトは、次の2つの場所で確認できます。
+
+- ビルドページの<strong>Artifacts</strong>タブ。ここではすべてのアーティファクトを確認できます。
+
+  ![builds-artifacts-tab.png](/img/_paligo/uuid-447a76c6-96e0-a493-214d-484d92a36dc8.png)
+- アプリのメインページにある<strong>Artifacts</strong>ページ。ここではインストール可能なバイナリのみを確認できます。
+
+  ![installable-artifacts-2.png](/img/_paligo/uuid-ad094f49-47bd-4ee0-a1f3-899a5d2a61a4.png)
+
+<strong>Artifacts</strong>タブにビルドごとデプロイできるファイル数に制限はありません。ただし、ファイルサイズには1ファイルあたり2GBの制限があります。
+
+
+## Installable artifactsページ {#the-installable-artifacts-page}
+
+<strong>Installable artifacts</strong>ページでは、次のことができます。
+
+- 過去のビルドのインストール可能なバイナリを確認する。
+- インストール可能なアーティファクトをダウンロードする。
+- これらのアーティファクトの詳細ページを確認する。ここには[パブリックインストールページ](/bitrise-ci/deploying/ios-deployment/installing-an-ipa-file-from-the-public-install-page)が含まれる場合があります。
+
+このページにアクセスするには、Bitriseにログインし、アプリを所有する<GlossTerm baseform="workspace">Workspace</GlossTerm>を選択して、<strong>Bitrise CI</strong>を開きます。Select your app、左側に<strong>Artifacts</strong>が表示されます。
+
+インストール可能なアーティファクトは、いくつかの異なるフィルターを使用して絞り込むことができます。
+
+- バイナリのプラットフォーム(iOSまたはAndroid)。
+
+  ![timeframe-artifacts.png](/img/_paligo/uuid-243b3111-76a9-8f92-b5aa-e345cf67e363.png)
+- ビルドが実行された<GlossTerm baseform="workflow">Workflow</GlossTerm>。
+- ビルド対象となったリポジトリのブランチ。
+
+
+## アーティファクトの詳細 {#artifact-details}
+
+Bitriseビルドで生成されたインストール可能なアーティファクト(IPAまたはAPK/AABファイルのいずれかのバイナリ)の詳細を確認できます。詳細には次の情報が含まれる場合があります。
+
+- 正確なファイル名。
+- バイナリのバージョン。
+- 作成日時やファイルサイズなどのメタデータ。
+- インストール用のQRコード。
+- 有効になっている場合は、[パブリックインストールページ](/bitrise-ci/deploying/bitrise-ota-app-deployment#deploying-with-the-deploy-to-bitriseio-step)へのリンク。
+
+詳細ページにアクセスするには、<strong>Artifacts</strong>ページを開き、<strong>Installable artifacts</strong>リストからファイルを選択します。
+
+![CrossPlatform.png](/img/_paligo/uuid-3a873c33-52fb-926c-64d7-faeb23df7e64.png)
+
+詳細ページ自体で最も重要な操作は、モバイルデバイスにアプリをインストールすることです。これはテストの際に特に役立ちます。次の2つの方法があります。
+
+- QRコード: スキャンしてバイナリをインストールします。
+- パブリックインストールページへのリンク。
+
+![qr-code-install.png](/img/_paligo/uuid-6a389697-3c42-fd18-6bfb-c5c854e695d3.png)
+
+iOSアプリをデバイスにインストールする場合、そのデバイスはApple Developer Portal上でアプリに登録されている必要があります。利用可能なデバイスは、<strong>Who can install this app?</strong>セクションで確認できます。
+
+
+## ファイルをアーティファクトにデプロイする {#deploying-files-into-artifacts}
+
+アーティファクトは、<strong>Deploy to Bitrise.io</strong> <GlossTerm baseform="step">Step</GlossTerm>を使用して、ビルドページの<strong>Artifacts</strong>セクションにデプロイされます。ビルド中に生成されたすべてのファイルをデプロイし、`$BITRISE_DEPLOY_DIR`ディレクトリに保存します。
+
+アーティファクトをデプロイするには、アーティファクトを生成するStepの後に<strong>Deploy to Bitrise.io</strong> Stepを追加してください。さらに良いのは、<strong>Deploy to Bitrise.io</strong> StepをWorkflowの一番最後に配置することです。
+
+:::important[Stepを正しい場所に配置する]
+
+<strong>Deploy to Bitrise.io</strong> Stepを正しい場所に追加してください。ビルド中にファイルを生成する他のStepsより前にStepを挿入すると、<strong>Deploy to Bitrise.io</strong>にはデプロイするものがなくなります。
+
+:::
+
+デプロイディレクトリ内にあるサブディレクトリの内容は、ビルドの<strong>Artifacts</strong>セクションには表示されません。ただし、<strong>Deploy to Bitrise.io</strong> Stepの<strong>アーティファクトを1つのファイルに圧縮する</strong>フィールドで、デフォルトの`false`の値を`true`に変更すると、アーティファクトをZIPファイルに圧縮できます。これにより、サブディレクトリを含むディレクトリ全体が圧縮され、<strong>Artifacts</strong>にデプロイされます。
+
+### ターゲットディレクトリパスを変更する {#modifying-the-target-directory-path}
+
+ターゲットディレクトリパスは別のパスに変更できますが、生成されたファイルが同じディレクトリに収集されるように、Workflow内の他のStepsでも同じディレクトリパスを参照するようにしてください。
+
+### ビルドが失敗した場合にアーティファクトを表示する {#viewing-artifacts-if-your-build-has-failed}
+
+<strong>前のStepが失敗した場合でもRun</strong>トグルを有効にすると、ビルドが失敗した場合でも、正常に生成されたビルドアーティファクトのみアクセスできます。たとえば、生成されたテストレポートファイルを確認することで、失敗したビルドのバグを検出できます。
+
+### ビルドアーティファクトへのアクセス権を持つユーザー {#who-can-access-build-artifacts}
+
+<strong>Artifacts</strong>にあるアーティファクトは、アプリのオーナー、管理者、デベロッパー、テスター/QAの全員がアクセスできます。これらのロールに加えて、<strong>アプリ用のEnableパブリックページ</strong>機能をデフォルト設定のままにしている場合、URLを受け取った人は誰でもアプリとそのアーティファクトにアクセスできるようになります。

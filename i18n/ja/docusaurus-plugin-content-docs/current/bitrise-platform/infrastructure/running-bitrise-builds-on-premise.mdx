@@ -1,0 +1,112 @@
+---
+title: "Bitriseビルドのオンプレミスでの実行"
+description: "BitriseエージェントをインストールしてBitriseWorkspaceに接続すると、自社のハードウェアまたは仮想環境でBitriseビルドを実行できます。エージェントは、macOSとLinuxの両方にインストールできます。"
+sidebar_position: 9
+slug: /bitrise-platform/infrastructure/running-bitrise-builds-on-premise
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+self-hosted infrastructure（つまり、お客様が管理するハードウェアまたは仮想化環境）でBitriseビルドを実行しながら、Bitrise websiteが提供するすべての機能を活用できます。そのためには、ご自身のインフラストラクチャにBitriseエージェントをインストールし、<GlossTerm baseform="workspace">Workspace</GlossTerm>に接続するだけです。それが完了すると、通常どおりBitriseUIを使用して、Bitriseアカウントからビルドを実行できます。
+
+![bitrise-runner-diagram.png](/img/_paligo/uuid-d50cbc2f-3b77-a344-44dc-2a45449893e1.png)
+
+
+## オンプレミスランナーを使用する場合 {#when-to-use-the-on-premise-runner}
+
+管理下のインフラストラクチャでBitriseビルドを実行する必要がある場合、BitriseではAmazon EC2 MacインスタンスまたはLinuxインスタンスを使用する方法と、オンプレミスランナーを使用する方法の2つのオプションを提供しています。
+
+オンプレミスランナーの使用は、必要なマシンをお持ちの場合、またはインフラストラクチャのニーズにAWS以外のクラウドプロバイダーを使用している場合にのみお勧めします。オンプレミスランナーはプラグアンドプレイではありません。必要なツールとサービスがすべてマシンにインストールされていることを確認する必要があります。
+
+インフラストラクチャの管理用にAWSアカウントをお持ちの場合は、[AWSの提供](/bitrise-platform/infrastructure/bitrise-on-aws--manual-setup/advanced-options-for-ec2-instances)をご確認いただくことをお勧めします。
+
+
+## Bitriseをオンプレミスでセットアップする {#setting-up-bitrise-on-premise}
+
+ご自身のインフラストラクチャでBitriseビルドを実行できるようにするには、[Homebrew](https://brew.sh/)からBitriseランナーを取得し、ネットワークを設定して2つのBitriseサービスエンドポイントにアクセスできるようにする必要があります。
+
+:::note[ツールとサービス]
+
+この方法でBitriseランナーを使用する場合は、必要なツールがすべてマシンにインストールされていることを確認してください。現時点では、このオンプレミスソリューション向けにプリインストールされたツールは提供していません。
+
+:::
+
+<Tabs>
+<TabItem value="macos" label="macOS" default>
+
+1. bitrise.ioの<strong>Workspace settings</strong>ページでBitriseランナープールを設定します。[ランナープールの設定](/bitrise-platform/infrastructure/configuring-runner-pools)を参照してください。
+
+   このプロセスからトークンを必ず取得してください。
+1. Homebrewから`bitrise-den-agent`フォーミュラを取得します。
+
+   ```bash
+   brew tap bitrise-io/den-agent
+   ```
+1. latest versionをインストールします。
+
+   ```bash
+   brew install bitrise-den-agent
+   ```
+
+   :::tip[特定のバージョンをインストールする]
+
+   コマンドにバージョン番号を追加することで、特定のバージョンをインストールすることもできます。
+
+   ```bash
+   brew install bitrise-den-agent@2.1.26
+   ```
+
+   :::
+1. [Bitrise CLI](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli)をインストールします。CLIはYAMLの設定に基づいてビルドを実行します。
+
+   ```bash
+   brew install bitrise
+   ```
+1. 次の2つのサービスにアクセスできるようにネットワークを設定します。
+
+   - `https://den.services.bitrise.io`
+   - `https://build-log.services.bitrise.io`
+
+   エージェントがビルドを実行し、Bitrise websiteと通信するには、これら両方にアクセスできる必要があります。
+1. サービスデーモンテンプレートを生成します。
+
+   このプロセスを完了するには、ランナープールトークンが必要です。
+
+   ```bash
+   sudo $(brew --prefix)/bin/create_bitrise_daemon.sh --bitrise-agent-intro-secret=YOUR_TOKEN --enable-agent-self-update
+   ```
+1. ビルド後にビルド環境をクリーンアップするようにエージェントモードを設定します。[永続的なビルド環境のクリーンアップ](/bitrise-platform/infrastructure/cleaning-up-persistent-build-environments)を参照してください。
+
+</TabItem>
+<TabItem value="linux" label="Linux">
+
+1. bitrise.ioの<strong>Workspace settings</strong>ページでBitriseランナープールを設定します。[ランナープールの設定](/bitrise-platform/infrastructure/configuring-runner-pools)を参照してください。
+
+   このプロセスからトークンを必ず取得してください。
+1. GPG公開鍵を追加します。
+
+   ```bash
+   curl -fsSL https://bitrise-den-agent-deb.s3.amazonaws.com/DEB-GPG-KEY-bitrise.pub | 
+   sudo gpg --dearmor -o /usr/share/keyrings/DEB-GPG-KEY-bitrise.gpg
+   ```
+1. Bitrise DENエージェントのdebパッケージリポジトリを追加します。
+
+   ```bash
+   echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/DEB-GPG-KEY-bitrise.gpg] https://bitrise-den-agent-deb.s3.amazonaws.com stable main' | 
+   sudo tee /etc/apt/sources.list.d/den-agent-deb.list
+   ```
+1. ランナーをインストールし、マシン上でBitriseworkspaceに接続します。
+
+   このプロセスを完了するには、ランナープールトークンが必要です。
+
+   ```bash
+   sudo apt update
+   sudo apt install bitrise-den-agent
+   /opt/bitrise/releases/bitrise-den-agent-configure.sh $TOKEN --enable-agent-self-update
+   ```
+1. ビルド後にビルド環境をクリーンアップするようにエージェントモードを設定します。[永続的なビルド環境のクリーンアップ](/bitrise-platform/infrastructure/cleaning-up-persistent-build-environments)を参照してください。
+
+</TabItem>
+</Tabs>

@@ -1,0 +1,109 @@
+---
+title: "OIDC認証の概要"
+description: "Bitriseでは、OIDCにより、長期間有効な認証情報をWorkflowsに埋め込まなくても、ビルドから外部システム(AWS、GCP、Azure、コンテナーレジストリ、シークレット管理、アーティファクトストアなど)に対して認証できます。"
+sidebar_position: 1
+slug: /bitrise-platform/integrations/oidc-authentication/oidc-authentication-overview
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+OpenID Connect（OIDC）は、OAuth 2.0フレームワーク上に構築されたID認証レイヤーです。サードパーティのアプリケーションがエンドユーザーのIDを検証できるようにし、アプリケーション間でSingle Sign-Onを使用することも可能にします。
+
+OIDCは、認証操作の結果とユーザーのIDに関する情報を提供するIDトークン（通常はJSON Web TokenまたはJWT）を発行することで機能します。認証結果とユーザー情報に関するこのデータをクレームと呼びます。
+
+トークンを受け取ったサービスは、そのトークンのクレームを自身のOIDCポリシーと照合して評価します。トークンのクレームがポリシーに一致する場合はリクエストが許可され、一致しない場合は拒否されます。
+
+Bitriseは、OIDCトークンの使用を2つの方法でサポートします。
+
+- Bitriseのビルドが、AWS、GCP、Azure、コンテナレジストリ、シークレット管理、アーティファクトストアなどの外部システムに対して認証できるようにするため。
+- 外部のOIDCトークンを使用してBitriseに対して認証を行い、短期間有効なBitriseトークンを受け取るため。
+
+
+## OIDCを使った外部サービスへの認証 {#authentication-to-external-services-with-oidc}
+
+OIDCを使用すると、<GlossTerm baseform="workflow">Workflows</GlossTerm>に長期間有効な認証情報を埋め込むことなく、ビルドがAWS、GCP、Azure、コンテナレジストリ、シークレット管理、アーティファクトストアなどの外部システムに対して認証できます。Bitriseは、ビルド番号、コミットハッシュ、リポジトリスラッグ、アプリスラッグ、Workflow名などのクレームを含む、特定のビルドに紐づいた1つ以上のIDトークンを発行できます。
+
+これらのトークンには、次の特徴があります。
+
+- 特定のビルドのやり取りに対して発行されるため、サードパーティのサービスはその実行のみに限定したアクセス権を付与できます。
+- 有効期間が短いため、万が一漏えいした場合の影響を最小限に抑えられます。
+- OIDCを受け入れるフェデレーションサービスで利用できます。たとえば、BitriseのOIDCトークンを一時的なクラウド認証情報と交換できます。
+
+### ビルド用のIDトークンをリクエストする {#request-an-identity-token-for-your-build}
+
+BitriseのビルドからOIDCトークンを使ってサービスに対して認証を行うには、トークンを取得したうえで、そのサービスとの認証情報交換を実行する必要があります。Bitriseでは、この処理の一部を担う<GlossTerm baseform="step">Steps</GlossTerm>を提供しています。
+
+#### Get OIDC Identity Token Step
+
+ビルド内で任意のサービスに対してOIDCトークンを使用するには、<strong>Get OIDC Identity Token</strong> Stepを使用します。このStepにより、Workflowsや<GlossTerm baseform="pipeline">Pipelines</GlossTerm>は、リポジトリやビルド設定にシークレットを保存することなく、実行時にクラウドリソースや外部サービスへの一時的で監査可能なアクセスをリクエストできます。
+
+<strong>Token audience</strong>インプットを設定して、Stepを構成します。これは、トークンでアクセスしたいサービスのURLか、そのサービスが提供する特定の識別子です。
+
+![2025-11-12-get-oidc-token-step.png](/img/_paligo/uuid-aad02a5a-3899-01eb-0842-76bfcc14b1d4.png)
+
+Stepは、トークンの関連情報を含む環境変数を、キーBITRISE_IDENTITY_TOKENでエクスポートします。アクセスしたいサービスとの認証情報交換にはこれを使用してください。
+
+#### 特定のサービス向けの専用Steps {#dedicated-steps-for-specific-services}
+
+<strong>Get OIDC Identity Token</strong> Stepを使用すると、任意のサービス向けにOIDCトークンを取得できますが、認証情報の交換までは行いません。一部のサービスについては、この処理全体を担うStepsを用意しています。
+
+- <strong>Google Cloud Platform（GCP）での認証</strong>：サービスアカウントキーを使用してGoogle認証トークンを生成し、GCPに対して認証を行います。
+- <strong>Amazon Web Services（AWS）での認証</strong>：AWS IAM IDプロバイダーに基づいてIDトークンを生成します。詳細ガイドはこちら：[OIDC（AWS向け）](/bitrise-platform/integrations/oidc-authentication/oidc-for-aws)をご覧ください。
+
+### OIDCトークンに含まれる情報 {#information-in-the-oidc-token}
+
+Bitriseは、OIDCトークンに次の情報を含めます。
+
+:::important[制限事項]
+
+Bitriseは汎用的なIDプロバイダーとみなされるため、AWSでは当社のトークンから`aud`と`sub`の2つのクレームのみを保持します。ポリシーで使用できるのはこれらのみです。
+
+クレームフィールドの詳細については、[AWSのドキュメント](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html#Conditions_String)をご覧ください。
+
+:::
+
+| `Name` | `Description` |
+| --- | --- |
+| `aud` | カスタマイズ可能なオーディエンスフィールド |
+| `sub` | IDトークンの作成をトリガーしたサブジェクト。`app:APP_SLUG:workflow:WORKFLOW`形式になります。 |
+| `exp` | トークンの有効期限 |
+| `iat` | トークンの生成日時 |
+| `iss` | トークンの発行者 |
+| `jti` | トークンの一意の識別子 |
+| `nbf` | 現在時刻 |
+| `sha` | Gitのコミットハッシュ |
+| `repository_url` | アプリに関連付けられたGitリポジトリのURL |
+| `repository_owner` | Gitリポジトリの所有者 |
+| `repository_slug` | Gitリポジトリのスラッグ |
+| `app_slug` | アプリのスラッグ |
+| `workspace_slug` | <GlossTerm baseform="workspace">Workspace</GlossTerm>のスラッグ |
+| `trigger_by` | ビルドをトリガーしたエンティティ |
+| `branch` | ビルド対象のブランチ |
+| `branch_dest` | PRのターゲットブランチ |
+| `tag` | ビルドをトリガーしたタグ |
+| `build_number` | ビルド番号 |
+| `workflow` | トリガーされたWorkflow名 |
+
+
+## OIDCを使ったBitriseへの認証 {#authentication-to-bitrise-with-oidc}
+
+Bitriseでは、外部のOIDCトークンを使用してBitriseに対して認証を行い、短期間有効なBitriseの[workspaceアクセストークン](/bitrise-platform/workspaces/workspace-api-token)を受け取ることができます。発行されたトークンは、Bitriseの信頼ポリシーと照合されます。
+
+Bitriseトークンを受け取ったサービスは、実質的にworkspaceの一時的なメンバーとなり、信頼ポリシーで定義された特定の操作を実行できるようになります。たとえば、特定のリポジトリの特定のブランチでトリガーされたビルドからデータを受け取ることができます。
+
+### 信頼ポリシー {#trust-policy}
+
+OIDCの信頼ポリシーでは、誰を信頼するか、どのような条件で信頼するか、OIDCトークンをどのように検証するかを定義します。Bitriseの信頼ポリシーでは、次の項目を定義します。
+
+- Bitriseが信頼するOIDCの発行者。信頼ポリシーで発行者として登録されていないOIDCプロバイダーからのクレームは自動的に拒否されます。
+- 短期間有効なトークンの有効期間：どのくらいの期間有効かを定義します。
+- アクセスレベル：workspacesやプロジェクトで付与されるロールと権限を定義します。
+- トークンのマッチングルール：一致させる必要があるクレームを定義します。たとえば、クレームにはリポジトリ、リポジトリのブランチ、トリガーされるべきWorkflowなどを含めることができます。マッチングルールはJSON形式で記述します。
+
+### OIDCトークンのリクエスト {#oidc-token-request}
+
+ポリシーの作成に成功すると、Bitriseは一意のポリシーIDを自動的に生成します。このポリシーIDは、すべてのトークンリクエストに含める必要があります。
+
+サービスが短期間有効なBitrise workspaceアクセストークンをリクエストするためにOIDCトークンを送信すると、Bitriseはリクエスト内のポリシーIDを対応する信頼ポリシーと照合し、その信頼ポリシーのマッチングルールを確認します。ルールがOIDCトークンのクレームと一致する場合、短期間有効なトークンが発行されます。

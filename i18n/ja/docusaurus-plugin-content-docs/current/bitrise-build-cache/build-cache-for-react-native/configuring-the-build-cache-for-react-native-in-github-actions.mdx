@@ -1,0 +1,134 @@
+---
+title: "GitHub ActionsでのBuild Cache for React Nativeの設定"
+description: "GitHub Actionsのワークフローで、GitHubホストランナーまたはBitrise Build Hubランナー上にBitrise Build Cache for React Nativeを設定します。"
+sidebar_position: 3
+slug: /bitrise-build-cache/build-cache-for-react-native/configuring-the-build-cache-for-react-native-in-github-actions
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Partial_BuildCacheGitHubActionsAuthentication from '@site/i18n/ja/partials/build-cache-github-actions-authentication.mdx';
+import Partial_BuildCacheGitHubActionsNotes from '@site/i18n/ja/partials/build-cache-github-actions-notes.mdx';
+import Partial_BuildCacheGitHubActionsVerifying from '@site/i18n/ja/partials/build-cache-github-actions-verifying.mdx';
+
+Bitrise Build Cache を使用すると、CI を Bitrise に移行することなく、GitHub Actions ワークフローで React Native のビルドを高速化できます。GitHub ホストランナーでも、[Bitrise Build Hub](/bitrise-build-hub/build-hub-for-github-actions/build-hub-for-github-actions-overview) ランナーでも、同じように動作します。
+
+1 回のアクティベーションで、React Native ビルドが使用する 3 つのバックエンドをすべてカバーします。Android 向けの Gradle、iOS 向けの Xcode Compilation Cache、C++ 向けの `ccache` です。
+
+手順を手動で実行する代わりに、AIコーディングエージェントを使ってセットアップすることもできます。[AI を使ったはじめ方](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-ai)を参照してください。
+
+## 要件 {#requirements}
+
+Bitrise Build Cache CLI v1.0.0 以降が必要です。それより前のバージョンは React Native をサポートしていません。
+
+## 認証 {#authentication}
+
+<Partial_BuildCacheGitHubActionsAuthentication />
+
+## ワークフローへの Build Cache の追加 {#adding-the-build-cache-to-your-workflow}
+
+1. Bitrise Build Cache CLI をインストールするステップを追加します。
+
+   ```yaml
+   - name: Install the Bitrise Build Cache CLI
+     run: curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+   ```
+1. ビルドを実行するステップの前に、Build Cache for React Native をアクティブにするステップを追加します。
+
+   ```yaml
+   - name: Activate Bitrise Build Cache for React Native
+     run: /tmp/bin/bitrise-build-cache activate react-native --cache-push
+   ```
+
+   デフォルトでは、3 つのバックエンドすべてが有効です。いずれかを無効にするには、対応するフラグを指定します。
+
+   ```bash
+   /tmp/bin/bitrise-build-cache activate react-native --gradle=true --xcode=true --cpp=false
+   ```
+
+   CI は通常、キャッシュを作成する環境であるため、`--cache-push` を有効のままにしてください。
+1. ネイティブビルドを実行するすべてのコマンドの先頭に `bitrise-build-cache react-native run` を付けます。
+
+   ```yaml
+   - name: Build iOS
+     run: /tmp/bin/bitrise-build-cache react-native run npx react-native run-ios --configuration=Release
+   ```
+
+   詳細については、[ネイティブビルドコマンドのラップ](/bitrise-build-cache/build-cache-for-react-native/wrapping-native-build-commands)を参照してください。
+
+## ワークフローの例 {#example-workflow}
+
+<Tabs>
+<TabItem value="github-hosted" label="GitHub-hosted runners" default>
+
+```yaml
+name: build-rn
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    env:
+      BITRISE_BUILD_CACHE_AUTH_TOKEN: ${{ secrets.BITRISE_BUILD_CACHE_AUTH_TOKEN }}
+      BITRISE_BUILD_CACHE_WORKSPACE_ID: ${{ vars.BITRISE_BUILD_CACHE_WORKSPACE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the Bitrise Build Cache CLI
+        run: curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+
+      - name: Activate Bitrise Build Cache for React Native
+        run: /tmp/bin/bitrise-build-cache activate react-native --cache-push
+
+      - name: Install JavaScript dependencies
+        run: yarn install
+
+      - name: Build iOS
+        run: /tmp/bin/bitrise-build-cache react-native run npx react-native run-ios --configuration=Release
+
+      - name: Build Android
+        run: /tmp/bin/bitrise-build-cache react-native run npx react-native run-android --mode=release
+```
+
+</TabItem>
+<TabItem value="build-hub" label="Build Hub runners">
+
+このジョブにトークンや environment variables は不要です。`runs-on` ラベルは、使用するプールを指定します。Bitrise はマシンプールごとに `bitrise-runner-<pool name>` ラベルを作成するため、`rn-builds` という名前のプールは `bitrise-runner-rn-builds` で指定します。
+
+```yaml
+name: build-rn
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: bitrise-runner-rn-builds
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the Bitrise Build Cache CLI
+        run: curl --retry 5 -sSfL 'https://raw.githubusercontent.com/bitrise-io/bitrise-build-cache-cli/main/install/installer.sh' | sh -s -- -b /tmp/bin -d
+
+      - name: Activate Bitrise Build Cache for React Native
+        run: /tmp/bin/bitrise-build-cache activate react-native --cache-push
+
+      - name: Install JavaScript dependencies
+        run: yarn install
+
+      - name: Build iOS
+        run: /tmp/bin/bitrise-build-cache react-native run npx react-native run-ios --configuration=Release
+```
+
+プールのカスタムラベルを使用することもできます。詳細については、[GitHub Actions ワークフローの設定](/bitrise-build-hub/build-hub-for-github-actions/configuring-your-github-actions-workflow)を参照してください。
+
+</TabItem>
+</Tabs>
+
+## ベストプラクティスと制限事項 {#best-practices-and-limitations}
+
+<Partial_BuildCacheGitHubActionsNotes />
+
+## セットアップの確認 {#verifying-the-setup}
+
+<Partial_BuildCacheGitHubActionsVerifying />

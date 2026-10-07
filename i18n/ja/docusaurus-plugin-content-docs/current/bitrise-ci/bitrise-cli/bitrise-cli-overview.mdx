@@ -1,0 +1,178 @@
+---
+title: "Bitrise CLIの概要"
+description: "Bitrise CLIは、お使いのコンピューター上でビルドを実行し、Bitrise上のプロジェクト、ビルド、bitrise.ymlファイルを管理します。Workspacesとプロジェクトの選択方法、出力の形式、リストのページ送り、エラーの報告方法について説明します。"
+sidebar_position: 1
+slug: /bitrise-ci/bitrise-cli/bitrise-cli-overview
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+Bitrise CLIは、Bitriseのオープンソースランナーです。次のことができます。
+
+- ローカルの <GlossTerm baseform="bitrise.yml">`bitrise.yml`</GlossTerm> ファイルから、`bitrise local` コマンドを使って、お使いのコンピューター上でビルドを実行する。
+- Bitrise アカウントと連携する。<GlossTerm baseform="project">プロジェクト</GlossTerm>の一覧表示と確認、ビルドのトリガーと監視、設定ファイルのダウンロードとアップロード、Bitrise APIの呼び出しができます。
+
+bitrise.io では、CLIがクラウド上でビルドを実行するエンジンです。
+
+:::important[Bitrise CLI 3.0.0 以降]
+
+Bitriseアカウントと連携するコマンドには、Bitrise CLI 3.0.0 以降が必要です。バージョンを確認するには `bitrise version` を、更新するには `bitrise update` を実行してください。
+
+:::
+
+使い始めるには、[CLIをインストール](/bitrise-ci/bitrise-cli/installing-and-updating-the-bitrise-cli)して、[ログイン](/bitrise-ci/bitrise-cli/authenticating-with-the-bitrise-cli)してください。
+
+## コマンドリファレンス {#command-reference}
+
+主なコマンドを以下に示します。すべてのコマンドとフラグについては、GitHubの[Bitrise CLIコマンドリファレンス](https://github.com/bitrise-io/bitrise#commands)を参照してください。任意のコマンドに `--help` を付けて実行することもできます。
+
+```bash
+bitrise build trigger --help
+```
+
+| Command | 説明 | ガイド |
+| --- | --- | --- |
+| `bitrise auth` | ログイン、ログアウトを行い、CLIが使用するアクセストークンを確認します。 | [Bitrise CLIでの認証](/bitrise-ci/bitrise-cli/authenticating-with-the-bitrise-cli) |
+| `bitrise config` | プロジェクトや <GlossTerm baseform="workspace">Workspace</GlossTerm> など、CLIが使用するdefault valueを保存します。 | [Bitrise CLIの設定](/bitrise-ci/bitrise-cli/configuring-the-bitrise-cli) |
+| `bitrise app` | プロジェクトの一覧表示、確認、作成を行います。 | [CLIからの新しいプロジェクトの追加](/bitrise-ci/bitrise-cli/adding-a-new-project-from-a-cli) |
+| `bitrise build` | ビルドのトリガー、一覧表示、確認、監視、中止を行います。 | [Bitrise CLIでのビルドの管理](/bitrise-ci/bitrise-cli/managing-builds-with-the-bitrise-cli) |
+| `bitrise yml` | `bitrise.yml` ファイルのダウンロード、アップロード、検証、マージを行います。 | [Bitrise CLIを使った bitrise.yml の操作](/bitrise-ci/bitrise-cli/working-with-bitrise-yml-via-the-bitrise-cli) |
+| `bitrise stack` | ビルドで利用できる<GlossTerm baseform="stack">スタック</GlossTerm>を一覧表示します。 | [Bitrise CLIを使った bitrise.yml の操作](/bitrise-ci/bitrise-cli/working-with-bitrise-yml-via-the-bitrise-cli#finding-stack-ids) |
+| `bitrise rde` | Remote Dev Environment のセッションとテンプレートを管理します。 | [Bitrise RDE CLI](/bitrise-rde/rde-options/bitrise-rde-cli) |
+| `bitrise api` | 任意の Bitrise API エンドポイントにリクエストを送信します。 | [Bitrise APIの呼び出し](#calling-the-bitrise-api) |
+| `bitrise local` | お使いのコンピューター上で Workflows を実行します。 | [CLIでの初めてのローカルビルドの実行](/bitrise-ci/bitrise-cli/running-your-first-local-build-with-the-cli) |
+
+## workspaceとプロジェクトの選択 {#selecting-the-workspace-and-the-project}
+
+Bitrise CLIコマンドには、2 つのスコープがあります。
+
+- Project: コマンドは 1 つのプロジェクトを対象に動作します。プロジェクトは `--app` フラグで指定します。
+- Workspace: コマンドは Bitrise workspace を対象に動作します。workspace は `--workspace` フラグで指定します。
+
+:::note
+
+Bitrise APIと同様に、CLIではプロジェクトを指す用語として "app" を使用します。
+
+:::
+
+どちらのフラグも、ID (スラッグ) または名前を受け付けます。名前には、プロジェクトのタイトルまたはWorkspaceの名前を指定できます。ID を調べるには、[スラッグによるプロジェクトとアプリの識別Workspaces](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs)を参照してください。
+
+```bash
+bitrise build list --app my-app-id
+bitrise app list --workspace "My Workspace"
+```
+
+フラグを指定しない場合、CLIは次の順序で値を探します。
+
+1. `BITRISE_APP_ID` または `BITRISE_WORKSPACE_ID` Environment Variable。プロジェクトの場合は `BITRISE_APP_SLUG` も使用できます。
+1. 現在のディレクトリまたはその親ディレクトリにある `.bitrise-cli.yml` ファイルの `app_id` キーまたは `default_workspace_id` キー。
+1. グローバル設定ファイルの同じキー。
+
+デフォルトのプロジェクトやWorkspaceを保存するには、[Bitrise CLIの設定](/bitrise-ci/bitrise-cli/configuring-the-bitrise-cli)を参照してください。
+
+Workspaceが設定されておらず、所属しているのが 1 つだけの場合、CLIはそれを使用します。複数に所属している場合、CLIは対話型ターミナルでは選択画面を表示し、それ以外ではエラーで失敗します。プロジェクトにはこのようなフォールバックはありません。プロジェクトを必要とするコマンドは、プロジェクトが見つからない場合 `--app is required` で失敗します。
+
+Bitriseビルドの内部では、`BITRISE_APP_SLUG` と `BITRISE_WORKSPACE_ID` が常に設定されています。そのため、`--app` や `--workspace` を指定しないコマンドは、ビルドが実行されているプロジェクトと、それを所有するWorkspaceを対象に動作します。それ以外を対象にするには、フラグを指定してください。
+
+## 出力フォーマット {#output-formats}
+
+データを出力するコマンドは、3 つの出力フォーマットをサポートしています。
+
+| Format | 出力 |
+| --- | --- |
+| `raw` | ターミナルで読むための表とテキスト。これがデフォルトです。`human` は別名です。 |
+| `json` | JSON。スクリプトや `jq` などのツール向けです。 |
+| `yml` | YAML。 |
+
+フォーマットは `--format` フラグで選択します。
+
+```bash
+bitrise build view abc123 --app my-app-id --format json | jq -r '.status'
+```
+
+:::note
+
+ほとんどのコマンドは、短縮形として `-f` も受け付けます。ただし、`bitrise api` と `bitrise yml update` では、`-f` は別のフラグです。これらのガイドの例では `--format` を使用します。
+
+:::
+
+デフォルトのフォーマットを変更するには、`output` 設定キーまたは `BITRISE_OUTPUT` Environment Variable を設定します。1 回のコマンド実行だけ変更するには、グローバルの `-o` フラグまたは `--output` フラグを使用します。`--format` は、これらすべてよりも優先されます。
+
+次のコマンドは、デフォルトのフォーマットを使用しません。
+
+- `bitrise build log` は常に生のテキストを出力し、`bitrise api` はAPIのレスポンスをそのまま出力します。どちらも `--format` フラグを持ちません。
+- `bitrise yml validate`、`bitrise local workflows`、`bitrise plugin list`、`bitrise plugin info` は、`--format` を指定しない限り `raw` を出力します。
+
+ターミナルでの出力の見た目は、次のフラグで変更できます。
+
+- `--no-color` (または `NO_COLOR` Environment Variable): 色を無効にします。
+- `--theme`: カラーテーマを選択します。利用できるテーマは `auto`、`dark`、`light`、`none` です。
+- `-q` または `--quiet`: 診断メッセージを非表示にします。
+
+## ページネーション {#pagination}
+
+`bitrise app list` や `bitrise build list` などの一覧表示コマンドは、一度に 1 ページ分の結果を返します。次のフラグでページングを制御します。
+
+| Flag | 説明 |
+| --- | --- |
+| `--limit` | 1 ページあたりの項目数を設定します。指定しない場合は、APIのデフォルトが適用されます。 |
+| `--cursor` | 前回のレスポンスのカーソルに対応するページを取得します。 |
+| `--all` | すべてのページを取得し、まとめて出力します。`--cursor` と組み合わせることはできません。 |
+
+`raw` フォーマットでは、結果がさらにある場合、CLIは一覧の下に次のページ用のコマンドを出力します。
+
+`json` フォーマットでは、`next_cursor` フィールドに次のページのカーソルが含まれます。最後のページにはこのフィールドがありません。
+
+```bash
+bitrise build list --app my-app-id --format json | jq -r '.next_cursor'
+bitrise build list --app my-app-id --cursor NEXT_CURSOR
+```
+
+これは、[Bitrise APIのページネーション](/bitrise-ci/api/pagination-of-api-calls)と同じ仕組みです。
+
+## エラーと終了コード {#errors-and-exit-codes}
+
+コマンドが失敗すると、CLIは `Error:` で始まるエラーを標準エラー出力 (stderr) に出力し、終了コード 1 で終了します。これは `--format json` を指定した場合も同じです。エラーは JSON として出力されません。
+
+代表的なエラーは次のとおりです。
+
+| 原因 | エラー |
+| --- | --- |
+| アクセストークンがない。[Bitrise CLIでの認証](/bitrise-ci/bitrise-cli/authenticating-with-the-bitrise-cli)を参照してください。 | `no Bitrise access token configured (run 'bitrise auth login' or set BITRISE_TOKEN)` |
+| 存在しない ID、またはアカウントがアクセスできない ID。 | エラーに、見つからないプロジェクトまたはビルドが示されます。 |
+| その他の API エラー。 | エラーに、HTTP ステータスコードとAPIのメッセージが含まれます。 |
+
+`bitrise build trigger --wait`、`bitrise build trigger --watch`、`bitrise build watch` も、ビルドが失敗または中止された場合に終了コード 1 で終了するため、スクリプトでビルドの結果に応じた処理ができます。success 付きで中止されたビルドは、成功として扱われます。
+
+## Bitrise APIの呼び出し {#calling-the-bitrise-api}
+
+`bitrise api` コマンドは、保存済みのアクセストークンを使って任意の[Bitrise API](/bitrise-api/api-reference/bitrise-api)エンドポイントにリクエストを送信し、レスポンスボディを出力します。専用のコマンドがないエンドポイントに使用してください。
+
+パスは、APIのベース URL である `https://api.bitrise.io/v0.1` からの相対パスです。
+
+```bash
+bitrise api /me
+bitrise api "/apps/APP_ID/builds?limit=10"
+```
+
+| Flag | 説明 |
+| --- | --- |
+| `-X`、`--method` | HTTP メソッドを設定します。デフォルトは `GET` で、ボディを送信する場合は `POST` です。 |
+| `-f`、`--field` | `key=value` のペアを追加します。`GET` リクエストの場合はクエリパラメーター、それ以外の場合は JSON ボディのフィールドになります。値は文字列として送信されます。複数回指定できます。 |
+| `--input` | ファイルをリクエストボディとして送信します。`-` を指定すると標準入力を送信します。ネストされたオブジェクトや、文字列ではない値を含むボディに使用します。 |
+| `-H`、`--header` | `Name: value` 形式でリクエストヘッダーを追加します。複数回指定できます。 |
+| `-i`、`--include` | ボディの前に、レスポンスのステータスとヘッダーを出力します。 |
+| `--all` | ページネーションをたどり、すべてのページの `data` 配列を 1 つのレスポンスにマージします。`GET` のみ対応しています。 |
+
+たとえば、アクセスできるすべてのプロジェクトのタイトルを出力するには、次のようにします。
+
+```bash
+bitrise api /apps --field sort_by=last_build_at --all | jq '.data[].title'
+```
+
+ファイルのリクエストボディを使ってビルドをトリガーするには、次のようにします。
+
+```bash
+bitrise api /apps/APP_ID/builds -X POST --input body.json
+```
