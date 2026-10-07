@@ -334,6 +334,44 @@ def translate_verified(client, model, sysp, masked):
     return None
 
 
+def translate_body(ctx, body, fm_values):
+    """Mask, translate, verify and unmask one Markdown body together with the
+    frontmatter values in `fm_values`. Returns (japanese_body, {key: japanese})
+    or None. Heading ids are pinned by the caller, against the whole page."""
+    # Frontmatter values and JSX string props are readable text the masker
+    # would otherwise protect; send them as %%key%% lines instead.
+    body, jsx_strings = ts.extract_jsx_strings(body)
+    store = {}
+    masked, n = mask(body, ctx.patterns, store)
+    masked, n = mask_terms(masked, ctx.matcher, store, n)
+    block = ts.build_block(fm_values, jsx_strings)
+    if block:
+        block, n = mask(block, ctx.patterns, store, n)
+        block, n = mask_terms(block, ctx.matcher, store, n)
+        masked = block + "\n\n" + masked
+    translated = translate_verified(ctx.client, ctx.model, ctx.sysp, masked)
+    if translated is None:
+        print(f"    failed verification after {MAX_ATTEMPTS} attempts", file=sys.stderr)
+        return None
+    # Before the block is split off, so title/description lines get it too.
+    translated = restore_token_spacing(masked, translated, store)
+    found, translated = ts.parse_block(translated)
+    left_english = untranslated_headings(masked, translated)
+    if left_english:
+        print(f"  warning: {len(left_english)} heading(s) left in English: "
+              + "; ".join(h for h in left_english[:5]), file=sys.stderr)
+    translated = promote_bold_to_strong(translated.lstrip("\n"))  # pre-unmask: code is still tokens
+    translated = unmask(translated, store)
+    found = {k: unmask(v, store) for k, v in found.items()}
+    if TOKEN_RE.search(translated):
+        # Can't happen if verify_tokens passed and the store is sound —
+        # belt and braces against a placeholder leaking into the page.
+        print("    unresolved placeholder after unmask", file=sys.stderr)
+        return None
+    fm_tr, js_tr = ts.split_block(found)
+    return ts.apply_jsx_strings(translated, jsx_strings, js_tr), fm_tr
+
+
 def dest_path(src, src_root, dest_root):
     # map .../<src_root>/rest -> <dest_root>/rest
     marker = f"/{src_root}/"
@@ -497,9 +535,9 @@ def main():
     # env_var protect pattern only catches 3+ char ALL-CAPS runs.
     matcher = TermMatcher(a.glossary, include_acronyms=True)
     preferred = load_preferred_translations(a.preferred)
-    client = anthropic.Anthropic()
-    model = os.environ.get("TRANSLATE_MODEL", "claude-sonnet-5")
-    sysp = system_prompt(preferred)
+    ctx = argparse.Namespace(client=anthropic.Anthropic(), patterns=patterns, matcher=matcher,
+                             model=os.environ.get("TRANSLATE_MODEL", "claude-sonnet-5"),
+                             sysp=system_prompt(preferred))
 
     # Partials first: a page translated in the same run points its imports at
     # the translated partial only if that file already exists.
@@ -524,41 +562,12 @@ def main():
     failures = []
     for src, raw in todo:
         frontmatter, body = split_frontmatter(raw)
-        # Frontmatter values and JSX string props are readable text the masker
-        # would otherwise protect; send them as %%key%% lines instead.
-        fm_values = ts.extract_frontmatter(frontmatter)
-        body, jsx_strings = ts.extract_jsx_strings(body)
-        store = {}
-        masked, n = mask(body, patterns, store)
-        masked, n = mask_terms(masked, matcher, store, n)
-        block = ts.build_block(fm_values, jsx_strings)
-        if block:
-            block, n = mask(block, patterns, store, n)
-            block, n = mask_terms(block, matcher, store, n)
-            masked = block + "\n\n" + masked
-        translated = translate_verified(client, model, sysp, masked)
-        if translated is None:
-            print(f"  FAILED verification after {MAX_ATTEMPTS} attempts, not writing: {src}",
-                  file=sys.stderr)
+        result = translate_body(ctx, body, ts.extract_frontmatter(frontmatter))
+        if result is None:
+            print(f"  FAILED, not writing: {src}", file=sys.stderr)
             failures.append(src)
             continue
-        # Before the block is split off, so title/description lines get it too.
-        translated = restore_token_spacing(masked, translated, store)
-        found, translated = ts.parse_block(translated)
-        left_english = untranslated_headings(masked, translated)
-        if left_english:
-            print(f"  warning: {len(left_english)} heading(s) left in English in {src}: "
-                  + "; ".join(h for h in left_english[:5]), file=sys.stderr)
-        translated = promote_bold_to_strong(translated.lstrip("\n"))  # pre-unmask: code is still tokens
-        translated = unmask(translated, store)
-        found = {k: unmask(v, store) for k, v in found.items()}
-        if TOKEN_RE.search(translated):
-            # Can't happen if verify_tokens passed and the store is sound —
-            # belt and braces against a placeholder leaking into the page.
-            print(f"  FAILED: unresolved placeholder after unmask, not writing: {src}",
-                  file=sys.stderr)
-            failures.append(src)
-            continue
+        translated, fm_tr = result
         # Translated headings get new auto-generated anchors, which breaks
         # every #anchor link written against the English heading. Pin each
         # one to its English id. A page whose headings can't be paired is
@@ -569,8 +578,6 @@ def main():
                   file=sys.stderr)
         translated = point_imports_at_translated_partials(
             translated, a.partials_dest_root, a.partials_import_prefix)
-        fm_tr, js_tr = ts.split_block(found)
-        translated = ts.apply_jsx_strings(translated, jsx_strings, js_tr)
         frontmatter = ts.apply_frontmatter(frontmatter, fm_tr)
         dst = route(src, a)
         os.makedirs(os.path.dirname(dst) or ".", exist_ok=True)
