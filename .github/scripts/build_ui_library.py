@@ -46,7 +46,10 @@ PROTECT_PATTERNS = [
     # route, not prose. Mirrors the url pattern above for the site's own
     # bare-path convention (see scripts/strip_en_prefix.py) instead of
     # relying on the model's "preserve links" instruction to leave it alone.
-    ("relative_link_target", r'\]\(/[^)\s]*\)'),
+    # Only the target is masked ([text](⟦p7⟧), the shape `url` gives external
+    # links): masking the `]` with it showed the model `[text⟦p7⟧`, and it
+    # dropped the `[` or doubled the `]`. In-page #anchors are targets too.
+    ("relative_link_target", r'(?<=\]\()[/#][^)\s]*(?=\))'),
     # Whole <NT>...</NT> spans, matched BEFORE mdx_component (which would
     # otherwise mask the opening/closing tags one at a time and leave the
     # protected text exposed in between). <NT> is the rare MANUAL escape
@@ -63,7 +66,9 @@ PROTECT_PATTERNS = [
     # is as often English emphasis ("NOT", "MUST") as an identifier, and the
     # acronyms tier already protects real acronyms exact-case.
     ("env_var",           r'(\$[A-Z][A-Z0-9_]+|[A-Z][A-Z0-9]*[_0-9][A-Z0-9_]*)'),
-    ("filename",          r'\S+\.(yml|yaml|json|sh|rb|swift|kt|kts|java|md|mdx|plist|xml|gradle|podspec|toml|lock|cfg|env)'),
+    # Never starts on [ ] ( ) *, so [bitrise.yml](...) and **bitrise.yml**
+    # keep their link bracket / bold markers outside the token.
+    ("filename",          r'[^\s\[\]()*]+\.(yml|yaml|json|sh|rb|swift|kt|kts|java|md|mdx|plist|xml|gradle|podspec|toml|lock|cfg|env)'),
     ("mdx_component",     r'</?[A-Za-z][^>]*>'),
     ("docusaurus_admonition", r':::[a-z]+'),
     # Explicit heading anchor IDs (`## Workspace {#workspace}`) — Docusaurus

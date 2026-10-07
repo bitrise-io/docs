@@ -61,6 +61,33 @@ class PromoteBoldTests(unittest.TestCase):
         self.assertEqual(out.count("*"), 0)
 
 
+class LinkMaskingTests(unittest.TestCase):
+    """Only a link's target is masked; the model must see [text](⟦pN⟧)."""
+
+    def mask(self, text):
+        store = {}
+        masked, _ = T.mask(text, T.load_protect_patterns(GLOSSARY), store)
+        self.assertEqual(T.unmask(masked, store), text)  # round trip is exact
+        return masked
+
+    def test_internal_link_image_and_anchor_keep_brackets_visible(self):
+        self.assertRegex(self.mask("See [the guide](/bitrise-ci/a) and ![alt](/img/b.png)."),
+                         r"^See \[the guide\]\(⟦p\d+⟧\) and !\[alt\]\(⟦p\d+⟧\)\.$")
+        self.assertRegex(self.mask("[Connect it](#connect-your-workspace)."),
+                         r"^\[Connect it\]\(⟦p\d+⟧\)\.$")
+
+    def test_filename_never_swallows_link_bracket_or_bold(self):
+        self.assertRegex(self.mask("Open **bitrise.yml** or [Podfile.lock](/x)."),
+                         r"^Open \*\*⟦p\d+⟧\*\* or \[⟦p\d+⟧\]\(⟦p\d+⟧\)\.$")
+
+    def test_builder_emits_the_same_patterns(self):
+        # build_ui_library.py regenerates the glossary weekly from PROTECT_PATTERNS.
+        import build_ui_library as B
+        glossary = dict(T.load_protect_patterns(GLOSSARY))
+        for name, rx in B.PROTECT_PATTERNS:
+            self.assertEqual(glossary.get(name), rx, name)
+
+
 class PartialImportTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

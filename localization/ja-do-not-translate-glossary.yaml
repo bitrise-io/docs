@@ -57,9 +57,9 @@ protect_patterns:
     regex: '`[^`]+`'
   - name: url                      # https://... http://...
     regex: 'https?://[^\s)]+'
-  - name: relative_link_target     # ](/bitrise-ci/foo), ![alt](/img/foo.png) — internal
-    regex: '\]\(/[^)\s]*\)'        #   link/image targets are never translated; there's no
-                                    #   legitimate translated form of a route
+  - name: relative_link_target     # [x](/bitrise-ci/foo), ![alt](/img/foo.png), [x](#anchor) — internal
+    regex: '(?<=\]\()[/#][^)\s]*(?=\))'  #   targets are never translated. Only the target is masked:
+                                    #   the model must see [text](⟦p7⟧), not [text⟦p7⟧ (it drops the [)
   - name: nt_span                  # whole <NT>...</NT> spans (the manual escape hatch) — matched
     regex: '<NT\b[^>]*>[\s\S]*?</NT>'  #   before mdx_component, which would otherwise mask the tags
                                     #   one at a time and leave the protected text exposed between
@@ -69,8 +69,8 @@ protect_patterns:
     regex: '(\$[A-Z][A-Z0-9_]+|[A-Z][A-Z0-9]*[_0-9][A-Z0-9_]*)'  #   underscore (or a $ prefix), so ALL-CAPS
                                     #   English emphasis ("NOT", "MUST") stays translatable prose;
                                     #   bare acronyms are covered exact-case by the acronyms tier
-  - name: filename                 # bitrise.yml, Podfile.lock, build.gradle
-    regex: '\S+\.(yml|yaml|json|sh|rb|swift|kt|kts|java|md|mdx|plist|xml|gradle|podspec|toml|lock|cfg|env)'
+  - name: filename                 # bitrise.yml, Podfile.lock, build.gradle — never starts on [ ] ( ) *
+    regex: '[^\s\[\]()*]+\.(yml|yaml|json|sh|rb|swift|kt|kts|java|md|mdx|plist|xml|gradle|podspec|toml|lock|cfg|env)'
   - name: mdx_component            # <Tabs>, <CodeBlock>, </Admonition>
     regex: '</?[A-Za-z][^>]*>'
   - name: docusaurus_admonition    # :::note  :::tip  :::warning
