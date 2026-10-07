@@ -86,5 +86,26 @@ class TranslateVerifiedTests(unittest.TestCase):
             self.assertIsNone(T.translate_verified(None, "m", "s", SOURCE))
 
 
+class CheckCommittedPagesTests(unittest.TestCase):
+    def run_check(self, ja_page):
+        import tempfile
+        import ja_structure as J
+        en_page = "---\ntitle: A\nslug: /a\nsidebar_position: 6\n---\nSee [x](/y).\n"
+        with tempfile.TemporaryDirectory() as root:
+            for rel, text in (("docs/a.mdx", en_page),
+                              ("i18n/ja/docusaurus-plugin-content-docs/current/a.mdx", ja_page)):
+                os.makedirs(os.path.dirname(f"{root}/{rel}"), exist_ok=True)
+                open(f"{root}/{rel}", "w", encoding="utf-8").write(text)
+            with mock.patch.object(J, "ROOT", root), mock.patch("sys.stdout"):
+                return J.check_committed_pages()
+
+    def test_translated_page_matching_english_passes(self):
+        self.assertEqual(self.run_check("---\ntitle: エー\nslug: /a\nsidebar_position: 6\n---\n[x](/y)を参照。\n"), 0)
+
+    def test_broken_link_or_changed_sidebar_position_fails(self):
+        self.assertEqual(self.run_check("---\ntitle: A\nslug: /a\nsidebar_position: 6\n---\nx](/y)を参照。\n"), 1)
+        self.assertEqual(self.run_check("---\ntitle: A\nslug: /a\nsidebar_position: 3\n---\n[x](/y)を参照。\n"), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
