@@ -265,10 +265,10 @@ const entryDate = (e: ReactElement<EntryProps>): string | undefined =>
 
 /**
  * A time bucket. Its first child is the `##` heading, so the page TOC still
- * lists the quarters. Entries are filtered here, and a quarter with no visible
- * entry is hidden along with its heading.
+ * lists the quarters. Entries are filtered here; a quarter with no visible
+ * entry keeps its heading and shows a short notice instead.
  */
-export function Quarter({children}: {children: ReactNode}): ReactElement | null {
+export function Quarter({children}: {children: ReactNode}): ReactElement {
   const {filter, range} = useContext(ChangelogContext);
 
   const all = Children.toArray(children);
@@ -290,12 +290,22 @@ export function Quarter({children}: {children: ReactNode}): ReactElement | null 
     }
     return true;
   });
-  if (visible.length === 0) return null;
-
+  // Keep the heading even when nothing matches: the TOC is built from the MDX
+  // at build time and links to every quarter, so a missing heading is a dead link.
   return (
     <>
       {rest}
-      {visible}
+      {visible.length > 0 ? (
+        visible
+      ) : (
+        <p className={styles.emptyQuarter}>
+          {translate({
+            id: 'changelog.quarter.empty',
+            message: 'No updates match the current filters in this quarter.',
+            description: 'Changelog text under a quarter heading when the area or date filter hides all its entries',
+          })}
+        </p>
+      )}
     </>
   );
 }
