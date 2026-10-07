@@ -42,6 +42,15 @@ class OverridesTests(unittest.TestCase):
                 self.assertIn(term, context if tier == "context" else always, tier)
         self.assertEqual({t for t in context | always if t.lower() in B.NEVER_PROTECT}, set())
 
+    def test_every_extra_label_matches_when_written_as_bold_ui_text(self):
+        # nt_terms wraps terms in \b: "(optional)" or "+ Add key" would never match.
+        sys.path.insert(0, HERE)
+        from nt_terms import TermMatcher
+        matcher = TermMatcher(GLOSSARY, fetch_steps=False)
+        for terms in B.EXTRA_UI_LABELS.values():
+            for term in terms:
+                self.assertIn(term, [m.base for m in matcher.find_matches(f"Click **{term}**.")])
+
 
 if __name__ == "__main__":
     unittest.main()

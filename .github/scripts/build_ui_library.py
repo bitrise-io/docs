@@ -105,8 +105,51 @@ CURATED = {
 # ("hard", "context", "step"). NEVER_PROTECT: lowercased strings the scan
 # picks up that are ordinary prose, never a UI label (freezing them left
 # English mid-sentence in JA).
-EXTRA_UI_LABELS = {"hard": [], "context": [], "step": []}
-NEVER_PROTECT = set()
+EXTRA_UI_LABELS = {
+    "hard": [
+        "2FA is enabled", "Add a provider to pool", "Add a purchase order", "Add certificate",
+        "Add exclusions", "Add existing workspace members", "Add IAM condition", "Add keystore",
+        "Add your own SSH key", "Air-gapped network mode", "Allow notifications",
+        "Allow public repositories", "Apply a template", "Authorize SSO access",
+        "AWS instance profile", "Change project access", "Change to Pro", "Change to Teams",
+        "Command error rate", "Configure provider attributes", "Confirm status change",
+        "Connect provider", "Connect with IdP", "Create an identity pool", "Create and continue",
+        "Download config", "Edit definition", "Edit Release details",
+        "Enable public page for the App", "Enable support for the SAML 2.0 WebSSO protocol",
+        "Expo project directory", "GitLab Self-hosted",
+        "Grant access using service account impersonation", "Group name already exists",
+        "Invite new members to the workspace", "Manage billing information",
+        "Manage collaboration settings", "Manage exclusions", "Manage infrastructure",
+        "Pause schedule", "React Native project directory", "Rebuild the entire Pipeline",
+        "Release rollout/App Store release settings", "Remove from workspace", "Reset Password",
+        "Run if previous Step failed", "Select a provider", "Select individual events",
+        "Send me everything", "Show more options", "Sign in to Bitrise",
+        "Start with a blank release", "Subscribe to events", "Sync only assigned users and groups",
+        "Update status and stop managing release", "Upload a JSON file"],
+    "context": [
+        "2FA code", "Account details", "Account information", "An empty Workflow", "API token",
+        "App installation", "App tester", "Build configuration", "Callback URL", "Change access",
+        "Create container", "Create role", "Current branch", "Custom values", "Delete item",
+        "Domain verification", "Enter your username", "Enter your work email",
+        "Enterprise applications", "Error rate", "Filter tests", "Image tags", "New branch",
+        "New task", "Organization settings", "Pipeline details", "Plan and billing",
+        "Profile settings", "Pushed changes to GitHub", "Remove release", "Save token",
+        "SSH key name", "Triggered build", "Upload version", "Uploads/downloads", "Your feedback"],
+    "step": [
+        "Additional options for the gradlew dependencies command", "Android app under test",
+        "API Key path", "APK or App Bundle file path", "Build context path",
+        "Download destination path", "Download source url", "Enable Gradle cache",
+        "Enable Xcode cache", "gradlew file path",
+        "Path of file containing the devices to be registered", "Project path, scheme and Target",
+        "Register test devices on the Apple Developer Portal", "Restore NPM cache",
+        "Save Dart cache", "Save NPM cache", "Test API's base URL",
+        "Variables to share between Pipeline Workflows", "Version of npm to use",
+        "Yarn command to run"],
+}
+NEVER_PROTECT = {
+    "enable the", "example", "for the", "how to use community plugins", "you have",
+    "you install all of the app's dependencies",
+}
 
 # ---------------------------------------------------------------------------
 # Extraction (shared with extract_ui_strings.py logic)
