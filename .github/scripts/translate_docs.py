@@ -69,6 +69,7 @@ REQUIREMENTS
   pip install anthropic pyyaml
 """
 import argparse
+import functools
 import os
 import re
 import sys
@@ -166,6 +167,33 @@ def unmask(text, store):
     for tok in sorted(store, key=token_number, reverse=True):
         text = text.replace(tok, store[tok])
     return text
+
+
+LATIN_RE = re.compile(r"[A-Za-z0-9]")
+JUNCTION_RE = re.compile(r"(⟦p\d+⟧|[A-Za-z0-9])(?=(⟦p\d+⟧|[A-Za-z0-9]))")
+
+
+def restore_token_spacing(masked_text, translated, store):
+    """Put back the space the model drops next to a token. Japanese has no
+    word spaces, so `⟦p1⟧ ⟦p0⟧` comes back as `⟦p1⟧⟦p0⟧` ("OktaSSO") and
+    `⟦p0⟧ 13` as `⟦p0⟧13` ("Xcode13"). Runs before unmask: a space goes back
+    at a token junction only where the token had whitespace on that side in
+    the masked input AND the characters meeting after unmasking are both
+    Latin, so suffixes (`⟦p0⟧s`), Japanese text and `**⟦p0⟧**` are untouched."""
+    spaced = {(m.group(), side) for m in TOKEN_RE.finditer(masked_text)
+              for side, ch in (("before", masked_text[m.start() - 1:m.start()]),
+                               ("after", masked_text[m.end():m.end() + 1])) if ch.isspace()}
+    full = functools.lru_cache(maxsize=None)(lambda piece: unmask(piece, store))
+
+    def junction(m):
+        left, right = m.groups()
+        if (left, "after") not in spaced and (right, "before") not in spaced:
+            return left
+        if LATIN_RE.match(full(left)[-1:]) and LATIN_RE.match(full(right)[:1]):
+            return left + " "
+        return left
+
+    return JUNCTION_RE.sub(junction, translated)
 
 
 def verify_tokens(masked_text, translated):
@@ -514,6 +542,8 @@ def main():
                   file=sys.stderr)
             failures.append(src)
             continue
+        # Before the block is split off, so title/description lines get it too.
+        translated = restore_token_spacing(masked, translated, store)
         found, translated = ts.parse_block(translated)
         left_english = untranslated_headings(masked, translated)
         if left_english:

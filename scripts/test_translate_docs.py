@@ -117,6 +117,33 @@ class PartialImportTests(unittest.TestCase):
         self.assertEqual(self.rewrite(text).count("@site/i18n/ja/partials/have.mdx"), 2)
 
 
+class TokenSpacingTests(unittest.TestCase):
+    """The model glues tokens to each other and to Latin words; the space the
+    English had between two Latin words comes back, nothing else changes."""
+
+    def round_trip(self, english, model_output):
+        from nt_terms import TermMatcher
+        store = {}
+        masked, n = T.mask(english, T.load_protect_patterns(GLOSSARY), store)
+        masked, _ = T.mask_terms(masked, TermMatcher(GLOSSARY, fetch_steps=False,
+                                                     include_acronyms=True), store, n)
+        glued = model_output(masked)
+        return T.unmask(T.restore_token_spacing(masked, glued, store), store)
+
+    def test_observed_glued_phrases_get_their_space_back(self):
+        # Cases from i18n/ja: OktaSSO, AndroidSDK, BitrisePipelineの設定, Xcode13.
+        english = "Okta SSO, Android SDK, Bitrise Pipeline settings, Xcode 13"
+        out = self.round_trip(english, lambda m: re.sub(r"\s*(⟦p\d+⟧)\s*", r"\1", m)
+                              .replace("settings", "の設定"))
+        self.assertEqual(out, "Okta SSO,Android SDK,Bitrise Pipelineの設定,Xcode 13")
+
+    def test_suffix_japanese_and_markdown_stay_glued(self):
+        out = self.round_trip("Add two Steps to **Workflow** settings.",
+                              lambda m: m.replace("Add two ", "2つの").replace(" to ", "を")
+                              .replace(" settings.", "の設定に追加します。"))
+        self.assertEqual(out, "2つのStepsを**Workflow**の設定に追加します。")
+
+
 class RouteTests(unittest.TestCase):
     ARGS = argparse.Namespace(
         src_root="docs", dest_root="i18n/ja/docs",
