@@ -99,6 +99,15 @@ CURATED = {
     "code_literals": [".bitrise.yml","GIT_HTTP_PASSWORD","BITRISE_BUILD_NUMBER","Podfile","Gemfile","Info.plist"],
 }
 
+# Hand-kept corrections to the extracted tiers; this file regenerates the
+# glossary weekly, so a fix made only in the YAML would be wiped.
+# EXTRA_UI_LABELS: UI labels / Step names the scan misses, keyed by tier
+# ("hard", "context", "step"). NEVER_PROTECT: lowercased strings the scan
+# picks up that are ordinary prose, never a UI label (freezing them left
+# English mid-sentence in JA).
+EXTRA_UI_LABELS = {"hard": [], "context": [], "step": []}
+NEVER_PROTECT = set()
+
 # ---------------------------------------------------------------------------
 # Extraction (shared with extract_ui_strings.py logic)
 # ---------------------------------------------------------------------------
@@ -277,6 +286,11 @@ def main():
         out_records.append({"string":s,"count":e["count"],"kinds":sorted(e["kinds"]),
                             "contexts":sorted(e["contexts"]),"files":sorted(e["files"]),
                             "doc_hits":total,"doc_ui_formatted":ui})
+
+    for k,extra in EXTRA_UI_LABELS.items():       # an extra's tier wins over the scan's
+        for t in tiers.values(): t.difference_update(extra)
+        tiers[k].update(extra)
+    for k in tiers: tiers[k]={t for t in tiers[k] if t.lower() not in NEVER_PROTECT}
 
     os.makedirs(a.out_dir,exist_ok=True)
     lib_path=os.path.join(a.out_dir,"ui_copy_library.json")
