@@ -196,7 +196,7 @@ def fake_translate(client, model, sysp, masked):
 
 
 class EndToEndTests(unittest.TestCase):
-    def run_main(self, tmp, files):
+    def run_main(self, tmp, files, translate=fake_translate):
         argv = [
             "translate_docs.py", "--glossary", GLOSSARY,
             "--src-root", f"{tmp}/docs", "--dest-root", f"{tmp}/out/docs",
@@ -208,7 +208,7 @@ class EndToEndTests(unittest.TestCase):
         with mock.patch.object(sys, "argv", argv), \
              mock.patch.dict(sys.modules, {"anthropic": fake_anthropic}), \
              mock.patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test"}), \
-             mock.patch.object(T, "translate_verified", fake_translate):
+             mock.patch.object(T, "translate_verified", translate):
             T.main()
 
     def test_partials_first_imports_rewritten_ids_and_bold(self):
@@ -233,6 +233,19 @@ class EndToEndTests(unittest.TestCase):
             self.assertIn("Hello <strong>world</strong>.", page)
             self.assertIn("<strong>Key pair name - <em>required</em></strong>: value", page)
             self.assertTrue(page.startswith("---\ntitle: \"A page\"\nslug: /a-page\n---\n"))
+
+    def test_failed_page_is_skipped_others_written_then_exit_1(self):
+        # translate-ja-docs.yml commits whatever this wrote, then fails the job.
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(f"{tmp}/docs")
+            for name in ("good", "bad"):
+                open(f"{tmp}/docs/{name}.mdx", "w", encoding="utf-8").write(f"## {name}\n")
+            fail_bad = lambda c, m, s, masked: None if "bad" in masked else masked
+            with self.assertRaises(SystemExit) as exit_:
+                self.run_main(tmp, [f"{tmp}/docs/bad.mdx", f"{tmp}/docs/good.mdx"], fail_bad)
+            self.assertEqual(exit_.exception.code, 1)
+            self.assertTrue(os.path.isfile(f"{tmp}/out/docs/good.mdx"))
+            self.assertFalse(os.path.exists(f"{tmp}/out/docs/bad.mdx"))
 
     def test_deleted_partial_removes_its_translation(self):
         with tempfile.TemporaryDirectory() as tmp:
