@@ -45,6 +45,14 @@ Design:
      off and never sent to the model at all, so there's no risk of it
      touching the slug — only the body is translated.
 
+CHANGED PAGES
+  When a JA page exists and --base-ref gives the English it was translated
+  from, only the sections (cut at every heading, keyed by heading id) and
+  frontmatter values whose English changed are sent; every other section
+  keeps its Japanese byte for byte, so a one-line edit can't reword the rest
+  of the page. Anything unexpected (ids that don't line up, a structure
+  mismatch after reassembly) falls back to translating the whole page.
+
 PARTIALS
   Reusable partials (src/partials/*.mdx) are translated exactly like pages,
   into i18n/ja/partials/ (--partials-src-root / --partials-dest-root). They
@@ -81,7 +89,7 @@ import yaml
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(REPO_ROOT, "scripts"))
 
-from heading_ids import add_english_heading_ids, untranslated_headings  # noqa: E402
+from heading_ids import add_english_heading_ids, final_ids, scan, untranslated_headings  # noqa: E402
 from ja_structure import structure_issues  # noqa: E402
 from nt_terms import TermMatcher  # noqa: E402
 import translatable_strings as ts  # noqa: E402
@@ -372,6 +380,62 @@ def translate_body(ctx, body, fm_values):
     return ts.apply_jsx_strings(translated, jsx_strings, js_tr), fm_tr
 
 
+def split_sections(body):
+    """Cut a body before every heading: [(id, text), ...], where id is the
+    anchor Docusaurus gives the heading (explicit {#id} or slug, as
+    heading_ids.final_ids computes it) and "" keys the text before the first
+    heading. "".join(texts) == body. A ### starts its own section like a ##
+    does: ids are unique on a page, so editing one subsection leaves its parent
+    and siblings alone."""
+    lines = body.split("\n")
+    heads = scan(lines)
+    cuts = [0] + [h.line for h in heads] + [len(lines)]
+    texts = ["".join(line + "\n" for line in lines[a:b]) for a, b in zip(cuts, cuts[1:])]
+    texts[-1] = texts[-1][:-1]  # the body has no "\n" after its last line
+    return list(zip([""] + final_ids(heads), texts))
+
+
+def translate_sections(ctx, old_raw, new_raw, ja_raw):
+    """Re-translate only what changed since `old_raw`, the English that the
+    JA page `ja_raw` matches: new or changed sections (split_sections) and
+    frontmatter values. Unchanged sections keep their Japanese byte for byte,
+    removed ones are dropped, and the page follows the new English order.
+    Returns translate_body()'s (body, fm values), or None when the page must
+    be translated whole: section ids repeat or differ between the old English
+    and the JA page, the translation fails, or the assembled page's structure
+    differs from the English (scripts/ja_structure.py)."""
+    (_, old_body), (_, new_body), (_, ja_body) = (
+        split_frontmatter(r) for r in (old_raw, new_raw, ja_raw))
+    old, new, ja = (split_sections(b) for b in (old_body, new_body, ja_body))
+    if [k for k, _ in ja] != [k for k, _ in old] or len(dict(old)) < len(old) or len(dict(new)) < len(new):
+        return None
+    old, ja, new_text = dict(old), dict(ja), dict(new)
+    changed = [k for k, t in new if k not in old or ts.normalized(t) != ts.normalized(old[k])]
+    old_fm, new_fm, ja_fm = (ts.extract_frontmatter(split_frontmatter(r)[0])
+                             for r in (old_raw, new_raw, ja_raw))
+    fm_send = {k: v for k, v in new_fm.items() if old_fm.get(k) != v or k not in ja_fm}
+    out, fm_tr = "", {}
+    if changed or fm_send:
+        print(f"  re-translating {len(changed)} of {len(new)} section(s), "
+              f"{len(fm_send)} frontmatter value(s)")
+        result = translate_body(ctx, "".join(new_text[k] for k in changed), fm_send)
+        if result is None:
+            return None
+        out, fm_tr = result
+    parts = [t for _, t in split_sections(out)]
+    if changed[:1] != [""] and parts.pop(0).strip():
+        return None  # text before the first heading that no section owns
+    if len(parts) != len(changed):
+        return None
+    # Each translated section ends with the blank lines its English one has.
+    done = {k: t.rstrip("\n") + new_text[k][len(new_text[k].rstrip("\n")):]
+            for k, t in zip(changed, parts)}
+    body = "".join(done.get(k, ja.get(k)) for k, _ in new)
+    if structure_issues(new_body, body):
+        return None
+    return body, {**ja_fm, **fm_tr}
+
+
 def dest_path(src, src_root, dest_root):
     # map .../<src_root>/rest -> <dest_root>/rest
     marker = f"/{src_root}/"
@@ -408,16 +472,15 @@ def point_imports_at_translated_partials(text, translated_dir, import_prefix):
     return PARTIAL_IMPORT_RE.sub(sub, text)
 
 
-def english_really_changed(base_ref, src, new_raw):
-    """False only when the page at `base_ref` and now differ in whitespace alone.
-    Anything unknown (new file, git failure) counts as changed."""
+def english_at(base_ref, src):
+    """The English page as it was at `base_ref`, or None when unknown (new
+    file, git failure)."""
     import subprocess
     try:
-        old = subprocess.run(["git", "show", f"{base_ref}:{src}"], capture_output=True,
-                             text=True, check=True).stdout
+        return subprocess.run(["git", "show", f"{base_ref}:{src}"], capture_output=True,
+                              text=True, check=True).stdout
     except (subprocess.CalledProcessError, OSError):
-        return True
-    return ts.normalized(old) != ts.normalized(new_raw)
+        return None
 
 
 def is_relevant(path):
@@ -553,16 +616,26 @@ def main():
             print(f"  skip (missing): {src}")
             continue
         raw = open(src, encoding="utf-8").read()
-        if a.base_ref and os.path.isfile(route(src, a)) and not english_really_changed(a.base_ref, src, raw):
+        old = english_at(a.base_ref, src) if a.base_ref and os.path.isfile(route(src, a)) else None
+        if old is not None and ts.normalized(old) == ts.normalized(raw):
             print(f"  skip (English only changed in whitespace): {src}")
             continue
-        todo.append((src, raw))
-    print(f"Plan: translating {len(todo)} file(s), {sum(len(r) for _, r in todo):,} characters of English.")
+        todo.append((src, raw, old))
+    print(f"Plan: translating {len(todo)} file(s), at most "
+          f"{sum(len(r) for _, r, _ in todo):,} characters of English.")
 
     failures = []
-    for src, raw in todo:
+    for src, raw, old in todo:
+        dst = route(src, a)
         frontmatter, body = split_frontmatter(raw)
-        result = translate_body(ctx, body, ts.extract_frontmatter(frontmatter))
+        # With the English the JA page was translated from, only the sections
+        # that changed since are sent; anything unexpected falls back to the
+        # whole page.
+        result = translate_sections(ctx, old, raw, open(dst, encoding="utf-8").read()) if old else None
+        if result is None:
+            if old:
+                print(f"  translating the whole page (sections can't be reused): {src}")
+            result = translate_body(ctx, body, ts.extract_frontmatter(frontmatter))
         if result is None:
             print(f"  FAILED, not writing: {src}", file=sys.stderr)
             failures.append(src)
@@ -579,7 +652,6 @@ def main():
         translated = point_imports_at_translated_partials(
             translated, a.partials_dest_root, a.partials_import_prefix)
         frontmatter = ts.apply_frontmatter(frontmatter, fm_tr)
-        dst = route(src, a)
         os.makedirs(os.path.dirname(dst) or ".", exist_ok=True)
         open(dst, "w", encoding="utf-8").write(frontmatter + translated)
         print(f"  translated {src} -> {dst}")
