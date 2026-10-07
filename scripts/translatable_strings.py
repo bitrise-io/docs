@@ -161,5 +161,21 @@ def split_block(found, prefix=""):
 
 
 def normalized(text):
-    """Whitespace-insensitive form, for 'did the English really change?'"""
-    return re.sub(r"\s+", " ", text).strip()
+    """Comparison form for 'did the English really change?'. Ignores line
+    endings, trailing spaces, runs of blank lines and runs of spaces inside a
+    prose line; keeps leading indentation and fenced code exact, because an
+    indentation-only edit (YAML in a code block, list nesting) is a real one."""
+    out, fence = [], None
+    for line in text.replace("\r\n", "\n").split("\n"):
+        line = line.rstrip()
+        m = FENCE_RE.match(line)
+        in_code = fence is not None
+        if m and (not in_code or m.group(1).startswith(fence)):
+            fence = None if in_code else m.group(1)
+        elif not in_code:
+            if not line and (not out or not out[-1]):
+                continue
+            indent = line[:len(line) - len(line.lstrip())]
+            line = indent + re.sub(r"[ \t]+", " ", line.lstrip())
+        out.append(line)
+    return "\n".join(out).rstrip("\n")

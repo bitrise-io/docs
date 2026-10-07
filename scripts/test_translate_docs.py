@@ -61,6 +61,33 @@ class PromoteBoldTests(unittest.TestCase):
         self.assertEqual(out.count("*"), 0)
 
 
+class LinkMaskingTests(unittest.TestCase):
+    """Only a link's target is masked; the model must see [text](⟦pN⟧)."""
+
+    def mask(self, text):
+        store = {}
+        masked, _ = T.mask(text, T.load_protect_patterns(GLOSSARY), store)
+        self.assertEqual(T.unmask(masked, store), text)  # round trip is exact
+        return masked
+
+    def test_internal_link_image_and_anchor_keep_brackets_visible(self):
+        self.assertRegex(self.mask("See [the guide](/bitrise-ci/a) and ![alt](/img/b.png)."),
+                         r"^See \[the guide\]\(⟦p\d+⟧\) and !\[alt\]\(⟦p\d+⟧\)\.$")
+        self.assertRegex(self.mask("[Connect it](#connect-your-workspace)."),
+                         r"^\[Connect it\]\(⟦p\d+⟧\)\.$")
+
+    def test_filename_never_swallows_link_bracket_or_bold(self):
+        self.assertRegex(self.mask("Open **bitrise.yml** or [Podfile.lock](/x)."),
+                         r"^Open \*\*⟦p\d+⟧\*\* or \[⟦p\d+⟧\]\(⟦p\d+⟧\)\.$")
+
+    def test_builder_emits_the_same_patterns(self):
+        # build_ui_library.py regenerates the glossary weekly from PROTECT_PATTERNS.
+        import build_ui_library as B
+        glossary = dict(T.load_protect_patterns(GLOSSARY))
+        for name, rx in B.PROTECT_PATTERNS:
+            self.assertEqual(glossary.get(name), rx, name)
+
+
 class PartialImportTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -88,6 +115,33 @@ class PartialImportTests(unittest.TestCase):
         text = ("import A from '@site/src/partials/have.mdx';\n"
                 "import B from '@site/src/partials/have.mdx';\n")
         self.assertEqual(self.rewrite(text).count("@site/i18n/ja/partials/have.mdx"), 2)
+
+
+class TokenSpacingTests(unittest.TestCase):
+    """The model glues tokens to each other and to Latin words; the space the
+    English had between two Latin words comes back, nothing else changes."""
+
+    def round_trip(self, english, model_output):
+        from nt_terms import TermMatcher
+        store = {}
+        masked, n = T.mask(english, T.load_protect_patterns(GLOSSARY), store)
+        masked, _ = T.mask_terms(masked, TermMatcher(GLOSSARY, fetch_steps=False,
+                                                     include_acronyms=True), store, n)
+        glued = model_output(masked)
+        return T.unmask(T.restore_token_spacing(masked, glued, store), store)
+
+    def test_observed_glued_phrases_get_their_space_back(self):
+        # Cases from i18n/ja: OktaSSO, AndroidSDK, BitrisePipelineの設定, Xcode13.
+        english = "Okta SSO, Android SDK, Bitrise Pipeline settings, Xcode 13"
+        out = self.round_trip(english, lambda m: re.sub(r"\s*(⟦p\d+⟧)\s*", r"\1", m)
+                              .replace("settings", "の設定"))
+        self.assertEqual(out, "Okta SSO,Android SDK,Bitrise Pipelineの設定,Xcode 13")
+
+    def test_suffix_japanese_and_markdown_stay_glued(self):
+        out = self.round_trip("Add two Steps to **Workflow** settings.",
+                              lambda m: m.replace("Add two ", "2つの").replace(" to ", "を")
+                              .replace(" settings.", "の設定に追加します。"))
+        self.assertEqual(out, "2つのStepsを**Workflow**の設定に追加します。")
 
 
 class RouteTests(unittest.TestCase):
@@ -142,7 +196,7 @@ def fake_translate(client, model, sysp, masked):
 
 
 class EndToEndTests(unittest.TestCase):
-    def run_main(self, tmp, files):
+    def run_main(self, tmp, files, translate=fake_translate):
         argv = [
             "translate_docs.py", "--glossary", GLOSSARY,
             "--src-root", f"{tmp}/docs", "--dest-root", f"{tmp}/out/docs",
@@ -154,7 +208,7 @@ class EndToEndTests(unittest.TestCase):
         with mock.patch.object(sys, "argv", argv), \
              mock.patch.dict(sys.modules, {"anthropic": fake_anthropic}), \
              mock.patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test"}), \
-             mock.patch.object(T, "translate_verified", fake_translate):
+             mock.patch.object(T, "translate_verified", translate):
             T.main()
 
     def test_partials_first_imports_rewritten_ids_and_bold(self):
@@ -179,6 +233,19 @@ class EndToEndTests(unittest.TestCase):
             self.assertIn("Hello <strong>world</strong>.", page)
             self.assertIn("<strong>Key pair name - <em>required</em></strong>: value", page)
             self.assertTrue(page.startswith("---\ntitle: \"A page\"\nslug: /a-page\n---\n"))
+
+    def test_failed_page_is_skipped_others_written_then_exit_1(self):
+        # translate-ja-docs.yml commits whatever this wrote, then fails the job.
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(f"{tmp}/docs")
+            for name in ("good", "bad"):
+                open(f"{tmp}/docs/{name}.mdx", "w", encoding="utf-8").write(f"## {name}\n")
+            fail_bad = lambda c, m, s, masked: None if "bad" in masked else masked
+            with self.assertRaises(SystemExit) as exit_:
+                self.run_main(tmp, [f"{tmp}/docs/bad.mdx", f"{tmp}/docs/good.mdx"], fail_bad)
+            self.assertEqual(exit_.exception.code, 1)
+            self.assertTrue(os.path.isfile(f"{tmp}/out/docs/good.mdx"))
+            self.assertFalse(os.path.exists(f"{tmp}/out/docs/bad.mdx"))
 
     def test_deleted_partial_removes_its_translation(self):
         with tempfile.TemporaryDirectory() as tmp:
