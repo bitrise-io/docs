@@ -1,0 +1,419 @@
+---
+title: "Using App Store Connect API keys for multiple teams"
+description: "Pick the right App Store Connect API key for each app from a shared key list, and keep the Apple ID connection as a fallback while you migrate team by team."
+sidebar_position: 6
+slug: /bitrise-platform/integrations/apple-services-connection/using-api-keys-for-multiple-teams
+sidebar_label: "API keys for multiple teams"
+draft: true
+---
+
+import GlossTerm from '@site/src/components/GlossTerm';
+
+:::caution[Draft]
+
+This guide is a draft. The resolver script isn't an official <GlossTerm baseform="step">Step</GlossTerm>.
+
+:::
+
+If you build many apps that belong to different Apple Developer teams, you often sign them with one Apple ID that is a member of every team. An App Store Connect API key, on the other hand, belongs to a single team. To move these apps to API keys, each team needs its own key, and each build needs to pick the key of its own team.
+
+This guide shows how to:
+
+- Keep every team's API key in one key list.
+- Pick the key that matches the app's team at the start of each build.
+- Fall back to the Apple ID connection for teams that don't have a key yet, so you can migrate team by team.
+
+## How it works
+
+Every app gets the same key list file. A Script Step at the start of the <GlossTerm baseform="workflow">Workflow</GlossTerm>, the resolver, does the following:
+
+1. Reads the app's team ID from the `ASC_TEAM_ID` <GlossTerm baseform="environment variable">Env Var</GlossTerm>.
+1. Downloads the key list and looks up the entry for that team.
+1. Checks the key with a single App Store Connect API call.
+1. Exports Env Vars that tell every Apple-auth Step which connection to use and with which key.
+
+The resolver writes only the app's own team key to the build machine and deletes the downloaded list right away.
+
+| App state | `ASC_CONNECTION` | `ASC_DEPLOY_CONNECTION` | Key Env Vars |
+|---|---|---|---|
+| No key list, or team not in the list | `apple-id` | `apple_id` | Empty |
+| Team in the list, key works | `api-key` | `off` | Set |
+| Team in the list, key rejected or list unreadable | `apple-id`, with a warning | `apple_id` | Empty |
+| `ASC_FORCE_APPLE_ID` is `true` | `apple-id` | `apple_id` | Empty |
+
+Every build logs a single line with the result, for example:
+
+```bash
+[asc-auth] ASC_AUTH mode=api-key team=AB12CD34EF list=2026-10-07-1 key=***1234 enterprise=no
+[asc-auth] ASC_AUTH mode=apple-id team=ZX98YW76VU list=2026-10-07-1 reason="team not in key list"
+```
+
+Search your build logs for `ASC_AUTH mode=apple-id` to find the apps that still use the Apple ID.
+
+:::important[Set the connection explicitly in every Step]
+
+The **App Store Connect connection override** inputs only take effect when all three of them are set. If any of them is empty, the Step uses the Bitrise-managed API key connection, not the Apple ID connection. Leaving the inputs empty isn't a safe fallback, so the resolver sets the connection method of each Step explicitly.
+
+:::
+
+## Before you start
+
+You need:
+
+- An [Apple ID connection](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id) enabled on every app. Keep it until all teams are migrated.
+- The Apple Developer team ID of every app.
+- An App Store Connect API key for each team you want to migrate. Create it as a **Team key** with the **Admin** access role: code signing creates certificates and profiles, which can fail with lower roles.
+
+## Maintaining the key list
+
+The key list is a single JSON file with one entry per team. You maintain it on your own machine and upload it to each app.
+
+:::warning[Every app can read every key]
+
+Each app gets the full list, so anyone who can edit a Workflow of any app can read the API key of every team. Mark the file as protected, limit who can edit Workflows, and store the source files in a secure vault, never in a repository.
+
+:::
+
+### The key list format
+
+```json
+{
+  "version": "2026-10-07-1",
+  "keys": [
+    {
+      "team_id": "AB12CD34EF",
+      "key_id": "2X9R4HXF34",
+      "issuer_id": "57246542-96fe-1a63-e053-0824d011072a",
+      "enterprise": false,
+      "private_key": "-----BEGIN PRIVATE KEY-----\nMIGTAgEAMBMG...\n-----END PRIVATE KEY-----\n"
+    }
+  ]
+}
+```
+
+| Field | Description |
+|---|---|
+| `version` | Any string without spaces that identifies this version of the list. The resolver prints it in the build log, so change it every time you update the list. |
+| `team_id` | The Apple Developer team ID. It must match the app's `ASC_TEAM_ID`. List each team only once. |
+| `key_id` | The API key ID, as shown in App Store Connect. |
+| `issuer_id` | The issuer ID of the team, shown above the key list in App Store Connect. |
+| `enterprise` | `true` for Apple Developer Enterprise Program teams, otherwise `false`. |
+| `private_key` | The full content of the `AuthKey_<KEY_ID>.p8` file, with line breaks written as `\n`. |
+
+### Adding a team to the key list
+
+1. In App Store Connect, go to **Users and Access** > **Integrations** > **App Store Connect API**.
+1. Under **Team Keys**, create a key with the **Admin** access role.
+
+   If the page asks you to request access first, the team's Account Holder must do it once.
+1. Download the `.p8` file and note the key ID and the issuer ID.
+
+   You can download the file only once. Store it in your vault right away.
+1. Convert the `.p8` file to a JSON string:
+
+   ```bash
+   jq -Rs . AuthKey_2X9R4HXF34.p8
+   ```
+
+1. Add a new entry to the `keys` array of the key list, and paste the output of the previous step as the value of `private_key`.
+1. Change the `version` of the list.
+1. Check that the file is valid JSON and that each team is listed only once:
+
+   ```bash
+   jq -r '.keys[].team_id' asc-keys.json | sort | uniq -d
+   ```
+
+   The command prints nothing if the list is valid. A team ID in the output is listed more than once.
+1. Upload the list to the apps of the new team, as described in [Uploading the key list to an app](#uploading-the-key-list-to-an-app).
+
+To replace a team's key, for example when the key expires or leaks, edit the team's existing entry instead of adding a new one, then upload the list again. If a key leaks, revoke it in App Store Connect first.
+
+To move a team back to the Apple ID permanently, delete its entry, change the `version`, and upload the list again.
+
+### Uploading the key list to an app
+
+Repeat these steps for each app. An app that doesn't have the latest list keeps working with its older version: a team that is missing from it uses the Apple ID.
+
+1. Open the app on Bitrise and go to **Project settings** > **Code Signing & Files**.
+1. In the **Generic File Storage** section, delete the previous `ASC_API_KEYS` file, if there is one.
+1. Upload the new `asc-keys.json` file with the Env Var name `ASC_API_KEYS`.
+
+   Bitrise creates the `BITRISEIO_ASC_API_KEYS_URL` Env Var for the file.
+1. Mark the file as protected.
+1. Make sure the app has an `ASC_TEAM_ID` Env Var with the app's team ID. Set it once, as an app-level Env Var or a Secret.
+
+## Setting up the resolver
+
+### Adding the resolver to your Workflows
+
+Add a Script Step with the [resolver script](#the-resolver-script) to every Workflow that signs or deploys your app, before any Apple-auth Step. If many apps share the same configuration, define the Script Step once in a step bundle and include it in each app's `bitrise.yml`.
+
+```yaml
+step_bundles:
+  resolve-asc-auth:
+    steps:
+    - script@1:
+        title: Resolve App Store Connect auth
+        inputs:
+        - content: |-
+            # The resolver script
+```
+
+### Connecting the Steps to the resolver
+
+Set the connection inputs of every Apple-auth Step to the Env Vars that the resolver exports.
+
+| Step | Connection method input | Team input | API key inputs |
+|---|---|---|---|
+| Manage iOS Code Signing | `apple_service_connection: $ASC_CONNECTION` | `apple_team_id` | `api_key_path: $ASC_KEY_PATH` |
+| Xcode Archive & Export for iOS | `automatic_code_signing: $ASC_CONNECTION` | `export_development_team` | `api_key_path: $ASC_KEY_PATH` |
+| Xcode Build for testing for iOS | `automatic_code_signing: $ASC_CONNECTION` | `apple_team_id` | `api_key_path: $ASC_KEY_PATH` |
+| Export iOS and tvOS Xcode archive | `automatic_code_signing: $ASC_CONNECTION` | `export_development_team` | `api_key_path: $ASC_KEY_PATH` |
+| Deploy to App Store Connect - Application Loader | `connection: $ASC_DEPLOY_CONNECTION` | `altool_options: --team-id $ASC_TEAM_ID` | `api_key_path: $ASC_KEY_URL` |
+| Deploy to App Store Connect with Deliver | `connection: $ASC_DEPLOY_CONNECTION` | `team_id` | `api_key_path: $ASC_KEY_URL` |
+
+Set the team input to `$ASC_TEAM_ID` in every Step. In addition:
+
+- In the code signing and build Steps, set `api_key_id: $ASC_KEY_ID`, `api_key_issuer_id: $ASC_ISSUER_ID`, and `api_key_enterprise_account: $ASC_ENTERPRISE`.
+- In the deploy Steps, set `api_issuer: $ASC_ISSUER_ID`.
+
+The deploy Steps work differently from the other Steps: they only use the API key inputs if the connection is set to `off`, and they read the key ID from the name of the `AuthKey_<KEY_ID>.p8` file. `ASC_DEPLOY_CONNECTION` and `ASC_KEY_URL` handle both.
+
+```yaml
+workflows:
+  archive-and-deploy:
+    steps:
+    - git-clone@8: {}
+    - bundle::resolve-asc-auth: {}
+    - manage-ios-code-signing@2:
+        inputs:
+        - apple_service_connection: $ASC_CONNECTION
+        - apple_team_id: $ASC_TEAM_ID
+        - api_key_path: $ASC_KEY_PATH
+        - api_key_id: $ASC_KEY_ID
+        - api_key_issuer_id: $ASC_ISSUER_ID
+        - api_key_enterprise_account: $ASC_ENTERPRISE
+        - distribution_method: app-store
+    - xcode-archive@6:
+        inputs:
+        - automatic_code_signing: "off"
+        - distribution_method: app-store
+    - deploy-to-itunesconnect-application-loader@2:
+        inputs:
+        - connection: $ASC_DEPLOY_CONNECTION
+        - api_key_path: $ASC_KEY_URL
+        - api_issuer: $ASC_ISSUER_ID
+        - altool_options: --team-id $ASC_TEAM_ID
+```
+
+### Resolver settings
+
+You configure the resolver with app-level Env Vars or Secrets:
+
+| Env Var | Required | Description |
+|---|---|---|
+| `ASC_TEAM_ID` | Yes | The Apple Developer team ID of the app. |
+| `BITRISEIO_ASC_API_KEYS_URL` | No | Created by Bitrise when you upload the key list as `ASC_API_KEYS`. Without it, the app uses the Apple ID. |
+| `ASC_FORCE_APPLE_ID` | No | Set to `true` to use the Apple ID even if the team has a key. Use it to roll back a single app. |
+| `ASC_STRICT` | No | Set to `true` to fail the build if the team's key doesn't work, instead of falling back to the Apple ID. A team that isn't in the list still uses the Apple ID. |
+| `ASC_SKIP_SMOKE_CHECK` | No | Set to `true` to skip the test call to the App Store Connect API. |
+
+The resolver exports these Env Vars for the Steps that follow it:
+
+| Env Var | Value |
+|---|---|
+| `ASC_CONNECTION` | `api-key` or `apple-id` |
+| `ASC_DEPLOY_CONNECTION` | `off` or `apple_id` |
+| `ASC_KEY_PATH` | The local path of the team's `.p8` file. Empty in Apple ID mode. |
+| `ASC_KEY_URL` | The same path as a `file://` URL. Empty in Apple ID mode. |
+| `ASC_KEY_ID` | The key ID. Empty in Apple ID mode. |
+| `ASC_ISSUER_ID` | The issuer ID. Empty in Apple ID mode. |
+| `ASC_ENTERPRISE` | `yes` or `no` |
+
+Bitrise redacts the key path, key ID, and issuer ID in build logs.
+
+### The resolver script
+
+The script needs `bash`, `curl`, and `ruby`, which are available on the macOS stacks.
+
+<details>
+<summary>Show the resolver script</summary>
+
+```bash
+#!/usr/bin/env bash
+# Resolve App Store Connect authentication for the current Bitrise app.
+#
+# Decides per build whether Apple-auth steps use an App Store Connect API key
+# from the central key list (migrated teams) or the shared Bitrise Apple ID
+# connection (teams not migrated yet), and exports the step input values.
+#
+# Inputs (Bitrise project settings of the app):
+#   ASC_TEAM_ID                 Apple Developer team ID of the app (required)
+#   BITRISEIO_ASC_API_KEYS_URL  Generic File Storage file "ASC_API_KEYS": the central
+#                               key list (asc-keys.json, built by tools/apply.rb)
+#   ASC_FORCE_APPLE_ID          Optional, "true" forces Apple ID (rollback switch)
+#   ASC_STRICT                  Optional, "true" fails the build if the team's API key
+#                               is listed but does not work (instead of falling back)
+#   ASC_SKIP_SMOKE_CHECK        Optional, "true" skips the API key smoke check
+#
+# Outputs (env vars for subsequent steps):
+#   ASC_CONNECTION              api-key | apple-id   (manage-ios-code-signing, xcode-archive, ...)
+#   ASC_DEPLOY_CONNECTION       off | apple_id       (deploy-to-itunesconnect-* steps: they
+#                               only read the key inputs when connection is "off")
+#   ASC_KEY_PATH, ASC_KEY_URL, ASC_KEY_ID, ASC_ISSUER_ID, ASC_ENTERPRISE
+#                               set in api-key mode, empty in apple-id mode
+#                               (ASC_KEY_URL is file://.../AuthKey_<KEY_ID>.p8, the
+#                               deploy steps derive the key ID from the file name)
+set -euo pipefail
+
+log() { echo "[asc-auth] $*"; }
+warn() { echo -e "\033[33;1m[asc-auth] WARNING: $*\033[0m"; }
+fail() { echo -e "\033[31;1m[asc-auth] ERROR: $*\033[0m"; exit 1; }
+
+team_id="${ASC_TEAM_ID:-}"
+list_url="${BITRISEIO_ASC_API_KEYS_URL:-}"
+key_id=""
+issuer_id=""
+enterprise="no"
+list_version="-"
+
+[[ -n "$team_id" ]] || fail "ASC_TEAM_ID is not set for this app."
+
+export_apple_id() {
+  local reason="$1"
+  envman add --key ASC_CONNECTION --value "apple-id"
+  envman add --key ASC_DEPLOY_CONNECTION --value "apple_id"
+  # The connection override inputs are all-or-nothing in the steps. They are
+  # ignored in apple-id mode, but keep them empty so nothing is half-set.
+  envman add --key ASC_KEY_PATH --value ""
+  envman add --key ASC_KEY_URL --value ""
+  envman add --key ASC_KEY_ID --value ""
+  envman add --key ASC_ISSUER_ID --value ""
+  envman add --key ASC_ENTERPRISE --value "no"
+  log "ASC_AUTH mode=apple-id team=${team_id} list=${list_version} reason=\"${reason}\""
+}
+
+export_api_key() {
+  local path="$1"
+  envman add --key ASC_CONNECTION --value "api-key"
+  envman add --key ASC_DEPLOY_CONNECTION --value "off"
+  envman add --key ASC_KEY_PATH --value "$path" --sensitive
+  envman add --key ASC_KEY_URL --value "file://$path" --sensitive
+  envman add --key ASC_KEY_ID --value "$key_id" --sensitive
+  envman add --key ASC_ISSUER_ID --value "$issuer_id" --sensitive
+  envman add --key ASC_ENTERPRISE --value "$enterprise"
+  log "ASC_AUTH mode=api-key team=${team_id} list=${list_version} key=***${key_id: -4} enterprise=${enterprise}"
+}
+
+# Fall back to Apple ID, or fail in strict mode.
+api_key_broken() {
+  local reason="$1"
+  if [[ "${ASC_STRICT:-false}" == "true" ]]; then
+    fail "$reason (ASC_STRICT=true, not falling back to Apple ID)"
+  fi
+  warn "$reason - falling back to Apple ID"
+  export_apple_id "$reason"
+  exit 0
+}
+
+if [[ "${ASC_FORCE_APPLE_ID:-false}" == "true" ]]; then
+  export_apple_id "ASC_FORCE_APPLE_ID=true"
+  exit 0
+fi
+
+if [[ -z "$list_url" ]]; then
+  export_apple_id "no key list (ASC_API_KEYS) on this app"
+  exit 0
+fi
+
+work_dir="$(mktemp -d "${TMPDIR:-/tmp}/asc.XXXXXX")"
+chmod 700 "$work_dir"
+list_path="${work_dir}/asc-keys.json"
+if ! curl --fail --silent --show-error --location --retry 3 --output "$list_path" "$list_url"; then
+  api_key_broken "Failed to download the key list from Generic File Storage"
+fi
+
+# Look up this app's team in the list. On a match, writes the key to
+# <work_dir>/AuthKey_<KEY_ID>.p8 and prints: status version key_id issuer_id enterprise
+if ! lookup="$(ASC_LIST="$list_path" ASC_TEAM="$team_id" ASC_DIR="$work_dir" ruby -rjson -e '
+  list = begin
+    JSON.parse(File.read(ENV["ASC_LIST"]))
+  rescue JSON::ParserError
+    abort "not valid JSON"
+  end
+  version = list["version"].to_s.empty? ? "-" : list["version"]
+  entry = Array(list["keys"]).find { |k| k["team_id"] == ENV["ASC_TEAM"] }
+  unless entry
+    puts ["not-listed", version].join(" ")
+    exit
+  end
+  %w[key_id issuer_id private_key].each { |f| abort "list entry for #{ENV["ASC_TEAM"]} has no #{f}" if entry[f].to_s.empty? }
+  path = File.join(ENV["ASC_DIR"], "AuthKey_#{entry["key_id"]}.p8")
+  File.write(path, entry["private_key"], perm: 0o600)
+  puts ["found", version, entry["key_id"], entry["issuer_id"], [true, "yes", "true"].include?(entry["enterprise"]) ? "yes" : "no"].join(" ")
+' 2>&1)"; then
+  api_key_broken "Key list is unreadable: ${lookup}"
+fi
+read -r status list_version key_id issuer_id enterprise <<<"$lookup"
+rm -f "$list_path" # the other teams' keys are not needed past this point
+
+if [[ "$status" == "not-listed" ]]; then
+  export_apple_id "team not in key list"
+  exit 0
+fi
+key_path="${work_dir}/AuthKey_${key_id}.p8"
+grep -q "BEGIN PRIVATE KEY" "$key_path" || api_key_broken "Key list entry is not a .p8 PEM key"
+
+if [[ "${ASC_SKIP_SMOKE_CHECK:-false}" != "true" ]]; then
+  # Sign an ES256 JWT (same claims as go-xcode's appstoreconnect client) and
+  # call an endpoint that both regular and enterprise APIs serve.
+  if ! http_status="$(ASC_P8="$key_path" ASC_KID="$key_id" ASC_ISS="$issuer_id" ASC_ENT="$enterprise" ruby -e '
+    require "openssl"; require "json"; require "base64"; require "net/http"
+    b64 = ->(s) { Base64.urlsafe_encode64(s, padding: false) }
+    ent = ENV["ASC_ENT"] == "yes"
+    host = ent ? "api.enterprise.developer.apple.com" : "api.appstoreconnect.apple.com"
+    aud = ent ? "apple-developer-enterprise-v1" : "appstoreconnect-v1"
+    key = OpenSSL::PKey::EC.new(File.read(ENV["ASC_P8"]))
+    now = Time.now.to_i
+    input = b64.(JSON.dump(alg: "ES256", kid: ENV["ASC_KID"], typ: "JWT")) + "." +
+            b64.(JSON.dump(iss: ENV["ASC_ISS"], iat: now, exp: now + 600, aud: aud))
+    # JWS ES256 wants raw r||s, OpenSSL returns DER.
+    der = OpenSSL::ASN1.decode(key.dsa_sign_asn1(OpenSSL::Digest::SHA256.digest(input)))
+    sig = der.value.map { |i| i.value.to_s(2).rjust(32, "\x00") }.join
+    uri = URI("https://#{host}/v1/bundleIds?limit=1")
+    req = Net::HTTP::Get.new(uri); req["Authorization"] = "Bearer #{input}.#{b64.(sig)}"
+    res = Net::HTTP.start(uri.host, uri.port, use_ssl: true, open_timeout: 15, read_timeout: 30) { |h| h.request(req) }
+    print res.code
+  ' 2>&1)"; then
+    api_key_broken "API key smoke check could not run: ${http_status}"
+  fi
+  case "$http_status" in
+    200) log "API key smoke check passed" ;;
+    401|403) api_key_broken "API key rejected by Apple (HTTP ${http_status}), check key ID, issuer ID, role and revocation" ;;
+    *) api_key_broken "API key smoke check returned HTTP ${http_status}" ;;
+  esac
+fi
+
+export_api_key "$key_path"
+```
+
+</details>
+
+## Migrating from the Apple ID team by team
+
+1. Add the `ASC_TEAM_ID` Env Var to every app, and connect the Steps to the resolver, without uploading a key list yet.
+
+   Every build logs `ASC_AUTH mode=apple-id` and signs with the Apple ID as before. This confirms the setup before you change anything.
+1. Add the first team to the key list and upload it to one app of that team.
+1. Run a build of that app and check that the log shows `ASC_AUTH mode=api-key` and that the build succeeds.
+1. Upload the list to the other apps of the team.
+1. Repeat the previous three steps for each team.
+1. When your build logs no longer show `ASC_AUTH mode=apple-id`, set `ASC_STRICT` to `true` so a broken key fails the build instead of silently using the Apple ID.
+1. Disable the Apple ID connection.
+
+To roll back a team, set `ASC_FORCE_APPLE_ID` to `true` on its apps. The next builds use the Apple ID.
+
+## Limitations
+
+- Builds that can't access protected files, for example builds of pull requests from forks, can't download the key list. They use the Apple ID connection and log a warning. Keep code signing out of those Workflows.
+- When the **Register test devices** input is enabled, the Steps register the devices of the Bitrise-managed connection, even if they use an API key from the list.
