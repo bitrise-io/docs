@@ -24,9 +24,9 @@ A delta update package only contains the changes between the version already ins
 
 ## Delta updates with CodePush
 
-CodePush computes delta updates between your package versions automatically. This is enabled by default, and results in smaller updates that the client SDK downloads and installs faster. It also reduces your data transfer costs.
+CodePush computes delta updates between your package versions automatically. Delta updates are smaller, so the client SDK downloads and installs them faster. They also reduce your data transfer costs.
 
-File-level diffing is enabled by default and works across all popular CodePush SDK implementations, while the more efficient binary diffing is supported in the [Bitrise CodePush SDK](https://github.com/bitrise-io/react-native-code-push) starting with version 10.6.0.
+File-level diffing is enabled by default and works across all popular CodePush SDK implementations. The [Bitrise CodePush SDK](https://github.com/bitrise-io/react-native-code-push) supports the more efficient binary diffing starting with version 10.6.1.
 
 Binary diffing is currently opt-in. To enable it, set `CodePushEnableDeltaUpdates` to `true` in your app configuration:
 
@@ -72,3 +72,44 @@ Binary diffing is currently opt-in. To enable it, set `CodePushEnableDeltaUpdate
 CodePush deltas are computed on the server side automatically when a new update is created. A delta is always relative to a previous update, and Bitrise generates deltas between the newly created update and the previous five updates. As a concrete example:
 
 When update `v8` is created, delta packages are generated for `v8` relative to `v7`, `v6`, `v5`, `v4` and `v3`. Apps upgrading from any of these previous versions to `v8` will receive the smaller delta package. Apps upgrading from `v1`, `v2` or a store release (bundle shipped as part of a binary app store release) will receive the full update.
+
+Bitrise generates deltas only against earlier CodePush updates, never against the bundle in the store binary. For this reason, the first CodePush update of a binary release has no deltas, and clients download the full package.
+
+Delta updates, including binary diffing, also work with signed updates. For more information, see [Code signing with CodePush](/release-management/codepush/code-signing-with-codepush).
+
+## Verifying delta updates
+
+You can verify delta updates in two ways: check on the server which deltas Bitrise created, or check on a device that the SDK applied them.
+
+### Checking delta generation for an update
+
+To see which deltas Bitrise created for an update, run `update status` with the [CodePush CLI](/release-management/codepush/codepush-cli/using-the-codepush-cli):
+
+```bash
+bitrise :codepush update status Staging --label v13
+```
+
+The output includes the delta generation state and one line for each earlier update that has a delta:
+
+```text
+Update              v13
+Status              processed_valid
+Delta generation    completed
+Delta from v12      file-level diff, binary patch
+Delta from v9, v11  file-level diff
+```
+
+- `Delta generation` is `pending` while Bitrise builds the deltas, and `completed` when they are ready for download.
+- Each `Delta from` line names the earlier update by its version label. Several labels on one line mean that those updates share the same package. If no update with that package is left in the deployment, the line shows the shortened package hash instead.
+- A `completed` state with no `Delta from` lines means clients download the full package.
+- For machine-readable output, add the `--json` flag.
+
+### Checking delta updates on a device
+
+Starting with version 10.6.1, the Bitrise CodePush SDK logs its configuration at startup and each step of an update installation. To check that a device uses binary diffing, look for these log lines:
+
+- On startup, the `Configuration` line shows `deltaUpdates=true` when binary diffing is enabled.
+- During installation, `Applying diff update. binaryDiff=true patchedFiles=<count>` shows that the device received a delta package with binary patches. A file-level delta without binary patches logs `binaryDiff=false`. For a full package, the log shows `Applying full update.` instead.
+- After patching, `Applied <count> binary diff patches.` confirms that the SDK applied the patches.
+
+To stream these logs from a connected Android device or iOS simulator, use `bitrise :codepush debug android` or `bitrise :codepush debug ios`.
