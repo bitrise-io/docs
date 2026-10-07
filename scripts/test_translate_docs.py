@@ -264,5 +264,15 @@ class FrontmatterAndHubTests(EndToEndTests):
             self.assertEqual(open(f"{tmp}/out/docs/page.mdx").read(), "existing")
 
 
+class PreferredTranslationsTests(unittest.TestCase):
+    def test_no_preferred_term_is_also_kept_english_by_the_glossary(self):
+        # ja-preferred-translations.yaml's own rule: kept English OR a fixed rendering, never both.
+        from nt_terms import TermMatcher
+        matcher = TermMatcher(GLOSSARY, fetch_steps=False)
+        preferred = T.load_preferred_translations(
+            os.path.join(REPO, "localization", "ja-preferred-translations.yaml"))
+        self.assertEqual([t for t in preferred if matcher.find_matches(t)], [])
+
+
 if __name__ == "__main__":
     unittest.main()
