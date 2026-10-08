@@ -17,6 +17,7 @@ Apps whose team doesn't have a key yet keep using the [Apple ID connection](/bit
 
 - Workspace Secrets are available on Enterprise plans only.
 - The API keys must be team keys with the **Admin** role.
+- The resolver script needs a stack with macOS 15 or later.
 
 :::
 
@@ -117,6 +118,8 @@ To make a single app use the Apple ID again, add the `ASC_FORCE_APPLE_ID` Env Va
 #   {"team_id": "AB12CD34EF", "key_id": "2X9R4HXF34", "issuer_id": "...",
 #    "enterprise": false, "private_key": "-----BEGIN PRIVATE KEY-----\n..."}
 #
+# Requires jq, openssl, curl and xxd (all part of macOS 15 and later).
+#
 # Inputs (Bitrise project settings of the app):
 #   ASC_TEAM_ID                 Apple Developer team ID of the app (required)
 #   ASC_API_KEY_<TEAM_ID>       Secret with the team's API key (see above)
@@ -141,6 +144,21 @@ log() { echo "[asc-auth] $*"; }
 warn() { echo -e "\033[33;1m[asc-auth] WARNING: $*\033[0m"; }
 fail() { echo -e "\033[31;1m[asc-auth] ERROR: $*\033[0m"; exit 1; }
 
+# Every build gets the key secrets of all teams (Workspace Secrets are shared by
+# all apps). Clear them for the steps that follow on every exit path, including
+# failures, so that always-run steps can't read them either. The resolved key is
+# passed on as a file instead.
+clear_key_secrets() {
+  [[ "${ASC_KEEP_KEY_SECRETS:-false}" == "true" ]] && return 0
+  local name count=0
+  for name in $(compgen -e | grep -E '^ASC_API_KEY_[A-Z0-9]{10}$' || true); do
+    envman unset --key "$name"
+    count=$((count + 1))
+  done
+  (( count == 0 )) || log "Cleared ${count} ASC_API_KEY_<TEAM_ID> secret(s) for later steps"
+}
+trap clear_key_secrets EXIT
+
 team_id="${ASC_TEAM_ID:-}"
 key_id=""
 issuer_id=""
@@ -150,22 +168,8 @@ enterprise="no"
 [[ "$team_id" =~ ^[A-Z0-9]{10}$ ]] || fail "ASC_TEAM_ID (${team_id}) is not a 10 character Apple team ID."
 secret_name="ASC_API_KEY_${team_id}"
 
-# Every build gets the key secrets of all teams (Workspace Secrets are shared by
-# all apps). Clear them for the steps that follow, the resolved key is passed on
-# as a file instead.
-clear_key_secrets() {
-  [[ "${ASC_KEEP_KEY_SECRETS:-false}" == "true" ]] && return 0
-  local name count=0
-  while read -r name; do
-    envman unset --key "$name"
-    count=$((count + 1))
-  done < <(compgen -e | grep -E '^ASC_API_KEY_[A-Z0-9]{10}$' || true)
-  (( count == 0 )) || log "Cleared ${count} ASC_API_KEY_<TEAM_ID> secret(s) for later steps"
-}
-
 export_apple_id() {
   local reason="$1"
-  clear_key_secrets
   envman add --key ASC_CONNECTION --value "apple-id"
   envman add --key ASC_DEPLOY_CONNECTION --value "apple_id"
   # The connection override inputs are all-or-nothing in the steps. They are
@@ -180,7 +184,6 @@ export_apple_id() {
 
 export_api_key() {
   local path="$1"
-  clear_key_secrets
   envman add --key ASC_CONNECTION --value "api-key"
   envman add --key ASC_DEPLOY_CONNECTION --value "off"
   envman add --key ASC_KEY_PATH --value "$path" --sensitive
@@ -212,59 +215,70 @@ if [[ -z "${!secret_name:-}" ]]; then
   exit 0
 fi
 
+for tool in jq openssl curl xxd; do
+  command -v "$tool" >/dev/null || api_key_broken "${tool} is not installed on this stack"
+done
+
+# Read a field of the team's secret. jq reads the secret straight from the
+# environment, so the value never goes through a pipe or a temp file.
+secret_field() {
+  jq -nj --arg name "$secret_name" --arg field "$1" \
+    'env[$name] | fromjson | .[$field] // empty | if type == "string" then . else tostring end'
+}
+
+jq -ne --arg name "$secret_name" 'env[$name] | fromjson | type == "object"' >/dev/null 2>&1 \
+  || api_key_broken "${secret_name} is not a JSON object"
+
+secret_team="$(secret_field team_id)"
+key_id="$(secret_field key_id)"
+issuer_id="$(secret_field issuer_id)"
+case "$(secret_field enterprise)" in
+  true|yes) enterprise="yes" ;;
+esac
+
+if [[ -n "$secret_team" && "$secret_team" != "$team_id" ]]; then
+  api_key_broken "${secret_name} belongs to team ${secret_team}"
+fi
+[[ "$key_id" =~ ^[A-Z0-9]{10}$ ]] \
+  || api_key_broken "${secret_name} key_id is not a 10 character App Store Connect key ID"
+[[ "$issuer_id" =~ ^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$ ]] \
+  || api_key_broken "${secret_name} issuer_id is not a UUID"
+
 work_dir="$(mktemp -d "${TMPDIR:-/tmp}/asc.XXXXXX")"
 chmod 700 "$work_dir"
-
-# Parse the team's secret. Writes the key to <work_dir>/AuthKey_<KEY_ID>.p8 and
-# prints: key_id issuer_id enterprise
-if ! parsed="$(ASC_SECRET="$secret_name" ASC_TEAM="$team_id" ASC_DIR="$work_dir" ruby -rjson -e '
-  entry = begin
-    JSON.parse(ENV.fetch(ENV["ASC_SECRET"]))
-  rescue JSON::ParserError
-    abort "#{ENV["ASC_SECRET"]} is not valid JSON"
-  end
-  abort "#{ENV["ASC_SECRET"]} is not a JSON object" unless entry.is_a?(Hash)
-  %w[key_id issuer_id private_key].each { |f| abort "#{ENV["ASC_SECRET"]} has no #{f}" if entry[f].to_s.empty? }
-  if entry["team_id"] && entry["team_id"] != ENV["ASC_TEAM"]
-    abort "#{ENV["ASC_SECRET"]} belongs to team #{entry["team_id"]}"
-  end
-  path = File.join(ENV["ASC_DIR"], "AuthKey_#{entry["key_id"]}.p8")
-  File.write(path, entry["private_key"], perm: 0o600)
-  puts [entry["key_id"], entry["issuer_id"], [true, "yes", "true"].include?(entry["enterprise"]) ? "yes" : "no"].join(" ")
-' 2>&1)"; then
-  api_key_broken "Invalid key secret: ${parsed}"
-fi
-read -r key_id issuer_id enterprise <<<"$parsed"
-
 key_path="${work_dir}/AuthKey_${key_id}.p8"
-grep -q "BEGIN PRIVATE KEY" "$key_path" || api_key_broken "${secret_name} private_key is not a .p8 PEM key"
+(umask 077 && secret_field private_key > "$key_path")
+openssl pkey -in "$key_path" -noout 2>/dev/null \
+  || api_key_broken "${secret_name} private_key is not a valid .p8 private key"
 
 if [[ "${ASC_SKIP_SMOKE_CHECK:-false}" != "true" ]]; then
   # Sign an ES256 JWT (same claims as go-xcode's appstoreconnect client) and
   # call an endpoint that both regular and enterprise APIs serve.
-  if ! http_status="$(ASC_P8="$key_path" ASC_KID="$key_id" ASC_ISS="$issuer_id" ASC_ENT="$enterprise" ruby -e '
-    require "openssl"; require "json"; require "base64"; require "net/http"
-    b64 = ->(s) { Base64.urlsafe_encode64(s, padding: false) }
-    ent = ENV["ASC_ENT"] == "yes"
-    host = ent ? "api.enterprise.developer.apple.com" : "api.appstoreconnect.apple.com"
-    aud = ent ? "apple-developer-enterprise-v1" : "appstoreconnect-v1"
-    key = OpenSSL::PKey::EC.new(File.read(ENV["ASC_P8"]))
-    now = Time.now.to_i
-    input = b64.(JSON.dump(alg: "ES256", kid: ENV["ASC_KID"], typ: "JWT")) + "." +
-            b64.(JSON.dump(iss: ENV["ASC_ISS"], iat: now, exp: now + 600, aud: aud))
-    # JWS ES256 wants raw r||s, OpenSSL returns DER.
-    der = OpenSSL::ASN1.decode(key.dsa_sign_asn1(OpenSSL::Digest::SHA256.digest(input)))
-    sig = der.value.map { |i| i.value.to_s(2).rjust(32, "\x00") }.join
-    uri = URI("https://#{host}/v1/bundleIds?limit=1")
-    req = Net::HTTP::Get.new(uri); req["Authorization"] = "Bearer #{input}.#{b64.(sig)}"
-    res = Net::HTTP.start(uri.host, uri.port, use_ssl: true, open_timeout: 15, read_timeout: 30) { |h| h.request(req) }
-    print res.code
-  ' 2>&1)"; then
-    api_key_broken "API key smoke check could not run: ${http_status}"
+  if [[ "$enterprise" == "yes" ]]; then
+    host="api.enterprise.developer.apple.com" aud="apple-developer-enterprise-v1"
+  else
+    host="api.appstoreconnect.apple.com" aud="appstoreconnect-v1"
   fi
+  b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
+  now="$(date +%s)"
+  header="$(printf '{"alg":"ES256","kid":"%s","typ":"JWT"}' "$key_id" | b64url)"
+  payload="$(printf '{"iss":"%s","iat":%d,"exp":%d,"aud":"%s"}' "$issuer_id" "$now" "$((now + 600))" "$aud" | b64url)"
+  printf '%s' "${header}.${payload}" | openssl dgst -sha256 -sign "$key_path" -out "${work_dir}/sig.der" 2>/dev/null \
+    || api_key_broken "Failed to sign the App Store Connect token with ${secret_name}"
+  # JWS ES256 wants the raw 32 byte r and s values, openssl writes a DER sequence.
+  signature="$(openssl asn1parse -inform DER -in "${work_dir}/sig.der" \
+    | awk -F: '/INTEGER/ { h = $NF; while (length(h) < 64) h = "0" h; printf "%s", substr(h, length(h) - 63) }' \
+    | xxd -r -p | b64url)"
+  rm -f "${work_dir}/sig.der"
+
+  http_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+    --max-time 30 --retry 2 --retry-connrefused \
+    --header "Authorization: Bearer ${header}.${payload}.${signature}" \
+    "https://${host}/v1/bundleIds?limit=1")" || true
   case "$http_status" in
     200) log "API key smoke check passed" ;;
     401|403) api_key_broken "API key rejected by Apple (HTTP ${http_status}), check key ID, issuer ID, role and revocation" ;;
+    000|"") api_key_broken "Could not reach ${host}" ;;
     *) api_key_broken "API key smoke check returned HTTP ${http_status}" ;;
   esac
 fi
