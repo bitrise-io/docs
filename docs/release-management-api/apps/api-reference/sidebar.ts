@@ -200,6 +200,30 @@ const sidebar: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "CodePush - Signing Keys",
+      items: [
+        {
+          type: "doc",
+          id: "release-management-api/apps/api-reference/delete-signing-key",
+          label: "Delete the CodePush signing key",
+          className: "api-method delete",
+        },
+        {
+          type: "doc",
+          id: "release-management-api/apps/api-reference/get-signing-key",
+          label: "Get the CodePush signing key metadata",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "release-management-api/apps/api-reference/create-signing-key",
+          label: "Upload a CodePush signing key",
+          className: "api-method post",
+        },
+      ],
+    },
+    {
+      type: "category",
       label: "Outgoing Webhooks",
       items: [
         {
