@@ -1,6 +1,6 @@
 ---
 title: "CodePush updates with Bitrise CI"
-description: "You can release your CodePush updates via a [Bitrise CI](/bitrise-ci) Workflow that creates the update packages for both iOS and Android, and updates both to the Bitrise CodePush Server."
+description: "Release your CodePush updates with a Bitrise CI Workflow that creates the update packages for iOS and Android and uploads both to Bitrise."
 sidebar_position: 5
 slug: /release-management/codepush/codepush-updates-with-bitrise-ci
 ---
@@ -11,23 +11,24 @@ import GlossTerm from '@site/src/components/GlossTerm';
 
 You can release your CodePush updates via a [Bitrise CI](/bitrise-ci) <GlossTerm baseform="Workflow">Workflow</GlossTerm>. The process requires:
 
-- Setting up CodePush credentials: create <GlossTerm baseform="Secret">Secrets</GlossTerm> and [Environment Variables](/bitrise-ci/configure-builds/environment-variables) that hold the deployment ID and the deployment key from Bitrise CodePush.
-- Creating a Workflow that creates the update packages for both iOS and Android, and updates both to the Bitrise CodePush Server.
+- Setting up CodePush credentials: create [Environment Variables](/bitrise-ci/configure-builds/environment-variables) and a <GlossTerm baseform="Secret">Secret</GlossTerm> that hold the app IDs, the deployment IDs, the target versions, and a Bitrise API token.
+- Creating a Workflow that creates the update packages for both iOS and Android, and uploads both to Bitrise.
 
 
 ## Configuring CodePush credentials on Bitrise
 
-1. [Get your credentials](/release-management/codepush/creating-and-releasing-codepush-updates#getting-your-codepush-credentials): you need the Release Management app IDs and the CodePush deployment IDs and deployment keys.
-1. [Create Environment Variables](/bitrise-ci/configure-builds/environment-variables#setting-an-env-var-in-the-workflow-editor) for the deployment IDs and the connected app IDs:
+1. [Get your credentials](/release-management/codepush/creating-and-releasing-codepush-updates#getting-your-codepush-credentials): you need the Release Management app IDs and the CodePush deployment IDs.
+1. [Create Environment Variables](/bitrise-ci/configure-builds/environment-variables#setting-an-env-var-in-the-workflow-editor) for the deployment IDs, the connected app IDs, and the target versions:
 
    - `IOS_PROD_DEPLOYMENT_ID`: The deployment ID for the iOS app.
    - `ANDROID_PROD_DEPLOYMENT_ID`: The deployment ID for the Android app.
    - `IOS_CONNECTED_APP_ID`: The app ID for the iOS app.
    - `ANDROID_CONNECTED_APP_ID`: The app ID for the Android app.
-1. [Create Secrets](/bitrise-ci/configure-builds/secrets#setting-a-secret) for the deployment key and the API token:
+   - `APP_TARGET_VERSIONS`: The app versions that receive the update. Use an exact version or a [range expression](/release-management/codepush/creating-and-releasing-codepush-updates#target-versions), for example `1.2.0` or `>=1.5.0`.
 
-   - `IOS_PROD_DEPLOYMENT_KEY`: The deployment key of the iOS deployment from Bitrise CodePush.
-   - `ANDROID_PROD_DEPLOYMENT_KEY`: The deployment key of the Android deployment from Bitrise CodePush.
+   Bitrise cannot check whether your update works with the native code of an app version. You decide which versions are compatible, so set `APP_TARGET_VERSIONS` yourself before each release.
+1. [Create a Secret](/bitrise-ci/configure-builds/secrets#setting-a-secret) for the API token:
+
    - `BITRISE_API_TOKEN`: Your personal access token or <GlossTerm baseform="workspace">workspace</GlossTerm> API token.
 
 
@@ -36,9 +37,9 @@ You can release your CodePush updates via a [Bitrise CI](/bitrise-ci) <GlossTerm
 This section shows you how to create a CI Workflow that will:
 
 - Create an update package for iOS.
-- Upload the iOS update package to Bitrise CodePush Server.
+- Upload the iOS update package to Bitrise.
 - Create an update package for Android.
-- Upload the Android update package to Bitrise CodePush Server.
+- Upload the Android update package to Bitrise.
 
 <Tabs>
 <TabItem value="react-native-app" label="React Native app" default>
@@ -49,41 +50,15 @@ This section shows you how to create a CI Workflow that will:
    ---
    format_version: '13'
    default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
-   project_type: ios
+   project_type: react-native
    workflows:
-     codepush_update_to_server:
-       description: The workflow will generate and push your update to CodePush Server.
+     codepush_update_deploy:
+       description: Generates your update and pushes it to Bitrise.
        steps:
        - git-clone@8: {}
        - npm@1:
            inputs:
            - command: install
-   ```
-1. Add a `script` Step that extracts the app version using a JSON parser and set version in an Environment Variable using `envman`:
-
-   ```yaml
-   - script@1:
-       title: Extract App Version
-       inputs:
-       - content: |-
-           #!/bin/bash
-           set -e
-
-           # Extract version from app.json using jq (JSON parser)
-           VERSION=$(jq -r '.version' package.json)
-
-           # Verify version extraction
-           if [ -z "$VERSION" ]; then
-             echo "Error: Could not extract version from package.json"
-             exit 1
-           fi
-
-           echo "Extracted version from package.json: $VERSION"
-
-           # Set the environment variable using envman
-           envman add --key APP_VERSION --value "$VERSION"
-
-           echo "Successfully set APP_VERSION=$VERSION"
    ```
 1. Add another `script` Step that clones the `release-management-recipes` repository from GitHub. This contains the upload script we'll use later.
 
@@ -120,6 +95,9 @@ This section shows you how to create a CI Workflow that will:
            # debug log
            set -x
 
+           # remove output of earlier runs so the zip holds one platform only
+           rm -rf ./build update.zip
+
            npx react-native bundle \
              --platform ios \
              --dev false \
@@ -130,11 +108,11 @@ This section shows you how to create a CI Workflow that will:
            # Create zip archive
            zip -r update.zip ./build
    ```
-1. Upload the iOS update bundle to the CodePush Server with `upload_code_push_package.sh`:
+1. Upload the iOS update bundle to Bitrise with `upload_code_push_package.sh`:
 
    ```yaml
    - script@1:
-       title: Upload iOS Update Bundle to Codepush Server
+       title: Upload iOS Update Bundle to Bitrise
        inputs:
        - content: >
            #!/usr/bin/env bash
@@ -152,7 +130,7 @@ This section shows you how to create a CI Workflow that will:
                            AUTHORIZATION_TOKEN=$BITRISE_API_TOKEN \
                            CONNECTED_APP_ID=$IOS_CONNECTED_APP_ID \
                            DEPLOYMENT_ID=$IOS_PROD_DEPLOYMENT_ID \
-                           APP_VERSION=$APP_VERSION /bin/bash ./api/upload_code_push_package.sh 2>&1)
+                           APP_VERSION=$APP_TARGET_VERSIONS /bin/bash ./api/upload_code_push_package.sh 2>&1)
            EXIT_CODE=$?
 
            if [ $EXIT_CODE -ne 0 ]; then 
@@ -199,6 +177,9 @@ This section shows you how to create a CI Workflow that will:
            # debug log
            set -x
 
+           # remove output of earlier runs so the zip holds one platform only
+           rm -rf ./build update.zip
+
            npx react-native bundle \
              --platform android \
              --dev false \
@@ -209,11 +190,11 @@ This section shows you how to create a CI Workflow that will:
            # Create zip archive
            zip -r update.zip ./build
    ```
-1. Upload the Android update bundle to the CodePush Server:
+1. Upload the Android update bundle to Bitrise:
 
    ```yaml
    - script@1:
-       title: Upload Android Update Bundle to Codepush Server
+       title: Upload Android Update Bundle to Bitrise
        inputs:
        - content: |
            #!/usr/bin/env bash
@@ -230,7 +211,7 @@ This section shows you how to create a CI Workflow that will:
                            AUTHORIZATION_TOKEN=$BITRISE_API_TOKEN \
                            CONNECTED_APP_ID=$ANDROID_CONNECTED_APP_ID \
                            DEPLOYMENT_ID=$ANDROID_PROD_DEPLOYMENT_ID \
-                           APP_VERSION=$APP_VERSION /bin/bash ./api/upload_code_push_package.sh 2>&1)
+                           APP_VERSION=$APP_TARGET_VERSIONS /bin/bash ./api/upload_code_push_package.sh 2>&1)
            EXIT_CODE=$?
 
            if [ $EXIT_CODE -ne 0 ]; then
@@ -272,11 +253,11 @@ This section shows you how to create a CI Workflow that will:
    ---
    format_version: '13'
    default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
-   project_type: ios
+   project_type: react-native
    workflows:
      codepush_update_deploy:    
        description: |      
-         Uploads Update Bundle to Bitrise CodePush Server    
+         Uploads Update Bundle to Bitrise    
        status_report_name: Executing <target_id> for <project_title>
        steps:
        - git-clone@8: {}
@@ -284,32 +265,6 @@ This section shows you how to create a CI Workflow that will:
        - npm@1:
            inputs:
            - command: install
-   ```
-1. Add a `script` Step that extracts the app version using `awk` and sets it as an Enviromment Variable:
-
-   ```yaml
-   - script@1:
-       title: Extract App Version
-       inputs:
-       - content: |-
-           #!/bin/bash
-           set -e
-
-           # Simpler version using awk
-           APP_VERSION=$(awk -F'"' '/version:/ {print $2}' app.config.js)
-
-           # Check if the version was successfully extracted
-           if [ -z "$APP_VERSION" ]; then
-             echo "Error: Failed to extract version from app.config.js"
-             exit 1
-           fi
-
-           echo "Extracted version: $APP_VERSION"
-
-           # Set the environment variable using envman
-           envman add --key APP_VERSION --value "$APP_VERSION"
-
-           echo "Successfully set APP_VERSION=$APP_VERSION"
    ```
 1. Add another `script` Step that clones the `release-management-recipes` repository from GitHub. This contains the upload script we'll use later.
 
@@ -345,7 +300,9 @@ This section shows you how to create a CI Workflow that will:
            # debug log
            set -x
 
-           # write your script here
+           # remove output of earlier runs so the zip holds one platform only
+           rm -rf ./build update.zip
+
            npx expo export:embed \
              --entry-file index.js \
              --platform ios \
@@ -358,11 +315,11 @@ This section shows you how to create a CI Workflow that will:
            # Create zip archive
            zip -r update.zip ./build
    ```
-1. Upload the iOS update bundle to the CodePush Server with `upload_code_push_package.sh`:
+1. Upload the iOS update bundle to Bitrise with `upload_code_push_package.sh`:
 
    ```yaml
    - script@1:
-       title: Upload iOS Update Bundle to Codepush Server
+       title: Upload iOS Update Bundle to Bitrise
        inputs:
        - content: >
            #!/usr/bin/env bash
@@ -380,7 +337,7 @@ This section shows you how to create a CI Workflow that will:
                            AUTHORIZATION_TOKEN=$BITRISE_API_TOKEN \
                            CONNECTED_APP_ID=$IOS_CONNECTED_APP_ID \
                            DEPLOYMENT_ID=$IOS_PROD_DEPLOYMENT_ID \
-                           APP_VERSION=$APP_VERSION /bin/bash ./api/upload_code_push_package.sh 2>&1)
+                           APP_VERSION=$APP_TARGET_VERSIONS /bin/bash ./api/upload_code_push_package.sh 2>&1)
 
            EXIT_CODE=$?
 
@@ -428,7 +385,9 @@ This section shows you how to create a CI Workflow that will:
            # debug log
            set -x
 
-           # write your script here
+           # remove output of earlier runs so the zip holds one platform only
+           rm -rf ./build update.zip
+
            npx expo export:embed \
              --entry-file index.js \
              --platform android \
@@ -441,11 +400,11 @@ This section shows you how to create a CI Workflow that will:
            # Create zip archive
            zip -r update.zip ./build
    ```
-1. Upload the Android update bundle to the CodePush Server:
+1. Upload the Android update bundle to Bitrise:
 
    ```yaml
    - script@1:
-       title: Upload Android Update Bundle to Codepush Server
+       title: Upload Android Update Bundle to Bitrise
        inputs:
        - content: |
            #!/usr/bin/env bash
@@ -462,7 +421,7 @@ This section shows you how to create a CI Workflow that will:
                            AUTHORIZATION_TOKEN=$BITRISE_API_TOKEN \
                            CONNECTED_APP_ID=$ANDROID_CONNECTED_APP_ID \
                            DEPLOYMENT_ID=$ANDROID_PROD_DEPLOYMENT_ID \
-                           APP_VERSION=$APP_VERSION /bin/bash ./api/upload_code_push_package.sh 2>&1)
+                           APP_VERSION=$APP_TARGET_VERSIONS /bin/bash ./api/upload_code_push_package.sh 2>&1)
            EXIT_CODE=$?
 
            if [ $EXIT_CODE -ne 0 ]; then
@@ -508,12 +467,12 @@ After creating a Workflow to generate and upload your CodePush updates, you have
 
 You can set up several different types of triggers to automate the process. Our example configuration uses a pull request trigger with a label:
 
-**Release a CodePush update when a pull request is opened to a specific branch**
+**Release a CodePush update when a pull request to a specific branch gets a label**
 
 In this example, we're setting up a trigger where:
 
 - Bitrise looks for pull requests opened with `updates` as the target branch.
-- The `codepush_update_deploy` Workflow is triggered when a pull request to the branch receives the `release-update` label to the PR.
+- The `codepush_update_deploy` Workflow runs when a pull request to the branch receives the `release-update` label.
 
 1. [Create the trigger](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers#creating-build-triggers): set up a pull request trigger with two conditions, `target_branch` and `label`:
 
@@ -534,7 +493,7 @@ In this example, we're setting up a trigger where:
      codepush_update_deploy:
        status_report_name: 'Executing <target_id> for <project_title>'
        description: |
-         Uploads Update Bundle to Bitrise CodePush Server
+         Uploads Update Bundle to Bitrise
        steps:
        [...]
        triggers:
@@ -543,4 +502,10 @@ In this example, we're setting up a trigger where:
            label: release-update
    ```
 1. When you want to release CodePush updates, open a pull request to the `updates` branch.
-1. After the PR has been reviewed and approved, add the `release-update` label to it.
+1. After the pull request has been reviewed and approved, add the `release-update` label to it.
+
+:::note
+
+The build runs on the code of the pull request, not on the merged branch. Bitrise releases the update before you merge the pull request.
+
+:::
