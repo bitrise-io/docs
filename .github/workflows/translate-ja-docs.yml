@@ -15,8 +15,8 @@
 # the text before the model sees it — no <NT> tags in the docs source needed
 # (a manual <NT> span remains a rare page-specific escape hatch and is masked
 # too). After translation, every masked token is verified restored; a page
-# that fails verification is retried and, if still failing, fails this job
-# instead of being committed.
+# that fails verification is retried and, if still failing, is left out of
+# the bot commit (the pages that passed are still committed) and fails this job.
 #
 # Commit translate_docs.py to .github/scripts/ and this file to .github/workflows/.
 #
@@ -98,11 +98,24 @@ jobs:
           # dependency clear). translate_docs.py's parse_changes() reads the
           # status codes directly and filters to .md/.mdx itself, so this
           # scopes to the docs/ directory and leaves the rest to it.
-          git diff --name-status -M "$BASE" HEAD -- docs src/partials > changed.txt || true
+          #
+          # Three-dot (BASE...HEAD), not two-dot: BASE is main's tip at the
+          # time of this event, not the commit this branch actually diverged
+          # from. A two-dot diff would pull in anything that changed on main
+          # since divergence too -- e.g. a page renamed on main after this
+          # branch split off would show up here as if this PR renamed it,
+          # producing a bogus i18n/ja/ move. Three-dot diffs against the
+          # merge-base instead, which is what "what did this PR change"
+          # actually means. fetch-depth: 0 above makes the merge-base
+          # available to compute.
+          git diff --name-status -M "$BASE...HEAD" -- docs src/partials > changed.txt || true
           echo "count=$(wc -l < changed.txt)" >> "$GITHUB_OUTPUT"
+          # --base-ref (the "only whitespace changed?" check) needs the same merge-base.
+          echo "base=$(git merge-base "$BASE" HEAD)" >> "$GITHUB_OUTPUT"
           cat changed.txt
 
       - name: Translate changed files
+        id: pages
         if: steps.changed.outputs.count != '0'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -114,7 +127,7 @@ jobs:
             --dest-root i18n/ja/docusaurus-plugin-content-docs/current \
             --partials-src-root src/partials \
             --partials-dest-root i18n/ja/partials \
-            --base-ref "${{ github.event.pull_request.base.sha }}"
+            --base-ref "${{ steps.changed.outputs.base }}"
 
       # Sidebar labels, navbar items and other UI strings live in JSON, not in
       # pages. write-translations adds the new English keys (keeping existing
@@ -123,17 +136,29 @@ jobs:
         if: steps.changed.outputs.count != '0'
         with: { node-version: '20', cache: npm }
 
+      # No API key here: npm ci runs every dependency's install scripts and
+      # write-translations loads the site config and plugins. This narrows the
+      # key's exposure; it is not isolation, since later steps in this job
+      # still run code that npm ci could have altered.
+      - name: Extract new UI strings
+        if: steps.changed.outputs.count != '0'
+        run: |
+          npm ci
+          npx docusaurus write-translations --locale ja
+
       - name: Translate new sidebar labels and UI strings
         if: steps.changed.outputs.count != '0'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          npm ci
-          npx docusaurus write-translations --locale ja
-          python3 scripts/translate_ui_strings.py
+        run: python3 scripts/translate_ui_strings.py
 
+      # Runs whenever page translation ran, even if it or a UI-string step
+      # failed: translate_docs.py only writes pages that passed verification,
+      # so those are committed and the failed step still fails the job.
+      # !cancelled(), not always(): a run superseded by a newer push must not
+      # push stale translations.
       - name: Commit Japanese translations
-        if: steps.changed.outputs.count != '0'
+        if: ${{ !cancelled() && steps.pages.outcome != 'skipped' }}
         run: |
           git config user.name  "bitrise-docs-bot"
           git config user.email "docs-bot@bitrise.io"

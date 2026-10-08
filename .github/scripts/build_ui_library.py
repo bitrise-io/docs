@@ -46,7 +46,10 @@ PROTECT_PATTERNS = [
     # route, not prose. Mirrors the url pattern above for the site's own
     # bare-path convention (see scripts/strip_en_prefix.py) instead of
     # relying on the model's "preserve links" instruction to leave it alone.
-    ("relative_link_target", r'\]\(/[^)\s]*\)'),
+    # Only the target is masked ([text](⟦p7⟧), the shape `url` gives external
+    # links): masking the `]` with it showed the model `[text⟦p7⟧`, and it
+    # dropped the `[` or doubled the `]`. In-page #anchors are targets too.
+    ("relative_link_target", r'(?<=\]\()[/#][^)\s]*(?=\))'),
     # Whole <NT>...</NT> spans, matched BEFORE mdx_component (which would
     # otherwise mask the opening/closing tags one at a time and leave the
     # protected text exposed in between). <NT> is the rare MANUAL escape
@@ -63,7 +66,9 @@ PROTECT_PATTERNS = [
     # is as often English emphasis ("NOT", "MUST") as an identifier, and the
     # acronyms tier already protects real acronyms exact-case.
     ("env_var",           r'(\$[A-Z][A-Z0-9_]+|[A-Z][A-Z0-9]*[_0-9][A-Z0-9_]*)'),
-    ("filename",          r'\S+\.(yml|yaml|json|sh|rb|swift|kt|kts|java|md|mdx|plist|xml|gradle|podspec|toml|lock|cfg|env)'),
+    # Never starts on [ ] ( ) *, so [bitrise.yml](...) and **bitrise.yml**
+    # keep their link bracket / bold markers outside the token.
+    ("filename",          r'[^\s\[\]()*]+\.(yml|yaml|json|sh|rb|swift|kt|kts|java|md|mdx|plist|xml|gradle|podspec|toml|lock|cfg|env)'),
     ("mdx_component",     r'</?[A-Za-z][^>]*>'),
     ("docusaurus_admonition", r':::[a-z]+'),
     # Explicit heading anchor IDs (`## Workspace {#workspace}`) — Docusaurus
@@ -92,6 +97,58 @@ CURATED = {
         "IPA","AMI","GHES","EDR","JWT","UI","UX","URL","YAML","JSON","SDK","CLI","VM","OS","PR","SDK","2FA",
         "IP","DNS","TLS","UDID"],
     "code_literals": [".bitrise.yml","GIT_HTTP_PASSWORD","BITRISE_BUILD_NUMBER","Podfile","Gemfile","Info.plist"],
+}
+
+# Hand-kept corrections to the extracted tiers; this file regenerates the
+# glossary weekly, so a fix made only in the YAML would be wiped.
+# EXTRA_UI_LABELS: UI labels / Step names the scan misses, keyed by tier
+# ("hard", "context", "step"). NEVER_PROTECT: lowercased strings the scan
+# picks up that are ordinary prose, never a UI label (freezing them left
+# English mid-sentence in JA).
+EXTRA_UI_LABELS = {
+    "hard": [
+        "2FA is enabled", "Add a provider to pool", "Add a purchase order", "Add certificate",
+        "Add exclusions", "Add existing workspace members", "Add IAM condition", "Add keystore",
+        "Add your own SSH key", "Air-gapped network mode", "Allow notifications",
+        "Allow public repositories", "Apply a template", "Authorize SSO access",
+        "AWS instance profile", "Change project access", "Change to Pro", "Change to Teams",
+        "Command error rate", "Configure provider attributes", "Confirm status change",
+        "Connect provider", "Connect with IdP", "Create an identity pool", "Create and continue",
+        "Download config", "Edit definition", "Edit Release details",
+        "Enable public page for the App", "Enable support for the SAML 2.0 WebSSO protocol",
+        "Expo project directory", "GitLab Self-hosted",
+        "Grant access using service account impersonation", "Group name already exists",
+        "Invite new members to the workspace", "Manage billing information",
+        "Manage collaboration settings", "Manage exclusions", "Manage infrastructure",
+        "Pause schedule", "React Native project directory", "Rebuild the entire Pipeline",
+        "Release rollout/App Store release settings", "Remove from workspace", "Reset Password",
+        "Run if previous Step failed", "Select a provider", "Select individual events",
+        "Send me everything", "Show more options", "Sign in to Bitrise",
+        "Start with a blank release", "Subscribe to events", "Sync only assigned users and groups",
+        "Update status and stop managing release", "Upload a JSON file"],
+    "context": [
+        "2FA code", "Account details", "Account information", "An empty Workflow", "API token",
+        "App installation", "App tester", "Build configuration", "Callback URL", "Change access",
+        "Create container", "Create role", "Current branch", "Custom values", "Delete item",
+        "Domain verification", "Enter your username", "Enter your work email",
+        "Enterprise applications", "Error rate", "Filter tests", "Image tags", "New branch",
+        "New task", "Organization settings", "Pipeline details", "Plan and billing",
+        "Profile settings", "Pushed changes to GitHub", "Remove release", "Save token",
+        "SSH key name", "Triggered build", "Upload version", "Uploads/downloads", "Your feedback"],
+    "step": [
+        "Additional options for the gradlew dependencies command", "Android app under test",
+        "API Key path", "APK or App Bundle file path", "Build context path",
+        "Download destination path", "Download source url", "Enable Gradle cache",
+        "Enable Xcode cache", "gradlew file path",
+        "Path of file containing the devices to be registered", "Project path, scheme and Target",
+        "Register test devices on the Apple Developer Portal", "Restore NPM cache",
+        "Save Dart cache", "Save NPM cache", "Test API's base URL",
+        "Variables to share between Pipeline Workflows", "Version of npm to use",
+        "Yarn command to run"],
+}
+NEVER_PROTECT = {
+    "enable the", "example", "for the", "how to use community plugins", "you have",
+    "you install all of the app's dependencies",
 }
 
 # ---------------------------------------------------------------------------
@@ -272,6 +329,11 @@ def main():
         out_records.append({"string":s,"count":e["count"],"kinds":sorted(e["kinds"]),
                             "contexts":sorted(e["contexts"]),"files":sorted(e["files"]),
                             "doc_hits":total,"doc_ui_formatted":ui})
+
+    for k,extra in EXTRA_UI_LABELS.items():       # an extra's tier wins over the scan's
+        for t in tiers.values(): t.difference_update(extra)
+        tiers[k].update(extra)
+    for k in tiers: tiers[k]={t for t in tiers[k] if t.lower() not in NEVER_PROTECT}
 
     os.makedirs(a.out_dir,exist_ok=True)
     lib_path=os.path.join(a.out_dir,"ui_copy_library.json")

@@ -18,6 +18,7 @@ on:
       - 'i18n/ja/**/*.md'
       - 'i18n/ja/**/*.mdx'
       - '.textlintrc.yaml'
+      - 'scripts/ja_structure.py'
 
 permissions:
   contents: read
@@ -49,3 +50,17 @@ jobs:
             --package textlint-rule-preset-jtf-style \
             --package textlint-filter-rule-comments \
             textlint -c .textlintrc.yaml
+
+  # Same structure_issues() the translator verifies each page with, run over
+  # every committed JA page vs. its English source (catches hand edits and
+  # pages translated before the check existed), plus frontmatter keys that
+  # are never translated (slug, id, sidebar_position, ...).
+  ja-structure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install pyyaml
+      - name: Compare JA pages' Markdown structure with English
+        run: python3 scripts/ja_structure.py

@@ -45,8 +45,8 @@ Disambiguation rules (shared verbatim by both consumers)
     `ui_labels_hard_protect` terms ("Add owner", "Enable AI features") only
     match where the surrounding markdown marks them as a literal UI
     reference — bold, a click/select/... verb just before, a "button"/
-    "dialog"/... noun just after, or (multi-word only) the start of a
-    numbered/bulleted procedure step.
+    "dialog"/... noun just after, or (multi-word only) a numbered/bulleted
+    list item that consists of the term alone (a list of UI labels).
   - Single-word Step titles ("Script", "Bundler") require an adjacent
     "Step"/"Steps" word, mirroring scripts/link_steps.py's rule.
   - "project"/"projects" only match right after "Bitrise " (the style guide
@@ -98,6 +98,8 @@ UI_NOUN_RE = re.compile(
     r"checkbox|section|screen|link|icon)\b"
 )
 LIST_ITEM_START_RE = re.compile(r"^\s*(?:\d+\.|[-*+])\s*(?:\*\*)?$")
+# ...and the term is the whole item, optionally followed by ":" or " - ...".
+LIST_ITEM_END_RE = re.compile(r"^\*{0,2}\s*(?:[:：]|[-–—]\s|$)")
 
 # Single-word Step titles ("Script", "Bundler", "Flutter") are common enough
 # as ordinary vocabulary that the title alone isn't a safe signal — require
@@ -153,11 +155,13 @@ def context_allows(content: str, start: int, end: int, matched_text: str) -> boo
         leading icon character inside the bold span) still counts.
       - Right after a click/select/tap/press/choose/navigate-to/go-to verb.
       - Right before a UI noun ("... button", "... dialog", "... toggle").
-      - For multi-word terms only: the first thing on a numbered/bulleted
-        list item line (a procedure step naming its own action target, e.g.
-        "1. Enable AI features..."). Single words ("Add", "Run", "Check")
-        start ordinary instructional bullets constantly regardless of
-        whether they name a UI element, so this signal is too weak for them.
+      - For multi-word terms only: a numbered/bulleted list item that is the
+        term alone, optionally followed by ":" or " - ..." ("- Workspace
+        owners", "1. Select an option:"), i.e. a list of UI labels. A term
+        that merely opens the item is a sentence ("1. Log in to Bitrise and
+        select...", "1. Enable AI features for your workspace: ..."), and
+        freezing it left English mid-sentence in JA. Single words never get
+        this signal: they name UI elements too rarely.
     """
     # Same-line-only: a "**" from the previous line's closing bold (or the
     # next line's opening bold) can otherwise land inside these windows and
@@ -178,7 +182,8 @@ def context_allows(content: str, start: int, end: int, matched_text: str) -> boo
         return True
     if " " in matched_text.strip():
         prefix_on_line = content[line_start_bold:start]
-        if LIST_ITEM_START_RE.match(prefix_on_line):
+        if LIST_ITEM_START_RE.match(prefix_on_line) and \
+                LIST_ITEM_END_RE.match(content[end:line_end_bold]):
             return True
     return False
 

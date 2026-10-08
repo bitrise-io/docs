@@ -30,8 +30,10 @@ Design:
      translations map (terms we DO translate, but want rendered the same
      way everywhere — see ja-preferred-translations.yaml) is injected too.
   3. VERIFY — deterministic post-check: every placeholder token visible in
-     the masked input must appear exactly once in the model output, and the
-     response must not be truncated (stop_reason). On mismatch the page is
+     the masked input must appear exactly once in the model output, the
+     Markdown structure must match the input (scripts/ja_structure.py: links,
+     headings, admonitions, ...), and the response must not be truncated
+     (stop_reason). On mismatch the page is
      retried, and if it still fails, the script exits non-zero WITHOUT
      writing the page — a bad translation can never be silently committed.
      This also gives protection a measurable guarantee: a token that
@@ -42,6 +44,14 @@ Design:
   4. WRITE — output goes to the Japanese i18n path. Front matter is split
      off and never sent to the model at all, so there's no risk of it
      touching the slug — only the body is translated.
+
+CHANGED PAGES
+  When a JA page exists and --base-ref gives the English it was translated
+  from, only the sections (cut at every heading, keyed by heading id) and
+  frontmatter values whose English changed are sent; every other section
+  keeps its Japanese byte for byte, so a one-line edit can't reword the rest
+  of the page. Anything unexpected (ids that don't line up, a structure
+  mismatch after reassembly) falls back to translating the whole page.
 
 PARTIALS
   Reusable partials (src/partials/*.mdx) are translated exactly like pages,
@@ -67,6 +77,7 @@ REQUIREMENTS
   pip install anthropic pyyaml
 """
 import argparse
+import functools
 import os
 import re
 import sys
@@ -78,7 +89,8 @@ import yaml
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(REPO_ROOT, "scripts"))
 
-from heading_ids import add_english_heading_ids, untranslated_headings  # noqa: E402
+from heading_ids import add_english_heading_ids, final_ids, scan, untranslated_headings  # noqa: E402
+from ja_structure import structure_issues  # noqa: E402
 from nt_terms import TermMatcher  # noqa: E402
 import translatable_strings as ts  # noqa: E402
 
@@ -163,6 +175,33 @@ def unmask(text, store):
     for tok in sorted(store, key=token_number, reverse=True):
         text = text.replace(tok, store[tok])
     return text
+
+
+LATIN_RE = re.compile(r"[A-Za-z0-9]")
+JUNCTION_RE = re.compile(r"(⟦p\d+⟧|[A-Za-z0-9])(?=(⟦p\d+⟧|[A-Za-z0-9]))")
+
+
+def restore_token_spacing(masked_text, translated, store):
+    """Put back the space the model drops next to a token. Japanese has no
+    word spaces, so `⟦p1⟧ ⟦p0⟧` comes back as `⟦p1⟧⟦p0⟧` ("OktaSSO") and
+    `⟦p0⟧ 13` as `⟦p0⟧13` ("Xcode13"). Runs before unmask: a space goes back
+    at a token junction only where the token had whitespace on that side in
+    the masked input AND the characters meeting after unmasking are both
+    Latin, so suffixes (`⟦p0⟧s`), Japanese text and `**⟦p0⟧**` are untouched."""
+    spaced = {(m.group(), side) for m in TOKEN_RE.finditer(masked_text)
+              for side, ch in (("before", masked_text[m.start() - 1:m.start()]),
+                               ("after", masked_text[m.end():m.end() + 1])) if ch.isspace()}
+    full = functools.lru_cache(maxsize=None)(lambda piece: unmask(piece, store))
+
+    def junction(m):
+        left, right = m.groups()
+        if (left, "after") not in spaced and (right, "before") not in spaced:
+            return left
+        if LATIN_RE.match(full(left)[-1:]) and LATIN_RE.match(full(right)[:1]):
+            return left + " "
+        return left
+
+    return JUNCTION_RE.sub(junction, translated)
 
 
 def verify_tokens(masked_text, translated):
@@ -295,11 +334,106 @@ def translate_verified(client, model, sysp, masked):
         if stop_reason != "end_turn":
             problems.append(f"stop_reason={stop_reason!r} (output truncated?)")
         problems.extend(verify_tokens(masked, translated))
+        problems.extend(structure_issues(masked, translated))
         if not problems:
             return translated
         print(f"    attempt {attempt}/{MAX_ATTEMPTS} failed verification: "
               + "; ".join(problems), file=sys.stderr)
     return None
+
+
+def translate_body(ctx, body, fm_values):
+    """Mask, translate, verify and unmask one Markdown body together with the
+    frontmatter values in `fm_values`. Returns (japanese_body, {key: japanese})
+    or None. Heading ids are pinned by the caller, against the whole page."""
+    # Frontmatter values and JSX string props are readable text the masker
+    # would otherwise protect; send them as %%key%% lines instead.
+    body, jsx_strings = ts.extract_jsx_strings(body)
+    store = {}
+    masked, n = mask(body, ctx.patterns, store)
+    masked, n = mask_terms(masked, ctx.matcher, store, n)
+    block = ts.build_block(fm_values, jsx_strings)
+    if block:
+        block, n = mask(block, ctx.patterns, store, n)
+        block, n = mask_terms(block, ctx.matcher, store, n)
+        masked = block + "\n\n" + masked
+    translated = translate_verified(ctx.client, ctx.model, ctx.sysp, masked)
+    if translated is None:
+        print(f"    failed verification after {MAX_ATTEMPTS} attempts", file=sys.stderr)
+        return None
+    # Before the block is split off, so title/description lines get it too.
+    translated = restore_token_spacing(masked, translated, store)
+    found, translated = ts.parse_block(translated)
+    left_english = untranslated_headings(masked, translated)
+    if left_english:
+        print(f"  warning: {len(left_english)} heading(s) left in English: "
+              + "; ".join(h for h in left_english[:5]), file=sys.stderr)
+    translated = promote_bold_to_strong(translated.lstrip("\n"))  # pre-unmask: code is still tokens
+    translated = unmask(translated, store)
+    found = {k: unmask(v, store) for k, v in found.items()}
+    if TOKEN_RE.search(translated):
+        # Can't happen if verify_tokens passed and the store is sound —
+        # belt and braces against a placeholder leaking into the page.
+        print("    unresolved placeholder after unmask", file=sys.stderr)
+        return None
+    fm_tr, js_tr = ts.split_block(found)
+    return ts.apply_jsx_strings(translated, jsx_strings, js_tr), fm_tr
+
+
+def split_sections(body):
+    """Cut a body before every heading: [(id, text), ...], where id is the
+    anchor Docusaurus gives the heading (explicit {#id} or slug, as
+    heading_ids.final_ids computes it) and "" keys the text before the first
+    heading. "".join(texts) == body. A ### starts its own section like a ##
+    does: ids are unique on a page, so editing one subsection leaves its parent
+    and siblings alone."""
+    lines = body.split("\n")
+    heads = scan(lines)
+    cuts = [0] + [h.line for h in heads] + [len(lines)]
+    texts = ["".join(line + "\n" for line in lines[a:b]) for a, b in zip(cuts, cuts[1:])]
+    texts[-1] = texts[-1][:-1]  # the body has no "\n" after its last line
+    return list(zip([""] + final_ids(heads), texts))
+
+
+def translate_sections(ctx, old_raw, new_raw, ja_raw):
+    """Re-translate only what changed since `old_raw`, the English that the
+    JA page `ja_raw` matches: new or changed sections (split_sections) and
+    frontmatter values. Unchanged sections keep their Japanese byte for byte,
+    removed ones are dropped, and the page follows the new English order.
+    Returns translate_body()'s (body, fm values), or None when the page must
+    be translated whole: section ids repeat or differ between the old English
+    and the JA page, the translation fails, or the assembled page's structure
+    differs from the English (scripts/ja_structure.py)."""
+    (_, old_body), (_, new_body), (_, ja_body) = (
+        split_frontmatter(r) for r in (old_raw, new_raw, ja_raw))
+    old, new, ja = (split_sections(b) for b in (old_body, new_body, ja_body))
+    if [k for k, _ in ja] != [k for k, _ in old] or len(dict(old)) < len(old) or len(dict(new)) < len(new):
+        return None
+    old, ja, new_text = dict(old), dict(ja), dict(new)
+    changed = [k for k, t in new if k not in old or ts.normalized(t) != ts.normalized(old[k])]
+    old_fm, new_fm, ja_fm = (ts.extract_frontmatter(split_frontmatter(r)[0])
+                             for r in (old_raw, new_raw, ja_raw))
+    fm_send = {k: v for k, v in new_fm.items() if old_fm.get(k) != v or k not in ja_fm}
+    out, fm_tr = "", {}
+    if changed or fm_send:
+        print(f"  re-translating {len(changed)} of {len(new)} section(s), "
+              f"{len(fm_send)} frontmatter value(s)")
+        result = translate_body(ctx, "".join(new_text[k] for k in changed), fm_send)
+        if result is None:
+            return None
+        out, fm_tr = result
+    parts = [t for _, t in split_sections(out)]
+    if changed[:1] != [""] and parts.pop(0).strip():
+        return None  # text before the first heading that no section owns
+    if len(parts) != len(changed):
+        return None
+    # Each translated section ends with the blank lines its English one has.
+    done = {k: t.rstrip("\n") + new_text[k][len(new_text[k].rstrip("\n")):]
+            for k, t in zip(changed, parts)}
+    body = "".join(done.get(k, ja.get(k)) for k, _ in new)
+    if structure_issues(new_body, body):
+        return None
+    return body, {**ja_fm, **fm_tr}
 
 
 def dest_path(src, src_root, dest_root):
@@ -338,16 +472,15 @@ def point_imports_at_translated_partials(text, translated_dir, import_prefix):
     return PARTIAL_IMPORT_RE.sub(sub, text)
 
 
-def english_really_changed(base_ref, src, new_raw):
-    """False only when the page at `base_ref` and now differ in whitespace alone.
-    Anything unknown (new file, git failure) counts as changed."""
+def english_at(base_ref, src):
+    """The English page as it was at `base_ref`, or None when unknown (new
+    file, git failure)."""
     import subprocess
     try:
-        old = subprocess.run(["git", "show", f"{base_ref}:{src}"], capture_output=True,
-                             text=True, check=True).stdout
+        return subprocess.run(["git", "show", f"{base_ref}:{src}"], capture_output=True,
+                              text=True, check=True).stdout
     except (subprocess.CalledProcessError, OSError):
-        return True
-    return ts.normalized(old) != ts.normalized(new_raw)
+        return None
 
 
 def is_relevant(path):
@@ -465,9 +598,9 @@ def main():
     # env_var protect pattern only catches 3+ char ALL-CAPS runs.
     matcher = TermMatcher(a.glossary, include_acronyms=True)
     preferred = load_preferred_translations(a.preferred)
-    client = anthropic.Anthropic()
-    model = os.environ.get("TRANSLATE_MODEL", "claude-sonnet-5")
-    sysp = system_prompt(preferred)
+    ctx = argparse.Namespace(client=anthropic.Anthropic(), patterns=patterns, matcher=matcher,
+                             model=os.environ.get("TRANSLATE_MODEL", "claude-sonnet-5"),
+                             sysp=system_prompt(preferred))
 
     # Partials first: a page translated in the same run points its imports at
     # the translated partial only if that file already exists.
@@ -483,48 +616,31 @@ def main():
             print(f"  skip (missing): {src}")
             continue
         raw = open(src, encoding="utf-8").read()
-        if a.base_ref and os.path.isfile(route(src, a)) and not english_really_changed(a.base_ref, src, raw):
+        old = english_at(a.base_ref, src) if a.base_ref and os.path.isfile(route(src, a)) else None
+        if old is not None and ts.normalized(old) == ts.normalized(raw):
             print(f"  skip (English only changed in whitespace): {src}")
             continue
-        todo.append((src, raw))
-    print(f"Plan: translating {len(todo)} file(s), {sum(len(r) for _, r in todo):,} characters of English.")
+        todo.append((src, raw, old))
+    print(f"Plan: translating {len(todo)} file(s), at most "
+          f"{sum(len(r) for _, r, _ in todo):,} characters of English.")
 
     failures = []
-    for src, raw in todo:
+    for src, raw, old in todo:
+        dst = route(src, a)
         frontmatter, body = split_frontmatter(raw)
-        # Frontmatter values and JSX string props are readable text the masker
-        # would otherwise protect; send them as %%key%% lines instead.
-        fm_values = ts.extract_frontmatter(frontmatter)
-        body, jsx_strings = ts.extract_jsx_strings(body)
-        store = {}
-        masked, n = mask(body, patterns, store)
-        masked, n = mask_terms(masked, matcher, store, n)
-        block = ts.build_block(fm_values, jsx_strings)
-        if block:
-            block, n = mask(block, patterns, store, n)
-            block, n = mask_terms(block, matcher, store, n)
-            masked = block + "\n\n" + masked
-        translated = translate_verified(client, model, sysp, masked)
-        if translated is None:
-            print(f"  FAILED verification after {MAX_ATTEMPTS} attempts, not writing: {src}",
-                  file=sys.stderr)
+        # With the English the JA page was translated from, only the sections
+        # that changed since are sent; anything unexpected falls back to the
+        # whole page.
+        result = translate_sections(ctx, old, raw, open(dst, encoding="utf-8").read()) if old else None
+        if result is None:
+            if old:
+                print(f"  translating the whole page (sections can't be reused): {src}")
+            result = translate_body(ctx, body, ts.extract_frontmatter(frontmatter))
+        if result is None:
+            print(f"  FAILED, not writing: {src}", file=sys.stderr)
             failures.append(src)
             continue
-        found, translated = ts.parse_block(translated)
-        left_english = untranslated_headings(masked, translated)
-        if left_english:
-            print(f"  warning: {len(left_english)} heading(s) left in English in {src}: "
-                  + "; ".join(h for h in left_english[:5]), file=sys.stderr)
-        translated = promote_bold_to_strong(translated.lstrip("\n"))  # pre-unmask: code is still tokens
-        translated = unmask(translated, store)
-        found = {k: unmask(v, store) for k, v in found.items()}
-        if TOKEN_RE.search(translated):
-            # Can't happen if verify_tokens passed and the store is sound —
-            # belt and braces against a placeholder leaking into the page.
-            print(f"  FAILED: unresolved placeholder after unmask, not writing: {src}",
-                  file=sys.stderr)
-            failures.append(src)
-            continue
+        translated, fm_tr = result
         # Translated headings get new auto-generated anchors, which breaks
         # every #anchor link written against the English heading. Pin each
         # one to its English id. A page whose headings can't be paired is
@@ -535,10 +651,7 @@ def main():
                   file=sys.stderr)
         translated = point_imports_at_translated_partials(
             translated, a.partials_dest_root, a.partials_import_prefix)
-        fm_tr, js_tr = ts.split_block(found)
-        translated = ts.apply_jsx_strings(translated, jsx_strings, js_tr)
         frontmatter = ts.apply_frontmatter(frontmatter, fm_tr)
-        dst = route(src, a)
         os.makedirs(os.path.dirname(dst) or ".", exist_ok=True)
         open(dst, "w", encoding="utf-8").write(frontmatter + translated)
         print(f"  translated {src} -> {dst}")

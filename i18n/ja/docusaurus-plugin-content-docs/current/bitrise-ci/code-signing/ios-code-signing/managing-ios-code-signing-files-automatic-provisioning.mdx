@@ -1,9 +1,9 @@
 ---
-title: "iOScode signingファイルの管理: 自動プロビジョニング"
+title: "iOS code signingファイルの管理: 自動プロビジョニング"
 description: "Automatic code signingとは、Apple Developer Portalアカウントで利用可能なプロビジョニングプロファイルを自動的に管理することです。Appleアカウントへの何らかの認証を設定すると、Bitriseはビルドプロセス中にアプリのプロビジョニングプロファイルをダウンロードしてインストールできます。"
 sidebar_position: 2
 slug: "/bitrise-ci/code-signing/ios-code-signing/managing-ios-code-signing-files---automatic-provisioning"
-sidebar_label: "自動プロビジョニングを使用するiOScode signing"
+sidebar_label: "自動プロビジョニングを使用するiOS code signing"
 ---
 
 import Tabs from '@theme/Tabs';
@@ -59,12 +59,12 @@ iOSのcode signing方法はすべて、iOSコードsigning certificateをエク�
 
    :::
 1. 完了したら、<strong>Continue</strong>をクリックします。
-1. サマリーを確認し、問題がなければ<strong>Add証明書</strong>をクリックします。
+1. サマリーを確認し、問題がなければ<strong>Add certificate</strong>をクリックします。
 
 
 ## 自動プロビジョニングのためのAppleサービス認証 {#apple-services-authentication-for-automatic-provisioning}
 
-ビルトインの自動化されたiOScode signingオプションを提供するBitrise Stepsを活用するには、[Appleサービス認証](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)を設定する必要があります。これらのStepsには、2つのオプションがあります。
+ビルトインの自動化されたiOS code signingオプションを提供するBitrise Stepsを活用するには、[Appleサービス認証](/bitrise-platform/integrations/apple-services-connection/about-connecting-to-apple-services)を設定する必要があります。これらのStepsには、2つのオプションがあります。
 
 | 認証方法 | 仕組み | 使用するタイミング |
 | --- | --- | --- |
@@ -76,15 +76,15 @@ iOSのcode signing方法はすべて、iOSコードsigning certificateをエク�
 
 Bitriseで自動プロビジョニングを処理する方法は2つあります。
 
-- code signingファイルの管理とアプリのビルドの両方を行える、公式のXcodeStepsを使用する。
+- code signingファイルの管理とアプリのビルドの両方を行える、公式のXcode Stepsを使用する。
 - <strong>Manage iOS Code Signing</strong>Stepを使用する。
 
 次の表は、2つの方法のユースケースを説明しています。必要なStepsを設定するには、以下のいずれかを確認してください。
 
-- [XcodeStepsを使用する](#using-the-xcode-steps)
-- [Manage iOS Code SigningStepを使用する](#using-the-manage-ios-code-signing-step)
+- [Xcode Stepsを使用する](#using-the-xcode-steps)
+- [Manage iOS Code Signing Stepを使用する](#using-the-manage-ios-code-signing-step)
 
-:::important[Certificate and profile installerStepを使用しないでください]
+:::important[Certificate and profile installer Stepを使用しないでください]
 
 自動プロビジョニングを使用する場合、<strong>Certificate and profile installer</strong>Stepを使用する必要は一切ありません。
 
@@ -92,12 +92,12 @@ Bitriseで自動プロビジョニングを処理する方法は2つあります
 
 | Steps | 仕組み | 使用するタイミング |
 | --- | --- | --- |
-| XcodeSteps:  - <strong>Xcode Archive & Export for iOS</strong> - <strong>Export iOS and tvOS Xcode Archive</strong> - <strong>XcodeのiOS向けテストビルド</strong> | これらのStepsは、ほぼ設定不要でXcodeプロジェクトにcode signingを自動的に設定します。 | ほとんどのシナリオでは、これらのStepsを使用することをおすすめします。 |
+| Xcode Steps:  - <strong>Xcode Archive & Export for iOS</strong> - <strong>Export iOS and tvOS Xcode Archive</strong> - <strong>Xcode build for testing for iOS</strong> | これらのStepsは、ほぼ設定不要でXcodeプロジェクトにcode signingを自動的に設定します。 | ほとんどのシナリオでは、これらのStepsを使用することをおすすめします。 |
 | <strong>Manage iOS Code Signing</strong>Step | このStepは、ビルドの実行前にXcodeプロジェクトにcode signingを設定します。 | 次の場合、この専用のStepを使用できます。  - スクリプトまたはfastlaneからアプリをビルドしている。 - クロスプラットフォームプロジェクトを使用している(例:React Native、Flutter、Ionic、Cordovaなど)。 - macOSアプリをビルドしている。 |
 
-### XcodeStepsを使用する {#using-the-xcode-steps}
+### Xcode Stepsを使用する {#using-the-xcode-steps}
 
-code signingアセットのビルトイン自動管理機能を備えたXcodeStepsのいずれかを使用できます。
+code signingアセットのビルトイン自動管理機能を備えたXcode Stepsのいずれかを使用できます。
 
 1. AppleサービスへのSet up接続。
 
@@ -106,7 +106,7 @@ code signingアセットのビルトイン自動管理機能を備えたXcodeSte
 
    - <strong>Xcode Archive & Export for iOS</strong>: Xcodeアプリをビルドし、選択したタイプのIPAをエクスポートします。
    - <strong>Export iOS and tvOS Xcode Archive</strong>: 既存のアーカイブからIPAをエクスポートします。
-   - <strong>XcodeのiOS向けテストビルド</strong>: `build-for-testing`アクションを使用してXcodeアプリをビルドします。
+   - <strong>Xcode build for testing for iOS</strong>: `build-for-testing`アクションを使用してXcodeアプリをビルドします。
 1. <strong>Automatic code signing method</strong>の入力を、設定したAppleサービス認証タイプに設定します。
 
    たとえば、APIキー認証を選択した場合は、<strong>api-key</strong>オプションを選択します。
@@ -123,9 +123,9 @@ code signingアセットのビルトイン自動管理機能を備えたXcodeSte
 
 ほとんどの場合、Apple接続を正しく設定していれば、他のすべての入力についてはdefault valueで十分です。
 
-### Manage iOS Code SigningStepを使用する {#using-the-manage-ios-code-signing-step}
+### Manage iOS Code Signing Stepを使用する {#using-the-manage-ios-code-signing-step}
 
-iOSアプリのビルドにXcodeStepsのいずれも使用しない場合、またはクロスプラットフォームアプリを使用している場合は、code signingアセットを自動的に管理するための専用のStepを使用してください。
+iOSアプリのビルドにXcode Stepsのいずれも使用しない場合、またはクロスプラットフォームアプリを使用している場合は、code signingアセットを自動的に管理するための専用のStepを使用してください。
 
 1. <strong>Run CocoaPods install</strong>や<strong>Carthage</strong>など、Workflow内の依存関係インストーラーStepの後に<strong>Manage iOS Code Signing</strong>Stepを追加します。
 
