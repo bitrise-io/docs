@@ -1,7 +1,8 @@
 import React, {useEffect, useRef, useState} from 'react';
 import clsx from 'clsx';
-import Translate, {translate} from '@docusaurus/Translate';
+import {translate} from '@docusaurus/Translate';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import Dropdown, {type MenuItem} from './Dropdown';
 import styles from './DateRangePicker.module.css';
 
 export interface DateRange {
@@ -9,6 +10,17 @@ export interface DateRange {
   start: string;
   end: string;
 }
+
+/** Which choice in the date menu is active. */
+export type DatePreset = 'all' | 'last30' | 'last90' | 'quarter' | 'custom';
+
+export interface DateFilterValue {
+  preset: DatePreset;
+  /** null for 'all'; otherwise the dates the entries are filtered to. */
+  range: DateRange | null;
+}
+
+export const ALL_DATES: DateFilterValue = {preset: 'all', range: null};
 
 // Month and weekday names come from Intl in the site's current locale. Dates are
 // built in UTC so the output doesn't depend on the viewer's time zone.
@@ -31,6 +43,22 @@ function todayIso(): string {
   return iso(t.getFullYear(), t.getMonth(), t.getDate());
 }
 
+/** `date` moved by `days` (negative for earlier), as an ISO date. */
+function addDays(date: string, days: number): string {
+  const [y, m, d] = date.split('-').map(Number);
+  const t = utc(y, m - 1, d + days);
+  return iso(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate());
+}
+
+/** The range a preset stands for, counted back from today. */
+function presetRange(preset: Exclude<DatePreset, 'all' | 'custom'>): DateRange {
+  const today = todayIso();
+  if (preset === 'last30') return {start: addDays(today, -29), end: today};
+  if (preset === 'last90') return {start: addDays(today, -89), end: today};
+  const [y, m] = today.split('-').map(Number);
+  return {start: iso(y, Math.floor((m - 1) / 3) * 3, 1), end: today};
+}
+
 function shortDate(d: string, withYear: boolean, locale: string): string {
   const [y, m, day] = d.split('-').map(Number);
   return new Intl.DateTimeFormat(locale, {
@@ -42,18 +70,34 @@ function shortDate(d: string, withYear: boolean, locale: string): string {
 }
 
 /** "Sep 06 - Oct 06", with years when the range isn't inside the current year. */
-export function formatRange(range: DateRange | null, locale = 'en'): string {
-  if (!range) {
-    return translate({
-      id: 'changelog.dateRange.allDates',
-      message: 'All dates',
-      description: 'Changelog date range button label when no date range is selected',
-    });
-  }
+export function formatRange(range: DateRange, locale = 'en'): string {
   const thisYear = String(new Date().getFullYear());
   const withYear = range.start.slice(0, 4) !== thisYear || range.end.slice(0, 4) !== thisYear;
   return `${shortDate(range.start, withYear, locale)} - ${shortDate(range.end, withYear, locale)}`;
 }
+
+const presetLabels = (): Record<Exclude<DatePreset, 'custom'>, string> => ({
+  all: translate({
+    id: 'changelog.dateRange.allDates',
+    message: 'All dates',
+    description: 'Changelog date menu choice that shows entries from every date',
+  }),
+  last30: translate({
+    id: 'changelog.dateRange.last30Days',
+    message: 'Last 30 days',
+    description: 'Changelog date menu choice that shows entries from the last 30 days',
+  }),
+  last90: translate({
+    id: 'changelog.dateRange.last90Days',
+    message: 'Last 90 days',
+    description: 'Changelog date menu choice that shows entries from the last 90 days',
+  }),
+  quarter: translate({
+    id: 'changelog.dateRange.thisQuarter',
+    message: 'This quarter',
+    description: 'Changelog date menu choice that shows entries from the current calendar quarter',
+  }),
+});
 
 interface View {
   year: number;
@@ -193,32 +237,34 @@ function Panel({view, onView, from, to, today, onPick, onHover, nav, onNav, loca
 }
 
 /**
- * Button that opens a two-month calendar to pick a date range. Click a start
- * day, then an end day; the range applies as soon as the second day is picked.
- * Days after today are disabled.
+ * The date filter: a dropdown with All dates, Last 30 days, Last 90 days, This
+ * quarter and Custom range. Custom range opens a two-month calendar. Click a
+ * start day, then an end day; the range applies as soon as the second day is
+ * picked. Days after today are disabled.
  */
 export default function DateRangePicker({
   value,
   onChange,
 }: {
-  value: DateRange | null;
-  onChange: (r: DateRange | null) => void;
+  value: DateFilterValue;
+  onChange: (v: DateFilterValue) => void;
 }): React.ReactElement {
-  const [open, setOpen] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [view, setView] = useState<View>({year: 2026, month: 0});
   const [anchor, setAnchor] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const {i18n} = useDocusaurusContext();
   const locale = i18n.currentLocale;
+  const labels = presetLabels();
 
   useEffect(() => {
-    if (!open) return;
+    if (!calendarOpen) return;
     const onDown = (e: MouseEvent) => {
-      if (root.current && !root.current.contains(e.target as Node)) setOpen(false);
+      if (root.current && !root.current.contains(e.target as Node)) setCalendarOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') setCalendarOpen(false);
     };
     document.addEventListener('mousedown', onDown);
     document.addEventListener('keydown', onKey);
@@ -226,21 +272,27 @@ export default function DateRangePicker({
       document.removeEventListener('mousedown', onDown);
       document.removeEventListener('keydown', onKey);
     };
-  }, [open]);
+  }, [calendarOpen]);
 
-  const toggle = () => {
-    if (open) {
-      setOpen(false);
-      return;
-    }
+  const openCalendar = () => {
     // Open on the range's first month, or on last month + this month.
-    const today = todayIso();
-    const base = value ? value.start : today;
+    const base = value.preset === 'custom' && value.range ? value.range.start : todayIso();
     const [y, m] = base.split('-').map(Number);
-    setView(value ? {year: y, month: m - 1} : shift({year: y, month: m - 1}, -1));
+    const first = {year: y, month: m - 1};
+    setView(value.preset === 'custom' && value.range ? first : shift(first, -1));
     setAnchor(null);
     setHover(null);
-    setOpen(true);
+    setCalendarOpen(true);
+  };
+
+  const select = (id: string) => {
+    if (id === 'custom') {
+      openCalendar();
+      return;
+    }
+    setCalendarOpen(false);
+    if (id === 'all') onChange(ALL_DATES);
+    else onChange({preset: id as DatePreset, range: presetRange(id as 'last30' | 'last90' | 'quarter')});
   };
 
   const pick = (d: string) => {
@@ -249,39 +301,61 @@ export default function DateRangePicker({
       return;
     }
     const [start, end] = anchor <= d ? [anchor, d] : [d, anchor];
-    onChange({start, end});
+    onChange({preset: 'custom', range: {start, end}});
     setAnchor(null);
-    setOpen(false);
+    setCalendarOpen(false);
   };
 
   // While picking, preview the range from the anchor to the hovered day.
-  let from: string | null = value?.start ?? null;
-  let to: string | null = value?.end ?? null;
+  let from: string | null = value.range?.start ?? null;
+  let to: string | null = value.range?.end ?? null;
   if (anchor !== null) {
     const other = hover ?? anchor;
     [from, to] = anchor <= other ? [anchor, other] : [other, anchor];
   }
 
-  const today = open ? todayIso() : '';
+  const today = calendarOpen ? todayIso() : '';
+
+  const items: MenuItem[] = [
+    {id: 'all', label: labels.all, dividerAfter: true},
+    {id: 'last30', label: labels.last30},
+    {id: 'last90', label: labels.last90},
+    {id: 'quarter', label: labels.quarter},
+    {
+      id: 'custom',
+      label: translate({
+        id: 'changelog.dateRange.customRange',
+        message: 'Custom range…',
+        description: 'Changelog date menu choice that opens a calendar to pick a start and end date',
+      }),
+      opensMore: true,
+    },
+  ];
+
+  const buttonLabel =
+    value.preset === 'custom' && value.range ? formatRange(value.range, locale) : labels[value.preset === 'custom' ? 'all' : value.preset];
 
   return (
     <div className={styles.root} ref={root}>
-      <button
-        type="button"
-        className={clsx(styles.trigger, open && styles.triggerOpen)}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={toggle}>
-        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
-          <rect x="3" y="4.5" width="14" height="12.5" rx="2" />
-          <path d="M3 8.5h14M7 3v3M13 3v3" />
-        </svg>
-        {formatRange(value, locale)}
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M4 6l4 4 4-4" />
-        </svg>
-      </button>
-      {open && (
+      <Dropdown
+        icon={
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+            <rect x="3" y="4.5" width="14" height="12.5" rx="2" />
+            <path d="M3 8.5h14M7 3v3M13 3v3" />
+          </svg>
+        }
+        label={buttonLabel}
+        items={items}
+        selectedId={value.preset}
+        onSelect={select}
+        onOpenChange={(open) => open && setCalendarOpen(false)}
+        ariaLabel={translate({
+          id: 'changelog.dateRange.menuAriaLabel',
+          message: 'Filter by date',
+          description: 'ARIA label of the changelog date filter menu',
+        })}
+      />
+      {calendarOpen && (
         <div className={styles.popover} role="dialog"
           aria-label={translate({
             id: 'changelog.dateRange.dialogAriaLabel',
@@ -313,23 +387,6 @@ export default function DateRangePicker({
               onHover={setHover}
               locale={locale}
             />
-          </div>
-          <div className={styles.footer}>
-            <button
-              type="button"
-              className={styles.clear}
-              disabled={value === null && anchor === null}
-              onClick={() => {
-                onChange(null);
-                setAnchor(null);
-                setOpen(false);
-              }}>
-              <Translate
-                id="changelog.dateRange.clear"
-                description="Button in the changelog date range picker that removes the date range">
-                Clear dates
-              </Translate>
-            </button>
           </div>
         </div>
       )}

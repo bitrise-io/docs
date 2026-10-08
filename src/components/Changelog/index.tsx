@@ -8,9 +8,9 @@ import React, {
   type ReactElement,
   type ReactNode,
 } from 'react';
-import clsx from 'clsx';
 import {translate} from '@docusaurus/Translate';
-import DateRangePicker, {type DateRange} from './DateRangePicker';
+import DateRangePicker, {ALL_DATES, type DateFilterValue, type DateRange} from './DateRangePicker';
+import Dropdown, {type MenuItem} from './Dropdown';
 import styles from './styles.module.css';
 
 // The documentation areas, one per product hub (API references belong to their
@@ -75,10 +75,7 @@ export const AREAS = [
   },
 ] as const;
 
-// The filter options sit on two lines inside one segmented control. The split
-// (All areas + the first three areas, then the other four) is picked so both
-// lines come out about the same width at the options' natural sizes; revisit it
-// if a label changes.
+// The choices in the area dropdown: everything first, then each area.
 const FILTER_ITEMS = [
   {
     id: 'all',
@@ -90,7 +87,6 @@ const FILTER_ITEMS = [
   },
   ...AREAS,
 ] as const;
-const FILTER_ROWS = [FILTER_ITEMS.slice(0, 4), FILTER_ITEMS.slice(4)];
 
 type AreaId = (typeof AREAS)[number]['id'];
 type Filter = AreaId | 'all';
@@ -98,6 +94,12 @@ type Filter = AreaId | 'all';
 const AREA_LABEL: Record<string, string> = Object.fromEntries(
   AREAS.map((a) => [a.id, a.label]),
 );
+
+const AREA_ITEMS: MenuItem[] = FILTER_ITEMS.map((a) => ({
+  id: a.id,
+  label: a.label,
+  dividerAfter: a.id === 'all',
+}));
 
 interface ChangelogState {
   filter: Filter;
@@ -130,7 +132,7 @@ export default function Changelog({
   children: ReactNode;
 }): ReactElement {
   const [filter, setFilter] = useState<Filter>(isArea(area) ? area : 'all');
-  const [range, setRange] = useState<DateRange | null>(null);
+  const [date, setDate] = useState<DateFilterValue>(ALL_DATES);
 
   // Feed items and shared links point at /<hub>/changelog#<anchor> regardless of
   // the entry's area or date. If the target entry is filtered out, show
@@ -140,7 +142,7 @@ export default function Changelog({
       const id = decodeURIComponent(window.location.hash.slice(1));
       if (!id) return;
       setFilter('all');
-      setRange(null);
+      setDate(ALL_DATES);
       requestAnimationFrame(() =>
         document.getElementById(id)?.scrollIntoView(),
       );
@@ -151,42 +153,25 @@ export default function Changelog({
   }, []);
 
   return (
-    <ChangelogContext.Provider value={{filter, range, setFilter}}>
+    <ChangelogContext.Provider value={{filter, range: date.range, setFilter}}>
       <div className={styles.toolbar}>
-        <svg
-          className={styles.filterIcon}
-          width="20"
-          height="20"
-          viewBox="0 0 20 20"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          aria-hidden="true">
-          <path d="M3 5h14M5.5 10h9M8 15h4" />
-        </svg>
-        <div className={styles.segmented} role="group"
-          aria-label={translate({
+        <Dropdown
+          icon={
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 4.5h14l-5.5 6.3v4.7l-3 1.8v-6.5z" />
+            </svg>
+          }
+          label={AREA_LABEL[filter] ?? FILTER_ITEMS[0].label}
+          items={AREA_ITEMS}
+          selectedId={filter}
+          onSelect={(id) => setFilter(id as Filter)}
+          ariaLabel={translate({
             id: 'changelog.filter.ariaLabel',
             message: 'Filter by area',
             description: 'ARIA label of the changelog area filter',
-          })}>
-          {FILTER_ROWS.map((row, i) => (
-            <div key={i} className={styles.segmentedRow}>
-              {row.map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  className={clsx(styles.option, filter === a.id && styles.optionActive)}
-                  aria-pressed={filter === a.id}
-                  onClick={() => setFilter(a.id)}>
-                  {a.label}
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
-        <DateRangePicker value={range} onChange={setRange} />
+          })}
+        />
+        <DateRangePicker value={date} onChange={setDate} />
       </div>
       {children}
     </ChangelogContext.Provider>
