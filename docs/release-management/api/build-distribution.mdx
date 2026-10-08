@@ -47,7 +47,7 @@ Optional query parameters:
 
 ### Step 2: Upload the binary
 
-You can upload `.ipa` (iOS), `.apk`, or `.aab` (Android) files. Use the `method`, `url`, and `headers` from the previous response exactly as returned — the headers vary per upload and typically include `Content-Type` and `X-Goog-Content-Length-Range`:
+You can upload `.ipa` (iOS), `.apk`, or `.aab` (Android) files. Only builds that are distribution-ready can be sent to tester groups: that means `.apk` files and `.ipa` files that were not exported for the App Store. `.aab` files and App Store–export `.ipa` files are stored but cannot be distributed to testers. Use the `method`, `url`, and `headers` from the previous response exactly as returned — the headers vary per upload and typically include `Content-Type` and `X-Goog-Content-Length-Range`:
 
 ```bash
 # Use the method, url, and headers exactly as returned by the Step 1 response.
@@ -178,7 +178,6 @@ curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v
   -d '{
     "app_id": "APP_ID",
     "name": "External QA testers",
-    "auto_notify": true,
     "emails": ["tester1@example.com", "tester2@example.com"]
   }'
 ```
@@ -188,7 +187,7 @@ The `emails` array accepts up to 1,000 addresses (each up to 255 characters) and
 </TabItem>
 </Tabs>
 
-Setting `auto_notify: true` means testers are automatically emailed when a new build is uploaded.
+Setting `auto_notify: true` on an internal group means testers are automatically emailed when a new distribution-ready build is uploaded. External groups don't support `auto_notify`: it is always `false`, and the field is ignored if you send it. To notify external testers, create a custom access link with the group's `tester_group_id`.
 
 ### Adding testers to a group
 
