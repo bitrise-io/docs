@@ -1,17 +1,16 @@
 ---
-title: "テスターへのビルドの配布"
-description: "Release Management API を使って、ビルドアーティファクトをアップロードし、テスターグループに配布します。"
+title: "テスターへのビルド配布"
+description: "Release Management APIを使用して、ビルドのアーティファクトをアップロードし、テスターグループに配布します。"
 sidebar_position: 5
 slug: /release-management/api/build-distribution
 ---
-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-ビルドアーティファクトをRelease Managementにアップロードし、APIを使ってテスターグループに直接配布できます。テスターグループには、Bitriseのユーザーをuser slugで追加する内部グループと、テスターをメールアドレスで追加する外部グループ(Bitriseアカウント不要)があります。このページでは、アーティファクトのアップロードフロー(AppsサブAPI)とテスターグループ管理(Build DistributionsサブAPI)の両方を扱います。
+ビルドのアーティファクトをRelease Managementにアップロードし、APIを通じてテスターグループに直接配布できます。テスターグループは、内部グループ(user slugで追加するBitriseユーザー)または外部グループ(メールアドレスで追加するテスター。Bitriseアカウントは不要)のいずれかです。ここでは、アーティファクトのアップロードフロー(Apps サブAPI)とテスターグループの管理(Build Distributions サブAPI)の両方を扱います。
 
-- <strong>AppsサブAPIのベースURL:</strong> `https://api.bitrise.io/release-management/v2/apps/v1`。[Apps APIリファレンス](/release-management-api/apps/api-reference/release-management-api)を参照してください。
-- <strong>BuildDistributionサブAPIのベースURL:</strong> `https://api.bitrise.io/release-management/v2/build-distributions/v1`。[Build Distributions APIリファレンス](/release-management-api/build-distributions/api-reference/release-management-api-build-distributions)を参照してください。
+- <strong>Apps サブAPIのベースURL:</strong> `https://api.bitrise.io/release-management/v2/apps/v1`。[Apps APIリファレンス](/release-management-api/apps/api-reference/release-management-api)を参照してください。
+- <strong>Build Distribution サブAPIのベースURL:</strong> `https://api.bitrise.io/release-management/v2/build-distributions/v1`。[Build Distributions APIリファレンス](/release-management-api/build-distributions/api-reference/release-management-api-build-distributions)を参照してください。
 
 ## ビルドアーティファクトのアップロード {#uploading-a-build-artifact}
 
@@ -19,13 +18,13 @@ import TabItem from '@theme/TabItem';
 | --- | --- | --- |
 | [`GET /installable-artifacts/{id}/upload-url`](/release-management-api/apps/api-reference/generate-installable-artifact-upload-url) | Apps | 署名付きアップロードURLを生成します。 |
 | [`GET /installable-artifacts/{id}/status`](/release-management-api/apps/api-reference/get-installable-artifact-status) | Apps | アップロードと処理のステータスを確認します。 |
-| [`GET /installable-artifacts`](/release-management-api/apps/api-reference/list-installable-artifacts) | Apps | アプリのアップロード済みアーティファクトの一覧を取得します。 |
+| [`GET /installable-artifacts`](/release-management-api/apps/api-reference/list-installable-artifacts) | Apps | アプリのアップロード済みアーティファクトを一覧表示します。 |
 | [`GET /installable-artifacts/{id}`](/release-management-api/apps/api-reference/get-installable-artifact) | Apps | アーティファクトの詳細を取得します。 |
 | [`DELETE /installable-artifacts/{id}`](/release-management-api/apps/api-reference/delete-installable-artifact) | Apps | アーティファクトを削除します。 |
 
-### Step 1: アップロードURLの生成 {#step-1-generate-an-upload-url}
+### Step 1: アップロードURLを生成する {#step-1-generate-an-upload-url}
 
-ビルドアーティファクト用に、署名付きのS3アップロードURLを生成します。レスポンスにはアップロードURLが含まれ、アーティファクトIDも確認できます。
+ビルドのアーティファクト用に、署名付きS3アップロードURLを生成します。レスポンスには、アップロードURLが含まれ、アーティファクトIDも確認できます。
 
 ```bash
 ARTIFACT_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
@@ -35,19 +34,19 @@ curl -X GET "https://api.bitrise.io/release-management/v2/apps/v1/installable-ar
   -H "Accept: application/json"
 ```
 
-必須のクエリパラメータ:
-- `app_id`: RMアプリのIDです。
-- `file_name`: アーティファクトのファイル名です(例: `MyApp.ipa`や`MyApp.apk`)。
-- `file_size_bytes`: ファイルサイズ(バイト単位)です。
+必須のクエリパラメーター:
+- `app_id`: RMアプリのID。
+- `file_name`: アーティファクトのファイル名(例: `MyApp.ipa` または `MyApp.apk`)。
+- `file_size_bytes`: ファイルサイズ(バイト単位)。
 
-任意のクエリパラメータ:
+オプションのクエリパラメーター:
 - `with_public_page`: `true`に設定すると、公開インストールページがすぐに有効になります。
-- `branch`: このビルドの取得元となるsource branchです。
-- `workflow`: このビルドを生成したCIワークフローです。
+- `branch`: このビルドのsource branch。
+- `workflow`: このビルドを生成したCIワークフロー。
 
-### Step 2: バイナリのアップロード {#step-2-upload-the-binary}
+### Step 2: バイナリをアップロードする {#step-2-upload-the-binary}
 
-アップロードできるのは、`.ipa`(iOS)、`.apk`、`.aab`(Android)のファイルです。前のレスポンスで返された`method`、`url`、`headers`はそのまま使用してください。ヘッダーはアップロードごとに異なり、通常は`Content-Type`と`X-Goog-Content-Length-Range`が含まれます:
+`.ipa`(iOS)、`.apk`、`.aab`(Android)のファイルをアップロードできます。テスターグループに送信できるのは、配布可能なビルドのみです。つまり、`.apk`ファイルと、App Store向けにエクスポートされていない`.ipa`ファイルです。`.aab`ファイルとApp Store向けにエクスポートされた`.ipa`ファイルは保存されますが、テスターには配布できません。前のレスポンスで返された`method`、`url`、`headers`は、返された内容のまま使用してください。ヘッダーはアップロードごとに異なり、通常は`Content-Type`と`X-Goog-Content-Length-Range`が含まれます。
 
 ```bash
 # Use the method, url, and headers exactly as returned by the Step 1 response.
@@ -58,9 +57,9 @@ curl -X PUT "PRESIGNED_UPLOAD_URL" \
   --data-binary "@/path/to/MyApp.aab"
 ```
 
-### Step 3: 処理ステータスの確認 {#step-3-check-processing-status}
+### Step 3: 処理ステータスを確認する {#step-3-check-processing-status}
 
-アップロード後、Bitriseがアーティファクトの処理を完了するまで待ちます:
+アップロード後、Bitriseがアーティファクトの処理を完了するまで待ちます。
 
 ```bash
 curl -X GET "https://api.bitrise.io/release-management/v2/apps/v1/installable-artifacts/${ARTIFACT_ID}/status" \
@@ -70,9 +69,9 @@ curl -X GET "https://api.bitrise.io/release-management/v2/apps/v1/installable-ar
 
 レスポンスには現在の`status`が返されます。ステータスがアーティファクトの配布準備完了を示すまで、このエンドポイントをポーリングしてください。
 
-## インストール可能なアーティファクトの一覧取得 {#listing-installable-artifacts}
+## インストール可能なアーティファクトの一覧表示 {#listing-installable-artifacts}
 
-自分でアップロードしたものではないアーティファクトを操作するには、[`GET /installable-artifacts`](/release-management-api/apps/api-reference/list-installable-artifacts)を使って検索します:
+自分でアップロードしたものではないアーティファクトを操作するには、[`GET /installable-artifacts`](/release-management-api/apps/api-reference/list-installable-artifacts)で検索します。
 
 ```bash
 curl -X GET "https://api.bitrise.io/release-management/v2/apps/v1/installable-artifacts?app_id=APP_ID&items_per_page=10&page=1" \
@@ -80,15 +79,15 @@ curl -X GET "https://api.bitrise.io/release-management/v2/apps/v1/installable-ar
   -H "Accept: application/json"
 ```
 
-:::note[`id`ではなく`uid`を使用してください]
+:::note[`id`ではなく`uid`を使用する]
 
-レスポンスの各項目には、`id`フィールドと`uid`フィールドの両方が含まれます。他の呼び出しでは`ARTIFACT_ID`として`uid`を使用してください。`id`は別の識別子であり、このページのエンドポイントでは使用できません。
+レスポンスの各項目には、`id`フィールドと`uid`フィールドの両方が含まれます。他の呼び出しでは、`uid`を`ARTIFACT_ID`として使用してください。`id`は別の識別子であり、このページのエンドポイントでは機能しません。
 
 :::
 
 ## 公開インストールページの有効化 {#enabling-a-public-install-page}
 
-ビルドを公開URL経由で利用可能にすると、テスターはBitriseアカウントなしで直接開けます。
+Bitriseアカウントがなくてもテスターが直接開ける公開URLを通じて、ビルドを利用可能にできます。
 
 ```bash
 curl -X PATCH "https://api.bitrise.io/release-management/v2/apps/v1/installable-artifacts/ARTIFACT_ID/public-install-page" \
@@ -101,7 +100,7 @@ curl -X PATCH "https://api.bitrise.io/release-management/v2/apps/v1/installable-
 
 ## テスト内容メモの追加 {#adding-what-to-test-notes}
 
-ビルドにテスト手順を添付すると、テスターが通知を受け取った際に確認できます。
+テスターが通知を受け取ったときに確認できるテスト手順を、ビルドに添付します。
 
 ```bash
 curl -X PATCH "https://api.bitrise.io/release-management/v2/apps/v1/installable-artifacts/ARTIFACT_ID/what-to-test" \
@@ -112,11 +111,11 @@ curl -X PATCH "https://api.bitrise.io/release-management/v2/apps/v1/installable-
   }'
 ```
 
-`what_to_test`フィールドには最大4,000文字まで入力できます。
+`what_to_test`フィールドには、最大4,000文字まで指定できます。
 
 ## カスタムアクセスリンクの作成 {#creating-custom-access-links}
 
-カスタムアクセスリンクを使用すると、アクセスを制限した状態でビルドを共有できます。コードによる保護や有効期限の設定も任意で行えます。詳細については、[Custom access links](/release-management/build-distribution/distributing-builds-to-testers#custom-access-link)を参照してください。
+カスタムアクセスリンクを使用すると、アクセスを制限してビルドを共有できます。コードによる保護や有効期限の設定も任意で行えます。詳細については、[カスタムアクセスリンク](/release-management/build-distribution/distributing-builds-to-testers#custom-access-link)を参照してください。
 
 :::note
 
@@ -135,16 +134,16 @@ curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/installable-a
   }'
 ```
 
-`access_code`は8~64文字である必要があります。有効期限のないリンクを作成するには、`expires_at`を省略してください。
+`access_code`は8〜64文字である必要があります。有効期限のないリンクを作成するには、`expires_at`を省略してください。
 
 ## テスターグループの管理 {#managing-tester-groups}
 
-テスターグループを使用すると、新しいビルドの準備ができた際に内部テスターのグループへ通知できます。詳細については、[テスターグループ](/release-management/build-distribution/tester-groups)を参照してください。
+テスターグループを使用すると、新しいビルドの準備ができたときに内部テスターのグループへ通知できます。詳細については、[テスターグループ](/release-management/build-distribution/tester-groups)を参照してください。
 
 | エンドポイント | 機能 |
 | --- | --- |
 | [`POST /tester-groups`](/release-management-api/build-distributions/api-reference/create-tester-group) | テスターグループを作成します。 |
-| [`GET /tester-groups`](/release-management-api/build-distributions/api-reference/list-tester-groups) | アプリのテスターグループの一覧を取得します。 |
+| [`GET /tester-groups`](/release-management-api/build-distributions/api-reference/list-tester-groups) | アプリのテスターグループを一覧表示します。 |
 | [`PUT /tester-groups/{id}`](/release-management-api/build-distributions/api-reference/update-tester-group) | テスターグループを更新します。 |
 | [`POST /tester-groups/{id}/add-testers`](/release-management-api/build-distributions/api-reference/add-testers-to-tester-group) | グループにテスターを追加します。 |
 | [`POST /tester-groups/{id}/notify`](/release-management-api/build-distributions/api-reference/notify-tester-group) | 新しいビルドについてグループに通知します。 |
@@ -152,7 +151,7 @@ curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/installable-a
 
 ### テスターグループの作成 {#creating-a-tester-group}
 
-`type`クエリパラメータを設定して、内部グループ(Bitriseのユーザーをuser slugで追加)か外部グループ(テスターをメールアドレスで追加、Bitriseアカウント不要)かを選択します。`type`を省略した場合、デフォルトは`internal`になります。
+`type`クエリパラメーターを設定して、内部グループ(user slugで追加するBitriseユーザー)と外部グループ(メールアドレスで追加するテスター。Bitriseアカウントは不要)のどちらにするかを選択します。`type`を省略した場合のデフォルトは`internal`です。
 
 <Tabs groupId="tester-group-type">
 <TabItem value="internal" label="Internal" default>
@@ -178,21 +177,20 @@ curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v
   -d '{
     "app_id": "APP_ID",
     "name": "External QA testers",
-    "auto_notify": true,
     "emails": ["tester1@example.com", "tester2@example.com"]
   }'
 ```
 
-`emails`配列には最大1,000件のアドレス(各255文字まで)を指定できますが、内部グループでは無視されます。各アドレスに対してテスターが作成され、グループに追加されます。
+`emails`配列には最大1,000件のアドレス(各255文字まで)を指定でき、内部グループでは無視されます。すべてのアドレスに対してテスターが作成され、グループに追加されます。
 
 </TabItem>
 </Tabs>
 
-`auto_notify: true`を設定すると、新しいビルドがアップロードされた際にテスターへ自動的にメールが送信されます。
+内部グループで`auto_notify: true`を設定すると、配布可能な新しいビルドがアップロードされたときに、テスターへ自動的にメールが送信されます。外部グループは`auto_notify`をサポートしていません。常に`false`となり、送信してもこのフィールドは無視されます。外部テスターに通知するには、グループの`tester_group_id`を指定してカスタムアクセスリンクを作成してください。
 
 ### グループへのテスターの追加 {#adding-testers-to-a-group}
 
-`type`クエリパラメータをグループのタイプに合わせて設定します。省略した場合、`type`のデフォルトは`internal`になります。グループのタイプと一致しない配列は無視されます。
+グループのタイプに合わせて`type`クエリパラメーターを設定してください。`type`を省略した場合のデフォルトは`internal`です。グループのタイプに合わない配列は無視されます。
 
 <Tabs groupId="tester-group-type">
 <TabItem value="internal" label="Internal" default>
@@ -206,7 +204,7 @@ curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v
   }'
 ```
 
-:::tip[user slugの検索]
+:::tip[user slugの確認]
 
 workspaceメンバーのuser slugを確認するには、`GET /tester-groups/{id}/potential-testers?search=name-or-email`を使用して対象となるテスターを検索します。レスポンスには各ユーザーの`slug`が含まれます。
 
@@ -224,14 +222,14 @@ curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v
   }'
 ```
 
-`emails`配列には最大1,000件のアドレスを指定できます。各アドレスに対してテスターが作成されるか、既存のテスターが再利用されます。
+`emails`配列には最大1,000件のアドレスを指定できます。各アドレスに対して、テスターが作成または再利用されます。
 
 </TabItem>
 </Tabs>
 
 ### テスターグループへの通知 {#notifying-a-tester-group}
 
-特定のビルドについて、テスターグループに通知を送信します:
+特定のビルドについて、テスターグループに通知を送信します。
 
 ```bash
 curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v1/tester-groups/GROUP_ID/notify" \
@@ -242,11 +240,11 @@ curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v
   }'
 ```
 
-テスターに通知する前に、ビルドが配布可能な状態である必要があります。呼び出しが成功すると、`204 No Content`が返されます。
+テスターに通知する前に、ビルドが配布可能な状態になっている必要があります。呼び出しが成功すると、`204 No Content`が返されます。
 
-## アップロード済みビルドの一覧取得 {#listing-uploaded-builds}
+## アップロード済みビルドの一覧表示 {#listing-uploaded-builds}
 
-特定のバージョンで配布可能なすべてのビルドを一覧表示するには:
+特定のバージョンで配布可能なすべてのビルドを一覧表示するには、次のようにします。
 
 ```bash
 curl -X GET "https://api.bitrise.io/release-management/v2/build-distributions/v1/test-builds?app_id=APP_ID&version=1.5.0" \

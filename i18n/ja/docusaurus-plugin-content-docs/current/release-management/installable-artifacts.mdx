@@ -1,12 +1,11 @@
 ---
 title: "インストール可能なアーティファクト"
-description: "API エンドポイントを使って、バイナリを Release Management にアップロードできます。正常にアップロードされたアプリバイナリを、リリース候補として自動的に選択することもできます。Bitrise の代わりに別の CI サービスを使用している場合に特に便利です。"
+description: "API エンドポイントを使用して、バイナリをRelease Managementにアップロードできます。正常にアップロードされたアプリのバイナリを、リリース候補として自動的に選択することもできます。Bitrise ではなく別の CI サービスを使用している場合に特に便利です。"
 sidebar_position: 3
 slug: /release-management/installable-artifacts
 sidebar_custom_props:
   icon: Install
 ---
-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
@@ -14,117 +13,116 @@ import Partial_IMPORTANTArtifactRetentionPolicy from '@site/i18n/ja/partials/imp
 
 <Partial_IMPORTANTArtifactRetentionPolicy />
 
-Release Managementにインストール可能なアーティファクトをアップロードし、リリース候補として使用する方法は2つあります。
+インストール可能なアーティファクトをRelease Managementにアップロードしてリリース候補として使用するには、2 つの方法があります。
 
-- [connected app](/release-management/getting-started-with-release-management/connecting-an-app)のBitriseビルドを介して生成する方法。
-- APIエンドポイントを使用する方法。これは、Bitriseの代わりに別のCIサービスを使用している場合に特に便利です。
-- 用意されている[bashスクリプト](https://github.com/bitrise-io/release-management-recipes/blob/main/api/upload_installable_artifact.sh)を使用して、APIエンドポイントを利用する方法。
+- [接続済みアプリ](/release-management/getting-started-with-release-management/connecting-an-app)の Bitrise ビルドで生成する。
+- API エンドポイントを使用する。Bitrise ではなく別の CI サービスを使用している場合に特に便利です。
+- [用意されている bash スクリプト](https://github.com/bitrise-io/release-management-recipes/blob/main/api/upload_installable_artifact.sh)を使用して、API エンドポイントを利用する。
 
-## Bitriseビルドを使用する {#using-a-bitrise-build}
+## Bitrise ビルドを使用する {#using-a-bitrise-build}
 
-Bitrise CIを使用している場合、インストール可能なアーティファクトを生成するビルドを実行するだけで取得できます。
+Bitrise CIを使用している場合、インストール可能なアーティファクトを入手するには、アーティファクトを生成するビルドを実行するだけです。
 
-1. Release Managementに[connected app](/release-management/getting-started-with-release-management/connecting-an-app)があることを確認してください。
-1. インストール可能なアーティファクト(IPA、APKまたはAAB)を生成するBitrise <GlossTerm baseform="workflow">Workflow</GlossTerm>に[<strong>Deploy to Bitrise.io</strong>](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) <GlossTerm baseform="step">Step</GlossTerm>があることを確認してください。
-1. ビルドを実行してください。
+1. Release Managementに[接続済みアプリ](/release-management/getting-started-with-release-management/connecting-an-app)があることを確認します。
+1. インストール可能なアーティファクト (IPA、APK、AAB) を生成するBitrise <GlossTerm baseform="workflow">Workflow</GlossTerm>に、[<strong>Deploy to Bitrise.io</strong>](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) <GlossTerm baseform="step">Step</GlossTerm>があることを確認します。
+1. ビルドを実行します。
 
-成功したビルドから生成されたすべてのインストール可能なアーティファクトは、<strong>Artifacts</strong>ページで確認でき、[リリース候補として選択](/release-management/releases/managing-the-release-process/selecting-a-release-candidate)できます。
+成功したビルドのインストール可能なアーティファクトはすべて <strong>Artifacts</strong> ページに表示され、[リリース候補として選択](/release-management/releases/managing-the-release-process/selecting-a-release-candidate)できます。
 
-## APIを使用する {#using-the-api}
+## APIの使用 {#using-the-api}
 
-APIでは、インストール可能なアーティファクトをアップロードするために2つのリクエストが必要です。
+APIでは、インストール可能なアーティファクトをアップロードするために 2 つのリクエストが必要です。
 
-1. 最初のリクエストはアップロード情報を取得するためのものです。このリクエストには、次の情報を含める必要があります。
+1. 1 つ目のリクエストは、アップロード情報を取得するためのものです。このリクエストには次の内容を含める必要があります。
 
-   - API認証トークン。[Workspaceトークン](/bitrise-platform/workspaces/workspace-api-token)と[個人アクセストークン](/bitrise-platform/accounts/personal-access-tokens)のどちらも使用できます。
-   - connected appのスラッグ。Release Management UIからリクエストを取得した場合は自動的に入力されます。
-   - ファイル名とファイルサイズ(バイト単位)。
-1. 2番目のリクエストは、ファイルをartifact storageにアップロードするためのものです。このリクエストは、前のリクエストのレスポンスを使用して作成する必要があります。レスポンスには次の情報が含まれます。
+   - APIの認証トークン。[Workspace トークン](/bitrise-platform/workspaces/workspace-api-token)と[パーソナルアクセストークン](/bitrise-platform/accounts/personal-access-tokens)のどちらも使用できます。
+   - 接続済みアプリの ID。Release Management UIからリクエストを取得した場合は、自動的に入力されます。
+   - アーティファクト用に生成する新しい UUID (リクエスト内の `[NEW_ARTIFACT_UUID]`)。
+   - ファイル名とバイト単位のファイルサイズ。
+1. 2 つ目のリクエストは、ファイルをartifact storageにアップロードするためのものです。リクエストは、前のリクエストのレスポンスを使用して作成する必要があります。レスポンスには次の内容が含まれます。
 
    - 必要なHTTPヘッダー。
    - アップロードに使用するHTTPメソッド。
-   - リクエスト(必要な情報をすべて含む)の送信先となるURL。
-1. 必要に応じて、3番目のリクエストを使用してアップロードのステータスを確認できます。
+   - リクエスト (必要な情報をすべて含む) の送信先のURL。
+1. 必要に応じて、3 つ目のリクエストでアップロードのステータスを確認できます。1 つ目のリクエストと同じアーティファクトの UUID を使用します。
 
-該当するエンドポイントは、[公式のAPIドキュメント](https://api.bitrise.io/release-management/api-docs/index.html#/Installable%20Artifacts%20-%20COMING%20SOON/GenerateInstallableArtifactUploadUrl)で確認できます。
+関連するエンドポイントは、[公式の API ドキュメント](https://api.bitrise.io/release-management/api-docs/index.html#/Installable%20Artifacts%20-%20COMING%20SOON/GenerateInstallableArtifactUploadUrl)で確認できます。
 
-APIリクエストは、<strong>Release candidate</strong>ステージまたは<strong>Artifacts</strong>ページから取得できます。
+APIリクエストは、<strong>Release candidate</strong> ステージまたは <strong>Artifacts</strong> ページから取得できます。
 
 <Tabs>
 <TabItem value="rc-stage" label="RC stage" default>
 
-1. Release Managementに[connected app](/release-management/getting-started-with-release-management/connecting-an-app)があることを確認してください。
-1. connected appを開いてください。
-1. リリースを選択し、<strong>Release candidate</strong>ステージに移動してください。
-1. ソースカードで<strong>Configure</strong>をクリックしてください。
+1. Release Managementに[接続済みアプリ](/release-management/getting-started-with-release-management/connecting-an-app)があることを確認します。
+1. 接続済みアプリを開きます。
+1. リリースを選択し、<strong>Release candidate</strong> ステージに移動します。
+1. ソースカードで <strong>Configure</strong> をクリックします。
 
    ![configure-source-rm.png](/img/_paligo/uuid-5e506f8a-6c68-cbef-ee53-8e97df232093.png)
-1. ダイアログで<strong>Upload via API</strong>を選択してください。
-1. アップロードURL用のcurlコマンドを取得し、続けてアップロードファイル用のcurlコマンドを取得してください。`[AUTH_TOKEN]`、`[FILE_NAME]`、`[FILE_SIZE]`、`[UPLOAD_URL]`のプレースホルダーを実際の値に置き換えてください。
+1. ダイアログで <strong>Upload via API</strong> を選択します。
+1. アップロードURL用の curl コマンドと、ファイルをアップロードするための curl コマンドを取得します。1 つ目のコマンドでは、`[AUTH_TOKEN]`、`[FILE_NAME]`、`[FILE_SIZE]`、`[NEW_ARTIFACT_UUID]` のプレースホルダーを実際の値に置き換えます (`[NEW_ARTIFACT_UUID]` は、アーティファクト用に生成する新しい UUID です)。2 つ目のコマンドでは、`[FILE_NAME]`、`[FILE_SIZE]`、`[UPLOAD_URL]` を置き換えます。
 
-   :::tip[利用可能なBashスクリプト]
+   :::tip[Bash script available]
 
-   API呼び出しを簡単にセットアップするために使用できる[bashスクリプトへのリンク](https://github.com/bitrise-io/release-management-recipes/blob/main/api/upload_installable_artifact.sh)もあります。
+   API の呼び出しを簡単に設定できる [bash スクリプトへのリンク](https://github.com/bitrise-io/release-management-recipes/blob/main/api/upload_installable_artifact.sh)もあります。
 
    :::
-1. 必要に応じて<strong>Automatically select after successful upload</strong>をオンにすると、アップロードが成功した際にバイナリが自動的にリリース候補として選択されるようになります。
+1. 必要に応じて <strong>Automatically select after successful upload</strong> をオンにすると、アップロードが成功した時点で、バイナリがリリース候補として自動的に選択されます。
 
-   これをオンにしない場合は、アーティファクトの一覧からリリース候補を選択できます。
-1. <strong>Save changes</strong>をクリックしてください。
-1. APIリクエストを使用してアーティファクトをアップロードしてください。
+   オンにしない場合は、アーティファクトの一覧からリリース候補を選択できます。
+1. <strong>Save changes</strong> をクリックします。
+1. APIリクエストを使用して、アーティファクトをアップロードします。
 
 </TabItem>
 <TabItem value="build-distribution-page" label="Build distribution page">
 
-1. Release Managementに[connected app](/release-management/getting-started-with-release-management/connecting-an-app)があることを確認してください。
-1. connected appを開いてください。
-1. 左側のナビゲーションメニューから<strong>Build distribution</strong>を選択し、<strong>Builds</strong>タブを選択してください。
-1. <strong>Upload via API</strong>をクリックしてください。
-1. アップロードURL用のcurlコマンドを取得し、続けてアップロードファイル用のcurlコマンドを取得してください。`[AUTH_TOKEN]`、`[FILE_NAME]`、`[FILE_SIZE]`、`[UPLOAD_URL]`のプレースホルダーを実際の値に置き換えてください。
+1. Release Managementに[接続済みアプリ](/release-management/getting-started-with-release-management/connecting-an-app)があることを確認します。
+1. 接続済みアプリを開きます。
+1. 左側のナビゲーションメニューから <strong>Build distribution</strong> を選択し、<strong>Builds</strong> タブを選択します。
+1. <strong>Upload via API</strong> をクリックします。
+1. アップロードURL用の curl コマンドと、ファイルをアップロードするための curl コマンドを取得します。1 つ目のコマンドでは、`[AUTH_TOKEN]`、`[FILE_NAME]`、`[FILE_SIZE]`、`[NEW_ARTIFACT_UUID]` のプレースホルダーを実際の値に置き換えます (`[NEW_ARTIFACT_UUID]` は、アーティファクト用に生成する新しい UUID です)。2 つ目のコマンドでは、`[FILE_NAME]`、`[FILE_SIZE]`、`[UPLOAD_URL]` を置き換えます。
 
-   :::tip[利用可能なBashスクリプト]
+   :::tip[Bash script available]
 
-   API呼び出しを簡単にセットアップするために使用できる[bashスクリプトへのリンク](https://github.com/bitrise-io/release-management-recipes/blob/main/api/upload_installable_artifact.sh)もあります。
+   API の呼び出しを簡単に設定できる [bash スクリプトへのリンク](https://github.com/bitrise-io/release-management-recipes/blob/main/api/upload_installable_artifact.sh)もあります。
 
    :::
-1. 準備ができたら<strong>OK, got it</strong>をクリックしてください。
-1. APIリクエストを使用してアーティファクトをアップロードしてください。
+1. 準備ができたら <strong>OK, got it</strong> をクリックします。
+1. APIリクエストを使用して、アーティファクトをアップロードします。
 
 </TabItem>
 <TabItem value="artifacts-page" label="Artifacts page">
 
-1. Release Managementに[connected app](/release-management/getting-started-with-release-management/connecting-an-app)があることを確認してください。
-1. connected appを開いてください。
-1. 左側のナビゲーションメニューから<strong>Artifacts</strong>を選択し、<strong>Upload via API</strong>タブに移動してください。
-1. <strong>Configure</strong>をクリックしてください。
+1. Release Managementに[接続済みアプリ](/release-management/getting-started-with-release-management/connecting-an-app)があることを確認します。
+1. 接続済みアプリを開きます。
+1. 左側のナビゲーションメニューから <strong>Artifacts</strong> を選択し、<strong>Upload via API</strong> タブに移動します。
+1. <strong>Configure</strong> をクリックします。
 
    ![installable-artifacts-api.png](/img/_paligo/uuid-33deefaf-a687-276f-ff84-cb0b6e45e885.png)
-1. アップロードURL用のcurlコマンドを取得し、続けてアップロードファイル用のcurlコマンドを取得してください。`[AUTH_TOKEN]`、`[FILE_NAME]`、`[FILE_SIZE]`、`[UPLOAD_URL]`のプレースホルダーを実際の値に置き換えてください。
+1. アップロードURL用の curl コマンドと、ファイルをアップロードするための curl コマンドを取得します。1 つ目のコマンドでは、`[AUTH_TOKEN]`、`[FILE_NAME]`、`[FILE_SIZE]`、`[NEW_ARTIFACT_UUID]` のプレースホルダーを実際の値に置き換えます (`[NEW_ARTIFACT_UUID]` は、アーティファクト用に生成する新しい UUID です)。2 つ目のコマンドでは、`[FILE_NAME]`、`[FILE_SIZE]`、`[UPLOAD_URL]` を置き換えます。
 
-   :::tip[利用可能なBashスクリプト]
+   :::tip[Bash script available]
 
-   API呼び出しを簡単にセットアップするために使用できる[bashスクリプトへのリンク](https://github.com/bitrise-io/release-management-recipes/blob/main/api/upload_installable_artifact.sh)もあります。
+   API の呼び出しを簡単に設定できる [bash スクリプトへのリンク](https://github.com/bitrise-io/release-management-recipes/blob/main/api/upload_installable_artifact.sh)もあります。
 
    :::
-1. 準備ができたら<strong>OK, got it</strong>をクリックしてください。
-1. APIリクエストを使用してアーティファクトをアップロードしてください。
+1. 準備ができたら <strong>OK, got it</strong> をクリックします。
+1. APIリクエストを使用して、アーティファクトをアップロードします。
 
 </TabItem>
 </Tabs>
 
-## bashスクリプトを使用する {#using-the-bash-script}
+## bash スクリプトの使用 {#using-the-bash-script}
 
-APIをより便利に使用できるように、アップロードプロセスを簡略化するbashスクリプトを用意しています。このスクリプトはLinuxディストリビューション(alpine、arch、centos、debian、fedora、rhel、ubuntu)とmacOSに対応しています。スクリプトはシステムを確認したうえで、インストール可能なアーティファクトをRelease Managementにアップロードします。
+APIをより便利に使えるように、アップロード手順を簡素化する bash スクリプトを用意しています。このスクリプトは、Linux ディストリビューション (alpine、arch、centos、debian、fedora、rhel、ubuntu) と macOS をサポートしています。スクリプトはシステムを確認した後、インストール可能なアーティファクトをRelease Managementにアップロードしようとします。
 
-スクリプトを使用するには:
+スクリプトを使用するには、次の手順を実行します。
 
-1. [GitHubからスクリプトを取得](https://gist.github.com/miklosboros/4855a59213724f6eb5960579e15d285b)してください。
-1. システムに`sudo`権限があるか、または`jq`と`openssl`のパッケージがインストールされていることを確認してください。
-1. システムで次のEnvironment VariablesをSet upしてください。
+1. [GitHubからスクリプトを取得](https://gist.github.com/miklosboros/4855a59213724f6eb5960579e15d285b)します。
+1. システムで `sudo` 権限があること、または `jq` と `openssl` のパッケージがインストールされていることを確認します。
+1. システムで次のEnvironment Variablesを Set up します。
 
    - ARTIFACT_PATH: アップロードするアーティファクトのローカルパス。
-   - AUTHORIZATION_TOKEN: Bitrise Release Management APIのアクセストークン。Bitriseの[個人アクセストークン](/bitrise-platform/accounts/personal-access-tokens)または[Workspaceトークン](/bitrise-platform/workspaces/workspace-api-token)を使用できます。
-   - CONNECTED_APP_ID: アーティファクトのアップロード先となる[connected app](/release-management/getting-started-with-release-management/connecting-an-app)のアプリID。このIDは、bitrise.io上のアプリページのURLから取得できます: https://app.bitrise.io/release-management/workspaces/WORKSPACE_ID/connected-apps/CONNECTED_APP_ID.
-1. スクリプトを実行してください。
-</content>
-</invoke>
+   - AUTHORIZATION_TOKEN: Bitrise Release Management API のアクセストークン。Bitrise [パーソナルアクセストークン](/bitrise-platform/accounts/personal-access-tokens)または [Workspace トークン](/bitrise-platform/workspaces/workspace-api-token)を使用できます。
+   - CONNECTED_APP_ID: アーティファクトのアップロード先となる[接続済みアプリ](/release-management/getting-started-with-release-management/connecting-an-app)のアプリ ID。ID は、bitrise.io のアプリのページの URL で確認できます: https://app.bitrise.io/release-management/workspaces/WORKSPACE_ID/connected-apps/CONNECTED_APP_ID.
+1. スクリプトを実行します。
