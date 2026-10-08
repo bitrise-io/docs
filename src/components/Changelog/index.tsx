@@ -9,6 +9,7 @@ import React, {
   type ReactNode,
 } from 'react';
 import clsx from 'clsx';
+import {translate} from '@docusaurus/Translate';
 import DateRangePicker, {type DateRange} from './DateRangePicker';
 import styles from './styles.module.css';
 
@@ -16,20 +17,79 @@ import styles from './styles.module.css';
 // product). Order here is the order of the filter options. `id` is what entries
 // put in `areas="..."` and what each hub's changelog page passes as `area`.
 export const AREAS = [
-  {id: 'ci', label: 'Bitrise CI'},
-  {id: 'build-cache', label: 'Build Cache'},
-  {id: 'release-management', label: 'Release Management'},
-  {id: 'platform', label: 'Platform'},
-  {id: 'build-hub', label: 'Build Hub'},
-  {id: 'insights', label: 'Insights'},
-  {id: 'rde', label: 'Remote Dev Environments'},
+  {
+    id: 'ci',
+    label: translate({
+      id: 'changelog.area.ci',
+      message: 'Bitrise CI',
+      description: 'Changelog area filter option and badge. Product name, keep in English',
+    }),
+  },
+  {
+    id: 'build-cache',
+    label: translate({
+      id: 'changelog.area.build-cache',
+      message: 'Build Cache',
+      description: 'Changelog area filter option and badge. Product name, keep in English',
+    }),
+  },
+  {
+    id: 'release-management',
+    label: translate({
+      id: 'changelog.area.release-management',
+      message: 'Release Management',
+      description: 'Changelog area filter option and badge. Product name, keep in English',
+    }),
+  },
+  {
+    id: 'platform',
+    label: translate({
+      id: 'changelog.area.platform',
+      message: 'Platform',
+      description: 'Changelog area filter option and badge. Product name, keep in English',
+    }),
+  },
+  {
+    id: 'build-hub',
+    label: translate({
+      id: 'changelog.area.build-hub',
+      message: 'Build Hub',
+      description: 'Changelog area filter option and badge. Product name, keep in English',
+    }),
+  },
+  {
+    id: 'insights',
+    label: translate({
+      id: 'changelog.area.insights',
+      message: 'Insights',
+      description: 'Changelog area filter option and badge. Product name, keep in English',
+    }),
+  },
+  {
+    id: 'rde',
+    label: translate({
+      id: 'changelog.area.rde',
+      message: 'Remote Dev Environments',
+      description: 'Changelog area filter option and badge. Product name, keep in English',
+    }),
+  },
 ] as const;
 
 // The filter options sit on two lines inside one segmented control. The split
 // (All areas + the first three areas, then the other four) is picked so both
 // lines come out about the same width at the options' natural sizes; revisit it
 // if a label changes.
-const FILTER_ITEMS = [{id: 'all', label: 'All areas'}, ...AREAS] as const;
+const FILTER_ITEMS = [
+  {
+    id: 'all',
+    label: translate({
+      id: 'changelog.filter.allAreas',
+      message: 'All areas',
+      description: 'Changelog area filter option that shows entries from every area',
+    }),
+  },
+  ...AREAS,
+] as const;
 const FILTER_ROWS = [FILTER_ITEMS.slice(0, 4), FILTER_ITEMS.slice(4)];
 
 type AreaId = (typeof AREAS)[number]['id'];
@@ -105,7 +165,12 @@ export default function Changelog({
           aria-hidden="true">
           <path d="M3 5h14M5.5 10h9M8 15h4" />
         </svg>
-        <div className={styles.segmented} role="group" aria-label="Filter by area">
+        <div className={styles.segmented} role="group"
+          aria-label={translate({
+            id: 'changelog.filter.ariaLabel',
+            message: 'Filter by area',
+            description: 'ARIA label of the changelog area filter',
+          })}>
           {FILTER_ROWS.map((row, i) => (
             <div key={i} className={styles.segmentedRow}>
               {row.map((a) => (
@@ -150,7 +215,14 @@ export function Entry({areas, children}: EntryProps): ReactElement {
             key={id}
             type="button"
             className={styles.badge}
-            title={`Show only ${AREA_LABEL[id] ?? id} entries`}
+            title={translate(
+              {
+                id: 'changelog.badge.title',
+                message: 'Show only {area} entries',
+                description: 'Tooltip of a changelog entry area badge; {area} is the area name',
+              },
+              {area: AREA_LABEL[id] ?? id},
+            )}
             onClick={() => setFilter(id as Filter)}>
             {AREA_LABEL[id] ?? id}
           </button>
@@ -193,10 +265,10 @@ const entryDate = (e: ReactElement<EntryProps>): string | undefined =>
 
 /**
  * A time bucket. Its first child is the `##` heading, so the page TOC still
- * lists the quarters. Entries are filtered here, and a quarter with no visible
- * entry is hidden along with its heading.
+ * lists the quarters. Entries are filtered here; a quarter with no visible
+ * entry keeps its heading and shows a short notice instead.
  */
-export function Quarter({children}: {children: ReactNode}): ReactElement | null {
+export function Quarter({children}: {children: ReactNode}): ReactElement {
   const {filter, range} = useContext(ChangelogContext);
 
   const all = Children.toArray(children);
@@ -218,12 +290,22 @@ export function Quarter({children}: {children: ReactNode}): ReactElement | null 
     }
     return true;
   });
-  if (visible.length === 0) return null;
-
+  // Keep the heading even when nothing matches: the TOC is built from the MDX
+  // at build time and links to every quarter, so a missing heading is a dead link.
   return (
     <>
       {rest}
-      {visible}
+      {visible.length > 0 ? (
+        visible
+      ) : (
+        <p className={styles.emptyQuarter}>
+          {translate({
+            id: 'changelog.quarter.empty',
+            message: 'No updates match the current filters in this quarter.',
+            description: 'Changelog text under a quarter heading when the area or date filter hides all its entries',
+          })}
+        </p>
+      )}
     </>
   );
 }

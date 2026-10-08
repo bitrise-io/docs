@@ -1,5 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import clsx from 'clsx';
+import Translate, {translate} from '@docusaurus/Translate';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import styles from './DateRangePicker.module.css';
 
 export interface DateRange {
@@ -8,11 +10,18 @@ export interface DateRange {
   end: string;
 }
 
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+// Month and weekday names come from Intl in the site's current locale. Dates are
+// built in UTC so the output doesn't depend on the viewer's time zone.
+const utc = (y: number, m: number, d: number): Date => new Date(Date.UTC(y, m, d));
+const monthNames = (locale: string): string[] => {
+  const f = new Intl.DateTimeFormat(locale, {month: 'long', timeZone: 'UTC'});
+  return Array.from({length: 12}, (_, i) => f.format(utc(2026, i, 1)));
+};
+// Monday first: 2024-01-01 was a Monday.
+const weekdayNames = (locale: string): string[] => {
+  const f = new Intl.DateTimeFormat(locale, {weekday: 'short', timeZone: 'UTC'});
+  return Array.from({length: 7}, (_, i) => f.format(utc(2024, 0, 1 + i)));
+};
 
 const pad = (n: number): string => String(n).padStart(2, '0');
 const iso = (y: number, m: number, d: number): string => `${y}-${pad(m + 1)}-${pad(d)}`;
@@ -22,17 +31,28 @@ function todayIso(): string {
   return iso(t.getFullYear(), t.getMonth(), t.getDate());
 }
 
-function shortDate(d: string, withYear: boolean): string {
+function shortDate(d: string, withYear: boolean, locale: string): string {
   const [y, m, day] = d.split('-').map(Number);
-  return `${MONTHS[m - 1].slice(0, 3)} ${pad(day)}${withYear ? `, ${y}` : ''}`;
+  return new Intl.DateTimeFormat(locale, {
+    month: 'short',
+    day: '2-digit',
+    year: withYear ? 'numeric' : undefined,
+    timeZone: 'UTC',
+  }).format(utc(y, m - 1, day));
 }
 
 /** "Sep 06 - Oct 06", with years when the range isn't inside the current year. */
-export function formatRange(range: DateRange | null): string {
-  if (!range) return 'All dates';
+export function formatRange(range: DateRange | null, locale = 'en'): string {
+  if (!range) {
+    return translate({
+      id: 'changelog.dateRange.allDates',
+      message: 'All dates',
+      description: 'Changelog date range button label when no date range is selected',
+    });
+  }
   const thisYear = String(new Date().getFullYear());
   const withYear = range.start.slice(0, 4) !== thisYear || range.end.slice(0, 4) !== thisYear;
-  return `${shortDate(range.start, withYear)} - ${shortDate(range.end, withYear)}`;
+  return `${shortDate(range.start, withYear, locale)} - ${shortDate(range.end, withYear, locale)}`;
 }
 
 interface View {
@@ -55,7 +75,11 @@ function YearInput({value, onCommit}: {value: number; onCommit: (y: number) => v
       min={2000}
       max={2100}
       value={text}
-      aria-label="Year"
+      aria-label={translate({
+        id: 'changelog.dateRange.yearAriaLabel',
+        message: 'Year',
+        description: 'ARIA label of the year field in the changelog date range picker',
+      })}
       onChange={(e) => {
         setText(e.target.value);
         const y = parseInt(e.target.value, 10);
@@ -76,9 +100,10 @@ interface PanelProps {
   onHover: (d: string | null) => void;
   nav: 'prev' | 'next';
   onNav: () => void;
+  locale: string;
 }
 
-function Panel({view, onView, from, to, today, onPick, onHover, nav, onNav}: PanelProps): React.ReactElement {
+function Panel({view, onView, from, to, today, onPick, onHover, nav, onNav, locale}: PanelProps): React.ReactElement {
   const offset = (new Date(view.year, view.month, 1).getDay() + 6) % 7; // Monday first
   const days = new Date(view.year, view.month + 1, 0).getDate();
   const cells: (number | null)[] = [
@@ -90,7 +115,19 @@ function Panel({view, onView, from, to, today, onPick, onHover, nav, onNav}: Pan
     <button
       type="button"
       className={styles.nav}
-      aria-label={nav === 'prev' ? 'Previous month' : 'Next month'}
+      aria-label={
+        nav === 'prev'
+          ? translate({
+              id: 'changelog.dateRange.previousMonth',
+              message: 'Previous month',
+              description: 'ARIA label of the previous-month button in the changelog date range picker',
+            })
+          : translate({
+              id: 'changelog.dateRange.nextMonth',
+              message: 'Next month',
+              description: 'ARIA label of the next-month button in the changelog date range picker',
+            })
+      }
       onClick={onNav}>
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d={nav === 'prev' ? 'M10 3L5 8l5 5' : 'M6 3l5 5-5 5'} />
@@ -104,10 +141,14 @@ function Panel({view, onView, from, to, today, onPick, onHover, nav, onNav}: Pan
         {nav === 'prev' && navButton}
         <select
           className={styles.month}
-          aria-label="Month"
+          aria-label={translate({
+            id: 'changelog.dateRange.monthAriaLabel',
+            message: 'Month',
+            description: 'ARIA label of the month dropdown in the changelog date range picker',
+          })}
           value={view.month}
           onChange={(e) => onView({...view, month: Number(e.target.value)})}>
-          {MONTHS.map((m, i) => (
+          {monthNames(locale).map((m, i) => (
             <option key={m} value={i}>
               {m}
             </option>
@@ -117,7 +158,7 @@ function Panel({view, onView, from, to, today, onPick, onHover, nav, onNav}: Pan
         {nav === 'next' && navButton}
       </div>
       <div className={styles.grid}>
-        {WEEKDAYS.map((w) => (
+        {weekdayNames(locale).map((w) => (
           <div key={w} className={styles.weekday}>
             {w}
           </div>
@@ -168,6 +209,8 @@ export default function DateRangePicker({
   const [anchor, setAnchor] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
   const root = useRef<HTMLDivElement>(null);
+  const {i18n} = useDocusaurusContext();
+  const locale = i18n.currentLocale;
 
   useEffect(() => {
     if (!open) return;
@@ -233,13 +276,18 @@ export default function DateRangePicker({
           <rect x="3" y="4.5" width="14" height="12.5" rx="2" />
           <path d="M3 8.5h14M7 3v3M13 3v3" />
         </svg>
-        {formatRange(value)}
+        {formatRange(value, locale)}
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M4 6l4 4 4-4" />
         </svg>
       </button>
       {open && (
-        <div className={styles.popover} role="dialog" aria-label="Choose a date range">
+        <div className={styles.popover} role="dialog"
+          aria-label={translate({
+            id: 'changelog.dateRange.dialogAriaLabel',
+            message: 'Choose a date range',
+            description: 'ARIA label of the changelog date range picker popover',
+          })}>
           <div className={styles.panels}>
             <Panel
               nav="prev"
@@ -251,6 +299,7 @@ export default function DateRangePicker({
               today={today}
               onPick={pick}
               onHover={setHover}
+              locale={locale}
             />
             <Panel
               nav="next"
@@ -262,6 +311,7 @@ export default function DateRangePicker({
               today={today}
               onPick={pick}
               onHover={setHover}
+              locale={locale}
             />
           </div>
           <div className={styles.footer}>
@@ -274,7 +324,11 @@ export default function DateRangePicker({
                 setAnchor(null);
                 setOpen(false);
               }}>
-              Clear dates
+              <Translate
+                id="changelog.dateRange.clear"
+                description="Button in the changelog date range picker that removes the date range">
+                Clear dates
+              </Translate>
             </button>
           </div>
         </div>
