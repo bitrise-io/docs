@@ -1,0 +1,306 @@
+---
+title: "Using App Store Connect API keys for multiple teams"
+description: "Store one App Store Connect API key per team as a Secret, and let each build pick the key of its own team."
+sidebar_position: 6
+slug: /bitrise-platform/integrations/apple-services-connection/using-api-keys-for-multiple-teams
+sidebar_label: "API keys for multiple teams"
+draft: true
+---
+
+import GlossTerm from '@site/src/components/GlossTerm';
+
+If your apps belong to many different Apple Developer teams, you need an API key for each team: an App Store Connect API key works for one team only. You can store each team's key as a <GlossTerm baseform="secret">Secret</GlossTerm>, and use a Script <GlossTerm baseform="step">Step</GlossTerm> to pick the right key at the start of every build.
+
+Apps whose team doesn't have a key yet keep using the [Apple ID connection](/bitrise-platform/integrations/apple-services-connection/connecting-to-an-apple-service-with-apple-id), so you can move from Apple ID to API keys one team at a time.
+
+:::important[Requirements]
+
+- Workspace Secrets are available on Enterprise plans only.
+- The API keys must be team keys with the **Admin** role.
+- The resolver script needs a stack with macOS 15 or later.
+
+:::
+
+
+## Adding a team's API key
+
+1. On [App Store Connect](https://appstoreconnect.apple.com/login), [generate a new team API key with Admin access](https://developer.apple.com/documentation/appstoreconnectapi/creating_api_keys_for_app_store_connect_api) under **Users and Access**.
+
+   Download the `.p8` file, and note the key ID and the issuer ID.
+1. Create the value of the Secret with `jq`:
+
+   ```bash
+   jq -nc \
+     --arg team_id AB12CD34EF \
+     --arg key_id 2X9R4HXF34 \
+     --arg issuer_id 57246542-96fe-1a63-e053-0824d011072a \
+     --rawfile private_key AuthKey_2X9R4HXF34.p8 \
+     '{team_id: $team_id, key_id: $key_id, issuer_id: $issuer_id, enterprise: false, private_key: $private_key}'
+   ```
+
+   Replace the values with your own. For an Apple Enterprise API key, set `enterprise` to `true`.
+1. On Bitrise, open **Workspace settings** and select **Shared resources**.
+1. Click **Add new**.
+1. Set the key to `ASC_API_KEY_` followed by the team ID, for example `ASC_API_KEY_AB12CD34EF`.
+1. Paste the output of the `jq` command as the value.
+1. Check **Protected**, and leave the other options unchecked.
+1. Click **Done**.
+
+The apps of the team use the API key from their next build.
+
+To replace a team's key, edit the value of its Secret. To move a team back to the Apple ID, delete its Secret.
+
+
+## Setting up your Workflows
+
+1. Add the team ID of the app as an Env Var to your `bitrise.yml`:
+
+   ```yaml
+   app:
+     envs:
+     - ASC_TEAM_ID: AB12CD34EF
+   ```
+
+1. Add a **Script** Step as the first Step of every <GlossTerm baseform="workflow">Workflow</GlossTerm> that signs or deploys your app.
+1. Copy the [resolver script](#the-resolver-script) into the **Script content** input.
+1. Set the connection inputs of your iOS Steps to the Env Vars that the script exports:
+
+   ```yaml
+   - manage-ios-code-signing@2:
+       inputs:
+       - apple_service_connection: $ASC_CONNECTION
+       - apple_team_id: $ASC_TEAM_ID
+       - api_key_path: $ASC_KEY_PATH
+       - api_key_id: $ASC_KEY_ID
+       - api_key_issuer_id: $ASC_ISSUER_ID
+       - api_key_enterprise_account: $ASC_ENTERPRISE
+   - deploy-to-itunesconnect-application-loader@2:
+       inputs:
+       - connection: $ASC_DEPLOY_CONNECTION
+       - api_key_path: $ASC_KEY_URL
+       - api_issuer: $ASC_ISSUER_ID
+   ```
+
+   For **Xcode Archive & Export for iOS**, **Xcode Build for testing for iOS**, and **Export iOS and tvOS Xcode archive**, set the **Automatic code signing method** input to `$ASC_CONNECTION` and the other inputs the same way as for Manage iOS Code Signing.
+
+   :::note[Setting all inputs]
+
+   Set every input, not just the connection method. If any of the API key inputs is empty, the Step uses the API key connected to the project instead of the Apple ID.
+
+   :::
+1. Save your changes and run a build.
+
+The build log shows which connection the build uses:
+
+```bash
+[asc-auth] ASC_AUTH mode=api-key team=AB12CD34EF key=***XF34 enterprise=no
+```
+
+If the team has no key, or the key doesn't work, the build uses the Apple ID connection and the log shows `mode=apple-id` with the reason.
+
+To make a single app use the Apple ID again, add the `ASC_FORCE_APPLE_ID` Env Var with the value `true`.
+
+### The resolver script
+
+<details>
+<summary>Show the resolver script</summary>
+
+```bash
+#!/usr/bin/env bash
+# Resolve App Store Connect authentication for the current Bitrise app.
+#
+# Decides per build whether Apple-auth steps use the App Store Connect API key
+# of the app's team (migrated teams) or the shared Bitrise Apple ID connection
+# (teams not migrated yet), and exports the step input values.
+#
+# Each team's key is one Secret named ASC_API_KEY_<TEAM_ID> (Workspace or app
+# level), holding a JSON object:
+#   {"team_id": "AB12CD34EF", "key_id": "2X9R4HXF34", "issuer_id": "...",
+#    "enterprise": false, "private_key": "-----BEGIN PRIVATE KEY-----\n..."}
+#
+# Requires jq, openssl, curl and xxd (all part of macOS 15 and later).
+#
+# Inputs (Bitrise project settings of the app):
+#   ASC_TEAM_ID                 Apple Developer team ID of the app (required)
+#   ASC_API_KEY_<TEAM_ID>       Secret with the team's API key (see above)
+#   ASC_FORCE_APPLE_ID          Optional, "true" forces Apple ID (rollback switch)
+#   ASC_STRICT                  Optional, "true" fails the build if the team's key
+#                               secret exists but does not work (instead of falling back)
+#   ASC_SKIP_SMOKE_CHECK        Optional, "true" skips the API key smoke check
+#   ASC_KEEP_KEY_SECRETS        Optional, "true" keeps the ASC_API_KEY_<TEAM_ID>
+#                               secrets visible to later steps (cleared by default)
+#
+# Outputs (env vars for subsequent steps):
+#   ASC_CONNECTION              api-key | apple-id   (manage-ios-code-signing, xcode-archive, ...)
+#   ASC_DEPLOY_CONNECTION       off | apple_id       (deploy-to-itunesconnect-* steps: they
+#                               only read the key inputs when connection is "off")
+#   ASC_KEY_PATH, ASC_KEY_URL, ASC_KEY_ID, ASC_ISSUER_ID, ASC_ENTERPRISE
+#                               set in api-key mode, empty in apple-id mode
+#                               (ASC_KEY_URL is file://.../AuthKey_<KEY_ID>.p8, the
+#                               deploy steps derive the key ID from the file name)
+set -euo pipefail
+
+log() { echo "[asc-auth] $*"; }
+warn() { echo -e "\033[33;1m[asc-auth] WARNING: $*\033[0m"; }
+fail() { echo -e "\033[31;1m[asc-auth] ERROR: $*\033[0m"; exit 1; }
+
+# Every build gets the key secrets of all teams (Workspace Secrets are shared by
+# all apps). Clear them for the steps that follow on every exit path, including
+# failures, so that always-run steps can't read them either. The resolved key is
+# passed on as a file instead.
+clear_key_secrets() {
+  [[ "${ASC_KEEP_KEY_SECRETS:-false}" == "true" ]] && return 0
+  local name count=0
+  for name in $(compgen -e | grep -E '^ASC_API_KEY_[A-Z0-9]{10}$' || true); do
+    envman unset --key "$name"
+    count=$((count + 1))
+  done
+  (( count == 0 )) || log "Cleared ${count} ASC_API_KEY_<TEAM_ID> secret(s) for later steps"
+}
+trap clear_key_secrets EXIT
+
+team_id="${ASC_TEAM_ID:-}"
+key_id=""
+issuer_id=""
+enterprise="no"
+
+[[ -n "$team_id" ]] || fail "ASC_TEAM_ID is not set for this app."
+[[ "$team_id" =~ ^[A-Z0-9]{10}$ ]] || fail "ASC_TEAM_ID (${team_id}) is not a 10 character Apple team ID."
+secret_name="ASC_API_KEY_${team_id}"
+
+export_apple_id() {
+  local reason="$1"
+  envman add --key ASC_CONNECTION --value "apple-id"
+  envman add --key ASC_DEPLOY_CONNECTION --value "apple_id"
+  # The connection override inputs are all-or-nothing in the steps. They are
+  # ignored in apple-id mode, but keep them empty so nothing is half-set.
+  envman add --key ASC_KEY_PATH --value ""
+  envman add --key ASC_KEY_URL --value ""
+  envman add --key ASC_KEY_ID --value ""
+  envman add --key ASC_ISSUER_ID --value ""
+  envman add --key ASC_ENTERPRISE --value "no"
+  log "ASC_AUTH mode=apple-id team=${team_id} reason=\"${reason}\""
+}
+
+export_api_key() {
+  local path="$1"
+  envman add --key ASC_CONNECTION --value "api-key"
+  envman add --key ASC_DEPLOY_CONNECTION --value "off"
+  envman add --key ASC_KEY_PATH --value "$path" --sensitive
+  envman add --key ASC_KEY_URL --value "file://$path" --sensitive
+  envman add --key ASC_KEY_ID --value "$key_id" --sensitive
+  envman add --key ASC_ISSUER_ID --value "$issuer_id" --sensitive
+  envman add --key ASC_ENTERPRISE --value "$enterprise"
+  log "ASC_AUTH mode=api-key team=${team_id} key=***${key_id: -4} enterprise=${enterprise}"
+}
+
+# Fall back to Apple ID, or fail in strict mode.
+api_key_broken() {
+  local reason="$1"
+  if [[ "${ASC_STRICT:-false}" == "true" ]]; then
+    fail "$reason (ASC_STRICT=true, not falling back to Apple ID)"
+  fi
+  warn "$reason - falling back to Apple ID"
+  export_apple_id "$reason"
+  exit 0
+}
+
+if [[ "${ASC_FORCE_APPLE_ID:-false}" == "true" ]]; then
+  export_apple_id "ASC_FORCE_APPLE_ID=true"
+  exit 0
+fi
+
+if [[ -z "${!secret_name:-}" ]]; then
+  export_apple_id "no ${secret_name} secret"
+  exit 0
+fi
+
+for tool in jq openssl curl xxd; do
+  command -v "$tool" >/dev/null || api_key_broken "${tool} is not installed on this stack"
+done
+
+# Read a field of the team's secret. jq reads the secret straight from the
+# environment, so the value never goes through a pipe or a temp file.
+secret_field() {
+  jq -nj --arg name "$secret_name" --arg field "$1" \
+    'env[$name] | fromjson | .[$field] // empty | if type == "string" then . else tostring end'
+}
+
+jq -ne --arg name "$secret_name" 'env[$name] | fromjson | type == "object"' >/dev/null 2>&1 \
+  || api_key_broken "${secret_name} is not a JSON object"
+
+secret_team="$(secret_field team_id)"
+key_id="$(secret_field key_id)"
+issuer_id="$(secret_field issuer_id)"
+case "$(secret_field enterprise)" in
+  true|yes) enterprise="yes" ;;
+esac
+
+if [[ -n "$secret_team" && "$secret_team" != "$team_id" ]]; then
+  api_key_broken "${secret_name} belongs to team ${secret_team}"
+fi
+[[ "$key_id" =~ ^[A-Z0-9]{10}$ ]] \
+  || api_key_broken "${secret_name} key_id is not a 10 character App Store Connect key ID"
+[[ "$issuer_id" =~ ^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$ ]] \
+  || api_key_broken "${secret_name} issuer_id is not a UUID"
+
+work_dir="$(mktemp -d "${TMPDIR:-/tmp}/asc.XXXXXX")"
+chmod 700 "$work_dir"
+key_path="${work_dir}/AuthKey_${key_id}.p8"
+(umask 077 && secret_field private_key > "$key_path")
+openssl pkey -in "$key_path" -noout 2>/dev/null \
+  || api_key_broken "${secret_name} private_key is not a valid .p8 private key"
+
+if [[ "${ASC_SKIP_SMOKE_CHECK:-false}" != "true" ]]; then
+  # Sign an ES256 JWT (same claims as go-xcode's appstoreconnect client) and
+  # call an endpoint that both regular and enterprise APIs serve.
+  if [[ "$enterprise" == "yes" ]]; then
+    host="api.enterprise.developer.apple.com" aud="apple-developer-enterprise-v1"
+  else
+    host="api.appstoreconnect.apple.com" aud="appstoreconnect-v1"
+  fi
+  b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
+  now="$(date +%s)"
+  header="$(printf '{"alg":"ES256","kid":"%s","typ":"JWT"}' "$key_id" | b64url)"
+  payload="$(printf '{"iss":"%s","iat":%d,"exp":%d,"aud":"%s"}' "$issuer_id" "$now" "$((now + 600))" "$aud" | b64url)"
+  printf '%s' "${header}.${payload}" | openssl dgst -sha256 -sign "$key_path" -out "${work_dir}/sig.der" 2>/dev/null \
+    || api_key_broken "Failed to sign the App Store Connect token with ${secret_name}"
+  # JWS ES256 wants the raw 32 byte r and s values, openssl writes a DER sequence.
+  signature="$(openssl asn1parse -inform DER -in "${work_dir}/sig.der" \
+    | awk -F: '/INTEGER/ { h = $NF; while (length(h) < 64) h = "0" h; printf "%s", substr(h, length(h) - 63) }' \
+    | xxd -r -p | b64url)"
+  rm -f "${work_dir}/sig.der"
+
+  http_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+    --max-time 30 --retry 2 --retry-connrefused \
+    --header "Authorization: Bearer ${header}.${payload}.${signature}" \
+    "https://${host}/v1/bundleIds?limit=1")" || true
+  case "$http_status" in
+    200) log "API key smoke check passed" ;;
+    401|403) api_key_broken "API key rejected by Apple (HTTP ${http_status}), check key ID, issuer ID, role and revocation" ;;
+    000|"") api_key_broken "Could not reach ${host}" ;;
+    *) api_key_broken "API key smoke check returned HTTP ${http_status}" ;;
+  esac
+fi
+
+export_api_key "$key_path"
+```
+
+</details>
+
+
+## Moving from Apple ID to API keys
+
+1. Set up your Workflows as described above, without adding any API keys.
+
+   Every build still uses the Apple ID, and the build log shows `mode=apple-id`.
+1. Add the API key of one team, and run a build of one of its apps.
+1. Check that the build log shows `mode=api-key`.
+1. Repeat steps 2 and 3 for every team.
+1. When no build shows `mode=apple-id` anymore, turn off the Apple ID connection.
+
+:::caution[Size of Secrets]
+
+Every build gets every Workspace Secret, and all Secrets of a build count toward the 256 KB size limit of its Env Vars. Each key Secret is about 380 bytes.
+
+:::
