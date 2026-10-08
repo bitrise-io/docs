@@ -21,8 +21,8 @@ Bitriseは、CIプロジェクトに適したバージョンのツールを自�
 | Declarative config | Workflow実行 |
 | --- | --- |
 | Workflowの最初のStepの前に自動的に実行されます。 | Workflow内で手動で実行されます。Workflowの途中で実行することもできます。 |
-| バージョンファイルから設定を読み取ることはできません。ツールのセットアップは[<strong>Git Clone</strong>](https://github.com/bitrise-steplib/steps-git-clone)Stepの前に実行されます。ツールのバージョンは2つのファイル（バージョンファイルと設定YAMLファイル）で定義されます。 | [<strong>Git Clone</strong>](https://github.com/bitrise-steplib/steps-git-clone)Stepの後にコマンドを実行すれば、バージョンファイルから設定を読み取れます。再利用のため、`step bundle`](/bitrise-ci/workflows-and-pipelines/steps/step-bundles)を作成し、すべてのWorkflowsでそれを参照することをお勧めします。 |
-| 追加設定は不要です。ツールはWorkflowStepsの`$PATH`で自動的に使用できるようになります。 | 専用のStepには追加設定は不要です。独自のスクリプトを使う場合は、現在のシェルまたはスクリプトステップでツールを有効にする前に、シェルのソースが必要です（詳細は以下を参照）。 |
+| バージョンファイルから設定を読み取ることはできません。ツールのセットアップは[<strong>Git Clone</strong>](https://github.com/bitrise-steplib/steps-git-clone)Stepの前に実行されます。ツールのバージョンは2つのファイル（バージョンファイルと設定YAMLファイル）で定義されます。 | [<strong>Git Clone</strong>](https://github.com/bitrise-steplib/steps-git-clone)Stepの後にコマンドを実行すれば、バージョンファイルから設定を読み取れます。再利用のため、[`step bundle`を作成](/bitrise-ci/workflows-and-pipelines/steps/step-bundles)し、すべてのWorkflowsでそれを参照することをお勧めします。 |
+| 追加設定は不要です。ツールはWorkflow Stepsの`$PATH`で自動的に使用できるようになります。 | 専用のStepには追加設定は不要です。独自のスクリプトを使う場合は、現在のシェルまたはスクリプトステップでツールを有効にする前に、シェルのソースが必要です（詳細は以下を参照）。 |
 | ローカルの開発環境は設定されません（`bitrise local run workflow_name`経由でローカルでWorkflowsを実行する場合を除きます）。 | ツールのバージョンがバージョンファイル（たとえば`.ruby-version`）で定義されており、チームの全員がツールバージョンマネージャー（たとえば`Mise`）をセットアップしている場合は、ローカルの開発環境が設定されます。 |
 
 
@@ -63,7 +63,7 @@ tools:
 
 ### 部分的なバージョン番号を設定する {#setting-partial-version-numbers}
 
-プロジェクトで正確なツールバージョンが必要ない場合は、部分的なバージョン番号を定義できます。部分的なバージョン番号を使用すると、BitriseはBitrisebuild machinesにプリインストールされているバージョン、または利用可能な最新のリリースバージョンのいずれかを確認します。
+プロジェクトで正確なツールバージョンが必要ない場合は、部分的なバージョン番号を定義できます。部分的なバージョン番号を使用すると、BitriseはBitrise build machinesにプリインストールされているバージョン、または利用可能な最新のリリースバージョンのいずれかを確認します。
 
 ツールのプリインストールされたバージョンを使用するには、`x.y:installed`構文を使用します。
 
@@ -72,7 +72,7 @@ tools:
   ruby: 3.3:installed
 ```
 
-これは、Bitrisebuild machinesにプリインストールされているRubyの3.3パッチバージョンを確認し、そのバージョンを使用します。部分的なバージョンに一致するプリインストール済みのバージョンがない場合は、一致する最も新しいバージョンが実行時にダウンロードおよびインストールされます。これによってビルドが失敗することはありません。
+これは、Bitrise build machinesにプリインストールされているRubyの3.3パッチバージョンを確認し、そのバージョンを使用します。部分的なバージョンに一致するプリインストール済みのバージョンがない場合は、一致する最も新しいバージョンが実行時にダウンロードおよびインストールされます。これによってビルドが失敗することはありません。
 
 ツールの最新リリースバージョンを使用するには、`x.y:latest`構文を使用します。
 
@@ -81,7 +81,7 @@ tools:
   ruby: 3.3:latest
 ```
 
-これにより、Bitrisebuild machinesに何がプリインストールされているかに関係なく、Rubyの最新の3.3パッチバージョンがインストールされます。
+これにより、Bitrise build machinesに何がプリインストールされているかに関係なく、Rubyの最新の3.3パッチバージョンがインストールされます。
 
 ### Workflow固有の定義 {#workflow-specific-definitions}
 
