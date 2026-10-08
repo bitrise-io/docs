@@ -324,11 +324,174 @@ class FrontmatterAndHubTests(EndToEndTests):
             with mock.patch.object(sys, "argv", argv), \
                  mock.patch.dict(sys.modules, {"anthropic": types.SimpleNamespace(Anthropic=lambda: object())}), \
                  mock.patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test"}), \
-                 mock.patch.object(T, "english_really_changed", lambda *_: False), \
+                 mock.patch.object(T, "english_at", lambda *_: PAGE), \
                  mock.patch.object(T, "translate_verified", lambda *a: calls.append(1)):
                 T.main()
             self.assertEqual(calls, [])
             self.assertEqual(open(f"{tmp}/out/docs/page.mdx").read(), "existing")
+
+
+EN_V1 = """---
+title: "Fruit"
+sidebar_position: 1
+---
+
+Intro.
+
+## Quinces {#quinces}
+
+Quince text with [a link](/quinces).
+
+### Quince details
+
+Detail text.
+
+## Plums
+
+Plum text.
+"""
+
+JA_V1 = """---
+title: "果物"
+sidebar_position: 1
+---
+
+はじめに。
+
+## マルメロ {#quinces}
+
+マルメロの[リンク](/quinces)。
+
+### マルメロの詳細 {#quince-details}
+
+詳細。
+
+## すもも {#plums}
+
+すももの本文。
+"""
+
+
+class SectionRetranslationTests(unittest.TestCase):
+    """A page whose JA counterpart matches the English at --base-ref only has
+    its changed sections sent; every other byte of the JA page is kept."""
+
+    def run_main(self, new_en, old_en=EN_V1, ja=JA_V1, translate=None):
+        calls = []
+
+        def fake(client, model, sysp, masked):
+            calls.append(masked)
+            if translate:
+                return translate(masked)
+            out = re.sub(r"^(#{1,6} )(.*)$", r"\1JA-\2", masked, flags=re.M)
+            return re.sub(r"^(%%[^%]+%% )", r"\1JA:", out, flags=re.M)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(f"{tmp}/docs")
+            os.makedirs(f"{tmp}/out/docs")
+            open(f"{tmp}/docs/page.mdx", "w", encoding="utf-8").write(new_en)
+            open(f"{tmp}/out/docs/page.mdx", "w", encoding="utf-8").write(ja)
+            argv = ["translate_docs.py", "--glossary", GLOSSARY, "--base-ref", "BASE",
+                    "--src-root", f"{tmp}/docs", "--dest-root", f"{tmp}/out/docs",
+                    "--partials-src-root", f"{tmp}/src/partials",
+                    "--partials-dest-root", f"{tmp}/out/partials", f"{tmp}/docs/page.mdx"]
+            with mock.patch.object(sys, "argv", argv), \
+                 mock.patch.dict(sys.modules, {"anthropic": types.SimpleNamespace(Anthropic=lambda: object())}), \
+                 mock.patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test"}), \
+                 mock.patch.object(T, "english_at", lambda *_: old_en), \
+                 mock.patch.object(T, "translate_verified", fake):
+                T.main()
+            return open(f"{tmp}/out/docs/page.mdx", encoding="utf-8").read(), calls
+
+    def test_only_the_changed_section_is_sent_the_rest_is_byte_identical(self):
+        out, calls = self.run_main(EN_V1.replace("Plum text.", "Plum text, revised."))
+        self.assertEqual(len(calls), 1)
+        self.assertIn("Plum text, revised.", calls[0])
+        self.assertNotIn("Quince", calls[0])
+        self.assertNotIn("%%", calls[0])  # frontmatter unchanged: not sent
+        self.assertEqual(out, JA_V1.replace("## すもも {#plums}\n\nすももの本文。",
+                                            "## JA-Plums {#plums}\n\nPlum text, revised."))
+
+    def test_new_section_is_inserted_in_english_order(self):
+        out, calls = self.run_main(EN_V1.replace("## Plums", "## Cherries\n\nCherry text.\n\n## Plums"))
+        self.assertEqual(len(calls), 1)
+        self.assertNotIn("Plum", calls[0])
+        self.assertEqual(out, JA_V1.replace("## すもも", "## JA-Cherries {#cherries}\n\nCherry text.\n\n## すもも"))
+
+    def test_removed_section_is_dropped_without_a_model_call(self):
+        out, calls = self.run_main(EN_V1.replace("### Quince details\n\nDetail text.\n\n", ""))
+        self.assertEqual(calls, [])
+        self.assertEqual(out, JA_V1.replace("### マルメロの詳細 {#quince-details}\n\n詳細。\n\n", ""))
+
+    def test_frontmatter_only_change(self):
+        out, calls = self.run_main(EN_V1.replace('title: "Fruit"', 'title: "Fruits"'))
+        self.assertEqual(calls, ["%%fm:title%% Fruits\n\n"])
+        self.assertEqual(out, JA_V1.replace('title: "果物"', 'title: "JA:Fruits"'))
+
+    def test_non_translatable_frontmatter_change_is_copied_without_a_model_call(self):
+        out, calls = self.run_main(EN_V1.replace("sidebar_position: 1", "sidebar_position: 4"))
+        self.assertEqual(calls, [])
+        self.assertEqual(out, JA_V1.replace("sidebar_position: 1", "sidebar_position: 4"))
+
+    def assert_whole_page(self, calls):
+        for text in ("Intro.", "Quince", "Plum"):
+            self.assertIn(text, calls[-1])
+
+    def test_falls_back_to_whole_page_when_ja_is_out_of_sync(self):
+        new_en = EN_V1.replace("Plum text.", "Plum text, revised.")
+        _, calls = self.run_main(new_en, ja=JA_V1.split("## すもも")[0])
+        self.assertEqual(len(calls), 1)
+        self.assert_whole_page(calls)
+
+    def test_falls_back_to_whole_page_without_base_english(self):
+        new_en = EN_V1.replace("Plum text.", "Plum text, revised.")
+        _, calls = self.run_main(new_en, old_en=None)
+        self.assertEqual(len(calls), 1)
+        self.assert_whole_page(calls)
+
+    def test_falls_back_to_whole_page_on_duplicate_ids(self):
+        new_en = EN_V1.replace("## Plums", "## Plums {#quinces}")
+        _, calls = self.run_main(new_en)
+        self.assertEqual(len(calls), 1)
+        self.assert_whole_page(calls)
+
+    def test_falls_back_to_whole_page_when_assembled_structure_differs(self):
+        # The section call drops the link; the page then has one link fewer
+        # than the English, so the whole page is translated instead.
+        new_en = EN_V1.replace("Quince text", "Quince prose")
+        drop_link_once = lambda m: (re.sub(r"\[([^\]]*)\]\(⟦p\d+⟧\)", r"\1", m)
+                                    if "Plum" not in m else m)
+        out, calls = self.run_main(new_en, translate=drop_link_once)
+        self.assertEqual(len(calls), 2)
+        self.assert_whole_page(calls)
+        self.assertIn("[a link](/quinces)", out)
+
+    def test_changelog_entry_prepended_sends_only_that_entry(self):
+        head = "<!-- changelog-entries -->\n\n## 2026 September\n\n"
+        entry = ("### <time dateTime=\"2026-09-{d}\">2026-09-{d}</time> Entry {d} {{#entry-{d}}}\n\n"
+                 "Entry {d} text. See [page](/p{d}).\n\n")
+        ja_entry = ("### <time dateTime=\"2026-09-{d}\">2026-09-{d}</time> 項目{d} {{#entry-{d}}}\n\n"
+                    "項目{d}の本文。[page](/p{d})を参照してください。\n\n")
+        old_en = head + "".join(entry.format(d=d) for d in (29, 28, 27))
+        ja = ("<!-- changelog-entries -->\n\n## 2026年9月 {#2026-september}\n\n"
+              + "".join(ja_entry.format(d=d) for d in (29, 28, 27)))
+        new_en = head + entry.format(d=30) + old_en[len(head):]
+        out, calls = self.run_main(new_en, old_en=old_en, ja=ja)
+        self.assertEqual(len(calls), 1)
+        self.assertNotIn("Entry 29", calls[0])
+        first = ja.index("### <time")
+        self.assertEqual(out, ja[:first] + entry.format(d=30).replace("### ", "### JA-") + ja[first:])
+
+
+class SplitSectionsTests(unittest.TestCase):
+    def test_round_trip_and_ids(self):
+        body = "Intro\n\n## A\n\nx\n\n```\n# not a heading\n```\n\n### B\n\ny\n## A\n"
+        sections = T.split_sections(body)
+        self.assertEqual("".join(t for _, t in sections), body)
+        self.assertEqual([k for k, _ in sections], ["", "a", "b", "a-1"])
+
+    def test_body_starting_with_a_heading_has_an_empty_preamble(self):
+        self.assertEqual(T.split_sections("## A\nx"), [("", ""), ("a", "## A\nx")])
 
 
 class PreferredTranslationsTests(unittest.TestCase):
