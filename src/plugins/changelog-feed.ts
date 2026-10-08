@@ -18,6 +18,7 @@ interface Entry {
   title: string;
   anchor: string; // explicit {#id} from heading, used as the URL fragment
   content: string;
+  areas: string[]; // hub ids from the wrapping <Entry areas="...">
 }
 
 function parseEntries(): Entry[] {
@@ -28,17 +29,26 @@ function parseEntries(): Entry[] {
   // Match H3 headings: ### <time dateTime="YYYY-MM-DD">YYYY-MM-DD</time> — Title {#anchor}
   // Also matches plain: ### YYYY-MM-DD — Title {#anchor}
   const headingRe = /^### (?:<time[^>]*>)?(\d{4}-\d{2}-\d{2})(?:<\/time>)?\s+(.+?)(?:\s*\{#([^}]+)\})?$/;
+  // <Changelog>, <Quarter> and <Entry> wrap the entries for the page UI. They
+  // are not feed content; <Entry areas="..."> precedes its H3, so remember the
+  // areas until the heading arrives.
+  const wrapperRe = /^\s*<\/?(?:Changelog|Quarter|Entry)\b/;
+  const entryAreasRe = /^\s*<Entry\s+areas="([^"]*)"/;
+  let pendingAreas: string[] = [];
   let current: Entry | null = null;
   const contentLines: string[] = [];
 
   for (const line of lines) {
+    const areasMatch = line.match(entryAreasRe);
+    if (areasMatch) pendingAreas = areasMatch[1].split(/[\s,]+/).filter(Boolean);
+    if (wrapperRe.test(line)) continue;
     const m = line.match(headingRe);
     if (m) {
       if (current) {
         current.content = contentLines.join('\n').trim();
         entries.push(current);
       }
-      current = { date: m[1], title: m[2], anchor: m[3] ?? toSlug(`${m[1]}-${m[2]}`), content: '' };
+      current = { date: m[1], title: m[2], anchor: m[3] ?? toSlug(`${m[1]}-${m[2]}`), content: '', areas: pendingAreas };
       contentLines.length = 0;
     } else if (current && !line.startsWith('## ')) {
       contentLines.push(line);
@@ -77,7 +87,7 @@ function buildRss(entries: Entry[]): string {
     <title>${escapeXml(e.title)}</title>
     <link>${escapeXml(link)}</link>
     <guid isPermaLink="false">${escapeXml(link)}</guid>
-    <pubDate>${pubDate}</pubDate>
+    <pubDate>${pubDate}</pubDate>${e.areas.map((a) => `\n    <category>${escapeXml(a)}</category>`).join('')}
     <description>${escapeXml(e.content)}</description>
   </item>`;
     })
@@ -114,6 +124,7 @@ function buildJson(entries: Entry[]): string {
       title: e.title,
       date_published: `${e.date}T00:00:00Z`,
       content_text: e.content,
+      tags: e.areas,
     })),
   };
   return JSON.stringify(feed, null, 2);
