@@ -2004,7 +2004,7 @@
       "type": "object"
     },
     "v1WarmPool": {
-      "description": "WarmPool keeps a number of sessions of one configuration booted and idle so\nthe next session created from it is one of them (\"claim\") instead of a cold\nstart. A pool is a stored session-create request — template, session input\nvalues, feature flags, machine and device overrides — plus an owner and a\npool size. The per-session fields (name, labels, auto-terminate,\nartifact) are supplied by the claim (CreateSessionRequest.warm_pool_id).\n\nThe pool is owned by the principal that owns the claimed sessions: a user\n(\"user\") or the workspace itself (\"workspace\"). User pools are private to\ntheir owner; workspace pools are shared with every member and reachable by\nWorkspace API Tokens.",
+      "description": "WarmPool keeps a number of sessions of one configuration booted and idle so\nthe next session created from it is one of them (\"claim\") instead of a cold\nstart. A pool is a stored session-create request — template, session input\nvalues, feature flags, machine and device overrides — plus a pool size.\nThe per-session fields (name, labels, auto-terminate, artifact) are\nsupplied by the claim (CreateSessionRequest.warm_pool_id).\n\nA pool belongs to the workspace: every member and Workspace API Token sees,\nclaims from and manages it. A claimed session belongs to the claimant.",
       "properties": {
         "cluster": {
           "description": "Cluster override; empty means resolved from stack + machine type.",
@@ -2051,7 +2051,7 @@
           "type": "string"
         },
         "ownerType": {
-          "description": "Who owns the pool and its sessions: \"user\" or \"workspace\" (see Session.owner_type).",
+          "description": "Who owns the pool and the sessions waiting in it: always \"workspace\"\n(see CreateWarmPoolRequest.owner_type). A claimed session is the\nclaimant's, not the pool's (see CreateSessionRequest.owner_type).",
           "type": "string"
         },
         "poolSize": {
@@ -2591,7 +2591,7 @@
                   "type": "string"
                 },
                 "warmPoolId": {
-                  "description": "Serve the link's opens from a warm pool (see WarmPool): each open claims\none of the pool's warm sessions when one is available and creates a\nsession from the pool's configuration otherwise, so the click-to-app time\nis the app download, not a VM boot. The pool must be WORKSPACE-owned (a\nuser pool's sessions carry personal credentials that must never reach an\nanonymous viewer), visible to the minter, and its configuration must boot\na device. The pool fixes the machine and the device: stack_id and\nmachine_type must be empty, and device_spec must be empty, name only the\npool's platform (what the Device Preview Step sends, detected from the\napp), or equal the pool's device. Sessions the link spawns are owned by the workspace; the\nminter is attribution. Deleting the pool invalidates every link minted\nwith it: later opens fail like an expired link. A pool that still exists\nbut no longer boots the link's device degrades the open to the ordinary\ncold path instead (ResolvePreviewLinkResponse.fallback_reason).",
+                  "description": "Serve the link's opens from a warm pool (see WarmPool): each open claims\none of the pool's warm sessions when one is available and creates a\nsession from the pool's configuration otherwise, so the click-to-app time\nis the app download, not a VM boot. The pool's configuration must boot\na device. The pool fixes the machine and the device: stack_id and\nmachine_type must be empty, and device_spec must be empty, name only the\npool's platform (what the Device Preview Step sends, detected from the\napp), or equal the pool's device. Sessions the link spawns are owned by the workspace; the\nminter is attribution. Deleting the pool invalidates every link minted\nwith it: later opens fail like an expired link. A pool that still exists\nbut no longer boots the link's device degrades the open to the ordinary\ncold path instead (ResolvePreviewLinkResponse.fallback_reason).",
                   "type": "string"
                 }
               },
@@ -2807,7 +2807,7 @@
                   "type": "string"
                 },
                 "warmPoolId": {
-                  "description": "Claim a session from a warm pool (see WarmPool) instead of building one\nfrom this request. The pool fixes the configuration, so template_id,\nsession_inputs, map_saved_to_session_inputs, enabled_feature_flag_names,\nstack_id, image, machine_type, cluster, device_spec, no_device and\nai_prompt must be empty (they are rejected, not ignored). name,\ndescription, labels, auto_terminate_minutes and artifact (device pools\nonly) apply to the claimed session.\n\nA session claimed from a WORKSPACE pool is the claimant's: owner_type\nfollows the rule above — a user gets a personal session unless they ask\nfor \"workspace\", a Workspace API Token gets a workspace-owned one. A\nwarm session is the workspace's only while it waits in the pool. Note\nthat the machine was booted without the claimant's personal state (no\nGitHub credential helper, no saved inputs) and keeps that VM for its\nwhole life — a stop and restore restarts the same machine — so anything\npersonal has to be put on it by hand (SSH, ExecuteSession). A session\nclaimed from a USER pool stays its owner's (owner_type must be empty or\n\"user\").\n\nWith a ready or warming warm session available the response is that\nsession, renamed — no machine is created (Session.warm_state \"claimed\").\nWithout one, a session is created from the pool's stored configuration\nexactly as the pool would have warmed it (Session.warm_state \"cold\"), so\na pool with pool_size 0 still works as a configuration preset.\nThe caller must be able to see the pool: a user pool only by its owner,\na workspace pool by any member or a Workspace API Token.",
+                  "description": "Claim a session from a warm pool (see WarmPool) instead of building one\nfrom this request. The pool fixes the configuration, so template_id,\nsession_inputs, map_saved_to_session_inputs, enabled_feature_flag_names,\nstack_id, image, machine_type, cluster, device_spec, no_device and\nai_prompt must be empty (they are rejected, not ignored). name,\ndescription, labels, auto_terminate_minutes and artifact (device pools\nonly) apply to the claimed session.\n\nThe claimed session is the claimant's: owner_type follows the rule above\n— a user gets a personal session unless they ask for \"workspace\", a\nWorkspace API Token gets a workspace-owned one. A warm session is the\nworkspace's only while it waits in the pool. Note that the machine was\nbooted without the claimant's personal state (no GitHub credential\nhelper, no saved inputs) and keeps that VM for its whole life — a stop\nand restore restarts the same machine — so anything personal has to be\nput on it by hand (SSH, ExecuteSession).\n\nWith a ready or warming warm session available the response is that\nsession, renamed — no machine is created (Session.warm_state \"claimed\").\nWithout one, a session is created from the pool's stored configuration\nexactly as the pool would have warmed it (Session.warm_state \"cold\"), so\na pool with pool_size 0 still works as a configuration preset.\nAny workspace member or Workspace API Token may claim from a pool.",
                   "type": "string"
                 }
               },
@@ -4489,7 +4489,7 @@
     },
     "/v1/workspaces/{workspaceId}/warm-pools": {
       "get": {
-        "description": "Lists the workspace's pools plus the caller's own user pools (default), optionally for one template. `?scope=WARM_POOL_LIST_SCOPE_ALL` lists every pool in the workspace read-only and requires the view_billing_data permission.",
+        "description": "Lists the workspace's warm pools, optionally for one template. `?scope=WARM_POOL_LIST_SCOPE_ALL` is the read-only cost view of the same pools and requires the view_billing_data permission.",
         "operationId": "CodespacesService_ListWarmPools",
         "parameters": [
           {
@@ -4508,7 +4508,7 @@
           },
           {
             "default": "WARM_POOL_LIST_SCOPE_UNSPECIFIED",
-            "description": "Which pools to list. Encoded on the REST surface as a query parameter, by\nenum name (?scope=WARM_POOL_LIST_SCOPE_ALL).\n\n - WARM_POOL_LIST_SCOPE_UNSPECIFIED: Defaults to WARM_POOL_LIST_SCOPE_VISIBLE.\n - WARM_POOL_LIST_SCOPE_VISIBLE: The workspace's pools plus the caller's own user pools — never another\nuser's. What the pools page and the template page show.\n - WARM_POOL_LIST_SCOPE_ALL: Every pool in the workspace, read-only, for cost visibility. Requires the\nworkspace's view_billing_data permission (the same gate as GetWorkspaceUsage).",
+            "description": "Which pools to list. Encoded on the REST surface as a query parameter, by\nenum name (?scope=WARM_POOL_LIST_SCOPE_ALL).\n\n - WARM_POOL_LIST_SCOPE_UNSPECIFIED: Defaults to WARM_POOL_LIST_SCOPE_VISIBLE.\n - WARM_POOL_LIST_SCOPE_VISIBLE: The workspace's pools. What the pools page and the template page show.\n - WARM_POOL_LIST_SCOPE_ALL: Every pool in the workspace, read-only, for cost visibility. Requires the\nworkspace's view_billing_data permission (the same gate as GetWorkspaceUsage).",
             "enum": [
               "WARM_POOL_LIST_SCOPE_UNSPECIFIED",
               "WARM_POOL_LIST_SCOPE_VISIBLE",
@@ -4534,7 +4534,7 @@
         ]
       },
       "post": {
-        "description": "Creates a warm pool: a stored session configuration (template, input values, feature flags, machine and device overrides) plus an owner and a pool size. The backend keeps `pool_size` sessions of that configuration booted; `CreateSession` with `warm_pool_id` is handed one of them. Set `pool_size` to 0 to drain the pool — for example from a scheduled job outside business hours.",
+        "description": "Creates a warm pool: a stored session configuration (template, input values, feature flags, machine and device overrides) plus a pool size, owned by the workspace. The backend keeps `pool_size` sessions of that configuration booted; `CreateSession` with `warm_pool_id` is handed one of them. Set `pool_size` to 0 to drain the pool — for example from a scheduled job outside business hours.",
         "operationId": "CodespacesService_CreateWarmPool",
         "parameters": [
           {
@@ -4571,7 +4571,7 @@
                   "type": "string"
                 },
                 "mapSavedToSessionInputs": {
-                  "description": "When true (user pools only), the caller's saved inputs auto-fill template\ninputs the request did not supply, matched by key. The matches are stored\nas saved-input references.",
+                  "description": "Rejected: saved inputs are personal and cannot be mapped into a pool.\nSupply every input in session_inputs instead.",
                   "type": "boolean"
                 },
                 "name": {
@@ -4583,7 +4583,7 @@
                   "type": "boolean"
                 },
                 "ownerType": {
-                  "description": "Who owns the pool: \"user\" (the calling user; the default for a user) or\n\"workspace\" (shared; the only option for a Workspace API Token).",
+                  "description": "Who owns the pool. Pools belong to the workspace: omit it or set it to\n\"workspace\". \"user\" is rejected — a personal session comes from claiming\none (CreateSessionRequest.warm_pool_id), not from a private pool.",
                   "type": "string"
                 },
                 "poolSize": {
@@ -4592,7 +4592,7 @@
                   "type": "integer"
                 },
                 "sessionInputs": {
-                  "description": "Session input values (plain values, or saved-input references on user pools).",
+                  "description": "Session input values, as plain values: saved inputs are personal and a\npool is the workspace's, so saved_input_id references are rejected.",
                   "items": {
                     "$ref": "#/definitions/v1SessionInputValue",
                     "type": "object"
