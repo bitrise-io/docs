@@ -86,6 +86,28 @@ jobs:
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
 
+      # Rebuilds the Algolia search index from this build's HTML and swaps it
+      # in atomically (scripts/build-search-index.js, then
+      # scripts/upload-search-index.js). Runs after the deploy so the index
+      # matches what is live, and only on main (or a manual run on main), so
+      # PR previews never touch the production index. continue-on-error: an
+      # indexing problem must not fail an otherwise good docs deploy; the
+      # failure still shows on the run. The records go to RUNNER_TEMP, not
+      # build/, so they can never end up in a deploy. Skipped, with a notice,
+      # until the ALGOLIA_WRITE_API_KEY secret exists.
+      - name: Update Algolia search index
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          ALGOLIA_WRITE_API_KEY: ${{ secrets.ALGOLIA_WRITE_API_KEY }}
+        run: |
+          if [ -z "$ALGOLIA_WRITE_API_KEY" ] || [ -z "$ALGOLIA_APP_ID" ] || [ -z "$ALGOLIA_INDEX_NAME" ]; then
+            echo "::notice::Algolia indexing skipped: ALGOLIA_APP_ID, ALGOLIA_INDEX_NAME or the ALGOLIA_WRITE_API_KEY secret is not set."
+            exit 0
+          fi
+          node scripts/build-search-index.js --dir build/en --out "$RUNNER_TEMP/search-index"
+          node scripts/upload-search-index.js --dir "$RUNNER_TEMP/search-index" --upload
+
       - name: Comment preview URL
         if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
         uses: actions/github-script@v7
