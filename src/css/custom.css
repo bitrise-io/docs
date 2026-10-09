@@ -364,18 +364,28 @@ html.plugin-pages .navbar__items--right > div:has(> .DocSearch-Button) {
   }
 }
 
+/* The modal's bottom row (keyboard hints and the "Powered by Algolia" logo)
+   is hidden. !important because DocSearch's own stylesheet loads lazily,
+   after this one, so an equal-specificity rule here would otherwise lose by
+   source order alone. */
+.DocSearch-Footer {
+  display: none !important;
+}
+
 /* ---- Ask AI panel ----
    Covers .DocSearch-Dropdown in place, inside the same .DocSearch-Modal
    frame, while ask-ai mode is active (see useAskAiPanelHost/AskAiPanel in
    the swizzled SearchBar) — same rounded card, same position on screen, no
-   separate overlay/window. 56px/51px match .DocSearch-SearchBar's and
-   .DocSearch-Footer's own fixed heights (DocSearch doesn't expose those as
-   CSS variables to reference instead); the 2px overlap on each edge covers
-   a hairline sub-pixel gap otherwise left at the exact boundary, letting a
-   sliver of the underlying results list show through. */
+   separate overlay/window. 54px matches .DocSearch-SearchBar's own fixed
+   height (DocSearch doesn't expose it as a CSS variable to reference
+   instead), with a 2px overlap that covers a hairline sub-pixel gap
+   otherwise left at the exact boundary, letting a sliver of the underlying
+   results list show through. The bottom edge is the modal's own, since the
+   footer row is hidden above. */
 .ask-ai-panel-host {
   position: absolute;
-  inset: 54px 0 49px 0;
+  inset: 54px 0 0 0;
+  border-radius: 0 0 var(--docsearch-border-radius, 8px) var(--docsearch-border-radius, 8px);
   background: var(--docsearch-modal-background, var(--ifm-background-color));
   overflow: auto;
   z-index: 1;
@@ -965,8 +975,35 @@ article:has([data-product-overview]) > .markdown {
     display: contents;
   }
 
+  /* The right-hand group (locale switcher, support / sign-up buttons) stays
+     hidden on phones, but the search button has to survive: unwrap the
+     group and hide everything except the search, which becomes a compact
+     icon-only button next to the menu toggle. */
   .navbar__items--right {
+    display: contents !important;
+  }
+
+  .navbar__items--right > :not(div:has(> .DocSearch-Button)) {
     display: none !important;
+  }
+
+  .navbar__items--right > div:has(> .DocSearch-Button) {
+    position: static;
+    height: auto;
+    order: 1;
+  }
+
+  .navbar__items--right > div:has(> .DocSearch-Button) .DocSearch-Button {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+    margin: 0 0.5rem 0 0;
+  }
+
+  .navbar__items--right > div:has(> .DocSearch-Button) .DocSearch-Button-Placeholder,
+  .navbar__items--right > div:has(> .DocSearch-Button) .DocSearch-Button-Keys {
+    display: none;
   }
 
   .navbar__brand {
