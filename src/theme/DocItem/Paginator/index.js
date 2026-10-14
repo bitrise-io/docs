@@ -12,12 +12,16 @@ import SeeAlso from '@site/src/components/SeeAlso';
  * Shared by both regular docs (DocItem/Layout) and API reference pages
  * (ApiItem/Layout), but API reference pages are excluded from the embedding
  * corpus (see scripts/generate_see_also.py), so SeeAlso renders nothing there.
+ *
+ * A page with `see_also: false` in its frontmatter (the changelogs) opts out.
+ * The generator already leaves such pages out of see_also.json; this check
+ * keeps the section off the page even if the data file is stale.
  */
 export default function DocItemPaginator(props) {
-  const { metadata } = useDoc();
+  const { metadata, frontMatter } = useDoc();
   return (
     <>
-      <SeeAlso id={metadata.id} />
+      {frontMatter.see_also !== false && <SeeAlso id={metadata.id} />}
       <OriginalDocItemPaginator {...props} />
     </>
   );
