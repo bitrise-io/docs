@@ -512,7 +512,7 @@ const config: Config = {
     // arrives as an empty string.
     algolia: {
       appId: process.env.ALGOLIA_APP_ID || 'HI1538U2K4',
-      apiKey: process.env.ALGOLIA_SEARCH_API_KEY || 'f817c83dbdb923d880c215c9380d1107',
+      apiKey: process.env.ALGOLIA_SEARCH_API_KEY || '34dffb8555663a63f6a68a11730657a4',
       indexName: process.env.ALGOLIA_INDEX_NAME || 'docs_bitrise_io',
       contextualSearch: true,
     },
