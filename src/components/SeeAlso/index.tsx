@@ -3,12 +3,18 @@ import {translate} from '@docusaurus/Translate';
 import Link from '@docusaurus/Link';
 import {useDocsVersion, useDocsData} from '@docusaurus/plugin-content-docs/client';
 import IconBook from '@site/src/images/icon-book-16px.svg';
+import IconDoc16 from '@site/src/images/icon-doc-16px.svg';
+import IconDoc24 from '@site/src/images/icon-doc-24px.svg';
 import seeAlso from '@site/src/data/see_also.json';
 import styles from './styles.module.css';
 
 const relatedIdsByDoc: Record<string, string[]> = seeAlso as Record<string, string[]>;
 
-type ResolvedLink = {id: string; title: string; permalink: string};
+// Icon size under evaluation: 16 or 24.
+const LINK_ICON_SIZE: 16 | 24 = 16;
+const LinkIcon = LINK_ICON_SIZE === 16 ? IconDoc16 : IconDoc24;
+
+type ResolvedLink ={id: string; title: string; permalink: string};
 
 /**
  * `see_also.json` maps a doc id to its related pages' doc ids -- no titles,
@@ -57,6 +63,7 @@ export default function SeeAlso({id}: {id?: string}): React.JSX.Element | null {
         {links.map((link) => (
           <li key={link.id} className={styles.item}>
             <Link to={link.permalink} className={styles.link}>
+              <LinkIcon width={LINK_ICON_SIZE} height={LINK_ICON_SIZE} className={styles.linkIcon} aria-hidden="true" />
               {link.title}
             </Link>
           </li>
