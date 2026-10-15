@@ -6,7 +6,7 @@
  * on the active one. The link-computation logic (useLocaleDropdownUtils)
  * is untouched, copied verbatim from the stock component.
  */
-import React, {useEffect, useRef, useState, type ReactNode} from 'react';
+import React, {type ReactNode} from 'react';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import {useAlternatePageUtils} from '@docusaurus/theme-common/internal';
 import {mergeSearchStrings, useHistorySelector} from '@docusaurus/theme-common';
@@ -15,6 +15,7 @@ import {translate} from '@docusaurus/Translate';
 import type {Props} from '@theme/NavbarItem/LocaleDropdownNavbarItem';
 import IconCheck from '@site/src/images/icon-check-16px.svg';
 import IconGlobe from '@site/src/images/icon-globe-24px.svg';
+import useDropdown from '@site/src/components/NavbarDropdown/useDropdown';
 
 import styles from './styles.module.css';
 
@@ -76,32 +77,7 @@ export default function LocaleDropdownNavbarItem({
   const {
     i18n: {currentLocale, locales, localeConfigs},
   } = useDocusaurusContext();
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) {
-      return undefined;
-    }
-    const onPointerDown = (event: MouseEvent | TouchEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onPointerDown);
-    document.addEventListener('touchstart', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown);
-      document.removeEventListener('touchstart', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [open]);
+  const {open, setOpen, rootRef} = useDropdown();
 
   return (
     <div className={styles.localeSwitcher} ref={rootRef}>
