@@ -253,21 +253,6 @@ export const renderCodeBlocksWithHighlightJs = () => {
   });
 };
 
-export const renderNavbarSearch = () => {
-  const navbarHeader = document.querySelector('.navbar-header');
-  const searchField = document.createElement('div');
-  searchField.className = 'navbar-search';
-  searchField.id = 'searchWidgetTrigger';
-  searchField.innerHTML = `
-    <input type="text" name="q" placeholder="Search all documentation" aria-label="Search" />
-  `;
-  navbarHeader.insertAdjacentElement('afterend', searchField);
-
-  if (import.meta.webpackHot) onReset(() => {
-    searchField.remove();
-  });
-};
-
 export const detectOverviewContainer = () => {
   const overviewContainer = document.querySelector('aside.section-nav-container');
   if (!overviewContainer) document.querySelector(".site-content").classList.add('no-overview');
@@ -418,47 +403,3 @@ export const renderNavbarLanguageSwitcher = () => {
   });
 };
 
-export const genSearchWidgetFixer = ({ fixedHeight, intervalDelay }) => {
-  let genSearchWidget;
-  let ucsResults;
-  let ucsSummary;
-  let ucsSearchBar;
-  let loaderContainer;
-
-  window.setInterval(() => {
-    if (!genSearchWidget) genSearchWidget = document.querySelector("gen-search-widget");
-    if (genSearchWidget) {
-      if (!ucsResults) ucsResults = genSearchWidget.shadowRoot?.querySelector("ucs-results");
-      if (ucsResults) {
-        if (!ucsSummary) ucsSummary = ucsResults.shadowRoot?.querySelector("ucs-summary");
-        if (ucsSummary) {
-          if (!loaderContainer && ucsSummary.shadowRoot?.querySelector(".loader-container")) {
-            console.log('Loading started');
-          }
-          loaderContainer = ucsSummary.shadowRoot?.querySelector(".loader-container");
-          if (loaderContainer) {
-            loaderContainer.style.height = `${fixedHeight + 45}px`;
-          }
-          const summaryContainer = ucsSummary.shadowRoot?.querySelector(".summary-container");
-          if (summaryContainer) {
-            summaryContainer.style.height = summaryContainer.className.match(/expanded/) ? "auto" : `${fixedHeight}px`;
-          }
-        }
-        if (!ucsSearchBar) ucsSearchBar = genSearchWidget.shadowRoot?.querySelector("ucs-search-bar");
-        if (ucsSearchBar) {
-          const searchInput = ucsSearchBar.shadowRoot?.querySelector("input");
-          if (!searchInput.dataset.handled) {
-            searchInput.dataset.handled = 'true';
-            searchInput.addEventListener('keyup', (event) => {
-              if (event.key === 'Enter' || event.keyCode === 13) {
-                console.log('Search triggered by Enter key', searchInput.value);
-              }
-            });
-          }
-          searchInput.placeholder = 'Press Enter to search';
-        }
-      }
-    }
-  }, intervalDelay);
-};
-// TEST: genSearchWidgetFixer({ fixedHeight: 300, intervalDelay: 50 });

@@ -150,6 +150,12 @@ function injectApiSidebar(items: any[]): any[] {
   });
 }
 
+// Real support traffic only: on by default for production builds; set
+// ENABLE_INTERCOM=true to verify the Messenger (and the Ask Fin button that
+// opens it) on a local dev server.
+const intercomEnabled =
+  process.env.NODE_ENV === 'production' || process.env.ENABLE_INTERCOM === 'true';
+
 const config: Config = {
   title: 'Bitrise Docs',
   tagline: DEFAULT_DESCRIPTION,
@@ -293,18 +299,12 @@ const config: Config = {
           },
         ]
       : []),
-    ...(process.env.GEN_SEARCH_WIDGET_ID
-      ? [
-          {
-            src: 'https://cloud.google.com/ai/gen-app-builder/client?hl=en_US',
-            async: true,
-          },
-        ]
-      : []),
+    // The Vertex AI Search script (<gen-search-widget>) is not listed here: it
+    // used to load on every page. The search modal loads it the first time it
+    // opens instead — see src/theme/SearchBar/widgetScript.js.
   ],
 
   clientModules: [
-    './src/clientModules/genSearchWidget.ts',
     './src/clientModules/intercomWidget.ts',
   ],
 
@@ -312,10 +312,7 @@ const config: Config = {
     gtmId: process.env.GTM_ID || '',
     genSearchWidgetConfigId: process.env.GEN_SEARCH_WIDGET_ID || '',
     intercomAppId: 'e2rdidtm',
-    // Real support traffic only: on by default for production builds; set
-    // ENABLE_INTERCOM=true to verify the widget on a local dev server.
-    intercomEnabled:
-      process.env.NODE_ENV === 'production' || process.env.ENABLE_INTERCOM === 'true',
+    intercomEnabled,
   },
 
   plugins: [
@@ -481,6 +478,10 @@ const config: Config = {
       },
       items: [
         {
+          type: 'search',
+          position: 'right',
+        },
+        {
           type: 'localeDropdown',
           position: 'right',
         },
@@ -498,6 +499,22 @@ const config: Config = {
         },
       ],
       hideOnScroll: false,
+    },
+    // Always configured: the navbar's search item (src/theme/SearchBar) imports
+    // from the Algolia theme, which only loads when this block exists, so a
+    // build without it fails to compile. The defaults are the production app
+    // (search-only key, public by design, same as in every visitor's browser),
+    // so `npm start` and `npm run build` work without any setup. The ALGOLIA_*
+    // variables override them: the production deploy sets the same values as
+    // repository variables (.github/workflows/deploy.yml, which refuses to
+    // deploy main without them), and a local preview of an index experiment
+    // can point at another app. `||`, not `??`: an unset repository variable
+    // arrives as an empty string.
+    algolia: {
+      appId: process.env.ALGOLIA_APP_ID || 'HI1538U2K4',
+      apiKey: process.env.ALGOLIA_SEARCH_API_KEY || 'f817c83dbdb923d880c215c9380d1107',
+      indexName: process.env.ALGOLIA_INDEX_NAME || 'docs_bitrise_io',
+      contextualSearch: true,
     },
     colorMode: {
       disableSwitch: true,
