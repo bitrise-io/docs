@@ -284,6 +284,23 @@ const config: Config = {
         href: 'https://fonts.googleapis.com/css2?family=Figtree:wght@300..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&display=swap',
       },
     },
+    {
+      // Resolves the "System" color mode before first paint, so a changed OS
+      // setting doesn't flash the previously stored theme. Docusaurus's own
+      // script restores the stored light/dark choice; this one only corrects
+      // it for System, and writes the result back so both agree. Keep in sync
+      // with src/theme/Navbar/ColorModeToggle.
+      tagName: 'script',
+      attributes: {},
+      innerHTML: `(function () {
+  try {
+    if (localStorage.getItem('bitkitColorMode') !== 'system') return;
+    var mode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', mode);
+    localStorage.setItem('theme', mode);
+  } catch (e) {}
+})();`,
+    },
   ],
 
   scripts: [
@@ -482,10 +499,6 @@ const config: Config = {
           position: 'right',
         },
         {
-          type: 'localeDropdown',
-          position: 'right',
-        },
-        {
           href: 'https://support.bitrise.io/en/',
           label: 'Go to support',
           position: 'right',
@@ -496,6 +509,10 @@ const config: Config = {
           label: 'Start for free',
           position: 'right',
           className: 'navbar-btn navbar-btn--solid',
+        },
+        {
+          type: 'localeDropdown',
+          position: 'right',
         },
       ],
       hideOnScroll: false,
@@ -517,7 +534,8 @@ const config: Config = {
       contextualSearch: true,
     },
     colorMode: {
-      disableSwitch: true,
+      // The toggle is our own Light / Dark / System menu (src/theme/Navbar/ColorModeToggle).
+      disableSwitch: false,
     },
     footer: {
       style: 'dark',

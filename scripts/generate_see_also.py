@@ -22,6 +22,14 @@ output. A locale-prefixed permalink (`/en/...`, `/ja/...`) also resolves, for
 anything pasted from a browser URL, but isn't the form to write -- this
 repo's cross-reference convention is bare, locale-less paths (see CLAUDE.md).
 
+A page can opt out of the feature entirely with:
+
+    see_also: false
+
+Such a page gets no See also section and is never suggested from other pages
+(the same treatment as landing pages). Use it for pages that aren't topical
+reading, like the changelogs.
+
 The output maps each page's doc id to a list of its related pages' doc ids --
 no titles, no hrefs. Display data (title, locale-correct permalink) is
 resolved live at render time by <SeeAlso> via Docusaurus's own per-locale doc
@@ -205,6 +213,11 @@ def load_doc_metadata():
             continue
 
         front_matter = meta.get("frontMatter", {}) or {}
+        # `see_also: false` opts a page out as both source and target, e.g. the
+        # changelogs. Skipped here, like a landing page, so it never reaches
+        # the embedding corpus or any other page's neighbors.
+        if front_matter.get("see_also") is False:
+            continue
         docs.append({
             "id": doc_id,
             "source": source,
