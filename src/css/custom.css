@@ -43,7 +43,7 @@
 
 /* ---- Dark theme overrides ---- */
 
-[data-theme='dark'] {
+:root[data-theme='dark'] {
   --ifm-color-primary: var(--pal-purple-70);
   --ifm-color-primary-dark: var(--pal-purple-60);
   --ifm-color-primary-darker: var(--pal-purple-50);
@@ -52,7 +52,8 @@
   --ifm-color-primary-lighter: var(--pal-purple-90);
   --ifm-color-primary-lightest: var(--pal-purple-93);
 
-  /* IFM's own dark values would otherwise win over the :root ones above. */
+  /* The :root[...] selector outranks IFM's own dark values, which would
+     otherwise replace these with its stock grays. */
   --ifm-background-color: var(--sys-bg-surface);
   --ifm-background-surface-color: var(--sys-bg-surface);
   --ifm-navbar-background-color: var(--pal-purple-30);
@@ -277,7 +278,7 @@
 
 .sidebar-bottom-link svg {
   flex-shrink: 0;
-  color: #6B6279;
+  color: var(--sys-fg-secondary);
 }
 
 .sidebar-bottom-link-arrow {
@@ -292,7 +293,13 @@
 .theme-doc-sidebar-item-category-level-1 svg,
 .theme-doc-sidebar-item-link-level-1 svg {
   flex-shrink: 0;
-  color: #6B6279;
+  color: var(--sys-fg-secondary);
+}
+
+/* The active item's icon takes the accent color in dark mode. */
+[data-theme='dark'] .theme-doc-sidebar-item-category-level-1 > .menu__list-item-collapsible > .menu__link--active svg,
+[data-theme='dark'] .theme-doc-sidebar-item-link-level-1 > .menu__link--active svg {
+  color: var(--sys-interactive-base);
 }
 
 /* Menu items */
@@ -340,6 +347,12 @@
   filter: none;
   transform: rotate(0) !important;
   transition: transform 0.2s;
+}
+
+/* The caret is a dark background image; light it up in dark mode (the
+   second drop-shadow layers the glyph on itself to match the icon weight). */
+[data-theme='dark'] .menu__link--sublist-caret::after {
+  filter: invert(1) drop-shadow(0 0 0 #fff);
 }
 
 .menu__list-item:not(.menu__list-item--collapsed) > .menu__list-item-collapsible .menu__link--sublist-caret::after {
