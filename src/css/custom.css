@@ -43,7 +43,7 @@
 
 /* ---- Dark theme overrides ---- */
 
-[data-theme='dark'] {
+:root[data-theme='dark'] {
   --ifm-color-primary: var(--pal-purple-70);
   --ifm-color-primary-dark: var(--pal-purple-60);
   --ifm-color-primary-darker: var(--pal-purple-50);
@@ -52,7 +52,10 @@
   --ifm-color-primary-lighter: var(--pal-purple-90);
   --ifm-color-primary-lightest: var(--pal-purple-93);
 
-  --ifm-background-color: #1a1a2e;
+  /* The :root[...] selector outranks IFM's own dark values, which would
+     otherwise replace these with its stock grays. */
+  --ifm-background-color: var(--sys-bg-surface);
+  --ifm-background-surface-color: var(--sys-bg-surface);
   --ifm-navbar-background-color: var(--pal-purple-30);
 }
 
@@ -203,13 +206,13 @@
 /* ---- Sidebar ---- */
 
 .theme-doc-sidebar-container {
-  border-right: 1px solid var(--pal-neutral-90) !important;
+  border-right: 1px solid var(--sys-border-subtle) !important;
   --doc-sidebar-width: 320px !important;
 }
 
 /* "← Home" link */
 .theme-doc-sidebar-menu > .theme-doc-sidebar-item-link:first-child .menu__link {
-  color: var(--pal-purple-50);
+  color: var(--sys-interactive-base);
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
@@ -219,7 +222,7 @@
 
 .theme-doc-sidebar-menu > .theme-doc-sidebar-item-link:first-child .menu__link:hover {
   background: none;
-  color: var(--pal-purple-40);
+  color: var(--sys-interactive-strong);
 }
 
 /* Product title (HTML sidebar item) */
@@ -227,10 +230,10 @@
   font-size: 19px;
   font-weight: 700;
   line-height: 28px;
-  color: var(--pal-purple-10);
+  color: var(--sys-fg-primary);
   padding: 6px 24px 16px;
   margin-top: 8px;
-  border-bottom: 1px solid var(--pal-neutral-93);
+  border-bottom: 1px solid var(--sys-border-minimal);
   margin-bottom: 12px;
 }
 
@@ -241,7 +244,7 @@
 
 /* Bottom sidebar links (Changelog, Integration Steps, Workflow Recipes) */
 .sidebar-bottom-links {
-  border-top: 1px solid var(--pal-neutral-90);
+  border-top: 1px solid var(--sys-border-subtle);
   padding: 12px 0;
   display: flex;
   flex-direction: column;
@@ -251,7 +254,7 @@
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
-  color: var(--pal-purple-10);
+  color: var(--sys-fg-primary);
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -261,21 +264,21 @@
 
 .sidebar-bottom-link--active,
 .sidebar-bottom-link--active:hover {
-  background: var(--pal-purple-95);
-  border-right: 2px solid var(--pal-purple-50);
+  background: var(--sys-interactive-minimal);
+  border-right: 2px solid var(--sys-interactive-base);
   font-weight: 600;
-  color: var(--pal-purple-10);
+  color: var(--sys-fg-primary);
 }
 
 .sidebar-bottom-link:hover {
-  color: var(--pal-purple-10);
-  background: var(--pal-neutral-95);
+  color: var(--sys-fg-primary);
+  background: var(--sys-bg-minimal);
   text-decoration: none;
 }
 
 .sidebar-bottom-link svg {
   flex-shrink: 0;
-  color: #6B6279;
+  color: var(--sys-fg-secondary);
 }
 
 .sidebar-bottom-link-arrow {
@@ -290,7 +293,13 @@
 .theme-doc-sidebar-item-category-level-1 svg,
 .theme-doc-sidebar-item-link-level-1 svg {
   flex-shrink: 0;
-  color: #6B6279;
+  color: var(--sys-fg-secondary);
+}
+
+/* The active item's icon takes the accent color in dark mode. */
+[data-theme='dark'] .theme-doc-sidebar-item-category-level-1 > .menu__list-item-collapsible > .menu__link--active svg,
+[data-theme='dark'] .theme-doc-sidebar-item-link-level-1 > .menu__link--active svg {
+  color: var(--sys-interactive-base);
 }
 
 /* Menu items */
@@ -298,26 +307,26 @@
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
-  color: var(--pal-purple-10);
+  color: var(--sys-fg-primary);
   padding: 8px 20px 8px 24px;
   border-radius: 0;
 }
 
 .menu__link:hover {
-  color: var(--pal-purple-10);
-  background: var(--pal-neutral-95);
+  color: var(--sys-fg-primary);
+  background: var(--sys-bg-minimal);
 }
 
 .menu__link--active:not(.menu__link--sublist) {
-  background: var(--pal-purple-95) !important;
-  border-right: 2px solid var(--pal-purple-50);
+  background: var(--sys-interactive-minimal) !important;
+  border-right: 2px solid var(--sys-interactive-base);
   font-weight: 600;
-  color: var(--pal-purple-10);
+  color: var(--sys-fg-primary);
 }
 
 .menu__link--sublist.menu__link--active {
   font-weight: 600;
-  color: var(--pal-purple-10);
+  color: var(--sys-fg-primary);
   background: none;
 }
 
@@ -338,6 +347,12 @@
   filter: none;
   transform: rotate(0) !important;
   transition: transform 0.2s;
+}
+
+/* The caret is a dark background image; light it up in dark mode (the
+   second drop-shadow layers the glyph on itself to match the icon weight). */
+[data-theme='dark'] .menu__link--sublist-caret::after {
+  filter: invert(1) drop-shadow(0 0 0 #fff);
 }
 
 .menu__list-item:not(.menu__list-item--collapsed) > .menu__list-item-collapsible .menu__link--sublist-caret::after {
@@ -369,7 +384,7 @@
 }
 
 .breadcrumbs__item:not(:last-child) .breadcrumbs__link {
-  color: var(--pal-neutral-50);
+  color: var(--sys-neutral-base);
 }
 
 .breadcrumbs__item--active {
@@ -387,7 +402,7 @@
 
 .breadcrumbs__item:first-child .breadcrumbs__link {
   padding-left: 0;
-  color: var(--pal-purple-50);
+  color: var(--sys-interactive-base);
 }
 
 .breadcrumbs__item:not(:last-child)::after {
@@ -406,24 +421,24 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
-  color: var(--pal-purple-10);
+  color: var(--sys-fg-primary);
   margin-bottom: 8px;
 }
 
 .table-of-contents {
   font-size: 0.875rem;
   line-height: 1.25rem;
-  border-left: 1px solid var(--pal-neutral-90) !important;
+  border-left: 1px solid var(--sys-border-subtle) !important;
   padding-top: 0;
   padding-bottom: 0;
 }
 
 .table-of-contents__link {
-  color: var(--pal-neutral-40);
+  color: var(--sys-fg-secondary);
 }
 
 .table-of-contents .table-of-contents__link.table-of-contents__link--active {
-  color: var(--pal-purple-10);
+  color: var(--sys-fg-primary);
   font-weight: 600;
   position: relative;
 }
@@ -435,7 +450,7 @@
   top: 0;
   bottom: 0;
   width: 2px;
-  background: var(--pal-purple-50);
+  background: var(--sys-interactive-base);
   border-radius: 2px;
 }
 
@@ -464,7 +479,7 @@
   mask-image: url('../images/icon-link-16px.svg');
   mask-size: contain;
   mask-repeat: no-repeat;
-  background-color: var(--pal-purple-40);
+  background-color: var(--sys-interactive-strong);
   opacity: 0;
   transition: opacity 0.15s;
 }
@@ -507,7 +522,7 @@
   position: relative;
   padding-left: var(--step-padding-left);
   margin-left: var(--step-margin-left);
-  border-left: 1px solid var(--pal-purple-90);
+  border-left: 1px solid var(--sys-interactive-moderate);
   padding-bottom: 1rem;
 }
 
@@ -533,11 +548,11 @@
   width: 1.5rem;
   height: 1.5rem;
   border-radius: 1rem;
-  background-color: white;
-  border: 1px solid var(--pal-purple-90);
+  background-color: var(--sys-bg-surface);
+  border: 1px solid var(--sys-interactive-moderate);
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--pal-purple-40);
+  color: var(--sys-interactive-strong);
   transform: translate(
     calc(-1 * (var(--step-padding-left) + var(--step-margin-left))),
     0
@@ -689,12 +704,12 @@ article:has([data-product-overview]) > .markdown {
   gap: 6px;
   margin-bottom: 1.5rem;
   padding: 6px 14px;
-  border: 1px solid var(--pal-neutral-80);
+  border: 1px solid var(--sys-border-strong);
   border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
   line-height: 1;
-  color: var(--pal-purple-10);
+  color: var(--sys-fg-primary);
   text-decoration: none;
   transition: background 0.15s, border-color 0.15s;
 }
@@ -709,9 +724,9 @@ article:has([data-product-overview]) > .markdown {
 }
 
 .changelog-subscribe-btn:hover {
-  background: var(--pal-neutral-95);
-  border-color: var(--pal-neutral-60);
-  color: var(--pal-purple-10);
+  background: var(--sys-bg-minimal);
+  border-color: var(--sys-border-emphasized);
+  color: var(--sys-fg-primary);
   text-decoration: none;
 }
 
@@ -990,7 +1005,7 @@ html:not(.api-reference-page) .tabs-container .tabs__item--active:hover {
 }
 
 .card-table th {
-  background: var(--pal-neutral-93);
+  background: var(--sys-bg-subtle);
   color: var(--sys-fg-primary);
   font-weight: 700;
 }
