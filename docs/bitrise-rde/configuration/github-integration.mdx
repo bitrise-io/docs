@@ -18,15 +18,30 @@ When you enable the integration, Bitrise plants a short-lived GitHub access toke
 - No long-lived credential is ever stored on the machine.
 - Commits you author in a session are attributed to your GitHub account, using your GitHub noreply email address so your real email address is never exposed.
 
+## Before you start
+
+The integration needs two separate things on GitHub, and connecting your account only takes care of the first one:
+
+- **Your GitHub account connection**: authorizes the Bitrise GitHub App to act as you. You set this up in the steps below.
+- **A Bitrise GitHub App installation**: gives the app access to repositories. The GitHub App must be installed to the account or organization that owns the repository on GitHub, and the app installation must be enabled for the repository.
+
+:::important[Install the Bitrise GitHub App to your organization]
+
+Connecting your account doesn't install the app. If the Bitrise GitHub App isn't installed to the organization that owns your repositories, the integration shows as connected but every clone of a private repository fails.
+
+If your Workspace already uses the GitHub App for CI, the app is installed: check that the installation is enabled for the repositories you need. If not, install the app as described in [Connecting a GitHub app from the Workspace settings page](/bitrise-platform/repository-access/github-app-integration#connecting-a-github-app-from-the-workspace-settings-page). If you are not authorized on GitHub to install the app, you can still request the installation. Once a GitHub Admin approves the installation, sessions can access the repositories.
+
+:::
+
 ## Enabling the integration
 
 1. Open Bitrise.
 1. <Partial_GettingToYourProfileSettings />
 1. Select **Connected accounts**, then connect **GitHub** through the Bitrise GitHub App.
 
-   :::info[Workspace-level GitHub App connections don't count]
+   :::info[A Workspace-level connection isn't enough on its own]
 
-   This integration checks your personal GitHub account connection, not a GitHub App installed at the Workspace level. Even if your organization's admin already connected the Bitrise GitHub App for CI, you still need to connect your own account on the **Connected accounts** page.
+   This integration issues tokens through your personal GitHub account connection. Even if your organization's admin already connected the Bitrise GitHub App for CI, you still need to connect your own account on the **Connected accounts** page. The Workspace's app installation is what gives your sessions access to the repositories.
 
    :::
 
@@ -39,14 +54,15 @@ New sessions you create from this point get automatic GitHub access. Sessions cr
 
 ## Repositories you can access
 
-Sessions act as you through the Bitrise GitHub App, so a session can access the repositories that meet both conditions:
+Sessions act as you through the Bitrise GitHub App, so a session can access the repositories that meet all of the following conditions:
 
-- You have access to the repository on GitHub.
-- The Bitrise GitHub App is installed on the repository.
+- The GitHub App is installed to the account or organization that owns the repository on GitHub.
+- The app installation is enabled for the repository.
+- Your GitHub user account can access the repository on GitHub.
 
-:::info[Repository not found]
+:::info[Clone fails with a 403 error or repository not found]
 
-If a clone fails with "repository not found" for a repository you can open in the browser, the Bitrise GitHub App isn't installed on that repository or organization. Ask an organization admin to install the app there.
+If cloning a private repository that you can open in the browser fails with `remote: Write access to repository not granted`, `The requested URL returned error: 403`, or `repository not found`, the Bitrise GitHub App isn't installed to the organization that owns the repository, or the installation isn't enabled for that repository. Ask a GitHub Admin of the organization to install the app or enable it for the repository: see [Before you start](#before-you-start). You don't need to reconnect your account afterwards.
 
 :::
 
