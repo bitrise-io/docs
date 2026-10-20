@@ -43,6 +43,11 @@ const ROUTE_BASE = '';
 const GENERATED_ANCHOR_ROUTE_PREFIXES = [
   '/bitrise-api/api-reference',
   '/bitrise-rde-api/api-reference',
+  '/insights-api/api-reference',
+  '/release-management-api/apps/api-reference',
+  '/release-management-api/store-releases/api-reference',
+  '/release-management-api/code-push/api-reference',
+  '/release-management-api/build-distributions/api-reference',
 ];
 
 const KNOWN_ANCHOR_EXCEPTIONS = new Set([
