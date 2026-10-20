@@ -1,0 +1,108 @@
+---
+id: bitrise-insights-api
+title: "Bitrise Insights API"
+description: "Public, read-only API for Bitrise Insights build and test metrics."
+sidebar_label: Introduction
+sidebar_position: 0
+hide_title: true
+custom_edit_url: null
+displayed_sidebar: insightsSidebar
+---
+
+import ApiLogo from "@theme/ApiLogo";
+import Heading from "@theme/Heading";
+import SchemaTabs from "@theme/SchemaTabs";
+import TabItem from "@theme/TabItem";
+import Export from "@theme/ApiExplorer/Export";
+
+<span
+  className={"theme-doc-version-badge badge badge--secondary"}
+  children={"Version: 1.0.0"}
+>
+</span>
+
+<Heading
+  as={"h1"}
+  className={"openapi__heading"}
+  children={"Bitrise Insights API"}
+>
+</Heading>
+
+
+
+Public, read-only API for Bitrise Insights build and test metrics.
+
+## Authentication
+Send a Bitrise API token in the `Authorization` header, either as
+`Authorization: Bearer <token>` or bare as `Authorization: <token>`. Both forms are
+accepted.
+Both personal access tokens and workspace API tokens work; the token must have view
+access to the workspace in the path and to the project it is queried with.
+A missing or malformed header answers 401; a token that is rejected, expired or not
+entitled to the workspace or project answers 403.
+
+## Requirements
+The Insights API is part of a paid Insights plan. A workspace without one gets 402
+on every endpoint.
+
+## Rate limiting
+Requests are rate limited per token: 60 requests per minute, across every endpoint
+and workspace the token is used with. Every response to a request carrying a
+well-formed token carries `X-RateLimit-Limit`, `X-RateLimit-Remaining` and
+`X-RateLimit-Reset` - the limiter runs once the token is known, so a 401 for a
+missing or malformed header has none. Over the limit the API answers 429 with a
+`Retry-After` header.
+
+## Conventions
+Every call reports on exactly one project, named by the required `project` parameter.
+Timestamps are RFC3339 in UTC, both in requests and in responses. Durations are
+seconds and rates are percentages in 0-100. Filter parameters that accept several
+values are repeated rather than comma-separated: `branch=main&branch=develop`.
+The `branch` filter accepts `*` as a wildcard matching any run of characters:
+`branch=release/*` matches every release branch.
+Responses are long format: one row type per endpoint, and grouping adds a label to
+each row instead of changing its shape.
+
+<div
+  style={{"marginBottom":"2rem"}}
+>
+  <Heading
+    id={"authentication"}
+    as={"h2"}
+    className={"openapi-tabs__heading"}
+    children={"Authentication"}
+  >
+  </Heading><SchemaTabs
+    className={"openapi-tabs__security-schemes"}
+  >
+    <TabItem
+      label={"API Key: BearerAuth"}
+      value={"BearerAuth"}
+    >
+      
+      
+      A Bitrise API token - a personal access token or a workspace API token. Enter it as `Bearer <token>` or bare as `<token>`; both are accepted.
+      
+      <div>
+        <table>
+          <tbody>
+            <tr>
+              <th>
+                Security Scheme Type:
+              </th><td>
+                apiKey
+              </td>
+            </tr><tr>
+              <th>
+                Header parameter name:
+              </th><td>
+                Authorization
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </TabItem>
+  </SchemaTabs>
+</div>
+      

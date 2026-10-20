@@ -359,6 +359,16 @@ const config: Config = {
               groupPathsBy: 'tag',
             },
           },
+          // Insights API. The committed snapshot is refreshed from the live
+          // spec by scripts/sync_insights_spec.py (run nightly / on-demand by
+          // .github/workflows/sync-api-references.yml).
+          bitriseInsights: {
+            specPath: 'api/bitrise-insights.json',
+            outputDir: 'docs/insights-api/api-reference',
+            sidebarOptions: {
+              groupPathsBy: 'tag',
+            },
+          },
           // Release Management is split across four sub-APIs, each with its
           // own hosted spec (see docs/release-management/api/release-management-api.mdx
           // for the sub-API URLs). Snapshots are refreshed by the matching
