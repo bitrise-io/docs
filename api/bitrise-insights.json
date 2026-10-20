@@ -1,0 +1,1450 @@
+{
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "schemes": [
+        "https"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "Public, read-only API for Bitrise Insights build and test metrics.\n\n## Authentication\nSend a Bitrise API token in the `Authorization` header, either as\n`Authorization: Bearer \u003ctoken\u003e` or bare as `Authorization: \u003ctoken\u003e`. Both forms are\naccepted.\nBoth personal access tokens and workspace API tokens work; the token must have view\naccess to the workspace in the path and to the project it is queried with.\nA missing or malformed header answers 401; a token that is rejected, expired or not\nentitled to the workspace or project answers 403.\n\n## Requirements\nThe Insights API is part of a paid Insights plan. A workspace without one gets 402\non every endpoint.\n\n## Rate limiting\nRequests are rate limited per token: 60 requests per minute, across every endpoint\nand workspace the token is used with. Every response to a request carrying a\nwell-formed token carries `X-RateLimit-Limit`, `X-RateLimit-Remaining` and\n`X-RateLimit-Reset` - the limiter runs once the token is known, so a 401 for a\nmissing or malformed header has none. Over the limit the API answers 429 with a\n`Retry-After` header.\n\n## Conventions\nEvery call reports on exactly one project, named by the required `project` parameter.\nTimestamps are RFC3339 in UTC, both in requests and in responses. Durations are\nseconds and rates are percentages in 0-100. Filter parameters that accept several\nvalues are repeated rather than comma-separated: `branch=main\u0026branch=develop`.\nThe `branch` filter accepts `*` as a wildcard matching any run of characters:\n`branch=release/*` matches every release branch.\nResponses are long format: one row type per endpoint, and grouping adds a label to\neach row instead of changing its shape.",
+        "title": "Bitrise Insights API",
+        "contact": {},
+        "version": "1.0.0"
+    },
+    "host": "api.bitrise.io",
+    "basePath": "/insights/v1",
+    "paths": {
+        "/workspaces/{workspace_slug}/builds/series": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The same metrics as builds/totals, grouped by time granularity: one row per bucket,\noldest first, each carrying every metric. Pass 'group_by' to add a dimension\n(workflow, pipeline, stage, step): rows keep the same shape and gain that label,\ngroups are ranked by build count and capped by 'limit'.\nThe window may span at most 7 days hourly, 90 days daily, 1 year weekly and\n2 years monthly.\n\nGrouped, the response has one row per bucket per group - for example per day per\nworkflow - and each row names its group in the matching field ('workflow' here).",
+                "tags": [
+                    "builds"
+                ],
+                "summary": "Get a build metrics time series for a project.",
+                "operationId": "insights_builds_series",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Slug of the workspace the project belongs to",
+                        "name": "workspace_slug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "example": [
+                            "main"
+                        ],
+                        "description": "Keeps only builds that ran on one of these git branches. Repeat the parameter for several\nvalues: branch=main\u0026branch=develop. '*' matches any run of characters, so branch=release/*\nkeeps every release branch. Omit to include every branch.",
+                        "name": "branch",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-07-31T00:00:00Z",
+                        "description": "End of the reported time window, exclusive, as an RFC3339 timestamp. Must be after 'start'.",
+                        "name": "end",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "hourly",
+                            "daily",
+                            "weekly",
+                            "monthly"
+                        ],
+                        "type": "string",
+                        "default": "daily",
+                        "example": "daily",
+                        "description": "Size of one time bucket. It also caps how long a window may be: 7 days hourly, 90 days\ndaily, 1 year weekly, 2 years monthly.",
+                        "name": "granularity",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "pipeline",
+                            "stage",
+                            "workflow",
+                            "step"
+                        ],
+                        "type": "string",
+                        "example": "workflow",
+                        "description": "Splits the series by one more dimension. Without it the response has one row per time\nbucket for the whole project. With group_by=workflow it has one row per time bucket per\nworkflow, each row carrying the workflow's name in its 'workflow' field - and likewise for\npipeline, stage and step. One dimension per call.",
+                        "name": "group_by",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "example": 20,
+                        "description": "Caps how many groups are returned, keeping those with the most builds. Ignored when\n'group_by' is omitted. See 'truncated' in the response to tell whether groups were dropped.",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "example": [
+                            "ci-pipeline"
+                        ],
+                        "description": "Keeps only builds of one of these pipelines. Repeatable, like 'branch'.",
+                        "name": "pipeline",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "eab2b0d9-9d48-44a9-93bc-094fce984c78",
+                        "description": "ID of the project to report on. Exactly one is required.",
+                        "name": "project",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-07-01T00:00:00Z",
+                        "description": "Start of the reported time window, inclusive, as an RFC3339 timestamp.",
+                        "name": "start",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "example": [
+                            "pull-request-ci"
+                        ],
+                        "description": "Keeps only builds of one of these workflows. Repeatable, like 'branch'.",
+                        "name": "workflow",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.BuildSeriesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "a required parameter is missing, or a value is malformed",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.BadRequestResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "the Authorization header is missing or malformed",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.UnauthorizedResponse"
+                        }
+                    },
+                    "402": {
+                        "description": "the workspace has no paid Insights plan",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.PlanRequiredResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "the token is rejected, or has no access to this workspace or project",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.ForbiddenResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "a parameter value is outside its accepted set or range",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.UnprocessableEntityResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "rate limit exceeded; a plain text body of 'Too Many Requests', with a Retry-After header and the X-RateLimit-* headers",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.InternalErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "authorization is temporarily unavailable; the request may be retried",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.ServiceUnavailableResponse"
+                        }
+                    }
+                },
+                "x-codeSamples": [
+                    {
+                        "label": "cURL",
+                        "lang": "cURL",
+                        "source": "curl -H 'Authorization: Bearer $BITRISE_API_TOKEN' \\\n  'https://api.bitrise.io/insights/v1/workspaces/3f9c1a7e5b2d4c86/builds/series?project=eab2b0d9-9d48-44a9-93bc-094fce984c78\u0026start=2026-07-01T00:00:00Z\u0026end=2026-07-31T00:00:00Z\u0026granularity=daily\u0026group_by=workflow'"
+                    }
+                ]
+            }
+        },
+        "/workspaces/{workspace_slug}/builds/totals": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Build count, failure rate, p50/p90 duration and total duration over the requested\ntime window, without any grouping. Durations are in seconds, failure rate is a\npercentage in 0-100. The window may span at most 2 years.",
+                "tags": [
+                    "builds"
+                ],
+                "summary": "Get build aggregates for a project.",
+                "operationId": "insights_builds_totals",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Slug of the workspace the project belongs to",
+                        "name": "workspace_slug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "example": [
+                            "main"
+                        ],
+                        "description": "Keeps only builds that ran on one of these git branches. Repeat the parameter for several\nvalues: branch=main\u0026branch=develop. '*' matches any run of characters, so branch=release/*\nkeeps every release branch. Omit to include every branch.",
+                        "name": "branch",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-07-31T00:00:00Z",
+                        "description": "End of the reported time window, exclusive, as an RFC3339 timestamp. Must be after 'start'.",
+                        "name": "end",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "example": [
+                            "ci-pipeline"
+                        ],
+                        "description": "Keeps only builds of one of these pipelines. Repeatable, like 'branch'.",
+                        "name": "pipeline",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "eab2b0d9-9d48-44a9-93bc-094fce984c78",
+                        "description": "ID of the project to report on. Exactly one is required.",
+                        "name": "project",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-07-01T00:00:00Z",
+                        "description": "Start of the reported time window, inclusive, as an RFC3339 timestamp.",
+                        "name": "start",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "example": [
+                            "pull-request-ci"
+                        ],
+                        "description": "Keeps only builds of one of these workflows. Repeatable, like 'branch'.",
+                        "name": "workflow",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.BuildTotalsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "a required parameter is missing, or a value is malformed",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.BadRequestResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "the Authorization header is missing or malformed",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.UnauthorizedResponse"
+                        }
+                    },
+                    "402": {
+                        "description": "the workspace has no paid Insights plan",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.PlanRequiredResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "the token is rejected, or has no access to this workspace or project",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.ForbiddenResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "a parameter value is outside its accepted set or range",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.UnprocessableEntityResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "rate limit exceeded; a plain text body of 'Too Many Requests', with a Retry-After header and the X-RateLimit-* headers",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.InternalErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "authorization is temporarily unavailable; the request may be retried",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.ServiceUnavailableResponse"
+                        }
+                    }
+                },
+                "x-codeSamples": [
+                    {
+                        "label": "cURL",
+                        "lang": "cURL",
+                        "source": "curl -H 'Authorization: Bearer $BITRISE_API_TOKEN' \\\n  'https://api.bitrise.io/insights/v1/workspaces/3f9c1a7e5b2d4c86/builds/totals?project=eab2b0d9-9d48-44a9-93bc-094fce984c78\u0026start=2026-07-01T00:00:00Z\u0026end=2026-07-31T00:00:00Z'"
+                    }
+                ]
+            }
+        },
+        "/workspaces/{workspace_slug}/tests/flaky": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Test cases that were rerun after a flaky result in the requested time window, one\npage at a time, ranked by 'order_by' (flaky_rerun_count or flaky_rate).\nThe window may span at most 2 years.",
+                "tags": [
+                    "tests"
+                ],
+                "summary": "List the flaky test cases of a project.",
+                "operationId": "insights_tests_flaky",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Slug of the workspace the project belongs to",
+                        "name": "workspace_slug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "example": [
+                            "main"
+                        ],
+                        "description": "Keeps only test runs from builds that ran on one of these git branches. Repeat the parameter\nfor several values: branch=main\u0026branch=develop. '*' matches any run of characters, so\nbranch=release/* keeps every release branch. Omit to include every branch.",
+                        "name": "branch",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-07-31T00:00:00Z",
+                        "description": "End of the reported time window, exclusive, as an RFC3339 timestamp. Must be after 'start',\nand may span at most 2 years.",
+                        "name": "end",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "example": [
+                            "app.auth"
+                        ],
+                        "description": "Keeps only test cases of one of these modules. Repeatable, like 'branch'.",
+                        "name": "module",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "default": "desc",
+                        "example": "desc",
+                        "description": "Direction of the ranking.",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "flaky_rerun_count",
+                            "flaky_rate"
+                        ],
+                        "type": "string",
+                        "default": "flaky_rerun_count",
+                        "example": "flaky_rerun_count",
+                        "description": "Ranks the list. The default puts the flakiest first by absolute rerun count rather than by\nrate, so a test case that fails intermittently across thousands of runs outranks one that was\nrerun twice out of three.",
+                        "name": "order_by",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "example": 1,
+                        "description": "Page of the result set to return, 1-based.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "example": 20,
+                        "description": "Test cases per page. See 'pagination' in the response for the total and the next page.",
+                        "name": "per_page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "eab2b0d9-9d48-44a9-93bc-094fce984c78",
+                        "description": "ID of the project to report on. Exactly one is required.",
+                        "name": "project",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-07-01T00:00:00Z",
+                        "description": "Start of the reported time window, inclusive, as an RFC3339 timestamp.",
+                        "name": "start",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "example": [
+                            "test_login_succeeds"
+                        ],
+                        "description": "Keeps only these test cases. Repeatable, like 'branch'.",
+                        "name": "test_case",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "example": [
+                            "rspec"
+                        ],
+                        "description": "Keeps only runs of one of these test suites. Repeatable, like 'branch'.",
+                        "name": "test_suite",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "example": [
+                            "pull-request-ci"
+                        ],
+                        "description": "Keeps only test runs from builds of one of these workflows. Repeatable, like 'branch'.",
+                        "name": "workflow",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.TestFlakyResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "a required parameter is missing, or a value is malformed",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.BadRequestResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "the Authorization header is missing or malformed",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.UnauthorizedResponse"
+                        }
+                    },
+                    "402": {
+                        "description": "the workspace has no paid Insights plan",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.PlanRequiredResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "the token is rejected, or has no access to this workspace or project",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.ForbiddenResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "a parameter value is outside its accepted set or range",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.UnprocessableEntityResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "rate limit exceeded; a plain text body of 'Too Many Requests', with a Retry-After header and the X-RateLimit-* headers",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.InternalErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "authorization is temporarily unavailable; the request may be retried",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.ServiceUnavailableResponse"
+                        }
+                    }
+                },
+                "x-codeSamples": [
+                    {
+                        "label": "cURL",
+                        "lang": "cURL",
+                        "source": "curl -H 'Authorization: Bearer $BITRISE_API_TOKEN' \\\n  'https://api.bitrise.io/insights/v1/workspaces/3f9c1a7e5b2d4c86/tests/flaky?project=eab2b0d9-9d48-44a9-93bc-094fce984c78\u0026start=2026-07-01T00:00:00Z\u0026end=2026-07-31T00:00:00Z\u0026order_by=flaky_rate\u0026per_page=20'"
+                    }
+                ]
+            }
+        },
+        "/workspaces/{workspace_slug}/tests/series": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "The same metrics as tests/totals, grouped by time granularity: one row per bucket,\noldest first, each carrying every metric. Pass 'group_by' to add a dimension\n(workflow, pipeline, stage, branch, test_suite): rows keep the same shape and gain\nthat label, groups are ranked by run count and capped by 'limit'.\nThe window may span at most 7 days hourly, 90 days daily, 1 year weekly and\n2 years monthly.\n\nGrouped, the response has one row per bucket per group - for example per day per\nworkflow - and each row names its group in the matching field ('workflow' here).",
+                "tags": [
+                    "tests"
+                ],
+                "summary": "Get a test metrics time series for a project.",
+                "operationId": "insights_tests_series",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Slug of the workspace the project belongs to",
+                        "name": "workspace_slug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "example": [
+                            "main"
+                        ],
+                        "description": "Keeps only test runs from builds that ran on one of these git branches. Repeat the parameter\nfor several values: branch=main\u0026branch=develop. '*' matches any run of characters, so\nbranch=release/* keeps every release branch. Omit to include every branch.",
+                        "name": "branch",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-07-31T00:00:00Z",
+                        "description": "End of the reported time window, exclusive, as an RFC3339 timestamp. Must be after 'start'.",
+                        "name": "end",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "hourly",
+                            "daily",
+                            "weekly",
+                            "monthly"
+                        ],
+                        "type": "string",
+                        "default": "daily",
+                        "example": "daily",
+                        "description": "Size of one time bucket. It also caps how long a window may be: 7 days hourly, 90 days\ndaily, 1 year weekly, 2 years monthly.",
+                        "name": "granularity",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "pipeline",
+                            "stage",
+                            "workflow",
+                            "branch",
+                            "test_suite"
+                        ],
+                        "type": "string",
+                        "example": "workflow",
+                        "description": "Splits the series by one more dimension. Without it the response has one row per time\nbucket for the whole project. With group_by=workflow it has one row per time bucket per\nworkflow, each row carrying the workflow's name in its 'workflow' field - and likewise for\npipeline, stage, branch and test_suite. One dimension per call.",
+                        "name": "group_by",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "example": 20,
+                        "description": "Caps how many groups are returned, keeping those with the most test runs. Ignored when\n'group_by' is omitted. See 'truncated' in the response to tell whether groups were dropped.",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "example": [
+                            "ci-pipeline"
+                        ],
+                        "description": "Keeps only test runs from builds of one of these pipelines. Repeatable, like 'branch'.",
+                        "name": "pipeline",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "eab2b0d9-9d48-44a9-93bc-094fce984c78",
+                        "description": "ID of the project to report on. Exactly one is required.",
+                        "name": "project",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-07-01T00:00:00Z",
+                        "description": "Start of the reported time window, inclusive, as an RFC3339 timestamp.",
+                        "name": "start",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "example": [
+                            "rspec"
+                        ],
+                        "description": "Keeps only runs of one of these test suites. Repeatable, like 'branch'.",
+                        "name": "test_suite",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "example": [
+                            "pull-request-ci"
+                        ],
+                        "description": "Keeps only test runs from builds of one of these workflows. Repeatable, like 'branch'.",
+                        "name": "workflow",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.TestSeriesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "a required parameter is missing, or a value is malformed",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.BadRequestResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "the Authorization header is missing or malformed",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.UnauthorizedResponse"
+                        }
+                    },
+                    "402": {
+                        "description": "the workspace has no paid Insights plan",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.PlanRequiredResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "the token is rejected, or has no access to this workspace or project",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.ForbiddenResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "a parameter value is outside its accepted set or range",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.UnprocessableEntityResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "rate limit exceeded; a plain text body of 'Too Many Requests', with a Retry-After header and the X-RateLimit-* headers",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.InternalErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "authorization is temporarily unavailable; the request may be retried",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.ServiceUnavailableResponse"
+                        }
+                    }
+                },
+                "x-codeSamples": [
+                    {
+                        "label": "cURL",
+                        "lang": "cURL",
+                        "source": "curl -H 'Authorization: Bearer $BITRISE_API_TOKEN' \\\n  'https://api.bitrise.io/insights/v1/workspaces/3f9c1a7e5b2d4c86/tests/series?project=eab2b0d9-9d48-44a9-93bc-094fce984c78\u0026start=2026-07-01T00:00:00Z\u0026end=2026-07-31T00:00:00Z\u0026granularity=daily\u0026group_by=workflow'"
+                    }
+                ]
+            }
+        },
+        "/workspaces/{workspace_slug}/tests/totals": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Test run count, failure rate, p50/p90 duration, total duration and flaky run count\nover the requested time window, without any grouping. Counts are of test case runs,\nnot of distinct test cases. Durations are in seconds, failure rate is a percentage\nin 0-100. The window may span at most 2 years.",
+                "tags": [
+                    "tests"
+                ],
+                "summary": "Get test aggregates for a project.",
+                "operationId": "insights_tests_totals",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Slug of the workspace the project belongs to",
+                        "name": "workspace_slug",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "example": [
+                            "main"
+                        ],
+                        "description": "Keeps only test runs from builds that ran on one of these git branches. Repeat the parameter\nfor several values: branch=main\u0026branch=develop. '*' matches any run of characters, so\nbranch=release/* keeps every release branch. Omit to include every branch.",
+                        "name": "branch",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-07-31T00:00:00Z",
+                        "description": "End of the reported time window, exclusive, as an RFC3339 timestamp. Must be after 'start'.",
+                        "name": "end",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "example": [
+                            "ci-pipeline"
+                        ],
+                        "description": "Keeps only test runs from builds of one of these pipelines. Repeatable, like 'branch'.",
+                        "name": "pipeline",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "eab2b0d9-9d48-44a9-93bc-094fce984c78",
+                        "description": "ID of the project to report on. Exactly one is required.",
+                        "name": "project",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "2026-07-01T00:00:00Z",
+                        "description": "Start of the reported time window, inclusive, as an RFC3339 timestamp.",
+                        "name": "start",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "example": [
+                            "rspec"
+                        ],
+                        "description": "Keeps only runs of one of these test suites. Repeatable, like 'branch'.",
+                        "name": "test_suite",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "example": [
+                            "pull-request-ci"
+                        ],
+                        "description": "Keeps only test runs from builds of one of these workflows. Repeatable, like 'branch'.",
+                        "name": "workflow",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.TestTotalsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "a required parameter is missing, or a value is malformed",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.BadRequestResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "the Authorization header is missing or malformed",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.UnauthorizedResponse"
+                        }
+                    },
+                    "402": {
+                        "description": "the workspace has no paid Insights plan",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.PlanRequiredResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "the token is rejected, or has no access to this workspace or project",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.ForbiddenResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "a parameter value is outside its accepted set or range",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.UnprocessableEntityResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "rate limit exceeded; a plain text body of 'Too Many Requests', with a Retry-After header and the X-RateLimit-* headers",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.InternalErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "authorization is temporarily unavailable; the request may be retried",
+                        "schema": {
+                            "$ref": "#/definitions/insightsapi.ServiceUnavailableResponse"
+                        }
+                    }
+                },
+                "x-codeSamples": [
+                    {
+                        "label": "cURL",
+                        "lang": "cURL",
+                        "source": "curl -H 'Authorization: Bearer $BITRISE_API_TOKEN' \\\n  'https://api.bitrise.io/insights/v1/workspaces/3f9c1a7e5b2d4c86/tests/totals?project=eab2b0d9-9d48-44a9-93bc-094fce984c78\u0026start=2026-07-01T00:00:00Z\u0026end=2026-07-31T00:00:00Z'"
+                    }
+                ]
+            }
+        }
+    },
+    "definitions": {
+        "insightsapi.BadRequestResponse": {
+            "type": "object",
+            "required": [
+                "message"
+            ],
+            "properties": {
+                "code": {
+                    "description": "ERR_VALIDATION when a required parameter is missing; absent on a malformed value.",
+                    "type": "string",
+                    "example": "ERR_VALIDATION"
+                },
+                "details": {
+                    "description": "The missing parameters, one entry each; absent on a malformed value.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/insightsapi.MissingParameterDetail"
+                    }
+                },
+                "message": {
+                    "description": "A human-readable description of what went wrong.",
+                    "type": "string",
+                    "example": "validation error"
+                }
+            }
+        },
+        "insightsapi.BuildSeriesPoint": {
+            "type": "object",
+            "properties": {
+                "build_count": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "duration_p50_seconds": {
+                    "type": "number",
+                    "example": 301
+                },
+                "duration_p90_seconds": {
+                    "type": "number",
+                    "example": 870
+                },
+                "failure_rate": {
+                    "description": "A percentage in 0-100, not a fraction: 2 means 2%.",
+                    "type": "number",
+                    "example": 2
+                },
+                "group_id": {
+                    "description": "The group's ID, where the dimension has one; absent otherwise.",
+                    "type": "string",
+                    "example": "eab2b0d9-9d48-44a9-93bc-094fce984c78"
+                },
+                "pipeline": {
+                    "type": "string",
+                    "example": "ci-pipeline"
+                },
+                "stage": {
+                    "type": "string",
+                    "example": "test"
+                },
+                "step": {
+                    "type": "string",
+                    "example": "git-clone"
+                },
+                "target_branch": {
+                    "type": "string",
+                    "example": "main"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-07-01T00:00:00Z"
+                },
+                "total_duration_seconds": {
+                    "type": "number",
+                    "example": 12800
+                },
+                "workflow": {
+                    "description": "Group labels. Exactly one is set, matching meta.group_by; all absent when ungrouped.",
+                    "type": "string",
+                    "example": "pull-request-ci"
+                }
+            }
+        },
+        "insightsapi.BuildSeriesResponse": {
+            "type": "object",
+            "properties": {
+                "meta": {
+                    "$ref": "#/definitions/insightsapi.ResponseMeta"
+                },
+                "series": {
+                    "description": "Long format: one row per (bucket, group), oldest bucket first within a group, groups ranked by\nbuild count. Ungrouped, it is simply one row per bucket. Either way it is the same row type,\nso a consumer parses one shape.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/insightsapi.BuildSeriesPoint"
+                    }
+                },
+                "truncated": {
+                    "description": "Whether groups were dropped to satisfy the limit. Always false ungrouped.",
+                    "type": "boolean"
+                }
+            }
+        },
+        "insightsapi.BuildTotals": {
+            "type": "object",
+            "properties": {
+                "build_count": {
+                    "type": "integer",
+                    "example": 1024
+                },
+                "duration_p50_seconds": {
+                    "type": "number",
+                    "example": 312.5
+                },
+                "duration_p90_seconds": {
+                    "type": "number",
+                    "example": 884
+                },
+                "failure_rate": {
+                    "description": "A percentage in 0-100, not a fraction: 4.3 means 4.3%.",
+                    "type": "number",
+                    "example": 4.3
+                },
+                "total_duration_seconds": {
+                    "type": "number",
+                    "example": 183422.5
+                }
+            }
+        },
+        "insightsapi.BuildTotalsResponse": {
+            "type": "object",
+            "properties": {
+                "meta": {
+                    "$ref": "#/definitions/insightsapi.ResponseMeta"
+                },
+                "totals": {
+                    "$ref": "#/definitions/insightsapi.BuildTotals"
+                }
+            }
+        },
+        "insightsapi.ForbiddenResponse": {
+            "type": "object",
+            "required": [
+                "message"
+            ],
+            "properties": {
+                "message": {
+                    "description": "A human-readable description of what went wrong. Not a stable contract - branch on the status.",
+                    "type": "string",
+                    "example": "no access to project"
+                }
+            }
+        },
+        "insightsapi.InternalErrorResponse": {
+            "type": "object",
+            "required": [
+                "message"
+            ],
+            "properties": {
+                "message": {
+                    "description": "A human-readable description of what went wrong. Not a stable contract - branch on the status.",
+                    "type": "string",
+                    "example": "Internal Server Error"
+                }
+            }
+        },
+        "insightsapi.InvalidValueDetail": {
+            "type": "object",
+            "properties": {
+                "field": {
+                    "description": "The parameter that failed validation.",
+                    "type": "string",
+                    "example": "granularity"
+                },
+                "message": {
+                    "description": "The rule the value broke, naming the accepted values or bounds.",
+                    "type": "string",
+                    "example": "Field BuildSeriesRequest.Granularity failed on: oneof (hourly daily weekly monthly)"
+                }
+            }
+        },
+        "insightsapi.MissingParameterDetail": {
+            "type": "object",
+            "properties": {
+                "field": {
+                    "description": "The parameter that is missing.",
+                    "type": "string",
+                    "example": "project"
+                },
+                "message": {
+                    "description": "The rule the request broke.",
+                    "type": "string",
+                    "example": "Field BuildTotalsRequest.BuildMetricsCommonRequest.Project failed on: required"
+                }
+            }
+        },
+        "insightsapi.Pagination": {
+            "type": "object",
+            "properties": {
+                "next_page": {
+                    "description": "Absent on the last page.",
+                    "type": "integer",
+                    "example": 2
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "per_page": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "total_count": {
+                    "description": "The number of matching test cases across every page, not on this one.",
+                    "type": "integer",
+                    "example": 143
+                }
+            }
+        },
+        "insightsapi.PlanRequiredResponse": {
+            "type": "object",
+            "required": [
+                "code",
+                "message"
+            ],
+            "properties": {
+                "code": {
+                    "description": "A stable identifier to branch on.",
+                    "type": "string",
+                    "example": "ERR_PLAN_REQUIRED"
+                },
+                "message": {
+                    "description": "A human-readable description of what went wrong.",
+                    "type": "string",
+                    "example": "the Insights API requires a paid Insights plan"
+                }
+            }
+        },
+        "insightsapi.ResponseMeta": {
+            "type": "object",
+            "properties": {
+                "end": {
+                    "type": "string",
+                    "example": "2026-07-31T00:00:00Z"
+                },
+                "granularity": {
+                    "type": "string",
+                    "example": "daily"
+                },
+                "group_by": {
+                    "type": "string",
+                    "example": "workflow"
+                },
+                "project": {
+                    "type": "string",
+                    "example": "eab2b0d9-9d48-44a9-93bc-094fce984c78"
+                },
+                "start": {
+                    "type": "string",
+                    "example": "2026-07-01T00:00:00Z"
+                },
+                "workspace_slug": {
+                    "type": "string",
+                    "example": "3f9c1a7e5b2d4c86"
+                }
+            }
+        },
+        "insightsapi.ServiceUnavailableResponse": {
+            "type": "object",
+            "required": [
+                "message"
+            ],
+            "properties": {
+                "message": {
+                    "description": "A human-readable description of what went wrong. Not a stable contract - branch on the status.",
+                    "type": "string",
+                    "example": "authorization is unavailable"
+                }
+            }
+        },
+        "insightsapi.TestFlakyItem": {
+            "type": "object",
+            "properties": {
+                "flaky_rate": {
+                    "description": "A percentage in 0-100, not a fraction: 4.1 means 4.1%. Named without the _pct suffix the\nquery layer uses, to match failure_rate elsewhere on this API.",
+                    "type": "number",
+                    "example": 4.1
+                },
+                "flaky_rerun_count": {
+                    "description": "How many of those runs were reruns of a flaky result.",
+                    "type": "integer",
+                    "example": 17
+                },
+                "module": {
+                    "type": "string",
+                    "example": "app.auth"
+                },
+                "run_count": {
+                    "description": "Number of runs of this test case, matching run_count on the tests series.",
+                    "type": "integer",
+                    "example": 412
+                },
+                "test_case": {
+                    "type": "string",
+                    "example": "test_login_succeeds"
+                },
+                "test_suite": {
+                    "type": "string",
+                    "example": "AuthTests"
+                }
+            }
+        },
+        "insightsapi.TestFlakyResponse": {
+            "type": "object",
+            "properties": {
+                "meta": {
+                    "$ref": "#/definitions/insightsapi.ResponseMeta"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/insightsapi.Pagination"
+                },
+                "test_cases": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/insightsapi.TestFlakyItem"
+                    }
+                }
+            }
+        },
+        "insightsapi.TestSeriesPoint": {
+            "type": "object",
+            "properties": {
+                "branch": {
+                    "type": "string",
+                    "example": "main"
+                },
+                "duration_p50_seconds": {
+                    "type": "number",
+                    "example": 0.4
+                },
+                "duration_p90_seconds": {
+                    "type": "number",
+                    "example": 2.8
+                },
+                "failure_rate": {
+                    "description": "A percentage in 0-100, not a fraction: 2 means 2%.",
+                    "type": "number",
+                    "example": 2
+                },
+                "flaky_run_count": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "group_id": {
+                    "description": "The group's ID, where the dimension has one; absent otherwise.",
+                    "type": "string",
+                    "example": "eab2b0d9-9d48-44a9-93bc-094fce984c78"
+                },
+                "pipeline": {
+                    "type": "string",
+                    "example": "ci-pipeline"
+                },
+                "run_count": {
+                    "type": "integer",
+                    "example": 612
+                },
+                "stage": {
+                    "type": "string",
+                    "example": "test"
+                },
+                "test_suite": {
+                    "type": "string",
+                    "example": "rspec"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2026-07-01T00:00:00Z"
+                },
+                "total_duration_seconds": {
+                    "type": "number",
+                    "example": 244.8
+                },
+                "workflow": {
+                    "description": "Group labels. Exactly one is set, matching meta.group_by; all absent when ungrouped.",
+                    "type": "string",
+                    "example": "pull-request-ci"
+                }
+            }
+        },
+        "insightsapi.TestSeriesResponse": {
+            "type": "object",
+            "properties": {
+                "meta": {
+                    "$ref": "#/definitions/insightsapi.ResponseMeta"
+                },
+                "series": {
+                    "description": "Long format: one row per (bucket, group), oldest bucket first within a group, groups ranked by\nrun count. Ungrouped, it is simply one row per bucket.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/insightsapi.TestSeriesPoint"
+                    }
+                },
+                "truncated": {
+                    "description": "Whether groups were dropped to satisfy the limit. Always false ungrouped.",
+                    "type": "boolean"
+                }
+            }
+        },
+        "insightsapi.TestTotals": {
+            "type": "object",
+            "properties": {
+                "duration_p50_seconds": {
+                    "type": "number",
+                    "example": 0.42
+                },
+                "duration_p90_seconds": {
+                    "type": "number",
+                    "example": 3.1
+                },
+                "failure_rate": {
+                    "description": "A percentage in 0-100, not a fraction: 4.3 means 4.3%.",
+                    "type": "number",
+                    "example": 4.3
+                },
+                "flaky_run_count": {
+                    "description": "Number of runs that were reruns of a flaky test case.",
+                    "type": "integer",
+                    "example": 47
+                },
+                "run_count": {
+                    "description": "Number of test case runs, not of distinct test cases.",
+                    "type": "integer",
+                    "example": 18320
+                },
+                "total_duration_seconds": {
+                    "type": "number",
+                    "example": 7719.5
+                }
+            }
+        },
+        "insightsapi.TestTotalsResponse": {
+            "type": "object",
+            "properties": {
+                "meta": {
+                    "$ref": "#/definitions/insightsapi.ResponseMeta"
+                },
+                "totals": {
+                    "$ref": "#/definitions/insightsapi.TestTotals"
+                }
+            }
+        },
+        "insightsapi.UnauthorizedResponse": {
+            "type": "object",
+            "required": [
+                "message"
+            ],
+            "properties": {
+                "message": {
+                    "description": "A human-readable description of what went wrong. Not a stable contract - branch on the status.",
+                    "type": "string",
+                    "example": "invalid Authorization header"
+                }
+            }
+        },
+        "insightsapi.UnprocessableEntityResponse": {
+            "type": "object",
+            "required": [
+                "code",
+                "details",
+                "message"
+            ],
+            "properties": {
+                "code": {
+                    "description": "A stable identifier to branch on.",
+                    "type": "string",
+                    "example": "ERR_VALIDATION"
+                },
+                "details": {
+                    "description": "The offending parameters, one entry each.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/insightsapi.InvalidValueDetail"
+                    }
+                },
+                "message": {
+                    "description": "A human-readable description of what went wrong.",
+                    "type": "string",
+                    "example": "validation error"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "A Bitrise API token - a personal access token or a workspace API token. Enter it as `Bearer \u003ctoken\u003e` or bare as `\u003ctoken\u003e`; both are accepted.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    },
+    "tags": [
+        {
+            "description": "Build metrics: count, failure rate, duration percentiles and total duration.",
+            "name": "builds"
+        },
+        {
+            "description": "Test metrics: run count, failure rate, duration percentiles, total duration and flaky runs.",
+            "name": "tests"
+        }
+    ]
+}

@@ -1,6 +1,7 @@
 import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
 import bitriseAPIApiSidebar from './docs/bitrise-api/api-reference/sidebar';
 import rdeAPIApiSidebar from './docs/bitrise-rde-api/api-reference/sidebar';
+import insightsApiSidebar from './docs/insights-api/api-reference/sidebar';
 import rmAppsApiSidebar from './docs/release-management-api/apps/api-reference/sidebar';
 import rmStoreReleasesApiSidebar from './docs/release-management-api/store-releases/api-reference/sidebar';
 import rmCodePushApiSidebar from './docs/release-management-api/code-push/api-reference/sidebar';
@@ -55,6 +56,7 @@ function toHubItems(generated: any, addIcon = true, keyPrefix?: string) {
 
 const hubItems = toHubItems(bitriseAPIApiSidebar);
 const rdeHubItems = toHubItems(rdeAPIApiSidebar, false);
+const insightsHubItems = toHubItems(insightsApiSidebar, false, 'InsightsApi');
 const rmAppsHubItems = toHubItems(rmAppsApiSidebar, false, 'ReleaseManagementApps');
 const rmStoreReleasesHubItems = toHubItems(rmStoreReleasesApiSidebar, false, 'ReleaseManagementStoreReleases');
 const rmCodePushHubItems = toHubItems(rmCodePushApiSidebar, false, 'ReleaseManagementCodePush');
@@ -133,7 +135,24 @@ const sidebars: SidebarsConfig = {
       ],
     },
   ],
-  insightsSidebar: productSidebar('insights', 'Insights'),
+  insightsSidebar: [
+    ...productSidebar('insights', 'Insights'),
+    {
+      type: 'category',
+      label: 'API reference',
+      collapsed: true,
+      customProps: {icon: 'Code'},
+      items: [
+        {
+          type: 'doc',
+          id: 'insights-api/api-reference/bitrise-insights-api',
+          label: 'Introduction',
+          key: 'InsightsApiIntroduction',
+        },
+        ...insightsHubItems,
+      ],
+    },
+  ],
   buildHubSidebar: productSidebar('bitrise-build-hub', 'Build Hub'),
   rdeSidebar: [
     ...productSidebar('bitrise-rde', 'Remote Dev Environments'),

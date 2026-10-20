@@ -120,6 +120,9 @@ const sections: Section[] = [
         {label: translate({id: 'portal.insights.link.alerts', message: 'Alerts'}), href: '/insights/configuring-alerts-in-insights'},
         {label: translate({id: 'portal.insights.link.insights-tutorials', message: 'Insights tutorials'}), href: '/insights/insights-tutorials/monitoring-and-optimizing-your-slowest-mobile-builds'},
       ],
+      [
+        {label: translate({id: 'portal.insights.link.insights-api', message: 'Insights API'}), href: '/insights/insights-api-overview'},
+      ],
     ],
   },
   {

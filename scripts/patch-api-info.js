@@ -95,6 +95,11 @@ const TARGETS = [
     specFile: null,
   },
   {
+    infoFile: '../docs/insights-api/api-reference/bitrise-insights-api.info.mdx',
+    sidebar: 'insightsSidebar',
+    specFile: '../api/bitrise-insights.json',
+  },
+  {
     infoFile: '../docs/release-management-api/apps/api-reference/release-management-api.info.mdx',
     sidebar: 'releaseManagementSidebar',
     specFile: '../api/bitrise-rm-apps.json',
