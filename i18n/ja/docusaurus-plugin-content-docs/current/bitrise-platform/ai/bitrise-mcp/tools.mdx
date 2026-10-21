@@ -18,6 +18,16 @@ MCP クライアントに公開するツールの数を制限できます。ト�
 
 すべてのツールは `outputSchema` (結果の JSON Schema) を公開し、テキストコンテンツと併せて結果を `structuredContent` として返します。これにより、それを利用する MCP クライアントやディレクトリ (たとえば OpenAI コネクターディレクトリ) が結果を解釈できます。API レスポンスをそのまま返すツールのスキーマは、API が公開している OpenAPI ドキュメント (`internal/tool/outputschema/`) から生成されます。プレーンテキストの結果 (`bitrise.yml`、ガイド、ステータスメッセージ) は `{"content": "<text>"}` として返されます。オプションのフィールドは `null` になる場合があります。
 
+## ツールアノテーション {#tool-annotations}
+
+すべてのツールには、MCPの動作アノテーション(`readOnlyHint`、`destructiveHint`、`idempotentHint`、`openWorldHint`)と`title`が付いています。`openWorldHint`はコネクターディレクトリの定義に従います。Bitriseが外部でホストされていても、効果が認証済みのBitriseアカウントまたはworkspaceの範囲内にとどまるツールでは`false`となり、それを超えて影響するツールでのみ`true`となります。
+
+- `register_webhook`と`register_ssh_key`は、アプリのGitプロバイダーに書き込みます。
+- `invite_member_to_workspace`は、任意のアドレスに招待メールを送信します。
+- `create_outgoing_webhook`と`update_outgoing_webhook`は、Bitriseが任意のURLにビルドイベントを送信するようにします。
+- `update_artifact`、`generate_installable_artifact_upload_url`(`with_public_page`を指定した場合)、`set_installable_artifact_public_install_page`は、インストールページをパブリックインターネット上に公開します。
+- `codepush_generate_update_upload_url`、`codepush_promote_deployment`、`codepush_rollback_deployment`、`codepush_patch_update`、`codepush_delete_update`は、エンドユーザーのデバイスがダウンロードする内容を変更します。
+
 ## Tools
 
 ### Apps

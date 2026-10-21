@@ -12,49 +12,70 @@ import Partial_GettingToYourProfileSettings from '@site/i18n/ja/partials/getting
 
 ## 概要 {#overview}
 
-連携を有効にすると、Bitriseは新しいセッションマシンごとに短命なGitHubアクセストークンを設定します。これはBitrise上のGitHubアカウント接続(Bitrise GitHub App)を通じて発行されます:
+この連携を使用するには、Bitrise GitHub App を組織にインストールし、GitHub アカウントをGitHubアプリ経由でBitriseに接続します。
 
-- トークンの有効期間は最大8時間で、再開(リストア)を含むセッションの存続期間中、自動的に更新されます。
+RDE ページで連携を有効にすると、Bitriseは新しいセッションマシンごとに、有効期間の短いGitHubアクセストークンを配置します。このトークンは、Bitrise(Bitrise GitHub App)上のGitHubアカウント接続を通じて発行されます。
+
+- トークンの有効期間は最大 8 時間で、復元を含むセッションの存続期間全体にわたって自動的に更新されます。
 - 長期間有効な認証情報がマシンに保存されることはありません。
-- セッション内で作成したコミットはGitHubアカウントの作成としてひも付けられ、GitHubのno-replyメールアドレスを使用するため、実際のメールアドレスが公開されることはありません。
+- セッションで作成したコミットは、GitHubの noreply メールアドレスを使用してGitHubアカウントに紐付けられるため、実際のメールアドレスが公開されることはありません。
 
-## インテグレーションの有効化 {#enabling-the-integration}
+## GitHubアプリを組織にインストールする {#installing-the-github-app-to-your-organization}
 
-1. Bitriseを開きます。
-1. <Partial_GettingToYourProfileSettings />
-1. <strong>Connected accounts</strong>を選択し、Bitrise GitHub Appを通じて<strong>GitHub</strong>を接続します。
+この連携には、GitHub上で次の 2 つが別々に必要です。
 
-   :::info[WorkspaceレベルのGitHub App接続は対象外]
+- <strong>Bitrise GitHub App のインストール</strong>: アプリにリポジトリへのアクセス権を与えます。GitHub App は、GitHub上でリポジトリを所有するアカウントまたは組織にインストールされている必要があり、そのリポジトリに対してアプリのインストールが有効になっている必要があります。
+- <strong>GitHub account 接続</strong>: Bitrise GitHub App があなたとして動作することを許可します。これはBitrise Connected accountsページで行います。アプリがすでに組織にインストールされている場合でも必要です。詳細は、[連携を有効にする](#enabling-the-integration)を参照してください。
 
-   この連携が確認するのは、WorkspaceレベルにインストールされたGitHub Appではなく、個人のGitHubアカウント接続です。組織の管理者がすでにCI用にBitrise GitHub Appを接続済みであっても、<strong>Connected accounts</strong>ページで自分自身のアカウントを接続する必要があります。
+:::important
 
-   :::
-
-1. [Bitrise RDE UI](/bitrise-rde/rde-options/bitrise-rde-ui)で、左側の<strong>User settings</strong>の下にある<strong>Saved Inputs</strong>を選択します。
-1. <strong>GitHub</strong>カードで、アカウントが接続済みと表示されていることを確認し、enable theトグルを切り替えます。
-
-   ![Saved InputsページのGitHubカード。接続済みで有効化の準備ができている状態](/img/rde/2026-07-31-rde-github-integration-card.png)
-
-これ以降に作成する新しいセッションには、自動的にGitHubアクセスが付与されます。連携を有効にする前に作成したセッションは変更されません。
-
-## アクセス可能なリポジトリ {#repositories-you-can-access}
-
-セッションはBitrise GitHub Appを通じて本人として動作するため、次の両方の条件を満たすリポジトリにアクセスできます:
-
-- GitHub上のそのリポジトリへのYou haveアクセス権。
-- そのリポジトリにBitrise GitHub Appがインストールされていること。
-
-:::info[リポジトリが見つからない]
-
-ブラウザでは開けるリポジトリなのにクローンが「repository not found」で失敗する場合、そのリポジトリまたは組織にBitrise GitHub Appがインストールされていません。組織の管理者にそこへアプリをインストールしてもらってください。
+アカウントを接続しても、アプリはインストールされません。Bitrise GitHub App がリポジトリを所有する組織にインストールされていない場合、連携は接続済みと表示されますが、プライベートリポジトリのクローンはすべて失敗します。
 
 :::
 
-アプリがどのリポジトリにインストールされているかを確認するには:
+WorkspaceがすでにCI用にGitHub App を使用している場合、アプリはインストール済みです。必要なリポジトリに対してインストールが有効になっていることを確認してください。
 
-1. GitHubで、アカウント(アプリが組織レベルでインストールされている場合は組織)の[installed GitHub Apps](https://github.com/settings/installations)ページを開きます。
-1. 一覧で<strong>Bitrise</strong>を見つけて<strong>Configure</strong>を選択します。
-1. <strong>Repository access</strong>で、インストールの対象範囲となっているリポジトリを確認します。
+そうでない場合は、[Workspace settingsページからGitHubアプリを接続する](/bitrise-platform/repository-access/github-app-integration#connecting-a-github-app-from-the-workspace-settings-page)の説明に従ってアプリをインストールします。アプリをインストールする権限がGitHubにnot authorized場合でも、インストールをリクエストできます。GitHub Admin がインストールを承認すると、セッションからリポジトリにアクセスできるようになります。
+
+## 連携を有効にする {#enabling-the-integration}
+
+1. Bitriseを開きます。
+1. <Partial_GettingToYourProfileSettings />
+1. <strong>Connected accounts</strong> を選択し、<strong>Git providers</strong> タブを開きます。
+1. <strong>GitHub</strong> カード(「Connect via the Bitrise GitHub App」と説明されています)で <strong>Connect</strong> を選択します。<strong>GitHub with OAuth</strong> カードは使用しないでください。この連携にはGitHub App の接続が必要です。
+
+   :::info[Workspaceレベルの接続だけでは不十分です]
+
+   この連携は、個人のGitHubアカウント接続を通じてトークンを発行します。組織の管理者がCI用にBitrise GitHub App をすでに接続している場合でも、<strong>Connected accounts</strong> ページで自分のアカウントを接続する必要があります。セッションがリポジトリにアクセスできるのは、Workspaceのアプリのインストールによるものです。
+
+   :::
+
+1. [Bitrise RDE UI](/bitrise-rde/rde-options/bitrise-rde-ui)で、左側の <strong>User settings</strong> の下にある <strong>Saved Inputs</strong> を選択します。
+1. <strong>GitHub</strong> カードで、アカウントが接続済みと表示されていることを確認し、トグルを有効にします。
+
+   ![Saved Inputs ページのGitHubカード。接続済みで、有効にできる状態](/img/rde/2026-07-31-rde-github-integration-card.png)
+
+これ以降に作成した新しいセッションでは、自動的にGitHubアクセスが利用できます。連携を有効にする前に作成したセッションは変更されません。
+
+## アクセスできるリポジトリ {#repositories-you-can-access}
+
+セッションはBitrise GitHub App を通じてあなたとして動作するため、次の条件をすべて満たすリポジトリにアクセスできます。
+
+- GitHub App が、GitHub上でリポジトリを所有するアカウントまたは組織にインストールされている。
+- そのリポジトリに対してアプリのインストールが有効になっている。
+- GitHubユーザーアカウントが、GitHub上でそのリポジトリにアクセスできる。
+
+:::info[403 エラーまたは repository not found でクローンに失敗する]
+
+ブラウザーで開けるプライベートリポジトリのクローンが`remote: Write access to repository not granted`、`The requested URL returned error: 403`、または`repository not found`で失敗する場合は、Bitrise GitHub App がリポジトリを所有する組織にインストールされていないか、そのリポジトリに対してインストールが有効になっていません。組織のGitHub Admin に、アプリのインストールまたはリポジトリに対する有効化を依頼してください。[GitHubアプリを組織にインストールする](#installing-the-github-app-to-your-organization)を参照してください。その後、アカウントを再接続する必要はありません。
+
+:::
+
+アプリがどのリポジトリにインストールされているかを確認するには、次の手順を実行します。
+
+1. GitHubで、アカウントの[installed GitHub Apps](https://github.com/settings/installations)ページを開きます。アプリが組織レベルでインストールされている場合は、組織のページを開きます。
+1. 一覧から <strong>Bitrise</strong> を見つけ、<strong>Configure</strong> を選択します。
+1. <strong>Repository access</strong> で、インストールの対象となっているリポジトリを確認します。
 
 ## インテグレーションの無効化 {#disabling-the-integration}
 
