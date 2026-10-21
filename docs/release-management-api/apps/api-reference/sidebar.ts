@@ -216,6 +216,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "release-management-api/apps/api-reference/update-signing-key",
+          label: "Rename the CodePush signing key",
+          className: "api-method patch",
+        },
+        {
+          type: "doc",
           id: "release-management-api/apps/api-reference/create-signing-key",
           label: "Upload a CodePush signing key",
           className: "api-method post",
