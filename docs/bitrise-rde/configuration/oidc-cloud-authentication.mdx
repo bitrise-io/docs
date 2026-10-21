@@ -13,12 +13,12 @@ Remote Dev Environment sessions use the same Bitrise identity provider as CI bui
 
 ## How it works
 
-1. A process in the session runs the `rde-id-token` helper, which is preinstalled on every session machine.
+1. Your cloud SDK needs a credential and runs the `rde-id-token` helper, which is preinstalled on every session machine.
 1. The helper asks Bitrise for a token for that session.
-1. Bitrise signs a token whose subject and claims describe the session, and returns it to the helper.
-1. The helper writes the token to a file. Your cloud SDK reads the file and exchanges the token for cloud credentials.
+1. Bitrise signs a token whose subject and claims describe the session, and the helper prints it.
+1. The SDK exchanges the token for cloud credentials and caches them until they expire, then runs the helper again.
 
-The developer or agent working in the session doesn't do anything: once the template is set up, the cloud CLI and SDKs authenticate on their own.
+The developer or agent working in the session doesn't do anything: once the template is set up, the cloud CLI and SDKs authenticate on their own. Nothing runs in the background and no token is stored on the machine. This is the same on-demand model that the [GitHub integration](/bitrise-rde/configuration/github-integration) uses for git credentials.
 
 ## Information in the token
 
@@ -85,39 +85,75 @@ Run the helper with the audience your cloud provider expects:
 rde-id-token --audience sts.amazonaws.com
 ```
 
-The helper prints the token to standard output. To keep a fresh token in a file for the lifetime of the session, add `--out` and `--refresh`. The helper then runs in the background and replaces the file a few minutes before each token expires:
-
-```bash
-rde-id-token --audience sts.amazonaws.com --out /run/rde/aws-token --refresh
-```
-
-Cloud SDKs re-read the token file whenever they need a new credential, so a refreshed file is picked up without restarting anything.
+The helper prints the token to standard output and exits. A token is valid for one hour. Don't store it: let the cloud SDK run the helper whenever it needs a fresh one, as shown in the recipes below.
 
 ## Configuring a template for AWS
 
-1. Store the role ARN in a [template variable](/bitrise-rde/configuration/templates), for example `AWS_ROLE_ARN`. Use a session input instead if the role differs per user.
-1. Add the following to the template's startup script.
+The AWS CLI and SDKs can get credentials from a program you name in `credential_process`. The program runs whenever credentials are needed, and its output is cached until the expiration it reports.
+
+1. Store the role ARN in a [template variable](/bitrise-rde/configuration/templates) named `RDE_AWS_ROLE_ARN`, exposed as an environment variable. Use a session input instead if the role differs per user.
+1. Add the following to the template's startup script. It installs a small credential process that requests a token and exchanges it, and points the AWS CLI at it.
 
    ```bash
-   rde-id-token --audience sts.amazonaws.com --out /run/rde/aws-token --refresh
-   export AWS_WEB_IDENTITY_TOKEN_FILE=/run/rde/aws-token
-   export AWS_ROLE_ARN="$AWS_ROLE_ARN"
+   mkdir -p "$HOME/.aws" "$HOME/.local/bin"
+
+   cat > "$HOME/.local/bin/rde-aws-credentials" <<'EOF'
+   #!/usr/bin/env bash
+   set -euo pipefail
+   token="$(rde-id-token --audience sts.amazonaws.com)"
+   env -u AWS_PROFILE aws --no-sign-request sts assume-role-with-web-identity \
+     --role-arn "$RDE_AWS_ROLE_ARN" \
+     --role-session-name "rde-session" \
+     --web-identity-token "$token" \
+     --query 'Credentials.{Version: `1`, AccessKeyId: AccessKeyId, SecretAccessKey: SecretAccessKey, SessionToken: SessionToken, Expiration: Expiration}' \
+     --output json
+   EOF
+   chmod +x "$HOME/.local/bin/rde-aws-credentials"
+
+   cat > "$HOME/.aws/config" <<EOF
+   [profile rde]
+   credential_process = $HOME/.local/bin/rde-aws-credentials
+   EOF
+   export AWS_PROFILE=rde
    ```
 
-1. Create a session from the template and run `aws sts get-caller-identity`. The AWS CLI and SDKs exchange the token through `AssumeRoleWithWebIdentity` on their own.
+1. Create a session from the template and run `aws sts get-caller-identity`. The CLI runs the credential process, which exchanges the token through `AssumeRoleWithWebIdentity`, and caches the result until it expires.
 
 ## Configuring a template for GCP
 
-1. Download the client library configuration file from your workload identity pool, as described in [OIDC for GCP](/bitrise-platform/integrations/oidc-authentication/oidc-for-gcp), and set its `credential_source.file` to `/run/rde/gcp-token`.
-1. Add the configuration file to the template, for example by writing it in the warmup script.
-1. Add the following to the template's startup script, with the audience you set on the workload identity pool.
+Google client libraries and the gcloud CLI can get the identity token from an executable named in the credential configuration file. The library runs it whenever it needs a token and performs the exchange itself.
+
+1. Download the client library configuration file from your workload identity pool, as described in [OIDC for GCP](/bitrise-platform/integrations/oidc-authentication/oidc-for-gcp).
+1. In the file, replace the `credential_source` object with an executable source that points at a wrapper script.
+
+   ```json
+   "credential_source": {
+     "executable": {
+       "command": "/home/user/.local/bin/rde-gcp-token",
+       "timeout_millis": 10000
+     }
+   }
+   ```
+
+1. Add the following to the template's startup script, with the audience you set on the workload identity pool. It installs the wrapper, which prints the token in the format the library expects, and enables executable-sourced credentials.
 
    ```bash
-   rde-id-token --audience YOUR_AUDIENCE --out /run/rde/gcp-token --refresh
+   mkdir -p "$HOME/.local/bin"
+
+   cat > "$HOME/.local/bin/rde-gcp-token" <<'EOF'
+   #!/usr/bin/env bash
+   set -euo pipefail
+   token="$(rde-id-token --audience "YOUR_AUDIENCE")"
+   printf '{"version":1,"success":true,"token_type":"urn:ietf:params:oauth:token-type:jwt","id_token":"%s","expiration_time":%s}\n' \
+     "$token" "$(( $(date +%s) + 3300 ))"
+   EOF
+   chmod +x "$HOME/.local/bin/rde-gcp-token"
+
+   export GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES=1
    export GOOGLE_APPLICATION_CREDENTIALS=/path/to/client-library-config.json
    ```
 
-1. Create a session from the template and run `gcloud auth login --cred-file="$GOOGLE_APPLICATION_CREDENTIALS"`, or let a client library pick up the file.
+1. Create a session from the template and run `gcloud auth login --cred-file="$GOOGLE_APPLICATION_CREDENTIALS"`, or let a client library pick up the configuration file.
 
 ## Which sessions can request a token
 
@@ -125,4 +161,4 @@ Cloud SDKs re-read the token file whenever they need a new credential, so a refr
 - Sessions opened from a [device preview link](/bitrise-rde/devices/device-preview-links) can't, because anyone holding the link can run commands in them.
 - Sessions waiting in a [warm pool](/bitrise-rde/configuration/warm-pools) can't request tokens until someone claims them.
 
-A token stays valid for one hour after it's issued, even if the session is terminated in the meantime. Terminating the session stops any further tokens from being issued.
+A token stays valid for one hour after it's issued, even if the session is terminated in the meantime. Terminating the session stops any further tokens from being issued. Because tokens are requested on demand and handed straight to the SDK, no token is kept on the machine between exchanges.
