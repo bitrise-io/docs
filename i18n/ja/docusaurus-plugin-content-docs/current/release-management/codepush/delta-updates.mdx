@@ -22,17 +22,17 @@ CodePush でデプロイされるアップデートは、通常、アプリの�
 
 <strong>バイナリ差分:</strong> より効率的な差分の仕組みです。ファイル単位の差分と同様に、変更のないファイルはパッケージに含まれず、パッケージには削除するファイルの一覧が含まれます。2 つのバージョン間で変更されたファイルについては、CodePush はそのファイルの旧バージョンと新バージョンの間のバイトレベルのパッチを計算し、ファイル全体の代わりにそのパッチを配信します。ほとんどの React Native アップデートでは、バージョン間で JS バンドルが必ず変更されるため、この手法により JS バンドルファイル全体の取得を避けられます。
 
-## CodePush での差分アップデート {#delta-updates-with-codepush}
+## CodePush のデルタアップデート {#delta-updates-with-codepush}
 
-CodePush はパッケージのバージョン間の差分アップデートを自動的に計算します。これはデフォルトで有効になっており、クライアントが SDK ダウンロードおよびインストールできる、より小さなアップデートが得られます。データ転送コストの削減にもつながります。
+CodePush は、パッケージのバージョン間のデルタアップデートを自動的に計算します。デルタアップデートはサイズが小さいため、クライアントSDKはより速くダウンロードしてインストールできます。また、データ転送コストも削減できます。
 
-ファイル単位の差分はデフォルトで有効になっており、一般的なすべての CodePush SDK 実装で動作します。より効率的なバイナリ差分は、バージョン 10.6.0 以降の [Bitrise CodePush SDK](https://github.com/bitrise-io/react-native-code-push)でサポートされています。
+ファイルレベルの差分は既定で有効になっており、一般的なすべての CodePush SDK実装で動作します。[Bitrise CodePush SDK](https://github.com/bitrise-io/react-native-code-push)は、バージョン 10.6.1 以降で、より効率的なバイナリ差分に対応しています。
 
-バイナリ差分は現在オプトイン方式です。有効にするには、アプリの設定で `CodePushEnableDeltaUpdates` を `true` に設定してください。
+バイナリ差分は現在オプトイン方式です。有効にするには、アプリの設定で `CodePushEnableDeltaUpdates` を `true` に設定します。
 
 <Tabs>
   <TabItem value="expo-cng" label="Expo CNG">
-    Expo の [Continuous Native Generation](https://docs.expo.dev/workflow/continuous-native-generation/) 機能を使用する場合は、次のキーを `app.json` ファイルに追加してください。設定の全体については、[Expo アプリ向けの CodePush の設定](/release-management/codepush/configuring-your-app-for-codepush#configuring-codepush-for-expo-apps)を参照してください。
+    Expoの [Continuous Native Generation](https://docs.expo.dev/workflow/continuous-native-generation/) 機能を使用する場合は、次のキーを`app.json`ファイルに追加します。設定の全体については、[Expoアプリ向けの CodePush の設定](/release-management/codepush/configuring-your-app-for-codepush#configuring-codepush-for-expo-apps)を参照してください。
 
     ```diff
     [
@@ -53,22 +53,63 @@ CodePush はパッケージのバージョン間の差分アップデートを�
     ```
   </TabItem>
   <TabItem value="ios" label="iOS">
-    `Info.plist` に次のキーを追加してください。
+    次のキーを`Info.plist`に追加します。
     ```xml
     <key>CodePushEnableDeltaUpdates</key>
     <true/>
     ```
   </TabItem>
   <TabItem value="android" label="Android">
-    `res/values/strings.xml` に次を追加してください。
+    次を`res/values/strings.xml`に追加します。
     ```xml
     <bool name="CodePushEnableDeltaUpdates">true</bool>
     ```
   </TabItem>
 </Tabs>
 
-### アップデート間の差分の作成方法 {#how-deltas-are-created-between-updates}
+### アップデート間でデルタが作成される仕組み {#how-deltas-are-created-between-updates}
 
-CodePush の差分は、new update が作成されるときに、サーバー側で自動的に計算されます。差分は常に以前のアップデートを基準とし、Bitrise は新しく作成されたアップデートと直前の 5 つのアップデートとの間の差分を生成します。具体例は次のとおりです。
+CodePush のデルタは、new updateの作成時にサーバー側で自動的に計算されます。デルタは常に以前のアップデートに対する差分であり、Bitriseは、新しく作成されたアップデートと直前の 5 つのアップデートとの間でデルタを生成します。具体例を示します。
 
-アップデート `v8` が作成されると、`v8` について、`v7`、`v6`、`v5`、`v4`、`v3` を基準とした差分パッケージが生成されます。これらの以前のバージョンのいずれかから `v8` にアップグレードするアプリは、より小さな差分パッケージを受信します。`v1`、`v2`、またはストアリリース (バイナリのアプリストアリリースの一部として配布されたバンドル) からアップグレードするアプリは、完全なアップデートを受信します。
+アップデート `v8` が作成されると、`v7`、`v6`、`v5`、`v4`、`v3` に対する`v8`のデルタパッケージが生成されます。これらの以前のバージョンのいずれかから `v8` にアップグレードするアプリは、サイズの小さいデルタパッケージを受け取ります。`v1`、`v2`、またはストアリリース(バイナリのアプリストアリリースの一部として配布されたバンドル)からアップグレードするアプリは、完全なアップデートを受け取ります。
+
+Bitriseは、以前の CodePush アップデートに対してのみデルタを生成し、ストアバイナリ内のバンドルに対しては生成しません。このため、バイナリリリースの最初の CodePush アップデートにはデルタがなく、クライアントは完全なパッケージをダウンロードします。
+
+バイナリ差分を含むデルタアップデートは、署名付きアップデートでも動作します。詳細については、[CodePush でのCode signing](/release-management/codepush/code-signing-with-codepush)を参照してください。
+
+## デルタアップデートの検証 {#verifying-delta-updates}
+
+デルタアップデートは、次の 2 つの方法で検証できます。Bitriseが作成したデルタをサーバー上で確認する方法と、SDKがデルタを適用したことをデバイス上で確認する方法です。
+
+### アップデートのデルタ生成を確認する {#checking-delta-generation-for-an-update}
+
+Bitriseがアップデートに対して作成したデルタを確認するには、[CodePush CLI](/release-management/codepush/codepush-cli/using-the-codepush-cli)で `update status` を実行します。
+
+```bash
+bitrise :codepush update status Staging --label v13
+```
+
+出力には、デルタ生成の状態と、デルタを持つ以前のアップデートごとに 1 行が含まれます。
+
+```text
+Update              v13
+Status              processed_valid
+Delta generation    completed
+Delta from v12      file-level diff, binary patch
+Delta from v9, v11  file-level diff
+```
+
+- `Delta generation` は、Bitriseがデルタをビルドしている間は `pending` になり、ダウンロードの準備ができると `completed` になります。
+- 各 `Delta from` 行は、以前のアップデートをバージョンラベルで示します。1 行に複数のラベルがある場合は、それらのアップデートが同じパッケージを共有していることを意味します。そのパッケージを持つアップデートがデプロイメントに残っていない場合、その行には代わりに短縮されたパッケージハッシュが表示されます。
+- `completed` 状態で `Delta from` 行がない場合、クライアントは完全なパッケージをダウンロードします。
+- 機械可読な出力が必要な場合は、`--json` フラグを追加します。
+
+### デバイス上でデルタアップデートを確認する {#checking-delta-updates-on-a-device}
+
+バージョン 10.6.1 以降、Bitrise CodePush SDKは、起動時に設定をログに出力し、アップデートのインストールの各ステップもログに出力します。デバイスがバイナリ差分を使用していることを確認するには、次のログ行を探します。
+
+- 起動時に、バイナリ差分が有効な場合は `Configuration` 行に `deltaUpdates=true` が表示されます。
+- インストール中は、`Applying diff update. binaryDiff=true patchedFiles=<count>` により、デバイスがバイナリパッチを含むデルタパッケージを受信したことがわかります。バイナリパッチを含まないファイルレベルのデルタは `binaryDiff=false` をログに出力します。完全なパッケージの場合は、代わりに `Applying full update.` がログに出力されます。
+- パッチ適用後、`Applied <count> binary diff patches.` により、SDKがパッチを適用したことが確認できます。
+
+接続されたAndroidデバイスまたは iOS シミュレーターからこれらのログをストリーミングするには、`bitrise :codepush debug android` または `bitrise :codepush debug ios` を使用します。

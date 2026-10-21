@@ -26,38 +26,52 @@ Workspace のオーナーは、複数の Workspace API トークンを設定で�
    ![workspace-api-token.svg](/img/_paligo/uuid-cb123ebc-f548-8e87-615f-aab39fefa078.svg)
 1. <strong>Settings</strong> ステップで、トークンの <strong>Name</strong> を入力し、<strong>Expiration</strong> を選択します。
 1. トークンの <strong>Workspace role</strong> を選択します。これにより、トークンが workspace レベルで実行できる操作が決まります。
+1. トークンの有効期限が切れる前に Bitrise から Workspace のオーナーにメールを送信するには、<strong>Notify me before this token expires</strong> のチェックを入れたままにします。送信が不要な場合は、チェックを外してください。[有効期限通知メール](#expiry-notification-emails)を参照してください。
 1. <strong>Next</strong> をクリックします。
 1. <strong>Product access</strong> ステップで、トークンがアクセスできる対象を設定します。
 
-   - <strong>Admin access</strong> をオンにすると、トークンが selected projects のすべての側面を管理できるようになり、すべてのプロダクトにアクセスできます。
+   - <strong>Admin access</strong> をオンにすると、トークンが selected projects のあらゆる側面を管理でき、すべてのプロダクトにアクセスできるようになります。
    - <strong>Bitrise CI</strong> をオンにすると、トークンが CI ビルドにアクセスできるようになります。<strong>Apply to: All projects</strong> または <strong>Selected projects</strong> を選択し、<strong>Role</strong> を選択するか、<strong>No access</strong> のままにします。
-   - <strong>Release Management</strong> をオンにすると、トークンが Release Management にアクセスできるようになります。権限はアプリレベルのロールによって制御されます。
-   - <strong>Remote Dev Environments</strong> をオンにすると、トークンが workspace の Remote Dev Environments を操作できるようになります。たとえば、CI から[デバイスプレビューリンク](/bitrise-rde/devices/device-preview-links)を発行できます。トークンが作成したセッションは workspace が所有します。
+   - <strong>Release Management</strong> をオンにすると、トークンが Release Management にアクセスできるようになります。権限は、アプリレベルのロールによって制御されます。
+   - <strong>Remote Dev Environments</strong> をオンにすると、トークンが workspace の Remote Dev Environments を操作できるようになります。たとえば、CI から[デバイスプレビューリンク](/bitrise-rde/devices/device-preview-links)を発行できます。トークンが作成したセッションは、workspace が所有します。
 1. <strong>Create token</strong> をクリックします。
 1. <strong>Copy and close</strong> をクリックしてトークンをコピーし、ダイアログボックスを閉じます。
 
-   :::caution[トークンを保存してください]
+   :::caution[トークンを保存する]
 
-   ダイアログボックスを閉じると、トークンを再度確認することはできません。
+   ダイアログボックスを閉じると、トークンを再び表示することはできません。
 
    :::
 
 
+## 有効期限通知メール {#expiry-notification-emails}
+
+Workspace API トークンを作成すると、デフォルトで <strong>Notify me before this token expires</strong> にチェックが入っています。この場合、トークンの有効期限が切れる前に、Bitrise が Workspace のすべてのオーナーにメールを送信します。これにより、インテグレーションやスクリプトが動作しなくなる前に、トークンを再生成するか、新しいトークンを作成できます。メールが届くタイミングは、選択した有効期限によって異なります。
+
+- <strong>6 months</strong> または <strong>3 months</strong>: トークンの有効期限の 30 日前と 7 日前。
+- <strong>1 month</strong> または <strong>2 weeks</strong>: トークンの有効期限の 7 日前。
+
+有効期限のないトークンや、<strong>1 day</strong>、<strong>1 hour</strong> など有効期限が 7 日未満のトークンでは、通知をオンにできません。この設定は、トークンを再生成しても、異なる有効期限を選択しても、そのトークンに引き継がれます。既存のトークンの設定は変更できません。通知をオンまたはオフにするには、new tokenを作成してください。
+
+たとえば、有効期限のないトークンを作成したとします。通知は利用できないため、設定はオフになります。その後、有効期限を <strong>6 months</strong> にしてトークンを再生成しても、通常であれば通知が送信される設定ですが、このトークンは通知を送信しません。再生成では設定が変わらないためです。このトークンで通知を受け取るには、新しいトークンを作成してください。
+
+
 ## Workspace API トークンの再生成 {#regenerating-a-workspace-api-token}
 
-Workspace API トークンを何らかの理由で紛失した場合、再度確認する方法はありません。既存のトークンを再生成できるため、まったく新しい new token を作成してアプリへのアクセスを再設定する必要はありません。再生成されたトークンには次の特徴があります。
+Workspace API トークンを何らかの理由で紛失した場合、そのトークンを再び表示する方法はありません。既存のトークンを再生成することもできます。この方法なら、まったく新しい new token を作成して、アプリへのアクセスを再度設定する必要はありません。再生成されたトークンには、次の特徴があります。
 
 - 新しい有効期限が設定されます。
 - 以前とまったく同じアプリに対して、まったく同じロールでアクセスできます。
+- 有効期限通知の設定が維持されます。
 
 1. <Partial_OpeningTheWorkspaceSettingsPage />
 1. 左側で <strong>Security</strong> を選択します。
-1. 対象のトークンを見つけ、名前の横にあるオプションメニュー (⋮) をクリックします。
+1. 対象のトークンを見つけて、名前の横にあるオプションメニュー（⋮）をクリックします。
 1. <strong>Regenerate</strong> を選択します。
 
    ![regenerate-token.png](/img/_paligo/uuid-3850ebd0-6ab7-934f-c232-4305ccffe249.png)
 1. 新しい有効期限を選択します。
-1. <strong>Regenerate</strong> をクリックして new token を取得します。
+1. <strong>Regenerate</strong> をクリックして、new tokenを取得します。
 1. <strong>Copy and close</strong> をクリックします。
 
-   トークンは安全な方法で保存してください。再度確認することはできません。
+   トークンは安全な方法で保存してください。トークンを再び表示することはできません。

@@ -51,10 +51,11 @@ Bitrise for Jira アプリは Jira Cloud にのみ対応しており、セルフ
 
 | タスク | 実施場所 |
 |---|---|
-| Jira でのアプリのインストール | Jira、Jira 管理者が実施 |
-| トークンの作成 | Bitrise、トークンの作成者が実施 |
+| Jira へのアプリのインストール | Jira(Jira 管理者が実施) |
+| トークンの作成 | Bitrise(トークンを作成する人が実施) |
 | Bitrise projectの接続 | Bitrise、その後 Jira |
-| 接続の確認 | Jira、Jira 管理者が実施 |
+| 接続の確認 | Jira(Jira 管理者が実施) |
+| <strong>Bitrise build</strong> セクションを特定の Jira プロジェクトに限定する(任意) | Jira(Jira 管理者が実施) |
 
 ## Jira でのアプリのインストール {#installing-the-app-in-jira}
 
@@ -131,17 +132,17 @@ Workspace APIトークンを使用してください。個人ではなくWorkspa
 
 ## Bitrise projectの接続 {#connecting-bitrise-projects}
 
-Bitrise projectを Jira に接続するには、APIトークンと、接続したいプロジェクトのリストが必要です。接続の完了作業は Jira 側で行うため、その部分は Jira 管理者が担当する必要があります。
+Bitrise projectを Jira に接続するには、APIトークンと、接続したいプロジェクトの一覧が必要です。接続は Jira 側で完了するため、その部分は Jira 管理者が実施する必要があります。
 
-1. <strong>Bitrise側:</strong> どのBitrise projectから Jira に更新情報を送信するかを決定します。特定のプロジェクトのリストを作成するか、すべてのプロジェクトを接続するかを決めます。
-1. APIトークンとプロジェクトのリストは、パスワードマネージャーやシークレット管理ツールなどの安全なチャネルで Jira 管理者と共有してください。通常のメールやチャットでは共有しないでください。
-1. <strong>Jira 側:</strong> <strong>Apps > Manage your apps > Bitrise for Jira</strong>に移動し、設定ページを開きます。
-1. <strong>Bitrise API Token</strong>で、受け取ったトークンを貼り付け、<strong>Save</strong>をクリックします。
-1. <strong>Connected Bitrise Project</strong>で、指定されたプロジェクトを選択し、<strong>Save</strong>をクリックします。
+1. <strong>Bitriseで:</strong> Jira に更新を送信するBitrise projectを決めます。特定のプロジェクトの一覧を作成するか、すべてを接続することにします。
+1. APIトークンとプロジェクトの一覧を、パスワードマネージャーやシークレット管理ツールなどの安全な経路で Jira 管理者に共有します。プレーンなメールやチャットでは共有しないでください。
+1. <strong>Jira で:</strong> <strong>Apps > Manage your apps > Bitrise for Jira</strong> に移動し、設定ページを開きます。
+1. <strong>Bitrise API token</strong> で、受け取ったトークンを貼り付け、<strong>Save</strong> をクリックします。
+1. <strong>Connected Bitrise project</strong> で、共有されたプロジェクトを選択し、<strong>Save</strong> をクリックします。
 
 :::note
 
-接続された各プロジェクトについて、Bitrise内でアウトゴーイングウェブフックが自動的に作成されます。ウェブフックを手動で設定する必要はありません。
+接続した各プロジェクトに対して、Bitriseでアウトゴーイング Webhook が自動的に作成されます。Webhook を手動で設定する必要はありません。
 
 :::
 
@@ -154,16 +155,39 @@ Bitrise projectを Jira に接続するには、APIトークンと、接続し�
 
 何も表示されない場合は、[トラブルシューティング](#troubleshooting)を参照してください。
 
+## Bitrise buildセクションを特定の Jira プロジェクトに限定する {#limiting-the-bitrise-builds-section-to-specific-jira-projects}
+
+デフォルトでは、<strong>Bitrise build</strong> セクションは、サイト上のすべての Jira プロジェクトの課題に表示されます。Jira プロジェクトの一部のみがBitriseを使用している場合は、それらのプロジェクトにセクションを限定できます。これは、Jira 管理者がアプリの設定ページで行います。
+
+:::important[先にアプリの更新を承認してください]
+
+プロジェクトピッカーには新しい権限が必要なため、Jira はこれをアプリのメジャーアップデートとして扱います。既存のインストールでは、Jira 管理者が更新を承認すると、<strong>Connected Jira projects</strong> 設定が利用できるようになります。それまでは、セクションはすべてのプロジェクトで表示され続けます。
+
+:::
+
+1. Jira で、<strong>Apps > Manage your apps > Bitrise for Jira</strong> に移動し、設定ページを開きます。
+1. <strong>Connected Jira projects</strong> で、名前またはキーで Jira プロジェクトを検索し、セクションを表示するプロジェクトを選択します。
+1. <strong>Save panel visibility</strong> をクリックします。
+
+これで、<strong>Bitrise build</strong> セクションはselected projectsの課題にのみ表示されます。再びすべてのプロジェクトに表示するには、selected projectsをすべて削除して保存します。
+
+:::note
+
+ピッカーには、閲覧可能な Jira プロジェクトのみが一覧表示されます。この設定が制御するのは <strong>Bitrise build</strong> セクションのみです。Jira の開発パネルの <strong>Builds</strong> タブは変更されません。また、どのBitrise projectが Jira にビルドの更新を送信するかを制御する <strong>Connected Bitrise project</strong> とは別の設定です。
+
+:::
+
 ## 接続の維持 {#maintaining-the-connection}
 
-- <strong>Tokenの有効期限切れまたは変更:</strong> APIトークンの有効期限が切れた場合、再生成された場合、または置き換えられた場合、接続が機能しなくなります。アプリの設定ページでトークンを更新し、接続されたプロジェクトを再確認してください。
-- <strong>New Bitrise project:</strong> Jira に表示したい新しいプロジェクトをBitriseに追加した場合は、アプリの設定ページに戻り、<strong>Connected Bitrise Project</strong>の下に追加してください。
+- <strong>Tokenの有効期限切れまたは変更:</strong> APIトークンの有効期限が切れた場合、再生成された場合、または置き換えられた場合、接続は機能しなくなります。アプリの設定ページでトークンを更新し、接続済みのプロジェクトを再確認してください。
+- <strong>New Bitrise project:</strong> Bitriseで Jira に表示したい新しいプロジェクトを追加した場合は、アプリの設定ページに戻り、<strong>Connected Bitrise project</strong> の下に追加してください。
 
 ## トラブルシューティング {#troubleshooting}
 
-- <strong>課題にbuild statusが表示されない:</strong> 課題キーがbranch name、Git タグ、プルリクエストのタイトル、pull request description、またはコミットメッセージに含まれていることを確認してください。次に、トークンがまだ有効であること、そして該当するプロジェクトが<strong>Connected Bitrise Project</strong>の下で選択されていることを確認してください。
-- <strong>プロジェクトがリストにない:</strong> トークンがそのプロジェクトにアクセスできていません。トークン(Personal access token の場合はその所有者のプロジェクトロール)がそのプロジェクトを含んでいるかを確認するか、トークンを作成した担当者に更新を依頼してください。
-- <strong>これまで表示されていたBuild statusが表示されなくなった:</strong> よくある原因は、Bitrise内の、接続されたプロジェクトのアウトゴーイングウェブフックで<strong>Attach Bitrise OIDC token</strong>のチェックが外されていることです。拒否された配信については、アプリの Jira 設定ページの<strong>Activity</strong>セクションを確認してください。
+- <strong>課題にbuild statusが表示されない:</strong> 課題キーがbranch name、Git タグ、プルリクエストのタイトル、pull request description、またはコミットメッセージに含まれていることを確認してください。次に、トークンがまだ有効であること、および該当するプロジェクトが <strong>Connected Bitrise project</strong> で選択されていることを確認してください。
+- <strong>1 つの Jira プロジェクトの課題でBitrise buildセクションが表示されない:</strong> Jira 管理者がセクションを特定のプロジェクトに限定している可能性があります。アプリの設定ページで <strong>Connected Jira projects</strong> を確認し、プロジェクトを追加するか、選択を解除してすべての場所に表示してください。[Bitrise buildセクションを特定の Jira プロジェクトに限定する](#limiting-the-bitrise-builds-section-to-specific-jira-projects)を参照してください。
+- <strong>プロジェクトが一覧に表示されない:</strong> トークンがそのプロジェクトにアクセスできません。トークン(Personal access token の場合は、その所有者のプロジェクトロール)にそのプロジェクトが含まれていることを確認するか、トークンを作成した人に更新を依頼してください。
+- <strong>以前は表示されていたBuild statusが表示されなくなる:</strong> 通常の原因は、接続済みプロジェクトのアウトゴーイング Webhook で、誰かが <strong>Attach Bitrise OIDC token</strong> のチェックを外したことです(Bitrise)。アプリの Jira 設定ページの <strong>Activity</strong> セクションで、拒否された配信がないか確認してください。
 
 ## 関連ページ {#related-pages}
 
