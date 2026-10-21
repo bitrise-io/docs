@@ -282,6 +282,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "bitrise-api/api-reference/build-rebuild",
+          label: "Rebuild a build",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
           id: "bitrise-api/api-reference/build-list-all",
           label: "List all builds",
           className: "api-method get",

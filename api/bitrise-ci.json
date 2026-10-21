@@ -2714,6 +2714,90 @@
         }
       }
     },
+    "/apps/{app-slug}/builds/{build-slug}/rebuild": {
+      "post": {
+        "security": [
+          {
+            "PersonalAccessToken": []
+          }
+        ],
+        "description": "Rebuild a finished build with the same parameters and workflow as the original build. Set `is_remote` to enable remote access for the new build, which requires permission for remote access on the app.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "builds"
+        ],
+        "summary": "Rebuild a build",
+        "operationId": "build-rebuild",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "App slug",
+            "name": "app-slug",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Build slug",
+            "name": "build-slug",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Build rebuild parameters",
+            "name": "build-rebuild-params",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "is_remote": {
+                  "description": "Enable remote access for the new build. When omitted, the build is rebuilt without remote access.",
+                  "type": "boolean",
+                  "default": false
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/v0.BuildTriggerRespModel"
+            }
+          },
+          "400": {
+            "description": "Bad request - the build is not finished yet",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          },
+          "403": {
+            "description": "Forbidden - no permission to run builds, or to enable remote access",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          }
+        }
+      }
+    },
     "/apps/{app-slug}/cache-items": {
       "get": {
         "security": [
