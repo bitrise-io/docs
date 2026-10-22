@@ -341,7 +341,7 @@ Anything reused across pages: a setup-prerequisites paragraph, a "how to open th
 
 ### Japanese translations of partials
 
-Every partial is also translated: `src/partials/<slug>.mdx` → `i18n/ja/partials/<slug>.mdx`, by `translate_docs.py` (the workflow watches `src/partials/` too). Translated pages import the Japanese copy (`@site/i18n/ja/partials/<slug>.mdx`) instead of the English one; list-context references are filled from the Japanese copy by `docusaurus.config.ts` for pages under `i18n/ja/`. Edit only the English partial — never the `i18n/ja/partials/` copy.
+Every partial is also translated: `src/partials/<slug>.mdx` → `i18n/ja/partials/<slug>.mdx`, by `translate_docs.py`, or by `scripts/ja_manual_translate.py` when no API key is available (`scripts/detect_ja_drift.py` lists the missing and stale partials and pages). Translated pages import the Japanese copy (`@site/i18n/ja/partials/<slug>.mdx`) instead of the English one; list-context references are filled from the Japanese copy by `docusaurus.config.ts` for pages under `i18n/ja/`. Edit only the English partial — never the `i18n/ja/partials/` copy.
 
 ### Japanese UI strings and frontmatter
 

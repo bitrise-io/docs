@@ -1,6 +1,9 @@
 # =====================================================================
 # Translate changed English docs to Japanese on PRs
 # =====================================================================
+
+# !!!THIS WORKFLOW IS NOT USED. DO NOT READ ANY FURTHER: THE WORKFLOW IS KEPT FOR POSSIBLE FUTURE USE ONLY.!!!
+
 # When a PR changes English docs, translate ONLY the changed files to Japanese
 # and commit the JA versions back to the PR branch. This keeps JA in
 # lock-step with EN — it can never silently go stale. Added/modified pages
@@ -37,13 +40,14 @@
 name: Translate docs to Japanese
 
 on:
-  pull_request:
-    types: [opened, synchronize]
-    paths:
-      - 'docs/**/*.md'          # <-- adjust to your English docs location
-      - 'docs/**/*.mdx'
-      - 'src/partials/**/*.mdx' # reusable partials are translated too
-      - 'docs/**/_category_.json' # sidebar labels feed translate_ui_strings.py
+  workflow_dispatch: 
+  # pull_request:
+  #  types: [opened, synchronize]
+  #  paths:
+  #    - 'docs/**/*.md'          # <-- adjust to your English docs location
+  #    - 'docs/**/*.mdx'
+  #    - 'src/partials/**/*.mdx' # reusable partials are translated too
+  #    - 'docs/**/_category_.json' # sidebar labels feed translate_ui_strings.py
 
 # A fast-follow push to the same PR (a very ordinary thing to do — push,
 # notice something, push again) starts a new run while the previous one may
@@ -64,6 +68,7 @@ permissions:
 
 jobs:
   check-key:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     outputs:
       enabled: ${{ steps.key.outputs.enabled }}
