@@ -1,482 +1,128 @@
 ---
-title: "Bitrise CI での CodePush アップデート"
-description: "iOSとAndroidのアップデートパッケージを作成し、両方をBitriseにアップロードするBitrise CI Workflowで、CodePushアップデートをリリースします。"
+title: "Bitrise CIでのCodePushアップデートのリリース"
+description: "Bitrise CI Workflowから、Bitrise CodePush Publish StepまたはCodePush CLIを使って、iOSとAndroid向けのCodePushアップデートをリリースします。"
 sidebar_position: 5
 slug: /release-management/codepush/codepush-updates-with-bitrise-ci
 ---
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 
 CodePushアップデートは、[Bitrise CI](/bitrise-ci) <GlossTerm baseform="Workflow">Workflow</GlossTerm>でリリースできます。このプロセスには次のものが必要です。
 
-- CodePushの認証情報の設定: アプリID、デプロイID、ターゲットバージョン、Bitrise APIトークンを保持する[Environment Variables](/bitrise-ci/configure-builds/environment-variables)と、<GlossTerm baseform="Secret">シークレット</GlossTerm>を作成します。
-- iOSとAndroidの両方のアップデートパッケージを作成し、両方をBitriseにアップロードするWorkflowの作成。
+- CodePush認証情報の設定: アプリID、deployment name、ターゲットバージョン、Bitrise APIトークンを保持する[Environment Variables](/bitrise-ci/configure-builds/environment-variables)と<GlossTerm baseform="Secret">シークレット</GlossTerm>を作成します。
+- Workflowの作成: iOSとAndroidの両方のアップデートパッケージを作成し、両方をBitriseにアップロードします。
 
 
 ## BitriseでのCodePush認証情報の設定 {#configuring-codepush-credentials-on-bitrise}
 
-1. [認証情報を取得します](/release-management/codepush/creating-and-releasing-codepush-updates#getting-your-codepush-credentials)。Release ManagementのアプリIDとCodePushのデプロイIDが必要です。
-1. デプロイID、接続済みアプリID、ターゲットバージョン用に[Environment Variablesを作成します](/bitrise-ci/configure-builds/environment-variables#setting-an-env-var-in-the-workflow-editor)。
+1. Release ManagementのアプリID（[確認方法](/release-management/codepush/codepush-cli/using-the-codepush-cli#setting-up-a-project)）と[CodePush deployments](/release-management/codepush/creating-a-codepush-deployment)の名前を取得します。
+1. 接続されたアプリID、deployment name、ターゲットバージョン用の[Environment Variablesを作成](/bitrise-ci/configure-builds/environment-variables#setting-an-env-var-in-the-workflow-editor)します。
 
-   - `IOS_PROD_DEPLOYMENT_ID`: iOSアプリのデプロイID。
-   - `ANDROID_PROD_DEPLOYMENT_ID`: AndroidアプリのデプロイID。
    - `IOS_CONNECTED_APP_ID`: iOSアプリのアプリID。
    - `ANDROID_CONNECTED_APP_ID`: AndroidアプリのアプリID。
-   - `APP_TARGET_VERSIONS`: アップデートを受け取るアプリのバージョン。正確なバージョンまたは[範囲式](/release-management/codepush/creating-and-releasing-codepush-updates#target-versions)を使用します。例: `1.2.0`、`>=1.5.0`。
+   - `CODEPUSH_DEPLOYMENT`: リリース先のデプロイの名前（例: `Staging`）。
+   - `APP_TARGET_VERSIONS`: アップデートを受け取るアプリバージョン。正確なバージョンまたは[範囲式](/release-management/codepush/creating-and-releasing-codepush-updates#target-versions)を使用します（例: `1.2.0`または`>=1.5.0`）。
 
-   Bitriseは、アップデートがアプリバージョンのネイティブコードで動作するかどうかを確認できません。どのバージョンに互換性があるかはユーザーが判断するため、リリースのたびに`APP_TARGET_VERSIONS`を自分で設定してください。
-1. APIトークン用に[シークレットを作成します](/bitrise-ci/configure-builds/secrets#setting-a-secret)。
+   デプロイはアプリに属するため、iOSアプリとAndroidアプリにはそれぞれ独自のデプロイがあります。2つのデプロイには同じ名前を付けることができます（例: `Staging`）。その場合、`CODEPUSH_DEPLOYMENT`を`Staging`に設定すると、Bitriseが各アプリに対応するデプロイを見つけます。
 
-   - `BITRISE_API_TOKEN`: パーソナルアクセストークン、または<GlossTerm baseform="workspace">workspace</GlossTerm> APIトークン。
+   Bitriseは、アップデートがアプリバージョンのネイティブコードで動作するかどうかを確認できません。互換性のあるバージョンはご自身で判断するため、各リリースの前に`APP_TARGET_VERSIONS`を設定してください。
+1. 個人用アクセストークンまたは<GlossTerm baseform="workspace">workspace</GlossTerm> APIトークンを保持する、`BITRISE_API_TOKEN`という名前の[シークレットを作成](/bitrise-ci/configure-builds/secrets#setting-a-secret)します。
 
 
 ## CodePushアップデート用のWorkflowの作成 {#creating-a-workflow-for-codepush-updates}
 
-このセクションでは、次の処理を行うCI Workflowを作成する方法を説明します。
-
-- iOS用のアップデートパッケージを作成する。
-- iOSのアップデートパッケージをBitriseにアップロードする。
-- Android用のアップデートパッケージを作成する。
-- AndroidのアップデートパッケージをBitriseにアップロードする。
-
-<Tabs>
-<TabItem value="react-native-app" label="React Native app" default>
-
-1. Workflowを作成し、`git-clone` <GlossTerm baseform="step">Step</GlossTerm>の後に、`install`コマンドで`npm` Stepを追加します。
-
-   ```yaml
-   ---
-   format_version: '13'
-   default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
-   project_type: react-native
-   workflows:
-     codepush_update_deploy:
-       description: Generates your update and pushes it to Bitrise.
-       steps:
-       - git-clone@8: {}
-       - npm@1:
-           inputs:
-           - command: install
-   ```
-1. GitHubから`release-management-recipes`リポジトリをクローンする別の`script` Stepを追加します。このリポジトリには、後で使用するアップロードスクリプトが含まれています。
-
-   ```yaml
-   - script@1:
-       title: Get Release Management Recipes
-       inputs:
-       - content: >-
-           #!/usr/bin/env bash
-           # fail if any commands fails
-           set -e
-           # make pipelines' return status equal the last command to exit with a
-           non-zero status, or zero if all commands exit successfully
-           set -o pipefail
-           # debug log
-           set -x
-
-           # write your script here
-           git clone https://github.com/bitrise-io/release-management-recipes
-   ```
-1. iOSのアップデートバンドルを生成し、そこからzipアーカイブを作成します。
-
-   ```yaml
-   - script@1:
-       title: Generate iOS Update Bundle
-       inputs:
-       - content: >-
-           #!/usr/bin/env bash
-           # fail if any commands fails
-           set -e
-           # make pipelines' return status equal the last command to exit with a
-           non-zero status, or zero if all commands exit successfully
-           set -o pipefail
-           # debug log
-           set -x
-
-           # remove output of earlier runs so the zip holds one platform only
-           rm -rf ./build update.zip
-
-           npx react-native bundle \
-             --platform ios \
-             --dev false \
-             --entry-file index.js \
-             --bundle-output ./build/main.jsbundle \
-             --assets-dest ./build
-
-           # Create zip archive
-           zip -r update.zip ./build
-   ```
-1. `upload_code_push_package.sh`を使用して、iOSのアップデートバンドルをBitriseにアップロードします。
-
-   ```yaml
-   - script@1:
-       title: Upload iOS Update Bundle to Bitrise
-       inputs:
-       - content: >
-           #!/usr/bin/env bash
-           # fail if any commands fails 
-           set -e 
-           # make pipelines' return status equal the last command to exit with a non-zero status, or zero if all
-           commands exit successfully 
-           set -o pipefail 
-           # debug log 
-           set -x
-
-           cd release-management-recipes
-
-           UPLOAD_RESPONSE=$(PACKAGE_PATH=../update.zip \
-                           AUTHORIZATION_TOKEN=$BITRISE_API_TOKEN \
-                           CONNECTED_APP_ID=$IOS_CONNECTED_APP_ID \
-                           DEPLOYMENT_ID=$IOS_PROD_DEPLOYMENT_ID \
-                           APP_VERSION=$APP_TARGET_VERSIONS /bin/bash ./api/upload_code_push_package.sh 2>&1)
-           EXIT_CODE=$?
-
-           if [ $EXIT_CODE -ne 0 ]; then 
-           \  echo \"❌ upload_code_push_package.sh failed with exit code
-           $EXIT_CODE\"
-           \  echo \"$UPLOAD_RESPONSE\"
-           \  exit $EXIT_CODE
-           fi
-
-           # Take only the last line of the response (final/latest status JSON
-           object) FINAL_RESPONSE=$(echo "$UPLOAD_RESPONSE" | tail -n1)
-
-           # Check explicitly for ERR_INTERNAL or other internal error indicators
-           if echo \"$UPLOAD_RESPONSE\" | grep -q \"ERR_INTERNAL\"; then
-           \  ERROR_MESSAGE=$(echo \"$FINAL_RESPONSE\" | jq -r '.message' ||
-           echo \"Unknown error\")
-           \  echo \"❌ Server returned internal error: $ERROR_MESSAGE\"
-           \  exit 1
-           fi
-
-
-           # Now safely parse 'status' and 'status_reason' from the final
-           response line PACKAGE_STATUS=$(echo "$FINAL_RESPONSE" | jq -r
-           '.status' || echo "null") STATUS_REASON=$(echo "$FINAL_RESPONSE" | jq
-           -r '.status_reason' || echo "")
-
-           if [ "$PACKAGE_STATUS" = "processed_valid" ]; then   echo "✅ Package
-           uploaded and processed successfully."   rm -rf ../build.zip    rm -rf
-           ../build else   echo "⚠️ Package upload unexpected status:
-           $PACKAGE_STATUS - Reason: $STATUS_REASON"   exit 1 fi cd ..
-   ```
-1. Androidのアップデートバンドルを生成します。
-
-   ```yaml
-   - script@1:
-       title: Generate Android Update Bundle
-       inputs:
-       - content: |
-           #!/usr/bin/env bash
-           # fail if any commands fails
-           set -e
-           # make pipelines' return status equal the last command to exit with a non-zero status, or zero if all commands exit successfully
-           set -o pipefail
-           # debug log
-           set -x
-
-           # remove output of earlier runs so the zip holds one platform only
-           rm -rf ./build update.zip
-
-           npx react-native bundle \
-             --platform android \
-             --dev false \
-             --entry-file index.js \
-             --bundle-output ./build/index.android.bundle \
-             --assets-dest ./build
-
-           # Create zip archive
-           zip -r update.zip ./build
-   ```
-1. AndroidのアップデートバンドルをBitriseにアップロードします。
-
-   ```yaml
-   - script@1:
-       title: Upload Android Update Bundle to Bitrise
-       inputs:
-       - content: |
-           #!/usr/bin/env bash
-           # fail if any commands fails
-           set -e
-           # make pipelines' return status equal the last command to exit with a non-zero status, or zero if all commands exit successfully
-           set -o pipefail
-           # debug log
-           set -x
-
-           cd release-management-recipes
-
-           UPLOAD_RESPONSE=$(PACKAGE_PATH=../update.zip \
-                           AUTHORIZATION_TOKEN=$BITRISE_API_TOKEN \
-                           CONNECTED_APP_ID=$ANDROID_CONNECTED_APP_ID \
-                           DEPLOYMENT_ID=$ANDROID_PROD_DEPLOYMENT_ID \
-                           APP_VERSION=$APP_TARGET_VERSIONS /bin/bash ./api/upload_code_push_package.sh 2>&1)
-           EXIT_CODE=$?
-
-           if [ $EXIT_CODE -ne 0 ]; then
-             echo "❌ upload_code_push_package.sh failed with exit code $EXIT_CODE"
-             echo "$UPLOAD_RESPONSE"
-             exit $EXIT_CODE
-           fi
-
-           # Take only the last line of the response (final/latest status JSON object)
-           FINAL_RESPONSE=$(echo "$UPLOAD_RESPONSE" | tail -n1)
-
-           # Check explicitly for ERR_INTERNAL or other internal error indicators
-           if echo "$UPLOAD_RESPONSE" | grep -q "ERR_INTERNAL"; then
-             ERROR_MESSAGE=$(echo "$FINAL_RESPONSE" | jq -r '.message' || echo "Unknown error")
-             echo "❌ Server returned internal error: $ERROR_MESSAGE"
-             exit 1
-           fi
-
-           # Now safely parse 'status' and 'status_reason' from the final response line
-           PACKAGE_STATUS=$(echo "$FINAL_RESPONSE" | jq -r '.status' || echo "null")
-           STATUS_REASON=$(echo "$FINAL_RESPONSE" | jq -r '.status_reason' || echo "")
-
-           if [ "$PACKAGE_STATUS" = "processed_valid" ]; then
-             echo "✅ Package uploaded and processed successfully."
-           else
-             echo "⚠️ Package upload unexpected status: $PACKAGE_STATUS - Reason: $STATUS_REASON"
-             exit 1
-           fi
-
-           cd ..
-   ```
-
-</TabItem>
-<TabItem value="expo-app" label="Expo app">
-
-1. Workflowを作成し、`git-clone` Stepの後に、`install`コマンドで`npm` Stepを追加します。
-
-   ```yaml
-   ---
-   format_version: '13'
-   default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
-   project_type: react-native
-   workflows:
-     codepush_update_deploy:    
-       description: |      
-         Uploads Update Bundle to Bitrise    
-       status_report_name: Executing <target_id> for <project_title>
-       steps:
-       - git-clone@8: {}
-       - restore-npm-cache@2: {}
-       - npm@1:
-           inputs:
-           - command: install
-   ```
-1. GitHubから`release-management-recipes`リポジトリをクローンする別の`script` Stepを追加します。このリポジトリには、後で使用するアップロードスクリプトが含まれています。
-
-   ```yaml
-   - script@1:
-       title: Get Release Management Recipes
-       inputs:
-       - content: >-
-           #!/usr/bin/env bash
-           # fail if any commands fails
-           set -e
-           # make pipelines' return status equal the last command to exit with a
-           non-zero status, or zero if all commands exit successfully
-           set -o pipefail
-           # debug log
-           set -x
-
-           # write your script here
-           git clone https://github.com/bitrise-io/release-management-recipes
-   ```
-1. iOSのアップデートバンドルを生成し、そこからzipアーカイブを作成します。
-
-   ```yaml
-   - script@1:
-       title: Generate iOS Update Bundle
-       inputs:
-       - content: |-
-           #!/usr/bin/env bash
-           # fail if any commands fails
-           set -e
-           # make pipelines' return status equal the last command to exit with a non-zero status, or zero if all commands exit successfully
-           set -o pipefail
-           # debug log
-           set -x
-
-           # remove output of earlier runs so the zip holds one platform only
-           rm -rf ./build update.zip
-
-           npx expo export:embed \
-             --entry-file index.js \
-             --platform ios \
-             --dev false \
-             --reset-cache \
-             --bundle-output ./build/main.jsbundle \
-             --assets-dest ./build \
-             --minify false
-
-           # Create zip archive
-           zip -r update.zip ./build
-   ```
-1. `upload_code_push_package.sh`を使用して、iOSのアップデートバンドルをBitriseにアップロードします。
-
-   ```yaml
-   - script@1:
-       title: Upload iOS Update Bundle to Bitrise
-       inputs:
-       - content: >
-           #!/usr/bin/env bash
-           # fail if any commands fails 
-           set -e 
-           # make pipelines' return status equal the last command to exit with a non-zero status, or zero if all
-           commands exit successfully 
-           set -o pipefail 
-           # debug log 
-           set -x
-
-           cd release-management-recipes
-
-           UPLOAD_RESPONSE=$(PACKAGE_PATH=../update.zip \
-                           AUTHORIZATION_TOKEN=$BITRISE_API_TOKEN \
-                           CONNECTED_APP_ID=$IOS_CONNECTED_APP_ID \
-                           DEPLOYMENT_ID=$IOS_PROD_DEPLOYMENT_ID \
-                           APP_VERSION=$APP_TARGET_VERSIONS /bin/bash ./api/upload_code_push_package.sh 2>&1)
-
-           EXIT_CODE=$?
-
-           if [ $EXIT_CODE -ne 0 ]; then 
-           \  echo \"❌ upload_code_push_package.sh failed with exit code
-           $EXIT_CODE\"
-           \  echo \"$UPLOAD_RESPONSE\"
-           \  exit $EXIT_CODE
-           fi
-
-           # Take only the last line of the response (final/latest status JSON
-           object) FINAL_RESPONSE=$(echo "$UPLOAD_RESPONSE" | tail -n1)
-
-           # Check explicitly for ERR_INTERNAL or other internal error indicators
-           if echo \"$UPLOAD_RESPONSE\" | grep -q \"ERR_INTERNAL\"; then
-           \  ERROR_MESSAGE=$(echo \"$FINAL_RESPONSE\" | jq -r '.message' ||
-           echo \"Unknown error\")
-           \  echo \"❌ Server returned internal error: $ERROR_MESSAGE\"
-           \  exit 1
-           fi
-
-
-           # Now safely parse 'status' and 'status_reason' from the final
-           response line PACKAGE_STATUS=$(echo "$FINAL_RESPONSE" | jq -r
-           '.status' || echo "null") STATUS_REASON=$(echo "$FINAL_RESPONSE" | jq
-           -r '.status_reason' || echo "")
-
-           if [ "$PACKAGE_STATUS" = "processed_valid" ]; then   echo "✅ Package
-           uploaded and processed successfully."   rm -rf ../build.zip    rm -rf
-           ../build else   echo "⚠️ Package upload unexpected status:
-           $PACKAGE_STATUS - Reason: $STATUS_REASON"   exit 1 fi cd ..
-   ```
-1. Androidのアップデートバンドルを生成します。
-
-   ```yaml
-   - script@1:
-       title: Generate Android Update Bundle
-       inputs:
-       - content: |
-           #!/usr/bin/env bash
-           # fail if any commands fails
-           set -e
-           # make pipelines' return status equal the last command to exit with a non-zero status, or zero if all commands exit successfully
-           set -o pipefail
-           # debug log
-           set -x
-
-           # remove output of earlier runs so the zip holds one platform only
-           rm -rf ./build update.zip
-
-           npx expo export:embed \
-             --entry-file index.js \
-             --platform android \
-             --dev false \
-             --reset-cache \
-             --bundle-output ./build/index.android.bundle \
-             --assets-dest ./build \
-             --minify false
-
-           # Create zip archive
-           zip -r update.zip ./build
-   ```
-1. AndroidのアップデートバンドルをBitriseにアップロードします。
-
-   ```yaml
-   - script@1:
-       title: Upload Android Update Bundle to Bitrise
-       inputs:
-       - content: |
-           #!/usr/bin/env bash
-           # fail if any commands fails
-           set -e
-           # make pipelines' return status equal the last command to exit with a non-zero status, or zero if all commands exit successfully
-           set -o pipefail
-           # debug log
-           set -x
-
-           cd release-management-recipes
-
-           UPLOAD_RESPONSE=$(PACKAGE_PATH=../update.zip \
-                           AUTHORIZATION_TOKEN=$BITRISE_API_TOKEN \
-                           CONNECTED_APP_ID=$ANDROID_CONNECTED_APP_ID \
-                           DEPLOYMENT_ID=$ANDROID_PROD_DEPLOYMENT_ID \
-                           APP_VERSION=$APP_TARGET_VERSIONS /bin/bash ./api/upload_code_push_package.sh 2>&1)
-           EXIT_CODE=$?
-
-           if [ $EXIT_CODE -ne 0 ]; then
-             echo "❌ upload_code_push_package.sh failed with exit code $EXIT_CODE"
-             echo "$UPLOAD_RESPONSE"
-             exit $EXIT_CODE
-           fi
-
-           # Take only the last line of the response (final/latest status JSON object)
-           FINAL_RESPONSE=$(echo "$UPLOAD_RESPONSE" | tail -n1)
-
-           # Check explicitly for ERR_INTERNAL or other internal error indicators
-           if echo "$UPLOAD_RESPONSE" | grep -q "ERR_INTERNAL"; then
-             ERROR_MESSAGE=$(echo "$FINAL_RESPONSE" | jq -r '.message' || echo "Unknown error")
-             echo "❌ Server returned internal error: $ERROR_MESSAGE"
-             exit 1
-           fi
-
-           # Now safely parse 'status' and 'status_reason' from the final response line
-           PACKAGE_STATUS=$(echo "$FINAL_RESPONSE" | jq -r '.status' || echo "null")
-           STATUS_REASON=$(echo "$FINAL_RESPONSE" | jq -r '.status_reason' || echo "")
-
-           if [ "$PACKAGE_STATUS" = "processed_valid" ]; then
-             echo "✅ Package uploaded and processed successfully."
-           else
-             echo "⚠️ Package upload unexpected status: $PACKAGE_STATUS - Reason: $STATUS_REASON"
-             exit 1
-           fi
-
-           cd ..
-   ```
-
-</TabItem>
-</Tabs>
+このセクションでは、次の処理を行うCI Workflowの作成方法を説明します。
+
+- iOS用のアップデートパッケージを作成します。
+- iOSのアップデートパッケージをBitriseにアップロードします。
+- Android用のアップデートパッケージを作成します。
+- AndroidのアップデートパッケージをBitriseにアップロードします。
+
+これらのアップデートパッケージの作成とアップロードには、Bitrise CodePush Publish Stepまたは[CodePush CLI](/release-management/codepush/codepush-cli/about-the-codepush-cli)のどちらかを使用できます。どちらもプロジェクトがbare React NativeとExpoのどちらを使用しているかを検出し、1回の実行で1つのプラットフォームを処理します。そのため、iOS用に1回、Android用に1回追加してください。
+
+### Bitrise CodePush Publish Stepの使用 {#using-the-bitrise-codepush-publish-step}
+
+ほとんどのプロジェクトにはStepをお勧めします。JavaScriptの依存関係をインストールし、アプリをバンドルして、アップデートをアップロードします。`git-clone` Stepの後に、プラットフォームごとに1回ずつ追加してください。
+
+```yaml
+workflows:
+  codepush_update_deploy:
+    steps:
+    - git-clone@8: {}
+    - codepush-publish@1:
+        title: Publish iOS update
+        inputs:
+        - platform: ios
+        - app_id: $IOS_CONNECTED_APP_ID
+        - deployment: $CODEPUSH_DEPLOYMENT
+        - app_version: $APP_TARGET_VERSIONS
+        - api_token: $BITRISE_API_TOKEN
+    - codepush-publish@1:
+        title: Publish Android update
+        inputs:
+        - platform: android
+        - app_id: $ANDROID_CONNECTED_APP_ID
+        - deployment: $CODEPUSH_DEPLOYMENT
+        - app_version: $APP_TARGET_VERSIONS
+        - api_token: $BITRISE_API_TOKEN
+```
+
+Stepには、`rollout_percentage`、`mandatory`、`description`などのオプションの入力もあります。エントリファイルとHermesの設定は自動的に検出され、`entry_file`と`hermes`で上書きできます。前のStepですでに依存関係をインストールしている場合は、`skip_dependency_install`を`"true"`に設定してください。
+
+[アップデートに署名する](/release-management/codepush/code-signing-with-codepush)には、秘密鍵をSecret Fileとしてアップロードし、`private_key_path`にその環境変数（例: `$CODEPUSH_PRIVATE_KEY`）を設定します。
+
+Stepはアップデートパッケージを`$BITRISE_DEPLOY_DIR`にエクスポートするため、後続の<strong>Deploy to Bitrise.io</strong> Stepがそれをビルドのアーティファクトに追加します。
+
+### CodePush CLIの使用 {#using-the-codepush-cli}
+
+アップデートの公開以外の操作が必要な場合（たとえば、リリースを別のデプロイに昇格させたり、ロールバックしたりする場合）は、CLIを使用します。CodePush CLIプラグインと依存関係をインストールしてから、プラットフォームごとに1回ずつ`push --bundle`を実行します。このコマンドはJavaScriptをバンドルし、アップデートをアップロードします。CLIは環境から`BITRISE_API_TOKEN`を自動的に読み取ります。
+
+```yaml
+workflows:
+  codepush_update_deploy:
+    steps:
+    - git-clone@8: {}
+    - script@1:
+        title: Install the CodePush CLI
+        inputs:
+        - content: bitrise plugin install https://github.com/bitrise-io/bitrise-plugins-codepush-cli.git
+    - npm@1:
+        inputs:
+        - command: install
+    - script@1:
+        title: Push iOS update
+        inputs:
+        - content: |-
+            bitrise :codepush push --bundle --platform ios \
+              --app-id "$IOS_CONNECTED_APP_ID" \
+              --deployment "$CODEPUSH_DEPLOYMENT" \
+              --app-version "$APP_TARGET_VERSIONS"
+    - script@1:
+        title: Push Android update
+        inputs:
+        - content: |-
+            bitrise :codepush push --bundle --platform android \
+              --app-id "$ANDROID_CONNECTED_APP_ID" \
+              --deployment "$CODEPUSH_DEPLOYMENT" \
+              --app-version "$APP_TARGET_VERSIONS"
+```
+
+Bitriseビルドでは、CLIがビルド番号とコミットハッシュをアップデートに付加します。また、アップデートIDを次のStepsにエクスポートします。すべてのコマンドとフラグについては、[CodePush CLIリファレンス](/release-management/codepush/codepush-cli/codepush-cli-reference)を参照してください。
 
 
 ## CodePushアップデートリリースの自動化 {#automating-the-codepush-update-release}
 
-CodePushアップデートを生成してアップロードするWorkflowを作成した後は、2つの方法で実行できます。
+CodePushアップデートを生成してアップロードするWorkflowを作成したら、次の2つの方法で実行できます。
 
-- [Workflowを手動で実行します](/bitrise-ci/run-and-analyze-builds/starting-builds/starting-builds-manually)。
-- 定義した条件が満たされたときに、[ビルドを自動的にトリガーします](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers)。利用可能な条件については、[サポートされているトリガー条件](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers#supported-trigger-conditions)を参照してください。
+- [Workflowを手動で実行する](/bitrise-ci/run-and-analyze-builds/starting-builds/starting-builds-manually)。
+- 定義した条件が満たされたときに[ビルドを自動的にトリガーする](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers)。使用できる条件については、[サポートされているトリガー条件](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers#supported-trigger-conditions)を参照してください。
 
-自動化のために、さまざまな種類のトリガーを複数設定できます。この設定例では、ラベル付きのプルリクエストトリガーを使用します。
+さまざまな種類のトリガーを設定して、プロセスを自動化できます。この設定例では、ラベルを使ったプルリクエストトリガーを使用します。
 
-<strong>特定のブランチへのプルリクエストにラベルが付いたときにCodePushアップデートをリリースする</strong>
+<strong>プルリクエストにラベルが付いたときにCodePushアップデートをリリースする</strong>
 
-この例では、次のようなトリガーを設定します。
+この例では、いずれかのプルリクエストに`release-update`ラベルが付いたときに`codepush_update_deploy` Workflowが実行されるトリガーを設定します。マージする前のテストとして、プルリクエストを`Staging`などのデプロイにリリースする場合に使用します。
 
-- Bitriseは、`updates`をターゲットブランチとして開かれたプルリクエストを監視します。
-- そのブランチへのプルリクエストに`release-update`ラベルが付くと、`codepush_update_deploy` Workflowが実行されます。
-
-1. [トリガーを作成します](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers#creating-build-triggers)。`target_branch`と`label`の2つの条件を持つプルリクエストトリガーを設定します。
-
-   - `target_branch`を`updates`に設定します。
-   - `label`を`release-update`に設定します。
+1. [トリガーを作成します](/bitrise-ci/run-and-analyze-builds/build-triggers/configuring-build-triggers#creating-build-triggers)。`label`条件を`release-update`に設定したプルリクエストトリガーを設定します。`target_branch`条件のデフォルトは`*`のため、すべてのブランチへのプルリクエストが一致します。リリースを1つのブランチに限定するには、`target_branch`も設定してください。
 
    :::tip[GUI設定]
 
@@ -497,14 +143,13 @@ CodePushアップデートを生成してアップロードするWorkflowを作�
        [...]
        triggers:
          pull_request:
-         - target_branch: updates
-           label: release-update
+         - label: release-update
    ```
-1. CodePushアップデートをリリースするときは、`updates`ブランチへのプルリクエストを開きます。
-1. プルリクエストがレビューされて承認された後、`release-update`ラベルを付けます。
+1. CodePushアップデートをリリースするときは、プルリクエストを作成します。
+1. プルリクエストがレビューされて承認されたら、`release-update`ラベルを追加します。
 
 :::note
 
-ビルドは、マージ後のブランチではなく、プルリクエストのコードで実行されます。Bitriseは、プルリクエストをマージする前にアップデートをリリースします。
+Bitriseは、ラベルを追加した時点で、プルリクエストがマージされる前にビルドを実行します。アップデートはプルリクエストのコードからリリースされます。
 
 :::
