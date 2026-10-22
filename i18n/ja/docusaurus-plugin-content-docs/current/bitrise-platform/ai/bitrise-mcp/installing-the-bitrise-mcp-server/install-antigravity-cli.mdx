@@ -1,0 +1,147 @@
+---
+title: "Google Antigravity CLIへのBitrise MCPサーバーのインストール"
+sidebar_label: "Google Antigravity CLI"
+sidebar_position: 3
+slug: /bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-antigravity-cli
+---
+# Google Antigravity CLIにBitrise MCPサーバーをインストールする {#install-bitrise-mcp-server-in-google-antigravity-cli}
+
+Google Antigravity CLI（`agy`）は、Gemini CLIの後継です。Gemini CLIでBitrise MCPサーバーを使用していた場合は、[Gemini CLIからの移行](#migrating-from-gemini-cli)を参照してください。
+
+## 前提条件 {#prerequisites}
+
+1. Google Antigravity CLIがインストールされ、サインイン済みであること（[Antigravity CLIの公式ドキュメント](https://antigravity.google/docs/getting-started)を参照）
+2. Bitriseアカウント
+3. ローカルセットアップの場合: [Go](https://go.dev/)（1.25以上）がインストールされていること、およびBitriseのPAT
+
+## Bitrise MCPサーバーの設定 {#bitrise-mcp-server-configuration}
+
+Antigravity CLIは、専用の`mcp_config.json`ファイルにある`mcpServers`キーからMCPサーバーを読み込みます。
+
+- <strong>グローバル設定</strong>: `~/.gemini/config/mcp_config.json`（`~`はホームディレクトリ）
+- <strong>プロジェクト固有</strong>: プロジェクトディレクトリ内の`.agents/mcp_config.json`
+
+ファイルがまだない場合は作成してください。リモートサーバーは`serverUrl`で指定します。Antigravity CLIは、Gemini CLIで使われていた`url`キーと`httpUrl`キーをサポートしていません。
+
+### 方法1: リモートサーバー（推奨） {#method-1-remote-server-recommended}
+
+リモートのBitrise MCPサーバーはBitriseが`https://mcp.bitrise.io`でホストしており、Streamable HTTPに対応しています。OAuthを使用してBitriseアカウントで認証するため、トークンをコピー＆ペーストする必要はありません。
+
+1. `mcp_config.json`にサーバーを追加します。
+
+    ```json
+    // ~/.gemini/config/mcp_config.json
+    {
+        "mcpServers": {
+            "bitrise": {
+                "serverUrl": "https://mcp.bitrise.io"
+            }
+        }
+    }
+    ```
+
+2. `agy`でAntigravity CLIを起動し、MCPマネージャーを開きます。
+
+    ```
+    /mcp
+    ```
+
+3. `bitrise`を選択し、<strong>Authenticate</strong>アクションに移動してEnterキーを押します。
+4. ブラウザでBitriseにサインイン（または既存のセッションを確認）し、同意画面で承認します。
+5. ブラウザに表示された認証コードをコピーし、ターミナルのプロンプトに貼り付けてEnterキーを押します。
+
+Antigravity CLIはアクセストークンを保存し、有効期限が切れると自動的に更新します。
+
+#### フォールバック: PATベースの認証 {#fallback-pat-based-authentication}
+
+OAuthのサインインが完了しない場合や、個人アクセストークンを使用したい場合は、[Account Settings → Security](https://app.bitrise.io/me/account/security)で[BitriseのPATを作成](https://devcenter.bitrise.io/api/authentication)し、ヘッダーとして渡してください。
+
+```json
+// ~/.gemini/config/mcp_config.json
+{
+    "mcpServers": {
+        "bitrise": {
+            "serverUrl": "https://mcp.bitrise.io",
+            "headers": {
+                "Authorization": "Bearer YOUR_BITRISE_PAT"
+            }
+        }
+    }
+}
+```
+
+`YOUR_BITRISE_PAT`は実際のトークンに置き換えてください。プロジェクト固有の`.agents/mcp_config.json`を使用する場合は、トークンがリポジトリに含まれないように、このファイルを`.gitignore`に追加してください。
+
+### 方法2: ローカルサーバーのセットアップ（Goが必要） {#method-2-local-server-setup-go-required}
+
+ローカルサーバーはstdioモードで動作し、個人アクセストークンで認証します（stdioモードでは、ブラウザによるOAuthフローはありません）。
+
+```json
+// ~/.gemini/config/mcp_config.json
+{
+    "mcpServers": {
+        "bitrise": {
+            "command": "go",
+            "args": [
+                "run",
+                "github.com/bitrise-io/bitrise-mcp/v2@v2"
+            ],
+            "env": {
+                "BITRISE_TOKEN": "YOUR_BITRISE_PAT"
+            }
+        }
+    }
+}
+```
+
+## 確認 {#verification}
+
+Bitrise MCPサーバーが設定されていることを確認するには、ターミナルで`agy`を使ってAntigravity CLIを起動し、次の操作を行います。
+
+1. <strong>MCPマネージャーを開く</strong>:
+
+    ```
+    /mcp
+    ```
+
+    MCPマネージャーには、設定済みのサーバーが一覧表示されます。認証済みのサーバーには、名前の横に<strong>Authed</strong>と表示されます。`bitrise`を選択すると、接続ステータスとツールの一覧を確認できます。
+
+2. <strong>プロンプトでテストする</strong>:
+
+    ```
+    List my Bitrise apps
+    ```
+
+    デフォルトでは、Antigravity CLIはMCPツールを実行する前に承認を求めます。
+
+## Gemini CLIからの移行 {#migrating-from-gemini-cli}
+
+Antigravity CLIは、Gemini CLIの`~/.gemini/settings.json`または`.gemini/settings.json`で宣言されたMCPサーバーを読み込みません。
+
+- <strong>手動設定</strong>: [方法1](#method-1-remote-server-recommended)のように、`bitrise`エントリーを`mcp_config.json`に移動し、`httpUrl`（または`url`）キーの名前を`serverUrl`に変更してください。
+- <strong>BitriseのGemini拡張機能</strong>: `gemini extensions install`で拡張機能をインストールしていた場合は、`agy plugin import gemini`を使ってGemini CLIの拡張機能をAntigravityのプラグインに変換できます。変換後に`/mcp`を開き、`bitrise`が一覧に表示されて接続されていることを確認してください。表示されない場合は、[方法1](#method-1-remote-server-recommended)のようにサーバーを手動で追加してください。
+
+## 高度な設定 {#advanced-configuration}
+
+特定のAPIグループの有効化/無効化については、[ツール](/bitrise-platform/ai/bitrise-mcp/tools)を参照してください。
+
+`mcp_config.json`の各サーバーエントリーでは、特定のツールをモデルに渡さないようにする`disabledTools`や、設定を削除せずにサーバーを無効にする`disabled`など、Antigravity独自のオプションも使用できます。詳しくは[MCP設定プロパティ](https://antigravity.google/docs/mcp#mcp-configuration-properties)を参照してください。
+
+承認プロンプトなしでBitriseのツールを実行するには、`~/.gemini/antigravity-cli/settings.json`の`permissions.allow`リストに`mcp(bitrise/*)`（単一のツールの場合は`mcp(bitrise/<tool_name>)`）を追加してください。ルールの構文については、[Permissions](https://antigravity.google/docs/permissions)を参照してください。
+
+## トラブルシューティング {#troubleshooting}
+
+### 認証の問題 {#authentication-issues}
+
+- <strong>OAuthのサインインが完了しない</strong>: PATベースの認証にフォールバックしてください
+- <strong>PATの有効期限切れまたは取り消し</strong>: 新しいBitriseトークンを生成してください
+
+### 設定の問題 {#configuration-issues}
+
+- <strong>`/mcp`にサーバーが表示されない</strong>: 設定がGemini CLIの`settings.json`ではなく、`~/.gemini/config/mcp_config.json`（またはプロジェクト内の`.agents/mcp_config.json`）にあることを確認してください。その後、`/mcp`マネージャーからサーバー設定を再読み込みしてください。
+- <strong>サーバーは表示されるが接続されない</strong>: エントリーで`url`や`httpUrl`ではなく、`serverUrl`が使われていることを確認してください
+- <strong>JSONの構文エラー</strong>: 設定を検証してください:
+    ```bash
+    jq . ~/.gemini/config/mcp_config.json
+    ```
+- <strong>MCPの接続の問題</strong>: `/mcp`を開いて`bitrise`を選択し、接続ログを確認してください

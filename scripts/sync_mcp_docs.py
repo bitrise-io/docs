@@ -44,7 +44,7 @@ DRY_RUN      = "--dry-run" in sys.argv
 INSTALL_POSITIONS: Dict[str, int] = {
     "install-claude":             1,
     "install-cursor":             2,
-    "install-gemini-cli":         3,
+    "install-antigravity-cli":    3,
     "install-kiro":               4,
     "install-other-copilot-ides": 5,
     "install-vscode":             6,
