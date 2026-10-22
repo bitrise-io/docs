@@ -1,0 +1,207 @@
+---
+title: "Running Maestro tests on Bitrise"
+description: "Run your Maestro flows on an Android emulator or iOS simulator in a Bitrise Workflow and view the results, with screenshots and recordings, on the Test Reports page."
+sidebar_position: 6
+slug: /bitrise-ci/testing/running-maestro-tests-on-bitrise
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+The [**Maestro Test**](https://github.com/bitrise-steplib/bitrise-step-maestro-test) <GlossTerm baseform="Step">Step</GlossTerm> runs your [Maestro](https://maestro.dev) flows on an Android emulator or iOS simulator on the Bitrise build machine, not on Maestro Cloud, and shows the results on the Test Reports page. Each flow is a test case, with its screenshots, recordings, and logs attached.
+
+## Before you start
+
+You need:
+
+- Maestro flows in your repository. By default, the Step runs the flows in the `.maestro` folder. To run other flow files or folders, list them in the **Flow path** input. To learn how to write flows, see the [Maestro documentation](https://docs.maestro.dev).
+- An `.apk` for Android, or an `.app` built for the iOS simulator. Any framework works, including React Native and Flutter. The Step doesn't run Maestro's web flows.
+- The right [stack](/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds): a Linux Android stack for Android, a macOS stack for iOS. Android emulators don't run on macOS stacks.
+
+## Running Maestro flows in a Workflow
+
+The Step doesn't start a device: start one in an earlier Step, **AVD Manager** for Android or **Xcode Start Simulator** for iOS, as the procedures below show. Only one emulator or simulator can run on the build machine: if there's none or more than one, the Step fails.
+
+### Android apps
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Open the Workflow you want to use in the <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>.
+1. Add the [**Android Build**](https://github.com/bitrise-steplib/bitrise-step-android-build) Step, and set its **Module** and **Variant** inputs.
+1. Add the [**AVD Manager**](https://github.com/bitrise-steplib/steps-avd-manager) Step, and set the emulator in its **Android API Level**, **OS Tag**, and **ABI** inputs. The ABI must match the CPU architecture of the stack.
+1. Add the **Maestro Test** Step, and set its **App path** input to `$BITRISE_APK_PATH`.
+1. Add the [**Deploy to Bitrise.io**](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) Step.
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. Open your app's <GlossTerm baseform="configuration yaml">Configuration YAML</GlossTerm> file.
+1. Add the `android-build` Step to your Workflow, and set its `module` and `variant` inputs.
+1. Add the `avd-manager` Step, and set the emulator in its `api_level`, `tag`, and `abi` inputs. The ABI must match the CPU architecture of the stack.
+1. Add the `maestro-test` Step, and set its `app_path` input to `$BITRISE_APK_PATH`.
+1. Add the `deploy-to-bitrise-io` Step.
+
+```yaml
+workflows:
+  maestro-android:
+    steps:
+    - git-clone: {}
+    - android-build:
+        inputs:
+        - module: app
+        - variant: debug
+    - avd-manager:
+        inputs:
+        - api_level: 34
+        - tag: google_apis
+        - abi: x86_64
+    - maestro-test:
+        inputs:
+        - app_path: $BITRISE_APK_PATH
+    - deploy-to-bitrise-io: {}
+```
+
+</TabItem>
+</Tabs>
+
+An emulator can't install an Android App Bundle (`.aab`). If you build one, convert it to an APK with the **Export Universal APK** Step before the **Maestro Test** Step.
+
+### iOS apps
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. Open the Workflow you want to use in the <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm>.
+1. Add the [**Xcode Build for Simulator**](https://github.com/bitrise-steplib/steps-xcode-build-for-simulator) Step, and set its **Project path** and **Scheme** inputs.
+1. Add the [**Xcode Start Simulator**](https://github.com/bitrise-steplib/bitrise-step-xcode-start-simulator) Step, and set the simulator in its **Device destination specifier** input.
+1. Set the **Simulator boot timeout (in seconds)** input, so that the Step waits for the simulator to boot. Otherwise, the **Maestro Test** Step might not find it.
+1. Add the **Maestro Test** Step, and set its **App path** input to `$BITRISE_APP_DIR_PATH`.
+1. Add the [**Deploy to Bitrise.io**](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) Step.
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. Open your app's <GlossTerm baseform="configuration yaml">Configuration YAML</GlossTerm> file.
+1. Add the `xcode-build-for-simulator` Step to your Workflow, and set its `project_path` and `scheme` inputs.
+1. Add the `xcode-start-simulator` Step, and set the simulator in its `destination` input.
+1. Set the `wait_for_boot_timeout` input, so that the Step waits for the simulator to boot. Otherwise, the `maestro-test` Step might not find it.
+1. Add the `maestro-test` Step, and set its `app_path` input to `$BITRISE_APP_DIR_PATH`.
+1. Add the `deploy-to-bitrise-io` Step.
+
+```yaml
+workflows:
+  maestro-ios:
+    steps:
+    - git-clone: {}
+    - xcode-build-for-simulator:
+        inputs:
+        - project_path: MyApp.xcodeproj
+        - scheme: MyApp
+    - xcode-start-simulator:
+        inputs:
+        - destination: platform=iOS Simulator,name=Bitrise iOS default,OS=latest
+        - wait_for_boot_timeout: 120
+    - maestro-test:
+        inputs:
+        - app_path: $BITRISE_APP_DIR_PATH
+    - deploy-to-bitrise-io: {}
+```
+
+</TabItem>
+</Tabs>
+
+## Passing variables to flows
+
+Maestro passes every Environment Variable that starts with `MAESTRO_` to your flows. Store sensitive values as [Secrets](/bitrise-ci/configure-builds/secrets) with this prefix. For example, a Secret named `MAESTRO_PASSWORD` is `${MAESTRO_PASSWORD}` in a flow:
+
+```yaml
+appId: com.example.myapp
+---
+- launchApp
+- tapOn: "Password"
+- inputText: ${MAESTRO_PASSWORD}
+```
+
+## Selecting flows with tags
+
+Tag your flows in the flow file:
+
+```yaml
+appId: com.example.myapp
+tags:
+  - smoke
+---
+- launchApp
+```
+
+Then use **Include tags** to run only the flows that have any of the listed tags, and **Exclude tags** to skip the flows that have any of them. Separate tags with commas or new lines.
+
+```yaml
+- maestro-test:
+    inputs:
+    - app_path: $BITRISE_APK_PATH
+    - include_tags: smoke
+    - exclude_tags: flaky
+```
+
+## Running flows on several devices in parallel
+
+Maestro's own sharding needs several devices on one machine, which the Step doesn't support. Instead, run copies of the Workflow in parallel in a <GlossTerm baseform="Pipeline">Pipeline</GlossTerm>, each on its own virtual machine: [Parallelism in Pipelines](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow).
+
+1. Tag each flow with the copy that runs it: `shard0`, `shard1`, and so on.
+1. Set **Include tags** to `shard$BITRISE_IO_PARALLEL_INDEX`. Every copy gets its own zero-based index in this Env Var.
+1. Set a different **Test name** for each copy, so their results don't mix on the Test Reports page.
+
+```yaml
+pipelines:
+  ui-tests:
+    workflows:
+      maestro-tests:
+        parallel: 2
+
+workflows:
+  maestro-tests:
+    steps:
+    - git-clone: {}
+    - android-build:
+        inputs:
+        - module: app
+        - variant: debug
+    - avd-manager:
+        inputs:
+        - api_level: 34
+        - tag: google_apis
+        - abi: x86_64
+    - maestro-test:
+        inputs:
+        - app_path: $BITRISE_APK_PATH
+        - include_tags: shard$BITRISE_IO_PARALLEL_INDEX
+        - test_name: Maestro shard $BITRISE_IO_PARALLEL_INDEX
+    - deploy-to-bitrise-io: {}
+```
+
+## Viewing the results
+
+The results appear on the Test Reports page under the name in the **Test name** input, failed flows included. For the **Deploy to Bitrise.io** versions that show attachments, see [Deploying and viewing test results](/bitrise-ci/testing/deploying-and-viewing-test-results).
+
+:::tip[Give every flow a unique name]
+
+The Step attaches files to a flow by its name. If two flows share a name, their files aren't attached.
+
+:::
+
+The Step also exports the JUnit report in `$MAESTRO_JUNIT_PATH`, and Maestro's whole output folder as a zip in `$MAESTRO_TEST_OUTPUT_ZIP_PATH`. The zip is uploaded as a build artifact.
+
+## Troubleshooting
+
+The first line of the Step's error tells you what failed:
+
+| Error | Cause |
+| --- | --- |
+| `Failed to process Step inputs` | An input has an invalid value. The next lines name it. |
+| `Failed to install the Maestro CLI` | The Maestro CLI couldn't be downloaded or verified. |
+| `Failed to install the app` | No device is running, more than one is running, or the install failed. Make sure the Step that starts the device waits for the boot. |
+| `Maestro flows failed` | At least one flow failed. See the Test Reports page. |
+| `Maestro failed without a failing flow` | Maestro stopped before any flow failed, for example on a flow file it couldn't parse. See the Step's log. |
