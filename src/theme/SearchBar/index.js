@@ -35,7 +35,7 @@ import {
   useAlgoliaAskAi,
   mergeFacetFilters,
 } from '@docusaurus/theme-search-algolia/client';
-import Translate from '@docusaurus/Translate';
+import Translate, {translate} from '@docusaurus/Translate';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import translations from '@theme/SearchTranslations';
 import {
@@ -43,6 +43,7 @@ import {
   classifyStall,
   createSettleDetector,
   isFallbackAnswer,
+  isServiceFailure,
   reportAskAi,
   stripFallbackMarker,
 } from './askAiHelpers';
@@ -144,6 +145,14 @@ function useAskAiSearchBarButton({isOpen, enabled, searchContainer, onAskAi}) {
     }
 
     const container = searchContainer.current;
+    // Shared by the visible label and the aria-label: the label is hidden on
+    // narrow viewports (see custom.css), the aria-label is not.
+    const label = translate({
+      id: 'searchBar.askAi.button',
+      message: 'AI Summary',
+      description:
+        'Label of the search box button that shows an AI-generated summary for the query',
+    });
     const injectButton = () => {
       const form = container.querySelector('.DocSearch-Form');
       const actions = form?.querySelector('.DocSearch-Actions');
@@ -155,11 +164,14 @@ function useAskAiSearchBarButton({isOpen, enabled, searchContainer, onAskAi}) {
       button.className = 'ask-ai-searchbar-button';
       // The visible label is hidden on narrow viewports (see custom.css), so
       // the name has to live on the button itself.
-      button.setAttribute('aria-label', 'AI Summary');
+      button.setAttribute('aria-label', label);
       // Sparkle icon, same visual role as the "+" in a stock "+ Add
       // trigger"-style secondary button — a small glyph ahead of the label.
       button.innerHTML =
-        '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.54 11.54 4.884 13l3.654 1.46L10 18.115l1.46-3.653L15.115 13l-3.653-1.46L10 7.884zM18 13c0 .604-.368 1.147-.929 1.371L13 16l-1.629 4.071a1.477 1.477 0 0 1-2.696.104l-.046-.104L7 16l-4.071-1.629a1.477 1.477 0 0 1 0-2.742L7 10l1.629-4.071a1.477 1.477 0 0 1 2.742 0L13 10l4.071 1.629c.561.224.929.767.929 1.371M19.813 6.813l-.713 1.78a.646.646 0 0 1-1.157.089l-.043-.088-.712-1.781-1.782-.713a.646.646 0 0 1 0-1.2l1.781-.713.713-1.78a.646.646 0 0 1 1.2 0l.712 1.78 1.782.713a.646.646 0 0 1 0 1.2z"/></svg><span>AI Summary</span>';
+        '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.54 11.54 4.884 13l3.654 1.46L10 18.115l1.46-3.653L15.115 13l-3.653-1.46L10 7.884zM18 13c0 .604-.368 1.147-.929 1.371L13 16l-1.629 4.071a1.477 1.477 0 0 1-2.696.104l-.046-.104L7 16l-4.071-1.629a1.477 1.477 0 0 1 0-2.742L7 10l1.629-4.071a1.477 1.477 0 0 1 2.742 0L13 10l4.071 1.629c.561.224.929.767.929 1.371M19.813 6.813l-.713 1.78a.646.646 0 0 1-1.157.089l-.043-.088-.712-1.781-1.782-.713a.646.646 0 0 1 0-1.2l1.781-.713.713-1.78a.646.646 0 0 1 1.2 0l.712 1.78 1.782.713a.646.646 0 0 1 0 1.2z"/></svg>';
+      const labelEl = document.createElement('span');
+      labelEl.textContent = label;
+      button.appendChild(labelEl);
       button.addEventListener('click', () => {
         const query = container.querySelector('.DocSearch-Input')?.value ?? '';
         if (query) onAskAi(query);
@@ -245,14 +257,37 @@ function SparkleIcon() {
 // Cycled while status is 'loading', same idea as the widget's own
 // ucs-summary loader (it swaps a single line of text under a fade
 // in/out, rather than showing one static label the whole time).
-const LOADING_LABELS = ['Generating...', 'Thinking...', 'Preparing...', 'Almost there...'];
+const LOADING_LABELS = [
+  translate({
+    id: 'searchBar.askAi.loading.generating',
+    message: 'Generating...',
+    description: 'First of four labels cycled while the AI summary is being generated',
+  }),
+  translate({
+    id: 'searchBar.askAi.loading.thinking',
+    message: 'Thinking...',
+    description: 'Second of four labels cycled while the AI summary is being generated',
+  }),
+  translate({
+    id: 'searchBar.askAi.loading.preparing',
+    message: 'Preparing...',
+    description: 'Third of four labels cycled while the AI summary is being generated',
+  }),
+  translate({
+    id: 'searchBar.askAi.loading.almostThere',
+    message: 'Almost there...',
+    description: 'Fourth of four labels cycled while the AI summary is being generated',
+  }),
+];
 
 function AskAiPanel({query, onBack, onNavigate}) {
   const {siteConfig, i18n} = useDocusaurusContext();
   const locale = i18n.currentLocale;
   const configId = siteConfig.customFields?.genSearchWidgetConfigId;
   const containerRef = useRef(null);
-  const [status, setStatus] = useState('loading'); // 'loading' | 'summary' | 'unavailable'
+  // 'unavailable': the service worked, there was nothing to show for this query.
+  // 'error': the service itself didn't (script blocked, widget changed, ...).
+  const [status, setStatus] = useState('loading'); // 'loading' | 'summary' | 'unavailable' | 'error'
   const [summaryHtml, setSummaryHtml] = useState('');
   const [loadingLabelIndex, setLoadingLabelIndex] = useState(0);
 
@@ -276,7 +311,7 @@ function AskAiPanel({query, onBack, onNavigate}) {
     if (!configId) {
       // Not reachable while the button is only injected when configured (see
       // useAskAiSearchBarButton) — but never leave the loading state up forever.
-      setStatus('unavailable');
+      setStatus('error');
       return undefined;
     }
 
@@ -321,7 +356,7 @@ function AskAiPanel({query, onBack, onNavigate}) {
     const giveUp = (reason) => {
       if (cancelled) return;
       reportAskAi('ask_ai_unavailable', {ask_ai_reason: reason, ask_ai_locale: locale});
-      setStatus('unavailable');
+      setStatus(isServiceFailure(reason) ? 'error' : 'unavailable');
     };
 
     // The actual generated prose lives another three shadow-DOM levels
@@ -386,7 +421,12 @@ function AskAiPanel({query, onBack, onNavigate}) {
       // doesn't say when it is done, and the text arrives in bursts, so two
       // equal reads in a row can be a pause, not the end.
       if (settle.observe(stillLoading ? null : snapshot, now)) {
-        if (isFallbackAnswer(snapshot)) {
+        // "Sources" is what separates a real answer from the fallback in any
+        // language (see isFallbackAnswer).
+        const hasSources = Boolean(
+          summary?.shadowRoot?.querySelector('.show-search-results-container'),
+        );
+        if (isFallbackAnswer(snapshot, {hasSources})) {
           // Vertex's "no summary" sentence: not an answer, and not cached.
           giveUp(FAILURE.fallbackAnswer);
           return;
@@ -506,7 +546,11 @@ function AskAiPanel({query, onBack, onNavigate}) {
   return (
     <div className="ask-ai-panel">
       <button type="button" className="ask-ai-panel__back" onClick={onBack}>
-        ← Back to results
+        <Translate
+          id="searchBar.askAi.back"
+          description="Button that closes the AI summary and returns to the search results">
+          {'← Back to results'}
+        </Translate>
       </button>
       {status === 'loading' && (
         <div className="ask-ai-panel__loading">
@@ -531,8 +575,11 @@ function AskAiPanel({query, onBack, onNavigate}) {
           <p className="ask-ai-panel__disclaimer">
             <SparkleIcon />
             <span>
-              Generative AI may display inaccurate information, including
-              about people, so double-check its responses.
+              <Translate
+                id="searchBar.askAi.disclaimer"
+                description="Notice above an AI-generated summary that it may be inaccurate">
+                {'Generative AI may display inaccurate information, including about people, so double-check its responses.'}
+              </Translate>
             </span>
           </p>
           <div
@@ -547,8 +594,20 @@ function AskAiPanel({query, onBack, onNavigate}) {
       )}
       {status === 'unavailable' && (
         <div className="ask-ai-panel__unavailable">
-          No AI summary is available for this search. Try rephrasing your
-          question, or go back and browse the regular results.
+          <Translate
+            id="searchBar.askAi.unavailable"
+            description="Shown when the AI summary service worked but had no answer for this search">
+            {'No AI summary is available for this search. Try rephrasing your question, or go back and browse the regular results.'}
+          </Translate>
+        </div>
+      )}
+      {status === 'error' && (
+        <div className="ask-ai-panel__unavailable">
+          <Translate
+            id="searchBar.askAi.error"
+            description="Shown when the AI summary service could not be reached, for example when its script is blocked or the connection failed">
+            {"AI Summary isn't available right now. Go back to browse the regular results, or try again later."}
+          </Translate>
         </div>
       )}
       <div ref={containerRef} className="ask-ai-panel__widget-container" />

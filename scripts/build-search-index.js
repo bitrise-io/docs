@@ -4,8 +4,8 @@
  * record format the search modal (src/theme/SearchBar) reads. This stands in
  * for the Algolia Crawler on plans that don't include it.
  *
- * DRY RUN ONLY: it reads HTML and writes local JSON files. It never talks to
- * Algolia; uploading is a separate step, not implemented here.
+ * This script only reads HTML and writes local JSON files; it never talks to
+ * Algolia. Uploading is scripts/upload-search-index.js.
  *
  * Usage (after `npm run build`):
  *   node scripts/build-search-index.js [--locales en,ja] [--build-root build]

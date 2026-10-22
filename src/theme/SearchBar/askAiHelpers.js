@@ -2,18 +2,31 @@
 // here so they can be tested on their own.
 
 // When Vertex can't produce a real summary it streams a fixed fallback into
-// the same slot as a genuine answer: a short sentence, then "Here are some
-// search results." The second sentence promises results this panel never
-// shows. A real answer is much longer than the fallback, so a short text that
-// contains the marker is the fallback; a long one that happens to contain it
-// is still an answer (the marker is stripped, see stripFallbackMarker).
+// the same slot as a genuine answer: a short sentence, then (in English)
+// "Here are some search results." The second sentence promises results this
+// panel never shows. A real answer is much longer than the fallback, so a
+// short text that contains the marker is the fallback; a long one that happens
+// to contain it is still an answer (the marker is stripped, see
+// stripFallbackMarker).
+//
+// The fallback is written in the language of the *query*, not of the page: a
+// Japanese query, even on the English site, gets
+// 「検索語句の要約を生成できませんでした。以下が検索結果です。」 (checked live).
+// No list of sentences covers every language a reader can type, so a second
+// rule needs none: a fallback is short and has nothing behind it, no "Sources"
+// button, which every real answer has. The poll reads that button from the
+// widget (hasSources).
 export const FALLBACK_MARKER = /\s*Here are some search results\.?/i;
 const FALLBACK_MAX_TEXT_LENGTH = 160;
 
 const plainText = (html) => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
-export function isFallbackAnswer(html) {
-  return FALLBACK_MARKER.test(html) && plainText(html.replace(FALLBACK_MARKER, '')).length < FALLBACK_MAX_TEXT_LENGTH;
+// hasSources defaults to true so that, without that signal, only the English
+// marker applies. If Google renames the button, hasSources reads false for
+// every answer, but only a short one is then misread: real answers are long.
+export function isFallbackAnswer(html, {hasSources = true} = {}) {
+  const short = plainText(html.replace(FALLBACK_MARKER, '')).length < FALLBACK_MAX_TEXT_LENGTH;
+  return short && (FALLBACK_MARKER.test(html) || !hasSources);
 }
 
 export const stripFallbackMarker = (html) => html.replace(FALLBACK_MARKER, '');
@@ -54,6 +67,20 @@ export const FAILURE = {
   fallbackAnswer: 'fallback_answer', // Vertex answered with its "no summary" sentence
   noSummary: 'no_summary', // it worked, but there was nothing to show
 };
+
+// The reasons that mean the service itself didn't work (script blocked or
+// offline, widget changed), as opposed to it working and having no answer for
+// this query. The panel words the two differently: "try rephrasing your
+// question" only helps with the second.
+const SERVICE_FAILURES = new Set([
+  FAILURE.scriptFailed,
+  FAILURE.widgetNotDefined,
+  FAILURE.widgetNotRendered,
+  FAILURE.submitIgnored,
+  FAILURE.markupChanged,
+]);
+
+export const isServiceFailure = (reason) => SERVICE_FAILURES.has(reason);
 
 // Picks the reason from what the poll saw by the time it gave up.
 export function classifyStall({sawSummaryContainer, sawMarkdown, lastStillZeroState}) {
