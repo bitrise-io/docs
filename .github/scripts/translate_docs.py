@@ -342,10 +342,12 @@ def translate_verified(client, model, sysp, masked):
     return None
 
 
-def translate_body(ctx, body, fm_values):
-    """Mask, translate, verify and unmask one Markdown body together with the
-    frontmatter values in `fm_values`. Returns (japanese_body, {key: japanese})
-    or None. Heading ids are pinned by the caller, against the whole page."""
+def prepare_body(ctx, body, fm_values):
+    """The mask half of translate_body: returns (masked, state), where `masked`
+    is exactly what the model is shown and `state` (token store + JSX strings)
+    is what finish_body needs to put the page back together. Split out so a
+    translation made outside the API (scripts/ja_manual_translate.py) runs the
+    same masking and the same post-processing."""
     # Frontmatter values and JSX string props are readable text the masker
     # would otherwise protect; send them as %%key%% lines instead.
     body, jsx_strings = ts.extract_jsx_strings(body)
@@ -357,10 +359,14 @@ def translate_body(ctx, body, fm_values):
         block, n = mask(block, ctx.patterns, store, n)
         block, n = mask_terms(block, ctx.matcher, store, n)
         masked = block + "\n\n" + masked
-    translated = translate_verified(ctx.client, ctx.model, ctx.sysp, masked)
-    if translated is None:
-        print(f"    failed verification after {MAX_ATTEMPTS} attempts", file=sys.stderr)
-        return None
+    return masked, {"store": store, "jsx_strings": jsx_strings}
+
+
+def finish_body(masked, translated, state):
+    """The post-model half of translate_body: space restoration, bold
+    promotion, unmasking, frontmatter/JSX strings. `translated` must already
+    have passed verification. Returns (japanese_body, {key: japanese}) or None."""
+    store, jsx_strings = state["store"], state["jsx_strings"]
     # Before the block is split off, so title/description lines get it too.
     translated = restore_token_spacing(masked, translated, store)
     found, translated = ts.parse_block(translated)
@@ -380,6 +386,18 @@ def translate_body(ctx, body, fm_values):
     return ts.apply_jsx_strings(translated, jsx_strings, js_tr), fm_tr
 
 
+def translate_body(ctx, body, fm_values):
+    """Mask, translate, verify and unmask one Markdown body together with the
+    frontmatter values in `fm_values`. Returns (japanese_body, {key: japanese})
+    or None. Heading ids are pinned by the caller, against the whole page."""
+    masked, state = prepare_body(ctx, body, fm_values)
+    translated = translate_verified(ctx.client, ctx.model, ctx.sysp, masked)
+    if translated is None:
+        print(f"    failed verification after {MAX_ATTEMPTS} attempts", file=sys.stderr)
+        return None
+    return finish_body(masked, translated, state)
+
+
 def split_sections(body):
     """Cut a body before every heading: [(id, text), ...], where id is the
     anchor Docusaurus gives the heading (explicit {#id} or slug, as
@@ -395,15 +413,11 @@ def split_sections(body):
     return list(zip([""] + final_ids(heads), texts))
 
 
-def translate_sections(ctx, old_raw, new_raw, ja_raw):
-    """Re-translate only what changed since `old_raw`, the English that the
-    JA page `ja_raw` matches: new or changed sections (split_sections) and
-    frontmatter values. Unchanged sections keep their Japanese byte for byte,
-    removed ones are dropped, and the page follows the new English order.
-    Returns translate_body()'s (body, fm values), or None when the page must
-    be translated whole: section ids repeat or differ between the old English
-    and the JA page, the translation fails, or the assembled page's structure
-    differs from the English (scripts/ja_structure.py)."""
+def plan_sections(old_raw, new_raw, ja_raw):
+    """The planning half of translate_sections: which sections and frontmatter
+    values must be re-translated. Returns a plan dict, or None when the page
+    must be translated whole: section ids repeat or differ between the old
+    English and the JA page."""
     (_, old_body), (_, new_body), (_, ja_body) = (
         split_frontmatter(r) for r in (old_raw, new_raw, ja_raw))
     old, new, ja = (split_sections(b) for b in (old_body, new_body, ja_body))
@@ -414,14 +428,18 @@ def translate_sections(ctx, old_raw, new_raw, ja_raw):
     old_fm, new_fm, ja_fm = (ts.extract_frontmatter(split_frontmatter(r)[0])
                              for r in (old_raw, new_raw, ja_raw))
     fm_send = {k: v for k, v in new_fm.items() if old_fm.get(k) != v or k not in ja_fm}
-    out, fm_tr = "", {}
-    if changed or fm_send:
-        print(f"  re-translating {len(changed)} of {len(new)} section(s), "
-              f"{len(fm_send)} frontmatter value(s)")
-        result = translate_body(ctx, "".join(new_text[k] for k in changed), fm_send)
-        if result is None:
-            return None
-        out, fm_tr = result
+    return {"new": new, "new_body": new_body, "new_text": new_text, "ja": ja, "ja_fm": ja_fm,
+            "changed": changed, "fm_send": fm_send,
+            "send_body": "".join(new_text[k] for k in changed)}
+
+
+def assemble_sections(plan, result):
+    """The reassembly half of translate_sections: put the translated sections
+    (`result`, translate_body()'s (body, fm values) or None when nothing was
+    sent) between the untouched Japanese ones. Returns (body, fm values), or
+    None when the assembled page's structure differs from the English."""
+    changed, new_text, new, ja = plan["changed"], plan["new_text"], plan["new"], plan["ja"]
+    out, fm_tr = result if result else ("", {})
     parts = [t for _, t in split_sections(out)]
     if changed[:1] != [""] and parts.pop(0).strip():
         return None  # text before the first heading that no section owns
@@ -431,9 +449,31 @@ def translate_sections(ctx, old_raw, new_raw, ja_raw):
     done = {k: t.rstrip("\n") + new_text[k][len(new_text[k].rstrip("\n")):]
             for k, t in zip(changed, parts)}
     body = "".join(done.get(k, ja.get(k)) for k, _ in new)
-    if structure_issues(new_body, body):
+    if structure_issues(plan["new_body"], body):
         return None
-    return body, {**ja_fm, **fm_tr}
+    return body, {**plan["ja_fm"], **fm_tr}
+
+
+def translate_sections(ctx, old_raw, new_raw, ja_raw):
+    """Re-translate only what changed since `old_raw`, the English that the
+    JA page `ja_raw` matches: new or changed sections (split_sections) and
+    frontmatter values. Unchanged sections keep their Japanese byte for byte,
+    removed ones are dropped, and the page follows the new English order.
+    Returns translate_body()'s (body, fm values), or None when the page must
+    be translated whole: section ids repeat or differ between the old English
+    and the JA page, the translation fails, or the assembled page's structure
+    differs from the English (scripts/ja_structure.py)."""
+    plan = plan_sections(old_raw, new_raw, ja_raw)
+    if plan is None:
+        return None
+    result = None
+    if plan["changed"] or plan["fm_send"]:
+        print(f"  re-translating {len(plan['changed'])} of {len(plan['new'])} section(s), "
+              f"{len(plan['fm_send'])} frontmatter value(s)")
+        result = translate_body(ctx, plan["send_body"], plan["fm_send"])
+        if result is None:
+            return None
+    return assemble_sections(plan, result)
 
 
 def dest_path(src, src_root, dest_root):
