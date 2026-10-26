@@ -1,5 +1,6 @@
 ---
 title: "Detecting and aborting hanging Steps"
+description: "Automatically abort Steps that stop producing log output: enable the No Output Timeout function globally with a Secret or for specific Steps in the bitrise.yml."
 sidebar_position: 10
 slug: /bitrise-ci/workflows-and-pipelines/steps/detecting-and-aborting-hanging-steps
 sidebar_label: Detecting and aborting hanging Steps without output
@@ -40,16 +41,29 @@ To enable the **No Output Timeout** globally for all Steps:
 
    :::note[Aborting a hanging build automatically]
 
-   Compared to [setting a time limit for Steps](/bitrise-ci/workflows-and-pipelines/steps/setting-a-time-limit-for-steps), the **No Output Timeout** function only aborts a build no output log is generated for a set amount of time.
+   Compared to [setting a time limit for Steps](/bitrise-ci/workflows-and-pipelines/steps/setting-a-time-limit-for-steps), the **No Output Timeout** function only aborts a build if no output log is generated for a set amount of time.
 
    Any log output will reset the timeout. This can result in a Step running longer than the value you set in `BITRISE_NO_OUTPUT_TIMEOUT`.
+
+   :::
+1. Select **Expose for pull requests**.
+
+   :::important[Pull request builds need the Secret exposed]
+
+   Secrets are not available in pull request builds unless you expose them. Without this, the **No Output Timeout** function silently does not apply to pull request builds. The value is not sensitive, so exposing it is safe. For details, see [Exposing a Secret to pull requests](/bitrise-ci/configure-builds/secrets#exposing-a-secret-to-pull-requests).
 
    :::
 1. Click **Save**. You can check the Build log of your build to determine if the function is enabled.
 
    ![step-force-output.png](/img/_paligo/uuid-dc3bfafa-9720-8935-557a-97c317a8a624.png)
 
-And that's it! From now on, whenever a Step does not produce an output log for the number of seconds you set in `BITRISE_NO_OUTPUT_TIMEOUT` , your build automatically aborts with the message: `Abort via Bitrise CLI (no output timeout)`.
+And that's it! From now on, whenever a Step does not produce an output log for the number of seconds you set in `BITRISE_NO_OUTPUT_TIMEOUT`, your build automatically aborts with the message: `Abort via Bitrise CLI (no output timeout)`.
+
+:::note[Why a Secret and not an Env Var]
+
+The Bitrise CLI reads `BITRISE_NO_OUTPUT_TIMEOUT` from your Secrets before it processes the Env Vars in the `bitrise.yml`, so setting it as a project or Workflow level Env Var does not enable the function. If you can't expose the Secret to pull requests, for example, because your app is public, [enable the function for specific Steps](#enabling-the-no-output-timeout-function-for-specific-steps) instead.
+
+:::
 
 :::tip[Disabling the No Output Timeout function for a specific Step]
 
