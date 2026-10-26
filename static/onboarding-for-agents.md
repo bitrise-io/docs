@@ -102,7 +102,7 @@ for their client**, and ask which client they use if you don't know. The common 
   (or click its refresh icon); restarting Cursor also works.
 - **Claude Desktop:** fully **quit** the app (`Cmd+Q` on macOS, or quit from the system tray
   on Windows) and reopen it — closing the window alone doesn't reload it.
-- **Other clients (Windsurf, Gemini CLI, AWS Kiro):** restart the client, or its MCP
+- **Other clients (Windsurf, Antigravity CLI, AWS Kiro):** restart the client, or its MCP
   connection if it exposes one.
 
 ## If something goes wrong
