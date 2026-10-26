@@ -1,5 +1,6 @@
 ---
 title: "ハングしたStepsの検出と中止"
+description: "ログ出力が止まったStepsを自動的に中止します。No Output Timeout機能は、シークレットを使ってグローバルに有効にすることも、bitrise.ymlで特定のStepsに対してのみ有効にすることもできます。"
 sidebar_position: 10
 slug: /bitrise-ci/workflows-and-pipelines/steps/detecting-and-aborting-hanging-steps
 sidebar_label: "出力のないハングしたStepsの検出と中止"
@@ -45,11 +46,24 @@ import Partial_OpeningTheWorkflowEditor from '@site/i18n/ja/partials/opening-the
    ログ出力があるとタイムアウトはリセットされます。そのため、`BITRISE_NO_OUTPUT_TIMEOUT`で設定した値よりもStepの実行時間が長くなる場合があります。
 
    :::
+1. <strong>Expose for pull requests</strong>を選択します。
+
+   :::important[プルリクエストビルドにはシークレットの公開が必要です]
+
+   Secretsは、公開しない限りプルリクエストビルドでは利用できません。公開しない場合、<strong>No Output Timeout</strong>機能はプルリクエストビルドには適用されず、警告も表示されません。この値は機密情報ではないため、公開しても安全です。詳細は、[Secretのプルリクエストへの公開](/bitrise-ci/configure-builds/secrets#exposing-a-secret-to-pull-requests)を参照してください。
+
+   :::
 1. <strong>Save</strong>をクリックします。機能が有効になっているかどうかは、ビルドのビルドログで確認できます。
 
    ![step-force-output.png](/img/_paligo/uuid-dc3bfafa-9720-8935-557a-97c317a8a624.png)
 
 これで設定は完了です。今後、Stepが`BITRISE_NO_OUTPUT_TIMEOUT`で設定した秒数の間出力ログを生成しなかった場合、ビルドは次のメッセージとともに自動的に中止されます: `Abort via Bitrise CLI (no output timeout)`。
+
+:::note[環境変数ではなくシークレットを使う理由]
+
+Bitrise CLIは、`bitrise.yml`の環境変数を処理する前に、Secretsから`BITRISE_NO_OUTPUT_TIMEOUT`を読み取ります。そのため、プロジェクトレベルまたはWorkflowレベルの環境変数として設定しても、この機能は有効になりません。アプリが公開アプリであるなどの理由でシークレットをプルリクエストに公開できない場合は、代わりに[特定のStepsに対して機能を有効にする](#enabling-the-no-output-timeout-function-for-specific-steps)方法を使用してください。
+
+:::
 
 :::tip[特定のStepに対してNo Output Timeout機能を無効にする]
 
