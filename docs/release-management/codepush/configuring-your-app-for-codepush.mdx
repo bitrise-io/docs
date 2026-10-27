@@ -83,27 +83,33 @@ These instructions cover React Native's New Architecture. On older React Native 
 ### iOS setup
 
 1. Run `bundle exec pod install` from the `ios` folder to pick up the previously added CodePush SDK dependency.
-1. Update `ios/<projectname>/AppDelegate.swift`:
+1. Update `ios/<projectname>/SceneDelegate.swift`:
 
    1. Add an import statement for CodePush headers:
 
       ```swift
       import CodePush
       ```
-   1. In `class ReactNativeDelegate`, find the line which returns the bundle URL for production builds and replace it with a call to the CodePush SDK:
+   1. In `class SceneDelegate`, find the line that returns the bundle URL for release builds and replace it with a call to the CodePush SDK:
 
       ```diff
-      override func bundleURL() -> URL? {
-      #if DEBUG
-         RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
-      #else
-      -    Bundle.main.url(forResource: "main", withExtension: "jsbundle")
-      +    CodePush.bundleURL()
-      #endif
-      }
+        override func bundleURL() -> URL? {
+        #if DEBUG
+          RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
+        #else
+      -   Bundle.main.url(forResource: "main", withExtension: "jsbundle")
+      +   CodePush.bundleURL()
+        #endif
+        }
       ```
 
-   Use CodePush to resolve the JS bundle location only in release builds. The `DEBUG` pre-processor macro switches between the Metro packager in debug builds and CodePush in release builds, so Chrome Dev Tools and live reload keep working while you debug.
+   Use CodePush to resolve the JS bundle location only in release builds. The `DEBUG` pre-processor macro switches between the Metro packager in debug builds and CodePush in release builds, so React Native DevTools and Fast Refresh keep working while you debug.
+
+   :::note[Apps that still use AppDelegate]
+
+   Apps created with React Native 0.88 or later initialize React Native in `SceneDelegate.swift`, because the iOS 27 SDK requires the UIScene lifecycle. If your app still initializes React Native in `AppDelegate.swift` (created with 0.87 or earlier and not yet moved to the UIScene lifecycle), the `bundleURL()` method is in `class ReactNativeDelegate` in `ios/<projectname>/AppDelegate.swift`. Make the same two changes in that file.
+
+   :::
 
 1. Update `ios/<projectname>/Info.plist` with the CodePush deployment key and the CodePush server URL to let the CodePush runtime know which deployment it should query for updates against.
 
