@@ -133,22 +133,17 @@ Google client libraries and the gcloud CLI can get the identity token from an ex
    }
    ```
 
-1. Add the following to the template's warmup script, with the content of the edited file. The file contains no secrets, only the pool, provider, and service account to use. The last line activates the credential for the gcloud CLI; client libraries find the file through the variable set in the next step.
+1. Add the following to the template's warmup script, with the content of the edited file. The file contains no secrets, only the pool, provider, and service account to use. It's written to the application default credentials location, where every Google client library looks without further configuration; the last line activates it for the gcloud CLI as well.
 
    ```bash
    mkdir -p "$HOME/.config/gcloud"
-   cat > "$HOME/.config/gcloud/bitrise-rde-credentials.json" <<'EOF'
+   cat > "$HOME/.config/gcloud/application_default_credentials.json" <<'EOF'
    { ... the edited configuration file ... }
    EOF
-   GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES=1 gcloud auth login --cred-file="$HOME/.config/gcloud/bitrise-rde-credentials.json"
+   GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES=1 gcloud auth login --cred-file="$HOME/.config/gcloud/application_default_credentials.json"
    ```
 
-1. Add two [template variables](/bitrise-rde/configuration/templates), both exposed as environment variables, so that every terminal and process in the session picks them up:
-
-   | Name | Value |
-   | --- | --- |
-   | `GOOGLE_APPLICATION_CREDENTIALS` | `/home/USER/.config/gcloud/bitrise-rde-credentials.json`, the path from the previous step |
-   | `GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES` | `1`. Google's libraries refuse executable-sourced credentials without it. |
+1. Add a [template variable](/bitrise-rde/configuration/templates) named `GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES` with the value `1`, exposed as an environment variable. Google's libraries refuse executable-sourced credentials without it, and exposing it makes every terminal and process in the session pick it up.
 
 1. In a session created from the template, gcloud and the client libraries authenticate on their own. To check, run `gcloud auth print-access-token`: gcloud runs `rde-agent`, exchanges the token, and prints an access token for the service account.
 
