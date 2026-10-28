@@ -83,13 +83,21 @@ A trust policy written for CI builds matches subjects starting with `app:`, so i
 
 `rde-agent` is on the `PATH` of every session: in the terminal, in the warmup and startup scripts, and in any process a cloud SDK starts.
 
-| Command | What it prints |
-| --- | --- |
-| `rde-agent id-token get --audience AUDIENCE` | The identity token. Use it with a provider that isn't covered below. |
-| `rde-agent id-token aws --role-arn ROLE_ARN` | Temporary AWS credentials for the role, in the format `credential_process` expects. The command requests a token with the `sts.amazonaws.com` audience and exchanges it with AWS STS itself. |
-| `rde-agent id-token gcp --audience AUDIENCE` | The identity token, wrapped in the format Google's executable-sourced credentials expect. The Google client library performs the exchange. |
+- `rde-agent id-token get --audience AUDIENCE`
+
+  Prints the identity token. Use it with a provider that isn't covered below.
+
+- `rde-agent id-token aws --role-arn ROLE_ARN`
+
+  Prints temporary AWS credentials for the role, in the format `credential_process` expects. The command requests a token with the `sts.amazonaws.com` audience and exchanges it with AWS STS itself.
+
+- `rde-agent id-token gcp --audience AUDIENCE`
+
+  Prints the identity token wrapped in the format Google's executable-sourced credentials expect. The Google client library performs the exchange.
 
 Options for `rde-agent id-token aws`:
+
+<div className="command-table">
 
 | Option | Default | Description |
 | --- | --- | --- |
@@ -98,6 +106,8 @@ Options for `rde-agent id-token aws`:
 | `--region` | `AWS_REGION`, or the global STS endpoint | The region whose STS endpoint performs the exchange. |
 | `--duration` | `3600` | The lifetime of the AWS credentials, in seconds, within the role's maximum. |
 | `--session-name` | `rde-SESSION_ID` | The role session name, which shows up in CloudTrail. The default identifies the session. |
+
+</div>
 
 The commands print to standard output and exit. A token is valid for one hour; don't store it. Let the cloud SDK run the command whenever it needs a fresh one, as shown below.
 
