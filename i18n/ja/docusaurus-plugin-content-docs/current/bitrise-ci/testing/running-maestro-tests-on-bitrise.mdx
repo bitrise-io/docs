@@ -1,0 +1,246 @@
+---
+title: "Bitrise での Maestro テストの実行"
+description: "Android エミュレーターまたは iOS シミュレーター上で、Bitrise Workflow の Maestro フローを実行し、スクリーンショットや録画を含む結果を Test Reports ページで確認します。"
+sidebar_position: 6
+slug: /bitrise-ci/testing/running-maestro-tests-on-bitrise
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+[<strong>Maestro Test</strong>](https://github.com/bitrise-steplib/bitrise-step-maestro-test) <GlossTerm baseform="Step">Step</GlossTerm> は、Maestro Cloud ではなく、Bitrise build machine 上の Android エミュレーターまたは iOS シミュレーターで [Maestro](https://maestro.dev) フローを実行し、結果を [Test reports](/bitrise-ci/testing/deploying-and-viewing-test-results) ページに表示します。各フローが 1 つのテストケースとなり、スクリーンショット、録画、ログが添付されます。
+
+## Workflow での Maestro フローの実行 {#running-maestro-flows-in-a-workflow}
+
+Maestro Workflow は、アプリをビルドし、デバイスを起動し、フローを実行して、結果をアップロードします。<strong>Maestro Test</strong> Step はフローを実行するだけで、アプリのビルドやデバイスの起動は行いません。そのため、その前にビルド Step とデバイスを起動する Step を追加し、後に <strong>Deploy to Bitrise.io</strong> Step を追加してください。以下の手順では、Android アプリと iOS アプリ向けにこれを設定します。
+
+### Android アプリ {#android-apps}
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. 次のものが揃っていることを確認します。
+
+   - リポジトリ内の Maestro フロー。デフォルトでは、Step は `.maestro` フォルダー内のフローを実行します。他のフローファイルやフォルダーを実行するには、<strong>Flow path</strong> 入力に列挙します。フローの書き方については、[Maestro のドキュメント](https://docs.maestro.dev)を参照してください。
+   - アプリの `.apk`。フレームワークは問わず、React Native や Flutter も使用できます。Step は Maestro の Web フローを実行しません。
+   - Linux Android [スタック](/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds)。Android エミュレーターは macOS スタックでは動作しません。
+
+1. <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm> で、使用する Workflow を開きます。
+1. [<strong>Android Build</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build) Step を追加し、<strong>Module</strong> 入力と <strong>Variant</strong> 入力を設定します。
+1. [<strong>AVD Manager</strong>](https://github.com/bitrise-steplib/steps-avd-manager) Step を追加し、<strong>Android API Level</strong>、<strong>OS Tag</strong>、<strong>ABI</strong> の各入力でエミュレーターを設定します。ABI は、スタックの CPU アーキテクチャと一致している必要があります。
+
+    :::important
+
+    build machine で実行できるエミュレーターまたはシミュレーターは 1 つだけです。何も起動していない場合、または複数起動している場合、Step は失敗します。
+
+    :::
+1. <strong>Maestro Test</strong> Step を追加し、<strong>App path</strong> 入力を `$BITRISE_APK_PATH` に設定します。
+1. [<strong>Deploy to Bitrise.io</strong>](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) Step を追加します。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. 次のものが揃っていることを確認します。
+
+   - リポジトリ内の Maestro フロー。デフォルトでは、Step は `.maestro` フォルダー内のフローを実行します。他のフローファイルやフォルダーを実行するには、<strong>Flow path</strong> 入力に列挙します。フローの書き方については、[Maestro のドキュメント](https://docs.maestro.dev)を参照してください。
+   - アプリの `.apk`。フレームワークは問わず、React Native や Flutter も使用できます。Step は Maestro の Web フローを実行しません。
+   - Linux Android [スタック](/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds)。Android エミュレーターは macOS スタックでは動作しません。
+
+1. アプリの <GlossTerm baseform="configuration yaml">Configuration YAML</GlossTerm> ファイルを開きます。
+1. `android-build` Step を Workflow に追加し、`module` 入力と `variant` 入力を設定します。
+1. `avd-manager` Step を追加し、`api_level`、`tag`、`abi` の各入力でエミュレーターを設定します。ABI は、スタックの CPU アーキテクチャと一致している必要があります。
+
+    :::important
+
+    build machine で実行できるエミュレーターまたはシミュレーターは 1 つだけです。何も起動していない場合、または複数起動している場合、Step は失敗します。
+
+    :::
+1. `maestro-test` Step を追加し、`app_path` 入力を `$BITRISE_APK_PATH` に設定します。
+1. `deploy-to-bitrise-io` Step を追加します。
+
+```yaml
+workflows:
+  maestro-android:
+    steps:
+    - git-clone: {}
+    - android-build:
+        inputs:
+        - module: app
+        - variant: debug
+    - avd-manager:
+        inputs:
+        - api_level: 34
+        - tag: google_apis
+        - abi: x86_64
+    - maestro-test:
+        inputs:
+        - app_path: $BITRISE_APK_PATH
+    - deploy-to-bitrise-io: {}
+```
+
+</TabItem>
+</Tabs>
+
+エミュレーターには、Android App Bundle (`.aab`) をインストールできません。App Bundle をビルドする場合は、<strong>Maestro Test</strong> Step の前に、<strong>Export Universal APK</strong> Step で APK に変換してください。
+
+### iOS アプリ {#ios-apps}
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. 次のものが揃っていることを確認します。
+
+   - リポジトリ内の Maestro フロー。デフォルトでは、Step は `.maestro` フォルダー内のフローを実行します。他のフローファイルやフォルダーを実行するには、<strong>Flow path</strong> 入力に列挙します。フローの書き方については、[Maestro のドキュメント](https://docs.maestro.dev)を参照してください。
+   - iOS シミュレーター向けにビルドしたアプリの `.app`。フレームワークは問わず、React Native や Flutter も使用できます。Step は Maestro の Web フローを実行しません。
+   - macOS [スタック](/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds)。
+
+1. <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm> で、使用する Workflow を開きます。
+1. [<strong>Xcode Build for Simulator</strong>](https://github.com/bitrise-steplib/steps-xcode-build-for-simulator) Step を追加し、<strong>Project path</strong> 入力と <strong>Scheme</strong> 入力を設定します。
+
+    :::important
+
+    build machine で実行できるエミュレーターまたはシミュレーターは 1 つだけです。何も起動していない場合、または複数起動している場合、Step は失敗します。
+
+    :::
+1. [<strong>Xcode Start Simulator</strong>](https://github.com/bitrise-steplib/bitrise-step-xcode-start-simulator) Step を追加し、<strong>Device destination specifier</strong> 入力でシミュレーターを設定します。
+1. シミュレーターの起動を Step が待機するように、<strong>Simulator boot timeout (in seconds)</strong> 入力を設定します。設定しないと、<strong>Maestro Test</strong> Step がシミュレーターを見つけられない場合があります。
+1. <strong>Maestro Test</strong> Step を追加し、<strong>App path</strong> 入力を `$BITRISE_APP_DIR_PATH` に設定します。
+1. [<strong>Deploy to Bitrise.io</strong>](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) Step を追加します。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. 次のものが揃っていることを確認します。
+
+   - リポジトリ内の Maestro フロー。デフォルトでは、Step は `.maestro` フォルダー内のフローを実行します。他のフローファイルやフォルダーを実行するには、<strong>Flow path</strong> 入力に列挙します。フローの書き方については、[Maestro のドキュメント](https://docs.maestro.dev)を参照してください。
+   - iOS シミュレーター向けにビルドしたアプリの `.app`。フレームワークは問わず、React Native や Flutter も使用できます。Step は Maestro の Web フローを実行しません。
+   - macOS [スタック](/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds)。
+
+1. アプリの <GlossTerm baseform="configuration yaml">Configuration YAML</GlossTerm> ファイルを開きます。
+1. `xcode-build-for-simulator` Step を Workflow に追加し、`project_path` 入力と `scheme` 入力を設定します。
+
+    :::important
+
+    build machine で実行できるエミュレーターまたはシミュレーターは 1 つだけです。何も起動していない場合、または複数起動している場合、Step は失敗します。
+
+    :::
+1. `xcode-start-simulator` Step を追加し、`destination` 入力でシミュレーターを設定します。
+1. シミュレーターの起動を Step が待機するように、`wait_for_boot_timeout` 入力を設定します。設定しないと、`maestro-test` Step がシミュレーターを見つけられない場合があります。
+1. `maestro-test` Step を追加し、`app_path` 入力を `$BITRISE_APP_DIR_PATH` に設定します。
+1. `deploy-to-bitrise-io` Step を追加します。
+
+```yaml
+workflows:
+  maestro-ios:
+    steps:
+    - git-clone: {}
+    - xcode-build-for-simulator:
+        inputs:
+        - project_path: MyApp.xcodeproj
+        - scheme: MyApp
+    - xcode-start-simulator:
+        inputs:
+        - destination: platform=iOS Simulator,name=Bitrise iOS default,OS=latest
+        - wait_for_boot_timeout: 120
+    - maestro-test:
+        inputs:
+        - app_path: $BITRISE_APP_DIR_PATH
+    - deploy-to-bitrise-io: {}
+```
+
+</TabItem>
+</Tabs>
+
+## フローへの変数の受け渡し {#passing-variables-to-flows}
+
+Maestro は、`MAESTRO_` で始まるすべての Environment Variable をフローに渡します。機密性の高い値は、このプレフィックスを付けた [Secrets](/bitrise-ci/configure-builds/secrets) として保存してください。たとえば、`MAESTRO_PASSWORD` という名前の Secret は、フロー内で `${MAESTRO_PASSWORD}` として参照できます。
+
+```yaml
+appId: com.example.myapp
+---
+- launchApp
+- tapOn: "Password"
+- inputText: ${MAESTRO_PASSWORD}
+```
+
+## タグによるフローの選択 {#selecting-flows-with-tags}
+
+フローファイルでフローにタグを付けます。
+
+```yaml
+appId: com.example.myapp
+tags:
+  - smoke
+---
+- launchApp
+```
+
+その後、<strong>Include tags</strong> を使用して、指定したタグのいずれかを持つフローのみを実行し、<strong>Exclude tags</strong> を使用して、いずれかのタグを持つフローをスキップします。タグはカンマまたは改行で区切ります。
+
+```yaml
+- maestro-test:
+    inputs:
+    - app_path: $BITRISE_APK_PATH
+    - include_tags: smoke
+    - exclude_tags: flaky
+```
+
+## 複数のデバイスでのフローの並列実行 {#running-flows-on-several-devices-in-parallel}
+
+Maestro 独自のシャーディングには 1 台のマシン上に複数のデバイスが必要ですが、Step ではサポートされていません。代わりに、<GlossTerm baseform="Pipeline">Pipeline</GlossTerm> で Workflow のコピーを並列に実行し、それぞれを別々の仮想マシン上で動かします: [Pipelines での並列実行](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow)
+
+1. 各フローに、実行するコピーを示すタグを付けます: `shard0`、`shard1` など。
+1. <strong>Include tags</strong> を `shard$BITRISE_IO_PARALLEL_INDEX` に設定します。各コピーには、この Env Var で 0 から始まる固有のインデックスが渡されます。
+1. Test Reports ページで結果が混ざらないように、コピーごとに異なる <strong>Test name</strong> を設定します。
+
+```yaml
+pipelines:
+  ui-tests:
+    workflows:
+      maestro-tests:
+        parallel: 2
+
+workflows:
+  maestro-tests:
+    steps:
+    - git-clone: {}
+    - android-build:
+        inputs:
+        - module: app
+        - variant: debug
+    - avd-manager:
+        inputs:
+        - api_level: 34
+        - tag: google_apis
+        - abi: x86_64
+    - maestro-test:
+        inputs:
+        - app_path: $BITRISE_APK_PATH
+        - include_tags: shard$BITRISE_IO_PARALLEL_INDEX
+        - test_name: Maestro shard $BITRISE_IO_PARALLEL_INDEX
+    - deploy-to-bitrise-io: {}
+```
+
+## 結果の表示 {#viewing-the-results}
+
+結果は、失敗したフローも含めて、<strong>Test name</strong> 入力の名前で Test Reports ページに表示されます。添付ファイルを表示できる <strong>Deploy to Bitrise.io</strong> のバージョンについては、[テスト結果のデプロイと表示](/bitrise-ci/testing/deploying-and-viewing-test-results)を参照してください。
+
+:::tip[すべてのフローに一意の名前を付ける]
+
+Step は、フローの名前でファイルをフローに添付します。2 つのフローが同じ名前を持つ場合、それらのファイルは添付されません。
+
+:::
+
+Step は、JUnit レポートを `$MAESTRO_JUNIT_PATH` にエクスポートし、Maestro の出力フォルダー全体を zip として `$MAESTRO_TEST_OUTPUT_ZIP_PATH` にエクスポートします。この zip は、ビルドアーティファクトとしてアップロードされます。
+
+## トラブルシューティング {#troubleshooting}
+
+Step のエラーの最初の行に、失敗した内容が示されます。
+
+| エラー | 原因 |
+| --- | --- |
+| `Failed to process Step inputs` | 入力の値が無効です。次の行に該当する入力名が表示されます。 |
+| `Failed to install the Maestro CLI` | Maestro の CLI をダウンロードまたは検証できませんでした。 |
+| `Failed to install the app` | デバイスが起動していない、複数起動している、またはインストールに失敗しました。デバイスを起動する Step が、起動を待機していることを確認してください。 |
+| `Maestro flows failed` | 少なくとも 1 つのフローが失敗しました。Test Reports ページを確認してください。 |
+| `Maestro failed without a failing flow` | いずれかのフローが失敗する前に Maestro が停止しました。たとえば、解析できないフローファイルがあった場合などです。Step のログを確認してください。 |

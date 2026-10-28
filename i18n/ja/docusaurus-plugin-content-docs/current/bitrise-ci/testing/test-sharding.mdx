@@ -1,7 +1,7 @@
 ---
 title: "テストシャーディング"
 description: "Bitriseは、プロジェクトタイプと、シャーディング最適化の計算をBitriseに任せるかどうかに応じて、使いやすいテストシャーディング最適化機能を標準で提供します。"
-sidebar_position: 6
+sidebar_position: 7
 slug: /bitrise-ci/testing/test-sharding
 ---
 
@@ -21,9 +21,9 @@ Bitriseはプロジェクトの種類や、シャーディングの最適化計�
 
 ## 独自のテスト分割計算によるシャーディング {#sharding-with-your-own-test-split-calculation}
 
-すでにシャーディング用の最適なテスト分割を計算する手段をお持ちの場合は、<GlossTerm baseform="Pipeline">Pipelines</GlossTerm>の[parallelism](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow)機能を使ってテストシャーディングを設定できます。
+シャーディングに最適なテスト分割を計算する手段がすでにある場合は、<GlossTerm baseform="Pipeline">Pipelines</GlossTerm> で [並列実行](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow)機能を使用して、テストシャーディングを設定できます。
 
-Parallelismは、同じ<GlossTerm baseform="Workflow">Workflow</GlossTerm>を別々の仮想マシン上で並列実行します。必要なコピー数は、Workflowの`parallel`プロパティを設定することで手動で指定します。
+並列実行では、同じ <GlossTerm baseform="Workflow">Workflow</GlossTerm> を別々の仮想マシン上で並行して実行します。Workflow の `parallel` プロパティを設定して、必要なコピー数を手動で指定します。
 
 ```yaml
 ...
@@ -34,24 +34,26 @@ workflows:
 ...
 ```
 
-各コピーには、2つの新しいEnvironment Variablesが渡されます。
+各コピーには、次の 2 つの新しい Environment Variables が渡されます。
 
-- $BITRISE_IO_PARALLEL_INDEX: Workflowの各コピーに割り当てられる、0から始まるインデックスです。
-- $BITRISE_IO_PARALLEL_TOTAL: コピーの総数です。
+- $BITRISE_IO_PARALLEL_INDEX: Workflow の各コピーに付与される、0 から始まるインデックス
+- $BITRISE_IO_PARALLEL_TOTAL: コピーの総数
 
-これらのEnvironment Variablesを活用してテストシャーディングを実行できます。例えば、Jestの場合:
+これらの Environment Variables を利用して、テストシャーディングを実行できます。たとえば Jest の場合は次のとおりです。
 
 ```bash
 jest --shard=$((BITRISE_IO_PARALLEL_INDEX + 1))/$BITRISE_IO_PARALLEL_TOTAL
 ```
 
-または、yarnの場合:
+yarn を使用する場合は次のとおりです。
 
 ```bash
 yarn test --ci --silent --shard=$((BITRISE_IO_PARALLEL_INDEX + 1))/$BITRISE_IO_PARALLEL_TOTAL
 ```
 
-parallelismの設定方法について詳しくは、ガイドをご確認ください: [Parallelism in Pipelines](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow)。
+Maestro フローの場合は、各フローにシャードのタグを付け、`$BITRISE_IO_PARALLEL_INDEX` でフローを選択します: [複数のデバイスでのフローの並列実行](/bitrise-ci/testing/running-maestro-tests-on-bitrise#running-flows-on-several-devices-in-parallel)
+
+並列実行の設定方法の詳細については、次のガイドを参照してください: [Pipelines での並列実行](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow)
 
 
 ## Bitrise Stepがテスト分割を計算するシャーディング {#sharding-with-a-bitrise-step-calculating-the-test-split}
