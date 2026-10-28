@@ -73,6 +73,7 @@ Keep these limits in mind:
 - **On create has 20 minutes.** If its script hasn't exited by then, Bitrise stops it and marks it failed with exit code 124.
 - **Nobody can connect while On create runs.** The terminal, SSH, remote access, and file transfers open when On create finishes. You can read its log in the meantime.
 - **A stop keeps the disk, not the processes.** Cloned repositories and installed tools survive a restore. Running services, simulators, and files in `/tmp` don't, so restart them in On restore.
+- **Hooks don't wait for a virtual device.** On a [device session](/bitrise-rde/devices/device-sessions), the simulator or emulator boots alongside the hooks, so it may not be ready yet when On create or On restore runs. A script or AI agent that uses the device waits for both the setup and the device to be ready. `bitrise-cli rde session create --wait` does this for you.
 
 ## Variables and inputs
 
