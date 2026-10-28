@@ -49,7 +49,7 @@ The `bitrise-cli rde session` commands cover the full session lifecycle. Command
 
 | Command | What it does |
 | --- | --- |
-| `bitrise-cli rde session create NAME` | Create a session from a `--template`, or without one by passing `--stack` and `--machine-type`. Add `--device-platform ios` or `android` to boot a virtual device with it. Add `--wait` to block until the session, and its device, are ready. |
+| `bitrise-cli rde session create NAME` | Create a session from a `--template`, or without one by passing `--stack` and `--machine-type`. Add `--device-platform ios` or `android` to boot a virtual device with it. Add `--wait` to block until the session, its setup, and its device are ready. |
 | `bitrise-cli rde session list` | List your sessions and their status. |
 | `bitrise-cli rde session view SESSION_ID` | Show a session's details, including connection credentials. |
 | `bitrise-cli rde session update SESSION_ID` | Rename a session, change its description, or adjust its auto-terminate timer. |
@@ -59,7 +59,9 @@ The `bitrise-cli rde session` commands cover the full session lifecycle. Command
 | `bitrise-cli rde session ssh SESSION_ID` | Print the session's SSH command and password, for `scp` or for tunneling a device session's ports. |
 | `bitrise-cli rde session vnc SESSION_ID` | Print the session's VNC connection details, or tunnel them to a local port with `--forward` (macOS only). |
 | `bitrise-cli rde session open-vnc SESSION_ID` | Open the session's desktop in your default VNC viewer (macOS only). |
-| `bitrise-cli rde session logs SESSION_ID --stage startup` | Print the session's warmup or startup script logs. Add `--follow` to stream them live. |
+| `bitrise-cli rde session logs SESSION_ID --stage on-create` | Print a log of the session's setup: `on-create`, `on-claim`, `on-restore`, or `personalize` for a [lifecycle hook](/bitrise-rde/configuration/lifecycle-hooks), and `warmup` or `startup` for a template with warmup and startup scripts. Add `--follow` to stream it live. |
+| `bitrise-cli rde session run-hook SESSION_ID --hook on_claim` | Run a failed On claim, On restore, or System setup (`personalize`) again on the same machine. |
+| `bitrise-cli rde session rebuild SESSION_ID` | Replace the session's machine and run its setup again from On create. |
 | `bitrise-cli rde session notifications SESSION_ID` | List events the session emitted, such as agent stops and permission prompts. |
 | `bitrise-cli rde session diff SESSION_ID` | Show how the session's template changed since the session was created. |
 | `bitrise-cli rde session terminate SESSION_ID` | Stop the machine but keep the session for later. |
