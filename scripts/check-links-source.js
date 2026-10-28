@@ -10,11 +10,15 @@
  * docusaurus.config.ts) and the HTML-level `link_analyzer.js`.
  *
  * Usage:
- *   node scripts/check-links-source.js                 # scan every page under docs/
+ *   node scripts/check-links-source.js                 # scan every page under docs/,
+ *                                                      # src/partials/ and i18n/ja/
  *   node scripts/check-links-source.js docs/a.mdx ...  # check only the given files
  *   node scripts/check-links-source.js --json          # machine-readable output
  *
- * Exit code: 0 if clean, 1 if any broken link/anchor is found (so it can gate).
+ * Also fails on a Japanese page whose English source no longer exists: delete it.
+ *
+ * Exit code: 0 if clean, 1 if any broken link/anchor or orphaned Japanese page
+ * is found (so it can gate).
  *
  * Known limits (reported as warnings, never hard failures):
  *   - Headings that come from a non-partial component are invisible to a
@@ -255,18 +259,60 @@ for (const abs of allFiles) {
 // broken link in a reused partial would otherwise go unnoticed. Scan them too.
 const partialFiles = fs.existsSync(PARTIALS_DIR) ? walk(PARTIALS_DIR) : [];
 
+// Japanese pages and partials are copies of the English ones, link targets
+// included. scripts/ja_structure.py only compares how MANY links a translation
+// has, never where they point, so when an English URL changes, the Japanese
+// copies keep the old one and nothing else notices. Their links use the same
+// bare paths and the English heading ids (translated headings are pinned to
+// them), so they are validated against the same route map as the English pages.
+const JA_DIRS = [
+  path.join(ROOT, 'i18n', 'ja', 'docusaurus-plugin-content-docs', 'current'),
+  path.join(ROOT, 'i18n', 'ja', 'partials'),
+];
+const jaFiles = JA_DIRS.filter((d) => fs.existsSync(d)).flatMap(walk);
+
+// A Japanese page exists only to mirror an English one. When the English source
+// is deleted, its copy must go too: translate_docs.py removes it, but only on PRs
+// where translation is switched on, and ja_structure.py skips it silently. So
+// flag it here, where every PR is checked, instead of leaving a page nobody
+// maintains (and whose links keep pointing at whatever the English URL was).
+function englishSourceFor(absJa) {
+  const trees = [
+    [JA_DIRS[0], DOCS_DIR],
+    [JA_DIRS[1], PARTIALS_DIR],
+  ];
+  for (const [jaDir, enDir] of trees) {
+    if (absJa.startsWith(jaDir + path.sep)) {
+      return path.join(enDir, path.relative(jaDir, absJa));
+    }
+  }
+  return null; // not a Japanese page
+}
+
 const filesToCheck = fileArgs.length
   ? fileArgs.map((f) => path.resolve(f))
-  : [...allFiles, ...partialFiles];
+  : [...allFiles, ...partialFiles, ...jaFiles];
 
-const results = []; // { file, brokenLinks:[], brokenAnchors:[] }
+const results = []; // { file, brokenLinks:[], brokenAnchors:[], orphanOf? }
 let brokenLinkCount = 0;
 let brokenAnchorCount = 0;
+let orphanCount = 0;
 
 for (const abs of filesToCheck) {
   if (!fs.existsSync(abs)) {
     console.error(`skip (not found): ${abs}`);
     continue;
+  }
+  const enSource = englishSourceFor(abs);
+  if (enSource && !fs.existsSync(enSource)) {
+    results.push({
+      file: path.relative(ROOT, abs),
+      brokenLinks: [],
+      brokenAnchors: [],
+      orphanOf: path.relative(ROOT, enSource),
+    });
+    orphanCount++;
+    continue; // its links are moot: the page itself should not exist
   }
   const src = fs.readFileSync(abs, 'utf8');
   const brokenLinks = [];
@@ -307,7 +353,13 @@ for (const abs of filesToCheck) {
 if (JSON_OUT) {
   console.log(
     JSON.stringify(
-      { brokenLinkCount, brokenAnchorCount, pagesWithIssues: results.length, results },
+      {
+        brokenLinkCount,
+        brokenAnchorCount,
+        orphanCount,
+        pagesWithIssues: results.length,
+        results,
+      },
       null,
       2
     )
@@ -315,14 +367,18 @@ if (JSON_OUT) {
 } else {
   if (!results.length) {
     console.log(
-      `Clean — checked ${filesToCheck.length} file(s), no broken internal links or anchors.`
+      `Clean — checked ${filesToCheck.length} file(s), no broken internal links or anchors, no orphaned Japanese pages.`
     );
   } else {
     console.log(
-      `Found ${brokenLinkCount} broken link(s) and ${brokenAnchorCount} broken anchor(s) across ${results.length} page(s):\n`
+      `Found ${brokenLinkCount} broken link(s), ${brokenAnchorCount} broken anchor(s) and ${orphanCount} orphaned Japanese page(s) across ${results.length} page(s):\n`
     );
     for (const r of results) {
       console.log(`  ${r.file}`);
+      if (r.orphanOf)
+        console.log(
+          `    [orphan]     English source ${r.orphanOf} no longer exists: delete this Japanese file`
+        );
       for (const b of r.brokenLinks) console.log(`    [404 page]   ${b.link}`);
       for (const b of r.brokenAnchors)
         console.log(`    [no anchor]  ${b.link}  (page exists, #${b.anchor} does not)`);
@@ -331,4 +387,4 @@ if (JSON_OUT) {
   }
 }
 
-process.exit(brokenLinkCount + brokenAnchorCount > 0 ? 1 : 0);
+process.exit(brokenLinkCount + brokenAnchorCount + orphanCount > 0 ? 1 : 0);
