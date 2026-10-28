@@ -82,30 +82,36 @@ CodePush SDKは[オープンソースであり](https://github.com/bitrise-io/re
 
 ### iOS のセットアップ {#ios-setup}
 
-1. `ios` フォルダーから `bundle exec pod install` を実行し、事前に追加した CodePush SDK 依存関係を反映させます。
-1. `ios/<projectname>/AppDelegate.swift` を更新します。
+1. `ios` フォルダーから `bundle exec pod install` を実行して、先ほど追加した CodePush SDK の依存関係を取り込みます。
+1. `ios/<projectname>/SceneDelegate.swift` を更新します。
 
    1. CodePush ヘッダーの import 文を追加します。
 
       ```swift
       import CodePush
       ```
-   1. `class ReactNativeDelegate` で、本番ビルド用のバンドルURLを返している行を見つけ、CodePush SDK の呼び出しに置き換えます。
+   1. `class SceneDelegate` で、リリースビルド用のバンドル URL を返す行を見つけ、CodePush の SDK の呼び出しに置き換えます。
 
       ```diff
-      override func bundleURL() -> URL? {
-      #if DEBUG
-         RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
-      #else
-      -    Bundle.main.url(forResource: "main", withExtension: "jsbundle")
-      +    CodePush.bundleURL()
-      #endif
-      }
+        override func bundleURL() -> URL? {
+        #if DEBUG
+          RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
+        #else
+      -   Bundle.main.url(forResource: "main", withExtension: "jsbundle")
+      +   CodePush.bundleURL()
+        #endif
+        }
       ```
 
-   CodePush を使って JS バンドルの場所を解決するのは、リリースビルドのときだけにしてください。`DEBUG` プリプロセッサマクロによって、デバッグビルドでは Metro パッケージャー、リリースビルドでは CodePush に切り替わるため、デバッグ中も Chrome Dev Tools やライブリロードが引き続き使用できます。
+   JS バンドルの場所の解決に CodePush を使用するのは、リリースビルドのみにしてください。`DEBUG` プリプロセッサマクロにより、デバッグビルドでは Metro パッケージャー、リリースビルドでは CodePush に切り替わるため、デバッグ中も React Native DevTools と Fast Refresh が引き続き動作します。
 
-1. `ios/<projectname>/Info.plist` を CodePush デプロイキーと CodePush サーバーURLで更新し、CodePush ランタイムがどのデプロイに対してアップデートを問い合わせればよいかを認識できるようにします。
+   :::note[AppDelegate を引き続き使用しているアプリ]
+
+   React Native 0.88 以降で作成されたアプリは、iOS 27 の SDK で UIScene ライフサイクルが必須となっているため、`SceneDelegate.swift` で React Native を初期化します。アプリが引き続き `AppDelegate.swift` で React Native を初期化している場合 (0.87 以前で作成され、UIScene ライフサイクルにまだ移行していない場合)、`bundleURL()` メソッドは `ios/<projectname>/AppDelegate.swift` 内の `class ReactNativeDelegate` にあります。そのファイルにも同じ 2 つの変更を加えてください。
+
+   :::
+
+1. CodePush のデプロイキーと CodePush サーバーの URL で `ios/<projectname>/Info.plist` を更新して、CodePush ランタイムがどのデプロイに対して更新を問い合わせるかを認識できるようにします。
 
    ```xml
    <key>CodePushDeploymentKey</key>
@@ -114,17 +120,17 @@ CodePush SDKは[オープンソースであり](https://github.com/bitrise-io/re
    <string>https://<workspace-slug>.codepush.bitrise.io</string>
    ```
 
-   <strong>Deployment key</strong>: Bitrise の CodePush deployments ページから値をコピーしてください。デプロイキーは、[Bitrise 上で CodePush デプロイを作成](/release-management/codepush/creating-a-codepush-deployment)する際に取得できます。
+   <strong>Deployment key</strong>: Bitrise CodePush deployments ページから値をコピーします。デプロイキーは、[Bitrise での CodePush デプロイ](/release-management/codepush/creating-a-codepush-deployment)の作成時に取得できます。
 
-   <strong>Workspace slug</strong>: サーバーURLには Bitrise の workspace スラッグが必要です。[Workspaces とアプリをスラッグで識別する](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs)を参照してください。
+   <strong>Workspace slug</strong>: サーバーの URL には、Bitrise workspace のスラッグが必要です: [Workspaces とアプリをスラッグで識別する](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs)
 
-   :::note[Deployment keys are not secrets]
+   :::note[デプロイキーはシークレットではありません]
 
-   これらは最終的なアプリのビルド内にプレーンな文字列値として含まれます。秘密情報ではありませんが、workspace と CodePush のデプロイ設定に固有の値です。
+   これらの値は、最終的なアプリビルドにプレーンな文字列として含まれます。シークレットではありませんが、workspace と CodePush デプロイの設定に固有の値です。
 
    :::
 
-1. 任意: iOS の最小デプロイターゲットが 15.5 未満の場合は、少なくとも `15.5` まで引き上げる必要があります。`ios/Podfile` で `platform :ios, min_ios_version_supported` の行を探し、`platform :ios, '15.5'` に変更してください。
+1. 任意: iOS の最小デプロイメントターゲットが 15.5 より低い場合は、少なくとも `15.5` に引き上げる必要があります。`ios/Podfile` で `platform :ios, min_ios_version_supported` の行を探し、`platform :ios, '15.5'` に変更します。
 
 ### Android のセットアップ {#android-setup}
 
