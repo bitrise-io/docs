@@ -1,0 +1,81 @@
+---
+title: "Test reports overview"
+description: "Find out which Steps you need to see your test results on the Tests tab of your build page, based on your framework and test type."
+sidebar_position: 0
+slug: /bitrise-ci/testing/test-reports/overview
+---
+
+View your test results in one place after a Bitrise CI build: all tests appear on the **Tests** tab of the build page, even if you have multiple testing Steps in your Workflows. Which Steps you need depends on your framework and the type of test you run.
+
+:::important[Always add the Deploy to Bitrise.io Step]
+
+Add the **Deploy to Bitrise.io** Step after your test Step, and set it to run even when the tests fail (`is_always_run: true`). Without it, nothing reaches the **Tests** tab. To show attachments and flaky tests, use version 2.19.1 or newer.
+
+:::
+
+## Pick your framework and test type
+
+How you get your test results onto the **Tests** tab depends on the Step that runs your tests. There are two routes:
+
+- **Native Steps**: the official Bitrise testing Steps, such as **Xcode Test for iOS** and **Android Unit Test**, export your test results themselves. You only need to add the **Deploy to Bitrise.io** Step to your Workflow.
+- **Generic route**: if you run your tests with any other tool, for example in a **Script** Step, write your results to a JUnit XML file. Then add the **Export test results to Test Reports** Step after the Step that runs your tests, and the **Deploy to Bitrise.io** Step after that.
+
+Find your framework below to see which Steps you need for each test type. If your framework isn't listed, use the generic route. For the full instructions on both routes, see [Deploying test results](/bitrise-ci/testing/test-reports/deploying-test-results). Once your results are deployed, see [Viewing test results](/bitrise-ci/testing/test-reports/viewing-test-results) to learn how to find and read them on the build page.
+
+### Xcode (iOS, macOS)
+
+<div className="card-table test-reports-table">
+
+| Test type | Steps | Notes |
+|---|---|---|
+| Unit tests | <ul><li>**Xcode Test for iOS**</li><li>**Deploy to Bitrise.io**</li></ul> | Screenshots attach automatically from the `xcresult` file. |
+| UI tests | <ul><li>**Xcode Test for iOS**</li><li>**Deploy to Bitrise.io**</li></ul> | The same Step runs every test target, UI targets included. |
+| Device farm | <ul><li>**iOS Device Testing**</li><li>**Deploy to Bitrise.io**</li></ul> |  |
+
+</div>
+
+### Android (Gradle)
+
+<div className="card-table test-reports-table">
+
+| Test type | Steps | Notes |
+|---|---|---|
+| Unit tests | <ul><li>**Android Unit Test**</li><li>**Deploy to Bitrise.io**</li></ul> | The **Run Gradle Tests** Step also works. |
+| Instrumented tests | <ul><li>**Android Instrumented Test**</li><li>**Deploy to Bitrise.io**</li></ul> |  |
+| Device farm | <ul><li>**Virtual Device Testing for Android**</li><li>**Deploy to Bitrise.io**</li></ul> | Set `download_test_results` to `true` to detect flaky tests. |
+
+</div>
+
+### Flutter
+
+<div className="card-table test-reports-table">
+
+| Test type | Steps | Notes |
+|---|---|---|
+| Unit and widget tests | <ul><li>**Flutter Test**</li><li>**Deploy to Bitrise.io**</li></ul> | Covers unit and widget tests. |
+| UI tests | No native Step. | Use the generic route. |
+| Device farm | Not available natively. |  |
+
+</div>
+
+### Maestro
+
+<div className="card-table test-reports-table">
+
+| Test type | Steps | Notes |
+|---|---|---|
+| Unit tests | Not applicable. |  |
+| UI tests | <ul><li>**Android Build** or **Xcode Build for Simulator**</li><li>**AVD Manager** or **Xcode Start Simulator**</li><li>**Maestro Test**</li><li>**Deploy to Bitrise.io**</li></ul> | No export Step needed. |
+| Device farm | No native Step. | For Maestro Cloud and devicecloud.dev, use the generic route. |
+
+</div>
+
+### Any other framework
+
+<div className="card-table test-reports-table">
+
+| Test type | Steps | Notes |
+|---|---|---|
+| Unit, UI, and device farm tests | <ul><li>A **Script** Step that runs your tests and writes JUnit XML</li><li>**Export test results to Test Reports**</li><li>**Deploy to Bitrise.io**</li></ul> | Works for every test type. |
+
+</div>
