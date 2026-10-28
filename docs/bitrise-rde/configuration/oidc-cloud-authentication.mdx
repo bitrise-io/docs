@@ -131,13 +131,14 @@ To use a different role per user, store the ARN in a [session input](/bitrise-rd
 
 Google client libraries and the gcloud CLI can get the identity token from an executable named in the credential configuration file. The library runs it whenever it needs a token and performs the exchange itself.
 
-1. Download the client library configuration file from your workload identity pool, as described in [OIDC for GCP](/bitrise-platform/integrations/oidc-authentication/oidc-for-gcp). Note the `audience` value in it: the token must be requested with the same audience.
-1. In the file, replace the `credential_source` object with an executable source that runs `rde-agent`:
+1. Download the client library configuration file from your workload identity pool, as described in [OIDC for GCP](/bitrise-platform/integrations/oidc-authentication/oidc-for-gcp).
+1. Find the audience your provider accepts. It's the **Allowed audiences** value you set on the provider or, when you left it empty, the provider's resource name with an `https:` prefix, for example `https://iam.googleapis.com/projects/123456789012/locations/global/workloadIdentityPools/bitrise-rde/providers/bitrise`. Google checks it against the `aud` claim of the token. Don't confuse it with the `audience` field of the configuration file: that one has a `//` prefix, names the pool for the exchange, and is rejected as a token audience.
+1. In the file, replace the `credential_source` object with an executable source that runs `rde-agent` with that audience:
 
    ```json
    "credential_source": {
      "executable": {
-       "command": "rde-agent id-token gcp --audience //iam.googleapis.com/projects/123456789012/locations/global/workloadIdentityPools/bitrise-rde/providers/bitrise",
+       "command": "rde-agent id-token gcp --audience https://iam.googleapis.com/projects/123456789012/locations/global/workloadIdentityPools/bitrise-rde/providers/bitrise",
        "timeout_millis": 30000
      }
    }
