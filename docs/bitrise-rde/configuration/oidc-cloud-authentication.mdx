@@ -51,13 +51,11 @@ An example subject for a session that a user created from a template:
 rde:workspace:a1b2c3d4e5f67890:template:7f3c2a10-1111-4222-8333-444455556666:session-owner:user:5a0d688e73861d6d
 ```
 
-## Setting up your cloud provider
+## Authenticating with AWS
 
-The provider-side setup is the same as for CI builds. Follow the guide for your provider, with the differences below: the identities you trust are sessions instead of builds, so the rules that match them are different.
+### Setting up AWS
 
-### AWS
-
-Follow [OIDC for AWS](/bitrise-platform/integrations/oidc-authentication/oidc-for-aws) to add Bitrise as an identity provider and create a role with a custom trust policy.
+The AWS side is the same as for CI builds, except that the trust policy matches sessions instead of builds. Follow the first two sections of [OIDC for AWS](/bitrise-platform/integrations/oidc-authentication/oidc-for-aws), adding the identity provider and the custom trust policy, then come back here; the rest of that page is about CI Steps.
 
 In the trust policy, match the subject with a wildcard so that every session created from a template can assume the role. This AWS condition allows all sessions created from one template in one Workspace:
 
@@ -80,49 +78,7 @@ A trust policy written for CI builds matches subjects starting with `app:`, so i
 
 :::
 
-### GCP
-
-Follow [OIDC for GCP](/bitrise-platform/integrations/oidc-authentication/oidc-for-gcp) to create a workload identity pool and provider and connect them to a service account, with these differences:
-
-- Under **Configure provider attributes**, add the custom attribute `attribute.workspace_id` with the value `assertion.workspace_id`. Add `attribute.template_id` with `assertion.template_id` as well if you want to limit access to sessions created from one template. Google only lets you filter on mapped attributes, and filters are exact matches, so a claim that names the Workspace is what lets one grant cover every session.
-- When you grant access to the service account, under **Select principals** choose **Only identities matching the filter**, set the attribute name to `workspace_id` and the value to your Workspace slug. A `subject` filter also works, but it has to be the full subject string and matches one user on one template.
-- Note the provider's **Allowed audiences** value: the template needs it. If you left it empty, the audience is the provider's resource name with an `https:` prefix, for example `https://iam.googleapis.com/projects/123456789012/locations/global/workloadIdentityPools/bitrise-rde/providers/bitrise`.
-
-Without a matching grant, the exchange succeeds but the access token request fails with `iam.serviceAccounts.getAccessToken` denied.
-
-## The `rde-agent id-token` commands
-
-`rde-agent` is on the `PATH` of every session: in the terminal, in the warmup and startup scripts, and in any process a cloud SDK starts.
-
-- `rde-agent id-token get --audience AUDIENCE`
-
-  Prints the identity token. Use it with a provider that isn't covered below.
-
-- `rde-agent id-token aws --role-arn ROLE_ARN`
-
-  Prints temporary AWS credentials for the role, in the format `credential_process` expects. The command requests a token with the `sts.amazonaws.com` audience and exchanges it with AWS STS itself.
-
-- `rde-agent id-token gcp --audience AUDIENCE`
-
-  Prints the identity token wrapped in the format Google's executable-sourced credentials expect. The Google client library performs the exchange.
-
-Options for `rde-agent id-token aws`:
-
-<div className="command-table">
-
-| Option | Default | Description |
-| --- | --- | --- |
-| `--role-arn` | | The ARN of the role to assume. Required. |
-| `--audience` | `sts.amazonaws.com` | The audience in the token. Change it only if your identity provider in AWS was created with a different one. |
-| `--region` | `AWS_REGION`, or the global STS endpoint | The region whose STS endpoint performs the exchange. |
-| `--duration` | `3600` | The lifetime of the AWS credentials, in seconds, within the role's maximum. |
-| `--session-name` | `rde-SESSION_ID` | The role session name, which shows up in CloudTrail. The default identifies the session. |
-
-</div>
-
-The commands print to standard output and exit. A token is valid for one hour; don't store it. Let the cloud SDK run the command whenever it needs a fresh one, as shown below.
-
-## Configuring a template for AWS
+### Configuring a template for AWS
 
 The AWS CLI and SDKs can get credentials from a program you name in `credential_process`. The program runs whenever credentials are needed, and its output is cached until the expiration it reports. Name `rde-agent id-token aws` there, with the ARN of the role you created for sessions.
 
@@ -136,14 +92,26 @@ The AWS CLI and SDKs can get credentials from a program you name in `credential_
 
 1. In a session created from the template, the AWS CLI and SDKs authenticate on their own. To check, run `aws sts get-caller-identity`: the CLI runs `rde-agent`, which exchanges the token through `AssumeRoleWithWebIdentity`, and shows the role's identity.
 
-To use a different role per user, store the ARN in a [session input](/bitrise-rde/configuration/templates) exposed as an environment variable, and reference it in the warmup script instead of the literal ARN. To keep your existing default profile, pass `--profile rde` to `aws configure set` and select the profile with `AWS_PROFILE`.
+To use a different role per user, store the ARN in a [session input](/bitrise-rde/configuration/templates) exposed as an environment variable, and reference it in the warmup script instead of the literal ARN. To keep your existing default profile, pass `--profile rde` to `aws configure set` and select the profile with `AWS_PROFILE`. The [command reference](#command-reference) lists the other options, such as the credential lifetime and the STS region.
 
-## Configuring a template for GCP
+## Authenticating with GCP
+
+### Setting up GCP
+
+The GCP side is the same as for CI builds, except for how the pool identifies sessions. Follow the first two sections of [OIDC for GCP](/bitrise-platform/integrations/oidc-authentication/oidc-for-gcp), creating the workload identity pool and connecting the service account, with these differences; the rest of that page is about CI Steps.
+
+- Under **Configure provider attributes**, add the custom attribute `attribute.workspace_id` with the value `assertion.workspace_id`. Add `attribute.template_id` with `assertion.template_id` as well if you want to limit access to sessions created from one template. Google only lets you filter on mapped attributes, and filters are exact matches, so a claim that names the Workspace is what lets one grant cover every session.
+- When you grant access to the service account, under **Select principals** choose **Only identities matching the filter**, set the attribute name to `workspace_id` and the value to your Workspace slug. A `subject` filter also works, but it has to be the full subject string and matches one user on one template.
+- Note the provider's **Allowed audiences** value: the template needs it. If you left it empty, the audience is the provider's resource name with an `https:` prefix, for example `https://iam.googleapis.com/projects/123456789012/locations/global/workloadIdentityPools/bitrise-rde/providers/bitrise`.
+
+Without a matching grant, the exchange succeeds but the access token request fails with `iam.serviceAccounts.getAccessToken` denied.
+
+### Configuring a template for GCP
 
 Google client libraries and the gcloud CLI can get the identity token from an executable named in the credential configuration file. The library runs it whenever it needs a token and performs the exchange itself.
 
 1. Download the client library configuration file from your workload identity pool, as described in [OIDC for GCP](/bitrise-platform/integrations/oidc-authentication/oidc-for-gcp).
-1. In the file, replace the `credential_source` object with an executable source that runs `rde-agent` with the audience your provider accepts, the one you noted when [setting up the provider](#gcp). Don't confuse it with the `audience` field of the file: that one has a `//` prefix, names the pool for the exchange, and is rejected as a token audience.
+1. In the file, replace the `credential_source` object with an executable source that runs `rde-agent` with the audience your provider accepts, the one you noted when [setting up the provider](#setting-up-gcp). Don't confuse it with the `audience` field of the file: that one has a `//` prefix, names the pool for the exchange, and is rejected as a token audience.
 
    ```json
    "credential_source": {
@@ -167,6 +135,38 @@ Google client libraries and the gcloud CLI can get the identity token from an ex
 1. Add a [template variable](/bitrise-rde/configuration/templates) named `GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES` with the value `1`, exposed as an environment variable. Google's libraries refuse executable-sourced credentials without it, and exposing it makes every terminal and process in the session pick it up.
 
 1. In a session created from the template, gcloud and the client libraries authenticate on their own. To check, run `gcloud auth print-access-token`: gcloud runs `rde-agent`, exchanges the token, and prints an access token for the service account.
+
+## Command reference
+
+`rde-agent` is on the `PATH` of every session: in the terminal, in the warmup and startup scripts, and in any process a cloud SDK starts.
+
+- `rde-agent id-token get --audience AUDIENCE`
+
+  Prints the identity token. Use it with a provider that isn't covered above.
+
+- `rde-agent id-token aws --role-arn ROLE_ARN`
+
+  Prints temporary AWS credentials for the role, in the format `credential_process` expects. The command requests a token with the `sts.amazonaws.com` audience and exchanges it with AWS STS itself.
+
+- `rde-agent id-token gcp --audience AUDIENCE`
+
+  Prints the identity token wrapped in the format Google's executable-sourced credentials expect. The Google client library performs the exchange.
+
+Options for `rde-agent id-token aws`:
+
+<div className="command-table">
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `--role-arn` | | The ARN of the role to assume. Required. |
+| `--audience` | `sts.amazonaws.com` | The audience in the token. Change it only if your identity provider in AWS was created with a different one. |
+| `--region` | `AWS_REGION`, or the global STS endpoint | The region whose STS endpoint performs the exchange. |
+| `--duration` | `3600` | The lifetime of the AWS credentials, in seconds, within the role's maximum. |
+| `--session-name` | `rde-SESSION_ID` | The role session name, which shows up in CloudTrail. The default identifies the session. |
+
+</div>
+
+The commands print to standard output and exit. A token is valid for one hour; don't store it. Let the cloud SDK run the command whenever it needs a fresh one, as the recipes above do.
 
 ## Which sessions can request a token
 
