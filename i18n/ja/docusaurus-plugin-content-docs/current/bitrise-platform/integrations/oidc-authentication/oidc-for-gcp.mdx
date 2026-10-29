@@ -1,57 +1,61 @@
 ---
 title: "GCP向けOIDC"
-description: "Bitriseビルド中にOIDCトークンを生成し、Google Cloud Platformのスコープ付きアクセストークンと交換します。"
+description: "OIDC トークンを使用して、Bitrise ビルドと Remote Dev Environment セッションが、有効期間の長いサービスアカウントキーなしで Google Cloud Platform に対して認証できるようにします。"
 sidebar_position: 3
 slug: /bitrise-platform/integrations/oidc-authentication/oidc-for-gcp
 ---
-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 
-OIDCトークンをBitriseビルド中に生成し、Google Cloud Platform(GCP)のスコープ付きアクセストークンと交換します。
+OpenID Connect（OIDC）を使用すると、Bitrise は有効期間の長いサービスアカウントキーなしで、誰がリクエストを行っているかを Google Cloud Platform（GCP）に証明できます。Bitrise はビルドまたはセッションを記述する ID トークンを発行し、GCP は Workload Identity Federation を通じて、それをスコープ付きアクセストークンと交換します。
 
-GCPでOIDCトークンを使用するには、次の操作が必要です。
+OIDC トークンは、次の 2 か所で GCP に使用できます。
 
-- ワークロードIDプールを作成します。
-- IDプールにGoogleサービスアカウントを接続します。
+- <strong>CI build</strong>: [<strong>Get OIDC Identity Token</strong>](https://github.com/bitrise-steplib/bitrise-step-get-identity-token) <GlossTerm baseform="step">Step</GlossTerm> または [<strong>Authenticate with Google Cloud Platform (GCP)</strong>](https://github.com/bitrise-steplib/bitrise-step-authenticate-with-gcp) Step のいずれかでトークンを取得します。
+- <strong>Remote Dev Environment セッション</strong>: gcloud または Google クライアントライブラリが認証情報を必要とするたびに、セッションの `rde-agent` コマンドがトークンを提供します。[OIDC でのクラウド認証](/bitrise-rde/configuration/oidc-cloud-authentication)を参照してください。
 
-Bitriseでは、[<strong>Get OIDC Identity Token</strong>](https://github.com/bitrise-steplib/bitrise-step-get-identity-token)<GlossTerm baseform="step">Step</GlossTerm>または[<strong>Authenticate with Google Cloud Platform(GCP)</strong>](https://github.com/bitrise-steplib/bitrise-step-authenticate-with-gcp)Stepのいずれかを使用してトークンを取得できます。
+OIDC トークンを GCP に使用するには、次の作業が必要です。
+
+- ワークロード ID プールを作成します。
+- Google サービスアカウントを ID プールに接続します。
+
+セットアップは、ビルドとセッションで共通です。ただし、属性マッピングとプリンシパルフィルターは、ビルドまたはセッションのクレームに合わせて設定します。
 
 
-## ワークロードIDプールの作成 {#creating-a-workload-identity-pool}
+## ワークロード ID プールの作成 {#creating-a-workload-identity-pool}
 
-Workload Identity Federationを有効にするには、GCPでワークロードIDプールを作成します。
+GCP でワークロード ID プールを作成して、Workload Identity Federation を有効にします。
 
 :::tip[Workload Identity Federation]
 
-Workload Identity Federationを使用した認証の仕組みについて詳しくは、GCPの[Google公式ドキュメント](https://cloud.google.com/sap/docs/abap-sdk/on-premises-or-any-cloud/latest/authentication-wif)をご覧ください。
+GCP での Workload Identity Federation による認証の仕組みについては、[Google の公式ドキュメント](https://cloud.google.com/sap/docs/abap-sdk/on-premises-or-any-cloud/latest/authentication-wif)を参照してください。
 
 :::
 
-1. Google Cloudコンソールで、<strong>IAM & Admin</strong>に移動し、次に<strong>Workload Identity Federation</strong>を選択します。
-1. <strong>Create an identity pool</strong>セクションで、次のフィールドに値を入力します。
+1. Google Cloud コンソールで、<strong>IAM & Admin</strong> に移動し、<strong>Workload Identity Federation</strong> を選択します。
+1. <strong>Create an identity pool</strong> セクションで、次のフィールドに値を入力します。
 
-   - <strong>Name</strong>: プールの名前です。この名前はプールIDとして使用され、後から変更できません。
-   - <strong>Description</strong>: プールの目的です。
-1. <strong>Add a provider to pool</strong>で、Bitriseをプロバイダとして追加します。
+   - <strong>Name</strong>: プールの名前。この名前はプール ID として使用され、後からプール ID を変更することはできません。
+   - <strong>Description</strong>: プールの目的。
+1. <strong>Add a provider to pool</strong> で、Bitrise をプロバイダーとして追加します。
 
-   - <strong>Select a provider</strong>フィールドで、<strong>OpenID Connect(OIDC)</strong>を選択します。
-   - <strong>Provider name</strong>: 名前を入力します。わかりやすくするため、`Bitrise`の使用をお勧めします。
+   - <strong>Select a provider</strong> フィールドで、<strong>OpenID Connect (OIDC)</strong> を選択します。
+   - <strong>Provider name</strong>: 名前を入力します。わかりやすくするため、`Bitrise` の使用をおすすめします。
    - <strong>Issuer URL</strong>: https://token.builds.bitrise.io.
-   - <strong>Audience</strong>: Select<strong>Allowed audience</strong>。トークンを使用する際、GCPは許可されたaudienceが`aud`クレームにエンコードされたaudienceと一致するかを確認します。Bitriseでは、OIDCサービスを提供するStepsでaudienceを設定できます: [Fetching and exchanging tokens with GCP](/bitrise-platform/integrations/oidc-authentication/oidc-for-gcp#fetching-and-exchanging-tokens-with-gcp).
-1. <strong>Continue</strong>をクリックします。
-1. <strong>Configure provider attributes</strong>で、必要な属性マッピングの値を設定します:
+   - <strong>Audience</strong>: Select <strong>Allowed audience</strong>。トークンの使用時に、GCP は、許可されたオーディエンスが `aud` クレームにエンコードされたオーディエンスと一致するかどうかを確認します。Bitrise では、OIDC サービスを提供する Steps でオーディエンスを設定できます: [GCP でのトークンの取得と交換](/bitrise-platform/integrations/oidc-authentication/oidc-for-gcp#fetching-and-exchanging-tokens-with-gcp)。
+1. <strong>Continue</strong> をクリックします。
+1. <strong>Configure provider attributes</strong> で、必要な属性マッピングの値を設定します。
 
-   - `google.subject`キーは、ユーザーの一意の識別子です。`assertion.sub`を使用して、トークンをリクエストしたビルドを特定できます。
-   - `attribute.NAME`形式を使用すると、最大50個のカスタム属性を追加でき、各属性の値は`assertion.VALUE`形式で指定します。利用可能な属性の一覧は、Bitriseトークン内にあります: [Information in the OIDC token](/bitrise-platform/integrations/oidc-authentication/oidc-authentication-overview#information-in-the-oidc-token).
+   - `google.subject` キーは、ユーザーの一意の識別子です。`assertion.sub` を使用して、トークンをリクエストするビルドまたは Remote Dev Environment セッションを識別できます。セッションのサブジェクトは `rde:` で始まります。[OIDC でのクラウド認証](/bitrise-rde/configuration/oidc-cloud-authentication)を参照してください。
+   - `attribute.NAME` 形式を使用して、最大 50 個のカスタム属性を追加します。各属性には `assertion.VALUE` 形式の値を指定します。Bitrise トークンで使用可能な属性の一覧は、こちらで確認できます: [OIDC トークンに含まれる情報](/bitrise-platform/integrations/oidc-authentication/oidc-authentication-overview#information-in-the-oidc-token)。
 
-   :::important[明示的なマッピングが必要です]
+   :::important[明示的なマッピングが必要]
 
-   使用したいすべての属性をマッピングする必要があります。Googleでは、明示的にマッピングされた属性のみを使用できます。詳しくは[Googleのドキュメントの属性マッピング](https://cloud.google.com/iam/docs/workload-identity-federation?_gl=1*1sz7kri*_ga*MTM0MTUyNjA1OC4xNzYyNTMwMjA5*_ga_WH2QY8WWF5*czE3NjM0Nzc1MzYkbzIkZzEkdDE3NjM0Nzc4MDEkajUwJGwwJGgw#mapping)をご覧ください。
+   使用するすべての属性をマッピングする必要があります。Google では、明示的にマッピングされた属性のみを使用できます。詳細については、[Google ドキュメントの属性マッピング](https://cloud.google.com/iam/docs/workload-identity-federation?_gl=1*1sz7kri*_ga*MTM0MTUyNjA1OC4xNzYyNTMwMjA5*_ga_WH2QY8WWF5*czE3NjM0Nzc1MzYkbzIkZzEkdDE3NjM0Nzc4MDEkajUwJGwwJGgw#mapping)を参照してください。
 
    :::
-1. 必要に応じて、属性条件を追加します。サービスアカウントを作成する際に、プールレベルで属性に基づいてIDトークンを直接フィルタリングすることもできます。
+1. 必要に応じて、属性条件を追加します。サービスアカウントの作成時に、プールレベルで属性に基づいて ID トークンを直接フィルタリングすることもできます。
 
 
 ## ワークロードIDプールへのGoogleサービスアカウントの接続 {#connecting-a-google-service-account-to-the-workload-identity-pool}
@@ -76,20 +80,20 @@ GCPサービスでOIDC認証を使用するには、ワークロードIDプー�
    :::
 1. <strong>Done</strong>をクリックします。
 
-### ワークロードIDプールへのアクセス許可の付与 {#granting-access-to-the-workload-identity-pool}
+### ワークロード ID プールへのアクセス権の付与 {#granting-access-to-the-workload-identity-pool}
 
-1. Google Cloudコンソールで、<strong>IAM & Admin</strong>に移動し、次に<strong>Workload Identity Federation</strong>を選択します。
-1. 自分のIDプールを選択します。
-1. <strong>Grant access</strong>をクリックします。
-1. <strong>Grant access using service account impersonation</strong>オプションを選択します。
-1. 作成したservice accountを選択します。
-1. プリンシパル(サービスアカウントにアクセスできるID)を選択します。
+1. Google Cloud コンソールで、<strong>IAM & Admin</strong> に移動し、<strong>Workload Identity Federation</strong> を選択します。
+1. ID プールを選択します。
+1. <strong>Grant access</strong> をクリックします。
+1. <strong>Grant access using service account impersonation</strong> オプションを選択します。
+1. 作成した service account を選択します。
+1. プリンシパルを選択します: サービスアカウントにアクセスできる ID です。
 
-   利用可能なオプションは、IDプールのプロバイダ属性マッピングにあるキーに限定されます。たとえば、属性マッピング`google.subject=assertion.sub`を使用する場合、<strong>Attribute name</strong>を`subject`に、<strong>Attribute value</strong>を`sub`に設定します。利用可能な値は、Bitriseトークン内で確認できます:
-1. <strong>Save</strong>をクリックします。
-1. ダイアログで、Bitrise OIDCトークン用に作成したプロバイダを選択します。
-1. OIDCのIDトークンパス:https://token.builds.bitrise.ioを追加し、形式を<strong>text</strong>に設定します。
-1. <strong>Download config</strong>をクリックし、アクセス可能な場所にファイルを保存します。
+   選択可能なオプションは、ID プールのプロバイダー属性マッピングのキーに限られ、フィルターは属性の値と完全に一致します。たとえば、属性マッピング `google.subject=assertion.sub` を使用する場合は、<strong>Attribute name</strong> を `subject` に設定し、<strong>Attribute value</strong> にビルドのサブジェクトを `app:APP_SLUG:workflow:WORKFLOW` 形式で設定します。使用可能な値は、Bitrise トークンで確認できます: [OIDC トークンに含まれる情報](/bitrise-platform/integrations/oidc-authentication/oidc-authentication-overview#information-in-the-oidc-token)。
+1. <strong>Save</strong> をクリックします。
+1. ダイアログで、Bitrise OIDC トークン用に作成したプロバイダーを選択します。
+1. OIDC ID トークンのパス https://token.builds.bitrise.io を追加し、形式を <strong>text</strong> に設定します。
+1. <strong>Download config</strong> をクリックし、アクセスできる場所にファイルを保存します。
 
 
 ## GCPでのトークンの取得と交換 {#fetching-and-exchanging-tokens-with-gcp}
