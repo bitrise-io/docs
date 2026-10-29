@@ -1,0 +1,80 @@
+---
+title: "テストレポートの概要"
+description: "お使いのフレームワークとテストの種類に基づいて、ビルドページのTestsタブにテスト結果を表示するために必要なStepsを確認します。"
+sidebar_position: 0
+slug: /bitrise-ci/testing/test-reports/overview
+---
+Bitrise CIのビルドの後、テスト結果を一か所で確認できます。Workflows内に複数のテストStepsがある場合でも、すべてのテストがビルドページの<strong>Tests</strong>タブに表示されます。必要なStepsは、使用しているフレームワークと実行するテストの種類によって異なります。
+
+:::important[必ずDeploy to Bitrise.io Stepを追加する]
+
+テストStepの後に<strong>Deploy to Bitrise.io</strong> Stepを追加し、テストが失敗した場合でも実行されるように設定します（`is_always_run: true`）。これがないと、<strong>Tests</strong>タブには何も表示されません。添付ファイルと不安定なテストを表示するには、バージョン2.19.1以降を使用してください。
+
+:::
+
+## フレームワークとテストの種類を選択する {#pick-your-framework-and-test-type}
+
+テスト結果を<strong>Tests</strong>タブに表示する方法は、テストを実行するStepによって異なります。ルートは2つあります。
+
+- <strong>ネイティブのSteps</strong>: <strong>Xcode Test for iOS</strong>や<strong>Android Unit Test</strong>などの公式のBitriseテストStepsは、テスト結果を自らエクスポートします。Workflowに<strong>Deploy to Bitrise.io</strong> Stepを追加するだけで済みます。
+- <strong>汎用ルート</strong>: ほかのツールでテストを実行する場合（たとえば<strong>Script</strong> Step内で実行する場合）は、結果をJUnit XMLファイルに書き出します。次に、テストを実行するStepの後に<strong>Export test results to Test Reports</strong> Stepを追加し、その後に<strong>Deploy to Bitrise.io</strong> Stepを追加します。
+
+以下でお使いのフレームワークを探して、テストの種類ごとに必要なStepsを確認してください。フレームワークが記載されていない場合は、汎用ルートを使用します。両方のルートの詳しい手順については、[テスト結果のデプロイ](/bitrise-ci/testing/test-reports/deploying-test-results)を参照してください。結果をデプロイしたら、[テスト結果の表示](/bitrise-ci/testing/test-reports/viewing-test-results)で、ビルドページで結果を見つけて確認する方法を確認してください。
+
+### Xcode（iOS、macOS） {#xcode-ios-macos}
+
+<div className="card-table test-reports-table">
+
+| テストの種類 | Steps | 備考 |
+|---|---|---|
+| ユニットテスト | <ul><li><strong>Xcode Test for iOS</strong></li><li><strong>Deploy to Bitrise.io</strong></li></ul> | スクリーンショットは`xcresult`ファイルから自動的に添付されます。 |
+| UIテスト | <ul><li><strong>Xcode Test for iOS</strong></li><li><strong>Deploy to Bitrise.io</strong></li></ul> | 同じStepがすべてのテストターゲット（UIターゲットを含む）を実行します。 |
+| デバイスファーム | <ul><li><strong>iOS Device Testing</strong></li><li><strong>Deploy to Bitrise.io</strong></li></ul> |  |
+
+</div>
+
+### Android（Gradle） {#android-gradle}
+
+<div className="card-table test-reports-table">
+
+| テストの種類 | Steps | 備考 |
+|---|---|---|
+| ユニットテスト | <ul><li><strong>Android Unit Test</strong></li><li><strong>Deploy to Bitrise.io</strong></li></ul> | <strong>Run Gradle Tests</strong> Stepも使用できます。 |
+| インストルメンテーションテスト | <ul><li><strong>Android Instrumented Test</strong></li><li><strong>Deploy to Bitrise.io</strong></li></ul> |  |
+| デバイスファーム | <ul><li><strong>Virtual Device Testing for Android</strong></li><li><strong>Deploy to Bitrise.io</strong></li></ul> | 不安定なテストを検出するには、`download_test_results`を`true`に設定します。 |
+
+</div>
+
+### Flutter
+
+<div className="card-table test-reports-table">
+
+| テストの種類 | Steps | 備考 |
+|---|---|---|
+| ユニットテストとウィジェットテスト | <ul><li><strong>Flutter Test</strong></li><li><strong>Deploy to Bitrise.io</strong></li></ul> | ユニットテストとウィジェットテストに対応しています。 |
+| UIテスト | ネイティブなStepはありません。 | 汎用ルートを使用してください。 |
+| デバイスファーム | ネイティブでは利用できません。 |  |
+
+</div>
+
+### Maestro
+
+<div className="card-table test-reports-table">
+
+| テストの種類 | Steps | 備考 |
+|---|---|---|
+| ユニットテスト | 該当しません。 |  |
+| UIテスト | <ul><li><strong>Android Build</strong>または<strong>Xcode Build for Simulator</strong></li><li><strong>AVD Manager</strong>または<strong>Xcode Start Simulator</strong></li><li><strong>Maestro Test</strong></li><li><strong>Deploy to Bitrise.io</strong></li></ul> | エクスポート用のStepは不要です。 |
+| デバイスファーム | ネイティブなStepはありません。 | Maestro Cloudとdevicecloud.devの場合は、汎用ルートを使用してください。 |
+
+</div>
+
+### その他のフレームワーク {#any-other-framework}
+
+<div className="card-table test-reports-table">
+
+| テストの種類 | Steps | 備考 |
+|---|---|---|
+| ユニット、UI、デバイスファームのテスト | <ul><li>A <strong>Script</strong> Stepがテストを実行してJUnit XMLを書き出す</li><li><strong>Export test results to Test Reports</strong></li><li><strong>Deploy to Bitrise.io</strong></li></ul> | すべてのテストの種類で使用できます。 |
+
+</div>

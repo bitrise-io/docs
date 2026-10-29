@@ -1,0 +1,136 @@
+---
+title: "JUnit XMLでの添付ファイルの参照"
+sidebar_position: 4
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+ファイルにテストケース名を付けられない場合は、代わりにJUnit XMLでファイルを参照します。
+
+<Tabs>
+<TabItem value="workflow-editor" label="Workflow Editor" default>
+
+1. テストから`JUnit.xml`ファイルを生成します。
+
+   ファイル構造は、おおよそ次のようになります。
+
+   ```xml
+   <?xml version="1.0" encoding="UTF-8"?>
+   <testsuites time="15.682687">
+       <testsuite name="Tests.Registration" time="6.605871">
+           <testcase name="testCase1" classname="Tests.Registration" time="2.113871" />
+       </testsuite>
+   </testsuites>
+   ```
+1. 添付ファイルを`testcase`に関連付けるため、`<properties>`要素を追加します。
+
+   要素の`name`属性には、`attachment_#`（`#`は添付ファイルの順序インデックス）という値を設定し、値にはファイル名を指定します。Bitriseは、添付ファイルのプロパティを持つすべてのテストの添付ファイルを表示しますが、通常は失敗したテストにのみスクリーンショットを添付します。テストを失敗としてマークするには、`<failure>`要素を使用します。
+
+   ```xml
+   <testcase name="testCase1" classname="Tests.Registration" time="2.113871" />
+     <failure message="Assertion error message" type="AssertionError">
+       Call stack printed here
+     </failure>
+     <properties>
+       <property name="attachment_1" value="pp1.jpg" />
+       <property name="attachment_2" value="pp2.jpg" />
+     </properties>            
+   </testcase>
+   ```
+1. <strong>Export test results to Test Reports</strong> StepをBitrise Workflowに追加します。バージョンは1.1.0以降である必要があります。
+1. <strong>The name of the test</strong>インプットにテスト名を設定します。
+1. <strong>Test result search pattern</strong>インプットにJUnit XMLファイルのパスを設定します。
+1. Workflowの最後に<strong>Deploy to Bitrise.io</strong> Stepを追加します。
+
+   デフォルトのインプット値を変更する必要はありません。
+
+</TabItem>
+<TabItem value="configuration-yaml" label="Configuration YAML">
+
+1. テストから`JUnit.xml`ファイルを生成します。
+
+   ファイル構造は、おおよそ次のようになります。
+
+   ```xml
+   <?xml version="1.0" encoding="UTF-8"?>
+   <testsuites time="15.682687">
+       <testsuite name="Tests.Registration" time="6.605871">
+           <testcase name="testCase1" classname="Tests.Registration" time="2.113871" />
+       </testsuite>
+   </testsuites>
+   ```
+1. 添付ファイルを`testcase`に関連付けるため、`<properties>`要素を追加します。
+
+   要素の`name`属性には、`attachment_#`（`#`は添付ファイルの順序インデックス）という値を設定し、値にはファイル名を指定します。Bitriseは、添付ファイルのプロパティを持つすべてのテストの添付ファイルを表示しますが、通常は失敗したテストにのみスクリーンショットを添付します。テストを失敗としてマークするには、`<failure>`要素を使用します。
+
+   ```xml
+   <testcase name="testCase1" classname="Tests.Registration" time="2.113871" />
+     <failure message="Assertion error message" type="AssertionError">
+       Call stack printed here
+     </failure>
+     <properties>
+       <property name="attachment_1" value="pp1.jpg" />
+       <property name="attachment_2" value="pp2.jpg" />
+     </properties>            
+   </testcase>
+   ```
+1. JUnit XMLファイルを生成した後、`custom-test-results-export` StepをBitrise Workflowに追加します。バージョンは1.1.0以降である必要があります。
+
+   ```yaml
+   workflows:
+     inline_attachment:
+       steps:
+       - generate-text-file:
+           inputs:
+           - file_name: junit.xml
+           - file_content: "xml content with references to image files here"
+       - custom-test-results-export:
+   ```
+1. `test_name`インプットにテスト名を設定します。
+
+   ```yaml
+   - custom-test-results-export@1:
+       inputs:
+       - test_name: example_tests
+   ```
+1. `search_pattern`インプットにJUnit XMLファイルのパスを設定します。
+
+   ```yaml
+   - custom-test-results-export@1:
+       inputs:
+       - test_name: example_tests
+       - search_pattern: junit.xml
+   ```
+1. Workflowの最後に`deploy-to-bitrise-io` Stepを追加します。
+
+   デフォルトのインプット値を変更する必要はありません。<GlossTerm baseform="configuration yaml">configuration YAML</GlossTerm>ファイル内の完全なWorkflowは、次のようになります。
+
+   ```yaml
+   workflows:
+     inline_attachment:
+       steps:
+       - generate-text-file@0:
+           inputs:
+           - file_name: junit.xml
+           - file_content: "xml content with references to image files here"
+       - custom-test-results-export@1:
+           inputs:
+           - test_name: example_tests
+           - base_path: "."
+           - search_pattern: junit.xml
+       - script@1:
+           inputs:
+           - content: |
+               #!/usr/bin/env bash
+               set -ex
+               set -o pipefail
+
+               TEST_RESULTS_DIR=$(find "$BITRISE_TEST_DEPLOY_DIR" -type d -name "example_tests" -print -quit)
+               cp ~/*.jpg $TEST_RESULTS_DIR
+           title: Copy image files to test directory
+       - deploy-to-bitrise-io@2: {}
+   ```
+
+</TabItem>
+</Tabs>
