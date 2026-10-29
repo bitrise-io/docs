@@ -1,6 +1,6 @@
 ---
 title: "OIDC for GCP"
-description: "Generate OIDC tokens during your Bitrise build to exchange them for scoped access tokens with Google Cloud Platform"
+description: "Use OIDC tokens to let your Bitrise builds and Remote Dev Environment sessions authenticate to Google Cloud Platform without long-lived service account keys."
 sidebar_position: 3
 slug: /bitrise-platform/integrations/oidc-authentication/oidc-for-gcp
 ---
@@ -9,14 +9,19 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 
-Generate OIDC tokens during your Bitrise build to exchange them for scoped access tokens with Google Cloud Platform (GCP).
+OpenID Connect (OIDC) lets Bitrise prove to Google Cloud Platform (GCP) who is making a request, without a long-lived service account key. Bitrise issues an identity token that describes the build or session, and GCP exchanges it for a scoped access token through Workload Identity Federation.
+
+You can use OIDC tokens for GCP in two places:
+
+- **CI builds**: get the token with either the [**Get OIDC Identity Token**](https://github.com/bitrise-steplib/bitrise-step-get-identity-token) <GlossTerm baseform="step">Step</GlossTerm> or the [**Authenticate with Google Cloud Platform (GCP)**](https://github.com/bitrise-steplib/bitrise-step-authenticate-with-gcp) Step.
+- **Remote Dev Environment sessions**: the session's `rde-agent` command provides the token whenever gcloud or the Google client libraries need credentials. See [Cloud authentication with OIDC](/bitrise-rde/configuration/oidc-cloud-authentication).
 
 To use OIDC tokens for GCP, you'll need to:
 
 - Create a workload identity pool.
 - Connect a Google service account to the identity pool.
 
-On Bitrise, you can get the tokens by using either the [**Get OIDC Identity Token**](https://github.com/bitrise-steplib/bitrise-step-get-identity-token) <GlossTerm baseform="step">Step</GlossTerm> or the [**Authenticate with Google Cloud Platform (GCP)**](https://github.com/bitrise-steplib/bitrise-step-authenticate-with-gcp) Step.
+The setup is the same for builds and sessions, except for the attribute mapping and the principal filter, which match the claims of the build or the session.
 
 
 ## Creating a workload identity pool
