@@ -356,6 +356,10 @@
           "description": "Whether the workspace is on a free trial. Free-trial sessions are pinned to\nan 8-hour auto-terminate window that cannot be changed.",
           "type": "boolean"
         },
+        "lifecycleHooksEnabled": {
+          "description": "Whether lifecycle hooks are enabled for this workspace (rollout feature\nflag 'rde-lifecycle-hooks', docs/lifecycle-hooks/DESIGN.md). Gates\nsaving templates with hooks and decides how new sessions start: with\nthe flag on, new sessions run their hooks through the RDE runner (legacy\ntemplates through a fixed mapping); with it off, they start exactly as\nbefore. Sessions already running on the runner keep working either way.",
+          "type": "boolean"
+        },
         "warmPoolsEnabled": {
           "description": "Whether warm pools are enabled for this workspace (rollout feature flag\n'rde-warm-pool'). Gates the Warm pools navigation item, the template\nactions that create a pool, and CreateWarmPool server-side; pools that\nalready exist stay manageable and claimable regardless.",
           "type": "boolean"
@@ -423,6 +427,71 @@
       },
       "type": "object"
     },
+    "v1HookRun": {
+      "description": "HookRun is one run of a lifecycle hook on a session.",
+      "properties": {
+        "attempt": {
+          "description": "Attempt number of this hook on this session, starting at 1 (\"Run again\"\nand every restore add one).",
+          "format": "int32",
+          "type": "integer"
+        },
+        "exitCode": {
+          "description": "Exit code of the script, once it exited. 124 means RDE ended the run\nbecause On create did not finish within its limit.",
+          "format": "int32",
+          "type": "integer"
+        },
+        "finishedAt": {
+          "description": "When the script process exited (or the run was interrupted / skipped).",
+          "format": "date-time",
+          "type": "string"
+        },
+        "hook": {
+          "description": "The hook: \"on_create\", \"on_claim\", \"on_restore\", or the platform's own\n\"personalize\" step (the personal setup queued before On claim for a\npersonal owner).",
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier (UUID) of the run.",
+          "type": "string"
+        },
+        "queuedAt": {
+          "description": "When the run was queued.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "ranIn": {
+          "description": "Where it ran: \"pool\" (inside a warm pool, with the pool's shared inputs,\nbefore any claim) or \"session\" (on the owned session).",
+          "type": "string"
+        },
+        "startedAt": {
+          "description": "When the runner started it.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/definitions/v1HookRunState",
+          "description": "Current state of the run."
+        },
+        "triggeredBy": {
+          "description": "What queued the run: \"create\", \"claim\", \"restore\", \"run_again\" or\n\"rebuild\".",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1HookRunState": {
+      "default": "HOOK_RUN_STATE_UNSPECIFIED",
+      "description": "HookRunState is the state of one run of a lifecycle hook.\n\n - HOOK_RUN_STATE_UNSPECIFIED: Unspecified state.\n - HOOK_RUN_STATE_PENDING: Queued, waiting for the runner (and for any earlier run to finish).\n - HOOK_RUN_STATE_RUNNING: Handed to the runner and running.\n - HOOK_RUN_STATE_SUCCEEDED: The script exited with code 0. Background processes it started may keep\nrunning; the hook itself is done.\n - HOOK_RUN_STATE_FAILED: The script exited with a non-zero code, or RDE ended it because On\ncreate did not finish within its limit (exit code 124).\n - HOOK_RUN_STATE_INTERRUPTED: The run stopped reporting (the machine was stopped mid-run). It is never\nre-run by itself; \"Run again\" queues a new attempt.\n - HOOK_RUN_STATE_SKIPPED: Not run, because an earlier run of the session failed or was interrupted.",
+      "enum": [
+        "HOOK_RUN_STATE_UNSPECIFIED",
+        "HOOK_RUN_STATE_PENDING",
+        "HOOK_RUN_STATE_RUNNING",
+        "HOOK_RUN_STATE_SUCCEEDED",
+        "HOOK_RUN_STATE_FAILED",
+        "HOOK_RUN_STATE_INTERRUPTED",
+        "HOOK_RUN_STATE_SKIPPED"
+      ],
+      "type": "string"
+    },
     "v1Image": {
       "description": "Image represents a machine image available for sessions.\n\nDeprecated: use Stack. Images expose opaque merged-stack ids (for example, \"osx-26-edge\")\nthat bundle many Xcode versions and can be recomposed at any time. Stack exposes\nthe stable, specific stack id with friendly metadata.",
       "properties": {
@@ -444,6 +513,23 @@
         }
       },
       "type": "object"
+    },
+    "v1LifecyclePhase": {
+      "default": "LIFECYCLE_PHASE_UNSPECIFIED",
+      "description": "LifecyclePhase is the hook-aware label of a session, shown next to its\nmachine status.\n\n - LIFECYCLE_PHASE_UNSPECIFIED: Unspecified phase.\n - LIFECYCLE_PHASE_WARMING: Warm pool inventory whose On create is still running.\n - LIFECYCLE_PHASE_READY_TO_CLAIM: Warm pool inventory whose On create is done: claimable.\n - LIFECYCLE_PHASE_SETTING_UP: On create running on an owned session.\n - LIFECYCLE_PHASE_PERSONALIZING: The personal setup step or On claim running.\n - LIFECYCLE_PHASE_RESTORING: On restore running.\n - LIFECYCLE_PHASE_READY: Every queued hook is done.\n - LIFECYCLE_PHASE_SETUP_FAILED: On create failed (or was interrupted).\n - LIFECYCLE_PHASE_PERSONALIZATION_FAILED: The personal setup step or On claim failed (or was interrupted).\n - LIFECYCLE_PHASE_RESTORE_FAILED: On restore failed (or was interrupted).",
+      "enum": [
+        "LIFECYCLE_PHASE_UNSPECIFIED",
+        "LIFECYCLE_PHASE_WARMING",
+        "LIFECYCLE_PHASE_READY_TO_CLAIM",
+        "LIFECYCLE_PHASE_SETTING_UP",
+        "LIFECYCLE_PHASE_PERSONALIZING",
+        "LIFECYCLE_PHASE_RESTORING",
+        "LIFECYCLE_PHASE_READY",
+        "LIFECYCLE_PHASE_SETUP_FAILED",
+        "LIFECYCLE_PHASE_PERSONALIZATION_FAILED",
+        "LIFECYCLE_PHASE_RESTORE_FAILED"
+      ],
+      "type": "string"
     },
     "v1ListImagesResponse": {
       "description": "ListImagesResponse is the response for listing images.",
@@ -718,6 +804,16 @@
       ],
       "type": "string"
     },
+    "v1RebuildSessionResponse": {
+      "description": "RebuildSessionResponse is the session on its new VM.",
+      "properties": {
+        "session": {
+          "$ref": "#/definitions/v1Session",
+          "description": "The session, booting on a new VM with its lifecycle hooks queued again."
+        }
+      },
+      "type": "object"
+    },
     "v1ResolveClustersResponse": {
       "description": "ResolveClustersResponse contains the list of clusters that offer both the\nrequested image and machine type.",
       "properties": {
@@ -831,6 +927,26 @@
         "session": {
           "$ref": "#/definitions/v1Session",
           "description": "The updated session."
+        }
+      },
+      "type": "object"
+    },
+    "v1RetryWarmPoolResponse": {
+      "description": "RetryWarmPoolResponse is the pool after the retry.",
+      "properties": {
+        "warmPool": {
+          "$ref": "#/definitions/v1WarmPool",
+          "description": "The pool, healthy again; the reconciler resumes warming on its next tick."
+        }
+      },
+      "type": "object"
+    },
+    "v1RunSessionHookResponse": {
+      "description": "RunSessionHookResponse is the run that was queued.",
+      "properties": {
+        "run": {
+          "$ref": "#/definitions/v1HookRun",
+          "description": "The queued run (state pending); the VM's runner picks it up on its next poll."
         }
       },
       "type": "object"
@@ -976,6 +1092,10 @@
           },
           "description": "Arbitrary key/value metadata attached to the session (for example, team,\nbranch, ticket id). Returned verbatim; filterable via\nListSessionsRequest.label_selectors.",
           "type": "object"
+        },
+        "lifecycle": {
+          "$ref": "#/definitions/v1SessionLifecycle",
+          "description": "Lifecycle hooks: the session's phase and its hook runs\n(docs/lifecycle-hooks/DESIGN.md). Unset on a session that runs the\nlegacy warmup/startup scripts. Like `device`, this is separate from\n`status`: a \"running\" session still means the machine is up; whether\nits setup has finished is in lifecycle.phase."
         },
         "name": {
           "description": "Human-readable name of the session.",
@@ -1152,6 +1272,10 @@
           "description": "Whether to expose this input as an ENV VAR in interactive terminal sessions.",
           "type": "boolean"
         },
+        "hook": {
+          "description": "The scope that receives this input (docs/lifecycle-hooks/DESIGN.md\n§13): \"shared\" (the default when empty) reaches every hook and is\nsupplied when the session or the pool is created; \"on_create\" is\nsupplied with the pool (or the direct create) and reaches On create\nonly; \"on_claim\" and \"on_restore\" are supplied by whoever claims (or\nat a direct create) and reach that hook only. Keys are unique per\nscope; the same key may exist on several scopes.",
+          "type": "string"
+        },
         "id": {
           "description": "Unique identifier (UUID).",
           "type": "string"
@@ -1182,6 +1306,10 @@
           "description": "Whether to expose as an ENV VAR in interactive terminal sessions.",
           "type": "boolean"
         },
+        "hook": {
+          "description": "The scope that receives this input (see SessionInput.hook): empty or\n\"shared\", or \"on_create\" / \"on_claim\" / \"on_restore\" on a template\nwith lifecycle hooks.",
+          "type": "string"
+        },
         "key": {
           "description": "Key/name of the input.",
           "type": "string"
@@ -1196,6 +1324,10 @@
     "v1SessionInputValue": {
       "description": "SessionInputValue provides a value for a session input when creating a session.\nEither provide a direct value or reference a saved input by ID (for secrets).",
       "properties": {
+        "hook": {
+          "description": "The scope this value is for (\"shared\", \"on_create\", \"on_claim\" or\n\"on_restore\"), when the template defines the same key on several\nscopes and each gets its own value. Empty applies the value to every\nscope that defines the key — what a saved input does. A scoped value\nwins over an unscoped one for its scope.",
+          "type": "string"
+        },
         "isSecret": {
           "description": "Whether the value is secret (encrypt at rest). Ignored if saved_input_id is set.",
           "type": "boolean"
@@ -1211,6 +1343,36 @@
         "value": {
           "description": "Direct value (used when user typed in a value). Ignored if saved_input_id is set.",
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1SessionLifecycle": {
+      "description": "SessionLifecycle is a session's lifecycle-hook state: the phase derived\nfrom its runs, and the runs themselves, oldest first.",
+      "properties": {
+        "hasOnClaimHook": {
+          "description": "Whether the session's template copy has an On claim hook.",
+          "type": "boolean"
+        },
+        "hasOnRestoreHook": {
+          "description": "Whether the session's template copy has an On restore hook.",
+          "type": "boolean"
+        },
+        "mode": {
+          "title": "\"hooks\" for a session that runs lifecycle hooks through the RDE runner.\n(A legacy session has no lifecycle at all.)",
+          "type": "string"
+        },
+        "phase": {
+          "$ref": "#/definitions/v1LifecyclePhase",
+          "description": "The hook-aware phase, derived from the runs and the warm pool state."
+        },
+        "runs": {
+          "description": "Every hook run so far, oldest first.",
+          "items": {
+            "$ref": "#/definitions/v1HookRun",
+            "type": "object"
+          },
+          "type": "array"
         }
       },
       "type": "object"
@@ -1352,6 +1514,18 @@
           },
           "type": "array"
         },
+        "hasOnClaimHook": {
+          "description": "Whether the session's template copy has an On claim hook.",
+          "type": "boolean"
+        },
+        "hasOnCreateHook": {
+          "description": "Whether the session's template copy has a non-empty On create hook.",
+          "type": "boolean"
+        },
+        "hasOnRestoreHook": {
+          "description": "Whether the session's template copy has an On restore hook.",
+          "type": "boolean"
+        },
         "hasStartupScript": {
           "description": "Whether the template had a startup script configured.",
           "type": "boolean"
@@ -1362,6 +1536,10 @@
         },
         "image": {
           "description": "Machine image name from the template.\n\nSuperseded by stack_id (prefer it). The image is the resolved merged-stack\nid; stack_id is the stable, specific stack the session runs.",
+          "type": "string"
+        },
+        "lifecycleMode": {
+          "description": "Lifecycle hooks: \"hooks\" when the session runs its hooks through the RDE\nrunner (a legacy template mapped at creation, or a hooks template);\nempty for a session on the legacy warmup/startup path.",
           "type": "string"
         },
         "machineType": {
@@ -1437,6 +1615,10 @@
           "description": "Whether this value is exposed as an ENV VAR in interactive terminal sessions.",
           "type": "boolean"
         },
+        "hook": {
+          "description": "The scope this input belongs to: \"shared\" (also the meaning of empty),\n\"on_create\", \"on_claim\" or \"on_restore\" (see SessionInput.hook).",
+          "type": "string"
+        },
         "isSecret": {
           "description": "Whether this is a secret value.",
           "type": "boolean"
@@ -1444,6 +1626,10 @@
         "key": {
           "description": "Key/name of the input.",
           "type": "string"
+        },
+        "suppliedByPool": {
+          "description": "True on a session a warm pool handed out (claimed warm, or built cold\nfrom the pool's configuration) for an input the pool supplied and the\nclaimer never receives: the On create scope. value is then always\nempty, whatever include_secrets says; the key stays so the input can be\nlisted as set on the pool.",
+          "type": "boolean"
         },
         "value": {
           "description": "Value of the input. For secret inputs this is empty unless the request explicitly\nset include_secrets=true (see GetSessionRequest).",
@@ -1573,6 +1759,10 @@
     "v1Template": {
       "description": "Template defines a reusable configuration for creating sessions.",
       "properties": {
+        "convertedHooks": {
+          "$ref": "#/definitions/v1TemplateHooks",
+          "description": "Read-only, legacy templates only: the hooks the fixed mapping derives\nfrom warmup_script and startup_script — exactly what a session created\nfrom this template runs in a workspace with lifecycle hooks enabled, and\nwhat the editor starts from when the template is converted to hooks.\nUnset on a hooks template. Ignored on writes."
+        },
         "createdAt": {
           "description": "When the template was created.",
           "format": "date-time",
@@ -1598,12 +1788,20 @@
           },
           "type": "array"
         },
+        "hooks": {
+          "$ref": "#/definitions/v1TemplateHooks",
+          "description": "The lifecycle hooks of a \"hooks\" template; unset on a legacy template."
+        },
         "id": {
           "description": "Unique identifier (UUID) of the template.",
           "type": "string"
         },
         "image": {
           "description": "Machine image name (for example, \"osx-xcode-edge\"). Consistent across clusters.\n\nSuperseded by stack_id (prefer it). The image is a merged-stack id that\nbundles many Xcode versions; stack_id is the stable, specific contract.",
+          "type": "string"
+        },
+        "lifecycleMode": {
+          "description": "How the template's scripts are stored and run (lifecycle hooks,\ndocs/lifecycle-hooks/DESIGN.md). \"legacy\": warmup_script and\nstartup_script, run by the instance manager's two stages as before.\n\"hooks\": the lifecycle hooks in `hooks`, run on the booted VM by the RDE\nrunner. In a workspace with lifecycle hooks enabled a legacy template\nruns through a fixed mapping applied when a session is created (On\ncreate = the warmup part, then the startup part in the background; On\nrestore = the startup part in the background); it becomes a hooks\ntemplate only when it is saved with `hooks`.",
           "type": "string"
         },
         "machineType": {
@@ -1689,8 +1887,16 @@
           },
           "type": "array"
         },
+        "hooks": {
+          "$ref": "#/definitions/v1TemplateHooks",
+          "description": "The lifecycle hooks (the session's creation-time copy on the snapshot\nside; the template's current ones on the current side). Unset for a\nlegacy template; a legacy template mapped at session creation shows the\nmapped hooks on the snapshot side."
+        },
         "image": {
           "description": "Machine image name.",
+          "type": "string"
+        },
+        "lifecycleMode": {
+          "description": "\"legacy\" or \"hooks\" (see Template.lifecycle_mode). The snapshot side\nreports \"hooks\" when the session runs lifecycle hooks.",
           "type": "string"
         },
         "machineType": {
@@ -1812,12 +2018,38 @@
           "description": "Whether this variable is exposed as an environment variable.",
           "type": "boolean"
         },
+        "hook": {
+          "description": "The scope that receives it (see TemplateVariable.hook).",
+          "type": "string"
+        },
         "isSecret": {
           "description": "Whether this variable is a secret.",
           "type": "boolean"
         },
         "key": {
           "description": "Key/name of the variable.",
+          "type": "string"
+        },
+        "protected": {
+          "description": "Write-only (see TemplateVariable.protected).",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "v1TemplateHooks": {
+      "description": "TemplateHooks are a template's lifecycle hook scripts (bash), each run on\nthe booted VM as the session user, in a login shell, with the template's\nvariables and the hook's inputs exported. Every hook is optional: a field\nthat is set (even to an empty script) adds the hook, and an added hook runs\nat its moment; an empty script finishes at once with exit code 0. An unset\nfield means the template does not have that hook. On create runs once, when\nthe session is created — on a warm pool, when the pool warms the machine,\nwith the pool's shared inputs. On claim runs on every claim, when the\nsession is assigned to its owner: at claim time for a pool, right after On\ncreate for a session created directly. On restore runs every time a stopped\nsession is restored; it receives the shared values plus its own On restore\ninputs and variables; nothing is inherited from On claim. A hook is\ndone when its script exits (0 = done, non-zero = failed); long-running work\nis started in the background and the script exits. An On create that never\nexits fails at 20 minutes (exit code 124). Nobody can reach the machine\nwhile On create runs. Background processes do not survive a stop: anything\nthat must be running again after a restore belongs in On restore as well.",
+      "properties": {
+        "onClaim": {
+          "description": "On claim script. Unset means the template has no On claim hook.",
+          "type": "string"
+        },
+        "onCreate": {
+          "description": "On create script. Unset means the template has no On create hook.",
+          "type": "string"
+        },
+        "onRestore": {
+          "description": "On restore script. Unset means the template has no On restore hook.",
           "type": "string"
         }
       },
@@ -1827,8 +2059,12 @@
       "description": "TemplateVariable represents a baked-in variable for a template.\nAvailable in boot scripts. Optionally exposed as an ENV VAR in terminal sessions.",
       "properties": {
         "exposeAsEnvVar": {
-          "description": "Whether to expose this variable as an ENV VAR in interactive terminal sessions.",
+          "description": "Whether to also write this value to the session's shell profile when\nits scope's step runs (\"Also in terminal\"), so it is available in SSH\nand terminal sessions afterwards. Refused on a protected variable.",
           "type": "boolean"
+        },
+        "hook": {
+          "description": "The scope that receives this variable (docs/lifecycle-hooks/DESIGN.md\n§13): \"shared\" (the default when empty) reaches every hook; \"on_create\",\n\"on_claim\" or \"on_restore\" reach that hook only. Per-hook scopes exist\nonly on a template with lifecycle hooks. Keys are unique per scope; the\nhook's own value wins over a shared value of the same key.",
+          "type": "string"
         },
         "id": {
           "description": "Unique identifier (UUID).",
@@ -1841,6 +2077,10 @@
         "key": {
           "description": "Key/name of the variable.",
           "type": "string"
+        },
+        "protected": {
+          "description": "Write-only: never returned by the API, replaced but never viewed.\nImplies is_secret. For secrets every pool of the template reuses.",
+          "type": "boolean"
         },
         "value": {
           "description": "Value of the variable. For secret variables this is empty unless the request\nexplicitly set include_secrets=true (see GetTemplateRequest/ListTemplatesRequest).",
@@ -1856,6 +2096,10 @@
           "description": "Whether to expose as an ENV VAR in interactive terminal sessions.",
           "type": "boolean"
         },
+        "hook": {
+          "description": "The scope that receives this variable (see TemplateVariable.hook):\nempty or \"shared\", or \"on_create\" / \"on_claim\" / \"on_restore\" on a\ntemplate with lifecycle hooks.",
+          "type": "string"
+        },
         "isSecret": {
           "description": "Whether this is a secret value.",
           "type": "boolean"
@@ -1863,6 +2107,10 @@
         "key": {
           "description": "Key/name of the variable.",
           "type": "string"
+        },
+        "protected": {
+          "description": "Write-only (see TemplateVariable.protected). On update an empty value\nkeeps the stored one.",
+          "type": "boolean"
         },
         "value": {
           "description": "Value of the variable.",
@@ -2067,6 +2315,10 @@
           },
           "type": "array"
         },
+        "setupFailed": {
+          "$ref": "#/definitions/v1WarmPoolSetupFailed",
+          "description": "Set while the pool is in the \"Setup failed\" state: its On create hook\nfailed three times in a row, the third VM was kept for debugging, and\nthe pool creates nothing and hands out nothing until RetryWarmPool or a\nconfiguration change. Unset while the pool is healthy."
+        },
         "stackId": {
           "description": "Stack override; empty means the template's.",
           "type": "string"
@@ -2118,6 +2370,30 @@
         },
         "state": {
           "description": "\"warming\" or \"ready\".",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1WarmPoolSetupFailed": {
+      "description": "WarmPoolSetupFailed describes a pool's \"Setup failed\" state: the debug VM\nkept after the third consecutive On create failure (its session is readable\nby id with its connection details, so the script can be inspected on the\nbox; it is never claimable and is stopped automatically after four hours).",
+      "properties": {
+        "exitCode": {
+          "description": "Exit code of the failed On create run.",
+          "format": "int32",
+          "type": "integer"
+        },
+        "failedAt": {
+          "description": "When the pool entered the state.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "message": {
+          "description": "Customer-facing summary of the failure.",
+          "type": "string"
+        },
+        "sessionId": {
+          "description": "ID of the session kept as the debug VM. Deleted by RetryWarmPool or a\nconfiguration change.",
           "type": "string"
         }
       },
@@ -2807,7 +3083,7 @@
                   "type": "string"
                 },
                 "warmPoolId": {
-                  "description": "Claim a session from a warm pool (see WarmPool) instead of building one\nfrom this request. The pool fixes the configuration, so template_id,\nsession_inputs, map_saved_to_session_inputs, enabled_feature_flag_names,\nstack_id, image, machine_type, cluster, device_spec, no_device and\nai_prompt must be empty (they are rejected, not ignored). name,\ndescription, labels, auto_terminate_minutes and artifact (device pools\nonly) apply to the claimed session.\n\nThe claimed session is the claimant's: owner_type follows the rule above\n— a user gets a personal session unless they ask for \"workspace\", a\nWorkspace API Token gets a workspace-owned one. A warm session is the\nworkspace's only while it waits in the pool. Note that the machine was\nbooted without the claimant's personal state (no GitHub credential\nhelper, no saved inputs) and keeps that VM for its whole life — a stop\nand restore restarts the same machine — so anything personal has to be\nput on it by hand (SSH, ExecuteSession).\n\nWith a ready or warming warm session available the response is that\nsession, renamed — no machine is created (Session.warm_state \"claimed\").\nWithout one, a session is created from the pool's stored configuration\nexactly as the pool would have warmed it (Session.warm_state \"cold\"), so\na pool with pool_size 0 still works as a configuration preset.\nAny workspace member or Workspace API Token may claim from a pool.",
+                  "description": "Claim a session from a warm pool (see WarmPool) instead of building one\nfrom this request. The pool fixes the environment, so template_id,\nenabled_feature_flag_names, stack_id, image, machine_type, cluster,\ndevice_spec and no_device must be empty (they are rejected, not\nignored). On a template with lifecycle hooks, session_inputs may carry\nthe template's On claim and On restore inputs only (a shared or On\ncreate key is rejected: the pool fixes those values); a personal claim\nmay also use map_saved_to_session_inputs (a saved input fills every\nclaim-time scope that defines its key) and ai_prompt, while a\nworkspace-owned claim and a Workspace API Token send plain values only.\nA typed value may be marked is_secret. A required On claim or On restore\ninput without a value fails the claim. name, description, labels,\nauto_terminate_minutes and artifact (device pools only) apply to the\nclaimed session.\n\nThe claimed session is the claimant's: owner_type follows the rule above\n— a user gets a personal session unless they ask for \"workspace\", a\nWorkspace API Token gets a workspace-owned one. A warm session is the\nworkspace's only while it waits in the pool. The machine was booted for\nthe pool, without anyone's personal state; after a claim by a person the\nplatform sets it up for them (SSH key, Claude credentials, git credential\nhelper — Session.lifecycle shows that step as \"personalize\"), then the\ntemplate's On claim hook runs with the shared values and the On claim\ninputs, writing the exposed ones to the terminal profile. A\nworkspace-owned claim runs On claim only. The session keeps that VM for\nits whole life — a stop and restore restarts the same machine.\n\nWith a ready or warming warm session available the response is that\nsession, renamed — no machine is created (Session.warm_state \"claimed\").\nWithout one, a session is created from the pool's stored configuration\nexactly as the pool would have warmed it (Session.warm_state \"cold\"), so\na pool with pool_size 0 still works as a configuration preset.\nAny workspace member or Workspace API Token may claim from a pool.",
                   "type": "string"
                 }
               },
@@ -3292,6 +3568,55 @@
         ]
       }
     },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/hook-runs": {
+      "post": {
+        "description": "Queues a fresh attempt of `hook` (`on_create`, `on_claim`, `on_restore`, or `personalize` for the platform's system setup step where that step ran before) on a session that runs lifecycle hooks. Refused while a run is pending or running, and on warm pool inventory.",
+        "operationId": "CodespacesService_RunSessionHook",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "RunSessionHookRequest queues a fresh attempt of one of the session's\nlifecycle hooks (\"Run again\").",
+              "properties": {
+                "hook": {
+                  "description": "The hook to run again: \"on_create\", \"on_claim\" or \"on_restore\" (one the\nsession was created with, see Session.lifecycle), or \"personalize\" — the\nplatform's system setup step, only where that step already ran.",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RunSessionHookResponse"
+            }
+          }
+        },
+        "summary": "Run a lifecycle hook again",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
     "/v1/workspaces/{workspaceId}/sessions/{sessionId}/logs/{stage}": {
       "get": {
         "description": "Streams logs from a session's machine. The response is a server-side stream of log chunks.",
@@ -3316,12 +3641,25 @@
             "enum": [
               "LOG_STAGE_UNSPECIFIED",
               "LOG_STAGE_WARMUP",
-              "LOG_STAGE_MAIN"
+              "LOG_STAGE_MAIN",
+              "LOG_STAGE_ON_CREATE",
+              "LOG_STAGE_ON_CLAIM",
+              "LOG_STAGE_ON_RESTORE",
+              "LOG_STAGE_SYSTEM",
+              "LOG_STAGE_PERSONALIZE"
             ],
             "in": "path",
             "name": "stage",
             "required": true,
             "type": "string"
+          },
+          {
+            "description": "For a hook stage (ON_CREATE, ON_CLAIM, ON_RESTORE, PERSONALIZE): show\nonly this attempt of the hook (1-based; see HookRun.attempt). 0 shows\nevery attempt in order. Ignored for the other stages.",
+            "format": "int32",
+            "in": "query",
+            "name": "attempt",
+            "required": false,
+            "type": "integer"
           }
         ],
         "responses": {
@@ -3521,6 +3859,49 @@
           }
         },
         "summary": "Open remote access",
+        "tags": [
+          "Sessions"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/sessions/{sessionId}/rebuild": {
+      "post": {
+        "description": "Stops and discards the session's VM (and its disk), then boots a fresh VM from the session's creation-time configuration with its lifecycle hooks queued again. For sessions that run lifecycle hooks; refused on warm pool inventory and device preview sessions.",
+        "operationId": "CodespacesService_RebuildSession",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Unique identifier of the session.",
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "RebuildSessionRequest discards the session's VM and boots a fresh one from\nthe session's creation-time configuration (\"Rebuild\").",
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RebuildSessionResponse"
+            }
+          }
+        },
+        "summary": "Rebuild session",
         "tags": [
           "Sessions"
         ]
@@ -4165,6 +4546,10 @@
                   },
                   "type": "array"
                 },
+                "hooks": {
+                  "$ref": "#/definitions/v1TemplateHooks",
+                  "description": "Lifecycle hooks (see TemplateHooks). Setting this creates a \"hooks\"\ntemplate: it cannot be combined with warmup_script / startup_script, and\nit requires lifecycle hooks to be enabled for the workspace."
+                },
                 "image": {
                   "description": "Machine image name (for example, \"osx-xcode-edge\"). Consistent across clusters.\n\nSuperseded by stack_id (prefer it). Accepted for now and resolved to a stack id on the\nfly so un-migrated clients keep working.",
                   "type": "string"
@@ -4357,6 +4742,10 @@
                   },
                   "type": "array"
                 },
+                "hooks": {
+                  "$ref": "#/definitions/v1TemplateHooks",
+                  "description": "With update_hooks, replaces the template's lifecycle hooks (see\nTemplateHooks) and makes it a \"hooks\" template if it was legacy — that\nconversion requires lifecycle hooks to be enabled for the workspace; a\ntemplate that already is a hooks template stays editable either way.\nOnce a template is a hooks template, warmup_script / startup_script are\nrefused on it. A session input resent without `hook` keeps the hook it\nis stored with."
+                },
                 "image": {
                   "description": "Updated image name (optional).\n\nSuperseded by stack_id (prefer it). Accepted for now and resolved to a stack id on the fly.",
                   "type": "string"
@@ -4407,6 +4796,10 @@
                 },
                 "updateFeatureFlags": {
                   "description": "Whether to update feature_flags (false = don't touch, true = replace with provided list).",
+                  "type": "boolean"
+                },
+                "updateHooks": {
+                  "description": "Whether to update hooks (false = don't touch, true = replace with hooks).",
                   "type": "boolean"
                 },
                 "updateServicePorts": {
@@ -4786,6 +5179,49 @@
           }
         },
         "summary": "Update warm pool",
+        "tags": [
+          "Warm Pools"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/warm-pools/{warmPoolId}/retry": {
+      "post": {
+        "description": "Leaves the pool's `setup_failed` state: deletes the debug VM kept after the third consecutive On create failure, resets the failure streak and resumes warming. Lifts a failure pause as well.",
+        "operationId": "CodespacesService_RetryWarmPool",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "ID of the pool.",
+            "in": "path",
+            "name": "warmPoolId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "RetryWarmPoolRequest leaves the pool's \"Setup failed\" state.",
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1RetryWarmPoolResponse"
+            }
+          }
+        },
+        "summary": "Retry warm pool",
         "tags": [
           "Warm Pools"
         ]
