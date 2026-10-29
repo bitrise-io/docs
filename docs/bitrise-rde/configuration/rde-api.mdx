@@ -54,17 +54,19 @@ POST   /v1/workspaces/{workspace_id}/warm-pools
 GET    /v1/workspaces/{workspace_id}/warm-pools/{warm_pool_id}
 PATCH  /v1/workspaces/{workspace_id}/warm-pools/{warm_pool_id}
 DELETE /v1/workspaces/{workspace_id}/warm-pools/{warm_pool_id}
+POST   /v1/workspaces/{workspace_id}/warm-pools/{warm_pool_id}/retry
 ```
 
-A pool's `status` reports how many sessions are ready and warming, the warm sessions themselves, and any configuration error. See [Warm pools](/bitrise-rde/configuration/warm-pools).
+A pool's `status` reports how many sessions are ready and warming, the warm sessions themselves, and any configuration error. The `retry` request starts a pool warming again after it stopped because On create failed three times in a row. See [Warm pools](/bitrise-rde/configuration/warm-pools).
 
 ## Lifecycle hooks
 
-Templates carry their setup scripts in the `hooks` object, and every session read reports its setup phase and hook runs in the `lifecycle` field. Two endpoints run a failed setup again:
+Templates carry their setup scripts in the `hooks` object, and every session read reports its setup phase and hook runs in the `lifecycle` field. Two endpoints run a failed setup again, and one reads a hook's log:
 
 ```text
 POST /v1/workspaces/{workspace_id}/sessions/{session_id}/hook-runs
 POST /v1/workspaces/{workspace_id}/sessions/{session_id}/rebuild
+GET  /v1/workspaces/{workspace_id}/sessions/{session_id}/logs/{stage}
 ```
 
 See [Lifecycle hooks](/bitrise-rde/configuration/lifecycle-hooks#managing-hooks-from-the-cli-an-ai-agent-or-the-api).

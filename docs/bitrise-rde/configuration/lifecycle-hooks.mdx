@@ -277,9 +277,10 @@ To follow and fix a session's setup:
 | Command | What it does |
 | --- | --- |
 | `bitrise-cli rde session view SESSION_ID` | Show the session's setup phase and every hook run. |
-| `bitrise-cli rde session logs SESSION_ID --stage on-create` | Print a hook's log. The stages are `on-create`, `on-claim`, `on-restore`, and `personalize` for System setup. |
+| `bitrise-cli rde session logs SESSION_ID --stage on-create` | Print a hook's log. The stages are `on-create`, `on-claim`, `on-restore`, and `personalize` for System setup. Add `--attempt 2` to see only the second run of a hook. |
 | `bitrise-cli rde session run-hook SESSION_ID --hook on_claim` | Run On claim, On restore, or System setup (`personalize`) again. |
 | `bitrise-cli rde session rebuild SESSION_ID` | Discard the machine and run the setup again from On create. |
+| `bitrise-cli rde warm-pool retry WARM_POOL_ID` | Start a pool warming again after On create failed three times in a row. |
 
 When you claim from a warm pool, `--input` sets the On claim and On restore inputs:
 
@@ -292,7 +293,7 @@ bitrise-cli rde session create my-fix --warm-pool ios-app --input GIT_EMAIL=you@
 
 Ask for it in plain language, for example: *"Create a template that clones example-org/example-app on create and restarts the mock server on restore."* The agent passes the hooks to `bitrise_devenv_create_template` or `bitrise_devenv_update_template`.
 
-The agent waits for the session's setup to be ready before it runs commands. After a failure, it calls `bitrise_devenv_run_hook` to run a hook again, or `bitrise_devenv_rebuild` when On create failed.
+The agent waits for the session's setup to be ready before it runs commands. After a failure, it reads the hook's log with `bitrise_devenv_get_logs` to find out why. Then it calls `bitrise_devenv_run_hook` to run the hook again, or `bitrise_devenv_rebuild` when On create failed. For a warm pool that stopped after failed setups, it calls `bitrise_devenv_retry_warm_pool`.
 
 </TabItem>
 <TabItem value="api" label="API">
@@ -321,6 +322,14 @@ POST /v1/workspaces/{workspace_id}/sessions/{session_id}/rebuild
 ```
 
 The `hook-runs` request takes the hook to run, for example `{"hook": "on_claim"}`.
+
+To read a hook's log, request a stage such as `LOG_STAGE_ON_CREATE`, `LOG_STAGE_ON_CLAIM`, `LOG_STAGE_ON_RESTORE`, or `LOG_STAGE_PERSONALIZE` for System setup. Add `?attempt=2` to get only the second run of a hook:
+
+```text
+GET /v1/workspaces/{workspace_id}/sessions/{session_id}/logs/LOG_STAGE_ON_CREATE
+```
+
+To start a warm pool warming again after its setup failed, send `POST /v1/workspaces/{workspace_id}/warm-pools/{warm_pool_id}/retry`.
 
 </TabItem>
 </Tabs>
