@@ -58,7 +58,7 @@ The design has one load-bearing rule: **the orchestrator is not a coder.**
 
 Everything a coding agent needs — cloning repositories, installing packages, running build tools and test suites, executing whatever a `Makefile` says — is exactly what shouldn't run on the machine holding the orchestrator's credentials. Give every task its own disposable machine instead:
 
-- **One template, one tool call.** Create every coding machine from a single pinned <GlossTerm baseform="rde template">template</GlossTerm>: the stack, the machine type, and a warmup script that installs the coding agent, sets up a git-only SSH identity, and starts the agent in a persistent terminal session. Pass credentials through <GlossTerm baseform="saved input">saved inputs</GlossTerm> and session inputs: encrypted, never baked into an image.
+- **One template, one tool call.** Create every coding machine from a single pinned <GlossTerm baseform="rde template">template</GlossTerm>: the stack, the machine type, and an On create [lifecycle hook](/bitrise-rde/configuration/lifecycle-hooks) that installs the coding agent, sets up a git-only SSH identity, and starts the agent in a persistent terminal session. Pass credentials through <GlossTerm baseform="saved input">saved inputs</GlossTerm> and session inputs: encrypted, never baked into an image.
 - **A brief, not a babysitter.** Create each session with a self-contained task brief: the repository, the ticket, the acceptance criteria, the branch rules — plus one behavioral instruction: never block on input; pick the most defensible default, document the assumption in the commit message and pull request description, and continue. Pull request review is where a wrong assumption gets corrected.
 - **Isolation as the security model.** Give the coding agent a push-scoped SSH key and no API access to the ticket tracker or source control platform: git is its only interface to the outside world. Even if injected text in a codebase manipulates it, the blast radius is a pushed branch that still has to survive human review. The orchestrator's credentials never touch the machine, and the machine is deleted when the work is done.
 - **A dev environment that matches CI.** Run RDE sessions on the same infrastructure and <GlossTerm baseform="stack">stacks</GlossTerm> as your CI, so "the tests pass in the session" and "the tests pass in CI" are the same claim. When CI fails, relay the failing check into the session so the coding agent can reproduce it in a matching environment.
@@ -100,7 +100,7 @@ docker run -it --rm \
   bitriseio/bitclaw-public:latest
 ```
 
-Tier 2 is the reason the repository exists: its `docs/rde-template.md` guide walks through building the coding-agent template — a warmup script and a handful of saved inputs — after which the bot delegates real coding work to RDE sessions.
+Tier 2 is the reason the repository exists: its `docs/rde-template.md` guide walks through building the coding-agent template — a setup script and a handful of saved inputs — after which the bot delegates real coding work to RDE sessions.
 
 :::caution[Do your own threat modeling]
 
