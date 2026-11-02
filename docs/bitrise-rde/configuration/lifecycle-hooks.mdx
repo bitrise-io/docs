@@ -31,7 +31,9 @@ Whether you create a session directly or claim it from a warm pool, the hooks ru
 | Assigned to someone | System setup, then On claim, right after On create | System setup, then On claim, when you claim it |
 | Restore | On restore | On restore |
 
-**System setup** is Bitrise's own step, not a hook. It sets up the owner's SSH key, Claude credentials, and Git credentials, if they supplied them. It runs only when a person gets the session: a workspace-owned session skips it.
+**System setup** is Bitrise's own step, not a hook. It sets up the owner's SSH key and Claude credentials, if they supplied them. If the owner turned on the [GitHub integration](/bitrise-rde/configuration/github-integration), it also signs them in to GitHub, so `git` and `gh` work as them and their commits carry their GitHub identity. System setup runs only when a person gets the session: a workspace-owned session skips it.
+
+System setup runs before On claim, so On claim can already use the owner's GitHub access. On a direct session, the GitHub integration is set up when the machine boots, so On create can use it too. A session in a warm pool has no owner while On create runs, so On create there needs a token of its own.
 
 A few rules hold for every session:
 
@@ -126,6 +128,7 @@ A warm pool runs only On create. A warm session is ready to claim once On create
 - Put the slow setup in On create: cloning, installing, building.
 - Give On create shared credentials, like a read-only bot token. [Saved inputs](/bitrise-rde/configuration/saved-inputs) are personal, so a pool can't use them.
 - Put personal setup in On claim, with On claim inputs that whoever claims fills in.
+- Don't ask for a GitHub token in On claim. If whoever claims has the [GitHub integration](/bitrise-rde/configuration/github-integration) turned on, System setup signs them in to GitHub before On claim runs.
 
 A template without On create gives the pool nothing to prepare, so its sessions are ready to claim as soon as they boot. The pool form warns you when the template has no On create, and notes when it has no On claim. Both messages link to the template editor.
 
@@ -153,6 +156,8 @@ cd ~/example-app
 git config user.name "$GIT_NAME"
 git config user.email "$GIT_EMAIL"
 ```
+
+A team that uses the [GitHub integration](/bitrise-rde/configuration/github-integration) can leave this hook out: System setup already sets the commit identity of whoever gets the session.
 
 **On restore** starts the app's mock server again, because a stop ends every running process:
 
