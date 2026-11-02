@@ -1,22 +1,26 @@
 ---
 title: "AWS向けOIDC"
-description: "Bitriseビルド中にOIDCトークンを生成し、スコープ付きアクセストークンと交換します。"
+description: "OIDC トークンを使用して、Bitrise ビルドと Remote Dev Environment セッションが、有効期間の長いアクセスキーなしで AWS に対して認証できるようにします。"
 sidebar_position: 2
 slug: /bitrise-platform/integrations/oidc-authentication/oidc-for-aws
 ---
-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 
-Bitriseのビルド中にOpenID Connect(OIDC)トークンを生成し、それらをAWSスコープの権限を持つAWS Identity and Access Management(IAM)ロールと交換します。
+OpenID Connect（OIDC）を使用すると、Bitrise は有効期間の長いアクセスキーなしで、誰がリクエストを行っているかを AWS に証明できます。Bitrise はビルドまたはセッションを記述する ID トークンを発行し、AWS はそれを、AWS スコープの権限を持つ AWS Identity and Access Management（IAM）ロールの一時的な認証情報と交換します。
 
-AWSにOIDCトークンを使用するには、次の作業が必要です。
+OIDC トークンは、次の 2 か所で AWS に使用できます。
 
-- AWSアカウントにIAM OIDCプロバイダーを作成します。
-- カスタム信頼ポリシーを追加します。これは、IDトークンのルールを記述することを意味します。
+- <strong>CI build</strong>: [<strong>Get OIDC identity token</strong>](https://github.com/bitrise-steplib/bitrise-step-get-identity-token) <GlossTerm baseform="step">Step</GlossTerm> または [<strong>Authenticate with Amazon Web Services (AWS)</strong>](https://github.com/bitrise-steplib/bitrise-step-authenticate-with-aws) Step のいずれかでトークンを取得します。
+- <strong>Remote Dev Environment セッション</strong>: AWS CLI または SDK が認証情報を必要とするたびに、セッションの `rde-agent` コマンドがトークンをリクエストします。[OIDC でのクラウド認証](/bitrise-rde/configuration/oidc-cloud-authentication)を参照してください。
 
-Bitriseでは、[<strong>Get OIDC identity token</strong>](https://github.com/bitrise-steplib/bitrise-step-get-identity-token)<GlossTerm baseform="step">Step</GlossTerm>、または[<strong>Authenticate with Amazon Web Services (AWS)</strong>](https://github.com/bitrise-steplib/bitrise-step-authenticate-with-aws)Stepのいずれかを使用してトークンを取得できます。
+OIDC トークンを AWS に使用するには、次の作業が必要です。
+
+- AWS アカウントで IAM OIDC プロバイダーを作成します。
+- カスタム信頼ポリシーを追加します: ID トークンのルールを記述します。
+
+IAM OIDC プロバイダーは、ビルドとセッションで共通です。サブジェクトが異なるため、信頼ポリシーは異なります。
 
 
 ## IAMにOIDC IDプロバイダーを追加する {#adding-an-oidc-identity-provider-in-iam}
@@ -44,46 +48,46 @@ IAM OIDCプロバイダーの詳細については、[公式AWSユーザーガ�
    ARNは次のようになります：`arn:aws:iam::ACCOUNT_NUMBER:oidc-provider/token.builds.bitrise.io`。
 
 
-## カスタム信頼ポリシーを追加する {#adding-a-custom-trust-policy}
+## カスタム信頼ポリシーの追加 {#adding-a-custom-trust-policy}
 
-Bitrise IDトークンのルールを記述するために、AWS IAMにカスタム信頼ポリシーを追加します。
+AWS IAM でカスタム信頼ポリシーを追加して、Bitrise ID トークンのルールを記述します。
 
 :::tip[AWS ドキュメント]
 
-このガイドでは、Bitriseビルド用のAWSポリシーの設定方法を説明します。信頼ポリシーの詳細については、AWSのドキュメントをご覧ください：[カスタム信頼ポリシーを使用してロールを作成する](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-custom.html)。
+このガイドは、Bitrise ビルド用の AWS ポリシーの設定に役立ちます。信頼ポリシーの詳細については、AWS のドキュメント [Create a role using custom trust policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-custom.html) を参照してください。
 
 :::
 
-1. AWSアカウントにLog inします。
-1. <strong>IAM</strong>に移動します。
-1. 左側で<strong>Access Management</strong>を見つけ、<strong>Roles</strong>を選択します。
-1. <strong>Create role</strong>をクリックします。
+1. AWS アカウントにログインします。
+1. <strong>IAM</strong> に移動します。
+1. 左側で <strong>Access Management</strong> を見つけ、<strong>Roles</strong> を選択します。
+1. <strong>Create role</strong> をクリックします。
 
    ![2025-11-11-aws-roles.png](/img/_paligo/uuid-8fc9a70b-c1a9-6ce2-4369-8701e891f0d5.png)
-1. <strong>Custom trust policy</strong>を選択します。
+1. <strong>Custom trust policy</strong> を選択します。
 
    ![2025-11-11-custom-trust-policy.png](/img/_paligo/uuid-2aed5814-692a-476b-f993-617cdb2c338f.png)
-1. カスタム信頼ポリシーエディタでステートメントを作成し、OIDCトークンのルールを設定します：
+1. カスタム信頼ポリシーエディターでステートメントを作成して、OIDC トークンのルールを設定します。
 
    :::tip[ポリシーの作成]
 
-   ポリシーの作成方法の詳細については、AWSのドキュメントをご覧ください：[IAMポリシーの作成](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_create-console.html#access_policies_create-start)。
+   ポリシーの作成方法の詳細については、AWS のドキュメント [Creating IAM policies](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_create-console.html#access_policies_create-start) を参照してください。
 
    :::
 
-   - `Principal`を追加します。タイプはフェデレーテッドユーザーセッションとし、先ほど作成したARNを使用します。下記の例の`Federated`を参照してください。
-   - `sts:AssumeRoleWithWebIdentity`の値を持つ`Action`を追加します。
-   - `Conditions`の下で、IDトークン内のクレームに対して一致させます。
+   - `Principal` を追加します: タイプはフェデレーションユーザーセッションとし、先ほど作成した ARN を指定します。次の例の `Federated` を参照してください。
+   - `sts:AssumeRoleWithWebIdentity` 値を持つ `Action` を追加します。
+   - `Conditions` で、ID トークン内のクレームと照合します。
 
      :::important[制限事項]
 
-     Bitriseは汎用的なIDプロバイダーと見なされるため、AWSは当社のトークンから`aud`と`sub`の2つのクレームのみを保持します。ポリシーではこれらのみ使用できます。
+     Bitrise は汎用の ID プロバイダーと見なされるため、AWS はトークンから `aud` と `sub` の 2 つのクレームのみを保持します。ポリシーで使用できるのは、この 2 つだけです。
 
-     クレームフィールドの詳細については、[AWSのドキュメント](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html#Conditions_String)を参照してください。
+     クレームフィールドの詳細については、[AWS のドキュメント](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html#Conditions_String)を参照してください。
 
      :::
 
-     下記の例では、オーディエンス、Bitrise <GlossTerm baseform="project">project</GlossTerm>スラグ、および<GlossTerm baseform="workflow">Workflow</GlossTerm>名を確認します：
+     次の例では、オーディエンス、Bitrise <GlossTerm baseform="project">project</GlossTerm> スラッグ、および <GlossTerm baseform="workflow">Workflow</GlossTerm> 名を確認します。
 
    ```json
    {
@@ -106,20 +110,26 @@ Bitrise IDトークンのルールを記述するために、AWS IAMにカスタ
    }
    ```
 
-   `StringEquals`の代わりに`StringLike`オペレーションでワイルドカードを使用することもできます：[ワイルドカードによる一致](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html#Conditions_String-wildcard)。
-1. 完了したら、<strong>Next</strong>をクリックします。
+   `StringEquals` の代わりに `StringLike` 演算でワイルドカードを使用することもできます: [Wildcard matching](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition_operators.html#Conditions_String-wildcard)。
+
+   :::info[Remote Dev Environment セッション]
+
+   Remote Dev Environment セッションからリクエストされたトークンは、`rde:` で始まる別のサブジェクトを使用するため、専用の信頼ポリシーが必要です。[OIDC でのクラウド認証](/bitrise-rde/configuration/oidc-cloud-authentication)を参照してください。
+
+   :::
+1. 完了したら、<strong>Next</strong> をクリックします。
 1. ロールに必要な権限を選択します。
 
-   必要な権限は、AWSでアクセスしようとしているサービスによって異なります。たとえば、ビルド中にS3バケットにファイルをアップロードする場合は、<strong>AmazonS3FullAccess</strong>を選択できます。
+   必要な権限は、AWS でアクセスしようとしているサービスによって異なります。たとえば、ビルド中に S3 バケットにファイルをアップロードするには、<strong>AmazonS3FullAccess</strong> を選択します。
 
    :::note[カスタムアクセスポリシー]
 
-   必要な権限を正確に設定するために、AWSで独自のカスタムポリシーを作成することもできます。
+   AWS で独自のカスタムポリシーを作成して、必要な権限を正確に設定することもできます。
 
    :::
-1. 完了したら、<strong>Next</strong>をクリックします。
+1. 完了したら、<strong>Next</strong> をクリックします。
 1. ロールに名前を付け、必要に応じて説明を追加します。
-1. 完了したら、<strong>Create a role</strong>をクリックします。
+1. 完了したら、<strong>Create a role</strong> をクリックします。
 
 
 ## トークンの取得と交換 {#fetching-and-exchanging-tokens}

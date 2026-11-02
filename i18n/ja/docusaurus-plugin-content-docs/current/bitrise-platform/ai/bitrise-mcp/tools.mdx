@@ -110,26 +110,26 @@ MCP クライアントに公開するツールの数を制限できます。ト�
 12. `list_builds`
     - 指定した Bitrise アプリのすべてのビルド、またはアクセス可能なすべてのビルドを一覧表示します
     - 引数:
-      - `app_slug` (オプション): Bitrise アプリの識別子
-      - `sort_by` (オプション): ビルドの並び順。created_at (デフォルト)、running_first
-      - `branch` (オプション): ブランチでビルドを絞り込みます
-      - `workflow` (オプション): Workflow でビルドを絞り込みます
-      - `status` (オプション): ステータスでビルドを絞り込みます (0: 未完了、1: 成功、2: 失敗、3: 中止、4: 進行中)
-      - `next` (オプション): レスポンスの最初のビルドの slug
-      - `limit` (オプション): 1 ページあたりの最大要素数 (デフォルト: 50)
+      - `app_slug`（オプション）: Bitrise アプリの識別子
+      - `sort_by`（オプション）: ビルドの並び順: created_at（デフォルト）、running_first
+      - `branch`（オプション）: ブランチでビルドをフィルタリングします
+      - `workflow`（オプション）: Workflow でビルドをフィルタリングします
+      - `status`（オプション）: ステータスでビルドをフィルタリングします（0: 未完了、1: 成功、2: 失敗、3: 中止、4: 実行中）
+      - `next`（オプション）: レスポンス内の最初のビルドのスラッグ
+      - `limit`（オプション）: 1ページあたりの最大要素数（デフォルト: 50）
 
 13. `trigger_bitrise_build`
-    - 指定した Bitrise アプリの新しいビルドまたはパイプラインをトリガーします
+    - 指定した Bitrise アプリの新しいビルド/パイプラインをトリガーします
     - 引数:
       - `app_slug`: Bitrise アプリの識別子
-      - `branch` (オプション): ビルドするブランチ (デフォルト: main)
-      - `pipeline_id` (オプション): ビルドするパイプライン
-      - `workflow_id` (オプション): ビルドする Workflow
-      - `pipeline_id` (オプション): ビルドするパイプライン
-      - `commit_message` (オプション): ビルドのコミットメッセージ
-      - `commit_hash` (オプション): ビルドのコミットハッシュ
-      - `stack` (オプション): ビルドを実行する Stack。このビルドに限り、Workflow の `meta.bitrise.io.stack` を上書きします (例: "osx-xcode-16.0.x")
-      - `environments` (オプション): ビルド用のカスタム environment variables (`mapped_to`、`value`、およびオプションの `is_expand` プロパティを持つオブジェクトの配列)
+      - `branch`（オプション）: ビルドするブランチ（デフォルト: main）
+      - `pipeline_id`（オプション）: ビルドするパイプライン
+      - `workflow_id`（オプション）: ビルドする Workflow
+      - `pipeline_id`（オプション）: ビルドするパイプライン
+      - `commit_message`（オプション）: ビルドのコミットメッセージ
+      - `commit_hash`（オプション）: ビルドのコミットハッシュ
+      - `stack`（オプション）: ビルドを実行する Stack。このビルドに限り、Workflow の `meta.bitrise.io.stack` を上書きします（例: "osx-xcode-16.0.x"）
+      - `environments`（オプション）: ビルド用のカスタム environment variables（`mapped_to`、`value`、およびオプションの `is_expand` プロパティを持つオブジェクトの配列）
 
 14. `get_build`
     - 指定したアプリの特定のビルドを取得します
@@ -142,7 +142,7 @@ MCP クライアントに公開するツールの数を制限できます。ト�
     - 引数:
       - `app_slug`: Bitrise アプリの識別子
       - `build_slug`: ビルドの識別子
-      - `reason` (オプション): ビルドを中止する理由
+      - `reason`（オプション）: ビルドを中止する理由
 
 16. `get_build_log`
     - Bitrise アプリの指定したビルドのビルドログを取得します
@@ -166,6 +166,13 @@ MCP クライアントに公開するツールの数を制限できます。ト�
     - 引数:
       - `app_slug`: Bitrise アプリの識別子
       - `build_slug`: ビルドの識別子
+
+20. `get_build_test_results`
+    - 完了したビルドのテスト結果を取得します: テストスイートとテストケースのステータス、所要時間、失敗メッセージが含まれます。テストレポートを含むプランが必要です。
+    - 引数:
+      - `app_slug`: Bitrise アプリの識別子
+      - `build_slug`: ビルドの識別子
+      - `failed_only`（オプション）: 失敗またはエラーになったテストケースと、それらを含むテストスイートのみを返します（デフォルト: false）
 
 ### Artifacts
 
@@ -678,11 +685,11 @@ Bitrise Insights (公開 Insights API、`https://api.bitrise.io/insights/v1`) �
      - `page` (オプション): 1 から始まるページ番号 (デフォルト: 1)
      - `per_page` (オプション): 1 ページあたりのテストケース数、1-100 (デフォルト: 20)
 
-## API Groups
+## API グループ {#api-groups}
 
-Bitrise MCP サーバーは、コマンドライン引数で有効または無効にできる API グループにツールを整理しています。次の表は、各ツールが属する API グループを示しています。
+Bitrise MCP サーバーは、ツールを API グループに整理しており、コマンドライン引数で有効または無効にできます。次の表は、各ツールが属する API グループを示します。
 
-| Tool | apps | builds | workspaces | outgoing-webhooks | artifacts | group-roles | cache-items | pipelines | account | read-only | release-management | configuration | release-management-code-push | insights |
+| ツール | apps | builds | workspaces | outgoing-webhooks | artifacts | group-roles | cache-items | pipelines | account | read-only | release-management | configuration | release-management-code-push | insights |
 |------|------|--------|------------|-------------------|-----------|-------------|-------------|-----------|---------|-----------|--------------------|--------------|------------------------------|---|
 | list_apps | ✅ | | | | | | | | | ✅ | | | | |
 | register_app | ✅ | | | | | | | | | | | | | |
@@ -703,6 +710,7 @@ Bitrise MCP サーバーは、コマンドライン引数で有効または無�
 | get_build_bitrise_yml | | ✅ | | | | | | | | ✅ | | | | |
 | list_build_workflows | | ✅ | | | | | | | | ✅ | | | | |
 | get_build_steps | | ✅ | | | | | | | | ✅ | | | | |
+| get_build_test_results | | ✅ | | | | | | | | ✅ | | | | |
 | list_artifacts | | | | | ✅ | | | | | ✅ | | | | |
 | get_artifact | | | | | ✅ | | | | | ✅ | | | | |
 | delete_artifact | | | | | ✅ | | | | | | | | | |

@@ -3,75 +3,80 @@ title: "FlutterアプリのユニットテストとUIテストの実行"
 sidebar_position: 1
 slug: /bitrise-ci/testing/testing-flutter-apps/running-unit-and-ui-tests-on-flutter-apps
 ---
-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-<strong>Flutter Test</strong> Stepを使用すると、Bitrise上でFlutterアプリのユニットテスト、ウィジェットテスト、統合テスト(エンドツーエンドテストやUIテストとも呼ばれます)を実行できます。Stepは`flutter test`コマンドを実行し、そのコマンドで生成される`json`ファイルを保存します。テスト結果はいつでも確認できます。[テスト結果のデプロイと表示](/bitrise-ci/testing/deploying-and-viewing-test-results)。
+<strong>Flutter Test</strong> Step を使用すると、Bitrise 上で Flutter アプリのユニットテスト、ウィジェットテスト、統合テスト (エンドツーエンドテストまたは UI テストとも呼ばれます) を実行できます。Step は `flutter test` コマンドを実行し、コマンドが生成する `json` ファイルを保存します。その後、いつでもテスト結果を確認できます: [テスト結果のデプロイと表示](/bitrise-ci/testing/deploying-and-viewing-test-results)
 
 :::tip[コードカバレッジ]
 
-<strong>Flutter Test</strong> Stepでは、コードカバレッジレポートを生成することもできます。
+<strong>Flutter Test</strong> Step は、コードカバレッジレポートも生成できます。
 
 :::
 
-<strong>Flutter Test</strong>を使用してテストを実行するには:
+:::tip[UI Maestro によるテスト]
+
+エミュレーターやシミュレーターでタップや入力を行うフローを使って、Flutter アプリの UI を外部からテストするには、Maestro を参照してください: [Bitrise での Maestro テストの実行](/bitrise-ci/testing/running-maestro-tests-on-bitrise)
+
+:::
+
+<strong>Flutter Test</strong> を使用してテストを実行するには、次の手順に従います。
 
 <Tabs>
 <TabItem value="workflow-editor" label="Workflow Editor" default>
 
-1. Flutterプロジェクトにテストを含めます。
+1. Flutter プロジェクトにテストを含めます。
 
-   テストの書き方やFlutterプロジェクトへの追加方法の詳細については、Flutter公式ドキュメントを確認してください:[Flutterアプリのテスト](https://docs.flutter.dev/testing)。
-1. <strong>Flutter Install</strong> StepをWorkflowに追加します。
+   テストの書き方と Flutter プロジェクトへの組み込み方の詳細については、Flutter の公式ドキュメントを参照してください: [Flutter アプリのテスト](https://docs.flutter.dev/testing)
+1. <strong>Flutter Install</strong> Step を Workflow に追加します。
 
-   このStepは、Flutter SDKの初期セットアップを実行し、不足しているコンポーネントをインストールします。
-1. <strong>Flutter Install</strong> Stepが、アプリに適したバージョンのFlutter SDKをインストールすることを確認してください:<strong>Flutter SDK version or bundle URL</strong>入力を確認します。
+   この Step は、Flutter SDK の初期セットアップを実行し、不足しているコンポーネントをインストールします。
+1. <strong>Flutter Install</strong> Step が、アプリに適したバージョンの Flutter SDK をインストールすることを確認します。<strong>Flutter SDK version or bundle URL</strong> 入力を確認してください。
 
    ![flutter-install-step.png](/img/2026-07-16-flutter-install-step.png)
 
-   入力のdefault valueは<strong>stable</strong>で、これにより最新の安定版のSDKがインストールされます。ただし、特定のバージョンタグ、ブランチラベル、またはFlutter SDKバンドルURLを値として設定することもできます:
+   入力の default value は <strong>stable</strong> で、SDK の最新の安定版がインストールされます。ただし、特定のバージョンタグ、ブランチラベル、または Flutter SDK のインストールバンドル URL を値に設定することもできます。
 
-   - 利用可能なバージョンタグはこちらで確認できます:[バージョンタグ](https://github.com/flutter/flutter/tags)。
-   - 利用可能なブランチラベルはこちらで確認できます:[ブランチラベル](https://github.com/flutter/flutter/branches)。
+   - 利用可能なバージョンタグは次の場所で確認できます: [Version tags](https://github.com/flutter/flutter/tags)
+   - 利用可能なブランチラベルは次の場所で確認できます: [Branch labels](https://github.com/flutter/flutter/branches)
 
-   :::tip[インストールバンドルURL]
+   :::tip[インストールバンドル URL]
 
-   インストールバンドルURLからFlutter SDKをインストールすることもできます:同じ<strong>Flutter SDK version or bundle URL</strong>入力の値としてURLを設定します(例:`https://storage.googleapis.com/flutter_infra/releases/beta/macos/flutter_macos_v1.6.3-beta.zip`)。
+   インストールバンドル URL から Flutter SDK をインストールすることもできます。同じ <strong>Flutter SDK version or bundle URL</strong> 入力の値に URL を設定します。例: `https://storage.googleapis.com/flutter_infra/releases/beta/macos/flutter_macos_v1.6.3-beta.zip`
 
    :::
-1. <strong>Flutter Test</strong> StepをWorkflowに追加します。これは<strong>Flutter Install</strong> Stepの後に配置してください。
+1. <strong>Flutter Test</strong> Step を Workflow に追加します。<strong>Flutter Install</strong> Step の後に配置してください。
 
-   Stepは、オプションのフラグを付けて`flutter test`コマンドを実行します。コードカバレッジの確認も可能です。
-1. <strong>Project Location</strong>入力がFlutterプロジェクトのルートディレクトリを指していることを確認してください。
+   Step は、オプションのフラグを付けて `flutter test` コマンドを実行します。コードカバレッジを確認することもできます。
+1. <strong>Project Location</strong> 入力が、Flutter プロジェクトのルートディレクトリを指していることを確認します。
 
    ![flutter-test-step.png](/img/2026-07-16-flutter-test-step.png)
 
-   - Bitriseで[アプリとして追加](/bitrise-ci/getting-started/adding-a-new-project)する際にプロジェクトスキャナーがFlutterプロジェクトとして自動検出した場合は、default valueを変更する必要はありません。
-   - アプリを手動で設定した場合は、場所が正しいことを確認してください。これは、Workflow Editorの<strong>Env Vars</strong>タブに移動し、BITRISE_FLUTTER_PROJECT_LOCATIONの[環境変数](/bitrise-ci/configure-builds/environment-variables)を確認することで行えます。
-1. デフォルトでは、Stepはすべてのテストを検出して実行します。ただし、選択したテストのみを実行するように設定することもできます:<strong>Test files pattern</strong>入力を使用して、実行するテストをStepに指定します。
+   - Bitrise で[アプリとして追加](/bitrise-ci/getting-started/adding-a-new-project)したときに、プロジェクトスキャナーが Flutter プロジェクトとして自動的に検出した場合は、default value を変更する必要はありません。
+   - アプリを手動で設定した場合は、場所が正しいことを確認します。確認するには、Workflow Editor の <strong>Env Vars</strong> タブに移動し、BITRISE_FLUTTER_PROJECT_LOCATION [Environment Variable](/bitrise-ci/configure-builds/environment-variables) を確認します。
+1. デフォルトでは、Step はすべてのテストを検索して実行します。ただし、選択したテストのみを実行するように設定することもできます。<strong>Test files pattern</strong> 入力を使用して、実行するテストを Step に指定します。
 
-   入力には、*と**の両方のglob形式を使用できます。たとえば、`lib/**/*_test.dart`は有効な入力です。
+   この入力では、* 形式と ** 形式の両方の glob を使用できます。たとえば、`lib/**/*_test.dart` は有効な入力です。
 
    ![flutter-test-files-pattern.png](/img/2026-07-16-flutter-test-files-pattern.png)
-1. 必要に応じて、<strong>Additional parameters</strong>入力を使用して`flutter test`コマンドにフラグを追加します。
+1. 必要に応じて、<strong>Additional parameters</strong> 入力を使用して、`flutter test` コマンドにフラグを追加します。
 
-   利用可能なオプションを確認するには、`flutter help test`コマンドを実行します。これは、お使いのデバイス上、またはBitriseの<strong>Script</strong>Step内で実行できます。
-1. 必要に応じて、<strong>Generate code coverage files?</strong>入力を<strong>yes</strong>に設定して、コードカバレッジファイルを生成します。
+   利用可能なオプションを確認するには、`flutter help test` コマンドを実行します。ご自身のデバイス上、または Bitrise の <strong>Script</strong> Step で実行できます。
+1. 必要に応じて、<strong>Generate code coverage files?</strong> 入力を <strong>yes</strong> に設定して、コードカバレッジファイルを生成します。
 
-   この入力を有効にすると、`--coverage`フラグが`flutter test`コマンドに追加されます。
-1. 必要に応じて、生成されたjsonテストレポートとコードカバレッジファイル(`lcov.info`)には、BITRISE_FLUTTER_TESTRESULT_PATHとBITRISE_FLUTTER_COVERAGE_PATHの[Environment Variables](/bitrise-ci/configure-builds/environment-variables#setting-and-managing-env-vars-during-a-build)を使用することで、後続のStepsでアクセスできます。
-1. テスト結果を表示するには、<strong>Deploy to Bitrise.io</strong> StepをWorkflowに追加します:[テスト結果のデプロイと表示](/bitrise-ci/testing/deploying-and-viewing-test-results)。
+   この入力を有効にすると、`flutter test` コマンドに `--coverage` フラグが追加されます。
+1. 必要に応じて、生成された JSON テストレポートとコードカバレッジファイル (`lcov.info`) に、後続の Steps から、BITRISE_FLUTTER_TESTRESULT_PATH と BITRISE_FLUTTER_COVERAGE_PATH [Environment Variables](/bitrise-ci/configure-builds/environment-variables#setting-and-managing-env-vars-during-a-build) を使用してアクセスできます。
+1. テスト結果を表示するには、<strong>Deploy to Bitrise.io</strong> Step を Workflow に追加します: [テスト結果のデプロイと表示](/bitrise-ci/testing/deploying-and-viewing-test-results)
 
 </TabItem>
 <TabItem value="configuration-yaml" label="Configuration YAML">
 
-1. Flutterプロジェクトにテストを含めます。
+1. Flutter プロジェクトにテストを含めます。
 
-   テストの書き方やFlutterプロジェクトへの追加方法の詳細については、Flutter公式ドキュメントを確認してください:[Flutterアプリのテスト](https://docs.flutter.dev/testing)。
-1. `flutter-installer` StepをWorkflowに追加します。
+   テストの書き方と Flutter プロジェクトへの組み込み方の詳細については、Flutter の公式ドキュメントを参照してください: [Flutter アプリのテスト](https://docs.flutter.dev/testing)
+1. `flutter-installer` Step を Workflow に追加します。
 
-   このStepは、Flutter SDKの初期セットアップを実行し、不足しているコンポーネントをインストールします。
+   この Step は、Flutter SDK の初期セットアップを実行し、不足しているコンポーネントをインストールします。
 
    ```yaml
    primary:
@@ -83,12 +88,12 @@ import TabItem from '@theme/TabItem';
        - flutter-installer:
            inputs:
    ```
-1. Stepが、アプリに適したバージョンのFlutter SDKをインストールすることを確認してください:バージョンは`version`入力を使用して指定できます。
+1. Step が、アプリに適したバージョンの Flutter SDK をインストールすることを確認します。バージョンは `version` 入力で指定できます。
 
-   入力のdefault valueは`stable`で、これにより最新の安定版のSDKがインストールされます。Configuration YAMLファイルに`version`入力が表示されない場合、値はdefault valueに設定されています。ただし、特定のバージョンタグ、ブランチラベル、またはFlutter SDKバンドルURLを値として設定することもできます:
+   入力の default value は `stable` で、SDK の最新の安定版がインストールされます。Configuration YAML ファイルに `version` 入力が表示されない場合は、default value に設定されています。ただし、特定のバージョンタグ、ブランチラベル、または Flutter SDK のインストールバンドル URL を値に設定することもできます。
 
-   - 利用可能なバージョンタグはこちらで確認できます:[バージョンタグ](https://github.com/flutter/flutter/tags)。
-   - 利用可能なブランチラベルはこちらで確認できます:[ブランチラベル](https://github.com/flutter/flutter/branches)。
+   - 利用可能なバージョンタグは次の場所で確認できます: [Version tags](https://github.com/flutter/flutter/tags)
+   - 利用可能なブランチラベルは次の場所で確認できます: [Branch labels](https://github.com/flutter/flutter/branches)
 
    ```yaml
    # Installing version 3.7.7 of the Flutter SDK
@@ -97,9 +102,9 @@ import TabItem from '@theme/TabItem';
        - version: 3.7.7
    ```
 
-   :::tip[インストールバンドルURL]
+   :::tip[インストールバンドル URL]
 
-   インストールバンドルURLからFlutter SDKをインストールすることもできます:同じ`version`入力の値としてURLを設定します。URLは`https://storage.googleapis.com/flutter_infra`で始まる必要があります。例:
+   インストールバンドル URL から Flutter SDK をインストールすることもできます。同じ `version` 入力の値に URL を設定します。URL は `https://storage.googleapis.com/flutter_infra` で始まる必要があります。例:
 
    ```yaml
    - flutter-installer:
@@ -108,9 +113,9 @@ import TabItem from '@theme/TabItem';
    ```
 
    :::
-1. `flutter-test` StepをWorkflowに追加します。これは`flutter-installer` Stepの後に配置してください。
+1. `flutter-test` Step を Workflow に追加します。`flutter-installer` Step の後に配置してください。
 
-   Stepは、オプションのフラグを付けて`flutter test`コマンドを実行します。コードカバレッジの確認も可能です。
+   Step は、オプションのフラグを付けて `flutter test` コマンドを実行します。コードカバレッジを確認することもできます。
 
    ```yaml
    primary:
@@ -126,7 +131,7 @@ import TabItem from '@theme/TabItem';
        - flutter-test:
            inputs:
    ```
-1. `project_location`入力がFlutterプロジェクトのルートディレクトリを指していることを確認してください。
+1. `project_location` 入力が、Flutter プロジェクトのルートディレクトリを指していることを確認します。
 
    ```yaml
    - flutter-test:
@@ -134,8 +139,8 @@ import TabItem from '@theme/TabItem';
        - project_location: "$BITRISE_FLUTTER_PROJECT_LOCATION"
    ```
 
-   - Bitriseで[アプリとして追加](/bitrise-ci/getting-started/adding-a-new-project)する際にプロジェクトスキャナーがFlutterプロジェクトとして自動検出した場合は、BITRISE_FLUTTER_PROJECT_LOCATIONであるdefault valueを変更する必要はありません。
-   - アプリを手動で設定した場合は、場所が正しいことを確認してください。BITRISE_FLUTTER_PROJECT_LOCATIONが指す場所は、`app`の`envs`プロパティで確認できます:
+   - Bitrise で[アプリとして追加](/bitrise-ci/getting-started/adding-a-new-project)したときに、プロジェクトスキャナーが Flutter プロジェクトとして自動的に検出した場合は、default value (BITRISE_FLUTTER_PROJECT_LOCATION) を変更する必要はありません。
+   - アプリを手動で設定した場合は、場所が正しいことを確認します。BITRISE_FLUTTER_PROJECT_LOCATION が指す場所は、`app` の `envs` プロパティで確認できます。
 
      ```yaml
      # Pointing to the root directory
@@ -145,18 +150,18 @@ import TabItem from '@theme/TabItem';
              is_expand: false
            BITRISE_FLUTTER_PROJECT_LOCATION: .
      ```
-1. デフォルトでは、Stepはすべてのテストを検出して実行します。ただし、選択したテストのみを実行するように設定することもできます:`tests_path_pattern`入力を使用して、実行するテストをStepに指定します。
+1. デフォルトでは、Step はすべてのテストを検索して実行します。ただし、選択したテストのみを実行するように設定することもできます。`tests_path_pattern` 入力を使用して、実行するテストを Step に指定します。
 
-   入力には、*と**の両方のglob形式を使用できます。たとえば、`lib/**/*_test.dart`は有効な入力です。
+   この入力では、* 形式と ** 形式の両方の glob を使用できます。たとえば、`lib/**/*_test.dart` は有効な入力です。
 
    ```yaml
    - flutter-test:
        inputs:
        - tests_path_pattern: /lib/*_test.dart
    ```
-1. 必要に応じて、`additional_params`入力を使用して`flutter test`コマンドにフラグを追加します。
+1. 必要に応じて、`additional_params` 入力を使用して、`flutter test` コマンドにフラグを追加します。
 
-   利用可能なオプションを確認するには、`flutter help test`コマンドを実行します。これは、お使いのデバイス上、またはBitriseの<strong>Script</strong>Step内で実行できます。
+   利用可能なオプションを確認するには、`flutter help test` コマンドを実行します。ご自身のデバイス上、または Bitrise の <strong>Script</strong> Step で実行できます。
 
    ```yaml
    - flutter-test:
@@ -164,17 +169,17 @@ import TabItem from '@theme/TabItem';
    # setting a test timeout of 60 seconds
        - additional_params: --timeout 60s
    ```
-1. 必要に応じて、`generate_code_coverage_files`入力を`'yes'`に設定して、コードカバレッジファイルを生成します。
+1. 必要に応じて、`generate_code_coverage_files` 入力を `'yes'` に設定して、コードカバレッジファイルを生成します。
 
-   この入力を有効にすると、`--coverage`フラグが`flutter test`コマンドに追加されます。
+   この入力を有効にすると、`flutter test` コマンドに `--coverage` フラグが追加されます。
 
    ```yaml
    - flutter-test:
        inputs:
        - generate_code_coverage_files: 'yes'
    ```
-1. 必要に応じて、生成されたjsonテストレポートとコードカバレッジファイル(`lcov.info`)には、BITRISE_FLUTTER_TESTRESULT_PATHとBITRISE_FLUTTER_COVERAGE_PATHの[Environment Variables](/bitrise-ci/configure-builds/environment-variables#setting-and-managing-env-vars-during-a-build)を使用することで、後続のStepsでアクセスできます。
-1. テスト結果を表示するには、`deploy-to-bitrise-io` Stepを追加します:[テスト結果のデプロイと表示](/bitrise-ci/testing/deploying-and-viewing-test-results)。
+1. 必要に応じて、生成された JSON テストレポートとコードカバレッジファイル (`lcov.info`) に、後続の Steps から、BITRISE_FLUTTER_TESTRESULT_PATH と BITRISE_FLUTTER_COVERAGE_PATH [Environment Variables](/bitrise-ci/configure-builds/environment-variables#setting-and-managing-env-vars-during-a-build) を使用してアクセスできます。
+1. テスト結果を表示するには、`deploy-to-bitrise-io` Step を追加します: [テスト結果のデプロイと表示](/bitrise-ci/testing/deploying-and-viewing-test-results)
 
    ```yaml
    primary:

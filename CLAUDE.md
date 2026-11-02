@@ -120,8 +120,8 @@ We talk to people, not at them. **American English.** Three properties:
 | Workflow Editor | The UI for editing Workflows. | workflow editor |
 | Environment Variable / `Env Var` | Capitalized. Use abbreviation in titles. | environment variable |
 | Organization / Org | Capitalized. Use `Org` in titles. | organization |
-| project | Lowercase. Within an app. | Project, app (synonyms — they're not) |
-| app | Lowercase. The Bitrise unit. | application, project |
+| project | Lowercase. The Bitrise unit that holds a repository connection, Workflows, and Secrets. Older UI, the API (`app-slug`), and some legacy pages still call it an "app". | Project (capitalized), app (in prose) |
+| app | Lowercase. Only the user's own mobile or web app that Bitrise builds, or API names such as `app-slug`. | application, project (as a synonym for the user's own app) |
 | build | Lowercase. The output of a Workflow run. | Build |
 | pull request | Lowercase. Spelled out. | PR, pull-request |
 | repository | Lowercase. Spelled out in DevCenter. | repo |

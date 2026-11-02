@@ -1,0 +1,234 @@
+---
+title: "OIDCによるクラウド認証"
+description: "Remote Dev Environment セッションが、テンプレートに保存した長期有効なキーの代わりに、有効期間の短いOIDCのIDトークンを使って、AWS、GCP、その他のクラウドサービスに対して認証できるようにします。"
+sidebar_position: 5
+slug: /bitrise-rde/configuration/oidc-cloud-authentication
+---
+import GlossTerm from '@site/src/components/GlossTerm';
+
+<GlossTerm baseform="rde session">セッション</GlossTerm>は、所属するWorkspace、<GlossTerm baseform="rde template">テンプレート</GlossTerm>、オーナーを証明する OpenID Connect (OIDC) IDトークンをリクエストできます。クラウドプロバイダーはこのトークンを、有効期間の短い独自の認証情報と交換します。そのため、テンプレートにAWSアクセスキー、GCPサービスアカウントキーなどの長期有効なシークレットを持たせる必要はありません。
+
+Remote Dev Environment セッションは、CIビルドと同じBitrise IDプロバイダーを使用します。発行者は`https://token.builds.bitrise.io`で、トークンの有効期間は1時間です。ビルド用にOIDCをすでに設定している場合、クラウドプロバイダーはBitriseをすでに信頼しているため、セッション用の信頼ポリシーを追加するだけで済みます。BitriseでのOIDCの概要については、[OIDC認証の概要](/bitrise-platform/integrations/oidc-authentication/oidc-authentication-overview)を参照してください。
+
+## RDE 向けOIDCの概要 {#oidc-for-rde-overview}
+
+すべてのセッションマシンには、`rde-agent`コマンドがプリインストールされています。そのサブコマンド`id-token`は、セッション用のトークンをリクエストし、クラウドSDKが期待する形式（SDK）でそのトークンを渡します。手順は2つの部分に分かれます。テンプレートごとに一度だけコマンドを設定すると、以降はSDKが自動的にそのコマンドを実行します。
+
+1. テンプレートごとに一度だけ、認証情報が必要になるたびに`rde-agent`を実行するようクラウドSDKに設定します。この設定をテンプレートのウォームアップスクリプトに追加すると、そのテンプレートから作成されるすべてのセッションに反映されます。
+
+   - AWSの場合は、`~/.aws/config`に`credential_process`を設定します。
+   - GCPの場合は、認証情報の設定ファイルに実行可能な`credential_source`を設定します。
+
+   具体的な設定は、以下の[AWS](#configuring-a-template-for-aws)と[GCP](#configuring-a-template-for-gcp)の手順で示します。
+1. クラウドコマンドを初めて実行したとき、およびキャッシュされた認証情報の有効期限が切れたときに、SDKは設定されたコマンドを実行します。
+1. `rde-agent`がBitriseにセッション用のIDトークンをリクエストし、Bitriseがセッションを表すサブジェクトとクレームを持つトークンに署名します。
+1. `rde-agent`は、SDKが期待する形式で認証情報を返します。AWSの場合は、トークンをAWS STS と交換して一時的なアクセスキーを返します。GCPの場合は、IDトークンを返し、Google クライアントライブラリがそれをアクセストークンと交換します。
+1. SDKは、有効期限が切れるまで認証情報をキャッシュし、期限が切れると再び`rde-agent`を実行します。
+
+セッションで作業する開発者やエージェントが行う操作はありません。テンプレートを設定すれば、クラウドCLIとSDKは自動的に認証されます。
+
+## トークンに含まれる情報 {#information-in-the-token}
+
+クラウドプロバイダーは、クレームに基づいてトークンを信頼するかどうかを判断します。セッションのトークンには次の情報が含まれます。
+
+| 名前 | 説明 |
+| --- | --- |
+| `aud` | リクエストしたオーディエンス。例: `sts.amazonaws.com`。 |
+| `sub` | `rde:workspace:WORKSPACE_ID:template:TEMPLATE_ID:session-owner:OWNER_TYPE:OWNER_ID`形式のサブジェクト。 |
+| `iss`、`exp`、`iat`、`nbf`、`jti` | 標準のJWTクレーム: 発行者、有効期限、発行日時、有効開始日時、トークンID。 |
+| `workspace_id` | Workspaceスラッグ。 |
+| `session_id` | セッションID。 |
+| `template_id` | セッションの作成元となったテンプレートのID。 |
+| `session_owner_type` | Workspaceメンバーが所有するセッションの場合は`user`、Workspaceが所有するセッションの場合は`workspace`。 |
+| `session_owner_id` | セッションオーナーのuser slugまたはWorkspaceのスラッグ。 |
+
+### サブジェクトクレーム {#the-subject-claim}
+
+:::important[制限事項]
+
+AWSは、汎用IDプロバイダーの`aud`クレームと`sub`クレームのみを保持します。そのため、サブジェクトには、照合に使用する可能性のあるすべての値が固定の順序で含まれています。GCPでは、任意のクレームを属性にマッピングできます。
+
+:::
+
+サブジェクト内のすべての識別子は不変です。Workspaceスラッグとuser slugは変更されず、テンプレートの名前を変更してもIDは変わりません。テンプレートIDは、[Bitrise RDE UI](/bitrise-rde/rde-options/bitrise-rde-ui)のテンプレートのページ、または[CLI](/bitrise-rde/rde-options/bitrise-rde-cli)の`rde template list`で確認できます。
+
+ユーザーがテンプレートから作成したセッションのサブジェクトの例:
+
+```text
+rde:workspace:a1b2c3d4e5f67890:template:7f3c2a10-1111-4222-8333-444455556666:session-owner:user:5a0d688e73861d6d
+```
+
+## AWSでの認証 {#authenticating-with-aws}
+
+セッションがAWSに対して認証できるようにするには、Workspaceのセッションを信頼する IAM ロールを作成し、AWS CLIとSDKが`rde-agent`を通じてロールの一時的な認証情報を取得できるようにテンプレートを設定します。セッションがAWSアクセスキーを保持することはありません。
+
+### AWSの設定 {#setting-up-aws}
+
+AWSの設定は、CIビルドの場合と同じですが、信頼ポリシーがビルドではなくセッションに一致する点が異なります。
+
+1. IAM で、プロバイダーURLに`https://token.builds.bitrise.io`、オーディエンスに`sts.amazonaws.com`を指定して、[BitriseをIDプロバイダーとして追加](/bitrise-platform/integrations/oidc-authentication/oidc-for-aws#adding-an-oidc-identity-provider-in-iam)します。ビルド用にすでに設定済みの場合は、この手順をスキップしてください。
+1. [カスタム信頼ポリシーを持つロールを作成](/bitrise-platform/integrations/oidc-authentication/oidc-for-aws#adding-a-custom-trust-policy)します。フェデレーテッドプリンシパルにはIDプロバイダーの ARN を、アクションには`sts:AssumeRoleWithWebIdentity`を使用し、開発者に必要な権限のみを選択します。
+1. 信頼ポリシーで、サブジェクトをワイルドカードで照合し、テンプレートから作成されたすべてのセッションがロールを引き受けられるようにします。次の条件は、1つのWorkspace内の1つのテンプレートから作成されたすべてのセッションを許可します。
+
+   ```json
+   "Condition": {
+     "StringEquals": {
+       "token.builds.bitrise.io:aud": "sts.amazonaws.com"
+     },
+     "StringLike": {
+       "token.builds.bitrise.io:sub": "rde:workspace:a1b2c3d4e5f67890:template:7f3c2a10-1111-4222-8333-444455556666:*"
+     }
+   }
+   ```
+
+   :::tip
+   ロールを特定の1人に限定するには、末尾の`*`を`session-owner:user:USER_SLUG`に置き換えます。Workspace内のすべてのテンプレートを許可するには、代わりにWorkspaceスラッグの後にワイルドカードを置きます。
+   :::
+
+1. ロールの ARN を控えておきます。テンプレートで必要になります。
+
+:::tip[専用のロールを使用する]
+
+CIビルド用に作成した信頼ポリシーは、`app:`で始まるサブジェクトに一致するため、セッションには一致しません。デプロイ用のロールを再利用せず、開発者に必要な権限のみを持つ、開発環境専用のロールを別途作成してください。
+
+:::
+
+### AWS用のテンプレートの設定 {#configuring-a-template-for-aws}
+
+AWS CLIとSDKは、`credential_process`で指定したプログラムから認証情報を取得できます。このプログラムは認証情報が必要になるたびに実行され、その出力は報告された有効期限までキャッシュされます。そこに`rde-agent id-token aws`を指定し、セッション用に作成したロールの ARN を設定します。
+
+1. テンプレートのウォームアップスクリプトに次の内容を追加します。この設定はデフォルトプロファイルを構成します。書き込まれるファイルは、リストアしても維持されます。
+
+   ```bash
+   aws configure set credential_process "rde-agent id-token aws --role-arn arn:aws:iam::123456789012:role/rde-developers"
+   ```
+
+   このコマンドは設定を`~/.aws/config`に書き込みます。AWS SDKもここから設定を読み取ります。
+
+1. テンプレートから作成したセッションでは、AWS CLIとSDKが自動的に認証されます。確認するには、`aws sts get-caller-identity`を実行します。CLIが`rde-agent`を実行し、`AssumeRoleWithWebIdentity`を通じてトークンを交換して、ロールのIDを表示します。
+
+ユーザーごとに異なるロールを使用するには、ARN を環境変数として公開する[セッション入力](/bitrise-rde/configuration/templates)に保存し、ウォームアップスクリプトでは ARN を直接記述する代わりにその環境変数を参照します。既存のデフォルトプロファイルを維持するには、`aws configure set`に`--profile rde`を渡し、`AWS_PROFILE`でプロファイルを選択します。認証情報の有効期間や STS リージョンなど、その他のオプションについては、[コマンドリファレンス](#command-reference)を参照してください。
+
+## GCPでの認証 {#authenticating-with-gcp}
+
+セッションがGCPに対して認証できるようにするには、Workspaceのセッションを信頼し、サービスアカウントを偽装できるようにするワークロードIDプールを設定します。そのうえで、gcloud と Google クライアントライブラリが`rde-agent`からIDトークンを取得し、自身で交換できるようにテンプレートを設定します。セッションがサービスアカウントキーを保持することはありません。
+
+### GCPの設定 {#setting-up-gcp}
+
+GCPの設定は、CIビルドの場合と同じですが、プールがセッションを識別する方法が異なります。
+
+1. [ワークロードIDプールを作成](/bitrise-platform/integrations/oidc-authentication/oidc-for-gcp#creating-a-workload-identity-pool)し、発行者URLに`https://token.builds.bitrise.io`を指定して、Bitriseを OpenID Connect (OIDC) プロバイダーとして追加します。
+1. <strong>Configure provider attributes</strong>で、次の属性を追加します。
+   - `attribute.workspace_id`、値は`assertion.workspace_id`。
+   - 1つのテンプレートから作成されたセッションにアクセスを限定する場合は、`attribute.template_id`、値は`assertion.template_id`。Google ではマッピングされた属性でのみフィルタリングでき、フィルターは完全一致であるため、Workspaceを示すクレームを使用することで、1つの付与ですべてのセッションを対象にできます。
+1. 開発者に必要なロールを持つ[サービスアカウントを作成](/bitrise-platform/integrations/oidc-authentication/oidc-for-gcp#create-a-service-account)します。
+1. サービスアカウントの偽装を通じて、[プールにサービスアカウントへのアクセスを付与](/bitrise-platform/integrations/oidc-authentication/oidc-for-gcp#granting-access-to-the-workload-identity-pool)します。<strong>Selectプリンシパル</strong>で<strong>Only identities matching the filter</strong>を選択し、属性名に`workspace_id`、値にWorkspaceスラッグを設定します。`subject`フィルターも使用できますが、完全なサブジェクト文字列を指定する必要があり、1つのテンプレート上の1人のユーザーにのみ一致します。
+1. プロバイダーの<strong>Allowed audiences</strong>の値を控えておきます。テンプレートで必要になります。空のままにした場合、オーディエンスは、プロバイダーのリソース名に`https:`プレフィックスを付けたものになります。例: `https://iam.googleapis.com/projects/123456789012/locations/global/workloadIdentityPools/bitrise-rde/providers/bitrise`。
+
+一致する付与がない場合、交換は成功しますが、アクセストークンのリクエストは`iam.serviceAccounts.getAccessToken` denied で失敗します。
+
+### GCP用のテンプレートの設定 {#configuring-a-template-for-gcp}
+
+Google クライアントライブラリと gcloud CLIは、認証情報の設定ファイルで指定した実行可能ファイルからIDトークンを取得できます。ライブラリは、トークンが必要になるたびにそれを実行し、交換自体も行います。
+
+1. [GCP向けのOIDC](/bitrise-platform/integrations/oidc-authentication/oidc-for-gcp)の説明に従って、ワークロードIDプールからクライアントライブラリの設定ファイルをダウンロードします。
+1. ファイル内の`credential_source`オブジェクトを、プロバイダーが受け入れるオーディエンスを指定して`rde-agent`を実行する実行可能ソースに置き換えます。使用するオーディエンスは、[プロバイダーの設定](#setting-up-gcp)時に控えたものです。ファイルの`audience`フィールドと混同しないでください。そのフィールドには`//`プレフィックスが付いており、交換のためにプールを指定するもので、token audienceとして拒否されます。
+
+   ```json
+   "credential_source": {
+     "executable": {
+       "command": "rde-agent id-token gcp --audience https://iam.googleapis.com/projects/123456789012/locations/global/workloadIdentityPools/bitrise-rde/providers/bitrise",
+       "timeout_millis": 30000
+     }
+   }
+   ```
+
+1. 編集したファイルの内容とともに、次の内容をテンプレートのウォームアップスクリプトに追加します。このファイルにシークレットは含まれず、使用するプール、プロバイダー、サービスアカウントのみが含まれます。ファイルはアプリケーションのデフォルト認証情報の場所に書き込まれ、すべての Google クライアントライブラリが追加の設定なしでそこを参照します。最後の行で、gcloud CLIでも有効化します。
+
+   ```bash
+   mkdir -p "$HOME/.config/gcloud"
+   cat > "$HOME/.config/gcloud/application_default_credentials.json" <<'EOF'
+   { ... the edited configuration file ... }
+   EOF
+   GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES=1 gcloud auth login --cred-file="$HOME/.config/gcloud/application_default_credentials.json"
+   ```
+
+1. `1`を値とする`GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES`という名前の[テンプレート変数](/bitrise-rde/configuration/templates)を追加し、環境変数として公開します。これがないと、Google のライブラリは実行可能ソースの認証情報を拒否します。環境変数として公開すると、セッション内のすべてのターミナルとプロセスに反映されます。
+
+1. テンプレートから作成したセッションでは、gcloud とクライアントライブラリが自動的に認証されます。確認するには、`gcloud auth print-access-token`を実行します。gcloud が`rde-agent`を実行してトークンを交換し、サービスアカウントのアクセストークンを出力します。
+
+## コマンドリファレンス {#command-reference}
+
+`rde-agent`は、すべてのセッションの`PATH`上にあります。ターミナル、ウォームアップスクリプトとスタートアップスクリプト、およびクラウドSDKが起動するすべてのプロセスで使用できます。
+
+トークンをリクエストするコマンドは、`rde-agent id-token`のサブコマンド`get`、`aws`、`gcp`です。サブコマンドのオプションを一覧表示するには、マシン上で`rde-agent id-token SUBCOMMAND --help`を実行します。
+
+成功すると、コマンドは標準出力に結果を出力し、終了コード 0 で終了します。オプションの不足などの使用方法のエラーは、終了コード 2 で終了します。セッション外でコマンドを実行した場合を含め、その他の失敗は、終了コード 1 で終了し、標準エラー出力に理由を出力します。各コマンドは50秒後にタイムアウトします。トークンの有効期間は1時間です。トークンは保存しないでください。上記の手順のように、新しいトークンが必要になるたびに、クラウドSDKにコマンドを実行させてください。
+
+### get
+
+セッションのIDトークンを出力します。`aws`コマンドと`gcp`コマンドの対象外のプロバイダーで使用します。
+
+```bash
+rde-agent id-token get --audience AUDIENCE
+```
+
+<div className="command-table">
+
+| オプション | デフォルト | 説明 |
+| --- | --- | --- |
+| `--audience` | | トークンを受け取るサービスが期待するオーディエンス(`aud`クレーム)。必須です。256文字以内で、スペースを含まず、印字可能な ASCII 文字のみを使用できます。 |
+
+</div>
+
+### aws
+
+ロールの一時的なAWS認証情報を、`credential_process`が期待する形式で出力します。このコマンドは、デフォルトでは`sts.amazonaws.com`オーディエンスを指定してトークンをリクエストし、AWS STS との交換も自身で行います。
+
+```bash
+rde-agent id-token aws --role-arn ROLE_ARN
+```
+
+<div className="command-table">
+
+| オプション | デフォルト | 説明 |
+| --- | --- | --- |
+| `--role-arn` | | 引き受けるロールの ARN。必須です。 |
+| `--audience` | `sts.amazonaws.com` | トークンのオーディエンス。AWSのIDプロバイダーを別のオーディエンスで作成した場合にのみ変更してください。形式のルールは[`get`](#get)と同じです。 |
+| `--region` | 優先順位順:<br />1. `AWS_REGION`<br />2. `AWS_DEFAULT_REGION`<br />3. グローバル STS エンドポイント | 交換を実行する STS エンドポイントのリージョン。グローバルエンドポイントは、デフォルトで有効なリージョンで使用できます。オプトインリージョン(アカウントがバージョン2のグローバルエンドポイントトークンを使用している場合を除く)、および GovCloud と中国のパーティションでは、リージョンを設定してください。`cn-`リージョンはAWS中国のエンドポイントを使用します。`credential_process`コマンドのこのオプションで設定するか、テンプレート変数として`AWS_REGION`で設定します。AWSプロファイルのリージョンは読み取られません。`AWS_ENDPOINT_URL_STS`が設定されている場合は、それがエンドポイントより優先されます。 |
+| `--duration` | `3600` | AWS認証情報の有効期間(秒)。`900`から`43200`の範囲で指定します。IAM で設定したロールの最大session duration(1〜12時間)を超えることはできません。 |
+| `--session-name` | `rde-SESSION_ID` | CloudTrail に表示されるロールセッション名。デフォルトではセッションを識別する名前になります。独自の名前を設定する場合は、英字、数字、`_+=,.@-`から2〜64文字で指定してください。 |
+
+</div>
+
+### gcp
+
+Google の実行可能ソース認証情報が期待する形式でラップしたIDトークンを出力します。交換は Google クライアントライブラリが行います。
+
+```bash
+rde-agent id-token gcp --audience AUDIENCE
+```
+
+<div className="command-table">
+
+| オプション | デフォルト | 説明 |
+| --- | --- | --- |
+| `--audience` | | トークンのオーディエンス。ワークロードIDプロバイダーの<strong>Allowed audiences</strong>の値です。必須です。形式のルールは[`get`](#get)と同じです。 |
+
+</div>
+
+## トークンに関するセッションの要件 {#session-requirements-for-tokens}
+
+セッションは、次の場合にトークンをリクエストできます。
+
+- テンプレートから作成されている。
+- マシンが起動している。マシンが起動中でもリクエストできるため、ウォームアップスクリプトとスタートアップスクリプトからトークンをリクエストできます。
+- WorkspaceメンバーまたはWorkspaceが所有している。[warm pool](/bitrise-rde/configuration/warm-pools)内のセッションは、引き取られるまでの間も対象です。誰かがセッションを引き取るまでは、サブジェクト内のセッションオーナーはWorkspaceで、引き取られるとそのユーザーにオーナーが変わります。
+
+セッションは、次の場合にトークンをリクエストできません。
+
+- テンプレートなしで作成されている。サブジェクトにテンプレートが含まれるためです。`rde-agent id-token`は、その旨を示すメッセージとともに失敗します。
+- マシンが停止している、または存在しない。`rde-agent id-token`は、セッションマシンが実行されていない旨のメッセージとともに失敗します。
+- [デバイスプレビューリンク](/bitrise-rde/devices/device-preview-links)から開かれている。リンクを持つ誰もがセッション内でコマンドを実行できるためです。`rde-agent id-token`は、その旨を示すメッセージとともに失敗します。
+
+トークンは、発行から1時間は、その間にセッションが終了しても有効です。セッションを終了すると、それ以降のトークンは発行されなくなります。
