@@ -123,7 +123,9 @@ appId: com.example.myapp
 
 ## Selecting flows with tags
 
-Tag your flows in the flow file:
+You can tag your flows, so that the **Maestro Test** Step runs only the flows that have any of the listed tags, or skips the flows that have any of them.
+
+To tag a flow, add the tags to the flow file:
 
 ```yaml
 appId: com.example.myapp
@@ -133,7 +135,7 @@ tags:
 - launchApp
 ```
 
-Then use **Include tags** to run only the flows that have any of the listed tags, and **Exclude tags** to skip the flows that have any of them. Separate tags with commas or new lines.
+To select flows by tag, configure the Step: set **Include tags** to run only the flows that have any of the listed tags, and **Exclude tags** to skip the flows that have any of them. Separate tags with commas or new lines.
 
 ```yaml
 - maestro-test:
@@ -145,7 +147,9 @@ Then use **Include tags** to run only the flows that have any of the listed tags
 
 ## Retrying failed flows
 
-Set **Number of times a failed flow is reattempted** to run the failed flows again, up to 10 times. Only the failed flows run again, with the same tags and arguments. A flow that passes on a retry is reported as [flaky](/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#detecting-flaky-tests) and doesn't fail the Step. The default is 0, which turns retries off.
+Retrying runs the failed flows again, up to 10 times. Only the failed flows run again, with the same tags and arguments. A flow that passes on a retry is reported as [flaky](/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#detecting-flaky-tests) and doesn't fail the Step.
+
+To set it up, configure the **Maestro Test** Step: set its **Number of times a failed flow is reattempted** input to the number of retries. The default is 0, which turns retries off.
 
 ```yaml
 - maestro-test:
@@ -164,7 +168,9 @@ Retrying needs Maestro 2.6.0 or newer. The default **Maestro CLI version** meets
 
 ## Skipping quarantined flows
 
-The Step skips the flows that you [quarantine](/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#quarantining-flaky-tests) on Bitrise, with no setup: the **Quarantined tests** input reads them from `$BITRISE_QUARANTINED_TESTS_JSON` by default. Test Quarantine is available with the Enterprise plan.
+When you [quarantine](/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#quarantining-flaky-tests) a flow on Bitrise, the **Maestro Test** Step skips it. Test Quarantine is available with the Enterprise plan.
+
+The Step skips quarantined flows by default, with no setup: its **Quarantined tests** input reads them from `$BITRISE_QUARANTINED_TESTS_JSON`.
 
 The Step matches a flow by its path inside its **Flow path** folder. If another **Flow path** folder has a file with the same path, the Step skips that file too, and logs a warning.
 
@@ -178,7 +184,7 @@ Skipping a flow that the Step finds in a **Flow path** folder needs Maestro 2.9.
 
 ## Running flows on several devices in parallel
 
-Maestro's own sharding needs several devices on one machine, which the Step doesn't support. Instead, run copies of the Workflow in parallel in a <GlossTerm baseform="Pipeline">Pipeline</GlossTerm>, each on its own virtual machine: [Parallelism in Pipelines](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow).
+Maestro's own sharding needs several devices on one machine, which the **Maestro Test** Step doesn't support. Instead, run copies of the Workflow in parallel in a <GlossTerm baseform="Pipeline">Pipeline</GlossTerm>, each on its own virtual machine: [Parallelism in Pipelines](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow).
 
 1. Tag each flow with the copy that runs it: `shard0`, `shard1`, and so on.
 1. Set **Include tags** to `shard$BITRISE_IO_PARALLEL_INDEX`. Every copy gets its own zero-based index in this Env Var.
@@ -214,7 +220,7 @@ workflows:
 
 ## Viewing the results
 
-The results appear on the Test Reports page under the name in the **Test name** input, failed flows included. For the **Deploy to Bitrise.io** versions that show attachments, see [Deploying and viewing test results](/bitrise-ci/testing/deploying-and-viewing-test-results).
+You can view the results of the **Maestro Test** Step on the Test Reports page, under the name in the **Test name** input, failed flows included. For the **Deploy to Bitrise.io** versions that show attachments, see [Deploying and viewing test results](/bitrise-ci/testing/deploying-and-viewing-test-results).
 
 Each flow's output on the Test Reports page lists the commands that the flow ran, as a step list.
 
