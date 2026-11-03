@@ -162,6 +162,12 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "bitrise-rde-api/api-reference/codespaces-service-run-session-hook",
+          label: "Run a lifecycle hook again",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
           id: "bitrise-rde-api/api-reference/codespaces-service-list-session-notifications",
           label: "List session notifications",
           className: "api-method get",
@@ -170,6 +176,12 @@ const sidebar: SidebarsConfig = {
           type: "doc",
           id: "bitrise-rde-api/api-reference/codespaces-service-open-remote-access",
           label: "Open remote access",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "bitrise-rde-api/api-reference/codespaces-service-rebuild-session",
+          label: "Rebuild session",
           className: "api-method post",
         },
         {
@@ -369,6 +381,12 @@ const sidebar: SidebarsConfig = {
           id: "bitrise-rde-api/api-reference/codespaces-service-update-warm-pool",
           label: "Update warm pool",
           className: "api-method patch",
+        },
+        {
+          type: "doc",
+          id: "bitrise-rde-api/api-reference/codespaces-service-retry-warm-pool",
+          label: "Retry warm pool",
+          className: "api-method post",
         },
       ],
     },

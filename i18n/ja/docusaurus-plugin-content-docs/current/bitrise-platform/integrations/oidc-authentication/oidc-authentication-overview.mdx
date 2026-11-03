@@ -4,21 +4,20 @@ description: "Bitriseでは、OIDCにより、長期間有効な認証情報をW
 sidebar_position: 1
 slug: /bitrise-platform/integrations/oidc-authentication/oidc-authentication-overview
 ---
-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 
-OpenID Connect（OIDC）は、OAuth 2.0フレームワーク上に構築されたID認証レイヤーです。サードパーティのアプリケーションがエンドユーザーのIDを検証できるようにし、アプリケーション間でSingle Sign-Onを使用することも可能にします。
+OpenID Connect（OIDC）は、OAuth 2.0 フレームワークの上に構築された ID 認証レイヤーです。サードパーティのアプリケーションがエンドユーザーの ID を検証できるようにし、アプリケーション間での Single Sign-On の利用も可能にします。
 
-OIDCは、認証操作の結果とユーザーのIDに関する情報を提供するIDトークン（通常はJSON Web TokenまたはJWT）を発行することで機能します。認証結果とユーザー情報に関するこのデータをクレームと呼びます。
+OIDC は、認証操作の結果とユーザーの ID に関する情報を提供する ID トークン（通常は JSON Web Token または JWT）を発行することで機能します。認証結果に関するデータとユーザー情報は、クレームと呼ばれます。
 
-トークンを受け取ったサービスは、そのトークンのクレームを自身のOIDCポリシーと照合して評価します。トークンのクレームがポリシーに一致する場合はリクエストが許可され、一致しない場合は拒否されます。
+トークンを受け取るサービスは、そのトークンのクレームを自身の OIDC ポリシーと照合して評価します。トークンのクレームがポリシーに一致する場合はリクエストが許可され、一致しない場合は拒否されます。
 
-Bitriseは、OIDCトークンの使用を2つの方法でサポートします。
+Bitrise は、次の 2 つの方法で OIDC トークンの利用をサポートしています。
 
-- Bitriseのビルドが、AWS、GCP、Azure、コンテナレジストリ、シークレット管理、アーティファクトストアなどの外部システムに対して認証できるようにするため。
-- 外部のOIDCトークンを使用してBitriseに対して認証を行い、短期間有効なBitriseトークンを受け取るため。
+- Bitrise ビルドと Remote Dev Environment セッションが、AWS、GCP、Azure、コンテナレジストリ、シークレット管理、アーティファクトストアなどの外部システムに対して認証できるようにします。
+- 外部の OIDC トークンを使用して Bitrise に対して認証し、有効期間の短い Bitrise トークンを受け取ります。
 
 
 ## OIDCを使った外部サービスへの認証 {#authentication-to-external-services-with-oidc}
@@ -85,6 +84,17 @@ Bitriseは汎用的なIDプロバイダーとみなされるため、AWSでは�
 | `tag` | ビルドをトリガーしたタグ |
 | `build_number` | ビルド番号 |
 | `workflow` | トリガーされたWorkflow名 |
+
+
+### Remote Dev Environment の ID トークン {#identity-tokens-for-remote-dev-environments}
+
+Remote Dev Environment セッションは、ビルドと同じ方法で ID トークンをリクエストできます。トークンは同じ発行者から同じ署名鍵で発行されるため、ビルドですでに Bitrise を信頼しているクラウドプロバイダーは、セッションでも信頼します。サブジェクトは、ビルドではなくセッションを表します。
+
+```text
+rde:workspace:WORKSPACE_ID:template:TEMPLATE_ID:session-owner:OWNER_TYPE:OWNER_ID
+```
+
+サブジェクトは `rde:` で始まるため、ビルド用に記述した信頼ポリシーはセッションには一致せず、その逆も同様です。クレームの完全な一覧とセッションからトークンをリクエストする方法については、[OIDC でのクラウド認証](/bitrise-rde/configuration/oidc-cloud-authentication)を参照してください。
 
 
 ## OIDCを使ったBitriseへの認証 {#authentication-to-bitrise-with-oidc}

@@ -1,0 +1,235 @@
+---
+title: "Cloud authentication with OIDC"
+description: "Let Remote Dev Environment sessions authenticate to AWS, GCP, and other cloud services with short-lived OIDC identity tokens instead of long-lived keys stored in templates."
+sidebar_position: 5
+slug: /bitrise-rde/configuration/oidc-cloud-authentication
+---
+
+import GlossTerm from '@site/src/components/GlossTerm';
+
+A <GlossTerm baseform="rde session">session</GlossTerm> can request an OpenID Connect (OIDC) identity token that proves which Workspace, <GlossTerm baseform="rde template">template</GlossTerm>, and owner it belongs to. Your cloud provider exchanges that token for its own short-lived credentials, so your templates never need to carry AWS access keys, GCP service account keys, or similar long-lived secrets.
+
+Remote Dev Environment sessions use the same Bitrise identity provider as CI builds: the issuer is `https://token.builds.bitrise.io`, and the token is valid for one hour. If you already set up OIDC for your builds, your cloud provider already trusts Bitrise and you only need a trust policy for sessions. For an introduction to OIDC on Bitrise, see [OIDC authentication overview](/bitrise-platform/integrations/oidc-authentication/oidc-authentication-overview).
+
+## OIDC for RDE overview
+
+Every session machine has the `rde-agent` command preinstalled. Its `id-token` subcommands request a token for the session and hand it to your cloud SDK in the format the SDK expects. There are two parts: you configure the command once per template, and from then on the SDK runs it by itself.
+
+1. Once per template, tell your cloud SDK to run `rde-agent` whenever it needs credentials. Add this setup to the template's warmup script, so that every session created from the template has it:
+
+   - For AWS, set `credential_process` in `~/.aws/config`.
+   - For GCP, set an executable `credential_source` in the credential configuration file.
+
+   The recipes for [AWS](#configuring-a-template-for-aws) and [GCP](#configuring-a-template-for-gcp) below show the exact configuration.
+1. The first time you run a cloud command, and again when the cached credential expires, the SDK runs the command you configured.
+1. `rde-agent` asks Bitrise for an identity token for the session, and Bitrise signs a token whose subject and claims describe the session.
+1. `rde-agent` returns a credential in the format your SDK expects. For AWS, it exchanges the token with AWS STS and returns temporary access keys. For GCP, it returns the identity token, and the Google client library exchanges it for an access token.
+1. The SDK caches the credential until it expires, and then runs `rde-agent` again.
+
+The developer or agent working in the session doesn't do anything: once the template is set up, the cloud CLI and SDKs authenticate on their own.
+
+## Information in the token
+
+Cloud providers decide whether to trust a token based on its claims. The token for a session contains:
+
+| Name | Description |
+| --- | --- |
+| `aud` | The audience you request, for example `sts.amazonaws.com`. |
+| `sub` | The subject, in the `rde:workspace:WORKSPACE_ID:template:TEMPLATE_ID:session-owner:OWNER_TYPE:OWNER_ID` format. |
+| `iss`, `exp`, `iat`, `nbf`, `jti` | Standard JWT claims: issuer, expiration, issued at, not before, and token ID. |
+| `workspace_id` | The Workspace slug. |
+| `session_id` | The session ID. |
+| `template_id` | The ID of the template the session was created from. |
+| `session_owner_type` | `user` for a session owned by a Workspace member, `workspace` for a Workspace-owned session. |
+| `session_owner_id` | The user slug or Workspace slug of the session owner. |
+
+### The subject claim
+
+:::important[Limitation]
+
+AWS keeps only the `aud` and `sub` claims from a generic identity provider. That's why the subject contains every value you might want to match on, in a fixed order. GCP lets you map any claim to an attribute.
+
+:::
+
+All identifiers in the subject are stable: the Workspace slug and the user slug never change, and a template keeps its ID when you rename it. Find the template ID on the template's page in the [Bitrise RDE UI](/bitrise-rde/rde-options/bitrise-rde-ui) or with `rde template list` in the [CLI](/bitrise-rde/rde-options/bitrise-rde-cli).
+
+An example subject for a session that a user created from a template:
+
+```text
+rde:workspace:a1b2c3d4e5f67890:template:7f3c2a10-1111-4222-8333-444455556666:session-owner:user:5a0d688e73861d6d
+```
+
+## Authenticating with AWS
+
+To let sessions authenticate to AWS, create an IAM role that trusts your Workspace's sessions, then configure the template so that the AWS CLI and SDKs get the role's temporary credentials through `rde-agent`. The session never holds an AWS access key.
+
+### Setting up AWS
+
+AWS setup is the same as for CI builds, except that the trust policy matches sessions instead of builds.
+
+1. [Add Bitrise as an identity provider](/bitrise-platform/integrations/oidc-authentication/oidc-for-aws#adding-an-oidc-identity-provider-in-iam) in IAM, with `https://token.builds.bitrise.io` as the provider URL and `sts.amazonaws.com` as the audience. If you already did this for your builds, skip this step.
+1. [Create a role with a custom trust policy](/bitrise-platform/integrations/oidc-authentication/oidc-for-aws#adding-a-custom-trust-policy). Use the identity provider's ARN as the federated principal, `sts:AssumeRoleWithWebIdentity` as the action, and select only the permissions that developers need.
+1. In the trust policy, match the subject with a wildcard so that every session created from a template can assume the role. This condition allows all sessions created from one template in one Workspace:
+
+   ```json
+   "Condition": {
+     "StringEquals": {
+       "token.builds.bitrise.io:aud": "sts.amazonaws.com"
+     },
+     "StringLike": {
+       "token.builds.bitrise.io:sub": "rde:workspace:a1b2c3d4e5f67890:template:7f3c2a10-1111-4222-8333-444455556666:*"
+     }
+   }
+   ```
+
+   :::tip
+   To restrict the role to one person, replace the trailing `*` with `session-owner:user:USER_SLUG`. To allow every template in the Workspace, put the wildcard after the Workspace slug instead.
+   :::
+
+1. Note the ARN of the role: the template needs it.
+
+:::tip[Use a dedicated role]
+
+A trust policy written for CI builds matches subjects starting with `app:`, so it never matches a session. Create a separate role for dev environments with only the permissions developers need, rather than reusing a deployment role.
+
+:::
+
+### Configuring a template for AWS
+
+The AWS CLI and SDKs can get credentials from a program you name in `credential_process`. The program runs whenever credentials are needed, and its output is cached until the expiration it reports. Name `rde-agent id-token aws` there, with the ARN of the role you created for sessions.
+
+1. Add the following to the template's warmup script. It configures the default profile; the file it writes survives restores.
+
+   ```bash
+   aws configure set credential_process "rde-agent id-token aws --role-arn arn:aws:iam::123456789012:role/rde-developers"
+   ```
+
+   The command writes the setting to `~/.aws/config`, where the AWS SDKs read it too.
+
+1. In a session created from the template, the AWS CLI and SDKs authenticate on their own. To check, run `aws sts get-caller-identity`: the CLI runs `rde-agent`, which exchanges the token through `AssumeRoleWithWebIdentity`, and shows the role's identity.
+
+To use a different role per user, store the ARN in a [session input](/bitrise-rde/configuration/templates) exposed as an environment variable, and reference it in the warmup script instead of the literal ARN. To keep your existing default profile, pass `--profile rde` to `aws configure set` and select the profile with `AWS_PROFILE`. The [command reference](#command-reference) lists the other options, such as the credential lifetime and the STS region.
+
+## Authenticating with GCP
+
+To let sessions authenticate to GCP, set up a workload identity pool that trusts your Workspace's sessions and lets them impersonate a service account, then configure the template so that gcloud and the Google client libraries get the identity token from `rde-agent` and exchange it themselves. The session never holds a service account key.
+
+### Setting up GCP
+
+GCP setup is the same as for CI builds, except for how the pool identifies sessions.
+
+1. [Create a workload identity pool](/bitrise-platform/integrations/oidc-authentication/oidc-for-gcp#creating-a-workload-identity-pool) and add Bitrise as an OpenID Connect (OIDC) provider, with `https://token.builds.bitrise.io` as the issuer URL.
+1. Under **Configure provider attributes**, add the following attributes:
+   - `attribute.workspace_id` with the value `assertion.workspace_id`. 
+   - `attribute.template_id` with the value `assertion.template_id` if you want to limit access to sessions created from one template. Google only lets you filter on mapped attributes, and filters are exact matches, so a claim that names the Workspace is what lets one grant cover every session.
+1. [Create a service account](/bitrise-platform/integrations/oidc-authentication/oidc-for-gcp#create-a-service-account) with the roles that developers need.
+1. [Grant the pool access to the service account](/bitrise-platform/integrations/oidc-authentication/oidc-for-gcp#granting-access-to-the-workload-identity-pool) through service account impersonation. Under **Select principals**, choose **Only identities matching the filter**, set the attribute name to `workspace_id`, and set the value to your Workspace slug. A `subject` filter also works, but it has to be the full subject string and matches one user on one template.
+1. Note the provider's **Allowed audiences** value: the template needs it. If you left it empty, the audience is the provider's resource name with an `https:` prefix, for example `https://iam.googleapis.com/projects/123456789012/locations/global/workloadIdentityPools/bitrise-rde/providers/bitrise`.
+
+Without a matching grant, the exchange succeeds but the access token request fails with `iam.serviceAccounts.getAccessToken` denied.
+
+### Configuring a template for GCP
+
+Google client libraries and the gcloud CLI can get the identity token from an executable named in the credential configuration file. The library runs it whenever it needs a token and performs the exchange itself.
+
+1. Download the client library configuration file from your workload identity pool, as described in [OIDC for GCP](/bitrise-platform/integrations/oidc-authentication/oidc-for-gcp).
+1. In the file, replace the `credential_source` object with an executable source that runs `rde-agent` with the audience your provider accepts, the one you noted when [setting up the provider](#setting-up-gcp). Don't confuse it with the `audience` field of the file: that one has a `//` prefix, names the pool for the exchange, and is rejected as a token audience.
+
+   ```json
+   "credential_source": {
+     "executable": {
+       "command": "rde-agent id-token gcp --audience https://iam.googleapis.com/projects/123456789012/locations/global/workloadIdentityPools/bitrise-rde/providers/bitrise",
+       "timeout_millis": 30000
+     }
+   }
+   ```
+
+1. Add the following to the template's warmup script, with the content of the edited file. The file contains no secrets, only the pool, provider, and service account to use. It's written to the application default credentials location, where every Google client library looks without further configuration; the last line activates it for the gcloud CLI as well.
+
+   ```bash
+   mkdir -p "$HOME/.config/gcloud"
+   cat > "$HOME/.config/gcloud/application_default_credentials.json" <<'EOF'
+   { ... the edited configuration file ... }
+   EOF
+   GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES=1 gcloud auth login --cred-file="$HOME/.config/gcloud/application_default_credentials.json"
+   ```
+
+1. Add a [template variable](/bitrise-rde/configuration/templates) named `GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES` with the value `1`, exposed as an environment variable. Google's libraries refuse executable-sourced credentials without it, and exposing it makes every terminal and process in the session pick it up.
+
+1. In a session created from the template, gcloud and the client libraries authenticate on their own. To check, run `gcloud auth print-access-token`: gcloud runs `rde-agent`, exchanges the token, and prints an access token for the service account.
+
+## Command reference
+
+`rde-agent` is on the `PATH` of every session: in the terminal, in the warmup and startup scripts, and in any process a cloud SDK starts.
+
+The commands that request a token are the subcommands `get`, `aws`, and `gcp` of `rde-agent id-token`. Run `rde-agent id-token SUBCOMMAND --help` on the machine to list a subcommand's options.
+
+On success, the commands print to standard output and exit with code 0. A usage error, such as a missing option, exits with code 2. Any other failure, including running a command outside a session, exits with code 1 and prints the reason to standard error. Each command gives up after 50 seconds. A token is valid for one hour; don't store it. Let the cloud SDK run the command whenever it needs a fresh one, as the recipes above do.
+
+### get
+
+Prints the identity token for the session. Use it with a provider that isn't covered by the `aws` and `gcp` commands.
+
+```bash
+rde-agent id-token get --audience AUDIENCE
+```
+
+<div className="command-table">
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `--audience` | | The audience (`aud` claim) that the service receiving the token expects. Required. Up to 256 characters, with no spaces and only printable ASCII. |
+
+</div>
+
+### aws
+
+Prints temporary AWS credentials for the role, in the format `credential_process` expects. The command requests a token, by default with the `sts.amazonaws.com` audience, and exchanges it with AWS STS itself.
+
+```bash
+rde-agent id-token aws --role-arn ROLE_ARN
+```
+
+<div className="command-table">
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `--role-arn` | | The ARN of the role to assume. Required. |
+| `--audience` | `sts.amazonaws.com` | The audience in the token. Change it only if your identity provider in AWS was created with a different one. The same format rules apply as for [`get`](#get). |
+| `--region` | In order of priority:<br />1. `AWS_REGION`<br />2. `AWS_DEFAULT_REGION`<br />3. The global STS endpoint | The region whose STS endpoint performs the exchange. The global endpoint works for default-enabled regions. Set a region for opt-in regions (unless your account uses version 2 global endpoint tokens) and for the GovCloud and China partitions; `cn-` regions use the AWS China endpoint. Set it with this option in the `credential_process` command, or with `AWS_REGION` as a template variable. The region in your AWS profile isn't read. If `AWS_ENDPOINT_URL_STS` is set, it overrides the endpoint. |
+| `--duration` | `3600` | The lifetime of the AWS credentials, in seconds, from `900` to `43200`. It can't exceed the role's maximum session duration, which you set in IAM (1 to 12 hours). |
+| `--session-name` | `rde-SESSION_ID` | The role session name, which shows up in CloudTrail. The default identifies the session. If you set your own, use 2 to 64 characters from letters, digits, and `_+=,.@-`. |
+
+</div>
+
+### gcp
+
+Prints the identity token wrapped in the format Google's executable-sourced credentials expect. The Google client library performs the exchange.
+
+```bash
+rde-agent id-token gcp --audience AUDIENCE
+```
+
+<div className="command-table">
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `--audience` | | The audience in the token: the **Allowed audiences** value of your workload identity provider. Required. The same format rules apply as for [`get`](#get). |
+
+</div>
+
+## Session requirements for tokens
+
+A session can request a token when:
+
+- It was created from a template.
+- Its machine is up. The machine can still be starting, so warmup and startup scripts can request tokens.
+- It is owned by a Workspace member or by the Workspace. A session in a [warm pool](/bitrise-rde/configuration/warm-pools) qualifies while it waits to be claimed: the Workspace is the session owner in the subject until someone claims the session, then the owner changes to that user.
+
+A session can't request a token when:
+
+- It was created without a template, because the subject names the template. `rde-agent id-token` fails with a message that says so.
+- Its machine has stopped or no longer exists. `rde-agent id-token` fails with a message that says the session machine is not running.
+- It was opened from a [device preview link](/bitrise-rde/devices/device-preview-links), because anyone holding the link can run commands in it. `rde-agent id-token` fails with a message that says so.
+
+A token stays valid for one hour after it's issued, even if the session is terminated in the meantime. Terminating the session stops any further tokens from being issued.
