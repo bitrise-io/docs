@@ -1,0 +1,33 @@
+---
+title: "テストの添付ファイルについて"
+sidebar_position: 1
+---
+import Partial_SupportedAttachmentFormats from '@site/i18n/ja/partials/supported-attachment-formats.mdx';
+
+多くのテストは画像ファイルを生成します（スクリーンショットテスト、XCUITestsなど）。Bitriseは、これらの添付ファイルを関連するテストケースの下に表示できるため、ビルドページの<strong>Tests</strong>タブで確認できます。添付ファイルとテスト結果を照合する方法は、使用しているテストツールと、そのツールが`xcresult`ファイルを生成するかどうかによって異なります。
+
+<Partial_SupportedAttachmentFormats />
+
+## 添付ファイルとテスト結果の照合 {#collating-attachments-with-test-results}
+
+テストが`xcresult`ファイルを生成する場合、Bitriseは自動的に添付ファイルを対応するテストケースに照合します。追加の設定は不要です。
+
+テストが`xcresult`ファイルを生成しない場合は、次の2つの方法があります。
+
+- [各ファイルにテストケース名を付ける](#naming-attachments-after-their-test-case)。
+- [各ファイルをJUnit XMLで参照する](#referencing-attachments-in-the-junit-xml)。
+
+### テストケース名に合わせた添付ファイルの命名 {#naming-attachments-after-their-test-case}
+
+スクリーンショット、録画、ログに、それらを生成したテストケースの名前を付けます。`<classname>__<name>[__run<k>]__<label>.<ext>`の構造を使用すると、Bitriseは該当するテストの下にそれらを表示します。これには、<strong>Deploy to Bitrise.io</strong> Stepのバージョン2.26.0以降が必要です。
+
+詳しい手順については、次を参照してください。
+
+- [テストケース名に合わせた添付ファイルの命名](/bitrise-ci/testing/test-reports/test-attachments/naming-attachments-after-test-cases): ファイル名の構造、Bitrise Stepで添付ファイルをエクスポートする方法、表示されない添付ファイルのトラブルシューティング。
+- [テストツールの設定](/bitrise-ci/testing/test-reports/test-attachments/naming-attachments-after-test-cases#setting-up-your-test-tool): 一般的なテストツールが添付ファイルに正しい名前を付けるように設定する例（Espresso、Paparazzi、Roborazzi、Detox、Playwright）。
+
+### JUnit XMLでの添付ファイルの参照 {#referencing-attachments-in-the-junit-xml}
+
+ファイルにテストケース名を付けられない場合は、JUnit XMLの各`testcase`に、添付ファイルを列挙する`<properties>`要素を追加し、その後、<strong>Export test results to Test Reports</strong> StepでJUnit XMLをエクスポートします。これには、Stepのバージョン1.1.0以降が必要です。
+
+詳しい手順については、[JUnit XMLでの添付ファイルの参照](/bitrise-ci/testing/test-reports/test-attachments/referencing-attachments-in-junit-xml)を参照してください。

@@ -123,6 +123,34 @@
       },
       "type": "object"
     },
+    "v1ComputeQuota": {
+      "description": "ComputeQuota is the workspace's vCPU quota on one machine family and how\nmuch of it is in use.",
+      "properties": {
+        "displayName": {
+          "description": "Human-readable family name, for example \"M2 Pro\".",
+          "type": "string"
+        },
+        "family": {
+          "description": "Machine family identifier, for example \"m2pro\" or \"linux-lc01\".",
+          "type": "string"
+        },
+        "os": {
+          "description": "Operating system of the family's machines: \"macos\" or \"linux\". Empty\nwhen the machine catalog could not be read or does not know the family.",
+          "type": "string"
+        },
+        "quotaVcpu": {
+          "description": "The workspace's vCPU quota on this family, set by its plan. Always\npositive: families without a quota are left out.",
+          "format": "int32",
+          "type": "integer"
+        },
+        "usedVcpu": {
+          "description": "vCPUs held right now by the workspace's machines in this family, warm\npool sessions included. Starting a session is refused when its machine\nwould take this past quota_vcpu.",
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "v1CreatePreviewLinkResponse": {
       "description": "CreatePreviewLinkResponse carries the minted link.",
       "properties": {
@@ -370,6 +398,14 @@
     "v1GetWorkspaceUsageResponse": {
       "description": "GetWorkspaceUsageResponse is the workspace usage report: a point-in-time\nsnapshot of who is running how many active sessions, on how many vCPUs and\nhow much memory, split by OS.",
       "properties": {
+        "computeQuotas": {
+          "description": "The workspace's vCPU quota and current use per machine family, listing\nonly the families its plan gives a quota. Use is counted from the\nworkspace's machines, so it can briefly differ from the session totals\nwhile a session shuts down. Empty when the quota could not be read; the\nsession totals are still returned.",
+          "items": {
+            "$ref": "#/definitions/v1ComputeQuota",
+            "type": "object"
+          },
+          "type": "array"
+        },
         "totals": {
           "$ref": "#/definitions/v1UsageTotals",
           "description": "Workspace-wide totals across all users."
@@ -4855,7 +4891,7 @@
     },
     "/v1/workspaces/{workspaceId}/usage": {
       "get": {
-        "description": "Returns a point-in-time snapshot of the workspace's active remote development sessions: session counts and vCPU/memory totals split by OS, workspace-wide and per user. This reports sessions currently consuming resources; it is not a historical or billing-period report. Requires the caller to hold the workspace's billing-view permission (workspace owners and billing-managing custom roles); other members receive a permission-denied error.",
+        "description": "Returns a point-in-time snapshot of the workspace's active remote development sessions: session counts and vCPU/memory totals split by OS, workspace-wide and per user, and the workspace's vCPU quota and use per machine family. This reports sessions currently consuming resources; it is not a historical or billing-period report. Requires the caller to hold the workspace's billing-view permission (workspace owners and billing-managing custom roles); other members receive a permission-denied error.",
         "operationId": "CodespacesService_GetWorkspaceUsage",
         "parameters": [
           {
