@@ -154,15 +154,27 @@ Set **Number of times a failed flow is reattempted** to run the failed flows aga
     - num_flaky_test_attempts: 2
 ```
 
-Retrying needs Maestro 2.6.0 or newer, which the default **Maestro CLI version** is. Flows aren't retried when the workspace config sets their order with `executionOrder`.
+Flows aren't retried when the workspace config sets their order with `executionOrder`.
+
+:::important[Version requirement]
+
+Retrying needs Maestro 2.6.0 or newer. The default **Maestro CLI version** meets this, so it matters only if you set an older one.
+
+:::
 
 ## Skipping quarantined flows
 
 The Step skips the flows that you [quarantine](/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#quarantining-flaky-tests) on Bitrise, with no setup: the **Quarantined tests** input reads them from `$BITRISE_QUARANTINED_TESTS_JSON` by default. Test Quarantine is available with the Enterprise plan.
 
-Skipping a flow that the Step finds in a **Flow path** folder needs Maestro 2.9.0 or newer. Flow files that you list in **Flow path** are skipped with any Maestro version.
-
 The Step matches a flow by its path inside its **Flow path** folder. If another **Flow path** folder has a file with the same path, the Step skips that file too, and logs a warning.
+
+Quarantine applies to one platform: the Step reports each flow with the class name `<platform>:<flow file>`, for example `android:.maestro/login.yaml`, so a flow quarantined on Android still runs on iOS.
+
+:::important[Version requirement]
+
+Skipping a flow that the Step finds in a **Flow path** folder needs Maestro 2.9.0 or newer. Flow files that you list in **Flow path** are skipped with any version. The default **Maestro CLI version** meets this.
+
+:::
 
 ## Running flows on several devices in parallel
 
