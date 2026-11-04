@@ -15,23 +15,24 @@ import GlossTerm from '@site/src/components/GlossTerm';
 
 特定のビルドの<GlossTerm baseform="step">Steps</GlossTerm>を設定すると、失敗したテストが自動的に再実行されます。再試行でテストが成功すればビルドをグリーンにでき、そのテストは不安定（flaky）としてマークされるため、後で修正できます。[Enterprise](https://bitrise.io/solutions/enterprise)プランをご利用の場合は、[隔離](/bitrise-ci/testing/detecting-and-quarantining-flaky-tests#quarantining-flaky-tests)することもできます。
 
-### 失敗したテストの自動再実行を許可するSteps {#steps-allowing-automatic-reruns-for-failed-tests}
+### Steps 失敗したテストの自動再実行を許可する {#steps-allowing-automatic-reruns-for-failed-tests}
 
-これらのテスト用Stepsの入力欄では、失敗したテストの再試行回数を指定できます。実行中にテストが失敗すると、Stepが自動的にテストを再試行します。
+これらのテスト Steps の入力を使うと、失敗したテストの再試行回数を指定できます。実行中にテストが失敗すると、Step は自動的にテストを再試行します。
 
-後続の試行でテストが成功した場合、そのテストは不安定（flaky）としてマークされますが、Step自体は成功として扱われるため、ビルドとPRチェックをグリーンにできます。
+後続の試行でテストが成功した場合、そのテストは不安定（flaky）としてマークされますが、Step 自体は成功するため、ビルドと PR のチェックは緑色になります。
 
-これにより、変更のマージがブロックされることなく、後で不安定なテストを特定して修正するために必要なデータも得られます。
+これにより、変更のマージが妨げられることなく、後から不安定なテストを特定して修正するために必要なデータも得られます。
 
 - [Xcode Test for iOS](https://bitrise.io/integrations/steps/xcode-test)
 - [Xcode Test without building](https://bitrise.io/integrations/steps/xcode-test-without-building)
 - [iOS Device Testing](https://bitrise.io/integrations/steps/virtual-device-testing-for-ios)
 - [Virtual Device Testing for Android](https://bitrise.io/integrations/steps/virtual-device-testing-for-android)
-- [Android ユニットテスト](https://bitrise.io/integrations/steps/android-unit-test)（[Gradle プラグイン](https://github.com/gradle/test-retry-gradle-plugin)経由）
+- [Android ユニットテスト](https://bitrise.io/integrations/steps/android-unit-test)（[Gradle プラグイン](https://github.com/gradle/test-retry-gradle-plugin) 経由）
+- [Maestro Test](https://bitrise.io/integrations/steps/maestro-test)
 
-たとえば、UIテストは、ネットワークリクエストがタイムアウトしたり、アニメーションが完了していなかったりすることが原因で、時々失敗することがあります。この場合、ビルド全体を失敗させる代わりに、失敗したテストを最大3回まで再試行するように設定できます。2回目の試行で成功すれば、PRのブロックが解除され、テストレポートでこの特定のテストが不安定だったことを確認できます。
+たとえば、UI テストは、ネットワークリクエストがタイムアウトしたり、アニメーションが完了しなかったりして、まれに失敗することがあります。ビルド全体を失敗させる代わりに、失敗したテストを最大 3 回再試行するように設定できます。2 回目の試行で成功すれば、PR のブロックが解除され、テストレポートでこのテストが不安定であったことを確認できます。
 
-<strong>iOS Device Testing</strong> Stepまたは<strong>Virtual Device Testing for Android</strong> Stepを使用する場合、失敗したテストだけでなく、テストスイート全体が再実行される点に注意してください。
+<strong>iOS Device Testing</strong> Step または <strong>Virtual Device Testing for Android</strong> Step のいずれかを使用する場合は、失敗したテストだけでなく、テストスイート全体が再実行されるので注意してください。
 
 ### 不安定なテスト検出の設定 {#configuring-flaky-test-detection}
 
@@ -256,9 +257,9 @@ CIのホームページにある<strong>Test Quarantine</strong>タブから、�
 
 範囲は狭く設定し、不安定な挙動が発生しているブランチやWorkflowのみを隔離することをお勧めします。将来のクリーンアップのためにコメントを残し、長期間隔離されているテストや修正済みのテストを定期的にレビューする仕組みを設けておくことも役立ちます。
 
-### 隔離済みテスト用の環境変数 {#environment-variable-for-quarantined-tests}
+### 隔離されたテストの Environment Variable {#environment-variable-for-quarantined-tests}
 
-ビルド中、Bitriseは範囲指定された隔離済みテストのリストを$BITRISE_QUARANTINED_TESTS_JSON環境変数に挿入します。対応するStepsはこの変数を読み取り、該当のテストをスキップして自動再試行の対象からも除外します。カスタムのStepsを使用している場合や、テストランナーを直接呼び出している場合は、$BITRISE_QUARANTINED_TESTS_JSONを解析して、テストランナーの引数をそれに応じてフィルタリングしてください。Env Varの値の例を次に示します。
+ビルド中、Bitrise は、隔離されたテストのスコープ付きリストを $BITRISE_QUARANTINED_TESTS_JSON Environment Variable に挿入します。対応している Steps はこの変数を読み取り、該当するテストをスキップして、自動再実行の対象から除外します。カスタム Steps やテストランナーの直接呼び出しを使用する場合は、$BITRISE_QUARANTINED_TESTS_JSON を解析し、それに応じてテストランナーの引数をフィルタリングしてください。Env Var の値の例を次に示します。
 
 ```yaml
 BITRISE_QUARANTINED_TESTS_JSON = "[
@@ -276,15 +277,16 @@ BITRISE_QUARANTINED_TESTS_JSON = "[
 ]"
 ```
 
-:::note[隔離済みテストに対応するSteps]
+:::note[隔離されたテストに対応する Steps]
 
-以下のStepは、指定された範囲内の隔離済みテストを自動的にスキップします。カスタムStepを使用している場合や、テストランナーを直接呼び出している場合は、$BITRISE_QUARANTINED_TESTS_JSONを解析して、テストランナーの引数をそれに応じてフィルタリングしてください。
+次の Step は、指定されたスコープ内の隔離されたテストを自動的にスキップします。カスタム Step やテストランナーの直接呼び出しを使用する場合は、$BITRISE_QUARANTINED_TESTS_JSON を解析し、それに応じてテストランナーの引数をフィルタリングしてください。
 
 - [Xcode Test for iOS](https://bitrise.io/integrations/steps/xcode-test)
 - [Xcode Test Without Building](https://bitrise.io/integrations/steps/xcode-test-without-building)
 - [iOS Device Testing](https://bitrise.io/integrations/steps/virtual-device-testing-for-ios)
 - [Android Unit Test](https://bitrise.io/integrations/steps/android-unit-test)
 - [Virtual Device Testing for Android](https://bitrise.io/integrations/steps/virtual-device-testing-for-android)
+- [Maestro Test](https://bitrise.io/integrations/steps/maestro-test)
 
 :::
 
