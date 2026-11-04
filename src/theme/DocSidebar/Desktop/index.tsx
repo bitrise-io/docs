@@ -49,6 +49,7 @@ const IconArrowNE = () => (
 const HUB_ALIASES: Record<string, string> = {
   'bitrise-rde-api': 'bitrise-rde',
   'release-management-api': 'release-management',
+  'insights-api': 'insights',
 };
 
 function SidebarBottomLinks({path, locale}: {path: string; locale: string}) {
