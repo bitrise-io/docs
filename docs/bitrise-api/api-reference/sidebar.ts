@@ -282,9 +282,21 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "bitrise-api/api-reference/build-log-summary",
+          label: "Get the step summary of a build",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
           id: "bitrise-api/api-reference/build-rebuild",
           label: "Rebuild a build",
           className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "bitrise-api/api-reference/build-test-results",
+          label: "Get the test results of a build",
+          className: "api-method get",
         },
         {
           type: "doc",

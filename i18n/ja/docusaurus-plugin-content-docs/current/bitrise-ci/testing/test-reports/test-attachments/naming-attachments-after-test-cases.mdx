@@ -1,0 +1,233 @@
+---
+title: "テストケース名に合わせた添付ファイルの命名"
+sidebar_position: 2
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Partial_StepVersionsNamingAttachments from '@site/i18n/ja/partials/step-versions-naming-attachments.mdx';
+
+スクリーンショット、録画、ログに、それらを生成したテストケースの名前を付けると、Bitriseは<strong>Tests</strong>タブで該当するテストの下にそれらを表示します。
+
+<Partial_StepVersionsNamingAttachments />
+
+次の作業が必要です。
+
+- [正しいファイル名の構造を使用する](/bitrise-ci/testing/test-reports/test-attachments/naming-attachments-after-test-cases#about-the-filename-structure)。
+- [テストツールを設定して添付ファイルに正しい名前を付ける](/bitrise-ci/testing/test-reports/test-attachments/naming-attachments-after-test-cases#setting-up-your-test-tool)。
+- [Bitrise Stepで添付ファイルをエクスポートする](/bitrise-ci/testing/test-reports/test-attachments/naming-attachments-after-test-cases#exporting-the-attachments)。
+
+## ファイル名の構造について {#about-the-filename-structure}
+
+ファイル名は、次の構造にします。
+
+```text
+<classname>__<name>[__run<k>]__<label>.<ext>
+```
+
+たとえば、`com.example.LoginTest__emptyState__1.png`です。
+
+正しいファイル名にするには、次の点に注意してください。
+
+- JUnit XMLの`<testcase>`要素から`classname`と`name`をコピーし、`" * / : < > ? \ |`のいずれかの文字を`_`に置き換えます。BitriseはJUnit XML内の名前にも同じ置換を適用するため、どちらの表記でも一致します。
+- 必ずカウンターなどのラベルを付けます。ラベルに`__`を含めることはできず、`_`で始めることもできません。
+- 同じテストを複数のデバイスで実行する場合は、ラベルにデバイスを含めます（例: `api34_1`）。含めない場合、同じ名前のファイルはスキップされ、添付ファイルは表示されません。
+- 同じテストケースの後続の実行にファイルを添付するには、ラベルの前に`__run2`、`__run3`などを追加します。
+
+## テストツールの設定 {#setting-up-your-test-tool}
+
+命名の設定は、テスト構成で一度だけ行います。次の例は、一般的なテストツールでの設定方法を示しています。
+
+<Tabs>
+<TabItem value="espresso" label="Espresso" default>
+
+Espressoのチェックが失敗したときにスクリーンショットを撮る`RunListener`を登録します。
+
+```kotlin
+// app/build.gradle.kts
+android {
+    defaultConfig {
+        testInstrumentationRunnerArguments["listener"] = "com.example.testing.BitriseScreenshotListener"
+        testInstrumentationRunnerArguments["useTestStorageService"] = "true"
+    }
+}
+
+dependencies {
+    androidTestUtil("androidx.test.services:test-services:1.6.0")
+}
+```
+
+```kotlin
+// app/src/androidTest/java/com/example/testing/BitriseScreenshotListener.kt
+package com.example.testing
+
+
+private fun clean(value: String) = value.replace(Regex("""["*/:<>?\\|]"""), "_")
+
+class BitriseScreenshotListener : RunListener() {
+    override fun testStarted(test: Description) {
+        val default = DefaultFailureHandler(InstrumentationRegistry.getInstrumentation().targetContext)
+        Espresso.setFailureHandler { error, viewMatcher ->
+            val screen = Resources.getSystem().displayMetrics.run { "${widthPixels}x$heightPixels" }
+            val name = "${clean(test.className)}__${clean(test.methodName)}__api${Build.VERSION.SDK_INT}_${screen}_failure"
+            takeScreenshot().writeToTestStorage(name)
+            default.handle(error, viewMatcher)
+        }
+    }
+}
+```
+
+通常のJUnitアサーションでは、スクリーンショットは撮影されません。
+
+</TabItem>
+<TabItem value="paparazzi" label="Paparazzi">
+
+スナップショットハンドラーを追加する共通関数を通じて、Paparazziのルールを作成します。このハンドラーは、すべてのスナップショットを添付ファイル名でも保存します。
+
+```kotlin
+// src/test/java/com/example/testing/BitrisePaparazzi.kt
+package com.example.testing
+
+
+private fun clean(value: String) = value.replace(Regex("""["*/:<>?\\|]"""), "_")
+
+fun bitrisePaparazzi(deviceConfig: DeviceConfig = DeviceConfig.PIXEL_5) =
+    Paparazzi(deviceConfig = deviceConfig, snapshotHandler = BitriseSnapshotHandler())
+
+class BitriseSnapshotHandler(
+    maxPercentDifference: Double = 0.1,
+    private val delegate: SnapshotHandler =
+        if (System.getProperty("paparazzi.test.verify") == "true") SnapshotVerifier(maxPercentDifference)
+        else HtmlReportWriter(),
+) : SnapshotHandler by delegate {
+    override fun newFrameHandler(snapshot: Snapshot, frameCount: Int, fps: Int): SnapshotHandler.FrameHandler {
+        val frames = delegate.newFrameHandler(snapshot, frameCount, fps)
+        val test = snapshot.testName
+        val label = snapshot.name?.replace(Regex("_+"), "_")?.removePrefix("_") ?: "snapshot"
+        val name = "${clean("${test.packageName}.${test.className}")}__${clean(test.methodName)}__$label"
+        val file = File(System.getProperty("paparazzi.build.dir"), "bitrise-snapshots/${System.getProperty("bitrise.test.task")}/$name.png")
+        return object : SnapshotHandler.FrameHandler by frames {
+            override fun handle(image: BufferedImage) {
+                file.parentFile.mkdirs()
+                ImageIO.write(image, "png", file)
+                frames.handle(image)
+            }
+        }
+    }
+}
+```
+
+テストで、`Paparazzi(...)`を`bitrisePaparazzi(...)`に置き換えます。次に、モジュールの`build.gradle.kts`に次の内容を追加します。最初のブロックは、Android Gradleプラグイン8でハンドラーが`java.awt`を使用できるようにします。2つ目のブロックは、各テストタスクに専用のフォルダーを割り当て、前回の実行のスナップショットを削除し、現在のスナップショットをbuild cacheに保持します。
+
+```kotlin
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
+    if ("UnitTest" in name) compilerOptions.noJdk.set(false)
+}
+
+tasks.withType<Test>().configureEach {
+    val snapshots = layout.buildDirectory.dir("bitrise-snapshots/$name")
+    systemProperty("bitrise.test.task", name)
+    outputs.dir(snapshots)
+    doFirst { snapshots.get().asFile.deleteRecursively() }
+}
+```
+
+この例はPaparazzi 1.3.5向けです。Paparazzi 2.0では、`HtmlReportWriter(maxPercentDifference = maxPercentDifference)`でレポートライターを作成します。
+
+</TabItem>
+<TabItem value="roborazzi" label="Roborazzi">
+
+Roborazziを実行するたびに、Roborazziのスクリーンショットを添付ファイル名でコピーします。
+
+```kotlin
+// app/build.gradle.kts
+val bitriseScreenshots by tasks.registering(Sync::class) {
+    from(layout.buildDirectory.dir("outputs/roborazzi")) { include("*.png") }
+    into(layout.buildDirectory.dir("bitrise-screenshots"))
+    rename("""(.+)\.([^.]+?)(?:_(\d+))?(_actual|_compare)?\.png""", "$1__$2__screenshot$3$4.png")
+}
+tasks.named { it == "finalizeTestRoborazziDebug" }.configureEach { finalizedBy(bitriseScreenshots) }
+```
+
+Roborazziがスクリーンショットを書き出すのは、`recordRoborazziDebug`、`verifyRoborazziDebug`、`compareRoborazziDebug`のいずれかを実行したときだけです。パラメーター化テストには添付ファイルは付きません。
+
+</TabItem>
+<TabItem value="detox" label="Detox">
+
+Detoxの設定で、`artifacts.pathBuilder`をこのファイルに指定します。このファイルは、すべてのスクリーンショット、動画、ログに、jest-junitがデフォルト設定でテストに付ける名前と同じ形式で名前を付けます。
+
+```javascript
+// e2e/bitrisePathBuilder.js
+const path = require('path');
+
+const clean = (value) => value.replace(/["*/:<>?\\|]/g, '_');
+
+module.exports = class BitrisePathBuilder {
+  constructor({ rootDir }) {
+    this.rootDir = rootDir;
+  }
+
+  buildPathForTestArtifact(artifactName, testSummary) {
+    if (!testSummary) return path.join(this.rootDir, artifactName);
+
+    const { title, fullName } = testSummary;
+    const key = clean(`${fullName.slice(0, -title.length).trim()} ${title}`);
+    const ext = path.extname(artifactName);
+    const label = path.basename(artifactName, ext).replace(/_+/g, '_').replace(/^_/, '');
+    return path.join(this.rootDir, `${key}__${key}__${label}${ext}`);
+  }
+};
+```
+
+</TabItem>
+<TabItem value="playwright" label="Playwright">
+
+junitレポーターで`includeProjectInTestName`を有効にし、各テストのスクリーンショットと動画を添付ファイル名でコピーするレポーターを追加します。
+
+```typescript
+// playwright.config.ts
+reporter: [
+  ['junit', { outputFile: 'test-results/junit.xml', includeProjectInTestName: true }],
+  ['./bitrise-reporter.ts'],
+],
+use: { screenshot: 'only-on-failure', video: 'retain-on-failure' },
+```
+
+```typescript
+// bitrise-reporter.ts
+
+const clean = (value: string) => value.replace(/["*/:<>?\\|]/g, '_');
+const supported = /\.(png|jpe?g|mp4|webm|ogg|txt|log)$/i;
+
+export default class BitriseAttachments implements Reporter {
+  onTestEnd(test: TestCase, result: TestResult) {
+    const [, project, file, ...titles] = test.titlePath();
+    const key = `${clean(file)}__${clean((project ? `[${project}] ` : '') + titles.join(' › '))}`;
+    const files = result.attachments.filter((a) => a.path && supported.test(a.path));
+    files.forEach((a, i) => {
+      const label = (result.retry ? `retry${result.retry}_` : '') + (i + 1);
+      const target = path.join('test-attachments', `${key}__${label}${path.extname(a.path!)}`);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.copyFileSync(a.path!, target);
+    });
+  }
+}
+```
+
+</TabItem>
+</Tabs>
+
+## 添付ファイルのエクスポート {#exporting-the-attachments}
+
+<Partial_StepVersionsNamingAttachments />
+
+<strong>Deploy to Bitrise.io</strong> Stepは常に必要です。正しい名前を付けた添付ファイルを、テスト結果と一緒にデプロイします。そのほかに必要なものは、テストを実行するStepによって異なります。
+
+- <strong>公式のBitriseテストSteps</strong>: 追加の設定は不要です。<strong>Deploy to Bitrise.io</strong> Stepが、テスト結果と一緒に添付ファイルをエクスポートします。Stepsの一覧については、[公式のBitriseテストStepsからの結果のデプロイ](/bitrise-ci/testing/test-reports/deploying-test-results#deploying-results-from-the-official-bitrise-testing-steps)を参照してください。
+- <strong>Other Steps</strong>（Scriptやnpm Stepsなど）: テストを実行するStepの後に、<strong>Export test results to Test Reports</strong> Stepを追加します。このStepは添付ファイルを見つけて、<strong>Deploy to Bitrise.io</strong> Stepがデプロイする場所に移動します。<strong>Test result base path</strong>インプットには、テスト結果と添付ファイルの両方を含むフォルダー（たとえば`app/build/`）を設定します。[Export test results to Test Reports Stepの使い方](/bitrise-ci/testing/test-reports/deploying-test-results#using-the-export-test-results-to-test-reports-step)を参照してください。
+
+## 添付ファイルが表示されない場合のトラブルシューティング {#troubleshooting-missing-attachments}
+
+添付ファイルが表示されない場合は、ビルドログを確認してください。
+
+- <strong>Export test results to Test Reports</strong> Stepは、複数のテストまたはファイルに一致する名前、無効な`__run`番号、またはラベルがない名前について警告をログに出力します。そのほかのスキップされたファイルは、詳細ログを有効にした場合にのみ表示されます。<strong>Enable verbose logging?</strong>インプットを`yes`に設定してください。
+- <strong>Deploy to Bitrise.io</strong> Stepは、レポート内のファイルのうち、テストケースにリンクできないものすべてについて警告をログに出力します。

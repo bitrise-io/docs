@@ -17,7 +17,7 @@ The service that receives the token evaluates the token's claims against its OID
 
 Bitrise supports the use of OIDC tokens in two ways:
 
-- To enable your Bitrise builds to authenticate to external systems such as AWS, GCP, Azure, container registries, secret management or artifact stores.
+- To enable your Bitrise builds and Remote Dev Environment sessions to authenticate to external systems such as AWS, GCP, Azure, container registries, secret management or artifact stores.
 - To use foreign OIDC tokens to authenticate to Bitrise and receive short-lived Bitrise tokens.
 
 
@@ -85,6 +85,16 @@ You can find more information about claim fields in the [AWS documentation](http
 | `tag` | The tag which triggered the build |
 | `build_number` | Build number |
 | `workflow` | Name of the triggered workflow |
+
+### Identity tokens for Remote Dev Environments
+
+A Remote Dev Environment session can request an identity token the same way a build can. The token comes from the same issuer with the same signing keys, so a cloud provider that already trusts Bitrise for builds also trusts it for sessions. The subject describes the session instead of the build:
+
+```text
+rde:workspace:WORKSPACE_ID:template:TEMPLATE_ID:session-owner:OWNER_TYPE:OWNER_ID
+```
+
+Because the subject starts with `rde:`, a trust policy written for builds never matches a session, and the other way around. For the full list of claims and how to request a token from a session, see [Cloud authentication with OIDC](/bitrise-rde/configuration/oidc-cloud-authentication).
 
 
 ## Authentication to Bitrise with OIDC

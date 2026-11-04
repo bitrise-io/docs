@@ -2714,6 +2714,69 @@
         }
       }
     },
+    "/apps/{app-slug}/builds/{build-slug}/log/summary": {
+      "get": {
+        "security": [
+          {
+            "PersonalAccessToken": []
+          },
+          {
+            "AddonAuthToken": []
+          }
+        ],
+        "description": "Get the workflows and steps of a build with their status, timing and versions. For failed or aborted steps, `errors` holds why the step failed; for skipped steps, `status_reason` holds why it was skipped. The summary is updated as steps finish, so it can be polled while the build is running.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "builds"
+        ],
+        "summary": "Get the step summary of a build",
+        "operationId": "build-log-summary",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "App slug",
+            "name": "app-slug",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Build slug",
+            "name": "build-slug",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/service.dto.BuildLogSummaryRespModel"
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          },
+          "404": {
+            "description": "Not found - build does not exist, or it has no step summary yet",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          }
+        }
+      }
+    },
     "/apps/{app-slug}/builds/{build-slug}/rebuild": {
       "post": {
         "security": [
@@ -2791,6 +2854,78 @@
           },
           "404": {
             "description": "Not found",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          }
+        }
+      }
+    },
+    "/apps/{app-slug}/builds/{build-slug}/test-results": {
+      "get": {
+        "security": [
+          {
+            "PersonalAccessToken": []
+          }
+        ],
+        "description": "Get the test suites and test cases a finished build reported, with their status, duration and failure message. Requires a plan that includes test reports.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "builds"
+        ],
+        "summary": "Get the test results of a build",
+        "operationId": "build-test-results",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "App slug",
+            "name": "app-slug",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Build slug",
+            "name": "build-slug",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/service.dto.BuildTestResultsRespModel"
+            }
+          },
+          "400": {
+            "description": "Bad request - the build is not finished yet",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          },
+          "401": {
+            "description": "Unauthorized - no valid personal access token or workspace API token",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          },
+          "403": {
+            "description": "Forbidden - the plan of the workspace does not include test reports",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          },
+          "404": {
+            "description": "Not found - build does not exist, or user is not authorized",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          },
+          "502": {
+            "description": "Bad gateway - the test results could not be fetched, try again later",
             "schema": {
               "$ref": "#/definitions/service.ProxyErrorRespModel"
             }
@@ -8761,6 +8896,242 @@
         "$ref": "#/definitions/service.dto.StackInfo"
       }
     },
+    "service.dto.BuildLogSummaryCLIInfo": {
+      "type": "object",
+      "properties": {
+        "bitrise_cli_version": {
+          "type": "string"
+        },
+        "ci_mode": {
+          "type": "boolean"
+        },
+        "debug_mode": {
+          "type": "boolean"
+        },
+        "log_format_version": {
+          "type": "string"
+        },
+        "no_output_timeout_mode": {
+          "type": "boolean"
+        },
+        "pr_mode": {
+          "type": "boolean"
+        },
+        "secret_envs_filtering_mode": {
+          "type": "boolean"
+        },
+        "secret_filtering_mode": {
+          "type": "boolean"
+        }
+      }
+    },
+    "service.dto.BuildLogSummaryContainer": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "type": "string"
+        }
+      }
+    },
+    "service.dto.BuildLogSummaryExecution": {
+      "type": "object",
+      "properties": {
+        "build_environment_setup": {
+          "type": "object",
+          "properties": {
+            "finished_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "started_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "status": {
+              "type": "string"
+            }
+          }
+        },
+        "step_bundles": {
+          "description": "Step bundles, keyed by the `step_bundle_uuid` of their steps",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "with_groups": {
+          "description": "Step groups that run in a container, keyed by the `with_group_uuid` of their steps",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "container": {
+                "$ref": "#/definitions/service.dto.BuildLogSummaryContainer"
+              },
+              "services": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/service.dto.BuildLogSummaryContainer"
+                }
+              }
+            }
+          }
+        },
+        "workflows": {
+          "description": "Workflows in execution order, including before_run and after_run workflows",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/service.dto.BuildLogSummaryWorkflow"
+          }
+        }
+      }
+    },
+    "service.dto.BuildLogSummaryRespModel": {
+      "type": "object",
+      "properties": {
+        "agent_info": {
+          "description": "Information about the build machine",
+          "type": "object",
+          "additionalProperties": true
+        },
+        "cli_info": {
+          "$ref": "#/definitions/service.dto.BuildLogSummaryCLIInfo"
+        },
+        "execution": {
+          "$ref": "#/definitions/service.dto.BuildLogSummaryExecution"
+        },
+        "has_build_environment_setup_logs": {
+          "type": "boolean"
+        },
+        "is_log_archived": {
+          "type": "boolean"
+        }
+      }
+    },
+    "service.dto.BuildLogSummaryStep": {
+      "type": "object",
+      "properties": {
+        "collection": {
+          "type": "string"
+        },
+        "deprecation_notice": {
+          "type": "string"
+        },
+        "errors": {
+          "description": "Why the step failed or was aborted, including the exit code or timeout. Only set for `failed`, `failed_skippable`, `preparation_failed` and `aborted_with_*` steps.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/service.dto.BuildLogSummaryStepError"
+          }
+        },
+        "finished_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "latest_version": {
+          "type": "string"
+        },
+        "release_notes": {
+          "type": "string"
+        },
+        "source_code_url": {
+          "type": "string"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "not_started",
+            "started",
+            "success",
+            "failed",
+            "failed_skippable",
+            "preparation_failed",
+            "skipped",
+            "skipped_with_run_if",
+            "aborted",
+            "aborted_with_custom_timeout",
+            "aborted_with_no_output"
+          ]
+        },
+        "status_reason": {
+          "description": "Why the step was skipped, or why its failure did not fail the build. Only set for `skipped`, `skipped_with_run_if` and `failed_skippable` steps.",
+          "type": "string"
+        },
+        "step_bundle_uuid": {
+          "type": "string"
+        },
+        "step_id": {
+          "type": "string"
+        },
+        "support_url": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "uuid": {
+          "description": "Use it to fetch the log of this step",
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "with_group_uuid": {
+          "type": "string"
+        }
+      }
+    },
+    "service.dto.BuildLogSummaryStepError": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "service.dto.BuildLogSummaryWorkflow": {
+      "type": "object",
+      "properties": {
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/service.dto.BuildLogSummaryStep"
+          }
+        },
+        "uuid": {
+          "type": "string"
+        },
+        "workflow_id": {
+          "type": "string"
+        }
+      }
+    },
+    "service.dto.BuildTestResultsRespModel": {
+      "type": "object",
+      "properties": {
+        "test_suites": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/service.dto.TestSuite"
+          }
+        }
+      }
+    },
     "service.dto.CreatedSecretNoValue": {
       "type": "object",
       "properties": {
@@ -8954,6 +9325,159 @@
       "type": "array",
       "items": {
         "$ref": "#/definitions/service.dto.StepResponse"
+      }
+    },
+    "service.dto.TestAttachment": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        }
+      }
+    },
+    "service.dto.TestCase": {
+      "type": "object",
+      "properties": {
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/service.dto.TestAttachment"
+          }
+        },
+        "class_name": {
+          "type": "string"
+        },
+        "duration_in_ms": {
+          "type": "integer"
+        },
+        "flaky": {
+          "description": "Whether the test case is flaky",
+          "type": "boolean"
+        },
+        "message": {
+          "description": "Failure or error message of the test case",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "properties": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/service.dto.TestProperty"
+          }
+        },
+        "runs": {
+          "description": "Individual runs of the test case when it was retried",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/service.dto.TestRun"
+          }
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "passed",
+            "failed",
+            "skipped",
+            "error"
+          ]
+        },
+        "test_suites": {
+          "description": "Names of the test suites the test case originally belonged to",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "service.dto.TestProperty": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "service.dto.TestRun": {
+      "type": "object",
+      "properties": {
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/service.dto.TestAttachment"
+          }
+        },
+        "duration_in_ms": {
+          "type": "integer"
+        },
+        "message": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "passed",
+            "failed",
+            "skipped",
+            "error"
+          ]
+        }
+      }
+    },
+    "service.dto.TestSuite": {
+      "type": "object",
+      "properties": {
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/service.dto.TestAttachment"
+          }
+        },
+        "duration_in_ms": {
+          "type": "integer"
+        },
+        "error_count": {
+          "type": "integer"
+        },
+        "failure_count": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "properties": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/service.dto.TestProperty"
+          }
+        },
+        "skipped_count": {
+          "type": "integer"
+        },
+        "test_cases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/service.dto.TestCase"
+          }
+        },
+        "test_count": {
+          "type": "integer"
+        },
+        "test_suites": {
+          "description": "Nested test suites",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/service.dto.TestSuite"
+          }
+        }
       }
     },
     "service.dto.ValidateBitriseYMLRespModel": {
