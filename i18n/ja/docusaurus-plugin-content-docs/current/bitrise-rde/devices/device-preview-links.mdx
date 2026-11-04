@@ -23,15 +23,15 @@ import GlossTerm from '@site/src/components/GlossTerm';
 
 ビルドはシミュレーターまたはエミュレーター用のビルドで、匿名の `GET` から絶対 `https` URL で取得できる必要があります。対応する形式については、[Supported platforms](/bitrise-rde/devices/virtual-devices#supported-platforms)を参照してください。署名付きで有効期限のあるダウンロード URL も使用でき、閲覧者には表示されませんが、リンクより長く有効である必要があります。URL の期限が切れた後にリンクを開いた閲覧者のデバイスでは、インストールに失敗します。
 
-## CI Workflow からリンクを作成する {#creating-a-link-from-a-ci-workflow}
+## CI Workflowからリンクを作成する {#creating-a-link-from-a-ci-workflow}
 
-Bitrise Step Library の [<strong>Device Preview</strong> Step](https://bitrise.io/integrations/steps/device-preview) は、次の処理を行います。
+Bitrise Stepライブラリの[<strong>Device Preview</strong> Step](https://bitrise.io/integrations/steps/device-preview)は、次のことを行います。
 
-- Workflow 内で先にビルドしたアプリのリンクを作成します。
-- リンクを `$BITRISE_DEVICE_PREVIEW_URL` としてエクスポートします。
+- Workflowで先にビルドされたアプリのリンクを作成します。
+- それを`$BITRISE_DEVICE_PREVIEW_URL`としてエクスポートします。
 - 必要に応じて、ビルドが属するプルリクエストにコメントとして投稿します。
 
-ビルド自身の API トークンで認証するため、設定は不要です。Workflow Editor の Step Library から Workflow に追加するか、`bitrise.yml` の `device-preview@1` として追加してください。プレビュー中に Step を Git の URL で参照していた場合は、バージョン管理された更新を受け取れるよう、Step Library ID に切り替えてください。
+ビルド自身のAPIトークンで認証するため、設定は不要です。Workflow EditorのStepライブラリからWorkflowに追加するか、`bitrise.yml`の`device-preview@1`として追加します。プレビュー中にStepを Git URLで参照していた場合は、バージョン管理された更新を受け取るために、Stepライブラリ ID に切り替えてください。
 
 <Tabs>
 <TabItem value="ios" label="iOS" default>
@@ -71,15 +71,15 @@ workflows:
 </TabItem>
 </Tabs>
 
-Stepは、`app_path` 入力からプラットフォームを判別します。iOS の場合は `.zip`、Android の場合は上記の例のように `.apk` を指定します。`app_path` は、CI build machine 上のローカルファイルです。[Deploy to Bitrise.io](https://bitrise.io/integrations/steps/deploy-to-bitrise-io) Step が Workflow 内で先にそのファイルをアップロード済みの場合、Device Preview Step はその URL を再利用してプレビューリンクを作成します。そうでない場合は、ファイル自体をアップロードし、そこからリンクを作成します。
+Stepは、`app_path`入力からプラットフォームを検出します。iOS の場合は `.zip`、Androidの場合は `.apk` です(上記の例を参照)。`app_path`は、CI build machine上のローカルファイルです。[Deploy to Bitrise.io](https://bitrise.io/integrations/steps/deploy-to-bitrise-io) StepがそのファイルをWorkflowで先にアップロード済みの場合、Device Preview Stepは URL を再利用してプレビューリンクを作成します。そうでない場合は、ファイル自体をアップロードし、そこからリンクを作成します。
 
-その他の入力は、以下の[リンクオプション](#link-options)に対応しています。`device_model`、`os_version`、`system_image`、`link_ttl_hours`、`auto_terminate_minutes`、`stack`、`machine_type`、および Android のエミュレーターサイズ指定の入力です。`warm_pool_id` を指定すると、リンクを開いたときの処理を [warm pool](#serving-links-from-a-warm-pool)から提供します。すべての入力と出力は、[Step の README](https://github.com/bitrise-steplib/steps-device-preview#readme) に記載されています。
+その他の入力は、後述の[リンクオプション](#link-options)に対応しています。`device_model`、`os_version`、`system_image`、`link_ttl_hours`、`auto_terminate_minutes`、`stack`、`machine_type`、およびAndroidのエミュレーターサイズ入力です。`warm_pool_id`は、リンクの起動を[プール](#serving-links-from-a-pool)から提供します。すべての入力と出力は、[Stepの README](https://github.com/bitrise-steplib/steps-device-preview#readme)に記載されています。
 
-Stepは、後続の Steps 向けに `BITRISE_DEVICE_PREVIEW_URL` と `BITRISE_DEVICE_PREVIEW_EXPIRES_AT` をエクスポートします。URL を Slack に投稿する、チェックに添付する、リリースノートに貼り付けるといった使い方ができます。Step は、リンクを作成できない場合にビルドを失敗させます。プレビューの問題でビルドを止めたくない場合は、`is_skippable: true` を設定してください。
+Stepは、後続のSteps向けに `BITRISE_DEVICE_PREVIEW_URL` と `BITRISE_DEVICE_PREVIEW_EXPIRES_AT` をエクスポートします。URLを Slack に投稿したり、チェックに添付したり、リリースノートに追加したりできます。Stepは、リンクを作成できない場合にビルドを失敗させます。プレビューの問題でビルドを止めたくない場合は、`is_skippable: true` を設定してください。
 
-:::tip[Pull request のシミュレーター向けビルド]
+:::tip[Build for the simulator on pull requests]
 
-デバイス用ビルドのみを生成するプルリクエスト Workflow には、プレビューできるものがありません。Workflow にシミュレーターまたはエミュレーター用のビルドを追加するか、Pipeline で並列に実行し、その出力を Step に渡してください。
+デバイス向けビルドのみを生成するプルリクエストWorkflowでは、プレビューするものがありません。シミュレーターまたはエミュレーターのビルドをWorkflowに追加するか、Pipelineで並列実行し、その出力をStepに渡してください。
 
 :::
 
@@ -141,13 +141,13 @@ curl -X POST "https://api.bitrise.io/rde/v1/workspaces/WORKSPACE_ID/preview-link
 | Auto-terminate | 最後の閲覧者が切断してから、デバイスが起動し続ける時間です。デフォルトは60分で、最短は10分です。 |
 | Stack and machine type | デバイスが実行される場所です。プラットフォームのデフォルトを使う場合は空のままにします。プラットフォームに合わない値は、リンクの発行時に拒否されます。 |
 
-## warm poolからリンクを提供する {#serving-links-from-a-warm-pool}
+## プールからリンクを提供する {#serving-links-from-a-pool}
 
-プールがない場合、リンクを開くたびに新しいセッションが一から開始されます。マシンのプロビジョニング、セッションのセットアップの実行、シミュレーターまたはエミュレーターの起動が行われ、その後ようやくアプリのダウンロードとインストールが始まります。この起動処理が、レビュアーが待つ 1 ~ 3 分のほとんどを占めています。[warm pool](/bitrise-rde/configuration/warm-pools)を使えばこの待ち時間をなくせます。アプリのデバイスを起動するテンプレートのプールに対してリンクを発行すると、リンクを開くたびに、すでにデバイスが起動した状態のプールのウォームセッションが 1 つ割り当てられるため、クリックからアプリが表示されるまでの時間はアプリのダウンロード時間だけになります。その時点でプールにウォームセッションがない場合は、プールの設定から新しいセッションが作成されるため、リンクは引き続き動作しますが、速度は遅くなります。
+プールがない場合、リンクを開くたびに新しいセッションが一から開始されます。マシンのプロビジョニング、セッションのセットアップの実行、シミュレーターまたはエミュレーターの起動が行われ、その後ようやくアプリのダウンロードとインストールが始まります。この起動時間が、レビュアーが待つ 1~3 分のほとんどを占めます。[プール](/bitrise-rde/configuration/warm-pools)を使うと、この待ち時間をなくせます。アプリのデバイスを起動するテンプレートのプールに対してリンクを発行すると、リンクを開くたびにプールのウォームセッションが 1 つ割り当てられます。そのセッションはすでにデバイスが起動した状態で動作しているため、クリックしてからアプリが表示されるまでの時間は、アプリのダウンロード時間だけです。その時点でプールにウォームセッションがない場合は、プールの構成からセッションが作成されるため、リンクは引き続き動作しますが、速度は遅くなります。
 
-プールの設定では、アプリのプラットフォームのデバイスを起動する必要があります。デバイスとマシンはプールによって固定されるため、プールに対してリンクを発行する際は、デバイスモデル、OSバージョン、システムイメージ、エミュレーターのサイズ設定、スタック、マシンタイプを未設定のままにしてください。アプリのプラットフォームは引き続き検証されるため、Androidビルドを iOS プールに対して発行することはできません。
+プールの構成は、アプリのプラットフォームのデバイスを起動するものである必要があります。プールがデバイスとマシンを固定します。プールに対して発行する場合は、デバイスモデル、OSバージョン、システムイメージ、エミュレーターサイズ、スタック、マシンタイプを未設定のままにしてください。アプリのプラットフォームは引き続き確認されるため、Androidビルドを iOS プールに対して発行することはできません。
 
-Device Preview Stepで、`warm_pool_id` にプールの ID を設定します。RDE UIのプールのページ、または `bitrise-cli rde warm-pool view` からコピーできます。
+Device Preview Stepで、`warm_pool_id` にプールの ID を設定します。ID は、RDE UIのプールのページ、または `bitrise-cli rde pool view` からコピーできます。
 
 ```yaml
 workflows:
@@ -164,16 +164,16 @@ workflows:
         - post_pr_comment: "true"
 ```
 
-他のクライアントでも、同じプール参照を指定します。
+他のクライアントも、同じプール参照を受け取ります。
 
-- CLI: `bitrise-cli rde preview-link create --warm-pool POOL --artifact-url URL`。`POOL` にはプールの ID または名前を指定します。
+- CLI: `bitrise-cli rde preview-link create --warm-pool POOL --artifact-url URL`。`POOL` はプールの ID または名前です。
 - AIエージェント(MCP): `bitrise_devenv_create_preview_link` ツールの `warm_pool_id`。
 - API: プレビューリンク作成リクエストの `warm_pool_id`。
 
 プールを使用するリンクでは、次の 2 点が変わります。
 
-- プールを削除するとリンクが無効になり、以降の操作は、期限切れのリンクと同様に失敗します。リンクを機能させたまま、使用していないデバイスの料金を止めたい場合は、代わりにプールのサイズを 0 に設定してください。
-- プールを使用するリンクは、プールのテンプレートから作成されたセッションを開くため、レビュアーのデバイスでは、そのテンプレートのセットアップスクリプトと入力で設定された内容が実行されます。プールがない場合、リンクはアプリのみがインストールされたまっさらなデバイスを開きます。
+- プールを削除すると、リンクは無効になります。以降、リンクを開くと、有効期限が切れたリンクと同じように失敗します。アイドル状態のデバイスへの課金を止めつつリンクを有効なままにするには、代わりにプールのサイズを 0 に設定してください。
+- プールを使用するリンクは、プールのテンプレートから構築されたセッションを開くため、レビュアーのデバイスでは、そのテンプレートのセットアップスクリプトと入力値で設定された内容が実行されます。プールがない場合、リンクはアプリだけがインストールされた素のデバイスを開きます。
 
 ## 受信者に表示される内容 {#what-the-recipient-sees}
 
