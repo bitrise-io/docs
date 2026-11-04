@@ -268,7 +268,11 @@ def system_prompt(preferred):
         "STYLE (house standard, based on the JTF Japanese Standard Style Guide):\n"
         "- Register: polite です・ます調 throughout; phrase instructions as 〜してください / 〜します. "
         "Do not mix in plain だ・である style. Keep honorifics light and neutral (no heavy keigo).\n"
-        "- Orthography: full-width Japanese punctuation (。 、); keep the long-vowel mark on katakana "
+        "- Orthography: full-width Japanese punctuation (。 、); use a full-width colon ： (not :) after "
+        "Japanese text, for example `例：`, and full-width parentheses （ ） (not ( )) around Japanese or "
+        "mixed text; keep ASCII punctuation inside code spans, URLs, `⟦pN⟧` tokens, Markdown link syntax "
+        "`[text](target)` and admonition titles `:::type[Title]`, because those brackets are syntax; keep the "
+        "long-vowel mark on katakana "
         "loanwords (サーバー, not サーバ); half-width numerals; keep embedded English/product terms in "
         "Latin script inside the Japanese sentence.\n"
         "- Voice: clear and instructional; it is natural to omit the subject — do not force 「あなた」.",
