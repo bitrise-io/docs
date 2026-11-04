@@ -44,9 +44,9 @@ GET /v1/workspaces/{workspace_id}/usage
 
 Unlike the other endpoints, this one requires billing visibility: workspace owners and members with a billing-managing custom role can call it. Other members get a `403` response.
 
-## Warm pools
+## Pools
 
-The warm pool endpoints manage pools of pre-booted sessions, and the create session and create preview link requests claim from them with `warm_pool_id`:
+The pool endpoints manage pools of pre-booted sessions, and the create session and create preview link requests claim from them with `warm_pool_id`:
 
 ```text
 GET    /v1/workspaces/{workspace_id}/warm-pools
@@ -56,7 +56,7 @@ PATCH  /v1/workspaces/{workspace_id}/warm-pools/{warm_pool_id}
 DELETE /v1/workspaces/{workspace_id}/warm-pools/{warm_pool_id}
 ```
 
-A pool's `status` reports how many sessions are ready and warming, the warm sessions themselves, and any configuration error. See [Warm pools](/bitrise-rde/configuration/warm-pools).
+A pool's `status` reports how many sessions are ready and warming, how many are in use against the pool's `max_sessions` (`in_use`, `limit_state`, `refused_7d`), the warm sessions themselves, and any configuration error. A claim, restore, or start a full pool can't grant is refused with HTTP `429` and reason `POOL_FULL`; a workspace out of CPUs refuses with `CPU_QUOTA_EXHAUSTED`. See [Pools](/bitrise-rde/configuration/warm-pools).
 
 ## Device sessions
 
