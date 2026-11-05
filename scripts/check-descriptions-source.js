@@ -55,14 +55,18 @@ function isGenerated(file) {
 }
 
 /**
- * Returns why the page has no usable description, or null when it has one.
- * Reads only the leading `---` frontmatter block, and only a top-level
- * `description:` key. Handles inline, quoted, and block (`>` / `|`) values.
+ * Reads the `description` of a page. Returns `{ value }` with the text, or
+ * `{ problem }` with why there is no usable one. Reads only the leading `---`
+ * frontmatter block, and only a top-level `description:` key. Handles inline,
+ * quoted, and block (`>` / `|`) values.
+ *
+ * scripts/strip-mirror-descriptions.js uses `value` too, so the gate and the
+ * strip step agree on what a page's description is.
  */
-function descriptionProblem(source) {
+function parseDescription(source) {
   const lines = source.replace(/\r\n/g, '\n').split('\n');
 
-  if (lines[0].trim() !== '---') return 'has no frontmatter';
+  if (lines[0].trim() !== '---') return { problem: 'has no frontmatter' };
 
   let end = -1;
   for (let i = 1; i < lines.length; i++) {
@@ -71,30 +75,56 @@ function descriptionProblem(source) {
       break;
     }
   }
-  if (end === -1) return 'has an unterminated frontmatter block';
+  if (end === -1) return { problem: 'has an unterminated frontmatter block' };
 
   for (let i = 1; i < end; i++) {
     const match = /^description\s*:\s*(.*)$/.exec(lines[i]);
     if (!match) continue;
 
-    const value = match[1].trim();
-    const blockScalar = /^[>|][+-]?\d*$/.test(value);
+    const inline = match[1].trim();
+    const blockScalar = /^([>|])[+-]?\d*$/.exec(inline);
 
-    if (value !== '' && !blockScalar) {
-      return /^(""|''|~|null)$/.test(value) ? 'has an empty `description`' : null;
+    if (inline !== '' && !blockScalar) {
+      if (/^(""|''|~|null)$/.test(inline)) return { problem: 'has an empty `description`' };
+      return { value: decodeScalar(inline) };
     }
 
     // `description: >` or a bare `description:`: the text is on the indented
     // lines that follow, up to the next top-level key.
+    const body = [];
     for (let j = i + 1; j < end; j++) {
-      if (lines[j].trim() === '') continue;
+      if (lines[j].trim() === '') {
+        body.push('');
+        continue;
+      }
       if (!/^\s/.test(lines[j])) break;
-      return null;
+      body.push(lines[j].trim());
     }
-    return 'has an empty `description`';
+    const text = body.join(blockScalar && blockScalar[1] === '|' ? '\n' : ' ').trim();
+    return text === '' ? { problem: 'has an empty `description`' } : { value: text };
   }
 
-  return 'has no `description`';
+  return { problem: 'has no `description`' };
+}
+
+/** Decodes a YAML inline scalar: double-quoted, single-quoted, or plain. */
+function decodeScalar(raw) {
+  if (raw.startsWith('"') && raw.endsWith('"') && raw.length >= 2) {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return raw.slice(1, -1);
+    }
+  }
+  if (raw.startsWith("'") && raw.endsWith("'") && raw.length >= 2) {
+    return raw.slice(1, -1).replace(/''/g, "'");
+  }
+  return raw;
+}
+
+/** Returns why the page has no usable description, or null when it has one. */
+function descriptionProblem(source) {
+  return parseDescription(source).problem || null;
 }
 
 function main() {
@@ -163,4 +193,8 @@ function main() {
   process.exit(1);
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = { parseDescription, collectFiles, isGenerated, DOCS_DIR };
