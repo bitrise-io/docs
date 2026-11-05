@@ -56,6 +56,23 @@ ROOT_POSITIONS: Dict[str, int] = {
     "tools": 3,
 }
 
+# Frontmatter `description` per page. The source repo's own frontmatter is
+# stripped and the block rebuilt in build_frontmatter(), so a description added
+# by hand to a synced page is overwritten on the next sync; it lives here
+# instead. The social preview card and the .md mirror both read it, and
+# scripts/check-descriptions-source.js fails the build when a page has none, so
+# a newly synced page needs an entry here.
+DESCRIPTIONS: Dict[str, str] = {
+    "install-claude":             "Add the Bitrise MCP server to Claude Code and Claude Desktop with OAuth, or run the local server with a personal access token.",
+    "install-cursor":             "Install the Bitrise MCP server in Cursor from the marketplace or by hand, using OAuth or a personal access token.",
+    "install-gemini-cli":         "Install the Bitrise MCP server in Google Gemini CLI as an extension, as a remote server, or as a local server.",
+    "install-kiro":               "Install the Bitrise MCP server in AWS Kiro as a Kiro Power, authenticating with a Bitrise personal access token.",
+    "install-other-copilot-ides": "Add the Bitrise MCP server to GitHub Copilot in Visual Studio, JetBrains IDEs, Xcode, and Eclipse.",
+    "install-vscode":             "Add the Bitrise MCP server to VS Code with OAuth, or fall back to a personal access token or the local server.",
+    "install-windsurf":           "Add the Bitrise MCP server to Windsurf with OAuth, or fall back to a personal access token or the local server.",
+    "tools":                      "Limit which tools the Bitrise MCP server exposes to your MCP client, and look up every available tool by API group.",
+}
+
 
 def gh_request(url: str) -> bytes:
     token = os.environ.get("GITHUB_TOKEN")
@@ -237,9 +254,14 @@ def fix_list_code_blocks(content: str) -> str:
 def build_frontmatter(stem: str, h1: Optional[str], sidebar_label: str, position: int) -> str:
     title = h1 if h1 else stem.replace("-", " ").capitalize()
     slug  = f"{SLUG_INSTALL}/{stem}" if is_install_file(stem) else f"{SLUG_BASE}/{stem}"
+    description_line = []
+    if stem in DESCRIPTIONS:
+        escaped = DESCRIPTIONS[stem].replace("\\", "\\\\").replace('"', '\\"')
+        description_line = [f'description: "{escaped}"']
     return "\n".join([
         "---",
         f'title: "{title}"',
+        *description_line,
         f'sidebar_label: "{sidebar_label}"',
         f"sidebar_position: {position}",
         f"slug: {slug}",
@@ -263,6 +285,14 @@ def sync():
         position = derive_position(stem, install_stems, root_stems)
         body = rewrite_internal_links(body)
         new_content = build_frontmatter(stem, h1, label, position) + fix_void_html_tags(fix_list_code_blocks(body))
+
+        if stem not in DESCRIPTIONS:
+            print(
+                f"  WARNING    {stem}: no entry in DESCRIPTIONS, so the page has no frontmatter "
+                f"description and scripts/check-descriptions-source.js will fail. "
+                f"Add one to DESCRIPTIONS in this script and run it again.",
+                file=sys.stderr,
+            )
 
         # The synced pages live in this repo as .mdx, not .md — the source
         # repo's own extension. Writing `filename` verbatim would recreate a
