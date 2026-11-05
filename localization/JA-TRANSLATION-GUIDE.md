@@ -23,11 +23,15 @@ These rules are embedded in the translator's system prompt (`translate_docs.py`)
 
 Embedded in the prompt, and mechanically checked afterward:
 - Full-width Japanese punctuation (。 、).
+- Full-width colon ： (not :) after Japanese text, for example `例：`, and full-width parentheses （ ） (not ( )) around Japanese or mixed text. Keep ASCII punctuation inside code spans, URLs, `⟦pN⟧` tokens, Markdown link syntax `[text](target)` and admonition titles `:::type[Title]`, because those brackets are syntax.
 - Keep the long-vowel mark on katakana loanwords (サーバー, not サーバ).
 - Half-width numerals.
 - Embedded English / product terms stay in Latin script inside the Japanese sentence.
 
-The JTF **automated style-checker** (`.github/workflows/ja-style-check.yml` + `.textlintrc.yaml`, textlint + `textlint-rule-preset-jtf-style`) runs on changed JA docs and mechanically enforces the JTF rule set — register, katakana long-vowels, punctuation, spacing. It's a non-blocking CI check for now (see its own file header: `.mdx`/JSX support needs validating on a sample page before it's trusted as a required check).
+The JTF **automated style-checker** (`.textlintrc.yaml`, textlint + `textlint-rule-preset-jtf-style`) runs as the Bitrise workflow `ja-style-check` on changed JA docs and mechanically enforces the JTF rule set — register, katakana long-vowels, punctuation. It lints `.md` copies of the changed pages, because textlint silently skips `.mdx`. It is not a required check. Three rules are switched off in `.textlintrc.yaml`:
+- 3.1.1 (space between full-width and half-width characters): house style is the opposite. The translator keeps a space next to protected terms, `translate_docs.py` restores them, and every existing JA page has them.
+- 4.3.2 (full-width square brackets): it would convert the ASCII brackets of admonition titles `:::type[Title]` and other MDX syntax to full-width and break them.
+- 1.1.3 (full stops at the end of list items): parked for a later pass.
 
 ## 3. What never gets translated  **[LIVE]**
 
@@ -82,7 +86,7 @@ Plan: a `ja-translation-memory.json` storing each English segment → approved J
 
 ## 8. Automated quality gate & propagation  **[PARTIALLY LIVE / ROADMAP]**
 
-- JTF style-checker: **[LIVE]**, see §2 — non-blocking until validated on `.mdx`.
+- JTF style-checker: **[LIVE]**, see §2 — runs on Bitrise, lints `.md` copies, not a required check.
 - A terminology check (every preferred term rendered its one way), a cross-page consistency check (no English segment rendered two ways), a structure check: **[ROADMAP — NOT BUILT]**.
 - Invalidation & propagation: when a preferred rendering is fixed, invalidate every stored segment containing that term so the correction re-translates on every page ("fix once, fix everywhere"). Requires the translation memory (§7) to exist first. **[ROADMAP — NOT BUILT]**.
 
@@ -98,7 +102,7 @@ Plan: a `ja-translation-memory.json` storing each English segment → approved J
 | `ja-preferred-translations.yaml` | terminology consistency map | **LIVE** |
 | `../scripts/add_notranslate_tags.py` | optional: reports what the matcher protects; `--write` places manual `<NT>` escape-hatch tags | **LIVE** (optional) |
 | `../src/components/NT` | the do-not-translate marker component (manual escape hatch only) | **LIVE** |
-| `.github/workflows/ja-style-check.yml` + `.textlintrc.yaml` | JTF style checker (textlint) | **LIVE** (non-blocking) |
+| `.textlintrc.yaml` + Bitrise workflow `ja-style-check` | JTF style checker (textlint) | **LIVE** (Bitrise workflow `ja-style-check`, not required) |
 | translation memory / terminology & consistency CI checks / invalidation | reuse + gates + propagation | **ROADMAP** |
 
 Run today:

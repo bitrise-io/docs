@@ -1,7 +1,8 @@
 # JTF Japanese Standard Style Guide — automated checker config for the JA docs.
 # Uses textlint + textlint-rule-preset-jtf-style (open-source implementation of the
 # JTF standard). Enforces register (です・ます), katakana long-vowels, punctuation,
-# spacing, etc. Some rules auto-fix with `textlint --fix`.
+# etc. Some rules auto-fix with `textlint --fix`. All preset rules are on except
+# the three switched off under `rules:` below, each with its reason.
 #
 # This is the automated stand-in for a native reviewer on STYLE/ORTHOGRAPHY.
 # It does NOT judge meaning — that still needs the one-time human calibration.
@@ -13,4 +14,12 @@
 filters:
   comments: true            # honor <!-- textlint-disable --> in docs
 rules:
-  preset-jtf-style: true
+  preset-jtf-style:
+    # House style is the opposite: the translator deliberately keeps a space next to
+    # protected terms, and translate_docs.py restores them. Every JA page has them.
+    "3.1.1.全角文字と半角文字の間": false
+    # Would convert the ASCII brackets of admonition titles `:::type[Title]` and other
+    # MDX syntax to full-width and break them.
+    "4.3.2.大かっこ［］": false
+    # Full stops at the end of list items: parked for a later pass.
+    "1.1.3.箇条書き": false
