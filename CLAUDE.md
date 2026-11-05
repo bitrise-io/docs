@@ -462,7 +462,7 @@ python3 scripts/sync_mcp_docs.py
 
 This fetches `.md` files from `bitrise-io/bitrise-mcp/docs/` on GitHub and writes them as `.mdx` (with injected frontmatter, link rewriting, and MDX/list rendering fixes) to `docs/bitrise-platform/ai/bitrise-mcp/`. Set `GITHUB_TOKEN` in the environment for authenticated requests (5,000 req/hr vs 60 req/hr unauthenticated).
 
-The script is idempotent. After running, review the diff and commit if the changes look correct. Never manually edit the synced files — edits belong in the source repo.
+The script is idempotent. After running, review the diff and commit if the changes look correct. Never manually edit the synced files — edits belong in the source repo. The one exception is each page's frontmatter `description`: the script rebuilds the frontmatter on every run, so a description lives in the script's `DESCRIPTIONS` dict (keyed by file stem). Add an entry there for a newly synced page.
 
 ---
 
@@ -526,3 +526,5 @@ Run `node scripts/check-links-source.js docs/path/to/edited-page.mdx` to check s
 ## Checking for a missing description before a PR
 
 Whenever you edit or create a page (`.mdx` under `docs/`), check its frontmatter for a `description` field. If it's missing, **warn the user explicitly before opening a PR** — don't silently add a placeholder and don't skip the check. Say which file(s) lack one and ask whether to write one now or proceed without it. This matters beyond SEO: the social preview card (`functions/og.js`) is generated from `title` + `description`, so a page without one falls back to the generic site tagline in link previews instead of describing that page.
+
+CI enforces this: `node scripts/check-descriptions-source.js` fails when a page under `docs/` has no `description`, except the generated `api-reference/` pages. Run it locally before a PR. Write the description fresh rather than pasting the page's first paragraph: `docusaurus-plugin-llms` removes a body paragraph that exactly matches it from the `.md` mirror. When you add one to an English page, add the Japanese translation to the matching page under `i18n/ja/docusaurus-plugin-content-docs/current/` in the same PR.
