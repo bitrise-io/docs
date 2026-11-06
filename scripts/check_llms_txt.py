@@ -64,7 +64,9 @@ def added_page_slugs() -> set[str]:
     """Slugs of docs pages added in this PR, vs. its base branch. Empty
     outside a pull_request run (e.g. the weekly schedule) — there, links are
     checked strictly against production with no "pending deploy" carve-out."""
-    base_ref = os.environ.get('GITHUB_BASE_REF')
+    # GitHub Actions sets GITHUB_BASE_REF on pull_request runs; a Bitrise
+    # pull request build sets BITRISEIO_GIT_BRANCH_DEST instead.
+    base_ref = os.environ.get('GITHUB_BASE_REF') or os.environ.get('BITRISEIO_GIT_BRANCH_DEST')
     if not base_ref:
         return set()
     try:
