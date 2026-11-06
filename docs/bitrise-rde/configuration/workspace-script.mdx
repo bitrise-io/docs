@@ -195,7 +195,7 @@ On a warm pool machine, the workspace script runs before anyone claims the machi
 
 ### Example: a metrics agent
 
-This script installs a metrics agent once, and starts it on every boot. The agent's API key is a protected variable, `METRICS_API_KEY`. The tags come from `rde-agent session info`, and leave out the owner, who can change when a warm pool machine is claimed:
+This script installs a metrics agent once, and starts it on every boot. The agent's API key is a protected variable, `METRICS_API_KEY`. The tags come from `rde-agent session info`: they use IDs rather than names, and leave out the owner, who can change when a warm pool machine is claimed. The values reach the agent through its environment rather than a generated configuration file, so characters in a key or a name can't change what the agent reads:
 
 ```bash
 eval "$(rde-agent session info --format env)"
@@ -205,21 +205,11 @@ if ! command -v my-agent >/dev/null 2>&1; then
   curl -fsSL https://example.com/install-my-agent.sh | sudo bash
 fi
 
-# Write the configuration on every boot, so it's always current.
-mkdir -p ~/.my-agent
-cat > ~/.my-agent/config.yaml <<EOF
-api_key: ${METRICS_API_KEY}
-tags:
-  - rde_session:${RDE_SESSION_ID}
-  - rde_template:${RDE_TEMPLATE_NAME:-none}
-  - rde_warm_pool:${RDE_WARM_POOL_NAME:-none}
-  - os:${RDE_OS}
-EOF
-chmod 600 ~/.my-agent/config.yaml
-
 # Start it in the background, unless it's already running.
 if ! pgrep -x my-agent >/dev/null; then
-  nohup my-agent --config ~/.my-agent/config.yaml >~/my-agent.log 2>&1 &
+  MY_AGENT_API_KEY="$METRICS_API_KEY" \
+  MY_AGENT_TAGS="rde_session:$RDE_SESSION_ID rde_template:${RDE_TEMPLATE_ID:-none} rde_warm_pool:${RDE_WARM_POOL_ID:-none} os:$RDE_OS" \
+    nohup my-agent >~/my-agent.log 2>&1 &
 fi
 ```
 
@@ -243,10 +233,16 @@ Try the script on a session of your own before every session in the workspace ru
 1. Save the script. A test session runs only what's saved, never unsaved edits.
 1. Click **Test on a new session**. The **New session** page opens for a test session. It runs the saved draft even while the script is disabled. A test session is always your own session, and it can't come from a warm pool.
 1. Create the session, then open its logs and read the lines that start with `[workspace]`. See [Reading the script's output](#reading-the-scripts-output).
-1. To try a change, edit and save the script, then boot the same test session again. **Terminate**, then **Restore** works on any session. **Rebuild** works on sessions from templates with lifecycle hooks.
+1. To try a change, edit and save the script, then boot the same test session again. **Terminate**, then **Restore** works on any session and keeps the session's disk. **Rebuild** works only on sessions that run lifecycle hooks, and replaces the machine together with its disk.
 1. When the script works, turn on the **Enabled** switch.
 
 The page of a test session shows a **Runs workspace script draft** badge.
+
+:::warning
+
+A rebuild deletes everything stored only on the session's disk. Push or copy any work you want to keep before you rebuild a test session.
+
+:::
 
 ## Reading the script's output
 
@@ -289,7 +285,7 @@ bitrise-cli rde workspace-script update --script-file workspace-script.sh
 To create a test session that runs the saved draft:
 
 ```bash
-bitrise-cli rde session create script-test --workspace-script-test
+bitrise-cli rde session create script-test --template TEMPLATE_ID --workspace-script-test
 ```
 
 </TabItem>
