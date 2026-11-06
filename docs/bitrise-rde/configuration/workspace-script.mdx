@@ -1,0 +1,340 @@
+---
+title: "Workspace script"
+description: "Run one Bash script at the start of every Remote Dev Environment session boot in a workspace, for example to install a monitoring agent, with its own secret variables, draft testing, and CLI, MCP, and API access."
+sidebar_position: 8
+slug: /bitrise-rde/configuration/workspace-script
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+The workspace script is a single Bash script that every <GlossTerm baseform="rde session">session</GlossTerm> in a <GlossTerm baseform="workspace">workspace</GlossTerm> runs when it boots, whoever creates it and whichever <GlossTerm baseform="rde template">template</GlossTerm> it uses. Use it for setup that the whole workspace needs on every machine, such as a monitoring or security agent, without adding it to every template.
+
+Three rules shape how you write it:
+
+- **It runs before the template's lifecycle hooks or startup script, on every boot.** That's every boot of every session, including after a restore. The one exception is a template's warmup script, which runs once at creation, before the workspace script: see [Writing the script](#writing-the-script).
+- **The template waits for it, for at most 10 minutes.** The lifecycle hooks or startup script start when the script exits, or after 10 minutes, whichever comes first. You can [remove the limit](#how-long-the-template-waits) with one line in the script.
+- **It must be safe to run again.** The script runs on every restore, so make it idempotent. Start long-running processes in the background and let the script exit.
+
+:::important[Available on request]
+
+The workspace script is enabled per workspace. To use it, contact your Bitrise representative or [contact our support team](https://support.bitrise.io/en/articles/11689194-how-to-submit-a-ticket-to-bitrise-support).
+
+:::
+
+## Who can edit the workspace script
+
+The workspace script belongs to the workspace, not to a person. The people who can see the workspace's **Usage** page can see and edit it: workspace owners and members whose role includes **Manage plan and billing**. Other members don't see the page, but their sessions run the script like everyone else's.
+
+To open it, select **Workspace script** under **Workspace Settings** in the left sidebar of the Remote Dev Environments section.
+
+## Setting up the workspace script
+
+1. Under **Workspace Settings**, select **Workspace script**.
+1. Write the script in the **Script** field. See [Writing the script](#writing-the-script).
+1. Optional: click **Add variable** to give the script values it needs, such as an API key. See [Variables](#variables).
+1. Click **Save changes**. A new script is saved as a draft: it's disabled and runs only on test sessions.
+1. Click **Test on a new session** and check the result. See [Testing a draft](#testing-a-draft).
+1. Turn on the **Enabled** switch.
+
+## Which sessions run the script
+
+Once the script is enabled, it runs on every session boot in the workspace:
+
+- Sessions created from a template.
+- Sessions created without a template.
+- Machines of a [warm pool](/bitrise-rde/configuration/warm-pools). The script runs when the pool prepares the machine, not when someone claims it.
+- Device sessions, including the ones a [device preview link](/bitrise-rde/devices/device-preview-links) opens.
+
+The script runs on macOS and Linux alike, on every boot of the machine: when the session is created, after every restore, and after a rebuild. It runs:
+
+- As the session user, from the home directory.
+- In a login shell (`bash -l`), so the user's shell profile is loaded.
+- With the same `sudo` rights that the session user has on Bitrise stacks.
+
+A failing script never fails the session. The session starts as usual, and the log shows the script's exit code.
+
+## Writing the script
+
+Write the script so that it does its setup, starts what has to keep running in the background, and exits:
+
+- **Exit when the setup is done.** The template's setup waits until the script exits.
+- **Start long-running processes in the background.** For example, start a monitoring agent with `nohup my-agent >~/my-agent.log 2>&1 &`, or install it as a service. A process the script starts in the foreground keeps the script running, and the template waits for it.
+- **Make it idempotent.** The script runs again on every restore and rebuild. Check whether a tool is already installed or a process is already running before you install or start it. Installed files survive a restore, running processes don't.
+
+### How long the template waits
+
+The template's lifecycle hooks wait until the workspace script exits, for at most 10 minutes. On a template with warmup and startup scripts, the startup script waits the same way. After 10 minutes, the template's setup starts anyway, and the workspace script keeps running in the background. Bitrise never stops the script. The log notes it with a line starting with:
+
+```text
+[workspace] still running after 10 minutes;
+```
+
+To make the template wait however long the script takes, add this line anywhere in the script, on a line of its own:
+
+```bash
+# rde: no-wait-limit
+```
+
+Spacing and capitalization in the line don't matter.
+
+:::warning[No limit means no limit]
+
+With `# rde: no-wait-limit`, a script that hangs holds up the boot of every session in the workspace. On warm pool machines, the pool's own readiness limit of 130 minutes still applies: a pool machine that isn't ready in time is replaced.
+
+:::
+
+A template with warmup and startup scripts runs its warmup script once, when the session is created, before the workspace script. The warmup script can't rely on anything that the workspace script sets up.
+
+### Environment variables
+
+The script receives these environment variables on every run:
+
+| Variable | Value |
+| --- | --- |
+| `RDE_OS` | `macos` or `linux` |
+| `RDE_SESSION_ID` | The session's ID |
+| `RDE_WORKSPACE_ID` | The workspace's ID |
+
+It also receives its own [variables](#variables). Keys starting with `RDE_` are reserved, so you can't use them for your own variables.
+
+### Variables
+
+Store the values the script needs as variables on the workspace script page, instead of in the script itself. Every variable has a visibility:
+
+| Visibility | What it means |
+| --- | --- |
+| **Plain** | Visible to everyone who can edit the workspace script. |
+| **Secret** | Encrypted at rest and masked. Editors can reveal it. |
+| **Protected** | Encrypted at rest and write-only: you can replace it, but nobody can see it again. To keep the stored value when you save, leave the field blank. |
+
+The values are delivered to the script when it runs, and are never written into the machine's boot script. The script, however, runs on every member's own session as that member, so a value the script receives is readable on that machine. Use credentials scoped to what the script needs: for example, a metrics key that can only submit data.
+
+### Reading session details
+
+Every session machine has the `rde-agent` command. `rde-agent session info` prints the details of the session that it runs on. The script, and any other process on the machine, can call it. Every call looks the details up live, so it always reflects the session's current owner.
+
+```bash
+rde-agent session info                # JSON, the default
+rde-agent session info --format env   # Shell variables
+```
+
+It prints these fields:
+
+| Field | Value |
+| --- | --- |
+| `session_id` | The session's ID. |
+| `session_name` | The session's name. |
+| `workspace_id` | The workspace's ID. |
+| `owner_type` | `user` or `workspace`. |
+| `owner_email` | The owner's email address. Unset when the workspace owns the session. |
+| `owner_username` | The owner's Bitrise username. Unset when the workspace owns the session. |
+| `template_id` | The template's ID. Unset for a session without a template. |
+| `template_name` | The template's name. Unset for a session without a template. |
+| `warm_pool_id` | The ID of the warm pool the machine was prepared for. Unset for other sessions. |
+| `warm_pool_name` | The name of that warm pool. |
+| `os` | `macos` or `linux`. |
+| `machine_type` | The machine type. |
+| `vcpu` | The number of virtual CPUs. |
+| `memory_gb` | The memory, in GB. |
+| `device` | `ios` or `android` for a session with a virtual device. Unset otherwise. |
+| `created_at` | When the session was created. For a session claimed from a warm pool, when it was claimed. |
+| `created_via` | How the session was started for its current owner. See below. |
+| `auto_terminate_at` | When the session terminates automatically. Unset if it doesn't. |
+
+`created_via` is one of:
+
+- `ui`: the RDE UI.
+- `mcp`: the MCP server.
+- `cli`: the Bitrise CLI.
+- `api`: another API client or token.
+- `preview_link`: a device preview link.
+- `system`: a warm pool machine that nobody has claimed yet.
+- `unknown`: a session created before Bitrise recorded this.
+
+The client that starts a session reports `created_via`, so treat it as an observability signal, not as a security control.
+
+The JSON form prints one object, with `null` for every unset field:
+
+```json
+{
+  "session_id": "6f1c2a7e-4b0d-4c51-9a8e-2d3f5e6a7b8c",
+  "session_name": "checkout-fix",
+  "workspace_id": "a1b2c3d4e5f60718",
+  "owner_type": "user",
+  "owner_email": "dev@example.com",
+  "owner_username": "dev",
+  "template_id": "0e9d8c7b-6a5f-4e3d-2c1b-0a9f8e7d6c5b",
+  "template_name": "iOS app",
+  "warm_pool_id": null,
+  "warm_pool_name": null,
+  "os": "macos",
+  "machine_type": "MACHINE_TYPE",
+  "vcpu": 6,
+  "memory_gb": 14,
+  "device": "ios",
+  "created_at": "2026-11-06T09:12:44Z",
+  "created_via": "cli",
+  "auto_terminate_at": "2026-11-06T17:12:44Z"
+}
+```
+
+The env form prints one `RDE_FIELD='value'` line per field, in the same order, from `RDE_SESSION_ID` to `RDE_AUTO_TERMINATE_AT`. Values are shell-quoted, and an unset field is an empty string, so you can load every field into the shell safely:
+
+```bash
+eval "$(rde-agent session info --format env)"
+echo "Owner: ${RDE_OWNER_EMAIL:-unclaimed}"
+```
+
+:::note[Warm pool machines]
+
+On a warm pool machine, the workspace script runs before anyone claims the machine, and it doesn't run again at the claim. Details read once at startup, such as the owner, describe the unclaimed machine. When you need the owner, call `rde-agent session info` at the time you need it.
+
+:::
+
+### Example: a metrics agent
+
+This script installs a metrics agent once, and starts it on every boot. The agent's API key is a protected variable, `METRICS_API_KEY`. The tags come from `rde-agent session info`: they use IDs rather than names, and leave out the owner, who can change when a warm pool machine is claimed. The values reach the agent through its environment rather than a generated configuration file, so characters in a key or a name can't change what the agent reads:
+
+```bash
+eval "$(rde-agent session info --format env)"
+
+# Install once: installed files survive a restore.
+if ! command -v my-agent >/dev/null 2>&1; then
+  curl -fsSL https://example.com/install-my-agent.sh | sudo bash
+fi
+
+# Start it in the background, unless it's already running.
+if ! pgrep -x my-agent >/dev/null; then
+  MY_AGENT_API_KEY="$METRICS_API_KEY" \
+  MY_AGENT_TAGS="rde_session:$RDE_SESSION_ID rde_template:${RDE_TEMPLATE_ID:-none} rde_warm_pool:${RDE_WARM_POOL_ID:-none} os:$RDE_OS" \
+    nohup my-agent >~/my-agent.log 2>&1 &
+fi
+```
+
+For a real agent, such as the Datadog Agent, follow the vendor's installation guide for macOS and Linux, and prefer installing it as a service. Check how the vendor bills: Datadog, for example, bills per host, and every session is a separate host.
+
+## Turning the script on and off
+
+The **Enabled** switch at the top of the page decides which sessions run the script:
+
+- **Enabled:** every session boot in the workspace runs it.
+- **Disabled:** the script stays saved as a draft, and only [test sessions](#testing-a-draft) run it.
+
+The switch applies as soon as you click it, with no need to save. Changes to the script and its variables apply when you click **Save changes**. While you have unsaved changes, the switch is unavailable: save or discard them first.
+
+A change applies from each session's next boot: new sessions run the new version right away, and existing sessions run it when they're restored. Sessions created before the workspace script was available to the workspace don't run it, even after a restore. To give them the script, rebuild them where **Rebuild** is available (sessions that run lifecycle hooks), or replace them with a new session.
+
+## Testing a draft
+
+Try the script on a session of your own before every session in the workspace runs it:
+
+1. Save the script. A test session runs only what's saved, never unsaved edits.
+1. Click **Test on a new session**. The **New session** page opens for a test session. It runs the saved draft even while the script is disabled. A test session is always your own session, and it can't come from a warm pool.
+1. Create the session, then open its logs and read the lines that start with `[workspace]`. See [Reading the script's output](#reading-the-scripts-output).
+1. To try a change, edit and save the script, then boot the same test session again. **Terminate**, then **Restore** works on any session and keeps the session's disk. **Rebuild** works only on sessions that run lifecycle hooks, and replaces the machine together with its disk.
+1. When the script works, turn on the **Enabled** switch.
+
+The page of a test session shows a **Runs workspace script draft** badge.
+
+:::warning
+
+A rebuild deletes everything stored only on the session's disk. Push or copy any work you want to keep before you rebuild a test session.
+
+:::
+
+## Reading the script's output
+
+Every line that the script prints, on standard output and standard error, appears in the session's logs, prefixed with `[workspace] `. When the script exits, the last line shows its exit code, for example `[workspace] exited 0`.
+
+- On a session from a template with lifecycle hooks, the output is in the **System** log.
+- On other sessions, the output is in the **Startup** log.
+
+The same output is also written to `~/.rde/workspace.log` on the machine. The output of each boot is capped at 10 MiB.
+
+## Managing the script from the CLI, an AI agent, or the API
+
+<Tabs>
+<TabItem value="cli" label="CLI" default>
+
+To show the workspace script, its variables, and whether it's enabled:
+
+```bash
+bitrise-cli rde workspace-script view
+bitrise-cli rde workspace-script view --show-secrets
+```
+
+`bitrise-cli rde workspace-script update` changes only what you pass to it:
+
+| Flag | What it does |
+| --- | --- |
+| `--script-file PATH` | Replace the script with the content of a file. Pass `-` to read it from standard input. |
+| `--enable`, `--disable` | Turn the script on or off. |
+| `--set-var KEY=VALUE` | Add or change a plain variable. |
+| `--set-secret KEY=VALUE` | Add or change a secret variable. |
+| `--set-protected KEY=VALUE` | Add or change a protected variable. |
+| `--remove-var KEY` | Remove a variable. |
+
+This makes it easy to keep the script in a git repository and update it from there, for example from CI:
+
+```bash
+bitrise-cli rde workspace-script update --script-file workspace-script.sh
+```
+
+To create a test session that runs the saved draft:
+
+```bash
+bitrise-cli rde session create script-test --template TEMPLATE_ID --workspace-script-test
+```
+
+</TabItem>
+<TabItem value="mcp" label="AI agent (MCP)">
+
+Ask for it in plain language, for example: *"Show the workspace script"* or *"Add a step to the workspace script that installs jq, and test it on a new session."*
+
+- `bitrise_devenv_get_workspace_script` reads the script and its variables.
+- `bitrise_devenv_update_workspace_script` changes only what the agent passes: `script`, `enabled`, `set_variables`, and `remove_variables`.
+- `bitrise_devenv_create` with `workspace_script_test` creates a test session that runs the saved draft.
+
+</TabItem>
+<TabItem value="api" label="API">
+
+```text
+GET /v1/workspaces/{workspace_id}/workspace-script
+PUT /v1/workspaces/{workspace_id}/workspace-script
+```
+
+- `GET` returns the script, whether it's enabled, and its variables. Secret values are masked unless you add `?include_secrets=true`. Protected values are never returned.
+- `PUT` replaces the whole configuration. A variable you leave out is deleted. A protected variable sent with an empty `value` keeps its stored value.
+
+```bash
+curl -X PUT "https://api.bitrise.io/rde/v1/workspaces/WORKSPACE_ID/workspace-script" \
+  -H "Authorization: token YOUR_BITRISE_PAT" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "enabled": true,
+    "script": "echo \"Hello from $RDE_SESSION_ID\"",
+    "variables": [
+      { "key": "METRICS_API_KEY", "value": "", "isSecret": true, "protected": true }
+    ]
+  }'
+```
+
+To create a test session that runs the saved draft, set `workspaceScriptTest` to `true` on the create session request.
+
+</TabItem>
+</Tabs>
+
+The CLI, the MCP server, and the API act as the person whose [personal access token](https://app.bitrise.io/me/account/security) they use, so that person must be able to see the workspace's **Usage** page. A Workspace API token can't read or edit the workspace script.
+
+## Limits
+
+| Limit | Value |
+| --- | --- |
+| Script size | 64 KiB |
+| Number of variables | 64 |
+| Variable key length | 128 characters |
+| Script plus all variable keys and values | 256 KiB |
+| Output kept per boot | 10 MiB |
+| Time the template waits | 10 minutes, unless the script contains `# rde: no-wait-limit` |
