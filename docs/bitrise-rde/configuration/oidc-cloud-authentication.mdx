@@ -15,7 +15,7 @@ Remote Dev Environment sessions use the same Bitrise identity provider as CI bui
 
 Every session machine has the `rde-agent` command preinstalled. Its `id-token` subcommands request a token for the session and hand it to your cloud SDK in the format the SDK expects. There are two parts: you configure the command once per template, and from then on the SDK runs it by itself.
 
-1. Once per template, tell your cloud SDK to run `rde-agent` whenever it needs credentials. Add this setup to the template's warmup script, so that every session created from the template has it:
+1. Once per template, tell your cloud SDK to run `rde-agent` whenever it needs credentials. Add this setup to the template's On create [lifecycle hook](/bitrise-rde/configuration/lifecycle-hooks), so that every session created from the template has it:
 
    - For AWS, set `credential_process` in `~/.aws/config`.
    - For GCP, set an executable `credential_source` in the credential configuration file.
@@ -98,7 +98,7 @@ A trust policy written for CI builds matches subjects starting with `app:`, so i
 
 The AWS CLI and SDKs can get credentials from a program you name in `credential_process`. The program runs whenever credentials are needed, and its output is cached until the expiration it reports. Name `rde-agent id-token aws` there, with the ARN of the role you created for sessions.
 
-1. Add the following to the template's warmup script. It configures the default profile; the file it writes survives restores.
+1. Add the following to the template's On create hook. It configures the default profile; the file it writes survives restores.
 
    ```bash
    aws configure set credential_process "rde-agent id-token aws --role-arn arn:aws:iam::123456789012:role/rde-developers"
@@ -108,7 +108,7 @@ The AWS CLI and SDKs can get credentials from a program you name in `credential_
 
 1. In a session created from the template, the AWS CLI and SDKs authenticate on their own. To check, run `aws sts get-caller-identity`: the CLI runs `rde-agent`, which exchanges the token through `AssumeRoleWithWebIdentity`, and shows the role's identity.
 
-To use a different role per user, store the ARN in a [session input](/bitrise-rde/configuration/templates) exposed as an environment variable, and reference it in the warmup script instead of the literal ARN. To keep your existing default profile, pass `--profile rde` to `aws configure set` and select the profile with `AWS_PROFILE`. The [command reference](#command-reference) lists the other options, such as the credential lifetime and the STS region.
+To use a different role per user, add an On claim [input](/bitrise-rde/configuration/lifecycle-hooks#variables-and-inputs) for the ARN, and run the `aws configure set` command in the On claim hook instead, with the input in place of the literal ARN. Whoever gets the session fills in the input, also when they claim it from a warm pool. To keep your existing default profile, pass `--profile rde` to `aws configure set` and select the profile with `AWS_PROFILE`. The [command reference](#command-reference) lists the other options, such as the credential lifetime and the STS region.
 
 ## Authenticating with GCP
 
@@ -144,7 +144,7 @@ Google client libraries and the gcloud CLI can get the identity token from an ex
    }
    ```
 
-1. Add the following to the template's warmup script, with the content of the edited file. The file contains no secrets, only the pool, provider, and service account to use. It's written to the application default credentials location, where every Google client library looks without further configuration; the last line activates it for the gcloud CLI as well.
+1. Add the following to the template's On create hook, with the content of the edited file. The file contains no secrets, only the pool, provider, and service account to use. It's written to the application default credentials location, where every Google client library looks without further configuration; the last line activates it for the gcloud CLI as well.
 
    ```bash
    mkdir -p "$HOME/.config/gcloud"
@@ -154,13 +154,13 @@ Google client libraries and the gcloud CLI can get the identity token from an ex
    GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES=1 gcloud auth login --cred-file="$HOME/.config/gcloud/application_default_credentials.json"
    ```
 
-1. Add a [template variable](/bitrise-rde/configuration/templates) named `GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES` with the value `1`, exposed as an environment variable. Google's libraries refuse executable-sourced credentials without it, and exposing it makes every terminal and process in the session pick it up.
+1. Add a Shared [variable](/bitrise-rde/configuration/lifecycle-hooks#variables-and-inputs) named `GOOGLE_EXTERNAL_ACCOUNT_ALLOW_EXECUTABLES` with the value `1`, and switch on **Also in terminal**. Google's libraries refuse executable-sourced credentials without it, and **Also in terminal** makes every terminal in the session, and every tool you start from one, pick it up.
 
 1. In a session created from the template, gcloud and the client libraries authenticate on their own. To check, run `gcloud auth print-access-token`: gcloud runs `rde-agent`, exchanges the token, and prints an access token for the service account.
 
 ## Command reference
 
-`rde-agent` is on the `PATH` of every session: in the terminal, in the warmup and startup scripts, and in any process a cloud SDK starts.
+`rde-agent` is on the `PATH` of every session: in the terminal, in lifecycle hooks, and in any process a cloud SDK starts.
 
 The commands that request a token are the subcommands `get`, `aws`, and `gcp` of `rde-agent id-token`. Run `rde-agent id-token SUBCOMMAND --help` on the machine to list a subcommand's options.
 
@@ -223,7 +223,7 @@ rde-agent id-token gcp --audience AUDIENCE
 A session can request a token when:
 
 - It was created from a template.
-- Its machine is up. The machine can still be starting, so warmup and startup scripts can request tokens.
+- Its machine is up. The machine can still be starting, so lifecycle hooks, On create included, can request tokens.
 - It is owned by a Workspace member or by the Workspace. A session in a [warm pool](/bitrise-rde/configuration/warm-pools) qualifies while it waits to be claimed: the Workspace is the session owner in the subject until someone claims the session, then the owner changes to that user.
 
 A session can't request a token when:
