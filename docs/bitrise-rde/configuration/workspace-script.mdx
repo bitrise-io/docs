@@ -13,8 +13,8 @@ The workspace script is a single Bash script that every <GlossTerm baseform="rde
 
 Three rules shape how you write it:
 
-- **It runs first, on every boot.** The script runs before the template's lifecycle hooks or startup script, on every boot of every session, including after a restore.
-- **The template waits for it, for at most 10 minutes.** The template's setup starts when the script exits, or after 10 minutes, whichever comes first. You can [remove the limit](#how-long-the-template-waits) with one line in the script.
+- **It runs before the template's lifecycle hooks or startup script, on every boot.** That's every boot of every session, including after a restore. The one exception is a template's warmup script, which runs once at creation, before the workspace script: see [Writing the script](#writing-the-script).
+- **The template waits for it, for at most 10 minutes.** The lifecycle hooks or startup script start when the script exits, or after 10 minutes, whichever comes first. You can [remove the limit](#how-long-the-template-waits) with one line in the script.
 - **It must be safe to run again.** The script runs on every restore, so make it idempotent. Start long-running processes in the background and let the script exit.
 
 :::important[Available on request]
@@ -224,7 +224,7 @@ The **Enabled** switch at the top of the page decides which sessions run the scr
 
 The switch applies as soon as you click it, with no need to save. Changes to the script and its variables apply when you click **Save changes**. While you have unsaved changes, the switch is unavailable: save or discard them first.
 
-A change applies from each session's next boot: new sessions run the new version right away, and existing sessions run it when they're restored. Sessions created before the workspace script was available to the workspace run it only after a rebuild.
+A change applies from each session's next boot: new sessions run the new version right away, and existing sessions run it when they're restored. Sessions created before the workspace script was available to the workspace don't run it, even after a restore. To give them the script, rebuild them where **Rebuild** is available (sessions that run lifecycle hooks), or replace them with a new session.
 
 ## Testing a draft
 
