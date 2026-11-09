@@ -1,7 +1,7 @@
 ---
 title: "Workspace script"
 description: "Run one Bash script at the start of every Remote Dev Environment session boot in a workspace, for example to install a monitoring agent, with its own secret variables, draft testing, and CLI, MCP, and API access."
-sidebar_position: 8
+sidebar_position: 9
 slug: /bitrise-rde/configuration/workspace-script
 ---
 
@@ -13,8 +13,8 @@ The workspace script is a single Bash script that every <GlossTerm baseform="rde
 
 Three rules shape how you write it:
 
-- **It runs before the template's lifecycle hooks or startup script, on every boot.** That's every boot of every session, including after a restore. The one exception is a template's warmup script, which runs once at creation, before the workspace script: see [Writing the script](#writing-the-script).
-- **The template waits for it, for at most 10 minutes.** The lifecycle hooks or startup script start when the script exits, or after 10 minutes, whichever comes first. You can [remove the limit](#how-long-the-template-waits) with one line in the script.
+- **It runs before the template's lifecycle hooks, on every boot.** That's every boot of every session, including after a restore.
+- **The template waits for it, for at most 10 minutes.** The lifecycle hooks start when the script exits, or after 10 minutes, whichever comes first. You can [remove the limit](#how-long-the-template-waits) with one line in the script.
 - **It must be safe to run again.** The script runs on every restore, so make it idempotent. Start long-running processes in the background and let the script exit.
 
 :::important[Available on request]
@@ -65,7 +65,7 @@ Write the script so that it does its setup, starts what has to keep running in t
 
 ### How long the template waits
 
-The template's lifecycle hooks wait until the workspace script exits, for at most 10 minutes. On a template with warmup and startup scripts, the startup script waits the same way. After 10 minutes, the template's setup starts anyway, and the workspace script keeps running in the background. Bitrise never stops the script. The log notes it with a line starting with:
+The template's lifecycle hooks wait until the workspace script exits, for at most 10 minutes. A template that still has warmup and startup scripts runs them as lifecycle hooks, so they wait the same way. After 10 minutes, the template's setup starts anyway, and the workspace script keeps running in the background. Bitrise never stops the script. The log notes it with a line starting with:
 
 ```text
 [workspace] still running after 10 minutes;
@@ -84,8 +84,6 @@ Spacing and capitalization in the line don't matter.
 With `# rde: no-wait-limit`, a script that hangs holds up the boot of every session in the workspace. On warm pool machines, the pool's own readiness limit of 130 minutes still applies: a pool machine that isn't ready in time is replaced.
 
 :::
-
-A template with warmup and startup scripts runs its warmup script once, when the session is created, before the workspace script. The warmup script can't rely on anything that the workspace script sets up.
 
 ### Environment variables
 
@@ -248,8 +246,8 @@ A rebuild deletes everything stored only on the session's disk. Push or copy any
 
 Every line that the script prints, on standard output and standard error, appears in the session's logs, prefixed with `[workspace] `. When the script exits, the last line shows its exit code, for example `[workspace] exited 0`.
 
-- On a session from a template with lifecycle hooks, the output is in the **System** log.
-- On other sessions, the output is in the **Startup** log.
+- On a session that runs lifecycle hooks, the output is in the **System** log. Every new session runs lifecycle hooks, except one that a device preview link starts without a warm pool.
+- On other sessions, the output is in the **Startup** log: sessions created before lifecycle hooks were available to the workspace, and sessions that a device preview link starts without a warm pool.
 
 The same output is also written to `~/.rde/workspace.log` on the machine. The output of each boot is capped at 10 MiB.
 
