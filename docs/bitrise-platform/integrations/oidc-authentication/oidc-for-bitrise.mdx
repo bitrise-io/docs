@@ -41,7 +41,7 @@ Create an OIDC trust policy to grant external services access to Bitrise resourc
 
    :::
 
-   For example, you can create matching rules for a specific branch of a repository and names a <GlossTerm baseform="workflow">Workflow</GlossTerm>:
+   For example, you can create matching rules for a specific branch of a repository and name a <GlossTerm baseform="workflow">Workflow</GlossTerm>:
 
    ```json
    {
@@ -51,6 +51,8 @@ Create an OIDC trust policy to grant external services access to Bitrise resourc
      "repository": "my-account/my-repo"
    }
    ```
+
+   To match several values or a pattern, see [Writing matching rules](#writing-matching-rules).
 1. On the next page, set up a workspace role for the short-lived token.
 
    The workspace role determines the access level of the token. Read more: [Roles and permissions in workspaces](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces).
@@ -64,6 +66,93 @@ Create an OIDC trust policy to grant external services access to Bitrise resourc
 
      Read more: [Release Management roles and permissions](/release-management/configuring-connected-apps/release-management-roles-and-permissions)
 1. When ready, click **Create policy**.
+
+
+## Writing matching rules
+
+Each rule matches one claim in the token. A token matches the policy only if all rules match.
+
+### Exact value
+
+Matches only this value. This one accepts jobs from `my-org/my-repo` on the `main` branch:
+
+```json
+{ "sub": "repo:my-org/my-repo:ref:refs/heads/main" }
+```
+
+### Any of several values
+
+Matches if the claim equals any value in the list. This one accepts the `main` and `release` branches:
+
+```json
+{
+  "sub": [
+    "repo:my-org/my-repo:ref:refs/heads/main",
+    "repo:my-org/my-repo:ref:refs/heads/release"
+  ]
+}
+```
+
+### Pattern
+
+Matches every value that fits the pattern, where `*` stands for any text. This one accepts every repository in `my-org`, on any branch:
+
+```json
+{ "sub": { "glob": "repo:my-org/*" } }
+```
+
+A pattern needs fixed text before the `*`. A pattern that's only `*` is rejected, because it would match every token.
+
+### Examples by provider
+
+Each provider writes `sub` differently:
+
+| Provider | `sub` format |
+| --- | --- |
+| GitHub Actions | `repo:<owner>/<repo>:ref:<ref>` |
+| GitLab CI | `project_path:<group>/<project>:ref_type:<type>:ref:<branch>` |
+| Bitbucket Pipelines | `{<repositoryUuid>}:{<stepUuid>}` |
+
+#### GitHub
+
+Matches jobs from one repository, on the `main` branch only:
+
+```json
+{ "sub": "repo:my-org@123456/my-repo@456789:ref:refs/heads/main" }
+```
+
+Repositories created after July 15, 2026 include the owner and repository IDs in `sub`. Older repositories use the previous format, without IDs:
+
+```json
+{ "sub": "repo:my-org/my-repo:ref:refs/heads/main" }
+```
+
+If you rename or transfer a repository, its `sub` changes to the new format. Update your policy, or the token exchange fails. To check which format your repository uses, see [Immutable subject claims](https://docs.github.com/en/actions/reference/security/oidc#immutable-subject-claims) in the GitHub documentation.
+
+For all claims, see [OpenID Connect reference](https://docs.github.com/en/actions/reference/security/oidc) in the GitHub documentation.
+
+#### GitLab
+
+Matches jobs from one project, on the `main` branch only:
+
+```json
+{ "sub": "project_path:my-group/my-project:ref_type:branch:ref:main" }
+```
+
+For all claims, see [Token payload](https://docs.gitlab.com/ci/secrets/id_token_authentication/#token-payload) in the GitLab documentation.
+
+#### Bitbucket
+
+Matches jobs from one repository, on the `main` branch only. Bitbucket identifies repositories by UUID, written in braces.
+
+```json
+{
+  "sub": { "glob": "{11111111-2222-3333-4444-555555555555}:*" },
+  "branchName": "main"
+}
+```
+
+For all claims, see [Integrate Pipelines with resource servers using OIDC](https://support.atlassian.com/bitbucket-cloud/docs/integrate-pipelines-with-resource-servers-using-oidc/) in the Bitbucket documentation.
 
 
 ## Crafting a token request
@@ -96,3 +185,18 @@ After you create at least one trust policy on Bitrise, you can create OIDC token
           \"subject_token\": <OIDC_TOKEN>,
           \"policy_id\": <POLICY_ID> }"
    ```
+
+### Response
+
+A successful request returns the short-lived Bitrise token in `access_token`:
+
+```json
+{
+  "access_token": "<BITRISE_WAT_TOKEN>",
+  "token_type": "bearer",
+  "issued_token_type": "urn:ietf:params:oauth:token-type:access_token",
+  "expires_in": 3600
+}
+```
+
+Use the `access_token` value to authenticate your requests to the Bitrise API. The token expires after the session duration set in the policy.
