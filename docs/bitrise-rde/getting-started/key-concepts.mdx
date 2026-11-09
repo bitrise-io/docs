@@ -1,6 +1,6 @@
 ---
 title: "Key concepts"
-description: "Understand the building blocks of Remote Dev Environments: sessions, the session lifecycle, stacks and machine types, templates, and saved inputs."
+description: "Understand the building blocks of Remote Dev Environments: sessions and their states, stacks and machine types, templates, and saved inputs."
 sidebar_position: 3
 slug: /bitrise-rde/getting-started/key-concepts
 ---
@@ -17,7 +17,7 @@ A <GlossTerm baseform="rde session">session</GlossTerm> is a single Remote Dev E
 
 Each session belongs to the <GlossTerm baseform="workspace">workspace</GlossTerm> it was created in and is owned either by the user who created it or, for workspace-owned sessions, by the workspace itself. See [Can several people share one session?](/bitrise-rde/getting-started/rde-faq) in the FAQ. You can connect to it in several ways — see [Connecting to a session](/bitrise-rde/rde-options/connecting-to-a-session).
 
-## Session lifecycle
+## Session states {#session-lifecycle}
 
 A session moves through a few states during its life:
 
@@ -44,7 +44,7 @@ When you create a session you choose two things:
 
 A template can set these for you, or you can pick them directly when creating a session. The available stacks and machine types depend on your workspace.
 
-**Your session stays tied to the stack you choose.** The stack isn't only a starting point - a session keeps a permanent dependency on the stack image it was created from. Your session's disk stores only the changes you make on top of that image, so the session can be started only while that image is still available on Bitrise. You cannot move an existing session to a different stack; to move to a newer stack, create a new session from it. Because stacks are eventually removed on a published schedule, this also determines how long a session can be kept - see [Session lifecycle](#session-lifecycle).
+**Your session stays tied to the stack you choose.** The stack isn't only a starting point - a session keeps a permanent dependency on the stack image it was created from. Your session's disk stores only the changes you make on top of that image, so the session can be started only while that image is still available on Bitrise. You cannot move an existing session to a different stack; to move to a newer stack, create a new session from it. Because stacks are eventually removed on a published schedule, this also determines how long a session can be kept - see [Session states](#session-lifecycle).
 
 ## Virtual devices
 
@@ -55,11 +55,11 @@ A session can also boot an iOS simulator or Android emulator, making it a <Gloss
 A <GlossTerm baseform="rde template">template</GlossTerm> is a reusable session configuration. Instead of choosing a stack, machine type, and setup steps every time, you define them once in a template and create sessions from it. A template can include:
 
 - A stack, a machine type, and a working directory.
-- A **warmup script** that runs once when the session is first created, and a **startup script** that runs on every start.
-- **Template variables** and **session inputs**: values the session needs, which can be exposed as environment variables and marked as secret.
+- **Lifecycle hooks**: setup scripts that run when the session is created (**On create**), when someone gets it (**On claim**), and after every restore (**On restore**).
+- **Variables** and **inputs**: values the hooks need, which can also be made available in the terminal and marked as secret.
 - **Workspace links**: shortcut buttons that open a specific folder in your IDE.
 
-For details, see [Templates](/bitrise-rde/configuration/templates).
+For details, see [Templates](/bitrise-rde/configuration/templates) and [Lifecycle hooks](/bitrise-rde/configuration/lifecycle-hooks).
 
 ## Warm pools
 
