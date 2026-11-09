@@ -13,7 +13,7 @@ The workspace script is a single Bash script that every <GlossTerm baseform="rde
 
 Three rules shape how you write it:
 
-- **It runs before the template's lifecycle hooks, on every boot.** That's every boot of every session, including after a restore.
+- **It runs before the template's [lifecycle hooks](/bitrise-rde/configuration/lifecycle-hooks), on every boot.** That's every boot of every session, including after a restore.
 - **The template waits for it, for at most 10 minutes.** The lifecycle hooks start when the script exits, or after 10 minutes, whichever comes first. You can [remove the limit](#how-long-the-template-waits) with one line in the script.
 - **It must be safe to run again.** The script runs on every restore, so make it idempotent. Start long-running processes in the background and let the script exit.
 
@@ -23,9 +23,12 @@ The workspace script is enabled per workspace. To use it, contact your Bitrise r
 
 :::
 
-## Who can edit the workspace script
+## Workspace script edit rights
 
-The workspace script belongs to the workspace, not to a person. The people who can see the workspace's **Usage** page can see and edit it: workspace owners and members whose role includes **Manage plan and billing**. Other members don't see the page, but their sessions run the script like everyone else's.
+The workspace script belongs to the workspace, not to a person. The people who can see the workspace's **Usage** page can see and edit it: 
+
+- Workspace owners
+- Members whose [workspace role](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces) includes **Manage plan and billing**. Other members don't see the page, but their sessions run the script like everyone else's.
 
 To open it, select **Workspace script** under **Workspace Settings** in the left sidebar of the Remote Dev Environments section.
 
@@ -38,7 +41,7 @@ To open it, select **Workspace script** under **Workspace Settings** in the left
 1. Click **Test on a new session** and check the result. See [Testing a draft](#testing-a-draft).
 1. Turn on the **Enabled** switch.
 
-## Which sessions run the script
+## Sessions that run the script
 
 Once the script is enabled, it runs on every session boot in the workspace:
 
@@ -53,11 +56,11 @@ The script runs on macOS and Linux alike, on every boot of the machine: when the
 - In a login shell (`bash -l`), so the user's shell profile is loaded.
 - With the same `sudo` rights that the session user has on Bitrise stacks.
 
-A failing script never fails the session. The session starts as usual, and the log shows the script's exit code.
+A failing script never fails the session. The session starts as usual, and the log shows the script's exit code. If the machine can't fetch the script, it retries for about 3 minutes, then logs `[workspace] could not fetch the workspace script` and the boot goes on without it.
 
 ## Writing the script
 
-Write the script so that it does its setup, starts what has to keep running in the background, and exits:
+Write the script so that it does its setup, starts what has to keep running in the background, and exits. 
 
 - **Exit when the setup is done.** The template's setup waits until the script exits.
 - **Start long-running processes in the background.** For example, start a monitoring agent with `nohup my-agent >~/my-agent.log 2>&1 &`, or install it as a service. A process the script starts in the foreground keeps the script running, and the template waits for it.
@@ -65,7 +68,7 @@ Write the script so that it does its setup, starts what has to keep running in t
 
 ### How long the template waits
 
-The template's lifecycle hooks wait until the workspace script exits, for at most 10 minutes. A template that still has warmup and startup scripts runs them as lifecycle hooks, so they wait the same way. After 10 minutes, the template's setup starts anyway, and the workspace script keeps running in the background. Bitrise never stops the script. The log notes it with a line starting with:
+The template's lifecycle hooks wait until the workspace script exits, for at most 10 minutes. A template that still has warmup and startup scripts runs them as lifecycle hooks, so they wait the same way. See [Converting a template with warmup and startup scripts](/bitrise-rde/configuration/lifecycle-hooks#converting-a-template-with-warmup-and-startup-scripts). After 10 minutes, the template's setup starts anyway, and the workspace script keeps running in the background. Bitrise never stops the script. The log notes it with a line starting with:
 
 ```text
 [workspace] still running after 10 minutes;
@@ -79,7 +82,7 @@ To make the template wait however long the script takes, add this line anywhere 
 
 Spacing and capitalization in the line don't matter.
 
-:::warning[No limit means no limit]
+:::warning[No limit]
 
 With `# rde: no-wait-limit`, a script that hangs holds up the boot of every session in the workspace. On warm pool machines, the pool's own readiness limit of 130 minutes still applies: a pool machine that isn't ready in time is replaced.
 
@@ -94,6 +97,7 @@ The script receives these environment variables on every run:
 | `RDE_OS` | `macos` or `linux` |
 | `RDE_SESSION_ID` | The session's ID |
 | `RDE_WORKSPACE_ID` | The workspace's ID |
+| `RDE_WORKSPACE_SCRIPT` | The path of the script file on the machine |
 
 It also receives its own [variables](#variables). Keys starting with `RDE_` are reserved, so you can't use them for your own variables.
 
@@ -105,7 +109,7 @@ Store the values the script needs as variables on the workspace script page, ins
 | --- | --- |
 | **Plain** | Visible to everyone who can edit the workspace script. |
 | **Secret** | Encrypted at rest and masked. Editors can reveal it. |
-| **Protected** | Encrypted at rest and write-only: you can replace it, but nobody can see it again. To keep the stored value when you save, leave the field blank. |
+| **Protected** | Encrypted at rest and write-only: you can replace it, but nobody can see it again. On the page, click **Replace** to enter a new value. Otherwise saving keeps the stored one. |
 
 The values are delivered to the script when it runs, and are never written into the machine's boot script. The script, however, runs on every member's own session as that member, so a value the script receives is readable on that machine. Use credentials scoped to what the script needs: for example, a metrics key that can only submit data.
 
@@ -231,7 +235,7 @@ Try the script on a session of your own before every session in the workspace ru
 1. Save the script. A test session runs only what's saved, never unsaved edits.
 1. Click **Test on a new session**. The **New session** page opens for a test session. It runs the saved draft even while the script is disabled. A test session is always your own session, and it can't come from a warm pool.
 1. Create the session, then open its logs and read the lines that start with `[workspace]`. See [Reading the script's output](#reading-the-scripts-output).
-1. To try a change, edit and save the script, then boot the same test session again. **Terminate**, then **Restore** works on any session and keeps the session's disk. **Rebuild** works only on sessions that run lifecycle hooks, and replaces the machine together with its disk.
+1. To try a change, edit and save the script, then boot the same test session again. **Terminate**, then **Restore** works on any session and keeps the session's disk. **Rebuild** works only on sessions that run [lifecycle hooks](/bitrise-rde/configuration/lifecycle-hooks#when-a-hook-fails), and replaces the machine together with its disk.
 1. When the script works, turn on the **Enabled** switch.
 
 The page of a test session shows a **Runs workspace script draft** badge.
@@ -246,7 +250,7 @@ A rebuild deletes everything stored only on the session's disk. Push or copy any
 
 Every line that the script prints, on standard output and standard error, appears in the session's logs, prefixed with `[workspace] `. When the script exits, the last line shows its exit code, for example `[workspace] exited 0`.
 
-- On a session that runs lifecycle hooks, the output is in the **System** log. Every new session runs lifecycle hooks, except one that a device preview link starts without a warm pool.
+- On a session that runs lifecycle hooks, the output is in the **System** log, next to the hooks' own logs. See [Following a session's setup](/bitrise-rde/configuration/lifecycle-hooks#following-a-sessions-setup). Every new session runs lifecycle hooks, except one that a device preview link starts without a warm pool.
 - On other sessions, the output is in the **Startup** log: sessions created before lifecycle hooks were available to the workspace, and sessions that a device preview link starts without a warm pool.
 
 The same output is also written to `~/.rde/workspace.log` on the machine. The output of each boot is capped at 10 MiB.
@@ -278,6 +282,12 @@ This makes it easy to keep the script in a git repository and update it from the
 
 ```bash
 bitrise-cli rde workspace-script update --script-file workspace-script.sh
+```
+
+An inline value ends up in your shell history and in the process arguments. To keep a secret or protected value out of both, pass `KEY=-` and pipe the value in on standard input. Only one value or `--script-file -` can read standard input per call:
+
+```bash
+printf '%s' "$AGENT_TOKEN" | bitrise-cli rde workspace-script update --set-secret AGENT_TOKEN=-
 ```
 
 To create a test session that runs the saved draft:
@@ -333,6 +343,7 @@ The CLI, the MCP server, and the API act as the person whose [personal access to
 | Script size | 64 KiB |
 | Number of variables | 64 |
 | Variable key length | 128 characters |
+| Variable value size | 64 KiB |
 | Script plus all variable keys and values | 256 KiB |
 | Output kept per boot | 10 MiB |
 | Time the template waits | 10 minutes, unless the script contains `# rde: no-wait-limit` |

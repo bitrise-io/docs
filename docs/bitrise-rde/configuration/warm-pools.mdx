@@ -30,7 +30,7 @@ Warm pools are in alpha, as the **Alpha** badge in the RDE UI shows. Pool config
 A warm pool has two parts: a stored session configuration and a pool size. The workspace owns the pool.
 
 - The configuration holds the same fields as a session create request: a <GlossTerm baseform="rde template">template</GlossTerm>, the values of its Shared and **On create** inputs, the enabled feature flags, and optional overrides for stack, machine type, cluster, and virtual device.
-- The pool size is how many sessions the pool keeps booted. Bitrise creates the sessions, runs the template's **On create** hook on them, and keeps them ready. When someone claims one, a replacement boots.
+- The pool size is how many sessions the pool keeps booted. Bitrise creates the sessions, runs the workspace's [workspace script](/bitrise-rde/configuration/workspace-script), if it has one, and then the template's **On create** hook on them, and keeps them ready. When someone claims one, a replacement boots.
 - A pool with size 0 keeps no sessions but still works as a configuration preset. Claiming from it creates a session from the stored configuration.
 
 When you claim a session, you get one of the pool's warm sessions. Bitrise renames it and applies your name, labels, and auto-terminate window. If no session is ready yet, you get one that is still warming up, and it finishes starting as your session. If the pool has no warm session at all, Bitrise creates a session from the pool's configuration instead. Every session records where it came from: a claimed session has the warm state `claimed`, and a session created on demand has the warm state `cold`. The session list in the RDE UI shows these as **Claimed** and **Built cold** badges.

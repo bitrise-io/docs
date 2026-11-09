@@ -41,6 +41,7 @@ GitHub access for hooks depends on the session type. It applies only if the owne
 
 A few rules hold for every session:
 
+- If the workspace has a [workspace script](/bitrise-rde/configuration/workspace-script), it runs first on every boot, before any hook. The first hook waits until it exits, for at most 10 minutes.
 - Hooks run one at a time. **On claim** waits for **On create**, and if **On create** or System setup fails, **On claim** doesn't run.
 - **On create** and **On claim** run once per machine. A restore runs only **On restore**.
 - An added hook runs even if its script is empty. It finishes at once.
@@ -205,7 +206,7 @@ On a warm pool's page, a session that hasn't been claimed yet shows **Warming up
 
 A session is **Running** as soon as its machine is up, which is before **On create** finishes. If a script or an AI agent drives the session, wait for **Ready** instead. `bitrise-cli rde session create --wait` does this for you.
 
-Each hook has its own log, and so does System setup. Logs are kept across restores, so you can still read how **On create** ran after the session has been stopped and restored.
+Each hook has its own log, and so does System setup. The output of the workspace's [workspace script](/bitrise-rde/configuration/workspace-script#reading-the-scripts-output) is in the **System** log. Logs are kept across restores, so you can still read how **On create** ran after the session has been stopped and restored.
 
 ## When a hook fails
 
