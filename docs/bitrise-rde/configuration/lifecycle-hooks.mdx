@@ -11,7 +11,7 @@ import GlossTerm from '@site/src/components/GlossTerm';
 
 <GlossTerm baseform="lifecycle hook">Lifecycle hooks</GlossTerm> are the setup scripts of a <GlossTerm baseform="rde template">template</GlossTerm>. Each hook is a Bash script that runs at one moment in a <GlossTerm baseform="rde session">session's</GlossTerm> life:
 
-| Hook | When it runs | Use it to |
+| Hook | When it runs | Usage |
 | --- | --- | --- |
 | **On create** | Once, when the session is created | Clone a repository, install dependencies, build |
 | **On claim** | When the session is assigned to someone | Set up that person's own tokens and tools |
@@ -31,23 +31,27 @@ Whether you create a session directly or claim it from a warm pool, the hooks ru
 | Assigned to someone | System setup, then On claim, right after On create | System setup, then On claim, when you claim it |
 | Restore | On restore | On restore |
 
-**System setup** is Bitrise's own step, not a hook. It sets up the owner's SSH key and Claude credentials, if they supplied them. If the owner turned on the [GitHub integration](/bitrise-rde/configuration/github-integration), it also signs them in to GitHub, so `git` and `gh` work as them and their commits carry their GitHub identity. System setup runs only when a person gets the session: a workspace-owned session skips it.
+**System setup** is Bitrise's own step, not a hook. It sets up the owner's SSH key and Claude credentials, if they supplied them. For a session claimed from a warm pool, if the owner turned on the [GitHub integration](/bitrise-rde/configuration/github-integration), it also signs them in to GitHub, so `git` and `gh` work as them and their commits carry their GitHub identity. A direct session gets its GitHub sign-in when the machine boots instead. System setup runs only when a person gets the session: a workspace-owned session skips it.
 
-System setup runs before On claim, so On claim can already use the owner's GitHub access. On a direct session, the GitHub integration is set up when the machine boots, so On create can use it too. A session in a warm pool has no owner while On create runs, so On create there needs a token of its own.
+GitHub access for hooks depends on the session type. It applies only if the owner turned on the [GitHub integration](/bitrise-rde/configuration/github-integration):
+
+- **On claim** can use the owner's GitHub access. On a direct session, the integration is set up when the machine boots. On a session claimed from a warm pool, System setup signs the owner in before **On claim** runs.
+- **On create** can use the owner's GitHub access on a direct session only.
+- **On create** in a warm pool needs a token of its own, because the session has no owner while **On create** runs.
 
 A few rules hold for every session:
 
-- Hooks run one at a time. On claim waits for On create, and if On create fails, On claim doesn't run.
-- On create and On claim run once per machine. A restore runs only On restore.
+- Hooks run one at a time. **On claim** waits for **On create**, and if **On create** or System setup fails, **On claim** doesn't run.
+- **On create** and **On claim** run once per machine. A restore runs only **On restore**.
 - An added hook runs even if its script is empty. It finishes at once.
 
-Because On claim also runs right after On create on a direct session, a template written for warm pools works without a pool too.
+Because **On claim** also runs right after **On create** on a direct session, a template written for warm pools works without a pool too.
 
 The template editor shows the same timeline above the hooks. **Created from the template** shows a direct session:
 
 ![The timeline of a session created directly from a template: Session created, On create, Assigned to you, On claim, Ready, Stopped, On restore, Ready again](/img/rde/2026-10-28-rde-lifecycle-explainer-direct.png)
 
-**Claimed from a warm pool** shows a session from a pool. The pool runs On create while the session is still shared, and the rest runs once it's yours:
+**Claimed from a warm pool** shows a session from a pool. The pool runs **On create** while the session is still shared, and the rest runs once it's yours:
 
 ![The timeline of a session claimed from a warm pool: the pool boots a machine and runs On create, then the session waits until you claim it and On claim runs](/img/rde/2026-10-28-rde-lifecycle-explainer-pool.png)
 
@@ -68,13 +72,13 @@ A background process keeps the environment it started with, including secrets. I
 env -u REPO_TOKEN nohup npm run dev > ~/dev-server.log 2>&1 &
 ```
 
-This matters most in a warm pool: whoever claims the session can read the environment of a process that On create left running.
+This matters most in a warm pool: whoever claims the session can read the environment of a process that **On create** left running.
 
 Keep these in mind:
 
-- **Nobody can connect while On create runs.** The terminal, SSH, remote access, and file transfers open when On create finishes. You can read its log in the meantime.
-- **A stop keeps the disk, not the processes.** Cloned repositories and installed tools survive a restore. Running services, simulators, and files in `/tmp` don't, so restart them in On restore.
-- **Hooks don't wait for a virtual device.** On a [device session](/bitrise-rde/devices/device-sessions), the simulator or emulator boots alongside the hooks, so it may not be ready yet when On create or On restore runs. A script or AI agent that uses the device waits for both the setup and the device to be ready. `bitrise-cli rde session create --wait` does this for you.
+- **Nobody can connect while On create runs.** The terminal, SSH, remote access, and file transfers open when **On create** finishes. You can read its log in the meantime. If **On create** is still running after 2 hours, Bitrise ends it and marks it failed with exit code 124, so start long-running work in the background.
+- **A stop keeps the disk, not the processes.** Cloned repositories and installed tools survive a restore. Running services, simulators, and files in `/tmp` don't, so restart them in **On restore**.
+- **Hooks don't wait for a virtual device.** On a [device session](/bitrise-rde/devices/device-sessions), the simulator or emulator boots alongside the hooks, so it may not be ready yet when **On create** or **On restore** runs. A script or AI agent that uses the device waits for both the setup and the device to be ready. `bitrise-cli rde session create --wait` does this for you.
 
 ## Variables and inputs
 
@@ -97,9 +101,9 @@ A hook receives the Shared values plus the values of its own scope. If a hook's 
 Who fills in the inputs depends on how the session starts:
 
 - **A direct session:** whoever creates it fills in every input, in every scope.
-- **A warm pool:** the Shared and On create inputs are set once, on the pool. Whoever claims a session fills in the On claim and On restore inputs, typed in or from their saved inputs.
+- **A warm pool:** the Shared and **On create** inputs are set once, on the pool. Whoever claims a session fills in the **On claim** and **On restore** inputs, typed in or from their saved inputs. A session kept as a shared (Org-owned) session accepts typed plain values only.
 
-Nobody is asked for anything at restore: On restore inputs are filled in up front.
+Nobody is asked for anything at restore: **On restore** inputs are filled in up front.
 
 ### Secret and protected variables
 
@@ -117,28 +121,28 @@ Hooks always receive their values. Switch on **Also in terminal** to also write 
 
 ### Values in a warm pool
 
-On claim and On restore receive the Shared values, so whoever claims a session from a pool gets the Shared values too. Keep a value that only the pool should use, like a token to clone the repository, in On create instead.
+**On claim** and **On restore** receive the Shared values, so whoever claims a session from a pool gets the Shared values too. Keep a value that only the pool should use, like a token to clone the repository, in **On create** instead.
 
-The page of a claimed session doesn't show the values of its On create inputs: it lists them as set on the pool. But a Shared or On create value with **Also in terminal** switched on stays in the machine's shell profile, where the claimer can read it.
+The page of a claimed session doesn't show the values of its **On create** inputs: it lists them as set on the pool. But a Shared or **On create** value with **Also in terminal** switched on stays in the machine's shell profile, where the claimer can read it.
 
 ## Using hooks with a warm pool
 
-A warm pool runs only On create. A warm session is ready to claim once On create succeeds, and everything else runs after the claim. To get the most out of a pool:
+A warm pool runs only **On create**. A warm session is ready to claim once **On create** succeeds, and everything else runs after the claim. To get the most out of a pool:
 
-- Put the slow setup in On create: cloning, installing, building.
-- Give On create shared credentials, like a read-only bot token. [Saved inputs](/bitrise-rde/configuration/saved-inputs) are personal, so a pool can't use them.
-- Put personal setup in On claim, with On claim inputs that whoever claims fills in.
-- Don't ask for a GitHub token in On claim. If whoever claims has the [GitHub integration](/bitrise-rde/configuration/github-integration) turned on, System setup signs them in to GitHub before On claim runs.
+- Put the slow setup in **On create**: cloning, installing, building.
+- Give **On create** shared credentials, like a read-only bot token. [Saved inputs](/bitrise-rde/configuration/saved-inputs) are personal, so a pool can't use them.
+- Put personal setup in **On claim**, with **On claim** inputs that whoever claims fills in.
+- Don't ask for a GitHub token in **On claim**. If whoever claims has the [GitHub integration](/bitrise-rde/configuration/github-integration) turned on, System setup signs them in to GitHub before **On claim** runs.
 
-A template without On create gives the pool nothing to prepare, so its sessions are ready to claim as soon as they boot. The pool form warns you when the template has no On create, and notes when it has no On claim. Both messages link to the template editor.
+A template without **On create** gives the pool nothing to prepare, so its sessions are ready to claim as soon as they boot. The pool form warns you when the template has no **On create**, and notes when it has no **On claim**. Both messages link to the template editor.
 
-To serve [device preview links](/bitrise-rde/devices/device-preview-links) from a pool, the template can't have required On claim or On restore inputs, because nobody is there to fill them in. Give those inputs a default value instead.
+To serve [device preview links](/bitrise-rde/devices/device-preview-links) from a pool, the template can't have required **On claim** or **On restore** inputs, because nobody is there to fill them in. Give those inputs a default value instead.
 
 ## Example: an iOS app template
 
 This template prepares an iOS app repository. It works for direct sessions and for a warm pool alike.
 
-**On create** clones the repository with a read-only bot token and installs the dependencies. The token is a secret On create input, so it never reaches On claim, On restore, or whoever claims the session:
+**On create** clones the repository with a read-only bot token and installs the dependencies. The token is a secret **On create** input, so it never reaches **On claim**, **On restore**, or whoever claims the session:
 
 ```bash
 git clone "https://x-access-token:${REPO_TOKEN}@github.com/example-org/example-app.git" ~/example-app
@@ -149,7 +153,7 @@ bundle install
 bundle exec pod install
 ```
 
-**On claim** sets the Git identity of whoever gets the session, from the On claim inputs `GIT_NAME` and `GIT_EMAIL`:
+**On claim** sets the Git identity of whoever gets the session, from the **On claim** inputs `GIT_NAME` and `GIT_EMAIL`:
 
 ```bash
 cd ~/example-app
@@ -197,18 +201,19 @@ The card's label tells you what the session is doing:
 | **Personalization failed** | System setup or On claim failed. |
 | **Restore script failed** | On restore failed. |
 
-On a warm pool's page, a session that hasn't been claimed yet shows **Warming up** while On create runs, and **Ready to claim** when it's done.
+On a warm pool's page, a session that hasn't been claimed yet shows **Warming up** while **On create** runs, and **Ready to claim** when it's done.
 
-A session is **Running** as soon as its machine is up, which is before On create finishes. If a script or an AI agent drives the session, wait for **Ready** instead. `bitrise-cli rde session create --wait` does this for you.
+A session is **Running** as soon as its machine is up, which is before **On create** finishes. If a script or an AI agent drives the session, wait for **Ready** instead. `bitrise-cli rde session create --wait` does this for you.
 
-Each hook has its own log, and so does System setup. Logs are kept across restores, so you can still read how On create ran after the session has been stopped and restored.
+Each hook has its own log, and so does System setup. Logs are kept across restores, so you can still read how **On create** ran after the session has been stopped and restored.
 
 ## When a hook fails
 
 A failed hook doesn't break the session. It stays usable, and its log shows what went wrong. Bitrise stops any process the failed hook left running.
 
-- **On claim or On restore failed:** click **Run On claim again** or **Run On restore again** on the **Lifecycle** card. The hook runs again on the same machine, and everything on the machine stays as it is. If System setup failed, click **Retry system setup**.
-- **On create failed:** click **Rebuild**. Rebuild discards the machine and its disk, and boots a fresh one for the same session. On create runs again from the start, followed by System setup and On claim. On create can't run again on the same machine.
+- **On claim or On restore failed:** click **Run On claim again** or **Run On restore again** on the **Lifecycle** card. The hook runs again on the same machine, and everything on the machine stays as it is.
+- **System setup failed:** click **Retry system setup**. On claim was skipped behind it, so when System setup succeeds, click **Run On claim** to finish the setup.
+- **On create failed:** click **Rebuild**. Rebuild discards the machine and its disk, and boots a fresh one for the same session. **On create** runs again from the start, followed by System setup and **On claim**. **On create** can't run again on the same machine.
 
 ![The Lifecycle card of a session where On claim failed, with the Run On claim again button](/img/rde/2026-10-28-rde-lifecycle-session-card-failed.png)
 
@@ -220,11 +225,11 @@ Running a hook again and **Rebuild** both repeat the script the session was crea
 
 ### When On create fails in a warm pool
 
-If On create fails, the pool replaces the machine and tries again. After three failures in a row, the pool shows **Setup failed** and stops warming:
+If **On create** fails, the pool replaces the machine and tries again. After three failures in a row, the pool shows **Setup failed** and stops warming:
 
 - Nobody can claim from the pool until you fix it.
 - The pool keeps the last failed machine as a session you can open, read the log of, and connect to. It stops automatically after four hours.
-- Once you fix the cause, click **Retry** on the pool's page. Retry deletes the failed machine and the pool starts warming again. Editing the template or the pool also starts it again.
+- Once you fix the cause, click **Retry** on the pool's page. Retry deletes the failed machine and the pool starts warming again. Changing the template or the pool's configuration also starts it again.
 
 ## Converting a template with warmup and startup scripts
 
@@ -237,7 +242,7 @@ New templates always use lifecycle hooks. Templates created before lifecycle hoo
 To edit such a template with hooks, convert it:
 
 1. Open the template and click **Edit template**.
-1. In the **Scripts** section, click **Convert to lifecycle hooks**. The editor shows the hooks that the template runs today.
+1. In the **Scripts** section, click **Convert to lifecycle hooks**. The editor shows the hooks that the template runs today. If the warmup or startup script has unsaved changes, save them first: the button stays disabled until you do.
 1. Review the hooks, move values to a hook's scope if only that hook needs them, and click **Save changes**.
 
 ![The Scripts section of a template with warmup and startup scripts, with the Convert to lifecycle hooks button](/img/rde/2026-10-28-rde-lifecycle-convert.png)
@@ -287,7 +292,7 @@ To follow and fix a session's setup:
 | `bitrise-cli rde session rebuild SESSION_ID` | Discard the machine and run the setup again from On create. |
 | `bitrise-cli rde warm-pool retry WARM_POOL_ID` | Start a pool warming again after On create failed three times in a row. |
 
-When you claim from a warm pool, `--input` sets the On claim and On restore inputs:
+When you claim from a warm pool, `--input` sets the **On claim** and **On restore** inputs:
 
 ```bash
 bitrise-cli rde session create my-fix --warm-pool ios-app --input GIT_EMAIL=you@example.com
@@ -298,7 +303,7 @@ bitrise-cli rde session create my-fix --warm-pool ios-app --input GIT_EMAIL=you@
 
 Ask for it in plain language, for example: *"Create a template that clones example-org/example-app on create and restarts the mock server on restore."* The agent passes the hooks to `bitrise_devenv_create_template` or `bitrise_devenv_update_template`.
 
-The agent waits for the session's setup to be ready before it runs commands. After a failure, it reads the hook's log with `bitrise_devenv_get_logs` to find out why. Then it calls `bitrise_devenv_run_hook` to run the hook again, or `bitrise_devenv_rebuild` when On create failed. For a warm pool that stopped after failed setups, it calls `bitrise_devenv_retry_warm_pool`.
+The agent waits for the session's setup to be ready before it runs commands. After a failure, it reads the hook's log with `bitrise_devenv_get_logs` to find out why. Then it calls `bitrise_devenv_run_hook` to run the hook again, or `bitrise_devenv_rebuild` when **On create** failed. For a warm pool that stopped after failed setups, it calls `bitrise_devenv_retry_warm_pool`.
 
 </TabItem>
 <TabItem value="api" label="API">
