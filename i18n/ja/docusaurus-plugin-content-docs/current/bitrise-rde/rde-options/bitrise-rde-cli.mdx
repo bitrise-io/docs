@@ -44,27 +44,29 @@ bitrise-cli config set default_workspace_id WORKSPACE_ID
 
 ## セッションの管理 {#managing-sessions}
 
-`bitrise-cli rde session` コマンドは、セッションのライフサイクル全体をカバーします。`SESSION_ID` を受け取るコマンドは、名前が一意であれば、セッションの名前も指定できます。
+`bitrise-cli rde session`コマンドを使うと、セッションの作成から削除までを管理できます。`SESSION_ID`を受け取るコマンドは、名前が一意であれば、セッションの名前も指定できます。
 
-| コマンド | 内容 |
+| コマンド | 機能 |
 | --- | --- |
-| `bitrise-cli rde session create NAME` | `--template` からセッションを作成します。`--stack` と `--machine-type` を指定すれば、テンプレートなしでも作成できます。`--device-platform ios` または `android` を追加すると、仮想デバイスを一緒に起動します。`--wait` を追加すると、セッションとそのデバイスの準備が整うまで待機します。 |
-| `bitrise-cli rde session list` | セッションとそのステータスを一覧表示します。 |
-| `bitrise-cli rde session view SESSION_ID` | 接続用の認証情報を含め、セッションの詳細を表示します。 |
+| `bitrise-cli rde session create NAME` | `--template`からセッションを作成します。テンプレートなしで作成するには、`--stack`と`--machine-type`を指定します。`--device-platform ios`または`android`を追加すると、仮想デバイスも一緒に起動します。`--wait`を追加すると、セッション、そのセットアップ、デバイスの準備が完了するまで待機します。 |
+| `bitrise-cli rde session list` | 自分のセッションとそのステータスを一覧表示します。 |
+| `bitrise-cli rde session view SESSION_ID` | 接続用の認証情報を含む、セッションの詳細を表示します。 |
 | `bitrise-cli rde session update SESSION_ID` | セッションの名前や説明を変更したり、自動終了タイマーを調整したりします。 |
-| `bitrise-cli rde session exec SESSION_ID -- COMMAND` | SSH 経由でセッション内のコマンドを実行します。[セッション内でのコマンド実行](#running-commands-in-a-session)を参照してください。 |
+| `bitrise-cli rde session exec SESSION_ID -- COMMAND` | SSHを介して、セッションでコマンドを実行します。[セッションでのコマンドの実行](#running-commands-in-a-session)を参照してください。 |
 | `bitrise-cli rde session upload SESSION_ID LOCAL_PATH REMOTE_FOLDER` | ファイルまたはフォルダーをセッションにアップロードします。 |
 | `bitrise-cli rde session download SESSION_ID REMOTE_PATH LOCAL_PATH` | セッションからファイルまたはフォルダーをダウンロードします。 |
-| `bitrise-cli rde session ssh SESSION_ID` | セッションの SSH コマンドとパスワードを表示します。`scp` や、デバイスセッションのポートのトンネリングに使用します。 |
-| `bitrise-cli rde session vnc SESSION_ID` | セッションの VNC 接続の詳細を表示するか、`--forward` でローカルポートにトンネリングします (macOS のみ)。 |
-| `bitrise-cli rde session open-vnc SESSION_ID` | セッションのデスクトップをデフォルトの VNC ビューアーで開きます (macOS のみ)。 |
-| `bitrise-cli rde session logs SESSION_ID --stage startup` | セッションのウォームアップスクリプトまたは起動スクリプトのログを表示します。`--follow` を追加すると、リアルタイムでストリーミングします。 |
-| `bitrise-cli rde session notifications SESSION_ID` | エージェントの停止や権限プロンプトなど、セッションが発行したイベントを一覧表示します。 |
-| `bitrise-cli rde session diff SESSION_ID` | セッションの作成以降にテンプレートがどう変更されたかを表示します。 |
-| `bitrise-cli rde session terminate SESSION_ID` | マシンを停止し、セッションは後で使うために保持します。 |
-| `bitrise-cli rde session restore SESSION_ID` | 終了したセッションを永続ディスクから再起動します。`--wait` を追加すると、実行状態になるまで待機します。 |
+| `bitrise-cli rde session ssh SESSION_ID` | セッションのSSHコマンドとパスワードを出力します。`scp`用、またはデバイスセッションのポートをトンネリングする際に使用します。 |
+| `bitrise-cli rde session vnc SESSION_ID` | セッションのVNC接続の詳細を出力します。`--forward`を使うと、ローカルポートにトンネリングします（macOSのみ）。 |
+| `bitrise-cli rde session open-vnc SESSION_ID` | セッションのデスクトップを、デフォルトのVNCビューアーで開きます（macOSのみ）。 |
+| `bitrise-cli rde session logs SESSION_ID --stage on-create` | セッションのセットアップのログを出力します。[ライフサイクルフック](/bitrise-rde/configuration/lifecycle-hooks)には`on-create`、`on-claim`、`on-restore`、`personalize`、ウォームアップスクリプトと起動スクリプトを持つテンプレートには`warmup`または`startup`を使用します。`--follow`を追加するとリアルタイムでストリーミングし、`--attempt 2`を追加するとフックの2回目の実行のみを表示します。 |
+| `bitrise-cli rde session run-hook SESSION_ID --hook on_claim` | 失敗した On claim、On restore、またはSystem setup（`personalize`）を、同じマシンで再実行します。 |
+| `bitrise-cli rde session rebuild SESSION_ID` | セッションのマシンを入れ替え、On create からセットアップを再実行します。 |
+| `bitrise-cli rde session notifications SESSION_ID` | エージェントの停止や権限のプロンプトなど、セッションが発行したイベントを一覧表示します。 |
+| `bitrise-cli rde session diff SESSION_ID` | セッションの作成後に、そのテンプレートがどのように変更されたかを表示します。 |
+| `bitrise-cli rde session terminate SESSION_ID` | マシンを停止し、セッションは後のために保持します。 |
+| `bitrise-cli rde session restore SESSION_ID` | 終了したセッションを、永続ディスクから再起動します。`--wait`を追加すると、実行中になるまで待機します。 |
 | `bitrise-cli rde session delete SESSION_ID` | 終了したセッションを完全に削除します。 |
-| `bitrise-cli rde session delete-terminated` | workspace 内の終了済みセッションをすべて完全に削除します。 |
+| `bitrise-cli rde session delete-terminated` | workspace内の、終了したすべてのセッションを完全に削除します。 |
 
 ## セッション内でのコマンド実行 {#running-commands-in-a-session}
 
@@ -85,7 +87,7 @@ bitrise-cli rde session exec SESSION_ID --shell -- 'cd my-app && xcodebuild | xc
 よく使うフラグは次のとおりです。
 
 - `--timeout`: リモートコマンドは、デフォルトで 10 分後に停止されます。長時間のビルド (`--timeout 30m`) では上限を引き上げるか、`--timeout 0` で無効にします。
-- `--env`: ローカルの環境変数をリモートコマンドに転送する (`--env NPM_TOKEN`) か、リテラル値を設定します (`--env CI=1`)。転送された値はローカルには表示されませんが、コマンドの実行中はセッションのプロセス一覧で確認できます。
+- `--env`: ローカルの環境変数をリモートコマンドに転送するか（`--env NPM_TOKEN`）、リテラル値を設定します（`--env CI=1`）。転送された値はローカルには表示されませんが、コマンドの実行中はセッションのプロセス一覧で確認できます。
 - `--output json`: 終了コード、stdout、stderr を含む単一の JSON オブジェクトを出力します。スクリプトやエージェントから簡単に解析できます。
 
 転送する environment variables のリストをチームと共有するには、リポジトリ内の `.bitrise/rde.yml` に追加します。
@@ -120,20 +122,21 @@ CLI は、[仮想デバイス](/bitrise-rde/devices/virtual-devices)を使う両
 - `bitrise-cli rde device-guide [ios|android]`: デバイスの待機、接続、操作に関するガイドを表示します。
 - `bitrise-cli rde preview-link create --device-platform ios|android --artifact-url URL`: [デバイスプレビューリンク](/bitrise-rde/devices/device-preview-links)を発行します。
 
-## プール {#pools}
+## プール
 
-`bitrise-cli rde pool`は[プール](/bitrise-rde/configuration/pools)を管理します。セッションコマンドとプレビューリンクコマンドは、プールから取得します。`POOL_ID`を受け取るコマンドは、プールの名前も指定できます。
+`bitrise-cli rde warm-pool`は[プール](/bitrise-rde/configuration/pools)を管理し、セッションコマンドとプレビューリンクコマンドは、そこから割り当てを行います。`WARM_POOL_ID`を受け取るコマンドは、プールの名前も指定できます。
 
-| コマンド | 内容 |
+| コマンド | 機能 |
 | --- | --- |
-| `bitrise-cli rde pool create NAME --template TEMPLATE --size N` | プールを作成します。テンプレートの入力値には `--input` と `--secret-input` を追加し、テンプレートの設定を上書きするには `--stack`、`--machine-type`、`--device-*` フラグを使用します。 |
-| `bitrise-cli rde pool list` | workspaceのプールを、サイズと準備完了のセッション数とともに一覧表示します。`--all` は同じプールの読み取り専用のコストビューで、workspaceのオーナーと、請求を管理するメンバー向けです。 |
-| `bitrise-cli rde pool view POOL_ID` | プールのステータス、構成、ウォームセッションを表示します。 |
-| `bitrise-cli rde pool set-size POOL_ID N` | プールが起動済みに保つセッション数を変更します。`0` は構成を残したままプールを空にします。 |
-| `bitrise-cli rde pool update POOL_ID` | プールの名前の変更や構成の変更を行います。構成を変更すると、ウォームセッションは置き換えられます。 |
-| `bitrise-cli rde pool delete POOL_ID` | プールとそのウォームセッションを削除します。 |
-| `bitrise-cli rde session create NAME --warm-pool POOL_ID` | プールからセッションを取得します。 |
-| `bitrise-cli rde preview-link create --warm-pool POOL_ID --artifact-url URL` | プールから開かれるデバイスプレビューリンクを発行します。 |
+| `bitrise-cli rde warm-pool create NAME --template TEMPLATE --size N` | プールを作成します。テンプレートの入力には`--input`と`--secret-input`を追加し、テンプレートを上書きするには`--stack`、`--machine-type`、`--device-*`フラグを使用します。 |
+| `bitrise-cli rde warm-pool list` | workspaceのプールを、サイズと準備ができているセッションの数とともに一覧表示します。`--all`は、同じプールの読み取り専用のコスト表示で、workspaceのオーナーと、課金を管理するメンバー向けです。 |
+| `bitrise-cli rde warm-pool view WARM_POOL_ID` | プールのステータス、設定、ウォームセッションを表示します。 |
+| `bitrise-cli rde warm-pool set-size WARM_POOL_ID N` | プールが起動した状態で保持するセッションの数を変更します。`0`は、設定は保持したまま、プールを空にします。 |
+| `bitrise-cli rde warm-pool update WARM_POOL_ID` | プールの名前を変更したり、設定を変更したりします。設定を変更すると、ウォームセッションが置き換えられます。 |
+| `bitrise-cli rde warm-pool delete WARM_POOL_ID` | プールとそのウォームセッションを削除します。 |
+| `bitrise-cli rde warm-pool retry WARM_POOL_ID` | On create が3回連続で失敗した後に、プールのウォームアップを再開します。 |
+| `bitrise-cli rde session create NAME --warm-pool WARM_POOL_ID` | プールからセッションを割り当てます。 |
+| `bitrise-cli rde preview-link create --warm-pool WARM_POOL_ID --artifact-url URL` | リンクを開いたときにプールから提供される、デバイスプレビューリンクを発行します。 |
 
 ## テンプレート、保存済み入力、マシンオプション {#templates-saved-inputs-and-machine-options}
 
@@ -163,4 +166,4 @@ bitrise-cli rde --help
 bitrise-cli rde session exec --help
 ```
 
-すべてのコマンド、フラグ、引数を網羅した自動生成リファレンスは、オープンソースのリポジトリにあります: [bitrise-io/bitrise-cli](https://github.com/bitrise-io/bitrise-cli/tree/main/docs/cli)。
+すべてのコマンド、フラグ、引数を網羅した自動生成リファレンスは、オープンソースのリポジトリにあります： [bitrise-io/bitrise-cli](https://github.com/bitrise-io/bitrise-cli/tree/main/docs/cli)。

@@ -1,7 +1,7 @@
 ---
 title: "GitHub連携"
 description: "セッションがあなたとしてGitHubに認証できるようにします。Bitrise GitHub Appの接続による短期間有効なトークンを使用するため、gitとGitHub CLIはそのまま動作します。"
-sidebar_position: 4
+sidebar_position: 5
 slug: /bitrise-rde/configuration/github-integration
 ---
 
@@ -12,13 +12,15 @@ import Partial_GettingToYourProfileSettings from '@site/i18n/ja/partials/getting
 
 ## 概要 {#overview}
 
-この連携を使用するには、Bitrise GitHub App を組織にインストールし、GitHub アカウントをGitHubアプリ経由でBitriseに接続します。
+このインテグレーションを使用するには、Bitrise GitHub Appを組織にインストールし、GitHubアプリを通じてGitHubアカウントをBitriseに接続します。
 
-RDE ページで連携を有効にすると、Bitriseは新しいセッションマシンごとに、有効期間の短いGitHubアクセストークンを配置します。このトークンは、Bitrise(Bitrise GitHub App)上のGitHubアカウント接続を通じて発行されます。
+RDEページでインテグレーションを有効にすると、Bitriseは新しいセッションマシンごとに、有効期間の短いGitHubアクセストークンを配置します。このトークンは、Bitrise（Bitrise GitHub App）上のGitHubアカウント接続を通じて発行されます。
 
-- トークンの有効期間は最大 8 時間で、復元を含むセッションの存続期間全体にわたって自動的に更新されます。
-- 長期間有効な認証情報がマシンに保存されることはありません。
-- セッションで作成したコミットは、GitHubの noreply メールアドレスを使用してGitHubアカウントに紐付けられるため、実際のメールアドレスが公開されることはありません。
+- トークンの有効期間は最長で8時間です。リストアを含め、セッションが存続する間は自動的に更新されます。
+- 有効期間の長い認証情報がマシンに保存されることはありません。
+- セッションで作成したコミットは、GitHub noreplyメールアドレスを使用して、あなたのGitHubアカウントに紐づけられます。実際のメールアドレスが公開されることはありません。
+
+[プール](/bitrise-rde/configuration/pools)から取得したセッションは、取得時のSystemセットアップステップでトークンを受け取ります。<strong>On claim</strong>フックとそれ以降の処理では、あなたとして`git`と`gh`を利用できます。一方、<strong>On create</strong>フックは誰もセッションを所有していない時点で実行されたため、利用できません。[ライフサイクルフック](/bitrise-rde/configuration/lifecycle-hooks#when-each-hook-runs)を参照してください。
 
 ## GitHubアプリを組織にインストールする {#installing-the-github-app-to-your-organization}
 
@@ -42,7 +44,7 @@ WorkspaceがすでにCI用にGitHub App を使用している場合、アプリ�
 1. Bitriseを開きます。
 1. <Partial_GettingToYourProfileSettings />
 1. <strong>Connected accounts</strong> を選択し、<strong>Git providers</strong> タブを開きます。
-1. <strong>GitHub</strong> カード(「Connect via the Bitrise GitHub App」と説明されています)で <strong>Connect</strong> を選択します。<strong>GitHub with OAuth</strong> カードは使用しないでください。この連携にはGitHub App の接続が必要です。
+1. <strong>GitHub</strong> カード（「Connect via the Bitrise GitHub App」と説明されています）で <strong>Connect</strong> を選択します。<strong>GitHub with OAuth</strong> カードは使用しないでください。この連携にはGitHub App の接続が必要です。
 
    :::info[Workspaceレベルの接続だけでは不十分です]
 

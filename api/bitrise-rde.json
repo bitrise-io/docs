@@ -391,6 +391,24 @@
         "warmPoolsEnabled": {
           "description": "Whether warm pools are enabled for this workspace (rollout feature flag\n'rde-warm-pool'). Gates the Warm pools navigation item, the template\nactions that create a pool, and CreateWarmPool server-side; pools that\nalready exist stay manageable and claimable regardless.",
           "type": "boolean"
+        },
+        "workspaceScriptAvailable": {
+          "description": "True when the 'rde-workspace-script' rollout flag is on for this\nworkspace, whoever the caller: sessions may then run the workspace\nscript, so the UI offers the log views its output lands in. Unlike\nworkspace_script_enabled it says nothing about editing the script.",
+          "type": "boolean"
+        },
+        "workspaceScriptEnabled": {
+          "description": "True when the workspace script is available to this caller: the\n'rde-workspace-script' rollout flag is on and the caller may edit it\n(the same people who can view usage). Drives the Workspace script nav\nitem; the endpoints re-check server-side.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "v1GetWorkspaceScriptResponse": {
+      "description": "GetWorkspaceScriptResponse carries the workspace script.",
+      "properties": {
+        "workspaceScript": {
+          "$ref": "#/definitions/v1WorkspaceScript",
+          "description": "The script, its variables and its state."
         }
       },
       "type": "object"
@@ -1205,6 +1223,10 @@
         "warmState": {
           "description": "The session's relation to that pool: \"warming\" / \"ready\" (a warm session,\nnot listed), \"claimed\" (handed out by a claim), \"cold\" (created from the\npool's configuration because no warm session was available). Empty when\nthe session has no pool.",
           "type": "string"
+        },
+        "workspaceScriptTest": {
+          "description": "True for a session created to try the workspace script draft: its boot\nruns the script even while the script is disabled.",
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -2215,6 +2237,16 @@
       },
       "type": "object"
     },
+    "v1UpdateWorkspaceScriptResponse": {
+      "description": "UpdateWorkspaceScriptResponse carries the saved workspace script.",
+      "properties": {
+        "workspaceScript": {
+          "$ref": "#/definitions/v1WorkspaceScript",
+          "description": "The script as saved."
+        }
+      },
+      "type": "object"
+    },
     "v1UsageTotals": {
       "description": "UsageTotals splits active-session usage by OS platform.",
       "properties": {
@@ -2521,6 +2553,89 @@
         },
         "label": {
           "description": "Display label for the button.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1WorkspaceScript": {
+      "description": "WorkspaceScript is the workspace's script as the settings page shows it.",
+      "properties": {
+        "configured": {
+          "description": "True once anything has been saved; false means the page is empty.",
+          "type": "boolean"
+        },
+        "enabled": {
+          "description": "Whether sessions created from now on run the script. Off is draft mode:\nonly sessions created with workspace_script_test run it.",
+          "type": "boolean"
+        },
+        "script": {
+          "description": "The bash script.",
+          "type": "string"
+        },
+        "updatedAt": {
+          "description": "When it was last saved.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "updatedBy": {
+          "description": "Email of the last editor; empty before the first save.",
+          "type": "string"
+        },
+        "variables": {
+          "description": "The script's variables.",
+          "items": {
+            "$ref": "#/definitions/v1WorkspaceScriptVariable",
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "v1WorkspaceScriptVariable": {
+      "description": "WorkspaceScriptVariable is one variable of the workspace script\n(docs/workspace-script/DESIGN.md): plain, secret or protected, exactly as\na template variable.",
+      "properties": {
+        "isSecret": {
+          "description": "Encrypted at rest and masked in the UI; an editor can read it back\nwith include_secrets.",
+          "type": "boolean"
+        },
+        "key": {
+          "description": "Environment variable name the script receives. Names starting with\n\"RDE_\" are reserved.",
+          "type": "string"
+        },
+        "protected": {
+          "description": "Write-only: never returned, replaced but never viewed. Implies is_secret.",
+          "type": "boolean"
+        },
+        "value": {
+          "description": "The value. Masked for a secret unless include_secrets was asked; always\nempty for a protected variable, which is never returned.",
+          "type": "string"
+        },
+        "valueStored": {
+          "description": "True when a value is stored for this key; the UI shows \"Set\" for a\nprotected variable instead of the value.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "v1WorkspaceScriptVariableInput": {
+      "description": "WorkspaceScriptVariableInput is one variable as the editor saves it.",
+      "properties": {
+        "isSecret": {
+          "description": "Encrypt at rest and mask in the UI.",
+          "type": "boolean"
+        },
+        "key": {
+          "description": "Environment variable name. Names starting with \"RDE_\" are refused.",
+          "type": "string"
+        },
+        "protected": {
+          "description": "Write-only; implies is_secret.",
+          "type": "boolean"
+        },
+        "value": {
+          "description": "The value. For a protected variable that already has a stored value,\nempty keeps the stored one.",
           "type": "string"
         }
       },
@@ -3121,6 +3236,10 @@
                 "warmPoolId": {
                   "description": "Claim a session from a warm pool (see WarmPool) instead of building one\nfrom this request. The pool fixes the environment, so template_id,\nenabled_feature_flag_names, stack_id, image, machine_type, cluster,\ndevice_spec and no_device must be empty (they are rejected, not\nignored). On a template with lifecycle hooks, session_inputs may carry\nthe template's On claim and On restore inputs only (a shared or On\ncreate key is rejected: the pool fixes those values); a personal claim\nmay also use map_saved_to_session_inputs (a saved input fills every\nclaim-time scope that defines its key) and ai_prompt, while a\nworkspace-owned claim and a Workspace API Token send plain values only.\nA typed value may be marked is_secret. A required On claim or On restore\ninput without a value fails the claim. name, description, labels,\nauto_terminate_minutes and artifact (device pools only) apply to the\nclaimed session.\n\nThe claimed session is the claimant's: owner_type follows the rule above\n— a user gets a personal session unless they ask for \"workspace\", a\nWorkspace API Token gets a workspace-owned one. A warm session is the\nworkspace's only while it waits in the pool. The machine was booted for\nthe pool, without anyone's personal state; after a claim by a person the\nplatform sets it up for them (SSH key, Claude credentials, git credential\nhelper — Session.lifecycle shows that step as \"personalize\"), then the\ntemplate's On claim hook runs with the shared values and the On claim\ninputs, writing the exposed ones to the terminal profile. A\nworkspace-owned claim runs On claim only. The session keeps that VM for\nits whole life — a stop and restore restarts the same machine.\n\nWith a ready or warming warm session available the response is that\nsession, renamed — no machine is created (Session.warm_state \"claimed\").\nWithout one, a session is created from the pool's stored configuration\nexactly as the pool would have warmed it (Session.warm_state \"cold\"), so\na pool with pool_size 0 still works as a configuration preset.\nAny workspace member or Workspace API Token may claim from a pool.",
                   "type": "string"
+                },
+                "workspaceScriptTest": {
+                  "description": "Create this session to try the workspace script draft: its boot runs the\nscript even while the script is disabled. Only for a personal session\ncreated by someone who may edit the script, with the workspace on the\nrollout flag; refused otherwise, and refused on a warm pool claim.",
+                  "type": "boolean"
                 }
               },
               "type": "object"
@@ -5260,6 +5379,92 @@
         "summary": "Retry warm pool",
         "tags": [
           "Warm Pools"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/workspace-script": {
+      "get": {
+        "description": "Returns the workspace script: a bash script that every session in the workspace starts in the background at the beginning of every boot, before any template script, together with its variables. Requires the caller to hold the workspace's billing-view permission (workspace owners and billing-managing custom roles) and the workspace to be on the rollout flag; other callers receive a permission-denied error. Protected variable values are never returned.",
+        "operationId": "CodespacesService_GetWorkspaceScript",
+        "parameters": [
+          {
+            "description": "Workspace (organization) slug. Supplied via the URL path.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Return secret values in clear. Protected values are never returned.",
+            "in": "query",
+            "name": "includeSecrets",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetWorkspaceScriptResponse"
+            }
+          }
+        },
+        "summary": "Get workspace script",
+        "tags": [
+          "Workspace"
+        ]
+      },
+      "put": {
+        "description": "Saves the workspace script, its enabled state and its complete set of variables. Applies to sessions created or rebuilt afterwards; running sessions keep what they booted with. Same permission as GetWorkspaceScript.",
+        "operationId": "CodespacesService_UpdateWorkspaceScript",
+        "parameters": [
+          {
+            "description": "Workspace (organization) slug. Supplied via the URL path.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "UpdateWorkspaceScriptRequest saves the whole workspace script form.",
+              "properties": {
+                "enabled": {
+                  "description": "Whether sessions created from now on run the script.",
+                  "type": "boolean"
+                },
+                "script": {
+                  "description": "The bash script.",
+                  "type": "string"
+                },
+                "variables": {
+                  "description": "The complete set of variables; a key left out is removed.",
+                  "items": {
+                    "$ref": "#/definitions/v1WorkspaceScriptVariableInput",
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateWorkspaceScriptResponse"
+            }
+          }
+        },
+        "summary": "Update workspace script",
+        "tags": [
+          "Workspace"
         ]
       }
     }

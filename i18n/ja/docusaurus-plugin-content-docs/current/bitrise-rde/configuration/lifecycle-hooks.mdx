@@ -1,0 +1,345 @@
+---
+title: "ライフサイクルフック"
+description: "ライフサイクルフックで Remote Dev Environment セッションをセットアップします。On create はセッション作成時に 1 回、On claim は誰かがセッションを取得したとき、On restore は復元のたびに実行されます。プールの有無にかかわらず使用できます。"
+sidebar_position: 2
+slug: /bitrise-rde/configuration/lifecycle-hooks
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+<GlossTerm baseform="lifecycle hook">ライフサイクルフック</GlossTerm>は、<GlossTerm baseform="rde template">テンプレート</GlossTerm>のセットアップスクリプトです。各フックは Bash スクリプトで、<GlossTerm baseform="rde session">セッション</GlossTerm>のライフサイクルのある時点で実行されます。
+
+| フック | 実行されるタイミング | 用途 |
+| --- | --- | --- |
+| <strong>On create</strong> | セッションの作成時に 1 回 | リポジトリのクローン、依存関係のインストール、ビルド |
+| <strong>On claim</strong> | セッションが誰かに割り当てられたとき | その人専用のトークンやツールのセットアップ |
+| <strong>On restore</strong> | 停止したセッションを復元するたび | サービスやシミュレーターの再起動 |
+
+すべてのフックは任意です。テンプレートに必要なフックだけを追加してください。フックのないテンプレートでは、マシンが起動した時点ですぐにセッションを使用できます。
+
+同じテンプレートを、直接作成したセッションにも、[プール](/bitrise-rde/configuration/pools)から取得したセッションにも使用できます。ライフサイクルフックは、従来のテンプレートのウォームアップスクリプトと起動スクリプトに代わるものです。[ウォームアップスクリプトと起動スクリプトを使用するテンプレートの変換](#converting-a-template-with-warmup-and-startup-scripts)を参照してください。
+
+## 各フックが実行されるタイミング {#when-each-hook-runs}
+
+セッションを直接作成する場合も、プールから取得する場合も、フックは同じ順序で実行されます。違いはタイミングです。
+
+| タイミング | 直接作成したセッション |プールのセッション |
+| --- | --- | --- |
+| 作成 | On create | On create（プール内で、誰かがセッションを要求する前に実行） |
+| 誰かへの割り当て | System setup の後、On create の直後に On claim | System setup の後、取得したときに On claim |
+| 復元 | On restore | On restore |
+
+<strong>System setup</strong> はBitrise独自のステップであり、フックではありません。オーナーのSSHキーと Claude の認証情報が提供されている場合、それらをセットアップします。プールから取得したセッションでは、オーナーが [GitHub連携](/bitrise-rde/configuration/github-integration)を有効にしていれば、GitHubへのサインインも行うため、`git`と`gh`がオーナー本人として動作し、コミットにも本人のGitHub ID が記録されます。直接作成したセッションでは、代わりにマシンの起動時にGitHubへのサインインが行われます。System setup は、人がセッションを取得するときにのみ実行されます。workspace所有のセッションでは実行されません。
+
+フックからGitHubへアクセスできるかどうかは、セッションの種類によって異なります。オーナーが [GitHub連携](/bitrise-rde/configuration/github-integration)を有効にしている場合にのみ適用されます。
+
+- <strong>On claim</strong> では、オーナーのGitHubアクセスを使用できます。直接作成したセッションでは、マシンの起動時に連携がセットアップされます。プールから取得したセッションでは、<strong>On claim</strong> の実行前に System setup がオーナーをサインインさせます。
+- <strong>On create</strong> では、直接作成したセッションに限り、オーナーのGitHubアクセスを使用できます。
+-プールの <strong>On create</strong> には専用のトークンが必要です。<strong>On create</strong> の実行中、セッションにはオーナーがいないためです。
+
+すべてのセッションに共通するルールがいくつかあります。
+
+- workspaceに[workspaceスクリプト](/bitrise-rde/configuration/workspace-script)がある場合、起動のたびに、どのフックよりも先に実行されます。最初のフックは、スクリプトが終了するまで最大 10 分待機します。
+- フックは 1 つずつ実行されます。<strong>On claim</strong> は <strong>On create</strong> を待機し、<strong>On create</strong> または System setup が失敗した場合、<strong>On claim</strong> は実行されません。
+- <strong>On create</strong> と <strong>On claim</strong> は、マシンごとに 1 回実行されます。復元で実行されるのは <strong>On restore</strong> のみです。
+- 追加したフックは、スクリプトが空でも実行されます。すぐに終了します。
+
+直接作成したセッションでは <strong>On claim</strong> も <strong>On create</strong> の直後に実行されるため、プール向けに作成したテンプレートは、プールなしでも動作します。
+
+テンプレートエディターでは、フックの上に同じタイムラインが表示されます。<strong>Created from the template</strong> は、直接作成したセッションを表示します。
+
+![テンプレートから直接作成したセッションのタイムライン：Session created、On create、Assigned to you、On claim、Ready、Stopped、On restore、Ready again](/img/rde/2026-10-28-rde-lifecycle-explainer-direct.png)
+
+<strong>Claimed from a プール</strong> は、プールから取得したセッションを表示します。プールはセッションがまだ共有状態のうちに <strong>On create</strong> を実行し、残りはセッションがあなたのものになってから実行されます。
+
+![プールから取得したセッションのタイムライン：プールがマシンを起動して On create を実行し、その後セッションはあなたが取得するまで待機して On claim が実行される](/img/rde/2026-10-28-rde-lifecycle-explainer-pool.png)
+
+## フックの記述 {#writing-a-hook}
+
+フックはセッションユーザーとして Bash で実行され、ホームディレクトリから開始されます。そのスコープの[変数と入力](#variables-and-inputs)をenvironment variablesとして受け取ります。
+
+フックは、スクリプトが終了した時点で完了します。終了コード 0 は成功、それ以外の終了コードは失敗を意味します。Bitriseはそれ以外の処理を待機しないため、開発サーバーのような長時間実行される処理はバックグラウンドで開始し、スクリプトは終了させてください。
+
+```bash
+cd ~/example-app
+nohup npm run dev > ~/dev-server.log 2>&1 &
+```
+
+バックグラウンドプロセスは、シークレットを含め、開始時の環境を保持します。プロセスにシークレットが不要な場合は、`env -u`で削除してください。
+
+```bash
+env -u REPO_TOKEN nohup npm run dev > ~/dev-server.log 2>&1 &
+```
+
+これはプールで特に重要です。セッションを取得した人は、<strong>On create</strong> が実行したままにしたプロセスの環境を読み取ることができます。
+
+次の点に注意してください。
+
+- <strong>On create の実行中は、誰も接続できません。</strong> ターミナル、SSH、リモートアクセス、ファイル転送は、<strong>On create</strong> の終了後に使用可能になります。その間もログは読み取れます。<strong>On create</strong> が 2 時間を過ぎても実行中の場合、Bitriseが終了させ、終了コード 124 で失敗としてマークするため、長時間実行される処理はバックグラウンドで開始してください。
+- <strong>停止してもディスクは保持されますが、プロセスは保持されません。</strong> クローンしたリポジトリやインストールしたツールは、復元後も残ります。実行中のサービス、シミュレーター、`/tmp`内のファイルは残らないため、<strong>On restore</strong> で再起動してください。
+- <strong>フックは仮想デバイスを待機しません。</strong> [デバイスセッション](/bitrise-rde/devices/device-sessions)では、シミュレーターやエミュレーターがフックと並行して起動するため、<strong>On create</strong> や <strong>On restore</strong> の実行時にはまだ準備できていない場合があります。デバイスを使用するスクリプトや AIエージェントは、セットアップとデバイスの両方の準備が整うまで待機します。`bitrise-cli rde session create --wait`がこれを代行します。
+
+## 変数と入力 {#variables-and-inputs}
+
+テンプレートには、2 種類の値があります。
+
+- <strong>Variable</strong>はテンプレートに保存され、すべてのセッションで共通です。例：リポジトリのURL。
+- <strong>入力（Inputs）</strong> はセッションごとに入力します。例：チェックアウトするブランチや、パーソナルアクセストークン。
+
+すべての変数と入力は 1 つのスコープに属し、スコープによって、どのフックが受け取るかが決まります。
+
+| スコープ | 受け取るフック |
+| --- | --- |
+| <strong>Shared</strong> | すべてのフック |
+| <strong>On create</strong> | On create のみ |
+| <strong>On claim</strong> | On claim のみ |
+| <strong>On restore</strong> | On restore のみ |
+
+フックは、Shared の値と、自身のスコープの値を受け取ります。フック自身の値が Shared の値と同じキーを持つ場合、フックの値が優先されます。同じキーを複数のスコープに設定でき、その場合は 1 つの値または[保存済みの入力](/bitrise-rde/configuration/saved-inputs)がすべてのスコープに入力されます。
+
+入力を誰が行うかは、セッションの開始方法によって異なります。
+
+- <strong>直接作成したセッション：</strong> 作成した人が、すべてのスコープのすべての入力を行います。
+- <strong>プール：</strong> Sharedと <strong>On create</strong> の入力は、プールで 1 回設定します。セッションを取得した人は、<strong>On claim</strong> と <strong>On restore</strong> の入力を、直接入力するか保存済みの入力から入力します。共有（Org 所有）セッションとして保持されるセッションでは、直接入力するプレーンな値のみ使用できます。
+
+復元時には誰にも入力を求めません。<strong>On restore</strong> の入力は、事前に入力されています。
+
+### シークレット変数と保護された変数 {#secret-and-protected-variables}
+
+すべての変数には、可視性があります。
+
+| 可視性 | 意味 |
+| --- | --- |
+| <strong>Plain</strong> | テンプレートを閲覧できる全員が読み取り可能 |
+| <strong>Secret</strong> | 暗号化されマスクされます。アクセス権を持つメンバーは表示できます |
+| <strong>Protected</strong> | シークレットかつ書き込み専用：置き換えはできますが、再び表示することはできません |
+
+### Also in terminal
+
+フックは常に自身の値を受け取ります。<strong>Also in terminal</strong> をオンにすると、値がセッションのシェルプロファイルにも書き込まれ、ターミナルやSSHセッションからも参照できるようになります。Shared の値はセッションの作成時に、フック自身の値はそのフックの実行時に書き込まれます。同じキーが 2 つある場合は、最後に書き込まれた方が優先されます。保護された値は、ターミナルに書き込めません。
+
+### プール内の値 {#values-in-a-warm-pool}
+
+<strong>On claim</strong> と <strong>On restore</strong> は Shared の値を受け取るため、プールからセッションを取得した人も Shared の値を受け取ります。リポジトリをクローンするためのトークンなど、プールだけが使用する値は、代わりに <strong>On create</strong> に設定してください。
+
+取得したセッションのページには、<strong>On create</strong> の入力の値は表示されません。プールで設定されたものとして一覧表示されます。ただし、<strong>Also in terminal</strong> をオンにした Shared または <strong>On create</strong> の値は、マシンのシェルプロファイルに残り、取得した人が読み取ることができます。
+
+##プールでのフックの使用 {#using-hooks-with-a-warm-pool}
+
+プールで実行されるのは <strong>On create</strong> のみです。ウォームセッションは <strong>On create</strong> が成功すると取得可能になり、それ以外の処理はすべて取得後に実行されます。プールを最大限に活用するには、次のようにします。
+
+- 時間のかかるセットアップは <strong>On create</strong> に入れます。クローン、インストール、ビルドなどです。
+- <strong>On create</strong> には、読み取り専用のボットトークンなど、共有の認証情報を渡します。[保存済みの入力](/bitrise-rde/configuration/saved-inputs)は個人用のため、プールでは使用できません。
+- 個人用のセットアップは <strong>On claim</strong> に入れ、取得した人が入力する <strong>On claim</strong> の入力を使用します。
+- <strong>On claim</strong> でGitHubトークンを要求しないでください。取得した人が [GitHub連携](/bitrise-rde/configuration/github-integration)を有効にしている場合、<strong>On claim</strong> の実行前に System setup がGitHubへのサインインを行います。
+
+<strong>On create</strong> のないテンプレートでは、プールが準備する処理がないため、セッションは起動するとすぐに取得可能になります。テンプレートに <strong>On create</strong> がない場合、プールのフォームに警告が表示され、<strong>On claim</strong> がない場合は注意が表示されます。どちらのメッセージも、テンプレートエディターへのリンクを含みます。
+
+プールから[デバイスプレビューリンク](/bitrise-rde/devices/device-preview-links)を提供するには、テンプレートに必須の <strong>On claim</strong> や <strong>On restore</strong> の入力を含めることはできません。入力する人がいないためです。代わりに、それらの入力にdefault valueを設定してください。
+
+## 例：iOS アプリのテンプレート {#example-an-ios-app-template}
+
+このテンプレートは、iOS アプリのリポジトリを準備します。直接作成したセッションにも、プールにも使用できます。
+
+<strong>On create</strong> は、読み取り専用のボットトークンでリポジトリをクローンし、依存関係をインストールします。トークンは <strong>On create</strong> のシークレット入力のため、<strong>On claim</strong>、<strong>On restore</strong>、セッションを取得した人には渡りません。
+
+```bash
+git clone "https://x-access-token:${REPO_TOKEN}@github.com/example-org/example-app.git" ~/example-app
+cd ~/example-app
+# Keep the token out of the clone's configuration.
+git remote set-url origin https://github.com/example-org/example-app.git
+bundle install
+bundle exec pod install
+```
+
+<strong>On claim</strong> は、<strong>On claim</strong> の入力`GIT_NAME`と`GIT_EMAIL`から、セッションを取得した人のGit IDを設定します。
+
+```bash
+cd ~/example-app
+git config user.name "$GIT_NAME"
+git config user.email "$GIT_EMAIL"
+```
+
+[GitHub連携](/bitrise-rde/configuration/github-integration)を使用しているチームは、このフックを省略できます。System setup が、セッションを取得した人のコミットIDをすでに設定しているためです。
+
+<strong>On restore</strong> は、停止によってすべての実行中プロセスが終了するため、アプリのモックサーバーを再び起動します。
+
+```bash
+cd ~/example-app
+nohup ./scripts/start-mock-server.sh > ~/mock-server.log 2>&1 &
+```
+
+値は次のとおりです。
+
+| キー | 種類 | スコープ |
+| --- | --- | --- |
+| `APP_ENV` | 変数、プレーン、<strong>Also in terminal</strong> | Shared |
+| `REPO_TOKEN` | 入力、シークレット | On create |
+| `GIT_NAME` | 入力、必須 | On claim |
+| `GIT_EMAIL` | 入力、必須 | On claim |
+
+`APP_ENV`は Shared のため、すべてのフックが受け取ります。<strong>Also in terminal</strong> をオンにしているため、ターミナルからも参照できます。
+
+![テンプレートエディターの On claim フック。スクリプトとGIT_NAMEおよびGIT_EMAILの入力が表示されている](/img/rde/2026-10-28-rde-lifecycle-on-claim-card.png)
+
+## セッションのセットアップの確認 {#following-a-sessions-setup}
+
+セッションのページの <strong>Lifecycle</strong> カードには、セットアップの進行状況、すべてのフックの実行とその結果、各フックのログが表示されます。
+
+![System setup、On create、On claim が成功したセッションの Lifecycle カード](/img/rde/2026-10-28-rde-lifecycle-session-card.png)
+
+カードのラベルで、セッションの状態がわかります。
+
+| ラベル | 意味 |
+| --- | --- |
+| <strong>Setting up</strong> | On create を実行中です。完了すると接続できます。 |
+| <strong>Personalizing</strong> | System setup と On claim を実行中です。すでに接続できます。 |
+| <strong>Restoring</strong> | 復元後に On restore を実行中です。 |
+| <strong>Ready</strong> | このタイミングのすべてのフックが完了しています。 |
+| <strong>Setup failed</strong> | On create が失敗しました。 |
+| <strong>Personalization failed</strong> | System setup または On claim が失敗しました。 |
+| <strong>Restore script failed</strong> | On restore が失敗しました。 |
+
+プールのページでは、まだ取得されていないセッションは、<strong>On create</strong> の実行中は <strong>Warming up</strong>、完了すると <strong>Ready to claim</strong> と表示されます。
+
+セッションは、マシンが起動した時点で <strong>Running</strong> になります。これは <strong>On create</strong> が終了する前です。スクリプトや AIエージェントがセッションを操作する場合は、代わりに <strong>Ready</strong> になるまで待機してください。`bitrise-cli rde session create --wait`がこれを代行します。
+
+各フックと System setup には、それぞれ専用のログがあります。workspaceの[workspaceスクリプト](/bitrise-rde/configuration/workspace-script#reading-the-scripts-output)の出力は、<strong>System</strong> ログにあります。ログは復元後も保持されるため、セッションを停止して復元した後でも、<strong>On create</strong> の実行内容を確認できます。
+
+## フックが失敗した場合 {#when-a-hook-fails}
+
+フックが失敗しても、セッションは壊れません。セッションは引き続き使用でき、ログに問題の内容が表示されます。Bitriseは、失敗したフックが実行したまま残したプロセスを停止します。
+
+- <strong>On claim または On restore が失敗した場合：</strong> <strong>Lifecycle</strong> カードの <strong>Run On claim again</strong> または <strong>Run On restore again</strong> をクリックします。フックは同じマシンで再度実行され、マシン上のすべてのものはそのまま残ります。
+- <strong>System setup が失敗した場合：</strong> <strong>Retry system setup</strong> をクリックします。On claim はその後ろでスキップされているため、System setup が成功したら、<strong>Run On claim</strong> をクリックしてセットアップを完了します。
+- <strong>On create が失敗した場合：</strong> <strong>Rebuild</strong> をクリックします。Rebuild はマシンとそのディスクを破棄し、同じセッション用に新しいマシンを起動します。<strong>On create</strong> が最初から再実行され、その後に System setup と <strong>On claim</strong> が実行されます。<strong>On create</strong> を同じマシンで再実行することはできません。
+
+![On claim が失敗したセッションの Lifecycle カード。Run On claim again ボタンが表示されている](/img/rde/2026-10-28-rde-lifecycle-session-card-failed.png)
+
+:::important[修正したテンプレートは既存のセッションには反映されません]
+
+フックの再実行と <strong>Rebuild</strong> は、どちらもセッションの作成時のスクリプトを繰り返します。スクリプトの誤りが原因でフックが失敗した場合は、テンプレートを修正してから、新しいセッションを作成して修正を反映してください。
+
+:::
+
+###プールで On create が失敗した場合 {#when-on-create-fails-in-a-warm-pool}
+
+<strong>On create</strong> が失敗すると、プールはマシンを交換して再試行します。3 回連続で失敗すると、プールに <strong>Setup failed</strong> と表示され、ウォームアップが停止します。
+
+- 問題を修正するまで、誰もプールから取得できません。
+- プールは、最後に失敗したマシンを、開いてログを確認し、接続できるセッションとして保持します。4 時間後に自動的に停止します。
+- 原因を修正したら、プールのページで <strong>Retry</strong> をクリックします。Retry は失敗したマシンを削除し、プールが再びウォームアップを開始します。テンプレートまたはプールの設定を変更した場合も、再開されます。
+
+## ウォームアップスクリプトと起動スクリプトを使用するテンプレートの変換 {#converting-a-template-with-warmup-and-startup-scripts}
+
+新しいテンプレートでは、常にライフサイクルフックを使用します。ライフサイクルフックの導入前に作成されたテンプレートには、代わりにウォームアップスクリプトと起動スクリプトがあり、変更なしで引き続き動作します。Bitriseはそれらをフックとして実行します。
+
+- <strong>On create</strong> は、ウォームアップスクリプトを実行し、その後、起動スクリプトをバックグラウンドで開始します。
+- <strong>On restore</strong> は、起動スクリプトをバックグラウンドで開始します。
+- すべての変数と入力は Shared です。
+
+このようなテンプレートをフックで編集するには、変換します。
+
+1. テンプレートを開き、<strong>Edit template</strong> をクリックします。
+1. <strong>Scripts</strong> セクションで、<strong>Convert to lifecycle hooks</strong> をクリックします。エディターに、テンプレートが現在実行しているフックが表示されます。ウォームアップスクリプトまたは起動スクリプトに未保存の変更がある場合は、先に保存してください。保存するまで、ボタンは無効のままです。
+1. フックを確認し、特定のフックだけが必要とする値はそのフックのスコープに移動してから、<strong>Save changes</strong> をクリックします。
+
+![ウォームアップスクリプトと起動スクリプトを持つテンプレートの Scripts セクション。Convert to lifecycle hooks ボタンが表示されている](/img/rde/2026-10-28-rde-lifecycle-convert.png)
+
+:::warning[変換は元に戻せません]
+
+保存すると、テンプレートをウォームアップスクリプトと起動スクリプトに戻すことはできません。すでに作成されたセッションは、作成時のまま動作し続けます。
+
+:::
+
+## CLI、AIエージェント、またはAPIからのフックの管理 {#managing-hooks-from-the-cli-an-ai-agent-or-the-api}
+
+<Tabs>
+<TabItem value="cli" label="CLI" default>
+
+フックは、テンプレートのスペックファイルの`hooks`オブジェクトに記述します。変数または入力の`hook`キーでスコープを設定します。Shared にする場合は省略してください。
+
+```json
+{
+  "name": "iOS app",
+  "stack_id": "STACK_ID",
+  "machine_type": "MACHINE_TYPE",
+  "hooks": {
+    "on_create": "git clone https://github.com/example-org/example-app.git ~/example-app",
+    "on_claim": "cd ~/example-app && git config user.email \"$GIT_EMAIL\"",
+    "on_restore": ""
+  },
+  "session_inputs": [
+    { "key": "GIT_EMAIL", "required": true, "hook": "on_claim" }
+  ]
+}
+```
+
+```bash
+bitrise-cli rde template create --file template.json
+```
+
+`hooks`オブジェクト内のフックは、上の`on_restore`のようにスクリプトが空でも実行されます。フックを使用しない場合は、記述しないでください。
+
+セッションのセットアップを確認して修正するには、次のコマンドを使用します。
+
+| コマンド | 機能 |
+| --- | --- |
+| `bitrise-cli rde session view SESSION_ID` | セッションのセットアップフェーズと、すべてのフックの実行を表示します。 |
+| `bitrise-cli rde session logs SESSION_ID --stage on-create` | フックのログを出力します。ステージは`on-create`、`on-claim`、`on-restore`、そして System setup 用の`personalize`です。`--attempt 2`を追加すると、フックの 2 回目の実行のみが表示されます。 |
+| `bitrise-cli rde session run-hook SESSION_ID --hook on_claim` | On claim、On restore、または System setup（`personalize`）を再実行します。 |
+| `bitrise-cli rde session rebuild SESSION_ID` | マシンを破棄し、On create からセットアップを再実行します。 |
+| `bitrise-cli rde warm-pool retry WARM_POOL_ID` | On create が 3 回連続で失敗した後、プールのウォームアップを再開します。 |
+
+プールから取得する場合、`--input`が <strong>On claim</strong> と <strong>On restore</strong> の入力を設定します。
+
+```bash
+bitrise-cli rde session create my-fix --warm-pool ios-app --input GIT_EMAIL=you@example.com
+```
+
+</TabItem>
+<TabItem value="mcp" label="AI agent (MCP)">
+
+自然な言葉で依頼してください。例：*「Create a template that clones example-org/example-app on create and restarts the mock server on restore.」* エージェントは、フックを`bitrise_devenv_create_template`または`bitrise_devenv_update_template`に渡します。
+
+エージェントは、セッションのセットアップの準備が整うまで待機してから、コマンドを実行します。失敗した場合は、`bitrise_devenv_get_logs`でフックのログを読み取り、原因を調べます。その後、`bitrise_devenv_run_hook`を呼び出してフックを再実行します。<strong>On create</strong> が失敗した場合は`bitrise_devenv_rebuild`を呼び出します。セットアップの失敗で停止したプールに対しては、`bitrise_devenv_retry_warm_pool`を呼び出します。
+
+</TabItem>
+<TabItem value="api" label="API">
+
+フックは、テンプレート作成リクエストの`hooks`オブジェクトで送信します。テンプレート更新リクエストでは、`update_hooks`を`true`にも設定します。変数または入力の`hook`フィールドでスコープを設定します。
+
+```bash
+curl -X POST "https://api.bitrise.io/rde/v1/workspaces/WORKSPACE_ID/templates" \
+  -H "Authorization: token YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "iOS app",
+    "stack_id": "STACK_ID",
+    "machine_type": "MACHINE_TYPE",
+    "hooks": {
+      "on_create": "git clone https://github.com/example-org/example-app.git ~/example-app"
+    }
+  }'
+```
+
+セッションの読み取りには、すべてセットアップフェーズとすべてのフックの実行を含む`lifecycle`フィールドがあります。フックを再実行する場合、またはセッションを再構築する場合：
+
+```text
+POST /v1/workspaces/{workspace_id}/sessions/{session_id}/hook-runs
+POST /v1/workspaces/{workspace_id}/sessions/{session_id}/rebuild
+```
+
+`hook-runs`リクエストは、実行するフックを受け取ります。例：`{"hook": "on_claim"}`。
+
+フックのログを読み取るには、`LOG_STAGE_ON_CREATE`、`LOG_STAGE_ON_CLAIM`、`LOG_STAGE_ON_RESTORE`、System setup 用の`LOG_STAGE_PERSONALIZE`などのステージを指定します。`?attempt=2`を追加すると、フックの 2 回目の実行のみを取得できます。
+
+```text
+GET /v1/workspaces/{workspace_id}/sessions/{session_id}/logs/LOG_STAGE_ON_CREATE
+```
+
+セットアップの失敗後にプールのウォームアップを再開するには、`POST /v1/workspaces/{workspace_id}/warm-pools/{warm_pool_id}/retry`を送信します。
+
+</TabItem>
+</Tabs>

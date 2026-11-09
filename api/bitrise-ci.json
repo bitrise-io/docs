@@ -2747,6 +2747,35 @@
             "name": "build-slug",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "array",
+            "items": {
+              "enum": [
+                "not_started",
+                "started",
+                "success",
+                "failed",
+                "failed_skippable",
+                "preparation_failed",
+                "skipped",
+                "skipped_with_run_if",
+                "aborted",
+                "aborted_with_custom_timeout",
+                "aborted_with_no_output"
+              ],
+              "type": "string"
+            },
+            "collectionFormat": "multi",
+            "description": "Step statuses to keep, e.g. `status=failed\u0026status=aborted_with_custom_timeout` (a comma-separated list also works). Only steps with one of these statuses are returned, and workflows without any are left out. Failed and aborted steps carry their failure reason in `errors`.",
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "Only return the runs of this step (for example `xcode-test`). A step used several times in a build is returned once per run, each with its own `uuid`.",
+            "name": "step_id",
+            "in": "query"
           }
         ],
         "responses": {
@@ -2754,6 +2783,12 @@
             "description": "OK",
             "schema": {
               "$ref": "#/definitions/service.dto.BuildLogSummaryRespModel"
+            }
+          },
+          "400": {
+            "description": "Bad request - unknown step status in the `status` filter",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
             }
           },
           "401": {
@@ -2868,7 +2903,7 @@
             "PersonalAccessToken": []
           }
         ],
-        "description": "Get the test suites and test cases a finished build reported, with their status, duration and failure message. Requires a plan that includes test reports.",
+        "description": "Get the test suites and test cases a finished build reported, with their status, duration and failure message. Requires a plan that includes test reports. With any filter or `limit`, test suites without matching test cases are left out; the counts of a test suite always cover all of its test cases.",
         "produces": [
           "application/json"
         ],
@@ -2891,6 +2926,70 @@
             "name": "build-slug",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "array",
+            "items": {
+              "enum": [
+                "passed",
+                "failed",
+                "skipped",
+                "error"
+              ],
+              "type": "string"
+            },
+            "collectionFormat": "multi",
+            "description": "Test case statuses to keep, e.g. `status=failed\u0026status=error` for every test that needs fixing (a comma-separated list also works). A test that failed and then passed on a retry has status `passed` and `flaky` true.",
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "Only return test cases under the test suite with this exact name, at any nesting level.",
+            "name": "suite",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "Only return test cases with this exact class name.",
+            "name": "class_name",
+            "in": "query"
+          },
+          {
+            "type": "boolean",
+            "description": "Only return test cases that are (true) or are not (false) flaky in this build. A test case is flaky when its runs ended with different statuses.",
+            "name": "flaky",
+            "in": "query"
+          },
+          {
+            "enum": [
+              "duration",
+              "name",
+              "status"
+            ],
+            "type": "string",
+            "description": "Sort the test cases within each test suite. Ascending `status` lists `error`, `failed`, `skipped`, then `passed`.",
+            "name": "sort_by",
+            "in": "query"
+          },
+          {
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "type": "string",
+            "default": "asc",
+            "description": "Direction of `sort_by`. Only valid together with `sort_by`.",
+            "name": "sort_order",
+            "in": "query"
+          },
+          {
+            "maximum": 1000,
+            "minimum": 1,
+            "type": "integer",
+            "description": "Maximum number of test cases to return, counted in response order across all test suites.",
+            "name": "limit",
+            "in": "query"
           }
         ],
         "responses": {
@@ -2901,7 +3000,7 @@
             }
           },
           "400": {
-            "description": "Bad request - the build is not finished yet",
+            "description": "Bad request - the build is not finished yet, or a filter value is invalid",
             "schema": {
               "$ref": "#/definitions/service.ProxyErrorRespModel"
             }
@@ -5140,6 +5239,363 @@
             "description": "Internal Server Error",
             "schema": {
               "$ref": "#/definitions/service.StandardErrorRespModel"
+            }
+          }
+        }
+      }
+    },
+    "/apps/{app-slug}/quarantined-tests": {
+      "get": {
+        "security": [
+          {
+            "PersonalAccessToken": []
+          }
+        ],
+        "description": "List the tests quarantined on an app, oldest first. Quarantined tests are excluded from the test runs of builds the quarantine applies to.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "test-quarantine"
+        ],
+        "summary": "List the quarantined tests of an app",
+        "operationId": "quarantined-test-list",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "App slug",
+            "name": "app-slug",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/service.dto.QuarantinedTestsRespModel"
+            }
+          },
+          "401": {
+            "description": "Unauthorized - no valid personal access token or workspace API token",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          },
+          "404": {
+            "description": "Not found - app does not exist, or user is not authorized",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "PersonalAccessToken": []
+          }
+        ],
+        "description": "Quarantine a test case of an app. The test is identified by `test_case_identifier` when the test report provides one, otherwise by its name, suite names and class name. Requires permission to run builds and a plan that includes test quarantine.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "test-quarantine"
+        ],
+        "summary": "Quarantine a test",
+        "operationId": "quarantined-test-create",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "App slug",
+            "name": "app-slug",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "The test to quarantine",
+            "name": "quarantined-test",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "test_case_name",
+                "test_suite_name"
+              ],
+              "properties": {
+                "build_slug": {
+                  "description": "Slug of a build of the app the test failed in. When omitted, the test is recorded as quarantined from the API.",
+                  "type": "string"
+                },
+                "class_name": {
+                  "type": "string"
+                },
+                "comment": {
+                  "type": "string"
+                },
+                "filters": {
+                  "$ref": "#/definitions/service.dto.QuarantinedTestFilters"
+                },
+                "test_case_identifier": {
+                  "type": "string"
+                },
+                "test_case_name": {
+                  "type": "string"
+                },
+                "test_suite_name": {
+                  "description": "Names of the test suites containing the test case, outermost first",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/service.dto.QuarantinedTest"
+            }
+          },
+          "401": {
+            "description": "Unauthorized - no valid personal access token or workspace API token",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          },
+          "403": {
+            "description": "Forbidden - user cannot run builds on the app, or the plan of the workspace does not include test quarantine",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          },
+          "404": {
+            "description": "Not found - app does not exist, or user is not authorized",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          },
+          "409": {
+            "description": "Conflict - the test is already quarantined; the response contains it in `quarantined_test`",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error_msg": {
+                  "type": "string"
+                },
+                "quarantined_test": {
+                  "$ref": "#/definitions/service.dto.QuarantinedTest"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable entity - a parameter is missing or invalid, or `build_slug` is not a build of the app",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          }
+        }
+      }
+    },
+    "/apps/{app-slug}/quarantined-tests/{quarantined-test-id}": {
+      "get": {
+        "security": [
+          {
+            "PersonalAccessToken": []
+          }
+        ],
+        "description": "Get a quarantined test of an app",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "test-quarantine"
+        ],
+        "summary": "Get a quarantined test",
+        "operationId": "quarantined-test-show",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "App slug",
+            "name": "app-slug",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Quarantined test ID",
+            "name": "quarantined-test-id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/service.dto.QuarantinedTest"
+            }
+          },
+          "401": {
+            "description": "Unauthorized - no valid personal access token or workspace API token",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          },
+          "404": {
+            "description": "Not found - app or quarantined test does not exist, or user is not authorized",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "PersonalAccessToken": []
+          }
+        ],
+        "description": "Remove a test from quarantine, so it is included in test runs again. Requires permission to run builds and a plan that includes test quarantine.",
+        "tags": [
+          "test-quarantine"
+        ],
+        "summary": "Remove a test from quarantine",
+        "operationId": "quarantined-test-delete",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "App slug",
+            "name": "app-slug",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Quarantined test ID",
+            "name": "quarantined-test-id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "401": {
+            "description": "Unauthorized - no valid personal access token or workspace API token",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          },
+          "403": {
+            "description": "Forbidden - user cannot run builds on the app, or the plan of the workspace does not include test quarantine",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          },
+          "404": {
+            "description": "Not found - app or quarantined test does not exist, or user is not authorized",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          }
+        }
+      },
+      "patch": {
+        "security": [
+          {
+            "PersonalAccessToken": []
+          }
+        ],
+        "description": "Update the comment or the filters of a quarantined test. Only the fields sent are changed. Send `filters` as null to clear both filters, or `filters.branches` or `filters.targets` as null to clear one. Requires permission to run builds and a plan that includes test quarantine.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "test-quarantine"
+        ],
+        "summary": "Update a quarantined test",
+        "operationId": "quarantined-test-update",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "App slug",
+            "name": "app-slug",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "description": "Quarantined test ID",
+            "name": "quarantined-test-id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "The fields to change",
+            "name": "quarantined-test",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "comment": {
+                  "type": "string"
+                },
+                "filters": {
+                  "allOf": [
+                    {
+                      "$ref": "#/definitions/service.dto.QuarantinedTestFilters"
+                    }
+                  ],
+                  "x-nullable": true
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/service.dto.QuarantinedTest"
+            }
+          },
+          "401": {
+            "description": "Unauthorized - no valid personal access token or workspace API token",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          },
+          "403": {
+            "description": "Forbidden - user cannot run builds on the app, or the plan of the workspace does not include test quarantine",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          },
+          "404": {
+            "description": "Not found - app or quarantined test does not exist, or user is not authorized",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
+            }
+          },
+          "422": {
+            "description": "Unprocessable entity - a parameter is invalid",
+            "schema": {
+              "$ref": "#/definitions/service.ProxyErrorRespModel"
             }
           }
         }
@@ -9177,6 +9633,104 @@
         },
         "username": {
           "type": "string"
+        }
+      }
+    },
+    "service.dto.QuarantinedTest": {
+      "type": "object",
+      "properties": {
+        "class_name": {
+          "type": "string"
+        },
+        "comment": {
+          "type": "string"
+        },
+        "filters": {
+          "$ref": "#/definitions/service.dto.QuarantinedTestFilters"
+        },
+        "id": {
+          "description": "ID of the quarantined test",
+          "type": "string"
+        },
+        "quarantined_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "quarantined_by": {
+          "description": "Username of the user who quarantined the test",
+          "type": "string"
+        },
+        "quarantined_from": {
+          "$ref": "#/definitions/service.dto.QuarantinedTestSource"
+        },
+        "test_case_identifier": {
+          "description": "Identifier of the test case, when the test report provides one",
+          "type": "string"
+        },
+        "test_case_name": {
+          "type": "string"
+        },
+        "test_suite_name": {
+          "description": "Names of the test suites containing the test case, outermost first",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "service.dto.QuarantinedTestFilters": {
+      "description": "Limits the quarantine to builds on matching branches and of matching Workflows or Pipelines. Values may contain `*` wildcards. An empty or null list matches everything.",
+      "type": "object",
+      "properties": {
+        "branches": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-nullable": true
+        },
+        "targets": {
+          "description": "Workflow or Pipeline names",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-nullable": true
+        }
+      }
+    },
+    "service.dto.QuarantinedTestSource": {
+      "description": "Where the test was quarantined from",
+      "type": "object",
+      "properties": {
+        "number": {
+          "description": "Number of the build or pipeline the test was quarantined from",
+          "type": "integer"
+        },
+        "slug": {
+          "description": "Slug of the build or pipeline the test was quarantined from",
+          "type": "string"
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "api",
+            "build",
+            "insights",
+            "pipeline"
+          ]
+        }
+      }
+    },
+    "service.dto.QuarantinedTestsRespModel": {
+      "type": "object",
+      "properties": {
+        "quarantined_tests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/service.dto.QuarantinedTest"
+          }
         }
       }
     },
