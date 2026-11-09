@@ -18,7 +18,7 @@
  * scripts/check-partials-source.js for the sibling guards: same shape, same
  * no-dependency rule (Node built-ins only, so no npm install in CI).
  *
- * Scope: every .mdx page under docs/, except the generated API reference
+ * Scope: every .md and .mdx page under docs/, except the generated API reference
  * (`/api-reference/`), which is overwritten by `npm run gen-api-docs` and has
  * no .md mirror.
  *
@@ -44,7 +44,7 @@ function collectFiles(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) out.push(...collectFiles(full));
-    else if (entry.name.endsWith('.mdx')) out.push(full);
+    else if (/\.mdx?$/.test(entry.name)) out.push(full);
   }
   return out;
 }

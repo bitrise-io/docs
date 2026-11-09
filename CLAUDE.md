@@ -462,7 +462,7 @@ python3 scripts/sync_mcp_docs.py
 
 This fetches `.md` files from `bitrise-io/bitrise-mcp/docs/` on GitHub and writes them as `.mdx` (with injected frontmatter, link rewriting, and MDX/list rendering fixes) to `docs/bitrise-platform/ai/bitrise-mcp/`. Set `GITHUB_TOKEN` in the environment for authenticated requests (5,000 req/hr vs 60 req/hr unauthenticated).
 
-The script is idempotent. After running, review the diff and commit if the changes look correct. Never manually edit the synced files — edits belong in the source repo. The one exception is each page's frontmatter `description`: the script rebuilds the frontmatter on every run, so a description lives in the script's `DESCRIPTIONS` dict (keyed by file stem). Add an entry there for a newly synced page.
+The script is idempotent. After running, review the diff and commit if the changes look correct. The script reads each page's title from its `# Title` heading, writes it to the frontmatter, and drops the heading from the body. A page draws its title from the frontmatter, and the Markdown actions (copy, view, llms.txt) sit under that title. So a title change in the source repo reaches the page on the next sync. Never manually edit the synced files — edits belong in the source repo. The one exception is each page's frontmatter `description`: the script rebuilds the frontmatter on every run, so a description lives in the script's `DESCRIPTIONS` dict (keyed by file stem). Add an entry there for a newly synced page.
 
 ---
 

@@ -108,6 +108,31 @@ def extract_h1(content: str) -> Optional[str]:
     return None
 
 
+def strip_leading_h1(content: str, h1: Optional[str]) -> str:
+    """
+    Drop the page's own `# Title` line when it is the first thing in the body.
+
+    The title is already written to the frontmatter (build_frontmatter), and
+    Docusaurus draws it from there in the page header. A heading left in the
+    body would be drawn instead, and the page would lose what the header
+    carries: the Markdown actions under the title (src/theme/DocItem/Content).
+    Only a heading at the very top that matches the extracted title is removed,
+    so a `# comment` inside a code block is never touched.
+    """
+    if not h1:
+        return content
+    lines = content.split("\n")
+    first = 0
+    while first < len(lines) and not lines[first].strip():
+        first += 1
+    if first >= len(lines) or not lines[first].startswith("# ") or lines[first][2:].strip() != h1:
+        return content
+    rest = first + 1
+    while rest < len(lines) and not lines[rest].strip():
+        rest += 1
+    return "\n".join(lines[rest:])
+
+
 def is_install_file(stem: str) -> bool:
     return stem.startswith("install-")
 
@@ -284,6 +309,7 @@ def sync():
         label    = derive_sidebar_label(stem, h1)
         position = derive_position(stem, install_stems, root_stems)
         body = rewrite_internal_links(body)
+        body = strip_leading_h1(body, h1)
         new_content = build_frontmatter(stem, h1, label, position) + fix_void_html_tags(fix_list_code_blocks(body))
 
         if stem not in DESCRIPTIONS:

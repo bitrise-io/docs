@@ -1,15 +1,11 @@
 import React, {useEffect, useState} from 'react';
 import {translate} from '@docusaurus/Translate';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import {useDoc} from '@docusaurus/plugin-content-docs/client';
-import {
-  BitkitLink,
-  BitkitLinkButton,
-  BitkitProvider,
-  IconArrowNortheast,
-  IconCheck,
-  IconCopy,
-} from '@bitrise/bitkit-v2';
+import IconArrowNortheast from '@site/src/images/icon-arrow-northeast-16px.svg';
+import IconCheck from '@site/src/images/icon-check-16px.svg';
+import IconCopy from '@site/src/images/icon-copy-16px.svg';
 import styles from './styles.module.css';
 
 type CopyState = 'idle' | 'copied' | 'failed';
@@ -45,14 +41,15 @@ async function copyMarkdown(href: string): Promise<void> {
 }
 
 /**
- * Page actions above the title of a doc page: copy the page as Markdown, or
- * open its raw Markdown source.
+ * Page actions under the title of a doc page: copy the page as Markdown, open
+ * its raw Markdown source, or open the `llms.txt` index of the documentation.
  *
  * `docusaurus-plugin-llms` writes one `<slug>.md` per page next to the built
  * HTML (see the plugin config in docusaurus.config.ts), so the mirror URL is
  * the page's permalink plus `.md`. `permalink` already carries the locale
  * baseUrl (`/en/...`, `/ja/...`), which is where each locale's mirrors live.
- * The root page (`/en/`) maps to `index.md`.
+ * A hub page's permalink ends in a slash, which the mirror name drops
+ * (`/en/bitrise-ci/` -> `/en/bitrise-ci.md`).
  *
  * The mirrors only exist in a production build, not under `npm start`.
  * Generated API reference pages have no mirror (`ignoreFiles` in the plugin
@@ -60,12 +57,20 @@ async function copyMarkdown(href: string): Promise<void> {
  * the default locale: the plugin reads `docs/` only, never `i18n/<locale>`, so
  * every non-default mirror is a byte-identical copy of the English one.
  *
- * BitkitProvider wraps the actions locally, as on the portal landing page, so
- * Bitkit's theme doesn't have to be mounted around every doc page.
+ * Plain elements, not Bitkit components. Bitkit components need a
+ * BitkitProvider, which injects a global stylesheet: a CSS reset (`ul, ol`
+ * lose their bullets) and a light-theme `body` color that is unreadable in
+ * dark mode. That is fine on the portal landing page, which is built from
+ * Bitkit, but on a doc page it restyles the whole article. The look is Bitkit's
+ * small tertiary button, drawn with the Bitkit design tokens that
+ * src/css/variables.css already defines, in light and dark mode.
  */
 export default function MarkdownActions(): React.JSX.Element | null {
   const {metadata, frontMatter} = useDoc();
-  const {i18n} = useDocusaurusContext();
+  const {i18n, siteConfig} = useDocusaurusContext();
+  // `llms.txt` is a static file, copied into every locale's build; resolving it
+  // against baseUrl keeps the link working under `npm start` as well.
+  const llmsTxtHref = useBaseUrl('/llms.txt');
   const [copyState, setCopyState] = useState<CopyState>('idle');
 
   useEffect(() => {
@@ -78,14 +83,21 @@ export default function MarkdownActions(): React.JSX.Element | null {
 
   if (
     i18n.currentLocale !== i18n.defaultLocale ||
-    frontMatter.api !== undefined ||
+    // `api` is added to the front matter of generated API pages by
+    // docusaurus-plugin-openapi-docs, so it is not in Docusaurus's own type.
+    (frontMatter as {api?: unknown}).api !== undefined ||
     metadata.source.includes('/api-reference/')
   ) {
     return null;
   }
 
-  const permalink = metadata.permalink;
-  const href = permalink.endsWith('/') ? `${permalink}index.md` : `${permalink}.md`;
+  // An `index.mdx` page has a permalink with a trailing slash (for example
+  // `/en/bitrise-ci/testing/test-reports/test-attachments/`), and its mirror
+  // drops the slash (`.../test-attachments.md`). Only a page at the very root
+  // of the locale would map to `index.md`.
+  const base = siteConfig.baseUrl.replace(/\/+$/, '');
+  const path = metadata.permalink.replace(/\/+$/, '');
+  const href = path === base ? `${base}/index.md` : `${path}.md`;
 
   const copyLabels: Record<CopyState, string> = {
     idle: translate({
@@ -112,24 +124,32 @@ export default function MarkdownActions(): React.JSX.Element | null {
     );
   };
 
+  const CopyIcon = copyState === 'copied' ? IconCheck : IconCopy;
+
   return (
     <div className={styles.bar}>
-      <BitkitProvider>
-        <BitkitLinkButton
-          onClick={handleCopy}
-          suffixIcon={copyState === 'copied' ? IconCheck : IconCopy}
-          aria-live="polite"
-        >
-          {copyLabels[copyState]}
-        </BitkitLinkButton>
-        <BitkitLink href={href} target="_blank" suffixIcon={IconArrowNortheast}>
-          {translate({
-            id: 'markdownActions.view.label',
-            message: 'View as Markdown',
-            description: 'Label of the link above a doc page that opens its raw Markdown source',
-          })}
-        </BitkitLink>
-      </BitkitProvider>
+      <button type="button" className={styles.action} onClick={handleCopy} aria-live="polite">
+        {copyLabels[copyState]}
+        <CopyIcon width={16} height={16} aria-hidden="true" />
+      </button>
+      <span className={styles.separator} aria-hidden="true" />
+      <a className={styles.action} href={href} target="_blank" rel="noopener noreferrer">
+        {translate({
+          id: 'markdownActions.view.label',
+          message: 'View as Markdown',
+          description: 'Label of the link above a doc page that opens its raw Markdown source',
+        })}
+        <IconArrowNortheast width={16} height={16} aria-hidden="true" />
+      </a>
+      <span className={styles.separator} aria-hidden="true" />
+      <a className={styles.action} href={llmsTxtHref} target="_blank" rel="noopener noreferrer">
+        {translate({
+          id: 'markdownActions.llmsTxt.label',
+          message: 'View llms.txt',
+          description: 'Label of the link above a doc page that opens the llms.txt index of the documentation',
+        })}
+        <IconArrowNortheast width={16} height={16} aria-hidden="true" />
+      </a>
     </div>
   );
 }
