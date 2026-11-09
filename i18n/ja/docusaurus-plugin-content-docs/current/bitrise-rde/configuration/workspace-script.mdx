@@ -1,0 +1,342 @@
+---
+title: "Workspace スクリプト"
+description: "workspace内のすべてのRemote Dev Environmentセッションの起動時に、Bashスクリプトを1つ実行します。たとえば監視エージェントのインストールに使用できます。専用のシークレット変数、ドラフトのテスト、CLI、MCP、APIへのアクセスにも対応しています。"
+sidebar_position: 9
+slug: /bitrise-rde/configuration/workspace-script
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+workspaceスクリプトは、<GlossTerm baseform="workspace">workspace</GlossTerm>内のすべての<GlossTerm baseform="rde session">セッション</GlossTerm>が起動時に実行する、単一のBashスクリプトです。誰が作成したか、どの<GlossTerm baseform="rde template">テンプレート</GlossTerm>を使用しているかにかかわらず実行されます。監視エージェントやセキュリティエージェントなど、workspace全体のすべてのマシンで必要なセットアップに使用します。すべてのテンプレートに追加する必要はありません。
+
+スクリプトを書く際は、次の3つのルールに従ってください。
+
+- <strong>テンプレートの[ライフサイクルフック](/bitrise-rde/configuration/lifecycle-hooks)より前に、起動のたびに実行されます。</strong> リストア後を含め、すべてのセッションのすべての起動が対象です。
+- <strong>テンプレートは最長で10分間、スクリプトの終了を待ちます。</strong> ライフサイクルフックは、スクリプトが終了したとき、または10分が経過したときのいずれか早いほうで開始します。スクリプトに1行追加すると、[この制限を解除](#how-long-the-template-waits)できます。
+- <strong>再実行しても安全である必要があります。</strong> スクリプトはリストアのたびに実行されるため、冪等にしてください。長時間実行するプロセスはバックグラウンドで開始し、スクリプトは終了させてください。
+
+## Workspace スクリプトの編集権限 {#workspace-script-edit-rights}
+
+workspaceスクリプトは、個人ではなくworkspaceに属します。workspaceの<strong>Usage</strong>ページを表示できるユーザーは、スクリプトを表示および編集できます。
+
+- Workspace owners
+- [workspaceロール](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces)に<strong>Manage plan and billing</strong>が含まれるメンバー。その他のメンバーにはこのページは表示されませんが、そのセッションでは他のメンバーと同様にスクリプトが実行されます。
+
+スクリプトを開くには、Remote Dev Environmentsセクションの左サイドバーにある<strong>Workspace Settings</strong>で、<strong>Workspace script</strong>を選択します。
+
+## workspace スクリプトのセットアップ {#setting-up-the-workspace-script}
+
+1. <strong>Workspace Settings</strong>で、<strong>Workspace script</strong>を選択します。
+1. <strong>Script</strong>フィールドにスクリプトを記述します。[スクリプトの書き方](#writing-the-script)を参照してください。
+1. 任意：<strong>Add variable</strong>をクリックして、スクリプトに必要な値（APIキーなど）を設定します。[変数](#variables)を参照してください。
+1. <strong>Save changes</strong>をクリックします。新しいスクリプトはドラフトとして保存されます。ドラフトは無効の状態で、テストセッションでのみ実行されます。
+1. <strong>Test on a new session</strong>をクリックして、結果を確認します。[ドラフトのテスト](#testing-a-draft)を参照してください。
+1. <strong>Enabled</strong>スイッチをオンにします。
+
+## スクリプトを実行するセッション {#sessions-that-run-the-script}
+
+スクリプトを有効にすると、workspace内のすべてのセッションの起動時に実行されます。
+
+- テンプレートから作成されたセッション。
+- テンプレートを使用せずに作成されたセッション。
+- [warm pool](/bitrise-rde/configuration/warm-pools)のマシン。スクリプトは、誰かがマシンを取得したときではなく、プールがマシンを準備するときに実行されます。
+- [デバイスプレビューリンク](/bitrise-rde/devices/device-preview-links)で開くものを含む、デバイスセッション。
+
+スクリプトは、macOSとLinuxのどちらでも、マシンの起動のたびに実行されます。具体的には、セッションの作成時、リストアのたび、リビルド後です。実行条件は次のとおりです。
+
+- セッションユーザーとして、ホームディレクトリから実行されます。
+- ログインシェル（`bash -l`）で実行されるため、ユーザーのシェルプロファイルが読み込まれます。
+- Bitriseスタックでセッションユーザーが持つ`sudo`権限と同じ権限で実行されます。
+
+スクリプトが失敗しても、セッションが失敗することはありません。セッションは通常どおり開始され、ログにスクリプトの終了コードが表示されます。マシンがスクリプトを取得できない場合は、約3分間再試行し、その後`[workspace] could not fetch the workspace script`をログに記録して、スクリプトなしで起動を続行します。
+
+## スクリプトの書き方 {#writing-the-script}
+
+セットアップを行い、実行し続ける必要があるものをバックグラウンドで開始して、終了するようにスクリプトを書いてください。
+
+- <strong>セットアップが完了したら終了します。</strong> テンプレートのセットアップは、スクリプトが終了するまで待機します。
+- <strong>Start長時間実行するプロセスはバックグラウンドで実行します。</strong> たとえば、監視エージェントを`nohup my-agent >~/my-agent.log 2>&1 &`で開始するか、サービスとしてインストールします。スクリプトがフォアグラウンドで開始したプロセスがあると、スクリプトは実行され続け、テンプレートはそれを待機します。
+- <strong>冪等にします。</strong> スクリプトは、リストアやリビルドのたびに再実行されます。ツールをインストールしたりプロセスを開始したりする前に、すでにインストールされているか、すでに実行中かを確認してください。インストールしたファイルはリストア後も残りますが、実行中のプロセスは残りません。
+
+### テンプレートが待機する時間 {#how-long-the-template-waits}
+
+テンプレートのライフサイクルフックは、workspaceスクリプトが終了するまで、最長で10分間待機します。ウォームアップスクリプトとスタートアップスクリプトが残っているテンプレートは、それらをライフサイクルフックとして実行するため、同じように待機します。[ウォームアップスクリプトとスタートアップスクリプトを使用するテンプレートの変換](/bitrise-rde/configuration/lifecycle-hooks#converting-a-template-with-warmup-and-startup-scripts)を参照してください。10分が経過すると、テンプレートのセットアップは開始され、workspaceスクリプトはバックグラウンドで実行され続けます。Bitriseがスクリプトを停止することはありません。ログには、次で始まる行が記録されます。
+
+```text
+[workspace] still running after 10 minutes;
+```
+
+スクリプトにかかる時間に関係なくテンプレートに待機させるには、スクリプト内の任意の場所に、次の行を単独の行として追加します。
+
+```bash
+# rde: no-wait-limit
+```
+
+行内のスペースや大文字・小文字は区別されません。
+
+:::warning[制限なし]
+
+`# rde: no-wait-limit`を使用すると、スクリプトがハングした場合に、workspace内のすべてのセッションの起動が止まります。warm poolマシンでは、プール独自の準備完了の制限である130分が引き続き適用されます。その時間内に準備が完了しないプールマシンは置き換えられます。
+
+:::
+
+### Environment variables
+
+スクリプトは、実行のたびに次のenvironment variablesを受け取ります。
+
+| 変数 | 値 |
+| --- | --- |
+| `RDE_OS` | `macos`または`linux` |
+| `RDE_SESSION_ID` | セッションのID |
+| `RDE_WORKSPACE_ID` | workspaceのID |
+| `RDE_WORKSPACE_SCRIPT` | マシン上のスクリプトファイルのパス |
+
+スクリプトは、独自の[変数](#variables)も受け取ります。`RDE_`で始まるキーは予約されているため、独自の変数には使用できません。
+
+### 変数 {#variables}
+
+スクリプトに必要な値は、スクリプト自体に記述せず、workspaceスクリプトページの変数として保存します。すべての変数には可視性が設定されています。
+
+| 可視性 | 内容 |
+| --- | --- |
+| <strong>Plain</strong> | workspaceスクリプトを編集できるすべてのユーザーに表示されます。 |
+| <strong>Secret</strong> | 保存時に暗号化され、マスクされます。編集者は値を表示できます。 |
+| <strong>Protected</strong> | 保存時に暗号化され、書き込み専用です。値を置き換えることはできますが、再び表示することは誰にもできません。ページで<strong>Replace</strong>をクリックして、新しい値を入力します。入力しない場合は、保存しても保存済みの値が維持されます。 |
+
+値はスクリプトの実行時に渡され、マシンの起動スクリプトに書き込まれることはありません。ただし、スクリプトは各メンバー自身のセッションでそのメンバーとして実行されるため、スクリプトが受け取った値はそのマシン上で読み取ることができます。スクリプトに必要な範囲に限定された認証情報を使用してください。たとえば、データの送信のみができるメトリクスキーです。
+
+### セッションの詳細の読み取り {#reading-session-details}
+
+すべてのセッションマシンには、`rde-agent`コマンドがあります。`rde-agent session info`は、実行しているセッションの詳細を出力します。スクリプトやマシン上の他のプロセスから呼び出すことができます。呼び出しのたびに詳細がリアルタイムで取得されるため、常にセッションの現在の所有者が反映されます。
+
+```bash
+rde-agent session info                # JSON, the default
+rde-agent session info --format env   # Shell variables
+```
+
+次のフィールドが出力されます。
+
+| フィールド | 値 |
+| --- | --- |
+| `session_id` | セッションのID。 |
+| `session_name` | セッションの名前。 |
+| `workspace_id` | workspaceのID。 |
+| `owner_type` | `user`または`workspace`。 |
+| `owner_email` | 所有者のメールアドレス。workspaceがセッションを所有している場合は未設定。 |
+| `owner_username` | 所有者のBitriseユーザー名。workspaceがセッションを所有している場合は未設定。 |
+| `template_id` | テンプレートのID。テンプレートなしのセッションでは未設定。 |
+| `template_name` | テンプレートの名前。テンプレートなしのセッションでは未設定。 |
+| `warm_pool_id` | マシンの準備対象となったwarm poolのID。その他のセッションでは未設定。 |
+| `warm_pool_name` | そのwarm poolの名前。 |
+| `os` | `macos`または`linux`。 |
+| `machine_type` | マシンタイプ。 |
+| `vcpu` | 仮想CPUの数。 |
+| `memory_gb` | メモリ（GB）。 |
+| `device` | 仮想デバイスを使用するセッションでは`ios`または`android`。それ以外は未設定。 |
+| `created_at` | セッションが作成された日時。warm poolから取得したセッションの場合は、取得された日時。 |
+| `created_via` | 現在の所有者に対してセッションがどのように開始されたか。詳細は下記を参照してください。 |
+| `auto_terminate_at` | セッションが自動的に終了する日時。自動終了しない場合は未設定。 |
+
+`created_via`は次のいずれかです。
+
+- `ui`：RDE UI。
+- `mcp`：MCPサーバー。
+- `cli`：Bitrise CLI。
+- `api`：その他のAPIクライアントまたはトークン。
+- `preview_link`：デバイスプレビューリンク。
+- `system`：まだ誰も取得していないwarm poolマシン。
+- `unknown`：Bitriseがこの情報を記録する前に作成されたセッション。
+
+セッションを開始するクライアントが`created_via`を報告するため、これはセキュリティ制御ではなく、可観測性のためのシグナルとして扱ってください。
+
+JSON形式では、未設定のフィールドを`null`として、1つのオブジェクトを出力します。
+
+```json
+{
+  "session_id": "6f1c2a7e-4b0d-4c51-9a8e-2d3f5e6a7b8c",
+  "session_name": "checkout-fix",
+  "workspace_id": "a1b2c3d4e5f60718",
+  "owner_type": "user",
+  "owner_email": "dev@example.com",
+  "owner_username": "dev",
+  "template_id": "0e9d8c7b-6a5f-4e3d-2c1b-0a9f8e7d6c5b",
+  "template_name": "iOS app",
+  "warm_pool_id": null,
+  "warm_pool_name": null,
+  "os": "macos",
+  "machine_type": "MACHINE_TYPE",
+  "vcpu": 6,
+  "memory_gb": 14,
+  "device": "ios",
+  "created_at": "2026-11-06T09:12:44Z",
+  "created_via": "cli",
+  "auto_terminate_at": "2026-11-06T17:12:44Z"
+}
+```
+
+env形式では、フィールドごとに1行の`RDE_FIELD='value'`を、同じ順序で`RDE_SESSION_ID`から`RDE_AUTO_TERMINATE_AT`まで出力します。値はシェル用にクォートされ、未設定のフィールドは空文字列になるため、すべてのフィールドを安全にシェルへ読み込めます。
+
+```bash
+eval "$(rde-agent session info --format env)"
+echo "Owner: ${RDE_OWNER_EMAIL:-unclaimed}"
+```
+
+:::note[Warm poolマシン]
+
+warm poolマシンでは、workspaceスクリプトは誰かがマシンを取得する前に実行され、取得時に再実行されることはありません。所有者など、起動時に一度だけ読み取った詳細は、まだ取得されていないマシンのものです。所有者が必要な場合は、必要になった時点で`rde-agent session info`を呼び出してください。
+
+:::
+
+### 例：メトリクスエージェント {#example-a-metrics-agent}
+
+このスクリプトは、メトリクスエージェントを一度だけインストールし、起動のたびに開始します。エージェントのAPIキーは、保護された変数`METRICS_API_KEY`です。タグは`rde-agent session info`から取得します。タグには名前ではなくIDを使用し、warm poolマシンの取得時に変わる可能性がある所有者は含めません。値は、生成された設定ファイルではなく環境を通じてエージェントに渡されるため、キーや名前に含まれる文字によってエージェントが読み取る内容が変わることはありません。
+
+```bash
+eval "$(rde-agent session info --format env)"
+
+# Install once: installed files survive a restore.
+if ! command -v my-agent >/dev/null 2>&1; then
+  curl -fsSL https://example.com/install-my-agent.sh | sudo bash
+fi
+
+# Start it in the background, unless it's already running.
+if ! pgrep -x my-agent >/dev/null; then
+  MY_AGENT_API_KEY="$METRICS_API_KEY" \
+  MY_AGENT_TAGS="rde_session:$RDE_SESSION_ID rde_template:${RDE_TEMPLATE_ID:-none} rde_warm_pool:${RDE_WARM_POOL_ID:-none} os:$RDE_OS" \
+    nohup my-agent >~/my-agent.log 2>&1 &
+fi
+```
+
+実際のエージェント（Datadog Agentなど）では、macOSとLinux向けのベンダーのインストールガイドに従い、サービスとしてインストールすることをお勧めします。ベンダーの課金方法も確認してください。たとえばDatadogはホスト単位で課金し、すべてのセッションが個別のホストになります。
+
+## スクリプトのオンとオフの切り替え {#turning-the-script-on-and-off}
+
+ページ上部の<strong>Enabled</strong>スイッチで、どのセッションがスクリプトを実行するかが決まります。
+
+- <strong>Enabled：</strong> workspace内のすべてのセッションの起動時に実行されます。
+- <strong>Disabled：</strong> スクリプトはドラフトとして保存されたままになり、[テストセッション](#testing-a-draft)でのみ実行されます。
+
+スイッチはクリックするとすぐに反映され、保存する必要はありません。スクリプトと変数の変更は、<strong>Save changes</strong>をクリックしたときに反映されます。未保存の変更がある間はスイッチを使用できないため、先に保存するか破棄してください。
+
+変更は、各セッションの次回の起動から反映されます。新しいセッションはすぐに新しいバージョンを実行し、既存のセッションはリストアされたときに実行します。workspaceスクリプトがworkspaceで利用可能になる前に作成されたセッションは、リストアしても実行しません。これらのセッションにスクリプトを適用するには、<strong>Rebuild</strong>を利用できる場所（ライフサイクルフックを実行するセッション）でリビルドするか、新しいセッションに置き換えてください。
+
+## ドラフトのテスト {#testing-a-draft}
+
+workspace内のすべてのセッションでスクリプトを実行する前に、自分のセッションで試します。
+
+1. スクリプトを保存します。テストセッションは保存済みの内容のみを実行し、未保存の編集内容は実行しません。
+1. <strong>Test on a new session</strong>をクリックします。テストセッション用の<strong>New session</strong>ページが開きます。スクリプトが無効でも、テストセッションは保存済みのドラフトを実行します。テストセッションは常に自分のセッションであり、warm poolから取得することはできません。
+1. セッションを作成し、ログを開いて、`[workspace]`で始まる行を確認します。[スクリプトの出力の確認](#reading-the-scripts-output)を参照してください。
+1. 変更を試すには、スクリプトを編集して保存し、同じテストセッションを再度起動します。<strong>Terminate</strong>してから<strong>Restore</strong>する方法は、どのセッションでも使用でき、セッションのディスクが維持されます。<strong>Rebuild</strong>は、[ライフサイクルフック](/bitrise-rde/configuration/lifecycle-hooks#when-a-hook-fails)を実行するセッションでのみ使用でき、ディスクごとマシンを置き換えます。
+1. スクリプトが正常に動作したら、<strong>Enabled</strong>スイッチをオンにします。
+
+テストセッションのページには、<strong>Run workspace script draft</strong>バッジが表示されます。
+
+:::warning
+
+リビルドすると、セッションのディスクにのみ保存されているものはすべて削除されます。テストセッションをリビルドする前に、保持したい作業内容をプッシュするかコピーしてください。
+
+:::
+
+## スクリプトの出力の確認 {#reading-the-scripts-output}
+
+スクリプトが標準出力と標準エラー出力に出力したすべての行は、`[workspace] `を先頭に付けて、セッションのログに表示されます。スクリプトが終了すると、最後の行に終了コードが表示されます（例：`[workspace] exited 0`）。
+
+- ライフサイクルフックを実行するセッションでは、出力はフック自体のログと並んで<strong>System</strong>ログに表示されます。[セッションのセットアップの確認](/bitrise-rde/configuration/lifecycle-hooks#following-a-sessions-setup)を参照してください。デバイスプレビューリンクがwarm poolなしで開始するセッションを除き、すべての新しいセッションがライフサイクルフックを実行します。
+- その他のセッションでは、出力は<strong>Startup</strong>ログに表示されます。これは、ライフサイクルフックがworkspaceで利用可能になる前に作成されたセッションと、デバイスプレビューリンクがwarm poolなしで開始するセッションです。
+
+同じ出力は、マシン上の`~/.rde/workspace.log`にも書き込まれます。起動ごとの出力は10 MiBに制限されています。
+
+## CLI、AIエージェント、APIからのスクリプトの管理 {#managing-the-script-from-the-cli-an-ai-agent-or-the-api}
+
+<Tabs>
+<TabItem value="cli" label="CLI" default>
+
+workspaceスクリプト、その変数、および有効かどうかを表示するには、次のようにします。
+
+```bash
+bitrise-cli rde workspace-script view
+bitrise-cli rde workspace-script view --show-secrets
+```
+
+`bitrise-cli rde workspace-script update`は、渡したものだけを変更します。
+
+| フラグ | 内容 |
+| --- | --- |
+| `--script-file PATH` | スクリプトをファイルの内容に置き換えます。標準入力から読み取るには`-`を渡します。 |
+| `--enable`、`--disable` | スクリプトをオンまたはオフにします。 |
+| `--set-var KEY=VALUE` | Plain変数を追加または変更します。 |
+| `--set-secret KEY=VALUE` | シークレット変数を追加または変更します。 |
+| `--set-protected KEY=VALUE` | 保護された変数を追加または変更します。 |
+| `--remove-var KEY` | 変数を削除します。 |
+
+これにより、スクリプトをgitリポジトリで管理し、そこから更新することが簡単になります。たとえば、CIから更新できます。
+
+```bash
+bitrise-cli rde workspace-script update --script-file workspace-script.sh
+```
+
+インラインで指定した値は、シェルの履歴とプロセスの引数に残ります。シークレット変数や保護された変数の値をどちらにも残さないようにするには、`KEY=-`を渡し、値を標準入力からパイプで渡します。1回の呼び出しで標準入力から読み取れる値または`--script-file -`は、1つだけです。
+
+```bash
+printf '%s' "$AGENT_TOKEN" | bitrise-cli rde workspace-script update --set-secret AGENT_TOKEN=-
+```
+
+保存済みのドラフトを実行するテストセッションを作成するには、次のようにします。
+
+```bash
+bitrise-cli rde session create script-test --template TEMPLATE_ID --workspace-script-test
+```
+
+</TabItem>
+<TabItem value="mcp" label="AI agent (MCP)">
+
+普通の言葉で依頼してください。例：*「workspaceスクリプトを表示して」*、*「workspaceスクリプトにjqをインストールするステップを追加して、新しいセッションでテストして」*
+
+- `bitrise_devenv_get_workspace_script`は、スクリプトとその変数を読み取ります。
+- `bitrise_devenv_update_workspace_script`は、エージェントが渡したもの（`script`、`enabled`、`set_variables`、`remove_variables`）だけを変更します。
+- `workspace_script_test`を指定した`bitrise_devenv_create`は、保存済みのドラフトを実行するテストセッションを作成します。
+
+</TabItem>
+<TabItem value="api" label="API">
+
+```text
+GET /v1/workspaces/{workspace_id}/workspace-script
+PUT /v1/workspaces/{workspace_id}/workspace-script
+```
+
+- `GET`は、スクリプト、有効かどうか、およびその変数を返します。シークレットの値は、`?include_secrets=true`を追加しない限りマスクされます。保護された値が返されることはありません。
+- `PUT`は、設定全体を置き換えます。省略した変数は削除されます。`value`を空にして送信した保護された変数は、保存済みの値が維持されます。
+
+```bash
+curl -X PUT "https://api.bitrise.io/rde/v1/workspaces/WORKSPACE_ID/workspace-script" \
+  -H "Authorization: token YOUR_BITRISE_PAT" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "enabled": true,
+    "script": "echo \"Hello from $RDE_SESSION_ID\"",
+    "variables": [
+      { "key": "METRICS_API_KEY", "value": "", "isSecret": true, "protected": true }
+    ]
+  }'
+```
+
+保存済みのドラフトを実行するテストセッションを作成するには、セッション作成リクエストで`workspaceScriptTest`を`true`に設定します。
+
+</TabItem>
+</Tabs>
+
+CLI、MCPサーバー、APIは、使用する[パーソナルアクセストークン](https://app.bitrise.io/me/account/security)の持ち主として動作するため、その人がworkspaceの<strong>Usage</strong>ページを表示できる必要があります。Workspace APIトークンでは、workspaceスクリプトの読み取りも編集もできません。
+
+## 制限 {#limits}
+
+| 制限 | 値 |
+| --- | --- |
+| スクリプトのサイズ | 64 KiB |
+| 変数の数 | 64 |
+| 変数キーの長さ | 128文字 |
+| 変数の値のサイズ | 64 KiB |
+| スクリプトとすべての変数のキーおよび値の合計 | 256 KiB |
+| 起動ごとに保持される出力 | 10 MiB |
+| テンプレートが待機する時間 | 10分（スクリプトに`# rde: no-wait-limit`が含まれる場合を除く） |

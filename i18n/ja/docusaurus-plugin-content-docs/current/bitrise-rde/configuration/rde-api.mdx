@@ -1,7 +1,7 @@
 ---
 title: "Remote Dev Environments API"
 description: "REST APIを使って、Remote Dev Environmentのセッション、テンプレート、保存済み入力をプログラムで管理し、workspaceの使用状況をレポートします。"
-sidebar_position: 6
+sidebar_position: 7
 slug: /bitrise-rde/configuration/rde-api
 sidebar_label: "API"
 ---
@@ -45,7 +45,7 @@ GET /v1/workspaces/{workspace_id}/usage
 
 ## Warm pools
 
-warm poolエンドポイントは、事前に起動されたセッションのプールを管理します。セッション作成リクエストとプレビューリンク作成リクエストは、`warm_pool_id` を指定してプールからセッションを割り当てます。
+warm poolエンドポイントは、事前に起動されたセッションのプールを管理します。セッションの作成リクエストとプレビューリンクの作成リクエストは、`warm_pool_id`を使用してプールからセッションを取得します。
 
 ```text
 GET    /v1/workspaces/{workspace_id}/warm-pools
@@ -53,9 +53,22 @@ POST   /v1/workspaces/{workspace_id}/warm-pools
 GET    /v1/workspaces/{workspace_id}/warm-pools/{warm_pool_id}
 PATCH  /v1/workspaces/{workspace_id}/warm-pools/{warm_pool_id}
 DELETE /v1/workspaces/{workspace_id}/warm-pools/{warm_pool_id}
+POST   /v1/workspaces/{workspace_id}/warm-pools/{warm_pool_id}/retry
 ```
 
-プールの `status` には、準備完了およびウォームアップ中のセッション数、ウォーム状態のセッション自体、構成エラーが報告されます。[Warm pools](/bitrise-rde/configuration/warm-pools)をご覧ください。
+プールの`status`は、準備完了のセッション数とウォームアップ中のセッション数、ウォームアップされたセッション自体、および設定エラーを報告します。`retry`リクエストは、<strong>On create</strong>が3回連続で失敗して停止したプールのウォームアップを再開します。[Warm pools](/bitrise-rde/configuration/warm-pools)を参照してください。
+
+## ライフサイクルフック {#lifecycle-hooks}
+
+テンプレートはセットアップスクリプトを`hooks`オブジェクトに保持します。セッションを読み取るたびに、セットアップのフェーズとフックの実行結果が`lifecycle`フィールドで報告されます。2つのエンドポイントは失敗したセットアップを再実行し、1つはフックのログを読み取ります。
+
+```text
+POST /v1/workspaces/{workspace_id}/sessions/{session_id}/hook-runs
+POST /v1/workspaces/{workspace_id}/sessions/{session_id}/rebuild
+GET  /v1/workspaces/{workspace_id}/sessions/{session_id}/logs/{stage}
+```
+
+[ライフサイクルフック](/bitrise-rde/configuration/lifecycle-hooks#managing-hooks-from-the-cli-an-ai-agent-or-the-api)を参照してください。
 
 ## デバイスセッション {#device-sessions}
 
