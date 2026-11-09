@@ -47,7 +47,7 @@ Once the script is enabled, it runs on every session boot in the workspace:
 
 - Sessions created from a template.
 - Sessions created without a template.
-- Machines of a [warm pool](/bitrise-rde/configuration/warm-pools). The script runs when the pool prepares the machine, not when someone claims it.
+- Machines of a [pool](/bitrise-rde/configuration/pools). The script runs when the pool prepares the machine, not when someone claims it.
 - Device sessions, including the ones a [device preview link](/bitrise-rde/devices/device-preview-links) opens.
 
 The script runs on macOS and Linux alike, on every boot of the machine: when the session is created, after every restore, and after a rebuild. It runs:
@@ -84,7 +84,7 @@ Spacing and capitalization in the line don't matter.
 
 :::warning[No limit]
 
-With `# rde: no-wait-limit`, a script that hangs holds up the boot of every session in the workspace. On warm pool machines, the pool's own readiness limit of 130 minutes still applies: a pool machine that isn't ready in time is replaced.
+With `# rde: no-wait-limit`, a script that hangs holds up the boot of every session in the workspace. On pool machines, the pool's own readiness limit of 130 minutes still applies: a pool machine that isn't ready in time is replaced.
 
 :::
 
@@ -134,14 +134,14 @@ It prints these fields:
 | `owner_username` | The owner's Bitrise username. Unset when the workspace owns the session. |
 | `template_id` | The template's ID. Unset for a session without a template. |
 | `template_name` | The template's name. Unset for a session without a template. |
-| `warm_pool_id` | The ID of the warm pool the machine was prepared for. Unset for other sessions. |
-| `warm_pool_name` | The name of that warm pool. |
+| `warm_pool_id` | The ID of the pool the machine was prepared for. Unset for other sessions. |
+| `warm_pool_name` | The name of that pool. |
 | `os` | `macos` or `linux`. |
 | `machine_type` | The machine type. |
 | `vcpu` | The number of virtual CPUs. |
 | `memory_gb` | The memory, in GB. |
 | `device` | `ios` or `android` for a session with a virtual device. Unset otherwise. |
-| `created_at` | When the session was created. For a session claimed from a warm pool, when it was claimed. |
+| `created_at` | When the session was created. For a session claimed from a pool, when it was claimed. |
 | `created_via` | How the session was started for its current owner. See below. |
 | `auto_terminate_at` | When the session terminates automatically. Unset if it doesn't. |
 
@@ -152,7 +152,7 @@ It prints these fields:
 - `cli`: the Bitrise CLI.
 - `api`: another API client or token.
 - `preview_link`: a device preview link.
-- `system`: a warm pool machine that nobody has claimed yet.
+- `system`: a pool machine that nobody has claimed yet.
 - `unknown`: a session created before Bitrise recorded this.
 
 The client that starts a session reports `created_via`, so treat it as an observability signal, not as a security control.
@@ -189,15 +189,15 @@ eval "$(rde-agent session info --format env)"
 echo "Owner: ${RDE_OWNER_EMAIL:-unclaimed}"
 ```
 
-:::note[Warm pool machines]
+:::note[Pool machines]
 
-On a warm pool machine, the workspace script runs before anyone claims the machine, and it doesn't run again at the claim. Details read once at startup, such as the owner, describe the unclaimed machine. When you need the owner, call `rde-agent session info` at the time you need it.
+On a pool machine, the workspace script runs before anyone claims the machine, and it doesn't run again at the claim. Details read once at startup, such as the owner, describe the unclaimed machine. When you need the owner, call `rde-agent session info` at the time you need it.
 
 :::
 
 ### Example: a metrics agent
 
-This script installs a metrics agent once, and starts it on every boot. The agent's API key is a protected variable, `METRICS_API_KEY`. The tags come from `rde-agent session info`: they use IDs rather than names, and leave out the owner, who can change when a warm pool machine is claimed. The values reach the agent through its environment rather than a generated configuration file, so characters in a key or a name can't change what the agent reads:
+This script installs a metrics agent once, and starts it on every boot. The agent's API key is a protected variable, `METRICS_API_KEY`. The tags come from `rde-agent session info`: they use IDs rather than names, and leave out the owner, who can change when a pool machine is claimed. The values reach the agent through its environment rather than a generated configuration file, so characters in a key or a name can't change what the agent reads:
 
 ```bash
 eval "$(rde-agent session info --format env)"
@@ -233,7 +233,7 @@ A change applies from each session's next boot: new sessions run the new version
 Try the script on a session of your own before every session in the workspace runs it:
 
 1. Save the script. A test session runs only what's saved, never unsaved edits.
-1. Click **Test on a new session**. The **New session** page opens for a test session. It runs the saved draft even while the script is disabled. A test session is always your own session, and it can't come from a warm pool.
+1. Click **Test on a new session**. The **New session** page opens for a test session. It runs the saved draft even while the script is disabled. A test session is always your own session, and it can't come from a pool.
 1. Create the session, then open its logs and read the lines that start with `[workspace]`. See [Reading the script's output](#reading-the-scripts-output).
 1. To try a change, edit and save the script, then boot the same test session again. **Terminate**, then **Restore** works on any session and keeps the session's disk. **Rebuild** works only on sessions that run [lifecycle hooks](/bitrise-rde/configuration/lifecycle-hooks#when-a-hook-fails), and replaces the machine together with its disk.
 1. When the script works, turn on the **Enabled** switch.
@@ -250,8 +250,8 @@ A rebuild deletes everything stored only on the session's disk. Push or copy any
 
 Every line that the script prints, on standard output and standard error, appears in the session's logs, prefixed with `[workspace] `. When the script exits, the last line shows its exit code, for example `[workspace] exited 0`.
 
-- On a session that runs lifecycle hooks, the output is in the **System** log, next to the hooks' own logs. See [Following a session's setup](/bitrise-rde/configuration/lifecycle-hooks#following-a-sessions-setup). Every new session runs lifecycle hooks, except one that a device preview link starts without a warm pool.
-- On other sessions, the output is in the **Startup** log: sessions created before lifecycle hooks were available to the workspace, and sessions that a device preview link starts without a warm pool.
+- On a session that runs lifecycle hooks, the output is in the **System** log, next to the hooks' own logs. See [Following a session's setup](/bitrise-rde/configuration/lifecycle-hooks#following-a-sessions-setup). Every new session runs lifecycle hooks, except one that a device preview link starts without a pool.
+- On other sessions, the output is in the **Startup** log: sessions created before lifecycle hooks were available to the workspace, and sessions that a device preview link starts without a pool.
 
 The same output is also written to `~/.rde/workspace.log` on the machine. The output of each boot is capped at 10 MiB.
 
