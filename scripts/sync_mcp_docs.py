@@ -70,7 +70,7 @@ DESCRIPTIONS: Dict[str, str] = {
     "install-other-copilot-ides": "Add the Bitrise MCP server to GitHub Copilot in Visual Studio, JetBrains IDEs, Xcode, and Eclipse.",
     "install-vscode":             "Add the Bitrise MCP server to VS Code with OAuth, or fall back to a personal access token or the local server.",
     "install-windsurf":           "Add the Bitrise MCP server to Windsurf with OAuth, or fall back to a personal access token or the local server.",
-    "tools":                      "Limit which tools the Bitrise MCP server exposes to your MCP client, and look up every available tool by API group.",
+    "tools":                      "Limit which tools the Bitrise MCP server exposes to your MCP client, and look up every available tool by toolset.",
 }
 
 
