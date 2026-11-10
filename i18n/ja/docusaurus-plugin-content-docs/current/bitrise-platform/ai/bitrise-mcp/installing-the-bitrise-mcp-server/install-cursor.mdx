@@ -5,13 +5,11 @@ sidebar_label: "Cursor"
 sidebar_position: 2
 slug: /bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-cursor
 ---
-# CursorにBitrise MCPサーバーをインストールする {#install-bitrise-mcp-server-in-cursor}
-
 ## 前提条件 {#prerequisites}
 
-1. [Cursor](https://cursor.com/download) IDEがインストールされていること(latest version、MCP OAuthのサポートを含む — Streamable HTTPにはCursor v0.48.0以降、OAuthには最新のビルドが必要)
+1. [Cursor](https://cursor.com/download) IDEがインストールされていること（latest version、MCP OAuthのサポートを含む — Streamable HTTPにはCursor v0.48.0以降、OAuthには最新のビルドが必要）
 2. Bitriseアカウント
-3. ローカルセットアップの場合: [Go](https://go.dev/)(1.25以上)がインストールされていること、およびBitriseのPAT
+3. ローカルセットアップの場合： [Go](https://go.dev/)（1.25以上）がインストールされていること、およびBitriseのPAT
 
 ## リモートサーバーのセットアップ(推奨) {#remote-server-setup-recommended}
 
@@ -21,12 +19,12 @@ slug: /bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install
 
 このリポジトリには Cursor プラグインのマニフェスト(`.cursor-plugin/plugin.json` + `mcp.json`)が含まれているため、設定ファイルを編集せずに、[Cursor Marketplace](https://cursor.com/marketplace)からリモートサーバーをインストールできます。
 
-1. Cursor で <strong>Settings → Plugins</strong> を開く(または Marketplace を参照する)と、<strong>Bitrise</strong> をインストールします
+1. Cursor で <strong>Settings → Plugins</strong> を開く（または Marketplace を参照する）と、<strong>Bitrise</strong> をインストールします
 2. 最初のツール呼び出し時に、ブラウザーでのサインインフローを完了します
 
 ### オプション B: 手動でインストールする手順 {#option-b-manual-install-steps}
 
-1. グローバルのMCP設定ファイル `~/.cursor/mcp.json` を開き(またはプロジェクトローカルの `.cursor/mcp.json` を使用し)、以下の設定を追加します
+1. グローバルのMCP設定ファイル `~/.cursor/mcp.json` を開き（またはプロジェクトローカルの `.cursor/mcp.json` を使用し)、以下の設定を追加します
 2. ファイルを保存します
 3. Cursor を再起動します
 4. 最初のツール呼び出し時に、ブラウザーでのサインインフローを完了します
@@ -62,14 +60,14 @@ CursorのバージョンがMCP OAuthにまだ対応していない場合は、�
 
 ## ローカルサーバーのセットアップ {#local-server-setup}
 
-ローカルのBitrise MCPサーバーはGo経由で動作し、パーソナルアクセストークンを使用します(stdioモード、OAuthなし)。
+ローカルのBitrise MCPサーバーはGo経由で動作し、パーソナルアクセストークンを使用します（stdioモード、OAuthなし）。
 
 [![MCPサーバーをインストール](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en-US/install-mcp?name=bitrise&config=eyJlbnYiOnsiQklUUklTRV9UT0tFTiI6IllPVVJfQklUUklTRV9QQVQifSwiY29tbWFuZCI6ImdvIHJ1biBnaXRodWIuY29tL2JpdHJpc2UtaW8vYml0cmlzZS1tY3AvdjJAdjIifQo%3D)
 
 ### インストール手順 {#install-steps}
 
 1. 上のインストールボタンをクリックして手順に従うか、`~/.cursor/mcp.json` を開いて以下の設定を追加します
-2. Tools & Integrations > MCP tools で、"bitrise" の横にある鉛筆アイコンをクリックします
+2. Tools & Integrations → MCP tools で、"bitrise" の横にある鉛筆アイコンをクリックします
 3. `YOUR_BITRISE_PAT` を実際の Personal Access Token に置き換えます
 4. ファイルを保存します
 5. Cursor を再起動します
@@ -101,13 +99,29 @@ CursorのバージョンがMCP OAuthにまだ対応していない場合は、�
 ## インストールの確認 {#verify-installation}
 
 1. Cursorを完全に再起動します
-2. [設定] → [Tools & Integrations] → [MCP Tools]で緑色のドットを確認します
+2. [設定]→[Tools & Integrations]→[MCP Tools]で緑色のドットを確認します
 3. チャットまたはコンポーザーで「Available Tools」を確認します
-4. 「List my Bitrise apps」でテストします(サインインしていない場合、最初のツール呼び出しでOAuthフローがトリガーされます)
+4. 「List my Bitrise apps」でテストします（サインインしていない場合、最初のツール呼び出しでOAuthフローがトリガーされます）
 
 ## 詳細設定 {#advanced-configuration}
 
-特定のAPIグループの有効化・無効化については、[Tools](/bitrise-platform/ai/bitrise-mcp/tools)を参照してください。
+Marketplaceからのインストールでは`https://mcp.bitrise.io/?toolset=all`ですべてのツールセットが有効になります。手動設定でも同じURLを使用できます。Cursorでは、ツールの数が非常に多いサーバーがエラーなしでエージェントから消えるという報告があります。Bitriseのツールがエージェントに表示されない場合は、`toolset`クエリパラメーターで必要なツールセットのみを有効にしてください。次の例では、CIのツールのみを残します。
+
+```json
+{
+  "mcpServers": {
+    "bitrise": {
+      "url": "https://mcp.bitrise.io/?toolset=apps,builds,workspaces,outgoing-webhooks,artifacts,group-roles,cache-items,pipelines,account,configuration,insights"
+    }
+  }
+}
+```
+
+ローカルサーバーの場合は、同じカンマ区切りのリストを、代わりに`ENABLED_TOOLSET`環境変数に指定します。
+
+有効にしていないツールセットのツール（ストアリリースのツールなど）がタスクで必要な場合、エージェントは`list_toolset`を呼び出して、追加するツールセットを確認できます。
+
+すべてのツールセットと、一般的なツール数の上限に収まる組み合わせについては、[ツールセット](/bitrise-platform/ai/bitrise-mcp/tools#advanced-configuration)を参照してください。
 
 ## トラブルシューティング {#troubleshooting}
 
