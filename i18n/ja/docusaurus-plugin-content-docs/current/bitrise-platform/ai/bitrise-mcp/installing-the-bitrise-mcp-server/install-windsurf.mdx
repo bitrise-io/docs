@@ -5,14 +5,12 @@ sidebar_label: "Windsurf"
 sidebar_position: 7
 slug: /bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install-windsurf
 ---
-# Bitrise MCP サーバーを Windsurf にインストールする {#install-bitrise-mcp-server-in-windsurf}
-
 ## 前提条件 {#prerequisites}
 1. [Windsurf IDE](https://windsurf.com/) がインストールされていること（latest version）
 2. Bitrise アカウント
-3. ローカルセットアップの場合: [Go](https://go.dev/)（1.25 以上）がインストールされていること、および Bitrise PAT
+3. ローカルセットアップの場合： [Go](https://go.dev/)（1.25 以上）がインストールされていること、および Bitrise PAT
 
-## リモートサーバーのセットアップ（推奨） {#remote-server-setup-recommended}
+## リモートサーバーのセットアップ（推奨）{#remote-server-setup-recommended}
 
 リモート Bitrise MCP サーバーは Bitrise によって `https://mcp.bitrise.io` でホストされており、Streamable HTTP をサポートしています。最近の Windsurf のビルドは MCP OAuth をサポートしています。最初にツールを使用する際にブラウザが開き、Bitrise へのサインインを求められます。トークンを貼り付ける必要はありません。
 
@@ -45,7 +43,7 @@ Windsurf のビルドがまだ MCP OAuth をサポートしていない場合は
 }
 ```
 
-## ローカルサーバーのセットアップ（Go が必要） {#local-server-setup-go-required}
+## ローカルサーバーのセットアップ（Go が必要）{#local-server-setup-go-required}
 
 ```json
 {
@@ -82,15 +80,31 @@ Windsurf のビルドがまだ MCP OAuth をサポートしていない場合は
 
 ## 確認 {#verification}
 
-インストール後:
+インストール後：
 1. MCP ツールバーに「1 available MCP server」と表示されることを確認します。
 2. ハンマーアイコンをクリックして、利用可能な Bitrise ツールを確認します。
 3. 「List my Bitrise apps」と入力してテストします（リモートサーバーを使用している場合、最初の呼び出しで OAuth のサインインがトリガーされます）。
 4. サーバー名の横に緑色のドットが表示されていることを確認します。
 
-## 高度な設定 {#advanced-configuration}
+## 詳細設定 {#advanced-configuration}
 
-特定の API グループを有効化・無効化する方法については、[Tools](/bitrise-platform/ai/bitrise-mcp/tools)を参照してください。
+Cascadeでは、すべてのMCPサーバーを合わせて最大100個のツールを使用できます。デフォルトのツールセットはBitriseのツールを88個公開するため、他のMCPサーバーに使える余裕がほとんどなく、`all`は136個公開します。サーバーURLの`toolset`クエリパラメーターで、必要なツールセットのみを有効にすることをお勧めします。次の例では、CIのツールのみを残します。
+
+```json
+{
+  "mcpServers": {
+    "bitrise": {
+      "serverUrl": "https://mcp.bitrise.io/?toolset=apps,builds,workspaces,outgoing-webhooks,artifacts,group-roles,cache-items,pipelines,account,configuration,insights"
+    }
+  }
+}
+```
+
+ローカルサーバーの場合は、同じカンマ区切りのリストを、代わりに`ENABLED_TOOLSET`環境変数に指定します。不要な個別のツールを`disabledTools`に列挙することもできます。
+
+有効にしていないツールセットのツール（ストアリリースのツールなど）がタスクで必要な場合、エージェントは`list_toolset`を呼び出して、追加するツールセットを確認できます。
+
+すべてのツールセットと、一般的なツール数の上限に収まる組み合わせについては、[ツールセット](/bitrise-platform/ai/bitrise-mcp/tools#advanced-configuration)を参照してください。
 
 ## トラブルシューティング {#troubleshooting}
 
