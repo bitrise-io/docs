@@ -1,41 +1,69 @@
 ---
 title: "ツール"
-description: "Bitrise MCPサーバーがMCPクライアントに公開するツールを制限し、APIグループごとに利用可能なすべてのツールを確認します。"
+description: "Bitrise MCP サーバーが MCP クライアントに公開するツールを制限し、利用可能なすべてのツールをツールセット別に確認できます。"
 sidebar_label: "ツール"
 sidebar_position: 3
 slug: /bitrise-platform/ai/bitrise-mcp/tools
 ---
 ## 高度な設定 {#advanced-configuration}
 
-MCPクライアントに公開するツールの数を制限できます。トークンの使用量を最適化したい場合や、MCPクライアントにツール数の上限がある場合に便利です。
+MCP クライアントに公開するツールの数を制限できます。トークン使用量を最適化したい場合や、MCP クライアントにツール数の上限がある場合に便利です。
 
-ツールは「APIグループ」ごとにグループ化されており、ツールとして公開したいグループを指定できます。指定できる値: `apps, builds, workspaces, outgoing-webhooks, artifacts, group-roles, cache-items, pipelines, account, read-only, release-management, configuration, release-management-app, release-management-build-distribution, release-management-code-push, insights`。
+ツールはツールセットにグループ化されており、公開したいツールセットを指定できます。指定できる値：`apps, builds, workspaces, outgoing-webhooks, artifacts, group-roles, cache-items, pipelines, account, read-only, release-management, configuration, release-management-app, release-management-build-distribution, release-management-code-push, release-management-store-releases, insights`。すべてのツールセットを指定する場合は `all`。
 
-`user`も指定でき、`account`(`me`)と同じツールを有効にします。これは以前そのツールに付けられていた名前で、既存の設定が引き続き動作するように残されています。新しい設定では`account`を使用してください。
+`user` も指定でき、`account`（`me`）と同じツールを有効にします。これは以前そのツールに付けられていた名前で、既存の設定が引き続き動作するように残してあります。新しい設定では `account` を使用してください。
 
-混乱を避けるため、`release-management`APIグループは、`apps`APIグループとは別に使用することをおすすめします。
+どのツールセットを有効にしても、`list_toolset` ツールは常に利用できます。このツールは、すべてのツールセット、接続で有効かどうか、無効なツールセットを有効にすると追加されるツールを一覧表示します。サーバーの指示により、利用可能なツールでタスクに対応できない場合はエージェントがこのツールを呼び出すため、エージェントはどのツールセットを有効にすればよいかをユーザーに伝えられます。
 
-`release-management`グループは、すべてのRelease Managementツールを有効にします。一部のみを読み込むには、代わりに次のグループを1つ以上有効にしてください。
+`apps` ツールセットとの混同を避けるため、`release-management` ツールセットは別に使用することをお勧めします。
 
-- `release-management-app`: connected appsとインストール可能なアーティファクト
-- `release-management-build-distribution`: ビルド配布バージョンとテストビルド、テスターグループとテスター
-- `release-management-code-push`: CodePush deploymentsとアップデート
+`release-management` ツールセットは、ストアリリースを除くすべての Release Management ツールを有効にします。一部のみを読み込むには、代わりに次のツールセットのうち 1 つ以上を有効にします。
 
-デフォルトでは、すべてのAPIグループが有効です。有効にするグループは、ローカル(stdio)サーバーでは`ENABLED_API_GROUPS`環境変数、リモート(Streamable HTTP)サーバーでは`x-bitrise-enabled-api-groups` HTTPヘッダーに、グループ名のカンマ区切りリストを指定して選択できます。
+- `release-management-app`：connected apps とインストール可能なアーティファクト
+- `release-management-build-distribution`：ビルド配布バージョンとテストビルド、テスターグループとテスター
+- `release-management-code-push`：CodePush deployments とアップデート
+
+ストアリリースのツールは `release-management-store-releases` にのみ含まれます。これらは、リリース候補とベータテストから、承認、ストア審査、ロールアウトまでのアプリバージョンのストアへの流れと、新しいアプリバージョンの作成元となる release presets を扱います。`release-management`、`read-only`、デフォルトのツールセットのいずれにも含まれないため、使用するには `release-management-store-releases` または `all` を有効にしてください。
+
+デフォルトでは、`release-management-store-releases` を除くすべてのツールセットが有効です。デフォルトのツールセットは安定した契約ではありません。メジャーバージョンを上げずにツールを削除することがあるため、特定のツールに依存する場合は、そのツールセット名を指定してください。ツールセットを選択するには、ツールセット名をカンマ区切りで渡すか、`all` を渡します。
+
+- リモート（Streamable HTTP）サーバー：サーバー URL の `toolset` クエリパラメーター（例：`https://mcp.bitrise.io/?toolset=apps,builds`）、または `x-bitrise-enabled-toolset` HTTP ヘッダー。両方が設定されている場合は、クエリパラメーターが優先されます。
+- ローカル（stdio）サーバー：`ENABLED_TOOLSET` 環境変数。
+
+以前の名前である `x-bitrise-enabled-api-groups` ヘッダーと `ENABLED_API_GROUPS` 環境変数も、新しいものが設定されていない場合は引き続き動作します。
+
+`all` は、ツールを動的に読み込むため、大きなツールセットでもコンテキストがいっぱいにならない Claude に適しています。動的なツール読み込みがない GitHub Copilot には適しません。VS Code では、組み込みツールを含め、チャットリクエストごとに 128 個のツールまで使用できます。
+
+一部の MCP クライアントには、ツール数の上限があります。VS Code では、組み込みツールを含めてチャットリクエストごとに 128 個まで、Windsurf ではすべての MCP サーバー合計で 100 個まで使用できます。デフォルトのツールセットは 88 個のツールを公開し、`all` は 136 個を公開します。そのため、これらのクライアントでは、特に他の MCP サーバーと併用する場合、より小さなセットを有効にしてください。次の組み合わせはツール数が 100 個未満に収まります（数には `list_toolset` が含まれます）。
+
+| 用途 | `toolset` の値 | ツール数 |
+|---|---|---|
+| CI | `apps,builds,workspaces,outgoing-webhooks,artifacts,group-roles,cache-items,pipelines,account,configuration,insights` | 56 |
+| CI と CodePush | `apps,builds,workspaces,outgoing-webhooks,artifacts,group-roles,cache-items,pipelines,account,configuration,insights,release-management-code-push` | 70 |
+| ストアリリースを除く Release Management | `release-management` | 33 |
+| Release Management | `release-management,release-management-store-releases` | 81 |
+| ストアリリース | `release-management-store-releases` | 49 |
+
+`x-bitrise-enabled-toolset` ヘッダーまたは `ENABLED_TOOLSET` 環境変数にも同じ値を使用してください。より小さなセットでは `read-only` を含めないでください。他のツールセットの読み取りツールが追加されるためです。
 
 ## Output schemas
 
-すべてのツールは `outputSchema` (結果の JSON Schema) を公開し、テキストコンテンツと併せて結果を `structuredContent` として返します。これにより、それを利用する MCP クライアントやディレクトリ (たとえば OpenAI コネクターディレクトリ) が結果を解釈できます。API レスポンスをそのまま返すツールのスキーマは、API が公開している OpenAPI ドキュメント (`internal/tool/outputschema/`) から生成されます。プレーンテキストの結果 (`bitrise.yml`、ガイド、ステータスメッセージ) は `{"content": "<text>"}` として返されます。オプションのフィールドは `null` になる場合があります。
+すべてのツールは `outputSchema`（結果の JSON Schema）を公開し、テキストコンテンツと併せて結果を `structuredContent` として返します。これにより、それを利用する MCP クライアントやディレクトリ（たとえば OpenAI コネクターディレクトリ) が結果を解釈できます。API レスポンスをそのまま返すツールのスキーマは、API が公開している OpenAPI ドキュメント（`internal/tool/outputschema/`）から生成されます。プレーンテキストの結果（`bitrise.yml`、ガイド、ステータスメッセージ) は `{"content": "<text>"}` として返されます。オプションのフィールドは `null` になる場合があります。
 
 ## ツールアノテーション {#tool-annotations}
 
-すべてのツールには、MCPの動作アノテーション(`readOnlyHint`、`destructiveHint`、`idempotentHint`、`openWorldHint`)と`title`が付いています。`openWorldHint`はコネクターディレクトリの定義に従います。Bitriseが外部でホストされていても、効果が認証済みのBitriseアカウントまたはworkspaceの範囲内にとどまるツールでは`false`となり、それを超えて影響するツールでのみ`true`となります。
+すべてのツールには、MCP の動作アノテーション（`readOnlyHint`、`destructiveHint`、`idempotentHint`、`openWorldHint`）と `title` が付いています。`openWorldHint` はコネクターディレクトリの定義に従います。Bitrise が外部でホストされていても、効果が認証済みの Bitrise アカウントまたは workspace の範囲内にとどまるツールでは `false` となり、それを超えて影響するツールでのみ `true` となります。
 
-- `register_webhook`と`register_ssh_key`は、アプリのGitプロバイダーに書き込みます。
-- `invite_member_to_workspace`は、任意のアドレスに招待メールを送信します。
-- `create_outgoing_webhook`と`update_outgoing_webhook`は、Bitriseが任意のURLにビルドイベントを送信するようにします。
-- `update_artifact`、`generate_installable_artifact_upload_url`(`with_public_page`を指定した場合)、`set_installable_artifact_public_install_page`は、インストールページをパブリックインターネット上に公開します。
-- `codepush_generate_update_upload_url`、`codepush_promote_deployment`、`codepush_rollback_deployment`、`codepush_patch_update`、`codepush_delete_update`は、エンドユーザーのデバイスがダウンロードする内容を変更します。
+- `register_webhook` と `register_ssh_key` は、アプリの Git プロバイダーに書き込みます。
+- `invite_member_to_workspace` は、任意のアドレスに招待をメールで送信します。
+- `create_outgoing_webhook` と `update_outgoing_webhook` は、Bitrise が任意の URL にビルドイベントを送信するようにします。
+- `update_artifact`、`generate_installable_artifact_upload_url`（`with_public_page` を使用）、`set_installable_artifact_public_install_page` は、インストールページをパブリックなインターネット上に公開します。
+- `codepush_generate_update_upload_url`、`codepush_promote_deployment`、`codepush_rollback_deployment`、`codepush_patch_update`、`codepush_delete_update` は、エンドユーザーのデバイスがダウンロードする内容を変更します。
+- `create_app_version` と `update_app_version` は、Bitrise が任意の Slack または Teams の webhook URL にリリース通知を送信するようにします。`update_app_version` はストアへのアップロードを開始することもできます。
+- `create_release_preset` と `update_release_preset` は、Bitrise の UI または API を通じてプリセットから作成されたアプリバージョンがリリース通知を送信する Slack または Teams の webhook URL を設定します。
+- `upload_release_candidate`、`submit_release_candidate_for_beta_review`、`start_beta_testing`、`stop_beta_testing`、および `create`/`update`/`delete_what_to_test_description` ツールは、TestFlight または Google Play Console に書き込み、テスターに届きます。
+- `create_app_store_version`、`update_app_store_draft_version`、`update_app_store_release_settings`、`submit_for_app_store_review`、`cancel_app_store_review` は App Store Connect に書き込み、送信されたバージョンは承認されると公開される可能性があります。
+- `release_to_app_store`、`pause`/`continue`/`complete_app_store_phased_release` ツール、`update_google_play_release_notes`、`release_to_google_play`、`create`/`resume_google_play_staged_rollout_schedule` は、ストアに公開するか、エンドユーザーのデバイスが受け取る内容を変更します。
 
 ## Tools
 
@@ -43,42 +71,42 @@ MCPクライアントに公開するツールの数を制限できます。ト�
 
 1. `list_apps`
    - 認証済みアカウントで利用可能なすべてのアプリを一覧表示します
-   - 引数:
-     - `sort_by` (オプション): アプリの並び順。last_build_at (デフォルト) または created_at
-     - `next` (オプション): レスポンスの最初のアプリの slug
-     - `limit` (オプション): 1 ページあたりの最大要素数 (デフォルト: 50)
+   - 引数：
+     - `sort_by`（オプション）: アプリの並び順。last_build_at（デフォルト）または created_at
+     - `next`（オプション）: レスポンスの最初のアプリの slug
+     - `limit`（オプション）: 1 ページあたりの最大要素数（デフォルト： 50）
 
 2. `register_app`
    - Bitrise に新しいアプリを追加します
-   - 引数:
+   - 引数：
      - `repo_url`: リポジトリ URL
      - `is_public`: アプリのビルドの公開範囲が "public" かどうか
-     - `organization_slug`: アプリの追加先の Organization (別名 workspace)
-     - `project_type` (オプション): プロジェクトの種類 (ios、android など)
-     - `provider` (オプション): github
+     - `organization_slug`: アプリの追加先の Organization（別名 workspace）
+     - `project_type`（オプション）: プロジェクトの種類 (ios、android など）
+     - `provider`（オプション）: github
 
 3. `finish_bitrise_app`
    - Bitrise アプリのセットアップを完了します
-   - 引数:
+   - 引数：
      - `app_slug`: セットアップを完了する Bitrise アプリの slug
-     - `project_type` (オプション): プロジェクトの種類 (例: android、ios、flutter など)
-     - `stack_id` (オプション): アプリに使用する stack ID
-     - `mode` (オプション): セットアップのモード
-     - `config` (オプション): アプリに使用する設定
+     - `project_type`（オプション）: プロジェクトの種類 (例： android、ios、flutter など）
+     - `stack_id`（オプション）: アプリに使用する stack ID
+     - `mode`（オプション）: セットアップのモード
+     - `config`（オプション）: アプリに使用する設定
 
 4. `get_app`
    - 特定のアプリの詳細を取得します
-   - 引数:
+   - 引数：
      - `app_slug`: Bitrise アプリの識別子
 
 5. `delete_app`
    - Bitrise からアプリを削除します
-   - 引数:
+   - 引数：
      - `app_slug`: Bitrise アプリの識別子
 
 6. `update_app`
    - アプリを更新します
-   - 引数:
+   - 引数：
      - `app_slug`: Bitrise アプリの識別子
      - `is_public`: アプリのビルドの公開範囲が "public" かどうか
      - `project_type`: プロジェクトの種類
@@ -87,23 +115,23 @@ MCPクライアントに公開するツールの数を制限できます。ト�
 
 7. `get_bitrise_yml`
    - 指定した Bitrise アプリの現在の Bitrise YML 設定ファイルを取得します
-   - 引数:
+   - 引数：
      - `app_slug`: Bitrise アプリの識別子
 
 8. `update_bitrise_yml`
    - 指定した Bitrise アプリの Bitrise YML 設定ファイルを更新します
-   - 引数:
+   - 引数：
      - `app_slug`: Bitrise アプリの識別子
      - `bitrise_yml_as_json`: 新しい Bitrise YML 設定ファイルの内容
 
 9. `list_branches`
    - アプリのリポジトリで、既存のビルドがあるブランチを一覧表示します
-   - 引数:
+   - 引数：
      - `app_slug`: Bitrise アプリの識別子
 
 10. `register_ssh_key`
     - 特定のアプリに SSH-key を追加します
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
       - `auth_ssh_private_key`: 秘密 SSH キー
       - `auth_ssh_public_key`: 公開 SSH キー
@@ -111,105 +139,114 @@ MCPクライアントに公開するツールの数を制限できます。ト�
 
 11. `register_webhook`
     - 特定のアプリケーション用の受信 Webhook を登録します
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
 
 ### ビルド {#builds}
 
 12. `list_builds`
     - 指定した Bitrise アプリのすべてのビルド、またはアクセス可能なすべてのビルドを一覧表示します
-    - 引数:
-      - `app_slug`（オプション）: Bitrise アプリの識別子
-      - `sort_by`（オプション）: ビルドの並び順: created_at（デフォルト）、running_first
-      - `branch`（オプション）: ブランチでビルドをフィルタリングします
-      - `workflow`（オプション）: Workflow でビルドをフィルタリングします
-      - `status`（オプション）: ステータスでビルドをフィルタリングします（0: 未完了、1: 成功、2: 失敗、3: 中止、4: 実行中）
-      - `next`（オプション）: レスポンス内の最初のビルドのスラッグ
-      - `limit`（オプション）: 1ページあたりの最大要素数（デフォルト: 50）
+    - 引数：
+      - `app_slug`（任意）：Bitrise アプリの識別子
+      - `sort_by`（任意）：ビルドの並び順：created_at（デフォルト）、running_first
+      - `branch`（任意）：ブランチでビルドを絞り込みます
+      - `workflow`（任意）：ワークフローでビルドを絞り込みます
+      - `status`（任意）：ステータスでビルドを絞り込みます（0：未完了、1：成功、2：失敗、3：中止、4：実行中）
+      - `next`（任意）：レスポンスの最初のビルドのスラッグ
+      - `limit`（任意）：1 ページあたりの最大要素数（デフォルト：50）
 
 13. `trigger_bitrise_build`
-    - 指定した Bitrise アプリの新しいビルド/パイプラインをトリガーします
-    - 引数:
-      - `app_slug`: Bitrise アプリの識別子
-      - `branch`（オプション）: ビルドするブランチ（デフォルト: main）
-      - `pipeline_id`（オプション）: ビルドするパイプライン
-      - `workflow_id`（オプション）: ビルドする Workflow
-      - `pipeline_id`（オプション）: ビルドするパイプライン
-      - `commit_message`（オプション）: ビルドのコミットメッセージ
-      - `commit_hash`（オプション）: ビルドのコミットハッシュ
-      - `stack`（オプション）: ビルドを実行する Stack。このビルドに限り、Workflow の `meta.bitrise.io.stack` を上書きします（例: "osx-xcode-16.0.x"）
-      - `environments`（オプション）: ビルド用のカスタム environment variables（`mapped_to`、`value`、およびオプションの `is_expand` プロパティを持つオブジェクトの配列）
+    - 指定した Bitrise アプリの新しいビルドまたはパイプラインをトリガーします
+    - 引数：
+      - `app_slug`：Bitrise アプリの識別子
+      - `branch`（任意）：ビルドするブランチ（デフォルト：main）
+      - `pipeline_id`（任意）：ビルドするパイプライン
+      - `workflow_id`（任意）：ビルドするワークフロー
+      - `pipeline_id`（任意）：ビルドするパイプライン
+      - `commit_message`（任意）：ビルドのコミットメッセージ
+      - `commit_hash`（任意）：ビルドのコミットハッシュ
+      - `stack`（任意）：このビルドに限り、ワークフローの `meta.bitrise.io.stack` を上書きしてビルドを実行する Stack（例："osx-xcode-16.0.x"）
+      - `environments`（任意）：ビルド用のカスタム environment variables（`mapped_to`、`value`、および任意の `is_expand` プロパティを持つオブジェクトの配列）
 
 14. `get_build`
     - 指定したアプリの特定のビルドを取得します
-    - 引数:
-      - `app_slug`: Bitrise アプリの識別子
-      - `build_slug`: ビルドの識別子
+    - 引数：
+      - `app_slug`：Bitrise アプリの識別子
+      - `build_slug`：ビルドの識別子
 
 15. `abort_build`
     - 特定のビルドを中止します
-    - 引数:
-      - `app_slug`: Bitrise アプリの識別子
-      - `build_slug`: ビルドの識別子
-      - `reason`（オプション）: ビルドを中止する理由
+    - 引数：
+      - `app_slug`：Bitrise アプリの識別子
+      - `build_slug`：ビルドの識別子
+      - `reason`（任意）：ビルドを中止する理由
 
 16. `get_build_log`
     - Bitrise アプリの指定したビルドのビルドログを取得します
-    - 引数:
-      - `app_slug`: Bitrise アプリの識別子
-      - `build_slug`: Bitrise ビルドの識別子
+    - 引数：
+      - `app_slug`：Bitrise アプリの識別子
+      - `build_slug`：Bitrise ビルドの識別子
 
 17. `get_build_bitrise_yml`
     - ビルドの bitrise.yml を取得します
-    - 引数:
-      - `app_slug`: Bitrise アプリの識別子
-      - `build_slug`: ビルドの識別子
+    - 引数：
+      - `app_slug`：Bitrise アプリの識別子
+      - `build_slug`：ビルドの識別子
 
 18. `list_build_workflows`
-    - アプリの Workflow を一覧表示します
-    - 引数:
-      - `app_slug`: Bitrise アプリの識別子
+    - アプリのワークフローを一覧表示します
+    - 引数：
+      - `app_slug`：Bitrise アプリの識別子
 
 19. `get_build_steps`
-    - 指定したアプリの特定のビルドの Step を、ステータスと所要時間とともに取得します。失敗または中止された Step の失敗理由と、スキップされた Step がスキップされた理由も含まれます
-    - 引数:
-      - `app_slug`: Bitrise アプリの識別子
-      - `build_slug`: ビルドの識別子
+    - 指定したアプリの特定のビルドのステップを、ステータスと所要時間とともに取得します。失敗または中止されたステップの失敗理由や、スキップされたステップがスキップされた理由も含まれます
+    - 引数：
+      - `app_slug`：Bitrise アプリの識別子
+      - `build_slug`：ビルドの識別子
+      - `status`（任意）：これらのステータスのステップのみを残します（例：`failed`、`aborted_with_custom_timeout`）。該当するステップが 1 つもないワークフローは除外されます
+      - `step_id`（任意）：このステップの実行のみを残します（例：`xcode-test`）
+      - `verbose`（任意）：すべての build details を含めます（デフォルト：false）
 
 20. `get_build_test_results`
-    - 完了したビルドのテスト結果を取得します: テストスイートとテストケースのステータス、所要時間、失敗メッセージが含まれます。テストレポートを含むプランが必要です。
-    - 引数:
-      - `app_slug`: Bitrise アプリの識別子
-      - `build_slug`: ビルドの識別子
-      - `failed_only`（オプション）: 失敗またはエラーになったテストケースと、それらを含むテストスイートのみを返します（デフォルト: false）
+    - 完了したビルドのテスト結果を取得します。テストスイートとテストケースについて、ステータス、所要時間、失敗メッセージが含まれます。テストレポートを含むプランが必要です。フィルターはサーバー側で適用されます。
+    - 引数：
+      - `app_slug`：Bitrise アプリの識別子
+      - `build_slug`：ビルドの識別子
+      - `status`（任意）：これらのステータスのテストケースのみを残します（`passed`、`failed`、`skipped`、`error`）
+      - `suite`（任意）：この名前と完全に一致するテストスイートに含まれるテストケースのみを残します
+      - `class_name`（任意）：このクラス名と完全に一致するテストケースのみを残します
+      - `flaky`（任意）：不安定な（true）テストケース、または不安定でない（false）テストケースのみを残します
+      - `sort_by`（任意）：各スイート内のテストケースを `duration`、`name`、`status` で並べ替えます
+      - `sort_order`（任意）：`asc`（デフォルト）または `desc`
+      - `limit`（任意）：返すテストケースの最大数（1～1000）
 
 ### Artifacts
 
 20. `list_artifacts`
     - すべてのビルドアーティファクトの一覧を取得します
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
       - `build_slug`: ビルドの識別子
-      - `next` (オプション): レスポンスの最初のアーティファクトの slug
-      - `limit` (オプション): 1 ページあたりの最大要素数 (デフォルト: 50)
+      - `next`（オプション）: レスポンスの最初のアーティファクトの slug
+      - `limit`（オプション）: 1 ページあたりの最大要素数（デフォルト： 50）
 
 20. `get_artifact`
     - 特定のビルドアーティファクトを取得します
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
       - `build_slug`: ビルドの識別子
       - `artifact_slug`: アーティファクトの識別子
 
 21. `delete_artifact`
     - ビルドアーティファクトを削除します
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
       - `build_slug`: ビルドの識別子
       - `artifact_slug`: アーティファクトの識別子
 
 22. `update_artifact`
     - ビルドアーティファクトを更新します
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
       - `build_slug`: ビルドの識別子
       - `artifact_slug`: アーティファクトの識別子
@@ -219,53 +256,53 @@ MCPクライアントに公開するツールの数を制限できます。ト�
 
 24. `list_outgoing_webhooks`
     - アプリの送信 Webhook を一覧表示します
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
 
 25. `delete_outgoing_webhook`
     - アプリの送信 Webhook を削除します
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
       - `webhook_slug`: Webhook の識別子
 
 26. `update_outgoing_webhook`
     - アプリの送信 Webhook を更新します
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
       - `webhook_slug`: Webhook の識別子
       - `events`: Webhook をトリガーするイベントのリスト
       - `url`: Webhook の URL
-      - `headers` (オプション): Webhook と共に送信するヘッダー
+      - `headers`（オプション）: Webhook と共に送信するヘッダー
 
 27. `create_outgoing_webhook`
     - アプリの送信 Webhook を作成します
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
       - `events`: Webhook をトリガーするイベントのリスト
       - `url`: Webhook の URL
-      - `headers` (オプション): Webhook と共に送信するヘッダー
+      - `headers`（オプション）: Webhook と共に送信するヘッダー
 
 ### Cache Items
 
 28. `list_cache_items`
     - アプリに属するキーバリュー形式のキャッシュアイテムを一覧表示します
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
 
 29. `delete_all_cache_items`
     - アプリに属するキーバリュー形式のキャッシュアイテムを Delete all
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
 
 30. `delete_cache_item`
     - キーバリュー形式のキャッシュアイテムを削除します
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
       - `cache_item_id`: キャッシュアイテムの識別子
 
 31. `get_cache_item_download_url`
     - キーバリュー形式のキャッシュアイテムのダウンロード URL を取得します
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
       - `cache_item_id`: キャッシュアイテムの識別子
 
@@ -273,25 +310,25 @@ MCPクライアントに公開するツールの数を制限できます。ト�
 
 32. `list_pipelines`
     - アプリのすべてのパイプラインとスタンドアロンビルドを一覧表示します
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
 
 33. `get_pipeline`
     - 指定したアプリのパイプラインを取得します
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
       - `pipeline_id`: パイプラインの識別子
 
 34. `abort_pipeline`
     - パイプラインを中止します
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
       - `pipeline_id`: パイプラインの識別子
-      - `reason` (オプション): パイプラインを中止する理由
+      - `reason`（オプション）: パイプラインを中止する理由
 
 35. `rebuild_pipeline`
     - パイプラインを再ビルドします
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
       - `pipeline_id`: パイプラインの識別子
 
@@ -299,13 +336,13 @@ MCPクライアントに公開するツールの数を制限できます。ト�
 
 36. `list_group_roles`
     - アプリのグループロールを一覧表示します
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
       - `role_name`: ロールの名前
 
 37. `replace_group_roles`
     - アプリのグループロールを置き換えます
-    - 引数:
+    - 引数：
       - `app_slug`: Bitrise アプリの識別子
       - `role_name`: ロールの名前
       - `group_slugs`: グループ slug のリスト
@@ -317,34 +354,34 @@ MCPクライアントに公開するツールの数を制限できます。ト�
 
 39. `get_workspace`
     - 1 つの workspace の詳細を取得します
-    - 引数:
+    - 引数：
       - `workspace_slug`: Bitrise workspace の slug
 
 40. `get_workspace_groups`
     - workspace 内のグループを取得します
-    - 引数:
+    - 引数：
       - `workspace_slug`: Bitrise workspace の slug
 
 41. `create_workspace_group`
     - workspace 内で Create a group
-    - 引数:
+    - 引数：
       - `workspace_slug`: Bitrise workspace の slug
       - `group_name`: グループの名前
 
 42. `get_workspace_members`
     - workspace 内のメンバーを取得します
-    - 引数:
+    - 引数：
       - `workspace_slug`: Bitrise workspace の slug
 
 43. `invite_member_to_workspace`
     - workspace にメンバーを招待します
-    - 引数:
+    - 引数：
       - `workspace_slug`: Bitrise workspace の slug
       - `email`: ユーザーのメールアドレス
 
 44. `add_member_to_group`
     - グループにメンバーを追加します
-    - 引数:
+    - 引数：
       - `group_slug`: グループの slug
       - `user_slug`: ユーザーの slug
 
@@ -357,433 +394,799 @@ MCPクライアントに公開するツールの数を制限できます。ト�
 
 46. `create_connected_app`
    - Bitrise に新しい Release Management 接続済みアプリを追加します。
-   - 引数:
+   - 引数：
      - `platform`: 接続済みアプリのモバイルプラットフォーム (ios/android)。
      - `store_app_id`: 接続済みアプリのアプリストア識別子。
      - `workspace_slug`: Bitrise workspace の識別子。
-     - `id`: (オプション) 新しい接続済みアプリ用の uuidV4 識別子。
-     - `manual_connection`: (オプション) 手動接続であることを示します。
-     - `project_id`: (オプション) 関連付ける Bitrise Project を指定します。
-     - `project_title`: (オプション) `project_id` が指定されていない場合に作成されるプロジェクトのタイトル。`project_id` と同時には指定できません。
-     - `store_app_name`: (オプション) 手動接続用のアプリ名。
-     - `store_credential_id`: (オプション) Bitrise に追加された認証情報の選択。
-     - `framework`: (オプション) アプリのビルドに使用するフレームワーク (flutter/react_native/kotlin_multiplatform/other/native_ios/native_android)。デフォルトは 'other' です。
-     - `tester_groups`: (オプション) アプリと同時に作成されるテスターグループ (`name`、およびオプションの `type`、`auto_notify`、`user_slugs`、`emails` プロパティを持つオブジェクトの配列)。1 つずつ作成されるため、レスポンスの `errors` 配列を確認してください。
-     - `code_push_deployments`: (オプション) アプリと同時に作成される CodePush deployments (`name` とオプションの `key` プロパティを持つオブジェクトの配列)。1 つずつ作成されるため、レスポンスの `errors` 配列を確認してください。
+     - `id`:（オプション）新しい接続済みアプリ用の uuidV4 識別子。
+     - `manual_connection`:（オプション）手動接続であることを示します。
+     - `project_id`:（オプション）関連付ける Bitrise Project を指定します。
+     - `project_title`:（オプション）`project_id` が指定されていない場合に作成されるプロジェクトのタイトル。`project_id` と同時には指定できません。
+     - `store_app_name`:（オプション）手動接続用のアプリ名。
+     - `store_credential_id`:（オプション）Bitrise に追加された認証情報の選択。
+     - `framework`:（オプション）アプリのビルドに使用するフレームワーク (flutter/react_native/kotlin_multiplatform/other/native_ios/native_android)。デフォルトは 'other' です。
+     - `tester_groups`:（オプション) アプリと同時に作成されるテスターグループ（`name`、およびオプションの `type`、`auto_notify`、`user_slugs`、`emails` プロパティを持つオブジェクトの配列)。1 つずつ作成されるため、レスポンスの `errors` 配列を確認してください。
+     - `code_push_deployments`:（オプション) アプリと同時に作成される CodePush deployments（`name` とオプションの `key` プロパティを持つオブジェクトの配列)。1 つずつ作成されるため、レスポンスの `errors` 配列を確認してください。
 
 47. `list_connected_apps`
    - workspace 内で、認証済みアカウントが利用可能な Release Management connected apps を一覧表示します。
-   - 引数:
+   - 引数：
      - `workspace_slug`: Bitrise workspace の識別子。
-     - `items_per_page`: (オプション) 1 ページあたりの connected apps の最大数。
-     - `page`: (オプション) 返すページ番号。
-     - `platform`: (オプション) 特定のモバイルプラットフォームで絞り込みます。
-     - `project_id`: (オプション) 特定の Bitrise Project で絞り込みます。
-     - `search`: (オプション) バンドル ID、package name、または app title で検索します。
+     - `items_per_page`:（オプション）1 ページあたりの connected apps の最大数。
+     - `page`:（オプション）返すページ番号。
+     - `platform`:（オプション）特定のモバイルプラットフォームで絞り込みます。
+     - `project_id`:（オプション）特定の Bitrise Project で絞り込みます。
+     - `search`:（オプション）バンドル ID、package name、または app title で検索します。
 
 48. `get_connected_app`
    - 認証済みアカウントの Release Management 接続済みアプリを返します。
-   - 引数:
+   - 引数：
      - `id`: Release Management 接続済みアプリの識別子。
 
 49. `update_connected_app`
    - 接続済みアプリを更新します。
-   - 引数:
+   - 引数：
      - `connected_app_id`: 接続済みアプリの uuidV4 識別子。
      - `store_app_id`: アプリのストア識別子。
-     - `connect_to_store`: (オプション) App Store または Google Play に対して有効性を確認します。
-     - `store_credential_id`: (オプション) Bitrise に追加された認証情報の選択。
+     - `connect_to_store`:（オプション）App Store または Google Play に対して有効性を確認します。
+     - `store_credential_id`:（オプション）Bitrise に追加された認証情報の選択。
 
 50. `list_installable_artifacts`
    - 接続済みアプリの Release Management インストール可能なアーティファクトを一覧表示します。
-   - 引数:
+   - 引数：
      - `connected_app_id`: Release Management 接続済みアプリの識別子。
-     - `after_date`: (オプション) アーティファクトの作成/アップロード期間の開始日時。
-     - `artifact_type`: (オプション) 特定のアーティファクトタイプで絞り込みます。
-     - `before_date`: (オプション) アーティファクトの作成/アップロード期間の終了日時。
-     - `branch`: (オプション) Bitrise CI ブランチで絞り込みます。
-     - `distribution_ready`: (オプション) 配布可能なアーティファクトで絞り込みます。
-     - `items_per_page`: (オプション) 1 ページあたりのアーティファクトの最大数。
-     - `page`: (オプション) 返すページ番号。
-     - `platform`: (オプション) 特定のモバイルプラットフォームで絞り込みます。
-     - `search`: (オプション) バージョン、ファイル名、またはビルド番号で検索します。
-     - `source`: (オプション) インストール可能なアーティファクトのソースで絞り込みます。
-     - `store_signed`: (オプション) ストア提出可能なインストール可能アーティファクトで絞り込みます。
-     - `version`: (オプション) 特定のバージョンで絞り込みます。
-     - `workflow`: (オプション) 特定の Bitrise CI Workflow で絞り込みます。
+     - `after_date`:（オプション）アーティファクトの作成/アップロード期間の開始日時。
+     - `artifact_type`:（オプション）特定のアーティファクトタイプで絞り込みます。
+     - `before_date`:（オプション）アーティファクトの作成/アップロード期間の終了日時。
+     - `branch`:（オプション）Bitrise CI ブランチで絞り込みます。
+     - `distribution_ready`:（オプション）配布可能なアーティファクトで絞り込みます。
+     - `items_per_page`:（オプション）1 ページあたりのアーティファクトの最大数。
+     - `page`:（オプション）返すページ番号。
+     - `platform`:（オプション）特定のモバイルプラットフォームで絞り込みます。
+     - `search`:（オプション）バージョン、ファイル名、またはビルド番号で検索します。
+     - `source`:（オプション）インストール可能なアーティファクトのソースで絞り込みます。
+     - `store_signed`:（オプション）ストア提出可能なインストール可能アーティファクトで絞り込みます。
+     - `version`:（オプション）特定のバージョンで絞り込みます。
+     - `workflow`:（オプション）特定の Bitrise CI Workflow で絞り込みます。
 
 51. `generate_installable_artifact_upload_url`
    - Bitrise にアップロードするインストール可能なアーティファクト用の、署名付きアップロード URL を生成します。
-   - 引数:
+   - 引数：
      - `connected_app_id`: Release Management 接続済みアプリの識別子。
      - `installable_artifact_id`: インストール可能なアーティファクトの uuidv4 識別子。
      - `file_name`: インストール可能なアーティファクトファイルの名前。
      - `file_size_bytes`: インストール可能なアーティファクトファイルのバイトサイズ。
-     - `branch`: (オプション) CI ブランチの名前。
-     - `with_public_page`: (オプション) 公開インストールページを有効にします。
-     - `workflow`: (オプション) CI Workflow の名前。
+     - `branch`:（オプション）CI ブランチの名前。
+     - `with_public_page`:（オプション）公開インストールページを有効にします。
+     - `workflow`:（オプション）CI Workflow の名前。
 
 52. `get_installable_artifact_upload_and_proc_status`
    - インストール可能なアーティファクトの処理およびアップロードのステータスを取得します。
-   - 引数:
+   - 引数：
      - `connected_app_id`: Release Management 接続済みアプリの識別子。
      - `installable_artifact_id`: インストール可能なアーティファクトの uuidv4 識別子。
 
 53. `set_installable_artifact_public_install_page`
    - インストール可能なアーティファクトの公開インストールページを利用可能にするかどうかを変更します。
-   - 引数:
+   - 引数：
      - `connected_app_id`: Release Management 接続済みアプリの識別子。
      - `installable_artifact_id`: インストール可能なアーティファクトの uuidv4 識別子。
      - `with_public_page`: 公開インストールページを有効/無効にするブールフラグ。
 
 54. `list_build_distribution_versions`
    - テスターが利用可能な Build Distribution のバージョンを一覧表示します。
-   - 引数:
+   - 引数：
      - `connected_app_id`: 接続済みアプリの uuidV4 識別子。
-     - `items_per_page`: (オプション) 1 ページあたりのバージョンの最大数。
-     - `page`: (オプション) 返すページ番号。
+     - `items_per_page`:（オプション）1 ページあたりのバージョンの最大数。
+     - `page`:（オプション）返すページ番号。
 
 55. `list_build_distribution_version_test_builds`
    - 指定した Build Distribution バージョンのテストビルドの一覧を返します。
-   - 引数:
+   - 引数：
      - `connected_app_id`: 接続済みアプリの uuidV4 識別子。
      - `version`: Build Distribution のバージョン。
-     - `items_per_page`: (オプション) 1 ページあたりのテストビルドの最大数。
-     - `page`: (オプション) 返すページ番号。
+     - `items_per_page`:（オプション）1 ページあたりのテストビルドの最大数。
+     - `page`:（オプション）返すページ番号。
 
 56. `create_tester_group`
    - Release Management 接続済みアプリのテスターグループを作成します。
-   - 引数:
+   - 引数：
      - `connected_app_id`: 接続済みアプリの uuidV4 識別子。
      - `name`: 新しいテスターグループの名前。
-     - `auto_notify`: (オプション) グループへの自動通知を行うかどうかを示します。外部テスターグループでは無視されます。
-     - `user_slugs`: (オプション) 内部テスターとして追加する workspace メンバーの slug。外部テスターグループでは無視されます。
-     - `emails`: (オプション) 外部テスターグループのテスターとして追加するメールアドレス (最大 1000 件)。
-     - `type`: (オプション) テスターグループの種類。'internal' または 'external' (デフォルト: internal)。
+     - `auto_notify`:（オプション）グループへの自動通知を行うかどうかを示します。外部テスターグループでは無視されます。
+     - `user_slugs`:（オプション）内部テスターとして追加する workspace メンバーの slug。外部テスターグループでは無視されます。
+     - `emails`:（オプション）外部テスターグループのテスターとして追加するメールアドレス（最大 1000 件）。
+     - `type`:（オプション）テスターグループの種類。'internal' または 'external'（デフォルト： internal）。
 
 57. `notify_tester_group`
    - 新しいテストビルドについて、内部テスターグループにメールで通知します。
-   - 引数:
+   - 引数：
      - `connected_app_id`: 接続済みアプリの uuidV4 識別子。
      - `id`: テスターグループの uuidV4 識別子。
      - `test_build_id`: テストビルドの一意の識別子。
 
 58. `add_testers_to_tester_group`
    - 接続済みアプリのテスターグループにテスターを追加します。
-   - 引数:
+   - 引数：
      - `connected_app_id`: 接続済みアプリの uuidV4 識別子。
      - `id`: テスターグループの uuidV4 識別子。
-     - `user_slugs`: (オプション) 内部テスターとして追加する User slug。内部テスターグループでは必須で、外部テスターグループでは無視されます。
-     - `emails`: (オプション) 外部テスターとして追加するメールアドレス。外部テスターグループでは必須 (最大 1000 件) で、内部テスターグループでは無視されます。
+     - `user_slugs`:（オプション）内部テスターとして追加する User slug。内部テスターグループでは必須で、外部テスターグループでは無視されます。
+     - `emails`:（オプション）外部テスターとして追加するメールアドレス。外部テスターグループでは必須（最大 1000 件）で、内部テスターグループでは無視されます。
 
 59. `update_tester_group`
    - 指定したテスターグループの設定を更新します。
-   - 引数:
+   - 引数：
      - `connected_app_id`: 接続済みアプリの uuidV4 識別子。
      - `id`: テスターグループの uuidV4 識別子。
-     - `auto_notify`: (オプション) 自動メール通知の設定。
-     - `name`: (オプション) テスターグループの新しい名前。
+     - `auto_notify`:（オプション）自動メール通知の設定。
+     - `name`:（オプション）テスターグループの新しい名前。
 
 60. `list_tester_groups`
    - 特定の接続済みアプリに関連するテスターグループの一覧を返します。
-   - 引数:
+   - 引数：
      - `connected_app_id`: 接続済みアプリの uuidV4 識別子。
-     - `items_per_page`: (オプション) 1 ページあたりのテスターグループの最大数。
-     - `page`: (オプション) 返すページ番号。
-     - `type`: (オプション) 特定のテスターグループの種類 ('internal' または 'external') で絞り込みます (デフォルト: internal)。
-     - `installable_artifact_id`: (オプション) 指定すると、そのアーティファクトに関する通知の詳細を、各テスターグループのレスポンスに追加します。
+     - `items_per_page`:（オプション）1 ページあたりのテスターグループの最大数。
+     - `page`:（オプション）返すページ番号。
+     - `type`:（オプション）特定のテスターグループの種類（'internal' または 'external'）で絞り込みます（デフォルト： internal）。
+     - `installable_artifact_id`:（オプション）指定すると、そのアーティファクトに関する通知の詳細を、各テスターグループのレスポンスに追加します。
 
 61. `get_tester_group`
    - 選択したテスターグループの詳細を返します。
-   - 引数:
+   - 引数：
      - `connected_app_id`: 接続済みアプリの uuidV4 識別子。
      - `id`: テスターグループの uuidV4 識別子。
 
 62. `get_potential_testers`
    - テスターグループに追加できる候補テスターの一覧、またはテスターグループが存在する前の workspace メンバーの一覧を取得します。
-   - 引数:
-     - `workspace_slug`: (オプション) メンバーを一覧表示する workspace の slug。`connected_app_id`/`id` とは同時に指定できません。
-     - `project_id`: (オプション) `workspace_slug` と併せて使用します。プロジェクトの外部コントリビューターも一覧表示します。
-     - `connected_app_id`: (オプション) 接続済みアプリの uuidV4 識別子。`id` と併せて指定する必要があります。
-     - `id`: (オプション) テスターグループの uuidV4 識別子。`connected_app_id` と併せて指定する必要があります。
-     - `items_per_page`: (オプション) 1 ページあたりの候補テスターの最大数。1-1000 (デフォルト: 25)。
-     - `page`: (オプション) 返すページ番号 (デフォルト: 1)。
-     - `search`: (オプション) メールアドレスまたはユーザー名でテスターを検索します。
+   - 引数：
+     - `workspace_slug`:（オプション）メンバーを一覧表示する workspace の slug。`connected_app_id`/`id` とは同時に指定できません。
+     - `project_id`:（オプション）`workspace_slug` と併せて使用します。プロジェクトの外部コントリビューターも一覧表示します。
+     - `connected_app_id`:（オプション）接続済みアプリの uuidV4 識別子。`id` と併せて指定する必要があります。
+     - `id`:（オプション）テスターグループの uuidV4 識別子。`connected_app_id` と併せて指定する必要があります。
+     - `items_per_page`:（オプション）1 ページあたりの候補テスターの最大数。1-1000（デフォルト： 25）。
+     - `page`:（オプション）返すページ番号（デフォルト： 1）。
+     - `search`:（オプション）メールアドレスまたはユーザー名でテスターを検索します。
 
 63. `get_testers`
    - 特定の接続済みアプリに関連するテスターグループに関連付けられているテスターの一覧を取得します。
-   - 引数:
+   - 引数：
      - `connected_app_id`: 接続済みアプリの uuidV4 識別子。
-     - `tester_group_id`: (オプション) テスターグループの uuidV4 識別子。指定すると、その特定のテスターグループ内のテスターのみが返されます。
-     - `items_per_page`: (オプション) 1 ページあたりのテスターの最大数 (デフォルト: 10)。
-     - `page`: (オプション) 返すページ番号 (デフォルト: 1)。
-     - `type`: (オプション) 特定のテスターグループの種類 ('internal' または 'external') に属するテスターで絞り込みます (デフォルト: internal)。
+     - `tester_group_id`:（オプション）テスターグループの uuidV4 識別子。指定すると、その特定のテスターグループ内のテスターのみが返されます。
+     - `items_per_page`:（オプション）1 ページあたりのテスターの最大数（デフォルト： 10）。
+     - `page`:（オプション）返すページ番号（デフォルト： 1）。
+     - `type`:（オプション）特定のテスターグループの種類（'internal' または 'external'）に属するテスターで絞り込みます（デフォルト： internal）。
 
 ### Configuration
 
 64. `validate_bitrise_yml`
     - Bitrise YML 設定ファイルを検証します。このエンドポイントは、指定された bitrise.yml が有効かどうかを確認します。
-    - 引数:
+    - 引数：
       - `bitrise_yml`: 検証対象の Bitrise YML 設定ファイルの内容。文字列である必要があります。
-      - `app_slug` (オプション): Bitrise アプリの slug。この値を指定すると、利用可能なスタック、マシンタイプ、ライセンスプールなどの workspace 固有の設定に対して YML を検証できます。
+      - `app_slug`（オプション）: Bitrise アプリの slug。この値を指定すると、利用可能なスタック、マシンタイプ、ライセンスプールなどの workspace 固有の設定に対して YML を検証できます。
 
 65. `step_search`
     - Bitrise YML 設定ファイルで Workflow または step bundles を構築するための Step を検索します。名前、説明、タグ、またはメンテナーに基づいて Step を検索します。
-    - 引数:
+    - 引数：
       - `query`: `clone`、`npm`、`deploy` などの、Step を検索するフレーズ。
-      - `categories` (オプション): Step を絞り込むカテゴリ。指定可能な値: `build`、`code-sign`、`test`、`deploy`、`notification`、`access-control`、`artifact-info`、`installer`、`dependency`、`utility`
-      - `maintainers` (オプション): メンテナーで Step を絞り込みます。指定可能な値: `bitrise`、`verified`、`community`
+      - `categories`（オプション）: Step を絞り込むカテゴリ。指定可能な値： `build`、`code-sign`、`test`、`deploy`、`notification`、`access-control`、`artifact-info`、`installer`、`dependency`、`utility`
+      - `maintainers`（オプション）: メンテナーで Step を絞り込みます。指定可能な値： `bitrise`、`verified`、`community`
 
 66. `step_inputs`
     - Step の入力を、デフォルト値や許可される値などと共に一覧表示します。
-    - 引数:
+    - 引数：
       - `step_ref`: `step_lib_source::step_id@version` 形式の Step 参照。`step_id` と正確な `version` は必須で、`step_lib_source` はカスタム Step ソースの場合にのみ必要です。
 
 67. `list_available_stacks`
     - 利用可能なスタックを、マシン構成とバージョン情報と共に一覧表示します。workspace_slug を指定すると、カスタムスタックを含め、その workspace で利用可能なスタックを返します。省略すると、グローバルに利用可能なスタックを返します。
-    - 引数:
-      - `workspace_slug` (オプション): Bitrise workspace の slug。指定すると、その workspace で利用可能なスタック (カスタムスタックを含む) を一覧表示します。省略すると、グローバルに利用可能なスタックを一覧表示します。
+    - 引数：
+      - `workspace_slug`（オプション）: Bitrise workspace の slug。指定すると、その workspace で利用可能なスタック（カスタムスタックを含む）を一覧表示します。省略すると、グローバルに利用可能なスタックを一覧表示します。
 
 ### CodePush
 
 68. `codepush_list_deployments`
    - Bitrise アプリの CodePush deployments を一覧表示します。
-   - 引数:
+   - 引数：
      - `app_id`: Bitrise アプリの識別子。
-     - `search`: (オプション) 名前でデプロイを検索します。フィルターは大文字と小文字を区別します。
-     - `items_per_page`: (オプション) 1 ページあたりのデプロイの最大数 (デフォルト: 10)。
-     - `page`: (オプション) 返すページ番号 (デフォルト: 1)。
+     - `search`:（オプション）名前でデプロイを検索します。フィルターは大文字と小文字を区別します。
+     - `items_per_page`:（オプション）1 ページあたりのデプロイの最大数（デフォルト： 10）。
+     - `page`:（オプション）返すページ番号（デフォルト： 1）。
 
 69. `codepush_get_deployment`
    - ID を指定して、特定の CodePush デプロイを取得します。
-   - 引数:
+   - 引数：
      - `id`: CodePush デプロイの識別子 (UUID)。
 
 70. `codepush_create_deployment`
    - Bitrise アプリの新しい CodePush デプロイを作成します。
-   - 引数:
+   - 引数：
      - `name`: 新しいデプロイの名前。
      - `app_id`: Bitrise アプリの識別子。
-     - `key`: (オプション) デプロイキー。指定しない場合は自動生成されます。
+     - `key`:（オプション）デプロイキー。指定しない場合は自動生成されます。
 
 71. `codepush_update_deployment`
    - 既存の CodePush デプロイの名前を更新します。
-   - 引数:
+   - 引数：
      - `id`: CodePush デプロイの識別子 (UUID)。
      - `name`: デプロイの新しい名前。
 
 72. `codepush_delete_deployment`
    - CodePush デプロイを削除します。この操作は元に戻せません。
-   - 引数:
+   - 引数：
      - `id`: 削除する CodePush デプロイの識別子 (UUID)。
 
 73. `codepush_promote_deployment`
    - 元のデプロイから対象のデプロイへ、パッケージをプロモートします。package_id を指定しない限り、元のデプロイ内の最新のパッケージがプロモートされます。
-   - 引数:
+   - 引数：
      - `id`: 元のデプロイの識別子 (UUID)。
      - `target_deployment_id`: 対象のデプロイの識別子 (UUID)。
-     - `package_id`: (オプション) プロモートする特定のパッケージの UUID。デフォルトは最新のパッケージです。
-     - `app_version`: (オプション) プロモートするパッケージの Semver アプリバージョン制約。
-     - `description`: (オプション) プロモートするパッケージの説明。
-     - `disabled`: (オプション) true の場合、クライアントはこのアップデートをダウンロードしません。
-     - `mandatory`: (オプション) true の場合、クライアントはただちにインストールする必要があります。
-     - `rollout`: (オプション) このアップデートを受け取るユーザーの割合 (0-100)。
+     - `package_id`:（オプション）プロモートする特定のパッケージの UUID。デフォルトは最新のパッケージです。
+     - `app_version`:（オプション）プロモートするパッケージの Semver アプリバージョン制約。
+     - `description`:（オプション）プロモートするパッケージの説明。
+     - `disabled`:（オプション）true の場合、クライアントはこのアップデートをダウンロードしません。
+     - `mandatory`:（オプション）true の場合、クライアントはただちにインストールする必要があります。
+     - `rollout`:（オプション）このアップデートを受け取るユーザーの割合 (0-100)。
 
 74. `codepush_rollback_deployment`
    - CodePush デプロイを以前のバージョンにロールバックします。
-   - 引数:
+   - 引数：
      - `id`: ロールバックする CodePush デプロイの識別子 (UUID)。
-     - `package_id`: (オプション) ロールバック先の特定のパッケージの UUID。デフォルトは直前のパッケージです。
+     - `package_id`:（オプション）ロールバック先の特定のパッケージの UUID。デフォルトは直前のパッケージです。
 
 75. `codepush_list_updates`
    - 特定のデプロイの CodePush アップデートを一覧表示します。
-   - 引数:
+   - 引数：
      - `deployment_id`: CodePush デプロイの識別子 (UUID)。
-     - `search`: (オプション) ラベルまたは説明でアップデートを検索します。フィルターは大文字と小文字を区別します。
-     - `items_per_page`: (オプション) 1 ページあたりのアップデートの最大数 (デフォルト: 10)。
-     - `page`: (オプション) 返すページ番号 (デフォルト: 1)。
+     - `search`:（オプション）ラベルまたは説明でアップデートを検索します。フィルターは大文字と小文字を区別します。
+     - `items_per_page`:（オプション）1 ページあたりのアップデートの最大数（デフォルト： 10）。
+     - `page`:（オプション）返すページ番号（デフォルト： 1）。
 
 76. `codepush_get_update`
    - ID を指定して、特定の CodePush アップデートを取得します。
-   - 引数:
+   - 引数：
      - `id`: CodePush アップデートの識別子 (UUID)。
 
 77. `codepush_patch_update`
    - CodePush アップデートを部分更新して、無効状態、必須フラグ、または rollout percentage を変更します。変更したいフィールドのみを含めてください。省略したフィールドは変更されません。
-   - 引数:
+   - 引数：
      - `id`: CodePush アップデートの識別子 (UUID)。
-     - `disabled`: (オプション) 無効にするには 'true'、再び有効にするには 'false' を設定します。
-     - `mandatory`: (オプション) 必須にするには 'true'、任意にするには 'false' を設定します。
-     - `rollout`: (オプション) このアップデートを受け取るユーザーの割合 (0-100)。
+     - `disabled`:（オプション）無効にするには 'true'、再び有効にするには 'false' を設定します。
+     - `mandatory`:（オプション）必須にするには 'true'、任意にするには 'false' を設定します。
+     - `rollout`:（オプション）このアップデートを受け取るユーザーの割合 (0-100)。
 
 78. `codepush_delete_update`
    - CodePush アップデートを削除します。この操作は元に戻せません。
-   - 引数:
+   - 引数：
      - `id`: 削除する CodePush アップデートの識別子 (UUID)。
 
 79. `codepush_get_update_status`
-   - CodePush アップデートの処理ステータス (例: pending、ready、failed) を取得します。
-   - 引数:
+   - CodePush アップデートの処理ステータス（例： pending、ready、failed）を取得します。
+   - 引数：
      - `id`: CodePush アップデートの識別子 (UUID)。
 
 80. `codepush_generate_update_upload_url`
-   - CodePush アップデートバンドルをアップロードするための、署名付きアップロード URL (有効期間 1 時間) を生成します。レスポンスには、直接アップロードに必要な URL、HTTP メソッド、およびヘッダーが含まれます。アップロード後、`codepush_get_update_status` でステータスを確認します。
-   - 引数:
+   - CodePush アップデートバンドルをアップロードするための、署名付きアップロード URL（有効期間 1 時間）を生成します。レスポンスには、直接アップロードに必要な URL、HTTP メソッド、およびヘッダーが含まれます。アップロード後、`codepush_get_update_status` でステータスを確認します。
+   - 引数：
      - `id`: new update 用のクライアント生成の UUID。
      - `deployment_id`: このアップデートが属するデプロイの識別子 (UUID)。
-     - `app_version`: このアップデートの対象となるアプリの Semver バージョン (例: '1.2.3')。
-     - `file_name`: アップロードするアップデートバンドルのファイル名 (拡張子付き)。
-     - `file_size_bytes`: アップデートバンドルファイルのバイトサイズ (文字列)。
-     - `description`: (オプション) このアップデートの説明。
-     - `disabled`: (オプション) true の場合、クライアントはアップロード後にこのアップデートをダウンロードしません。
-     - `mandatory`: (オプション) true の場合、クライアントはこのアップデートをただちにインストールする必要があります。
-     - `rollout`: (オプション) このアップデートを受け取るユーザーの割合 (0-100)。デフォルトは 100 です。
+     - `app_version`: このアップデートの対象となるアプリの Semver バージョン（例： '1.2.3'）。
+     - `file_name`: アップロードするアップデートバンドルのファイル名（拡張子付き）。
+     - `file_size_bytes`: アップデートバンドルファイルのバイトサイズ（文字列）。
+     - `description`:（オプション）このアップデートの説明。
+     - `disabled`:（オプション）true の場合、クライアントはアップロード後にこのアップデートをダウンロードしません。
+     - `mandatory`:（オプション）true の場合、クライアントはこのアップデートをただちにインストールする必要があります。
+     - `rollout`:（オプション）このアップデートを受け取るユーザーの割合 (0-100)。デフォルトは 100 です。
 
 81. `codepush_get_metrics`
    - データ転送量、ストレージ、月間アクティブユーザー数を含む workspace レベルの CodePush usage metrics を、上限および請求サイクルの情報と共に取得します。
-   - 引数:
+   - 引数：
      - `workspace_slug`: Bitrise workspace の slug。
+
+### ストアリリース {#store-releases}
+
+これらのツールは `release-management-store-releases` ツールセットにのみ含まれ、デフォルトでは有効になっていません（[高度な設定](#advanced-configuration)を参照してください）。
+
+ストアリリースのツールは、接続済みアプリのアプリバージョン（Release Management の UI ではリリースと呼ばれるもの）をストア経由で扱います。リリース候補の選択とアップロード、ベータテスト、承認、ストア審査、本番ロールアウトが対象です。末尾の 3 つの App Store バージョンツールを除き、Store Releases API（`https://api.bitrise.io/release-management/v2/store-releases/v1`）を呼び出します。この 3 つは Apps API を呼び出します。`app_version_id` は、`list_app_versions` が返すアプリバージョンの `id` です。
+
+iOS 専用または Android 専用と記載されたツールは、もう一方のプラットフォームでは HTTP 422 `ERR_INVALID_PLATFORM` で失敗します。ほとんどのストア操作では、先にリリース候補を選択しておく必要があり（そうでない場合は HTTP 400）、接続済みアプリに Standard ライセンスが必要です（そうでない場合は HTTP 412）。`release_to_app_store`、`complete_app_store_phased_release`、`release_to_google_play`、およびステージングロールアウトのスケジュールツールはエンドユーザーに公開され、元に戻せないため、エージェントはこれらを呼び出す前にユーザーに確認する必要があります。削除、停止、キャンセル、ステータスのクローズを行うツールも元に戻せず、そのすべてに `destructiveHint: true` が付いています。App Store Connect または Google Play に書き込むツール、エンドユーザーに公開するツール、通知の webhook URL を設定するツールには `openWorldHint: true` が付いています（ツールアノテーションを参照してください）。読み取り、承認タスク、アプリバージョンの削除、ステージングロールアウトのスケジュールの一時停止や削除は、Bitrise データにのみ影響します。
+
+82. `list_app_versions`
+   - 接続済みアプリのアプリバージョンを、新しい順に、ステージ、リリース候補の選択、ステータスとともに一覧表示します。
+   - 引数：
+     - `connected_app_id`：接続済みアプリの uuidV4 識別子。
+     - `items_per_page`：（任意）1 ページあたりのアプリバージョンの最大数（デフォルト：10）。
+     - `page`：（任意）返すページ番号（デフォルト：1）。
+
+83. `get_app_version`
+   - アプリバージョンを、ステージ、リリース候補の選択、通知設定、自動化、ステータスとともに返します。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+84. `create_app_version`
+   - 接続済みアプリの下にアプリバージョンを作成します。何もアップロードも公開もされません。リリースは release candidate stage が進行中の状態で開始されます。ここで指定した値は `presets_id` の値を上書きします。`slack_webhook_url` または `teams_webhook_url` を空にしても、プリセットの通知先は削除されません。後から `update_app_version` で消去してください。
+   - 引数：
+     - `connected_app_id`：接続済みアプリの uuidV4 識別子。
+     - `name`：アプリバージョンの名前。iOS アプリの場合は、X.Y.Z 形式の App Store Connect バージョン。
+     - `artifact_source`：（任意）Bitrise CI ビルドの場合は `ci`（`release_branch`/`workflow` を指定する場合は必須）、アップロードされたアーティファクトの場合は `api`。
+     - `description`：（任意）アプリバージョンの説明。
+     - `release_branch`：（任意）リリース候補のビルド設定の Release branch。
+     - `workflow`：（任意）リリース候補のビルド設定の Workflow。
+     - `automatic_store_upload`：（任意）ブランチとワークフローの成功したビルドをすべてストアにアップロードします。
+     - `release_candidate_locked`：（任意）条件に一致する最新のアーティファクトを自動的に選択しません。
+     - `slack_webhook_url`、`slack_notification_integration_id`、`teams_webhook_url`：（任意）リリース更新の通知先。
+     - `approvals`：（任意）承認タスク（`summary`、および任意の `description` と `due_date` を持つオブジェクトの配列）。
+     - `automation`：（任意）リリースイベントで実行される Workflow またはパイプライン（`event_name` と、`workflow_name` または `pipeline_name` を持つオブジェクトの配列）。
+     - `presets_id`：（任意）アプリバージョンの内容を埋めるリリースプリセットの識別子。`list_release_presets` で一覧表示されるものです。
+
+85. `update_app_version`
+   - アプリバージョンを更新します。省略した引数は変更されません。`release_candidate_id` を選択するには、`release_candidate_locked` を true に設定する必要があります（そうでない場合は 409）。`automatic_store_upload` をオンにすると、現在選択されているリリース候補のアップロードもすぐに開始されます。空の文字列は `description`、`slack_webhook_url`、`teams_webhook_url` を消去します。`approvals` と `automation` は既存のリストをすべて置き換えます。`status` を設定すると、アプリバージョンは最終ステータスに移行し、以後は変更できません（409）。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+     - `artifact_source`、`description`、`release_branch`、`workflow`、`automatic_store_upload`、`slack_webhook_url`、`slack_notification_integration_id`、`teams_webhook_url`、`approvals`、`automation`：（任意）`create_app_version` と同じです。
+     - `release_candidate_id`：（任意）リリース候補として選択するインストール可能なアーティファクトの uuidV4 識別子。
+     - `release_candidate_locked`：（任意）選択したリリース候補をロックします。
+     - `status`：（任意）`abandoned` または `completed_externally`。リリースを完全にクローズし、以後は変更できません。
+
+86. `delete_app_version`
+   - アプリバージョンを、そのステージ、承認タスク、自動化、イベント履歴とともに削除します。元に戻せません。ストアにすでにアップロードまたは公開されているものには影響しません。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+87. `list_release_presets`
+   - 接続済みアプリの release presets を一覧表示します。これは、リリース候補の設定、ストアへの自動アップロード、通知、承認タスク、自動化を含む、新しいアプリバージョン用のテンプレートです。プリセットの `id` を `presets_id` として渡すと `create_app_version`。`default` はアプリのデフォルトのプリセットを示します。
+   - 引数：
+     - `connected_app_id`：接続済みアプリの uuidV4 識別子。
+
+88. `get_release_preset`
+   - リリースプリセットを取得します。
+   - 引数：
+     - `preset_id`：リリースプリセットの uuidV4 識別子。
+
+89. `create_release_preset`
+   - リリースプリセットを作成します。アプリに作成できるプリセットは最大 5 つで、作成にはアプリの Standard ライセンスが必要です（そうでない場合は 412）。
+   - 引数：
+     - `connected_app_id`：接続済みアプリの uuidV4 識別子。
+     - `template_name`：プリセットの名前。
+     - `default`：（任意）現在のデフォルトの代わりに、アプリのデフォルトのプリセットにします。
+     - `artifact_source`：（任意）`ci` または `api`。リリース候補の設定を初めて行う際は必須です。ただし `release_branch` または `workflow` を指定した場合は `ci` が暗黙的に指定されたものとして扱われます。`api` はこれらと組み合わせられません（422）。
+     - `release_branch`、`workflow`：（任意）release candidate stage のビルド設定。
+     - `auto_select_release_candidate`：（任意）条件に一致する最新のアーティファクトをリリース候補として自動的に選択します。
+     - `automatic_store_upload`：（任意）ブランチとワークフローの成功したビルドをすべてストアにアップロードします。
+     - `slack_webhook_url`、`slack_notification_integration_id`、`teams_webhook_url`：（任意）リリース更新の通知。
+     - `approvals`：（任意）承認タスク（`summary` と任意の `description` を持つオブジェクトの配列）。
+     - `automation`：（任意）リリースイベントで実行される Workflow またはパイプライン（`event_name` と、`workflow_name` または `pipeline_name` を持つオブジェクトの配列）。
+
+90. `update_release_preset`
+   - リリースプリセットを更新します。省略した引数は変更されません。`approvals` と `automation` は既存のリストをすべて置き換えます。通知の引数は現在の通知設定にマージされ、空の文字列は 1 つの設定を消去します。デフォルトのプリセットを変更するには、新しいプリセットで `default` を true に設定します。現在のデフォルトで false に設定すると失敗します。すでにそのプリセットから作成されたアプリバージョンは、その設定を保持します。
+   - 引数：
+     - `preset_id`：リリースプリセットの uuidV4 識別子。
+     - `template_name`：（任意）プリセットの新しい名前。
+     - `default`、`artifact_source`、`release_branch`、`workflow`、`auto_select_release_candidate`、`automatic_store_upload`、`slack_webhook_url`、`slack_notification_integration_id`、`teams_webhook_url`、`approvals`、`automation`：（任意）`create_release_preset` と同じです。
+
+91. `delete_release_preset`
+   - リリースプリセットを削除します。アプリのデフォルトのプリセットを削除するには `new_default_template_id` が必要です（そうでない場合は 400）。すでにそのプリセットから作成されたアプリバージョンは、その設定を保持します。元に戻せません。
+   - 引数：
+     - `preset_id`：リリースプリセットの uuidV4 識別子。
+     - `new_default_template_id`：（任意）新しくデフォルトになるプリセット。デフォルトのプリセットを削除する場合は必須です。
+
+92. `get_release_candidate`
+   - アプリバージョンのリリース候補（選択されたインストール可能なアーティファクトと、その元になった Bitrise CI ビルド）を返します。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+93. `upload_release_candidate`
+   - リリース候補を、非同期の Bitrise ビルドで TestFlight（iOS）または Google Play Console（Android）へのアップロードを開始し、`automatic_store_upload` がオンでない限りリリース候補をロックします。適切なアーティファクトがない場合は 422、アップロードを開始できない場合は 409 になります。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+94. `get_release_candidate_upload_status`
+   - リリース候補のストアへのアップロードステータスを返します：`upload_state`、アップロードを行うビルドの URL、iOS の場合は App Store Connect `processing_state`。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+95. `submit_release_candidate_for_beta_review`
+   - アップロード済みのリリース候補を TestFlight のベータ版アプリ審査に提出します。外部テストグループにはこの審査が必要です。iOS 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+     - `auto_notify_enabled`：（任意）ビルドが承認されたら、TestFlight からテスターに通知します（デフォルト：false）。
+
+96. `list_beta_testing_groups`
+   - アプリバージョンの TestFlight テストグループ（iOS。それぞれに `id` があります）、または Google Play テストトラック（Android。内部、クローズド、オープンにグループ化され、それぞれに `name` があります）を一覧表示します。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+97. `start_beta_testing`
+   - アップロード済みのリリース候補を、TestFlight テストグループまたは Google Play テストトラックに配布します。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+     - `group_id`：TestFlight テストグループの ID（iOS）、または Google Play のトラック名（Android）。
+
+98. `stop_beta_testing`
+   - テストグループでのリリース候補の TestFlight ベータテストを停止し、グループからビルドを削除します。iOS 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+     - `group_id`：TestFlight テストグループの ID。
+
+99. `list_what_to_test_descriptions`
+   - アップロード済みのリリース候補の TestFlight「What to Test」の説明を、ロケールごとに、アプリのプライマリロケールとともに一覧表示します。iOS 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+100. `create_what_to_test_description`
+   - 新しいロケールに TestFlight「What to Test」の説明を追加します。iOS 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+     - `locale`：App Store Connect のロケールショートコード（例：`en-US`）。
+     - `whats_new`：テスターに表示されるテキスト。
+
+101. `update_what_to_test_description`
+   - 既存の TestFlight「What to Test」の説明のテキストを置き換えます。iOS 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+     - `what_to_test_id`：`list_what_to_test_descriptions` の説明 ID。
+     - `whats_new`：テスターに表示される新しいテキスト。
+
+102. `delete_what_to_test_description`
+   - TestFlight「What to Test」の説明を削除します。iOS 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+     - `what_to_test_id`：`list_what_to_test_descriptions` の説明 ID。
+
+103. `list_approval_tasks`
+   - アプリバージョンの承認タスクを一覧表示します。すべてのタスクが完了すると、承認ステージが完了します。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+104. `get_approval_task`
+   - 承認タスクを 1 つ返します。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+     - `task_id`：承認タスクの識別子。
+
+105. `create_approval_task`
+   - アプリバージョンの承認ステージに承認タスクを追加します。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+     - `summary`：タスクの名前。
+     - `description`：（任意）タスクの詳しい説明。
+     - `assigned_user_slug`：（任意）タスクを割り当てるユーザーのスラッグ。
+     - `due_date`：（任意）未来の日付。
+
+106. `update_approval_task`
+   - 承認タスクを更新します。完了や再オープンも含まれます。割り当て済みのタスクでは、`completed` を変更できるのは担当者またはプロジェクト管理者のみ、それ以外のフィールドを変更できるのは作成者またはプロジェクト管理者のみです（そうでない場合は 403）。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+     - `task_id`：承認タスクの識別子。
+     - `summary`、`description`、`assigned_user_slug`、`due_date`：（任意）新しい値。`due_date` は未来の日付である必要があります。空の `description` は消去します。
+     - `completed`：（任意）完了（承認）する場合は `true`、再オープンする場合は `false`。
+
+107. `delete_approval_task`
+   - 承認タスクを削除します。最後の未完了タスクを削除すると、承認ステージが完了します。割り当て済みのタスクを削除できるのは、作成者またはプロジェクト管理者のみです（そうでない場合は 403）。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+     - `task_id`：承認タスクの識別子。
+
+108. `submit_for_app_store_review`
+   - アップロード済みのリリース候補を App Store 審査に提出します。必要に応じて、先にロケールごとの App Store metadata を設定できます。リリースタイプが `AFTER_APPROVAL` の Apple では、審査に通るとすぐにバージョンが公開されます。iOS 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+     - `copy_primary_whats_new`：（任意）プライマリローカライズの `whats_new` を空のローカライズにコピーします（デフォルト：false）。
+     - `localizations`：（任意）`locale` と、任意の `whats_new`、`description`、`keywords`、`promotional_text`、`marketing_url`、`support_url` を持つオブジェクトの配列。
+
+109. `get_app_store_review_status`
+   - Release Management が追跡している App Store 審査のステータスと、App Store Connect が報告するステータスを返します。iOS 専用です。一度も提出されていない場合は 422 `ERR_REVIEW_NOT_REQUESTED` になります。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+110. `cancel_app_store_review`
+   - 進行中の App Store 審査の提出をキャンセルします。バージョンは Apple の審査キューでの順番を失い、再提出が必要になります。iOS 専用です。バージョンが審査中でない場合は 422 になります。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+111. `release_to_app_store`
+   - 承認済みの `MANUAL` リリースタイプのアプリバージョンを App Store にリリースします。本番環境に公開され、元に戻せません。iOS 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+112. `pause_app_store_phased_release`
+   - 進行中の App Store の段階的リリースを一時停止します。すでにアップデートを入手したユーザーはそのまま保持します。iOS 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+113. `continue_app_store_phased_release`
+   - 一時停止中の App Store の段階的リリースを、Apple の 7 日間のスケジュールで再開します。iOS 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+114. `complete_app_store_phased_release`
+   - 段階的リリースを完了し、アップデートをすぐに 100% のユーザーに提供します。元に戻せません。iOS 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+115. `get_app_store_release_status`
+   - アプリバージョンの App Store の `app_release_status` と `phased_release_status` を返します。iOS 専用です。バージョンが App Store Connect にない場合は 422 `ERR_APP_STORE_VERSION_NOT_FOUND` になります。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+116. `get_app_store_release_settings`
+   - App Store Connect のリリース設定を返します：`release_type`（`MANUAL`、`AFTER_APPROVAL`、または `SCHEDULED`）、`phased_release`、`earliest_release_date`。iOS 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+117. `update_app_store_release_settings`
+   - App Store Connect のリリース設定を更新します。`release_type` と `phased_release` の両方を指定する必要があります。`AFTER_APPROVAL` と `SCHEDULED` は、追加の呼び出しなしで Apple がバージョンを公開するようにするため、エージェントは設定する前にユーザーに確認する必要があります。iOS 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+     - `release_type`：`MANUAL`、`AFTER_APPROVAL`、または `SCHEDULED`（大文字小文字は区別されません）。
+     - `phased_release`：7 日間かけてロールアウトする（`true`）か、全員に一度にロールアウトする（`false`）か。
+     - `earliest_release_date`：（任意）最も早い公開日時。`SCHEDULED` と併用する場合のみ指定できます。
+
+118. `update_google_play_release_notes`
+   - アップロード済みのリリース候補の Google Play リリースノートを、言語ごとに設定します。Android 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+     - `release_notes`：`language`（Google Play の言語コード）と `text`（最大 500 文字）を持つオブジェクトの配列。
+
+119. `get_google_play_release`
+   - 現在の Google Play の本番ロールアウトを `user_fraction` として返します（0 から 1。`1` は全ユーザー向けのリリース、本番トラックにない場合は `null`）。Android 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+120. `release_to_google_play`
+   - アップロード済みのリリース候補を Google Play の本番トラックで一部のユーザーにリリースするか、進行中のロールアウトの割合を引き上げます。本番環境に公開され、元に戻せません。Android 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+     - `user_fraction`：0 より大きく 1 以下の値。1 は全ユーザー向けのリリースです。
+
+121. `get_google_play_staged_rollout_schedule`
+   - ステージングロールアウトのスケジュールを返します：そのステップ（それぞれに `id`、`rollout_percentage`、`when`、`has_run`、`status` があります）、タイムゾーン、一時停止の状態、失敗の理由。スケジュールが存在しない場合は `null`。Android 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+122. `create_google_play_staged_rollout_schedule`
+   - ステージングロールアウトのスケジュールを作成します：本番ロールアウトを指定した割合に引き上げる日付を設定します。すでに実行された Steps は元に戻せません。Android 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+     - `location`：日付のタイムゾーン：TZ データベース名または `UTC`。
+     - `schedule`：`percentage`（0 から 100。`100` は全ユーザー向けのリリース）と `when`（ISO 8601）を持つオブジェクトの配列。
+
+123. `pause_google_play_staged_rollout_schedule`
+   - 実行中のステージングロールアウトのスケジュールを一時停止します。スケジュールがない場合、開始していない場合、または終了している場合は 412 になります。Android 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+124. `resume_google_play_staged_rollout_schedule`
+   - 一時停止中のステージングロールアウトのスケジュールを、残りのステップのタイミングを調整し直して再開します。スケジュールが一時停止中でない場合、または終了している場合は 412 になります。Android 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+     - `location`：日付のタイムゾーン：TZ データベース名または `UTC`。
+     - `schedule`：`get_google_play_staged_rollout_schedule` のステップ `id`、`percentage`、および新しい `when` を持つオブジェクトの配列。
+
+125. `delete_google_play_staged_rollout_schedule`
+   - ステージングロールアウトのスケジュールを削除し、以降のステップが実行されないようにします。すでに実行されたステップは有効なままです。スケジュールがない場合、または終了している場合は 412 になります。Android 専用です。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+
+126. `list_release_events`
+   - アプリバージョンのイベント履歴を新しい順に一覧表示します。カーソルによるページ分割に対応しており、`null` になるまで `next_before` を `before` として渡します。`total_count` と `available_actors` は最初のページにのみ含まれます。Standard ライセンスが必要です（そうでない場合は 412）。
+   - 引数：
+     - `app_version_id`：アプリバージョンの uuidV4 識別子。
+     - `before`：（任意）カーソル：前回のレスポンスの `next_before` をそのまま指定します。
+     - `limit`：（任意）1 回のリクエストあたりのイベントの最大数（デフォルト：10）。
+     - `search`：（任意）イベントタイトルに対する、大文字小文字を区別しないフィルター。
+     - `from`、`to`：（任意）両端を含む ISO 8601 の time range。2 つを一緒に指定する必要があります。
+     - `triggered_by`：（任意）絞り込む User slug またはマシンのアクタータイプ（`store`、`automation`、`preset`）。
+
+127. `create_app_store_version`
+   - iOS のアプリバージョンを審査に提出する前に必要な App Store Connect のバージョンレコードを作成します。`version_string` という名前のアプリバージョンが、接続済みアプリの下にすでに存在している必要があります（そうでない場合は 404）。iOS 専用です。
+   - 引数：
+     - `connected_app_id`：接続済みアプリの uuidV4 識別子。
+     - `version_string`：App Store Connect で作成するバージョン（例：`1.2.3`）。
+
+128. `get_app_store_draft_version`
+   - 接続済みアプリの App Store Connect のドラフトバージョン（未リリースの最新バージョン）を、その状態、リリースタイプ、一致する `app_version_id` とともに返します。ない場合は 404 になります。iOS 専用です。
+   - 引数：
+     - `connected_app_id`：接続済みアプリの uuidV4 識別子。
+
+129. `update_app_store_draft_version`
+   - 既存のアプリバージョンに合わせて、App Store Connect のドラフトバージョンの名前を変更します。iOS 専用です。
+   - 引数：
+     - `connected_app_id`：接続済みアプリの uuidV4 識別子。
+     - `version_string`：新しいバージョン文字列。既存のアプリバージョンの名前と一致している必要があります。
 
 ### Insights
 
 Bitrise Insights (公開 Insights API、`https://api.bitrise.io/insights/v1`) のビルドおよびテストのメトリクスです。workspace で有料の Insights プランが必要です。プランがない場合、すべての呼び出しが HTTP 402 で失敗します。各ツールは、Insights プロジェクト ID で識別される 1 つのプロジェクトのみを対象にレポートします。時間範囲は UTC で RFC3339 され、`start` は含み、`end` は含みません。所要時間の単位は秒で、割合は 0-100 のパーセンテージです。`branch` フィルターは、ワイルドカードとして `*` を受け付けます (`release/*`)。
 
-すべての Insights ツールに共通する引数:
+すべての Insights ツールに共通する引数：
 - `workspace_slug`: プロジェクトが属する workspace の slug
 - `project`: レポート対象の Insights プロジェクトの ID
-- `start`: 時間範囲の開始 (含む)、RFC3339
-- `end`: 時間範囲の終了 (含まない)、RFC3339
+- `start`: 時間範囲の開始（含む）、RFC3339
+- `end`: 時間範囲の終了（含まない）、RFC3339
 
 1. `insights_get_build_totals`
    - グループ化なしで、ウィンドウ全体の Build count、失敗率、p50/p90 の所要時間、および total duration を取得します。ウィンドウは最大 2 年間です。
-   - 引数:
-     - `branch` (オプション): これらのブランチのビルドのみを対象にします。`*` はワイルドカードです
-     - `workflow` (オプション): これらの Workflow のビルドのみを対象にします
-     - `pipeline` (オプション): これらのパイプラインのビルドのみを対象にします
+   - 引数：
+     - `branch`（オプション）: これらのブランチのビルドのみを対象にします。`*` はワイルドカードです
+     - `workflow`（オプション）: これらの Workflow のビルドのみを対象にします
+     - `pipeline`（オプション）: これらのパイプラインのビルドのみを対象にします
 
 2. `insights_get_build_series`
-   - 同じビルドメトリクスを時系列で取得します。時間バケットごとに 1 行で、古い順に並びます。`group_by` を指定すると、バケットごと、グループごとに 1 行となり、各行にグループ名が含まれます。ウィンドウの上限: 1 時間単位では 7 日間、日単位では 90 日間、週単位では 1 年間、月単位では 2 年間。
-   - 引数:
-     - `branch`、`workflow`、`pipeline` (オプション): 上記と同じ
-     - `granularity` (オプション): hourly、daily (デフォルト)、weekly、または monthly
-     - `group_by` (オプション): workflow, pipeline、stage、または step
-     - `limit` (オプション): グループの最大数、1-100 (デフォルト: 20)。`group_by` がない場合は無視されます
+   - 同じビルドメトリクスを時系列で取得します。時間バケットごとに 1 行で、古い順に並びます。`group_by` を指定すると、バケットごと、グループごとに 1 行となり、各行にグループ名が含まれます。ウィンドウの上限： 1 時間単位では 7 日間、日単位では 90 日間、週単位では 1 年間、月単位では 2 年間。
+   - 引数：
+     - `branch`、`workflow`、`pipeline`（オプション）: 上記と同じ
+     - `granularity`（オプション）: hourly、daily（デフォルト）、weekly、または monthly
+     - `group_by`（オプション）: workflow, pipeline、stage、または step
+     - `limit`（オプション）: グループの最大数、1-100（デフォルト： 20）。`group_by` がない場合は無視されます
 
 3. `insights_get_test_totals`
    - グループ化なしで、ウィンドウ全体のテスト実行回数、失敗率、p50/p90 の所要時間、total duration、および不安定な実行回数を取得します。カウントは個別のテストケースではなく、テストケースの実行回数です。ウィンドウは最大 2 年間です。
-   - 引数:
-     - `branch`、`workflow`、`pipeline` (オプション): 上記と同じ。テストが実行されたビルドが対象です
-     - `test_suite` (オプション): これらのテストスイートの実行のみを対象にします
+   - 引数：
+     - `branch`、`workflow`、`pipeline`（オプション）: 上記と同じ。テストが実行されたビルドが対象です
+     - `test_suite`（オプション）: これらのテストスイートの実行のみを対象にします
 
 4. `insights_get_test_series`
    - 同じテストメトリクスを、ビルドの時系列と同じウィンドウ上限で、時系列として取得します。
-   - 引数:
-     - `branch`、`workflow`、`pipeline`、`test_suite` (オプション): 上記と同じ
-     - `granularity` (オプション): hourly、daily (デフォルト)、weekly、または monthly
-     - `group_by` (オプション): workflow, pipeline、stage、branch、または test_suite
-     - `limit` (オプション): グループの最大数、1-100 (デフォルト: 20)
+   - 引数：
+     - `branch`、`workflow`、`pipeline`、`test_suite`（オプション）: 上記と同じ
+     - `granularity`（オプション）: hourly、daily（デフォルト）、weekly、または monthly
+     - `group_by`（オプション）: workflow, pipeline、stage、branch、または test_suite
+     - `limit`（オプション）: グループの最大数、1-100（デフォルト： 20）
 
 5. `insights_list_flaky_tests`
    - ウィンドウ内で不安定な結果の後に再実行された Test cases を、ランキング順に 1 ページずつ取得します。ウィンドウは最大 2 年間です。
-   - 引数:
-     - `branch`、`workflow`、`test_suite` (オプション): 上記と同じ (このツールには `pipeline` フィルターはありません)
-     - `test_case` (オプション): これらのテストケースのみを対象にします
-     - `module` (オプション): これらのモジュールのテストケースのみを対象にします
-     - `order_by` (オプション): flaky_rerun_count (デフォルト) または flaky_rate
-     - `order` (オプション): desc (デフォルト) または asc
-     - `page` (オプション): 1 から始まるページ番号 (デフォルト: 1)
-     - `per_page` (オプション): 1 ページあたりのテストケース数、1-100 (デフォルト: 20)
+   - 引数：
+     - `branch`、`workflow`、`test_suite`（オプション): 上記と同じ（このツールには `pipeline` フィルターはありません）
+     - `test_case`（オプション）: これらのテストケースのみを対象にします
+     - `module`（オプション）: これらのモジュールのテストケースのみを対象にします
+     - `order_by`（オプション）: flaky_rerun_count（デフォルト）または flaky_rate
+     - `order`（オプション）: desc（デフォルト）または asc
+     - `page`（オプション）: 1 から始まるページ番号（デフォルト： 1）
+     - `per_page`（オプション）: 1 ページあたりのテストケース数、1-100（デフォルト： 20）
 
-## APIグループ {#api-groups}
+### ツールの検出 {#tool-discovery}
 
-Bitrise MCPサーバーは、ツールをAPIグループにまとめており、コマンドライン引数で有効または無効にできます。次の表は、各ツールが属するAPIグループを示しています(`me`は、`account`の旧名称である`user`にも属します)。
+1. `list_toolset`
+   - ツールセットと、それぞれがこの接続で有効かどうか、無効な各ツールセットが追加するツールを `unavailable_tools` として一覧表示します。有効なツールセットに関係なく利用でき、どのツールセットにも属しません。ユーザーは、MCP クライアントの設定でツールセットを有効にします。
+   - 引数：なし
 
-| Tool | apps | builds | workspaces | outgoing-webhooks | artifacts | group-roles | cache-items | pipelines | account | read-only | release-management | configuration | release-management-app | release-management-build-distribution | release-management-code-push | insights |
-|------|------|--------|------------|-------------------|-----------|-------------|-------------|-----------|---------|-----------|--------------------|--------------|------------------------|---------------------------------------|------------------------------|---|
-| list_apps | ✅ | | | | | | | | | ✅ | | | | | | |
-| register_app | ✅ | | | | | | | | | | | | | | | |
-| finish_bitrise_app | ✅ | | | | | | | | | | | | | | | |
-| get_app | ✅ | | | | | | | | | ✅ | | | | | | |
-| delete_app | ✅ | | | | | | | | | | | | | | | |
-| update_app | ✅ | | | | | | | | | | | | | | | |
-| get_bitrise_yml | ✅ | | | | | | | | | ✅ | | | | | | |
-| update_bitrise_yml | ✅ | | | | | | | | | | | | | | | |
-| list_branches | ✅ | | | | | | | | | ✅ | | | | | | |
-| register_ssh_key | ✅ | | | | | | | | | | | | | | | |
-| register_webhook | ✅ | | | | | | | | | | | | | | | |
-| list_builds | | ✅ | | | | | | | | ✅ | | | | | | |
-| trigger_bitrise_build | | ✅ | | | | | | | | | | | | | | |
-| get_build | | ✅ | | | | | | | | ✅ | | | | | | |
-| abort_build | | ✅ | | | | | | | | | | | | | | |
-| get_build_log | | ✅ | | | | | | | | ✅ | | | | | | |
-| get_build_bitrise_yml | | ✅ | | | | | | | | ✅ | | | | | | |
-| list_build_workflows | | ✅ | | | | | | | | ✅ | | | | | | |
-| get_build_steps | | ✅ | | | | | | | | ✅ | | | | | | |
-| get_build_test_results | | ✅ | | | | | | | | ✅ | | | | | | |
-| list_artifacts | | | | | ✅ | | | | | ✅ | | | | | | |
-| get_artifact | | | | | ✅ | | | | | ✅ | | | | | | |
-| delete_artifact | | | | | ✅ | | | | | | | | | | | |
-| update_artifact | | | | | ✅ | | | | | | | | | | | |
-| list_outgoing_webhooks | | | | ✅ | | | | | | ✅ | | | | | | |
-| delete_outgoing_webhook | | | | ✅ | | | | | | | | | | | | |
-| update_outgoing_webhook | | | | ✅ | | | | | | | | | | | | |
-| create_outgoing_webhook | | | | ✅ | | | | | | | | | | | | |
-| list_cache_items | | | | | | | ✅ | | | ✅ | | | | | | |
-| delete_all_cache_items | | | | | | | ✅ | | | | | | | | | |
-| delete_cache_item | | | | | | | ✅ | | | | | | | | | |
-| get_cache_item_download_url | | | | | | | ✅ | | | ✅ | | | | | | |
-| list_pipelines | | | | | | | | ✅ | | ✅ | | | | | | |
-| get_pipeline | | | | | | | | ✅ | | ✅ | | | | | | |
-| abort_pipeline | | | | | | | | ✅ | | | | | | | | |
-| rebuild_pipeline | | | | | | | | ✅ | | | | | | | | |
-| list_group_roles | | | | | | ✅ | | | | ✅ | | | | | | |
-| replace_group_roles | | | | | | ✅ | | | | | | | | | | |
-| list_workspaces | | | ✅ | | | | | | | ✅ | | | | | | |
-| get_workspace | | | ✅ | | | | | | | ✅ | | | | | | |
-| get_workspace_groups | | | ✅ | | | | | | | ✅ | | | | | | |
-| create_workspace_group | | | ✅ | | | | | | | | | | | | | |
-| get_workspace_members | | | ✅ | | | | | | | ✅ | | | | | | |
-| invite_member_to_workspace | | | ✅ | | | | | | | | | | | | | |
-| add_member_to_group | | | ✅ | | | | | | | | | | | | | |
-| me | | | | | | | | | ✅ | ✅ | | | | | | |
-| create_connected_app | | | | | | | | | | | ✅ | | ✅ | | | |
-| list_connected_apps | | | | | | | | | | ✅ | ✅ | | ✅ | | | |
-| get_connected_app | | | | | | | | | | ✅ | ✅ | | ✅ | | | |
-| update_connected_app | | | | | | | | | | | ✅ | | ✅ | | | |
-| list_installable_artifacts | | | | | | | | | | ✅ | ✅ | | ✅ | | | |
-| generate_installable_artifact_upload_url | | | | | | | | | | | ✅ | | ✅ | | | |
-| get_installable_artifact_upload_and_proc_status | | | | | | | | | | ✅ | ✅ | | ✅ | | | |
-| set_installable_artifact_public_install_page | | | | | | | | | | | ✅ | | ✅ | | | |
-| list_build_distribution_versions | | | | | | | | | | ✅ | ✅ | | | ✅ | | |
-| list_build_distribution_version_test_builds | | | | | | | | | | ✅ | ✅ | | | ✅ | | |
-| create_tester_group | | | | | | | | | | | ✅ | | | ✅ | | |
-| notify_tester_group | | | | | | | | | | | ✅ | | | ✅ | | |
-| add_testers_to_tester_group | | | | | | | | | | | ✅ | | | ✅ | | |
-| update_tester_group | | | | | | | | | | | ✅ | | | ✅ | | |
-| list_tester_groups | | | | | | | | | | ✅ | ✅ | | | ✅ | | |
-| get_tester_group | | | | | | | | | | ✅ | ✅ | | | ✅ | | |
-| get_potential_testers | | | | | | | | | | ✅ | ✅ | | | ✅ | | |
-| get_testers | | | | | | | | | | ✅ | ✅ | | | ✅ | | |
-| validate_bitrise_yml | | | | | | | | | | ✅ | | ✅ | | | | |
-| step_search | | | | | | | | | | ✅ | | ✅ | | | | |
-| step_inputs | | | | | | | | | | ✅ | | ✅ | | | | |
-| list_available_stacks | | | | | | | | | | ✅ | | ✅ | | | | |
-| codepush_list_deployments | | | | | | | | | | ✅ | ✅ | | | | ✅ | |
-| codepush_get_deployment | | | | | | | | | | ✅ | ✅ | | | | ✅ | |
-| codepush_create_deployment | | | | | | | | | | | ✅ | | | | ✅ | |
-| codepush_update_deployment | | | | | | | | | | | ✅ | | | | ✅ | |
-| codepush_delete_deployment | | | | | | | | | | | ✅ | | | | ✅ | |
-| codepush_promote_deployment | | | | | | | | | | | ✅ | | | | ✅ | |
-| codepush_rollback_deployment | | | | | | | | | | | ✅ | | | | ✅ | |
-| codepush_list_updates | | | | | | | | | | ✅ | ✅ | | | | ✅ | |
-| codepush_get_update | | | | | | | | | | ✅ | ✅ | | | | ✅ | |
-| codepush_patch_update | | | | | | | | | | | ✅ | | | | ✅ | |
-| codepush_delete_update | | | | | | | | | | | ✅ | | | | ✅ | |
-| codepush_get_update_status | | | | | | | | | | ✅ | ✅ | | | | ✅ | |
-| codepush_generate_update_upload_url | | | | | | | | | | | ✅ | | | | ✅ | |
-| codepush_get_metrics | | | | | | | | | | ✅ | ✅ | | | | ✅ | |
-| insights_get_build_totals | | | | | | | | | | ✅ | | | | | | ✅ |
-| insights_get_build_series | | | | | | | | | | ✅ | | | | | | ✅ |
-| insights_get_test_totals | | | | | | | | | | ✅ | | | | | | ✅ |
-| insights_get_test_series | | | | | | | | | | ✅ | | | | | | ✅ |
-| insights_list_flaky_tests | | | | | | | | | | ✅ | | | | | | ✅ |
+## ツールセット {#toolsets}
+
+Bitrise MCP サーバーは、ツールを有効または無効にできるツールセットに整理します（[高度な設定](#advanced-configuration)を参照してください）。次の表は、各ツールがどのツールセットに属しているかを示します（`me` は、`account` の以前の名前である `user` にも属します）。
+
+| ツール | apps | builds | workspaces | outgoing-webhooks | artifacts | group-roles | cache-items | pipelines | account | read-only | release-management | configuration | release-management-app | release-management-build-distribution | release-management-code-push | release-management-store-releases | insights |
+|------|------|--------|------------|-------------------|-----------|-------------|-------------|-----------|---------|-----------|--------------------|---------------|------------------------|---------------------------------------|------------------------------|-----------------------------------|----------|
+| list_apps | ✅ | | | | | | | | | ✅ | | | | | | | |
+| register_app | ✅ | | | | | | | | | | | | | | | | |
+| finish_bitrise_app | ✅ | | | | | | | | | | | | | | | | |
+| get_app | ✅ | | | | | | | | | ✅ | | | | | | | |
+| delete_app | ✅ | | | | | | | | | | | | | | | | |
+| update_app | ✅ | | | | | | | | | | | | | | | | |
+| get_bitrise_yml | ✅ | | | | | | | | | ✅ | | | | | | | |
+| update_bitrise_yml | ✅ | | | | | | | | | | | | | | | | |
+| list_branches | ✅ | | | | | | | | | ✅ | | | | | | | |
+| register_ssh_key | ✅ | | | | | | | | | | | | | | | | |
+| register_webhook | ✅ | | | | | | | | | | | | | | | | |
+| list_builds | | ✅ | | | | | | | | ✅ | | | | | | | |
+| trigger_bitrise_build | | ✅ | | | | | | | | | | | | | | | |
+| get_build | | ✅ | | | | | | | | ✅ | | | | | | | |
+| abort_build | | ✅ | | | | | | | | | | | | | | | |
+| get_build_log | | ✅ | | | | | | | | ✅ | | | | | | | |
+| get_build_bitrise_yml | | ✅ | | | | | | | | ✅ | | | | | | | |
+| list_build_workflows | | ✅ | | | | | | | | ✅ | | | | | | | |
+| get_build_steps | | ✅ | | | | | | | | ✅ | | | | | | | |
+| get_build_test_results | | ✅ | | | | | | | | ✅ | | | | | | | |
+| list_artifacts | | | | | ✅ | | | | | ✅ | | | | | | | |
+| get_artifact | | | | | ✅ | | | | | ✅ | | | | | | | |
+| delete_artifact | | | | | ✅ | | | | | | | | | | | | |
+| update_artifact | | | | | ✅ | | | | | | | | | | | | |
+| list_outgoing_webhooks | | | | ✅ | | | | | | ✅ | | | | | | | |
+| delete_outgoing_webhook | | | | ✅ | | | | | | | | | | | | | |
+| update_outgoing_webhook | | | | ✅ | | | | | | | | | | | | | |
+| create_outgoing_webhook | | | | ✅ | | | | | | | | | | | | | |
+| list_cache_items | | | | | | | ✅ | | | ✅ | | | | | | | |
+| delete_all_cache_items | | | | | | | ✅ | | | | | | | | | | |
+| delete_cache_item | | | | | | | ✅ | | | | | | | | | | |
+| get_cache_item_download_url | | | | | | | ✅ | | | ✅ | | | | | | | |
+| list_pipelines | | | | | | | | ✅ | | ✅ | | | | | | | |
+| get_pipeline | | | | | | | | ✅ | | ✅ | | | | | | | |
+| abort_pipeline | | | | | | | | ✅ | | | | | | | | | |
+| rebuild_pipeline | | | | | | | | ✅ | | | | | | | | | |
+| list_group_roles | | | | | | ✅ | | | | ✅ | | | | | | | |
+| replace_group_roles | | | | | | ✅ | | | | | | | | | | | |
+| list_workspaces | | | ✅ | | | | | | | ✅ | | | | | | | |
+| get_workspace | | | ✅ | | | | | | | ✅ | | | | | | | |
+| get_workspace_groups | | | ✅ | | | | | | | ✅ | | | | | | | |
+| create_workspace_group | | | ✅ | | | | | | | | | | | | | | |
+| get_workspace_members | | | ✅ | | | | | | | ✅ | | | | | | | |
+| invite_member_to_workspace | | | ✅ | | | | | | | | | | | | | | |
+| add_member_to_group | | | ✅ | | | | | | | | | | | | | | |
+| me | | | | | | | | | ✅ | ✅ | | | | | | | |
+| create_connected_app | | | | | | | | | | | ✅ | | ✅ | | | | |
+| list_connected_apps | | | | | | | | | | ✅ | ✅ | | ✅ | | | | |
+| get_connected_app | | | | | | | | | | ✅ | ✅ | | ✅ | | | | |
+| update_connected_app | | | | | | | | | | | ✅ | | ✅ | | | | |
+| list_installable_artifacts | | | | | | | | | | ✅ | ✅ | | ✅ | | | | |
+| generate_installable_artifact_upload_url | | | | | | | | | | | ✅ | | ✅ | | | | |
+| get_installable_artifact_upload_and_proc_status | | | | | | | | | | ✅ | ✅ | | ✅ | | | | |
+| set_installable_artifact_public_install_page | | | | | | | | | | | ✅ | | ✅ | | | | |
+| list_build_distribution_versions | | | | | | | | | | ✅ | ✅ | | | ✅ | | | |
+| list_build_distribution_version_test_builds | | | | | | | | | | ✅ | ✅ | | | ✅ | | | |
+| create_tester_group | | | | | | | | | | | ✅ | | | ✅ | | | |
+| notify_tester_group | | | | | | | | | | | ✅ | | | ✅ | | | |
+| add_testers_to_tester_group | | | | | | | | | | | ✅ | | | ✅ | | | |
+| update_tester_group | | | | | | | | | | | ✅ | | | ✅ | | | |
+| list_tester_groups | | | | | | | | | | ✅ | ✅ | | | ✅ | | | |
+| get_tester_group | | | | | | | | | | ✅ | ✅ | | | ✅ | | | |
+| get_potential_testers | | | | | | | | | | ✅ | ✅ | | | ✅ | | | |
+| get_testers | | | | | | | | | | ✅ | ✅ | | | ✅ | | | |
+| validate_bitrise_yml | | | | | | | | | | ✅ | | ✅ | | | | | |
+| step_search | | | | | | | | | | ✅ | | ✅ | | | | | |
+| step_inputs | | | | | | | | | | ✅ | | ✅ | | | | | |
+| list_available_stacks | | | | | | | | | | ✅ | | ✅ | | | | | |
+| codepush_list_deployments | | | | | | | | | | ✅ | ✅ | | | | ✅ | | |
+| codepush_get_deployment | | | | | | | | | | ✅ | ✅ | | | | ✅ | | |
+| codepush_create_deployment | | | | | | | | | | | ✅ | | | | ✅ | | |
+| codepush_update_deployment | | | | | | | | | | | ✅ | | | | ✅ | | |
+| codepush_delete_deployment | | | | | | | | | | | ✅ | | | | ✅ | | |
+| codepush_promote_deployment | | | | | | | | | | | ✅ | | | | ✅ | | |
+| codepush_rollback_deployment | | | | | | | | | | | ✅ | | | | ✅ | | |
+| codepush_list_updates | | | | | | | | | | ✅ | ✅ | | | | ✅ | | |
+| codepush_get_update | | | | | | | | | | ✅ | ✅ | | | | ✅ | | |
+| codepush_patch_update | | | | | | | | | | | ✅ | | | | ✅ | | |
+| codepush_delete_update | | | | | | | | | | | ✅ | | | | ✅ | | |
+| codepush_get_update_status | | | | | | | | | | ✅ | ✅ | | | | ✅ | | |
+| codepush_generate_update_upload_url | | | | | | | | | | | ✅ | | | | ✅ | | |
+| codepush_get_metrics | | | | | | | | | | ✅ | ✅ | | | | ✅ | | |
+| list_app_versions | | | | | | | | | | | | | | | | ✅ | |
+| get_app_version | | | | | | | | | | | | | | | | ✅ | |
+| create_app_version | | | | | | | | | | | | | | | | ✅ | |
+| update_app_version | | | | | | | | | | | | | | | | ✅ | |
+| delete_app_version | | | | | | | | | | | | | | | | ✅ | |
+| list_release_presets | | | | | | | | | | | | | | | | ✅ | |
+| get_release_preset | | | | | | | | | | | | | | | | ✅ | |
+| create_release_preset | | | | | | | | | | | | | | | | ✅ | |
+| update_release_preset | | | | | | | | | | | | | | | | ✅ | |
+| delete_release_preset | | | | | | | | | | | | | | | | ✅ | |
+| get_release_candidate | | | | | | | | | | | | | | | | ✅ | |
+| upload_release_candidate | | | | | | | | | | | | | | | | ✅ | |
+| get_release_candidate_upload_status | | | | | | | | | | | | | | | | ✅ | |
+| submit_release_candidate_for_beta_review | | | | | | | | | | | | | | | | ✅ | |
+| list_beta_testing_groups | | | | | | | | | | | | | | | | ✅ | |
+| start_beta_testing | | | | | | | | | | | | | | | | ✅ | |
+| stop_beta_testing | | | | | | | | | | | | | | | | ✅ | |
+| list_what_to_test_descriptions | | | | | | | | | | | | | | | | ✅ | |
+| create_what_to_test_description | | | | | | | | | | | | | | | | ✅ | |
+| update_what_to_test_description | | | | | | | | | | | | | | | | ✅ | |
+| delete_what_to_test_description | | | | | | | | | | | | | | | | ✅ | |
+| list_approval_tasks | | | | | | | | | | | | | | | | ✅ | |
+| get_approval_task | | | | | | | | | | | | | | | | ✅ | |
+| create_approval_task | | | | | | | | | | | | | | | | ✅ | |
+| update_approval_task | | | | | | | | | | | | | | | | ✅ | |
+| delete_approval_task | | | | | | | | | | | | | | | | ✅ | |
+| submit_for_app_store_review | | | | | | | | | | | | | | | | ✅ | |
+| get_app_store_review_status | | | | | | | | | | | | | | | | ✅ | |
+| cancel_app_store_review | | | | | | | | | | | | | | | | ✅ | |
+| release_to_app_store | | | | | | | | | | | | | | | | ✅ | |
+| pause_app_store_phased_release | | | | | | | | | | | | | | | | ✅ | |
+| continue_app_store_phased_release | | | | | | | | | | | | | | | | ✅ | |
+| complete_app_store_phased_release | | | | | | | | | | | | | | | | ✅ | |
+| get_app_store_release_status | | | | | | | | | | | | | | | | ✅ | |
+| get_app_store_release_settings | | | | | | | | | | | | | | | | ✅ | |
+| update_app_store_release_settings | | | | | | | | | | | | | | | | ✅ | |
+| update_google_play_release_notes | | | | | | | | | | | | | | | | ✅ | |
+| get_google_play_release | | | | | | | | | | | | | | | | ✅ | |
+| release_to_google_play | | | | | | | | | | | | | | | | ✅ | |
+| get_google_play_staged_rollout_schedule | | | | | | | | | | | | | | | | ✅ | |
+| create_google_play_staged_rollout_schedule | | | | | | | | | | | | | | | | ✅ | |
+| pause_google_play_staged_rollout_schedule | | | | | | | | | | | | | | | | ✅ | |
+| resume_google_play_staged_rollout_schedule | | | | | | | | | | | | | | | | ✅ | |
+| delete_google_play_staged_rollout_schedule | | | | | | | | | | | | | | | | ✅ | |
+| list_release_events | | | | | | | | | | | | | | | | ✅ | |
+| create_app_store_version | | | | | | | | | | | | | | | | ✅ | |
+| get_app_store_draft_version | | | | | | | | | | | | | | | | ✅ | |
+| update_app_store_draft_version | | | | | | | | | | | | | | | | ✅ | |
+| insights_get_build_totals | | | | | | | | | | ✅ | | | | | | | ✅ |
+| insights_get_build_series | | | | | | | | | | ✅ | | | | | | | ✅ |
+| insights_get_test_totals | | | | | | | | | | ✅ | | | | | | | ✅ |
+| insights_get_test_series | | | | | | | | | | ✅ | | | | | | | ✅ |
+| insights_list_flaky_tests | | | | | | | | | | ✅ | | | | | | | ✅ |
