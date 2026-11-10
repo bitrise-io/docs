@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {translate} from '@docusaurus/Translate';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
@@ -6,6 +6,7 @@ import {useDoc} from '@docusaurus/plugin-content-docs/client';
 import IconArrowNortheast from '@site/src/images/icon-arrow-northeast-16px.svg';
 import IconCheck from '@site/src/images/icon-check-16px.svg';
 import IconCopy from '@site/src/images/icon-copy-16px.svg';
+import IconMore from '@site/src/images/icon-more-horizontal-16px.svg';
 import styles from './styles.module.css';
 
 type CopyState = 'idle' | 'copied' | 'failed';
@@ -39,6 +40,17 @@ async function copyMarkdown(href: string): Promise<void> {
     await navigator.clipboard.writeText(await fetchMarkdown());
   }
 }
+
+/**
+ * The "Open in" targets of the ellipsis menu. Each takes a prompt in a query
+ * parameter and starts a new chat with it, so the AI agent fetches the page's
+ * Markdown mirror itself. Recheck the URL formats when a target changes them.
+ */
+const AI_TARGETS = [
+  {id: 'chatgpt', label: 'ChatGPT', url: (prompt: string) => `https://chatgpt.com/?q=${prompt}`},
+  {id: 'claude', label: 'Claude', url: (prompt: string) => `https://claude.ai/new?q=${prompt}`},
+  {id: 'mistral', label: 'Mistral', url: (prompt: string) => `https://chat.mistral.ai/chat?q=${prompt}`},
+];
 
 /**
  * Page actions under the title of a doc page: copy the page as Markdown, open
@@ -80,6 +92,35 @@ export default function MarkdownActions(): React.JSX.Element | null {
     const timer = setTimeout(() => setCopyState('idle'), FEEDBACK_MS);
     return () => clearTimeout(timer);
   }, [copyState]);
+
+  // The ellipsis menu closes on Escape (focus returns to its button) and on a
+  // click outside it.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) {
+      return undefined;
+    }
+    const onPointerDown = (event: MouseEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMenuOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [menuOpen]);
 
   if (
     i18n.currentLocale !== i18n.defaultLocale ||
@@ -124,6 +165,25 @@ export default function MarkdownActions(): React.JSX.Element | null {
     );
   };
 
+  // The AI agents read the production mirror by its absolute URL.
+  const prompt = encodeURIComponent(
+    `Read ${siteConfig.url}${href} and answer my questions about it.`,
+  );
+
+  // Arrow keys move between the menu items, as in a native menu.
+  const handleMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
+      return;
+    }
+    const items = Array.from(
+      event.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]'),
+    );
+    const current = items.indexOf(document.activeElement as HTMLElement);
+    const step = event.key === 'ArrowDown' ? 1 : -1;
+    items[(current + step + items.length) % items.length]?.focus();
+    event.preventDefault();
+  };
+
   const CopyIcon = copyState === 'copied' ? IconCheck : IconCopy;
 
   return (
@@ -150,6 +210,49 @@ export default function MarkdownActions(): React.JSX.Element | null {
         })}
         <IconArrowNortheast width={16} height={16} aria-hidden="true" />
       </a>
+      <span className={styles.separator} aria-hidden="true" />
+      <div className={styles.menuWrapper} ref={menuRef}>
+        <button
+          type="button"
+          ref={menuButtonRef}
+          className={styles.action}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          aria-label={translate({
+            id: 'markdownActions.menu.label',
+            message: 'More actions',
+            description: 'Accessible name of the ellipsis button that opens the menu of extra page actions',
+          })}
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          <IconMore width={16} height={16} aria-hidden="true" />
+        </button>
+        {menuOpen && (
+          <div className={styles.menu} role="menu" onKeyDown={handleMenuKeyDown}>
+            {AI_TARGETS.map((target) => (
+              <a
+                key={target.id}
+                role="menuitem"
+                className={styles.action}
+                href={target.url(prompt)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setMenuOpen(false)}
+              >
+                {translate(
+                  {
+                    id: 'markdownActions.menu.openIn',
+                    message: 'Open in {target}',
+                    description: 'Menu item that opens the page in an AI agent. {target} is the agent name, such as ChatGPT',
+                  },
+                  {target: target.label},
+                )}
+                <IconArrowNortheast width={16} height={16} aria-hidden="true" />
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
