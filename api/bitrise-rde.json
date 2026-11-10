@@ -376,6 +376,10 @@
     "v1GetWorkspaceInfoResponse": {
       "description": "GetWorkspaceInfoResponse carries workspace-level capabilities the UI uses to\ntailor what it shows.",
       "properties": {
+        "canManageNetworkPolicy": {
+          "description": "Whether the caller may change the workspace network policy (org\npermission \"manage_workspace_settings\": workspace owners, managers and\ncustom roles with the \"Modify workspace settings\" bundle). Everyone else\nsees the policy read-only; UpdateWorkspaceNetworkPolicy enforces the same\npermission server-side.",
+          "type": "boolean"
+        },
         "canViewUsage": {
           "description": "Whether the caller may see the workspace usage page (org permission\n\"view_billing_data\" — workspace owners and billing-managing custom\nroles). Gates the Usage navigation item in the UI; GetWorkspaceUsage\nenforces the same permission server-side.",
           "type": "boolean"
@@ -388,9 +392,41 @@
           "description": "Whether lifecycle hooks are enabled for this workspace (rollout feature\nflag 'rde-lifecycle-hooks', docs/lifecycle-hooks/DESIGN.md). Gates\nsaving templates with hooks and decides how new sessions start: with\nthe flag on, new sessions run their hooks through the RDE runner (legacy\ntemplates through a fixed mapping); with it off, they start exactly as\nbefore. Sessions already running on the runner keep working either way.",
           "type": "boolean"
         },
+        "networkPolicyEnabled": {
+          "description": "Whether workspace network policies are enabled for this workspace\n(rollout feature flag 'rde-network-gateway'). Gates the Network policy\nnavigation item and the network policy endpoints; turning the flag\noff is the kill switch that stops applying policies to sessions.",
+          "type": "boolean"
+        },
         "warmPoolsEnabled": {
           "description": "Whether warm pools are enabled for this workspace (rollout feature flag\n'rde-warm-pool'). Gates the Warm pools navigation item, the template\nactions that create a pool, and CreateWarmPool server-side; pools that\nalready exist stay manageable and claimable regardless.",
           "type": "boolean"
+        },
+        "workspaceScriptAvailable": {
+          "description": "True when the 'rde-workspace-script' rollout flag is on for this\nworkspace, whoever the caller: sessions may then run the workspace\nscript, so the UI offers the log views its output lands in. Unlike\nworkspace_script_enabled it says nothing about editing the script.",
+          "type": "boolean"
+        },
+        "workspaceScriptEnabled": {
+          "description": "True when the workspace script is available to this caller: the\n'rde-workspace-script' rollout flag is on and the caller may edit it\n(the same people who can view usage). Drives the Workspace script nav\nitem; the endpoints re-check server-side.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "v1GetWorkspaceNetworkPolicyResponse": {
+      "description": "GetWorkspaceNetworkPolicyResponse carries the workspace's network policy;\na disabled, empty policy when none was saved.",
+      "properties": {
+        "networkPolicy": {
+          "$ref": "#/definitions/v1WorkspaceNetworkPolicy",
+          "description": "The workspace's network policy."
+        }
+      },
+      "type": "object"
+    },
+    "v1GetWorkspaceScriptResponse": {
+      "description": "GetWorkspaceScriptResponse carries the workspace script.",
+      "properties": {
+        "workspaceScript": {
+          "$ref": "#/definitions/v1WorkspaceScript",
+          "description": "The script, its variables and its state."
         }
       },
       "type": "object"
@@ -527,6 +563,28 @@
         "HOOK_RUN_STATE_SKIPPED"
       ],
       "type": "string"
+    },
+    "v1ICMPMatch": {
+      "description": "ICMPMatch selects ICMP flows (ping and friends).",
+      "type": "object"
+    },
+    "v1IPMatch": {
+      "description": "IPMatch selects where a flow goes (layer 3). Session networks are IPv4 only.",
+      "properties": {
+        "cidr": {
+          "description": "An IPv4 network in CIDR notation, for example 10.0.0.0/8.",
+          "type": "string"
+        },
+        "host": {
+          "description": "Destination name: an exact host name, or a `*.example.com` pattern\nmatching every name under example.com. Checked against the names the\nsession resolved through the host's DNS and, on TLS, against the SNI.",
+          "type": "string"
+        },
+        "ip": {
+          "description": "A single IPv4 address.",
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
     "v1Image": {
       "description": "Image represents a machine image available for sessions.\n\nDeprecated: use Stack. Images expose opaque merged-stack ids (for example, \"osx-26-edge\")\nthat bundle many Xcode versions and can be recomposed at any time. Stack exposes\nthe stable, specific stack id with friendly metadata.",
@@ -717,6 +775,78 @@
       },
       "type": "object"
     },
+    "v1NetworkFlowMatch": {
+      "description": "NetworkFlowMatch is what a rule compares a flow against, layer by layer.\nAn unset layer matches anything; a rule matches when every set layer does.",
+      "properties": {
+        "icmp": {
+          "$ref": "#/definitions/v1ICMPMatch",
+          "description": "An ICMP flow."
+        },
+        "l3": {
+          "$ref": "#/definitions/v1IPMatch",
+          "description": "Layer 3: the destination address and name."
+        },
+        "tcp": {
+          "$ref": "#/definitions/v1TCPMatch",
+          "description": "A TCP flow."
+        },
+        "tls": {
+          "$ref": "#/definitions/v1TLSMatch",
+          "description": "The TLS ClientHello. Only TCP flows can match."
+        },
+        "udp": {
+          "$ref": "#/definitions/v1UDPMatch",
+          "description": "A UDP flow."
+        }
+      },
+      "type": "object"
+    },
+    "v1NetworkPolicy": {
+      "description": "NetworkPolicy decides which flows a session may open. Rules are tried in\norder and the first matching rule decides; the default applies when none\nmatches.",
+      "properties": {
+        "defaultAction": {
+          "$ref": "#/definitions/v1NetworkPolicyAction",
+          "description": "Verdict for flows no rule matches; deny when unspecified."
+        },
+        "rules": {
+          "description": "The rules, in order of precedence.",
+          "items": {
+            "$ref": "#/definitions/v1NetworkPolicyRule",
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "v1NetworkPolicyAction": {
+      "default": "NETWORK_POLICY_ACTION_UNSPECIFIED",
+      "description": "NetworkPolicyAction is the verdict of a network policy rule, and the\ndefault verdict of a policy.\n\n - NETWORK_POLICY_ACTION_UNSPECIFIED: No verdict. As a policy's default it means deny; a rule must set one.\n - NETWORK_POLICY_ACTION_ALLOW: The flow is allowed.\n - NETWORK_POLICY_ACTION_DENY: The flow is denied.",
+      "enum": [
+        "NETWORK_POLICY_ACTION_UNSPECIFIED",
+        "NETWORK_POLICY_ACTION_ALLOW",
+        "NETWORK_POLICY_ACTION_DENY"
+      ],
+      "type": "string"
+    },
+    "v1NetworkPolicyRule": {
+      "description": "NetworkPolicyRule is one rule of a network policy.",
+      "properties": {
+        "action": {
+          "$ref": "#/definitions/v1NetworkPolicyAction",
+          "description": "Verdict of the rule; must be allow or deny."
+        },
+        "match": {
+          "$ref": "#/definitions/v1NetworkFlowMatch",
+          "description": "What the rule matches; an empty match matches every flow."
+        },
+        "name": {
+          "description": "Name of the rule, for the host's logs; the rule's position when empty.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "v1OpenRemoteAccessResponse": {
       "description": "OpenRemoteAccessResponse is the response for opening remote access.",
       "properties": {
@@ -753,6 +883,22 @@
         },
         "vcpu": {
           "description": "Total vCPUs across those sessions. Sessions whose machine type carries\nno parseable spec contribute 0 (see unknown_machine_type_count).",
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "v1PortRange": {
+      "description": "PortRange is an inclusive range of destination ports.",
+      "properties": {
+        "from": {
+          "description": "First port of the range, 1 to 65535.",
+          "format": "int32",
+          "type": "integer"
+        },
+        "to": {
+          "description": "Last port of the range, 1 to 65535; the single port `from` when unset.",
           "format": "int32",
           "type": "integer"
         }
@@ -1205,6 +1351,10 @@
         "warmState": {
           "description": "The session's relation to that pool: \"warming\" / \"ready\" (a warm session,\nnot listed), \"claimed\" (handed out by a claim), \"cold\" (created from the\npool's configuration because no warm session was available). Empty when\nthe session has no pool.",
           "type": "string"
+        },
+        "workspaceScriptTest": {
+          "description": "True for a session created to try the workspace script draft: its boot\nruns the script even while the script is disabled.",
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -1792,6 +1942,33 @@
       },
       "type": "object"
     },
+    "v1TCPMatch": {
+      "description": "TCPMatch selects TCP flows by destination port.",
+      "properties": {
+        "ports": {
+          "description": "Destination ports; any when empty.",
+          "items": {
+            "$ref": "#/definitions/v1PortRange",
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "v1TLSMatch": {
+      "description": "TLSMatch requires the flow to start with a TLS ClientHello, read without\nterminating the session.",
+      "properties": {
+        "alpnProtocols": {
+          "description": "Accepted application protocols (h2, http/1.1, ...), as offered by the\nclient in ALPN; any when empty.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "v1Template": {
       "description": "Template defines a reusable configuration for creating sessions.",
       "properties": {
@@ -2165,6 +2342,20 @@
       },
       "type": "object"
     },
+    "v1UDPMatch": {
+      "description": "UDPMatch selects UDP flows by destination port.",
+      "properties": {
+        "ports": {
+          "description": "Destination ports; any when empty.",
+          "items": {
+            "$ref": "#/definitions/v1PortRange",
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "v1UpdateGitProviderIntegrationResponse": {
       "description": "UpdateGitProviderIntegrationResponse carries the integration state after the update.",
       "properties": {
@@ -2211,6 +2402,26 @@
         "warmPool": {
           "$ref": "#/definitions/v1WarmPool",
           "description": "The updated pool."
+        }
+      },
+      "type": "object"
+    },
+    "v1UpdateWorkspaceNetworkPolicyResponse": {
+      "description": "UpdateWorkspaceNetworkPolicyResponse carries the saved network policy.",
+      "properties": {
+        "networkPolicy": {
+          "$ref": "#/definitions/v1WorkspaceNetworkPolicy",
+          "description": "The workspace's network policy after the update."
+        }
+      },
+      "type": "object"
+    },
+    "v1UpdateWorkspaceScriptResponse": {
+      "description": "UpdateWorkspaceScriptResponse carries the saved workspace script.",
+      "properties": {
+        "workspaceScript": {
+          "$ref": "#/definitions/v1WorkspaceScript",
+          "description": "The script as saved."
         }
       },
       "type": "object"
@@ -2521,6 +2732,112 @@
         },
         "label": {
           "description": "Display label for the button.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1WorkspaceNetworkPolicy": {
+      "description": "WorkspaceNetworkPolicy is the network policy a workspace's sessions boot\nwith. A session is judged by the policy saved when its machine was last\ncreated or started; saving does not change running sessions.",
+      "properties": {
+        "enabled": {
+          "description": "Whether sessions boot on a filtered network with the policy. A disabled\npolicy is kept but not applied.",
+          "type": "boolean"
+        },
+        "policy": {
+          "$ref": "#/definitions/v1NetworkPolicy",
+          "description": "The policy."
+        },
+        "updatedAt": {
+          "description": "When the policy was last saved; unset when it never was.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "updatedByEmail": {
+          "description": "Email of the user who last saved the policy; empty when it never was\nsaved or the user is gone.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "v1WorkspaceScript": {
+      "description": "WorkspaceScript is the workspace's script as the settings page shows it.",
+      "properties": {
+        "configured": {
+          "description": "True once anything has been saved; false means the page is empty.",
+          "type": "boolean"
+        },
+        "enabled": {
+          "description": "Whether sessions created from now on run the script. Off is draft mode:\nonly sessions created with workspace_script_test run it.",
+          "type": "boolean"
+        },
+        "script": {
+          "description": "The bash script.",
+          "type": "string"
+        },
+        "updatedAt": {
+          "description": "When it was last saved.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "updatedBy": {
+          "description": "Email of the last editor; empty before the first save.",
+          "type": "string"
+        },
+        "variables": {
+          "description": "The script's variables.",
+          "items": {
+            "$ref": "#/definitions/v1WorkspaceScriptVariable",
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "v1WorkspaceScriptVariable": {
+      "description": "WorkspaceScriptVariable is one variable of the workspace script\n(docs/workspace-script/DESIGN.md): plain, secret or protected, exactly as\na template variable.",
+      "properties": {
+        "isSecret": {
+          "description": "Encrypted at rest and masked in the UI; an editor can read it back\nwith include_secrets.",
+          "type": "boolean"
+        },
+        "key": {
+          "description": "Environment variable name the script receives. Names starting with\n\"RDE_\" are reserved.",
+          "type": "string"
+        },
+        "protected": {
+          "description": "Write-only: never returned, replaced but never viewed. Implies is_secret.",
+          "type": "boolean"
+        },
+        "value": {
+          "description": "The value. Masked for a secret unless include_secrets was asked; always\nempty for a protected variable, which is never returned.",
+          "type": "string"
+        },
+        "valueStored": {
+          "description": "True when a value is stored for this key; the UI shows \"Set\" for a\nprotected variable instead of the value.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "v1WorkspaceScriptVariableInput": {
+      "description": "WorkspaceScriptVariableInput is one variable as the editor saves it.",
+      "properties": {
+        "isSecret": {
+          "description": "Encrypt at rest and mask in the UI.",
+          "type": "boolean"
+        },
+        "key": {
+          "description": "Environment variable name. Names starting with \"RDE_\" are refused.",
+          "type": "string"
+        },
+        "protected": {
+          "description": "Write-only; implies is_secret.",
+          "type": "boolean"
+        },
+        "value": {
+          "description": "The value. For a protected variable that already has a stored value,\nempty keeps the stored one.",
           "type": "string"
         }
       },
@@ -2857,6 +3174,82 @@
         ]
       }
     },
+    "/v1/workspaces/{workspaceId}/network-policy": {
+      "get": {
+        "description": "Returns the network policy the workspace's sessions boot with: which flows a session may open, judged on the host.",
+        "operationId": "CodespacesService_GetWorkspaceNetworkPolicy",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetWorkspaceNetworkPolicyResponse"
+            }
+          }
+        },
+        "summary": "Get workspace network policy",
+        "tags": [
+          "Workspace"
+        ]
+      },
+      "put": {
+        "description": "Replaces the workspace's network policy. Sessions created or restored afterwards boot with it; running sessions keep the policy they started with.",
+        "operationId": "CodespacesService_UpdateWorkspaceNetworkPolicy",
+        "parameters": [
+          {
+            "description": "Workspace ID for routing and authorization.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "UpdateWorkspaceNetworkPolicyRequest replaces the workspace's network policy.",
+              "properties": {
+                "baseUpdatedAt": {
+                  "description": "The updated_at of the policy this update was made from, as\nGetWorkspaceNetworkPolicy returned it, or the zero timestamp\n(1970-01-01T00:00:00Z) when it returned none (never saved). When set, the\nupdate is refused with ABORTED if the policy was saved since, so a\nconcurrent change is not silently overwritten: load it again and reapply\nthe change. Unset skips the check, and the last save wins.",
+                  "format": "date-time",
+                  "type": "string"
+                },
+                "enabled": {
+                  "description": "Whether sessions boot on a filtered network with the policy.",
+                  "type": "boolean"
+                },
+                "policy": {
+                  "$ref": "#/definitions/v1NetworkPolicy",
+                  "description": "The policy; an unset policy is stored as an empty one (deny everything)."
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateWorkspaceNetworkPolicyResponse"
+            }
+          }
+        },
+        "summary": "Update workspace network policy",
+        "tags": [
+          "Workspace"
+        ]
+      }
+    },
     "/v1/workspaces/{workspaceId}/preview-links": {
       "post": {
         "description": "Turns an app build into a shareable URL that opens the app on a live Android emulator or iOS simulator in the recipient's browser — no Bitrise login, no local tooling, nothing to install. The usual shape is a CI step that builds a simulator/emulator app and posts the link on the pull request, so reviewers can try the change before merging.\n\n## Authentication\n\nUnlike the rest of this API, this endpoint accepts a **Workspace API Token** (`bitwat_…`, created with Remote Dev Environments access) as well as a Personal Access Token — the workspace token is what a CI pipeline should carry, since it belongs to no one person. Either way, the devices a link opens are sessions owned by the workspace, visible to and manageable by every workspace member — a PAT minter is recorded on them as the creator, but they never become that user's personal sessions. `GET /v1/workspaces/{workspace_id}/stacks` and `/machine-types` take a workspace token too, so a CI step can check `stack_id` / `machine_type` values before minting.\n\n## Nothing is stored\n\nThe signed token in the response is the only artifact — no row is written, and a link nobody opens costs nothing. Every open spawns its own device session, so one link serves many reviewers at once.\n\n## The app build\n\n`artifact.url` must be an absolute http(s) URL that a plain anonymous `GET` can fetch; a presigned URL is fine, and the URL is never echoed back to viewers. It must be a **simulator/emulator** build, not a device build — iOS wants a zipped `.app` carrying an arm64 simulator slice, Android an `.apk` that runs on x86_64. A device-signed build installs on neither.\n\n## Lifetime and limits\n\n`ttl_seconds` defaults to 24 hours and is capped at 72 hours. There is no revocation list, so a short lifetime is the control: treat the link as a bearer credential, because anyone holding the URL can open a device. Sessions a link spawns are capped at 5 alive per link and 20 per workspace — opens past the cap are refused with `ResourceExhausted` — and each one auto-terminates after its idle window (`session_auto_terminate_minutes`, at least 10, default 60).",
@@ -3121,6 +3514,10 @@
                 "warmPoolId": {
                   "description": "Claim a session from a warm pool (see WarmPool) instead of building one\nfrom this request. The pool fixes the environment, so template_id,\nenabled_feature_flag_names, stack_id, image, machine_type, cluster,\ndevice_spec and no_device must be empty (they are rejected, not\nignored). On a template with lifecycle hooks, session_inputs may carry\nthe template's On claim and On restore inputs only (a shared or On\ncreate key is rejected: the pool fixes those values); a personal claim\nmay also use map_saved_to_session_inputs (a saved input fills every\nclaim-time scope that defines its key) and ai_prompt, while a\nworkspace-owned claim and a Workspace API Token send plain values only.\nA typed value may be marked is_secret. A required On claim or On restore\ninput without a value fails the claim. name, description, labels,\nauto_terminate_minutes and artifact (device pools only) apply to the\nclaimed session.\n\nThe claimed session is the claimant's: owner_type follows the rule above\n— a user gets a personal session unless they ask for \"workspace\", a\nWorkspace API Token gets a workspace-owned one. A warm session is the\nworkspace's only while it waits in the pool. The machine was booted for\nthe pool, without anyone's personal state; after a claim by a person the\nplatform sets it up for them (SSH key, Claude credentials, git credential\nhelper — Session.lifecycle shows that step as \"personalize\"), then the\ntemplate's On claim hook runs with the shared values and the On claim\ninputs, writing the exposed ones to the terminal profile. A\nworkspace-owned claim runs On claim only. The session keeps that VM for\nits whole life — a stop and restore restarts the same machine.\n\nWith a ready or warming warm session available the response is that\nsession, renamed — no machine is created (Session.warm_state \"claimed\").\nWithout one, a session is created from the pool's stored configuration\nexactly as the pool would have warmed it (Session.warm_state \"cold\"), so\na pool with pool_size 0 still works as a configuration preset.\nAny workspace member or Workspace API Token may claim from a pool.",
                   "type": "string"
+                },
+                "workspaceScriptTest": {
+                  "description": "Create this session to try the workspace script draft: its boot runs the\nscript even while the script is disabled. Only for a personal session\ncreated by someone who may edit the script, with the workspace on the\nrollout flag; refused otherwise, and refused on a warm pool claim.",
+                  "type": "boolean"
                 }
               },
               "type": "object"
@@ -5260,6 +5657,92 @@
         "summary": "Retry warm pool",
         "tags": [
           "Warm Pools"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspaceId}/workspace-script": {
+      "get": {
+        "description": "Returns the workspace script: a bash script that every session in the workspace starts in the background at the beginning of every boot, before any template script, together with its variables. Requires the caller to hold the workspace's billing-view permission (workspace owners and billing-managing custom roles) and the workspace to be on the rollout flag; other callers receive a permission-denied error. Protected variable values are never returned.",
+        "operationId": "CodespacesService_GetWorkspaceScript",
+        "parameters": [
+          {
+            "description": "Workspace (organization) slug. Supplied via the URL path.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Return secret values in clear. Protected values are never returned.",
+            "in": "query",
+            "name": "includeSecrets",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetWorkspaceScriptResponse"
+            }
+          }
+        },
+        "summary": "Get workspace script",
+        "tags": [
+          "Workspace"
+        ]
+      },
+      "put": {
+        "description": "Saves the workspace script, its enabled state and its complete set of variables. Applies to sessions created or rebuilt afterwards; running sessions keep what they booted with. Same permission as GetWorkspaceScript.",
+        "operationId": "CodespacesService_UpdateWorkspaceScript",
+        "parameters": [
+          {
+            "description": "Workspace (organization) slug. Supplied via the URL path.",
+            "in": "path",
+            "name": "workspaceId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "description": "UpdateWorkspaceScriptRequest saves the whole workspace script form.",
+              "properties": {
+                "enabled": {
+                  "description": "Whether sessions created from now on run the script.",
+                  "type": "boolean"
+                },
+                "script": {
+                  "description": "The bash script.",
+                  "type": "string"
+                },
+                "variables": {
+                  "description": "The complete set of variables; a key left out is removed.",
+                  "items": {
+                    "$ref": "#/definitions/v1WorkspaceScriptVariableInput",
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              },
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateWorkspaceScriptResponse"
+            }
+          }
+        },
+        "summary": "Update workspace script",
+        "tags": [
+          "Workspace"
         ]
       }
     }

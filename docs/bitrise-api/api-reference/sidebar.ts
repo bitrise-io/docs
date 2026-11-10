@@ -608,6 +608,42 @@ const sidebar: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "test-quarantine",
+      items: [
+        {
+          type: "doc",
+          id: "bitrise-api/api-reference/quarantined-test-list",
+          label: "List the quarantined tests of an app",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "bitrise-api/api-reference/quarantined-test-create",
+          label: "Quarantine a test",
+          className: "api-method post",
+        },
+        {
+          type: "doc",
+          id: "bitrise-api/api-reference/quarantined-test-show",
+          label: "Get a quarantined test",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "bitrise-api/api-reference/quarantined-test-delete",
+          label: "Remove a test from quarantine",
+          className: "api-method delete",
+        },
+        {
+          type: "doc",
+          id: "bitrise-api/api-reference/quarantined-test-update",
+          label: "Update a quarantined test",
+          className: "api-method patch",
+        },
+      ],
+    },
+    {
+      type: "category",
       label: "secrets",
       items: [
         {

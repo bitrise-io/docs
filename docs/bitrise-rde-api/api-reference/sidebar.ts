@@ -42,9 +42,33 @@ const sidebar: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "bitrise-rde-api/api-reference/codespaces-service-get-workspace-network-policy",
+          label: "Get workspace network policy",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "bitrise-rde-api/api-reference/codespaces-service-update-workspace-network-policy",
+          label: "Update workspace network policy",
+          className: "api-method put",
+        },
+        {
+          type: "doc",
           id: "bitrise-rde-api/api-reference/codespaces-service-get-workspace-usage",
           label: "Get workspace usage",
           className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "bitrise-rde-api/api-reference/codespaces-service-get-workspace-script",
+          label: "Get workspace script",
+          className: "api-method get",
+        },
+        {
+          type: "doc",
+          id: "bitrise-rde-api/api-reference/codespaces-service-update-workspace-script",
+          label: "Update workspace script",
+          className: "api-method put",
         },
       ],
     },
