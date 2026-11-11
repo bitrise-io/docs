@@ -26,6 +26,8 @@ The workspace script belongs to the workspace, not to a person. The people who c
 
 To open it, select **Workspace script** under **Workspace Settings** in the left sidebar of the Remote Dev Environments section.
 
+Automation can manage the script without a person's account, using a [Workspace API token](/bitrise-platform/workspaces/workspace-api-token) that has both **Remote Dev Environments** access and a workspace role that can manage the workspace: **Manager**, or a [custom role](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/custom-roles/custom-roles-overview) that includes **Modify workspace settings**. See [Managing the script from the CLI, an AI agent, or the API](#managing-the-script-from-the-cli-an-ai-agent-or-the-api).
+
 ## Setting up the workspace script
 
 1. Under **Workspace Settings**, select **Workspace script**.
@@ -272,10 +274,10 @@ bitrise-cli rde workspace-script view --show-secrets
 | `--set-protected KEY=VALUE` | Add or change a protected variable. |
 | `--remove-var KEY` | Remove a variable. |
 
-This makes it easy to keep the script in a git repository and update it from there, for example from CI:
+This makes it easy to keep the script in a git repository and update it from there, for example from CI. In CI, set `BITRISE_TOKEN` to a [Workspace API token](/bitrise-platform/workspaces/workspace-api-token) that can manage the script (see [below](#which-tokens-can-manage-the-script)), and pass the workspace explicitly:
 
 ```bash
-bitrise-cli rde workspace-script update --script-file workspace-script.sh
+bitrise-cli rde workspace-script update --script-file workspace-script.sh --workspace WORKSPACE_ID
 ```
 
 An inline value ends up in your shell history and in the process arguments. To keep a secret or protected value out of both, pass `KEY=-` and pipe the value in on standard input. Only one value or `--script-file -` can read standard input per call:
@@ -328,7 +330,16 @@ To create a test session that runs the saved draft, set `workspaceScriptTest` to
 </TabItem>
 </Tabs>
 
-The CLI, the MCP server, and the API act as the person whose [personal access token](https://app.bitrise.io/me/account/security) they use, so that person must be able to see the workspace's **Usage** page. A Workspace API token can't read or edit the workspace script.
+### Which tokens can manage the script
+
+The CLI, the MCP server, and the API accept two kinds of token:
+
+- A [personal access token](https://app.bitrise.io/me/account/security). They act as the person the token belongs to, so that person must be able to see the workspace's **Usage** page.
+- A [Workspace API token](/bitrise-platform/workspaces/workspace-api-token) created with **Remote Dev Environments** access and a workspace role that can manage the workspace: **Manager**, or a [custom role](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/custom-roles/custom-roles-overview) that includes **Modify workspace settings**. It belongs to the workspace rather than to a person, which makes it the right choice for CI. A Workspace API token with any other role, such as the default **Viewer**, can't read or edit the script.
+
+After a save made with a Workspace API token, the page shows **Workspace API token** as the last editor instead of an email address.
+
+A test session is always a personal session, so creating one needs a personal access token.
 
 ## Limits
 
