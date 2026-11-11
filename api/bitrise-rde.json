@@ -380,6 +380,10 @@
           "description": "Whether the caller may change the workspace network policy (org\npermission \"manage_workspace_settings\": workspace owners, managers and\ncustom roles with the \"Modify workspace settings\" bundle). Everyone else\nsees the policy read-only; UpdateWorkspaceNetworkPolicy enforces the same\npermission server-side.",
           "type": "boolean"
         },
+        "canTerminateAnySession": {
+          "description": "True when the caller may terminate any session in the workspace, whoever\nowns it: the 'rde-admin-terminate-any-session' rollout flag is on for the\nworkspace and the caller holds the org permission \"view_billing_data\"\n(the people who can view usage). Drives the per-session lists and their\nTerminate actions on the usage page; TerminateSession re-checks both\nserver-side.",
+          "type": "boolean"
+        },
         "canViewUsage": {
           "description": "Whether the caller may see the workspace usage page (org permission\n\"view_billing_data\" — workspace owners and billing-managing custom\nroles). Gates the Usage navigation item in the UI; GetWorkspaceUsage\nenforces the same permission server-side.",
           "type": "boolean"
@@ -2426,6 +2430,51 @@
       },
       "type": "object"
     },
+    "v1UsageSession": {
+      "description": "UsageSession is one active session in the usage report: just enough to\ndecide whether to terminate it (TerminateSession with its id).",
+      "properties": {
+        "createdAt": {
+          "description": "When the session was created: its age. A session terminated and\nrestored since keeps its original creation time.",
+          "format": "date-time",
+          "type": "string"
+        },
+        "heldByWarmPoolId": {
+          "description": "Set when the session is held by a pool rather than by anyone using it:\nunclaimed inventory (booted, waiting to be claimed) or the debug VM a\npool keeps after its setup failed. The ID of that pool. Such a session\ncannot be terminated directly — lower the pool's pool_size\n(UpdateWarmPool) or retry the pool instead. Empty for every other\nsession, including ones already claimed from a pool.",
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier (UUID) of the session.",
+          "type": "string"
+        },
+        "machineType": {
+          "description": "Machine type the session runs on.",
+          "type": "string"
+        },
+        "memoryGb": {
+          "description": "Memory of the machine in GB; 0 when the machine type's spec is unknown.",
+          "format": "int32",
+          "type": "integer"
+        },
+        "name": {
+          "description": "Human-readable name of the session.",
+          "type": "string"
+        },
+        "os": {
+          "description": "Operating system of the session's machine: \"linux\" or \"macos\". Empty\nwhen it could not be determined (counted in UsageTotals.unknown).",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/v1SessionStatus",
+          "description": "Live status of the session: starting, running, terminating or draining."
+        },
+        "vcpu": {
+          "description": "vCPUs of the machine; 0 when the machine type's spec is unknown.",
+          "format": "int32",
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "v1UsageTotals": {
       "description": "UsageTotals splits active-session usage by OS platform.",
       "properties": {
@@ -2478,6 +2527,14 @@
         "isWorkspace": {
           "description": "True for the single aggregate row of sessions owned by the workspace\nitself rather than by an individual user (for example sessions spawned\nby a preview link).",
           "type": "boolean"
+        },
+        "sessions": {
+          "description": "The active sessions behind this row's totals, oldest first.\nFilled only for a workspace on the 'rde-admin-terminate-any-session'\nrollout flag (see GetWorkspaceInfoResponse.can_terminate_any_session);\nempty otherwise.",
+          "items": {
+            "$ref": "#/definitions/v1UsageSession",
+            "type": "object"
+          },
+          "type": "array"
         },
         "totals": {
           "$ref": "#/definitions/v1UsageTotals",
@@ -2665,6 +2722,11 @@
         },
         "lastError": {
           "description": "The last machine-creation failure (instance-manager quota, capacity, ...);\nempty when healthy.",
+          "type": "string"
+        },
+        "oldestWarmSessionCreatedAt": {
+          "description": "When the longest-waiting warm session of the pool (warming or ready,\nnot yet claimed) was created. Unset when the pool holds no warm\nsessions.",
+          "format": "date-time",
           "type": "string"
         },
         "pausedUntil": {
@@ -3415,7 +3477,7 @@
         ]
       },
       "post": {
-        "description": "Creates a new session (remote development environment) and starts provisioning it.\n\n## Authentication\n\nAccepts a Personal Access Token or a **Workspace API Token** (`bitwat_…`, created with Remote Dev Environments access). A PAT creates a personal session by default; set `owner_type` to `workspace` to create one owned by the workspace instead. A workspace token always creates **workspace-owned** sessions (`owner_type` may be omitted or `workspace`; `user` is rejected) — there is no user behind the token, so the session is visible to and manageable by every workspace member and listed under `?scope=SESSION_LIST_SCOPE_WORKSPACE`. The token can then manage the sessions it created — read, list, update, terminate, restore, delete, sweep terminated ones, run commands, transfer files, take screenshots — and read the workspace's templates and machine catalog; it never sees a member's personal session.\n\n## Workspace-owned sessions\n\nUse an existing template (`template_id`) or a bare `stack_id` + `machine_type`. Session inputs are given as plain values in `session_inputs`: every **required** input must be supplied that way, optional ones fall back to the template's `default_value` when omitted. Saved inputs are personal, so `saved_input_id` references and `map_saved_to_session_inputs` are rejected, and no saved SSH key or Claude credential is injected. `ai_prompt` is rejected for the same reason.",
+        "description": "Creates a new session (remote development environment) and starts provisioning it.\n\n## Authentication\n\nAccepts a Personal Access Token or a **Workspace API Token** (`bitwat_…`, created with Remote Dev Environments access). A PAT creates a personal session by default; set `owner_type` to `workspace` to create one owned by the workspace instead. A workspace token always creates **workspace-owned** sessions (`owner_type` may be omitted or `workspace`; `user` is rejected) — there is no user behind the token, so the session is visible to and manageable by every workspace member and listed under `?scope=SESSION_LIST_SCOPE_WORKSPACE`. The token can then manage the sessions it created — read, list, update, terminate, restore, delete, sweep terminated ones, run commands, transfer files, take screenshots — and read the workspace's templates and machine catalog; it never sees a member's personal session.\n\n## Workspace-owned sessions\n\nUse an existing template (`template_id`) or a bare `stack_id` + `machine_type`. Session inputs are given as plain values in `session_inputs`: every **required** input must be supplied that way, optional ones fall back to the template's `default_value` when omitted. Saved inputs are personal, so `saved_input_id` references and `map_saved_to_session_inputs` are rejected, and no saved SSH key or Claude credential is injected. `ai_prompt` is rejected for the same reason.\n\n## Out of CPUs\n\nWhen the workspace is out of CPUs for the session's machine family, or at its machine limit, the call is refused with `RESOURCE_EXHAUSTED` (HTTP 429) rather than a bad request. The error carries a `google.rpc.ErrorInfo` detail with `reason` `CPU_QUOTA_EXHAUSTED` (metadata `family`, `quota_vcpu`, `used_vcpu`) or `MACHINE_CONCURRENCY_EXHAUSTED` (metadata `machine_limit`, `active_machines`), plus `action` (`create` or `restore`); the status message is written to be shown to a person as is.",
         "operationId": "CodespacesService_CreateSession",
         "parameters": [
           {
@@ -4342,7 +4404,7 @@
     },
     "/v1/workspaces/{workspaceId}/sessions/{sessionId}/restore": {
       "post": {
-        "description": "Restores a terminated session (or restarts a failed one) by creating/starting its VM.",
+        "description": "Restores a terminated session (or restarts a failed one) by creating/starting its VM.\n\nWhen the workspace is out of CPUs for the session's machine family, or at its machine limit, the call is refused with `RESOURCE_EXHAUSTED` (HTTP 429) carrying a `google.rpc.ErrorInfo` detail (`reason` `CPU_QUOTA_EXHAUSTED` or `MACHINE_CONCURRENCY_EXHAUSTED`, `action` `restore`), as CreateSession documents.",
         "operationId": "CodespacesService_RestoreSession",
         "parameters": [
           {
@@ -4753,7 +4815,7 @@
     },
     "/v1/workspaces/{workspaceId}/sessions/{sessionId}/terminate": {
       "post": {
-        "description": "Stops the session's VM but keeps its disk, so the session stays listed as terminated and can be restored later. Use only when you intend to restore the session; otherwise call DeleteSession, which works on running sessions too and frees the disk.",
+        "description": "Stops the session's VM but keeps its disk, so the session stays listed as terminated and can be restored later. Use only when you intend to restore the session; otherwise call DeleteSession, which works on running sessions too and frees the disk. Where the feature is enabled for the workspace, a caller holding the workspace's billing-view permission (workspace owners and billing-managing custom roles) may terminate any session of the workspace, including another member's; the usage report lists them. A personal access token is required for that: workspace and session tokens keep their own reach. The session returned for another owner's session carries only its id, name, status, owner and timestamps.",
         "operationId": "CodespacesService_TerminateSession",
         "parameters": [
           {
@@ -5288,7 +5350,7 @@
     },
     "/v1/workspaces/{workspaceId}/usage": {
       "get": {
-        "description": "Returns a point-in-time snapshot of the workspace's active remote development sessions: session counts and vCPU/memory totals split by OS, workspace-wide and per user, and the workspace's vCPU quota and use per machine family. This reports sessions currently consuming resources; it is not a historical or billing-period report. Requires the caller to hold the workspace's billing-view permission (workspace owners and billing-managing custom roles); other members receive a permission-denied error.",
+        "description": "Returns a point-in-time snapshot of the workspace's active remote development sessions: session counts and vCPU/memory totals split by OS, workspace-wide and per user, and the workspace's vCPU quota and use per machine family. This reports sessions currently consuming resources; it is not a historical or billing-period report. Requires the caller to hold the workspace's billing-view permission (workspace owners and billing-managing custom roles); other members receive a permission-denied error. Where terminating any session is enabled for the workspace, each row also lists its active sessions, oldest first, with the IDs TerminateSession takes.",
         "operationId": "CodespacesService_GetWorkspaceUsage",
         "parameters": [
           {
