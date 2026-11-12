@@ -291,6 +291,27 @@ function DownloadProgress() {
 
 ### Checking for updates from your UI
 
-To let the end user check for updates, for example with a **Check for updates** button on a settings screen, call `sync()` from `useCodePush()`. While the check runs, `isChecking` is `true`, and you can disable the button. If the check fails, `checkError` tells you why.
+A **Check for updates** button for a settings screen:
+
+```tsx
+import codePush, { useCodePush } from "@bitrise/code-push-sdk";
+import { Button, Text, View } from "react-native";
+
+function CheckForUpdatesButton() {
+    const { isChecking, checkError, sync } = useCodePush();
+
+    return (
+        <View>
+            <Button
+                title={isChecking ? "Checking for updates..." : "Check for updates"}
+                disabled={isChecking}
+                // sync() logs its failures, and checkError shows a failed check.
+                onPress={() => sync({ updateDialog: true, installMode: codePush.InstallMode.IMMEDIATE }).catch(() => {})}
+            />
+            {checkError && <Text>Could not check for updates. Try again later.</Text>}
+        </View>
+    );
+}
+```
 
 Combine this with `checkFrequency={codePush.CheckFrequency.MANUAL}` if the app should check only when the end user asks.
