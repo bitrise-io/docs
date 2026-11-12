@@ -64,7 +64,21 @@ If you manually manage the native iOS and Android projects within your codebase 
    - `ios/<projectname>/AppDelegate.swift`: contains the `CodePush` import and `ReactNativeDelegate.bundleURL()` method override.
    - `android/app/src/main/res/values/strings.xml`: contains `CodePushDeploymentKey` and `CodePushServerURL` entries.
    - `android/app/src/main/java/.../MainApplication.kt`: `jsBundleFilePath` set to `CodePush.getJSBundleFile()`.
-1. Initialize the update check in your app's root component: [Customizing the update lifecycle](#customizing-the-update-lifecycle).
+1. Wrap your app's root component in `CodePushProvider` (SDK 10.8.0 and later). It checks for updates when the app starts, and tells CodePush that the app started fine, so CodePush keeps a new update instead of rolling it back:
+
+   ```tsx
+   import { CodePushProvider } from "@bitrise/code-push-sdk";
+
+   export default function App() {
+       return (
+           <CodePushProvider onError={(error) => reportError(error)}>
+               <YourAppContent />
+           </CodePushProvider>
+       );
+   }
+   ```
+
+   Render the Provider at the top of your component tree, outside login screens and screens that render late. `onError` receives every failure of the update checks: send them to your crash reporter. To change when and how updates install, see [Customizing the update lifecycle](#customizing-the-update-lifecycle).
 
 
 ## Configuring CodePush for bare React Native projects
@@ -78,7 +92,21 @@ These instructions cover React Native's New Architecture. On older React Native 
    ```
 1. Set up the CodePush iOS SDK in your project: [iOS setup](#ios-setup).
 1. Set up the CodePush Android SDK in your project: [Android setup](#android-setup).
-1. Initialize the update check in your app's root component: [Customizing the update lifecycle](#customizing-the-update-lifecycle).
+1. Wrap your app's root component in `CodePushProvider` (SDK 10.8.0 and later). It checks for updates when the app starts, and tells CodePush that the app started fine, so CodePush keeps a new update instead of rolling it back:
+
+   ```tsx
+   import { CodePushProvider } from "@bitrise/code-push-sdk";
+
+   export default function App() {
+       return (
+           <CodePushProvider onError={(error) => reportError(error)}>
+               <YourAppContent />
+           </CodePushProvider>
+       );
+   }
+   ```
+
+   Render the Provider at the top of your component tree, outside login screens and screens that render late. `onError` receives every failure of the update checks: send them to your crash reporter. To change when and how updates install, see [Customizing the update lifecycle](#customizing-the-update-lifecycle).
 
 ### iOS setup
 
@@ -182,23 +210,9 @@ These instructions cover React Native's New Architecture. On older React Native 
 
 ## Customizing the update lifecycle
 
-After you complete the configuration steps, CodePush can load an updated bundle instead of the one packaged into the app. To check for updates, wrap your app's root component in `CodePushProvider`:
+The hooks on this page are available in version 10.8.0 and later of the SDK, like `CodePushProvider`.
 
-```tsx
-import { CodePushProvider } from "@bitrise/code-push-sdk";
-
-export default function App() {
-    return (
-        <CodePushProvider onError={(error) => reportError(error)}>
-            <YourAppContent />
-        </CodePushProvider>
-    );
-}
-```
-
-`CodePushProvider` and the hooks below are available in version 10.8.0 and later of the SDK.
-
-By default, the Provider checks for an update once, after the app's first render. It downloads an available update in the background and applies it the next time the app restarts, so the end user never sees an update dialog. The Provider also tells CodePush that the app started fine, so CodePush keeps a new update instead of rolling it back. `onError` receives every failure of the checks that the Provider runs: send them to your crash reporter.
+By default, the Provider checks for an update once, after the app's first render. It downloads an available update in the background and applies it the next time the app restarts, so the end user never sees an update dialog.
 
 :::important[Put the Provider at the app root]
 
