@@ -229,7 +229,7 @@ Change the update experience with the Provider's props:
 | Ask the end user, then apply the update right away | `updateDialog={true}` and `installMode={codePush.InstallMode.IMMEDIATE}` |
 | Check only when your own code asks for it | `checkFrequency={codePush.CheckFrequency.MANUAL}` |
 
-To use the `codePush.CheckFrequency` and `codePush.InstallMode` constants, import the default export too: `import codePush, { CodePushProvider } from "@bitrise/code-push-sdk"`. If an update is marked as mandatory, the end user can't skip it in the update dialog.
+If an update is marked as mandatory, the end user can't skip it in the update dialog.
 
 :::note[API reference]
 
@@ -239,13 +239,21 @@ The [CodePush JS API reference](https://github.com/bitrise-io/react-native-code-
 
 ### Showing the update state in your app
 
-Call `useCodePush()` in any component inside the Provider to read the update state. The component re-renders when the state changes. The state covers every update check, download and install, whether the Provider started it or your own code did. The most useful fields:
+Call `useCodePush()` in any component inside the Provider. It returns the update state, and re-renders the component when the state changes. The state covers every update check, download and install, whether the Provider started it or your own code did. The most useful fields:
 
 - `isUpdateAvailable` and `availableUpdate`: the last check found an update that isn't installed yet.
 - `isDownloading`: an update is downloading.
 - `pendingUpdate`: an update is installed, but it only runs after the app restarts. Show a restart prompt, and apply the update with `restartApp(true)`.
 - `incompatibleUpdate`: the server has a release that this app binary can't install. Ask the end user to update the app from the store.
 - `checkError` and `installError`: why the last check or install failed.
+
+`useCodePush()` also returns the actions that start an update or apply one:
+
+- `sync()`: checks for an update, downloads it and installs it.
+- `checkForUpdate()`: checks for an update without downloading it.
+- `restartApp()`: restarts the app. Pass `true` to restart only when an installed update is waiting.
+
+`sync()` and `checkForUpdate()` use the Provider's props for every option that you don't pass. They take no callbacks: their progress and results show up in the state.
 
 For the download progress, call `useDownloadProgress()`. It's a separate hook because the progress changes many times per second, and only the components that call it re-render that often.
 
@@ -283,10 +291,6 @@ function DownloadProgress() {
 
 ### Checking for updates from your UI
 
-To let the end user check for updates, for example with a **Check for updates** button on a settings screen, call `sync()` from `useCodePush()`. It uses the Provider's props for every option that you don't pass. While the check runs, `isChecking` is `true`, and you can disable the button. If the check fails, `checkError` tells you why.
+To let the end user check for updates, for example with a **Check for updates** button on a settings screen, call `sync()` from `useCodePush()`. While the check runs, `isChecking` is `true`, and you can disable the button. If the check fails, `checkError` tells you why.
 
 Combine this with `checkFrequency={codePush.CheckFrequency.MANUAL}` if the app should check only when the end user asks.
-
-### Calling the SDK directly
-
-You can also call `codePush.sync()` yourself, for example from a `useEffect` in your root component on SDK versions earlier than 10.8.0. Don't combine this with the Provider: each one starts its own update check on app start. See the [JS API reference](https://github.com/bitrise-io/react-native-code-push/blob/master/docs/api-js.md#codepushsync) for its options and callbacks.
