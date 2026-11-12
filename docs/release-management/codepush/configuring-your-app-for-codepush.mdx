@@ -179,113 +179,100 @@ These instructions cover React Native's New Architecture. On older React Native 
 
    :::
 
+
 ## Customizing the update lifecycle
 
-After you complete the configuration steps, CodePush hooks into the app's lifecycle and can load an updated bundle instead of the one packaged into the app.
+After you complete the configuration steps, CodePush can load an updated bundle instead of the one packaged into the app. To check for updates, wrap your app's root component in `CodePushProvider`:
 
-Customize when and how updates are installed by calling `codePush.sync()` from your app's root component. The SDK provides several options to customize the update experience.
+```tsx
+import { CodePushProvider } from "@bitrise/code-push-sdk";
 
-:::note[API reference]
+export default function App() {
+    return (
+        <CodePushProvider onError={(error) => reportError(error)}>
+            <YourAppContent />
+        </CodePushProvider>
+    );
+}
+```
 
-The [CodePush JS API reference](https://github.com/bitrise-io/react-native-code-push/blob/master/docs/api-js.md) lists all options and parameters.
+`CodePushProvider` and the hooks below are available in version 10.8.0 and later of the SDK.
+
+By default, the Provider checks for an update once, after the app's first render. It downloads an available update in the background and applies it the next time the app restarts, so the end user never sees an update dialog. The Provider also tells CodePush that the app started fine, so CodePush keeps a new update instead of rolling it back. `onError` receives every failure of the checks that the Provider runs: send them to your crash reporter.
+
+:::important[Put the Provider at the app root]
+
+Render `CodePushProvider` at the top of your component tree, outside login screens, navigation conditions, and screens that render late. If the Provider only mounts after the end user logs in, and they close the app before logging in, CodePush treats the new update as broken and rolls it back on the next start.
 
 :::
 
-You can set this up in several ways.
+Change the update experience with the Provider's props:
 
-### Silent sync on app start
+| Update experience | Props |
+|---|---|
+| Download silently and apply on the next app start | None, this is the default. |
+| Check every time the app returns to the foreground, and apply on the next resume | `checkFrequency={codePush.CheckFrequency.ON_APP_RESUME}` and `installMode={codePush.InstallMode.ON_NEXT_RESUME}` |
+| Ask the end user, then apply the update right away | `updateDialog={true}` and `installMode={codePush.InstallMode.IMMEDIATE}` |
+| Check only when your own code asks for it | `checkFrequency={codePush.CheckFrequency.MANUAL}` |
 
-The simplest, default behavior. Your app automatically downloads available updates and applies them the next time it restarts. This way, the entire update experience is silent to the end user, since they don't see any update dialog.
+To use the `codePush.CheckFrequency` and `codePush.InstallMode` constants, import the default export too: `import codePush, { CodePushProvider } from "@bitrise/code-push-sdk"`. If an update is marked as mandatory, the end user can't skip it in the update dialog.
 
-```javascript
-import { useEffect } from "react";
-import codePush from "@bitrise/code-push-sdk";
+:::note[API reference]
 
-function App() {
-    useEffect(() => {
-        // Fully silent update which keeps the app in
-        // sync with the server, without ever
-        // interrupting the end user
-        codePush.sync();
-    }, []);
+The [CodePush JS API reference](https://github.com/bitrise-io/react-native-code-push/blob/master/docs/api-js.md#codepushprovider) lists all props and options.
 
-    return <YourAppContent />;
+:::
+
+### Showing the update state in your app
+
+Call `useCodePush()` in any component inside the Provider to read the update state. The component re-renders when the state changes. The state covers every update check, download and install, whether the Provider started it or your own code did. The most useful fields:
+
+- `isUpdateAvailable` and `availableUpdate`: the last check found an update that isn't installed yet.
+- `isDownloading`: an update is downloading.
+- `pendingUpdate`: an update is installed, but it only runs after the app restarts. Show a restart prompt, and apply the update with `restartApp(true)`.
+- `incompatibleUpdate`: the server has a release that this app binary can't install. Ask the end user to update the app from the store.
+- `checkError` and `installError`: why the last check or install failed.
+
+For the download progress, call `useDownloadProgress()`. It's a separate hook because the progress changes many times per second, and only the components that call it re-render that often.
+
+This example shows a restart prompt for an installed update, and the progress while an update downloads:
+
+```tsx
+import { useCodePush, useDownloadProgress } from "@bitrise/code-push-sdk";
+import { Button, Text } from "react-native";
+
+function UpdateBanner() {
+    const { isDownloading, pendingUpdate, restartApp } = useCodePush();
+
+    if (pendingUpdate) {
+        return <Button title="Restart to update" onPress={() => restartApp(true)} />;
+    }
+    if (isDownloading) {
+        return <DownloadProgress />;
+    }
+    return null;
+}
+
+// A separate component, so only this one re-renders on every progress event.
+function DownloadProgress() {
+    const progress = useDownloadProgress();
+
+    // totalBytes is -1 when the server doesn't send the size of the update.
+    if (!progress || progress.totalBytes < 0) {
+        return <Text>Downloading update...</Text>;
+    }
+    return <Text>Downloading update: {Math.round((100 * progress.receivedBytes) / progress.totalBytes)}%</Text>;
 }
 ```
 
-### Silent sync every time the app resumes
+`useCodePush()` and `useDownloadProgress()` throw an error outside `CodePushProvider`.
 
-Same as the previous, except the app checks for updates, or applies an update if one exists every time the app returns to the foreground.
+### Checking for updates from your UI
 
-```javascript
-import { useEffect } from "react";
-import { AppState } from "react-native";
-import codePush from "@bitrise/code-push-sdk";
+To let the end user check for updates, for example with a **Check for updates** button on a settings screen, call `sync()` from `useCodePush()`. It uses the Provider's props for every option that you don't pass. While the check runs, `isChecking` is `true`, and you can disable the button. If the check fails, `checkError` tells you why.
 
-function App() {
-    useEffect(() => {
-        const syncOptions = {
-           installMode: codePush.InstallMode.ON_NEXT_RESUME,
-        };
-        codePush.sync(syncOptions);
+Combine this with `checkFrequency={codePush.CheckFrequency.MANUAL}` if the app should check only when the end user asks.
 
-        const subscription = AppState.addEventListener("change", (newState) => {
-            if (newState === "active") {
-                codePush.sync(syncOptions);
-            }
-        });
+### Calling the SDK directly
 
-        return () => subscription.remove();
-    }, []);
-
-    return <YourAppContent />;
-}
-```
-
-### Interactive
-
-When an update is available, prompt the end user for permission before downloading it, and then immediately apply the update. If an update sets the `mandatory` flag, the end user is still notified about the update, but they don't have the choice to ignore it.
-
-```javascript
-import { useEffect } from "react";
-import codePush from "@bitrise/code-push-sdk";
-
-function App() {
-    useEffect(() => {
-        // Active update, which lets the end user know
-        // about each update, and displays it to them
-        // immediately after downloading it
-        codePush.sync({
-           updateDialog: true,
-           installMode: codePush.InstallMode.IMMEDIATE
-        });
-    }, []);
-
-    return <YourAppContent />;
-}
-```
-
-### Log/display progress
-
-Pass the `syncStatusChangedCallback` and/or `downloadProgressCallback` arguments to `sync` to log the different stages of the process, or even display a progress bar to the user.
-
-```javascript
-import { useEffect, useState } from "react";
-import codePush from "@bitrise/code-push-sdk";
-
-function App() {
-    const [status, setStatus] = useState(null);
-
-    useEffect(() => {
-        codePush.sync(
-            {},
-            (syncStatus) => setStatus(syncStatus),
-            ({ receivedBytes, totalBytes }) => {
-                console.log(`${receivedBytes} of ${totalBytes} received.`);
-            }
-        );
-    }, []);
-
-    return <YourAppContent status={status} />;
-}
-```
+You can also call `codePush.sync()` yourself, for example from a `useEffect` in your root component on SDK versions earlier than 10.8.0. Don't combine this with the Provider: each one starts its own update check on app start. See the [JS API reference](https://github.com/bitrise-io/react-native-code-push/blob/master/docs/api-js.md#codepushsync) for its options and callbacks.
