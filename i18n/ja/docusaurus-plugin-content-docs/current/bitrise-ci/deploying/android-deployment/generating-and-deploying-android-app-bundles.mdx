@@ -4,7 +4,6 @@ description: "BitriseでのAndroid App Bundleの作成は、APKの生成とほ�
 sidebar_position: 4
 slug: /bitrise-ci/deploying/android-deployment/generating-and-deploying-android-app-bundles
 ---
-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
@@ -19,7 +18,7 @@ Bitriseを使ってAndroid App Bundleを作成する手順は、APKを生成す�
 - [<strong>Android Build</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build) 0.10.0以降
 - [<strong>Gradle Runner</strong>](https://github.com/bitrise-io/steps-gradle-runner) 1.9.0以降
 - [<strong>Android Sign</strong>](https://github.com/bitrise-steplib/steps-sign-apk) 1.3.0以降
-- <strong>Deploy to Google Play</strong> 1.6.0以降
+- [<strong>Google Play Deploy</strong>](https://github.com/bitrise-io/steps-google-play-deploy) 1.6.0以降
 
 :::
 
@@ -163,11 +162,11 @@ Android App Bundleファイルの署名方法は、APKの署名方法と同じ�
 
 1. キーストアファイルをBitriseにアップロードします。
 1. <GlossTerm baseform="workflow editor">Workflow Editor</GlossTerm>でWorkflowを開き、ビルドStepの後に<strong>Android Sign</strong> Stepを追加します。
-1. <strong>Keystore password</strong>、<strong>Key alias</strong>、および<strong>Key password</strong>の各入力フィールドが入力されていることを確認します。
+1. <strong>Keystore password</strong>、<strong>Key alias</strong>、<strong>Key password</strong>の各入力フィールドが入力されていることを確認します。
 
    :::tip[デフォルトの入力値]
 
-   キーストアファイルをアップロードし、必要な認証情報を入力すると、<strong>Android Sign</strong> Stepの<strong>Keystore url</strong>、<strong>Keystore password</strong>、<strong>Keystore alias</strong>、<strong>Private key password</strong>の各入力は自動的に入力されます。
+   キーストアファイルをアップロードし、必要な認証情報を入力すると、<strong>Android Sign</strong> Stepの<strong>Keystore url</strong>、<strong>Keystore password</strong>、<strong>Key alias</strong>、<strong>Key password</strong>の各入力は自動的に入力されます。
 
    :::
 1. <strong>App file path</strong>入力フィールドに、使用しているビルドStepの出力と同じ出力環境変数が表示されていることを確認します。
@@ -178,7 +177,7 @@ Android App Bundleファイルの署名方法は、APKの署名方法と同じ�
 
    :::tip[その他の設定オプション]
 
-   <strong>Android Sign</strong> Stepで利用可能なすべての設定オプションについては、Workflow Editorをご覧ください。以下のことができます。
+   <strong>Android Sign</strong> Stepで利用可能なすべての設定オプションについては、Workflow Editorをご覧ください。次のことができます。
 
    - <strong>Page alignment</strong>入力でメモリページアライメントを有効または無効にします。
    - <strong>Signer tool</strong>入力で、アプリの署名に使用するツールを選択します。`automatic`（デフォルト。APKには`apksigner`、AABには`jarsigner`を使用）、`apksigner`、または`jarsigner`。
@@ -237,7 +236,7 @@ Android App Bundleファイルの署名方法は、APKの署名方法と同じ�
 
    :::tip[その他の設定オプション]
 
-   `android-sign` Stepで利用可能なすべての設定オプションについては、[step.yml file](https://github.com/bitrise-steplib/steps-sign-apk/blob/master/step.yml)をご覧ください。以下のことができます。
+   `android-sign` Stepで利用可能なすべての設定オプションについては、[step.ymlファイル](https://github.com/bitrise-steplib/steps-sign-apk/blob/master/step.yml)をご覧ください。次のことができます。
 
    - `page_align`入力でメモリページアライメントを有効または無効にします。
    - `signer_tool`入力で、アプリの署名に使用するツールを選択します。`automatic`（デフォルト。APKには`apksigner`、AABには`jarsigner`を使用）、`apksigner`、または`jarsigner`。
@@ -296,7 +295,7 @@ Google Playへのデプロイには、[署名済みのAPKまたはAABファイ�
 1. Workflowに<strong>Google Play Deploy</strong> Stepを追加します。
 1. <strong>Service Account JSON key file path</strong>入力に、作成したSecretを貼り付けます。
 1. <strong>Package name</strong>入力に、アプリのpackage nameを追加します。
-1. <strong>Track</strong>入力に、APKをデプロイするトラックを追加します（たとえば、alpha/beta/rollout/production、または設定した任意のカスタムトラック）。
+1. <strong>Track</strong>入力に、APKをデプロイするトラックを追加します。組み込みトラック（`internal`、`alpha`、`beta`、`production`）のいずれか、またはGoogle Play Consoleで作成したカスタムトラックを指定できます。
 
 </TabItem>
 <TabItem value="configuration-yaml" label="Configuration YAML">
@@ -337,7 +336,7 @@ Google Playへのデプロイには、[署名済みのAPKまたはAABファイ�
          - service_account_json_key_path: "$BITRISEIO_SERVICE_ACCOUNT_JSON_KEY_URL"
          - package_name: myApp
    ```
-1. `track`入力に、アプリバイナリをデプロイするトラックを追加します（たとえば、alpha/beta/rollout/production、または設定した任意のカスタムトラック）。
+1. `track`入力に、アプリバイナリをデプロイするトラックを追加します。組み込みトラック（`internal`、`alpha`、`beta`、`production`）のいずれか、またはGoogle Play Consoleで作成したカスタムトラックを指定できます。
 
    ```yaml
    deploy-workflow:
