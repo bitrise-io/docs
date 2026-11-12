@@ -2843,7 +2843,7 @@
           "type": "string"
         },
         "updatedBy": {
-          "description": "Email of the last editor; empty before the first save.",
+          "description": "Email of the last editor, or \"Workspace API token\" when the last save\nwas made with one; empty before the first save.",
           "type": "string"
         },
         "variables": {
@@ -4815,7 +4815,7 @@
     },
     "/v1/workspaces/{workspaceId}/sessions/{sessionId}/terminate": {
       "post": {
-        "description": "Stops the session's VM but keeps its disk, so the session stays listed as terminated and can be restored later. Use only when you intend to restore the session; otherwise call DeleteSession, which works on running sessions too and frees the disk. Where the feature is enabled for the workspace, a caller holding the workspace's billing-view permission (workspace owners and billing-managing custom roles) may terminate any session of the workspace, including another member's; the usage report lists them. A personal access token is required for that: workspace and session tokens keep their own reach. The session returned for another owner's session carries only its id, name, status, owner and timestamps.",
+        "description": "Stops the session's VM but keeps its disk, so the session stays listed as terminated and can be restored later. Use only when you intend to restore the session; otherwise call DeleteSession, which works on running sessions too and frees the disk. Where the feature is enabled for the workspace, a caller holding the workspace's billing-view permission (workspace owners and billing-managing custom roles) may terminate any session of the workspace, including another member's; the usage report lists them. A Workspace API Token (`bitwat_…`) may do the same when it was created with Remote Dev Environments access and a workspace role that can manage the workspace (Manager, or a custom role with Modify workspace settings); any other workspace token, and a session token, keeps its own reach. Terminate is the only session operation this widens. The session returned for another owner's session carries only its id, name, status, owner and timestamps.",
         "operationId": "CodespacesService_TerminateSession",
         "parameters": [
           {
@@ -5350,7 +5350,7 @@
     },
     "/v1/workspaces/{workspaceId}/usage": {
       "get": {
-        "description": "Returns a point-in-time snapshot of the workspace's active remote development sessions: session counts and vCPU/memory totals split by OS, workspace-wide and per user, and the workspace's vCPU quota and use per machine family. This reports sessions currently consuming resources; it is not a historical or billing-period report. Requires the caller to hold the workspace's billing-view permission (workspace owners and billing-managing custom roles); other members receive a permission-denied error. Where terminating any session is enabled for the workspace, each row also lists its active sessions, oldest first, with the IDs TerminateSession takes.",
+        "description": "Returns a point-in-time snapshot of the workspace's active remote development sessions: session counts and vCPU/memory totals split by OS, workspace-wide and per user, and the workspace's vCPU quota and use per machine family. This reports sessions currently consuming resources; it is not a historical or billing-period report. Requires the caller to hold the workspace's billing-view permission (workspace owners and billing-managing custom roles); other members receive a permission-denied error. A Workspace API Token (`bitwat_…`) may call it when it was created with Remote Dev Environments access and a workspace role that can manage the workspace: Manager, or a custom role with Modify workspace settings. Where terminating any session is enabled for the workspace, each row also lists its active sessions, oldest first, with the IDs TerminateSession takes.",
         "operationId": "CodespacesService_GetWorkspaceUsage",
         "parameters": [
           {
@@ -5724,7 +5724,7 @@
     },
     "/v1/workspaces/{workspaceId}/workspace-script": {
       "get": {
-        "description": "Returns the workspace script: a bash script that every session in the workspace starts in the background at the beginning of every boot, before any template script, together with its variables. Requires the caller to hold the workspace's billing-view permission (workspace owners and billing-managing custom roles) and the workspace to be on the rollout flag; other callers receive a permission-denied error. Protected variable values are never returned.",
+        "description": "Returns the workspace script: a bash script that every session in the workspace starts in the background at the beginning of every boot, before any template script, together with its variables. Requires the caller to hold the workspace's billing-view permission (workspace owners and billing-managing custom roles) and the workspace to be on the rollout flag; other callers receive a permission-denied error. A Workspace API Token (`bitwat_…`) may call it when it was created with Remote Dev Environments access and a workspace role that can manage the workspace: Manager, or a custom role with Modify workspace settings. Protected variable values are never returned.",
         "operationId": "CodespacesService_GetWorkspaceScript",
         "parameters": [
           {
