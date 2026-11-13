@@ -165,14 +165,15 @@ MCP クライアントに公開するツールの数を制限できます。ト�
       - `pipeline_id`（任意）：ビルドするパイプライン
       - `commit_message`（任意）：ビルドのコミットメッセージ
       - `commit_hash`（任意）：ビルドのコミットハッシュ
-      - `stack`（任意）：このビルドに限り、ワークフローの `meta.bitrise.io.stack` を上書きしてビルドを実行する Stack（例："osx-xcode-16.0.x"）
-      - `environments`（任意）：ビルド用のカスタム environment variables（`mapped_to`、`value`、および任意の `is_expand` プロパティを持つオブジェクトの配列）
+      - `stack`（任意）：ビルドを実行する Stack。このビルドに限り、ワークフローの `meta.bitrise.io.stack` を上書きします（例："osx-xcode-16.0.x"）
+      - `environments`（任意）：ビルドのカスタム environment variables（`mapped_to`、`value`、およびオプションの `is_expand` プロパティを持つオブジェクトの配列）
 
 14. `get_build`
     - 指定したアプリの特定のビルドを取得します
     - 引数：
       - `app_slug`：Bitrise アプリの識別子
       - `build_slug`：ビルドの識別子
+      - `verbose`（任意）：すべての build details を含めます。デフォルト：false
 
 15. `abort_build`
     - 特定のビルドを中止します
@@ -182,7 +183,7 @@ MCP クライアントに公開するツールの数を制限できます。ト�
       - `reason`（任意）：ビルドを中止する理由
 
 16. `get_build_log`
-    - Bitrise アプリの指定したビルドのビルドログを取得します
+    - 指定した Bitrise アプリの特定のビルドのビルドログを取得します
     - 引数：
       - `app_slug`：Bitrise アプリの識別子
       - `build_slug`：Bitrise ビルドの識別子
@@ -199,11 +200,11 @@ MCP クライアントに公開するツールの数を制限できます。ト�
       - `app_slug`：Bitrise アプリの識別子
 
 19. `get_build_steps`
-    - 指定したアプリの特定のビルドのステップを、ステータスと所要時間とともに取得します。失敗または中止されたステップの失敗理由や、スキップされたステップがスキップされた理由も含まれます
+    - 指定したアプリの特定のビルドのステップを、ステータスと所要時間とともに取得します。失敗または中止されたステップの失敗理由と、スキップされたステップがスキップされた理由も含まれます
     - 引数：
       - `app_slug`：Bitrise アプリの識別子
       - `build_slug`：ビルドの識別子
-      - `status`（任意）：これらのステータスのステップのみを残します（例：`failed`、`aborted_with_custom_timeout`）。該当するステップが 1 つもないワークフローは除外されます
+      - `status`（任意）：これらのステータスのステップのみを残します（例：`failed`、`aborted_with_custom_timeout`）。該当するステップがないワークフローは除外されます
       - `step_id`（任意）：このステップの実行のみを残します（例：`xcode-test`）
       - `verbose`（任意）：すべての build details を含めます（デフォルト：false）
 
@@ -213,10 +214,10 @@ MCP クライアントに公開するツールの数を制限できます。ト�
       - `app_slug`：Bitrise アプリの識別子
       - `build_slug`：ビルドの識別子
       - `status`（任意）：これらのステータスのテストケースのみを残します（`passed`、`failed`、`skipped`、`error`）
-      - `suite`（任意）：この名前と完全に一致するテストスイートに含まれるテストケースのみを残します
+      - `suite`（任意）：この名前と完全に一致するテストスイート配下のテストケースのみを残します
       - `class_name`（任意）：このクラス名と完全に一致するテストケースのみを残します
-      - `flaky`（任意）：不安定な（true）テストケース、または不安定でない（false）テストケースのみを残します
-      - `sort_by`（任意）：各スイート内のテストケースを `duration`、`name`、`status` で並べ替えます
+      - `flaky`（任意）：不安定な（true）テストケースのみ、または不安定でない（false）テストケースのみを残します
+      - `sort_by`（任意）：各スイート内のテストケースを `duration`、`name`、または `status` で並べ替えます
       - `sort_order`（任意）：`asc`（デフォルト）または `desc`
       - `limit`（任意）：返すテストケースの最大数（1～1000）
 

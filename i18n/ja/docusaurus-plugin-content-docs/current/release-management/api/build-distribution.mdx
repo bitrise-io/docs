@@ -79,6 +79,8 @@ curl -X GET "https://api.bitrise.io/release-management/v2/apps/v1/installable-ar
   -H "Accept: application/json"
 ```
 
+デフォルトでは、一覧には過去30日間のアーティファクトのみが含まれます。それより古いアーティファクトを表示するには、`after_date`クエリパラメーターと`before_date`クエリパラメーターを設定します。日付の範囲は200日を超えることはできません。`distribution_ready=true`を設定して配布可能なアーティファクトのみを一覧表示する場合は、`version`も設定する必要があります。この場合、日付の制限は適用されません。
+
 :::note[`id`ではなく`uid`を使用する]
 
 レスポンスの各項目には、`id`フィールドと`uid`フィールドの両方が含まれます。他の呼び出しでは、`uid`を`ARTIFACT_ID`として使用してください。`id`は別の識別子であり、このページのエンドポイントでは機能しません。
@@ -151,7 +153,7 @@ curl -X POST "https://api.bitrise.io/release-management/v2/apps/v1/installable-a
 
 ### テスターグループの作成 {#creating-a-tester-group}
 
-`type`クエリパラメーターを設定して、内部グループ(user slugで追加するBitriseユーザー)と外部グループ(メールアドレスで追加するテスター。Bitriseアカウントは不要)のどちらにするかを選択します。`type`を省略した場合のデフォルトは`internal`です。
+`type`クエリパラメーターを設定して、内部グループ（Bitriseユーザー。user slugで追加）と外部グループ（メールアドレスで追加するテスター。Bitriseアカウントは不要）のどちらを作成するかを指定します。省略した場合、`type`のデフォルトは`internal`です。
 
 <Tabs groupId="tester-group-type">
 <TabItem value="internal" label="Internal" default>
@@ -181,16 +183,16 @@ curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v
   }'
 ```
 
-`emails`配列には最大1,000件のアドレス(各255文字まで)を指定でき、内部グループでは無視されます。すべてのアドレスに対してテスターが作成され、グループに追加されます。
+外部グループでは、`emails`配列が必須です。最大1,000件のアドレス（各アドレスは255文字まで）を指定でき、内部グループでは無視されます。有効なアドレスごとにテスターが作成され、グループに追加されます。無効なアドレスは、理由`ERR_INVALID_EMAIL`とともにレスポンスの`errors`配列で返されます。有効なアドレスが1件もない場合、リクエストは`400`エラーで失敗します。
 
 </TabItem>
 </Tabs>
 
-内部グループで`auto_notify: true`を設定すると、配布可能な新しいビルドがアップロードされたときに、テスターへ自動的にメールが送信されます。外部グループは`auto_notify`をサポートしていません。常に`false`となり、送信してもこのフィールドは無視されます。外部テスターに通知するには、グループの`tester_group_id`を指定してカスタムアクセスリンクを作成してください。
+内部グループで`auto_notify: true`を設定すると、配布可能な新しいビルドがアップロードされたときに、テスターにメールが自動送信されます。外部グループは`auto_notify`をサポートしておらず、常に`false`になります。送信した場合も、このフィールドは無視されます。外部のテスターに通知するには、グループの`tester_group_id`を指定してカスタムアクセスリンクを作成します。
 
 ### グループへのテスターの追加 {#adding-testers-to-a-group}
 
-グループのタイプに合わせて`type`クエリパラメーターを設定してください。`type`を省略した場合のデフォルトは`internal`です。グループのタイプに合わない配列は無視されます。
+リクエストボディは、グループのタイプによって異なります。タイプは、Bitriseがグループ自体から取得します。`type`クエリパラメーターを設定する必要はありません。内部グループの場合は`user_slugs`を、外部グループの場合は`emails`を送信してください。グループのタイプに一致しない配列は無視されます。
 
 <Tabs groupId="tester-group-type">
 <TabItem value="internal" label="Internal" default>
@@ -206,7 +208,7 @@ curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v
 
 :::tip[user slugの確認]
 
-workspaceメンバーのuser slugを確認するには、`GET /tester-groups/{id}/potential-testers?search=name-or-email`を使用して対象となるテスターを検索します。レスポンスには各ユーザーの`slug`が含まれます。
+workspaceメンバーのuser slugを確認するには、`GET /tester-groups/{id}/potential-testers?search=name-or-email`を使用して対象となるテスターを検索します。レスポンスには、各ユーザーの`slug`が含まれます。
 
 :::
 
@@ -214,7 +216,7 @@ workspaceメンバーのuser slugを確認するには、`GET /tester-groups/{id
 <TabItem value="external" label="External">
 
 ```bash
-curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v1/tester-groups/GROUP_ID/add-testers?type=external" \
+curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v1/tester-groups/GROUP_ID/add-testers" \
   -H "Authorization: YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -222,7 +224,7 @@ curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v
   }'
 ```
 
-`emails`配列には最大1,000件のアドレスを指定できます。各アドレスに対して、テスターが作成または再利用されます。
+`emails`配列には、最大1,000件のアドレスを指定できます。アドレスごとにテスターが作成または再利用されます。
 
 </TabItem>
 </Tabs>
@@ -240,7 +242,9 @@ curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v
   }'
 ```
 
-テスターに通知する前に、ビルドが配布可能な状態になっている必要があります。呼び出しが成功すると、`204 No Content`が返されます。
+テスターに通知するには、ビルドが配布可能な状態である必要があります。呼び出しが成功すると、`204 No Content`が返されます。
+
+このエンドポイントは、内部のテスターグループでのみ機能します。外部グループの場合は、検証エラーが返されます。外部のテスターに通知するには、グループの`tester_group_id`を指定してカスタムアクセスリンクを作成します。
 
 ## アップロード済みビルドの一覧表示 {#listing-uploaded-builds}
 

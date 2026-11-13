@@ -80,6 +80,8 @@ curl -X GET "https://api.bitrise.io/release-management/v2/apps/v1/installable-ar
   -H "Accept: application/json"
 ```
 
+By default, the list only includes artifacts from the last 30 days. To see older artifacts, set the `after_date` and `before_date` query parameters; the date range can't be longer than 200 days. If you set `distribution_ready=true` to list only distribution-ready artifacts, you must also set `version`, and the date limit doesn't apply.
+
 :::note[Use `uid`, not `id`]
 
 Each item in the response includes both an `id` and a `uid` field. Use `uid` as the `ARTIFACT_ID` in other calls — `id` is a separate identifier and won't work in the endpoints on this page.
@@ -182,7 +184,7 @@ curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v
   }'
 ```
 
-The `emails` array accepts up to 1,000 addresses (each up to 255 characters) and is ignored for internal groups. A tester is created for every address and added to the group.
+The `emails` array is required for an external group. It accepts up to 1,000 addresses (each up to 255 characters) and is ignored for internal groups. A tester is created for every valid address and added to the group. Invalid addresses are returned in the response's `errors` array with the reason `ERR_INVALID_EMAIL`. If none of the addresses are valid, the request fails with a `400` error.
 
 </TabItem>
 </Tabs>
@@ -191,7 +193,7 @@ Setting `auto_notify: true` on an internal group means testers are automatically
 
 ### Adding testers to a group
 
-Set the `type` query parameter to match the group's type — `type` defaults to `internal` when omitted. The array that doesn't match the group's type is ignored.
+The request body depends on the group's type, which Bitrise takes from the group itself. You don't set a `type` query parameter. Send `user_slugs` for an internal group or `emails` for an external one; the array that doesn't match the group's type is ignored.
 
 <Tabs groupId="tester-group-type">
 <TabItem value="internal" label="Internal" default>
@@ -215,7 +217,7 @@ To find the user slugs of workspace members, use `GET /tester-groups/{id}/potent
 <TabItem value="external" label="External">
 
 ```bash
-curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v1/tester-groups/GROUP_ID/add-testers?type=external" \
+curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v1/tester-groups/GROUP_ID/add-testers" \
   -H "Authorization: YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -242,6 +244,8 @@ curl -X POST "https://api.bitrise.io/release-management/v2/build-distributions/v
 ```
 
 The build must be distribution-ready before you can notify testers. A successful call returns `204 No Content`.
+
+This endpoint only works for internal tester groups. For an external group it returns a validation error. To notify external testers, create a custom access link with the group's `tester_group_id`.
 
 ## Listing uploaded builds
 
