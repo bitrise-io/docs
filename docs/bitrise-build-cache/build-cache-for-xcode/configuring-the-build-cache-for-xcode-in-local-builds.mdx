@@ -22,11 +22,11 @@ Ensure you have:
 - A Bitrise workspace with the Build Cache enabled. Check it on the [Build Cache page](https://app.bitrise.io/build-cache/).
 - Network access to the Bitrise hosts the Build Cache uses, if your machine is behind a VPN, a firewall, or an outbound proxy. See [Network endpoints for firewalls and VPNs](/bitrise-build-cache/getting-started-with-the-build-cache/network-endpoints-for-firewalls-and-vpns).
 
-:::important[Terminal builds only]
+:::important[Terminal builds by default]
 
-The cache works for `xcodebuild` runs that resolve through your `PATH`: Terminal, iTerm, the integrated terminal of your editor, `fastlane`, and any script that shells out to `xcodebuild`.
+The default setup caches `xcodebuild` runs that resolve through your `PATH`: Terminal, iTerm, the integrated terminal of your editor, `fastlane`, and any script that shells out to `xcodebuild`.
 
-Xcode.app invokes `xcodebuild` through a hard-coded absolute path, so pressing ⌘B or ⌘R in the IDE bypasses the wrapper. Those builds get no cache reads, no cache writes, and no analytics. If you build from the IDE and see no cache activity, that's why — run the build from a terminal instead.
+Xcode.app invokes `xcodebuild` through a hard-coded absolute path, so pressing ⌘B or ⌘R in the IDE bypasses the wrapper under the default setup. If you need the cache for Xcode.app IDE builds too, see [Xcode.app IDE builds (opt-in beta)](#xcodeapp-ide-builds-opt-in-beta) below.
 
 :::
 
@@ -196,6 +196,39 @@ You have two options to turn cache push off:
   ```bash
   bitrise-build-cache activate xcode --cache --cache-push=false --debug
   ```
+
+## Xcode.app IDE builds (opt-in beta)
+
+The default setup only sees `xcodebuild` runs through your `PATH`, so Xcode.app GUI builds (⌘B, ⌘R) bypass the cache. An opt-in **wrapperless pipeline** removes that limitation: instead of wrapping `xcodebuild`, the CLI's proxy watches DerivedData directly, so Xcode.app builds and any direct `/usr/bin/xcodebuild` runs attribute their cache transfer and hit rate to a Build Cache invocation row.
+
+:::note[Beta]
+
+The wrapperless pipeline is a beta feature and off by default. The behavior may still change, and a few limitations are documented at the end of this section.
+
+:::
+
+Turn it on once per machine:
+
+```bash
+bitrise-build-cache activate xcode --wrapperless-pipeline
+```
+
+The CLI persists the choice in `~/.bitrise-xcelerate/config.json` as `wrapperlessPipelineEnabled: true`. Every subsequent cache proxy restart inherits it — you don't need to pass the flag again. The default wrapper + enricher setup is untouched for anyone who doesn't flip this flag.
+
+To turn it back off, re-activate and pass the explicit `false`:
+
+```bash
+bitrise-build-cache activate xcode --wrapperless-pipeline=false
+```
+
+### DerivedData locations
+
+The pipeline watches the default DerivedData root (`~/Library/Developer/Xcode/DerivedData`) and the custom one you set from Xcode's **Preferences → Locations → Derived Data → Custom** (`IDECustomDerivedDataLocation`). If your builds use yet another location — or several — list them in the `BITRISE_XCELERATE_DERIVED_DATA_DIRS` environment variable as a colon-separated list, and the pipeline will watch them all.
+
+### Known limitations
+
+- Running several `xcodebuild` builds in parallel from the same shell collapses them into a single invocation row. A warning is logged when this happens.
+- Cancelling a build with `^C` surfaces as a successful build in the Build Cache UI, because `xcodebuild` finalizes its logs cleanly on SIGINT.
 
 ## Troubleshooting
 
