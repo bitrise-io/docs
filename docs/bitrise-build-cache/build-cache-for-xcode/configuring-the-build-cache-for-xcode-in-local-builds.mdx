@@ -207,19 +207,33 @@ The wrapperless pipeline is a beta feature and off by default. The behavior may 
 
 :::
 
-Turn it on once per machine:
+### Turning it on
 
-```bash
-bitrise-build-cache activate xcode --wrapperless-pipeline
-```
+1. Activate the pipeline on this machine:
 
-The CLI persists the choice in `~/.bitrise-xcelerate/config.json` as `wrapperlessPipelineEnabled: true`. Every subsequent cache proxy restart inherits it — you don't need to pass the flag again. The default wrapper + enricher setup is untouched for anyone who doesn't flip this flag.
+   ```bash
+   bitrise-build-cache activate xcode --wrapperless-pipeline
+   ```
+
+   The CLI persists the choice in `~/.bitrise-xcelerate/config.json` as `wrapperlessPipelineEnabled: true`. Every subsequent cache proxy restart inherits it — you don't need to pass the flag again. The default wrapper + enricher setup is untouched for anyone who doesn't flip this flag.
+
+2. Wire your Xcode project or workspace to the override xcconfig. Xcode 27 no longer propagates the override to SwiftBuild automatically, so the CLI adds a managed `#include?` directive to each project's build configuration:
+
+   ```bash
+   bitrise-build-cache xcode link <path-to-.xcodeproj-or-.xcworkspace>
+   ```
+
+   The command is idempotent — re-run it after moving the project. Swift Package Manager package targets are not reachable this way; they stay uncached.
+
+3. In Xcode, pick the Bitrise toolchain from **Xcode → Toolchains**. Xcode doesn't honor the toolchain setting from the xcconfig automatically for the IDE, so this is a manual step the first time around. Build with ⌘B afterwards.
 
 To turn it back off, re-activate and pass the explicit `false`:
 
 ```bash
 bitrise-build-cache activate xcode --wrapperless-pipeline=false
 ```
+
+To undo the project edits `xcode link` made, run `bitrise-build-cache xcode unlink <path>` with the same project or workspace path.
 
 ### DerivedData locations
 
