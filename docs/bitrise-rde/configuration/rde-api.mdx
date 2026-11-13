@@ -44,9 +44,9 @@ GET /v1/workspaces/{workspace_id}/usage
 
 Unlike the other endpoints, this one requires billing visibility: workspace owners and members with a billing-managing custom role can call it. Other members get a `403` response.
 
-## Warm pools
+## Pools
 
-The warm pool endpoints manage pools of pre-booted sessions, and the create session and create preview link requests claim from them with `warm_pool_id`:
+The pool endpoints manage pools of pre-booted sessions, and the create session and create preview link requests claim from them with `warm_pool_id`:
 
 ```text
 GET    /v1/workspaces/{workspace_id}/warm-pools
@@ -57,7 +57,16 @@ DELETE /v1/workspaces/{workspace_id}/warm-pools/{warm_pool_id}
 POST   /v1/workspaces/{workspace_id}/warm-pools/{warm_pool_id}/retry
 ```
 
-A pool's `status` reports how many sessions are ready and warming, the warm sessions themselves, and any configuration error. The `retry` request starts a pool warming again after it stopped because **On create** failed three times in a row. See [Warm pools](/bitrise-rde/configuration/warm-pools).
+A pool's `status` reports:
+
+- How many sessions are ready and warming
+- How many sessions are in use against the pool's `max_sessions` (`in_use`, `limit_state`, `refused_7d`)
+- The warm sessions themselves
+- Any configuration error
+
+A full pool refuses claims, restores, and starts with HTTP `429` and the reason `POOL_FULL`. A workspace that is out of CPUs refuses them with `CPU_QUOTA_EXHAUSTED`. See [When a claim is refused](/bitrise-rde/configuration/pools#refused-claims).
+
+If a pool stops warming because **On create** failed three times in a row, send a `retry` request to start it again. See [Keeping the pool healthy](/bitrise-rde/configuration/pools#keeping-the-pool-healthy).
 
 ## Lifecycle hooks
 

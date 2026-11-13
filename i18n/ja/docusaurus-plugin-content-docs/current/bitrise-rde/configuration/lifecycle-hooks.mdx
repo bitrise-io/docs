@@ -1,6 +1,6 @@
 ---
 title: "ライフサイクルフック"
-description: "ライフサイクルフックで Remote Dev Environment セッションをセットアップします。On create はセッション作成時に 1 回、On claim は誰かがセッションを取得したとき、On restore は復元のたびに実行されます。warm poolsの有無にかかわらず使用できます。"
+description: "ライフサイクルフックで Remote Dev Environment セッションをセットアップします。On create はセッション作成時に 1 回、On claim は誰かがセッションを取得したとき、On restore は復元のたびに実行されます。プールの有無にかかわらず使用できます。"
 sidebar_position: 2
 slug: /bitrise-rde/configuration/lifecycle-hooks
 ---
@@ -18,25 +18,25 @@ import GlossTerm from '@site/src/components/GlossTerm';
 
 すべてのフックは任意です。テンプレートに必要なフックだけを追加してください。フックのないテンプレートでは、マシンが起動した時点ですぐにセッションを使用できます。
 
-同じテンプレートを、直接作成したセッションにも、[warm pool](/bitrise-rde/configuration/warm-pools)から取得したセッションにも使用できます。ライフサイクルフックは、従来のテンプレートのウォームアップスクリプトと起動スクリプトに代わるものです。[ウォームアップスクリプトと起動スクリプトを使用するテンプレートの変換](#converting-a-template-with-warmup-and-startup-scripts)を参照してください。
+同じテンプレートを、直接作成したセッションにも、[プール](/bitrise-rde/configuration/pools)から取得したセッションにも使用できます。ライフサイクルフックは、従来のテンプレートのウォームアップスクリプトと起動スクリプトに代わるものです。[ウォームアップスクリプトと起動スクリプトを使用するテンプレートの変換](#converting-a-template-with-warmup-and-startup-scripts)を参照してください。
 
 ## 各フックが実行されるタイミング {#when-each-hook-runs}
 
-セッションを直接作成する場合も、warm poolから取得する場合も、フックは同じ順序で実行されます。違いはタイミングです。
+セッションを直接作成する場合も、プールから取得する場合も、フックは同じ順序で実行されます。違いはタイミングです。
 
-| タイミング | 直接作成したセッション | warm poolのセッション |
+| タイミング | 直接作成したセッション |プールのセッション |
 | --- | --- | --- |
 | 作成 | On create | On create（プール内で、誰かがセッションを要求する前に実行） |
 | 誰かへの割り当て | System setup の後、On create の直後に On claim | System setup の後、取得したときに On claim |
 | 復元 | On restore | On restore |
 
-<strong>System setup</strong> はBitrise独自のステップであり、フックではありません。オーナーのSSHキーと Claude の認証情報が提供されている場合、それらをセットアップします。warm poolから取得したセッションでは、オーナーが [GitHub連携](/bitrise-rde/configuration/github-integration)を有効にしていれば、GitHubへのサインインも行うため、`git`と`gh`がオーナー本人として動作し、コミットにも本人のGitHub ID が記録されます。直接作成したセッションでは、代わりにマシンの起動時にGitHubへのサインインが行われます。System setup は、人がセッションを取得するときにのみ実行されます。workspace所有のセッションでは実行されません。
+<strong>System setup</strong> はBitrise独自のステップであり、フックではありません。オーナーのSSHキーと Claude の認証情報が提供されている場合、それらをセットアップします。プールから取得したセッションでは、オーナーが [GitHub連携](/bitrise-rde/configuration/github-integration)を有効にしていれば、GitHubへのサインインも行うため、`git`と`gh`がオーナー本人として動作し、コミットにも本人のGitHub ID が記録されます。直接作成したセッションでは、代わりにマシンの起動時にGitHubへのサインインが行われます。System setup は、人がセッションを取得するときにのみ実行されます。workspace所有のセッションでは実行されません。
 
 フックからGitHubへアクセスできるかどうかは、セッションの種類によって異なります。オーナーが [GitHub連携](/bitrise-rde/configuration/github-integration)を有効にしている場合にのみ適用されます。
 
-- <strong>On claim</strong> では、オーナーのGitHubアクセスを使用できます。直接作成したセッションでは、マシンの起動時に連携がセットアップされます。warm poolから取得したセッションでは、<strong>On claim</strong> の実行前に System setup がオーナーをサインインさせます。
+- <strong>On claim</strong> では、オーナーのGitHubアクセスを使用できます。直接作成したセッションでは、マシンの起動時に連携がセットアップされます。プールから取得したセッションでは、<strong>On claim</strong> の実行前に System setup がオーナーをサインインさせます。
 - <strong>On create</strong> では、直接作成したセッションに限り、オーナーのGitHubアクセスを使用できます。
-- warm poolの <strong>On create</strong> には専用のトークンが必要です。<strong>On create</strong> の実行中、セッションにはオーナーがいないためです。
+-プールの <strong>On create</strong> には専用のトークンが必要です。<strong>On create</strong> の実行中、セッションにはオーナーがいないためです。
 
 すべてのセッションに共通するルールがいくつかあります。
 
@@ -45,15 +45,15 @@ import GlossTerm from '@site/src/components/GlossTerm';
 - <strong>On create</strong> と <strong>On claim</strong> は、マシンごとに 1 回実行されます。復元で実行されるのは <strong>On restore</strong> のみです。
 - 追加したフックは、スクリプトが空でも実行されます。すぐに終了します。
 
-直接作成したセッションでは <strong>On claim</strong> も <strong>On create</strong> の直後に実行されるため、warm pools向けに作成したテンプレートは、プールなしでも動作します。
+直接作成したセッションでは <strong>On claim</strong> も <strong>On create</strong> の直後に実行されるため、プール向けに作成したテンプレートは、プールなしでも動作します。
 
 テンプレートエディターでは、フックの上に同じタイムラインが表示されます。<strong>Created from the template</strong> は、直接作成したセッションを表示します。
 
 ![テンプレートから直接作成したセッションのタイムライン：Session created、On create、Assigned to you、On claim、Ready、Stopped、On restore、Ready again](/img/rde/2026-10-28-rde-lifecycle-explainer-direct.png)
 
-<strong>Claimed from a warm pool</strong> は、プールから取得したセッションを表示します。プールはセッションがまだ共有状態のうちに <strong>On create</strong> を実行し、残りはセッションがあなたのものになってから実行されます。
+<strong>Claimed from a プール</strong> は、プールから取得したセッションを表示します。プールはセッションがまだ共有状態のうちに <strong>On create</strong> を実行し、残りはセッションがあなたのものになってから実行されます。
 
-![warm poolから取得したセッションのタイムライン：プールがマシンを起動して On create を実行し、その後セッションはあなたが取得するまで待機して On claim が実行される](/img/rde/2026-10-28-rde-lifecycle-explainer-pool.png)
+![プールから取得したセッションのタイムライン：プールがマシンを起動して On create を実行し、その後セッションはあなたが取得するまで待機して On claim が実行される](/img/rde/2026-10-28-rde-lifecycle-explainer-pool.png)
 
 ## フックの記述 {#writing-a-hook}
 
@@ -72,7 +72,7 @@ nohup npm run dev > ~/dev-server.log 2>&1 &
 env -u REPO_TOKEN nohup npm run dev > ~/dev-server.log 2>&1 &
 ```
 
-これはwarm poolで特に重要です。セッションを取得した人は、<strong>On create</strong> が実行したままにしたプロセスの環境を読み取ることができます。
+これはプールで特に重要です。セッションを取得した人は、<strong>On create</strong> が実行したままにしたプロセスの環境を読み取ることができます。
 
 次の点に注意してください。
 
@@ -101,7 +101,7 @@ env -u REPO_TOKEN nohup npm run dev > ~/dev-server.log 2>&1 &
 入力を誰が行うかは、セッションの開始方法によって異なります。
 
 - <strong>直接作成したセッション：</strong> 作成した人が、すべてのスコープのすべての入力を行います。
-- <strong>warm pool：</strong> Sharedと <strong>On create</strong> の入力は、プールで 1 回設定します。セッションを取得した人は、<strong>On claim</strong> と <strong>On restore</strong> の入力を、直接入力するか保存済みの入力から入力します。共有（Org 所有）セッションとして保持されるセッションでは、直接入力するプレーンな値のみ使用できます。
+- <strong>プール：</strong> Sharedと <strong>On create</strong> の入力は、プールで 1 回設定します。セッションを取得した人は、<strong>On claim</strong> と <strong>On restore</strong> の入力を、直接入力するか保存済みの入力から入力します。共有（Org 所有）セッションとして保持されるセッションでは、直接入力するプレーンな値のみ使用できます。
 
 復元時には誰にも入力を求めません。<strong>On restore</strong> の入力は、事前に入力されています。
 
@@ -119,15 +119,15 @@ env -u REPO_TOKEN nohup npm run dev > ~/dev-server.log 2>&1 &
 
 フックは常に自身の値を受け取ります。<strong>Also in terminal</strong> をオンにすると、値がセッションのシェルプロファイルにも書き込まれ、ターミナルやSSHセッションからも参照できるようになります。Shared の値はセッションの作成時に、フック自身の値はそのフックの実行時に書き込まれます。同じキーが 2 つある場合は、最後に書き込まれた方が優先されます。保護された値は、ターミナルに書き込めません。
 
-### warm pool内の値 {#values-in-a-warm-pool}
+### プール内の値 {#values-in-a-warm-pool}
 
 <strong>On claim</strong> と <strong>On restore</strong> は Shared の値を受け取るため、プールからセッションを取得した人も Shared の値を受け取ります。リポジトリをクローンするためのトークンなど、プールだけが使用する値は、代わりに <strong>On create</strong> に設定してください。
 
 取得したセッションのページには、<strong>On create</strong> の入力の値は表示されません。プールで設定されたものとして一覧表示されます。ただし、<strong>Also in terminal</strong> をオンにした Shared または <strong>On create</strong> の値は、マシンのシェルプロファイルに残り、取得した人が読み取ることができます。
 
-## warm poolでのフックの使用 {#using-hooks-with-a-warm-pool}
+##プールでのフックの使用 {#using-hooks-with-a-warm-pool}
 
-warm poolで実行されるのは <strong>On create</strong> のみです。ウォームセッションは <strong>On create</strong> が成功すると取得可能になり、それ以外の処理はすべて取得後に実行されます。プールを最大限に活用するには、次のようにします。
+プールで実行されるのは <strong>On create</strong> のみです。ウォームセッションは <strong>On create</strong> が成功すると取得可能になり、それ以外の処理はすべて取得後に実行されます。プールを最大限に活用するには、次のようにします。
 
 - 時間のかかるセットアップは <strong>On create</strong> に入れます。クローン、インストール、ビルドなどです。
 - <strong>On create</strong> には、読み取り専用のボットトークンなど、共有の認証情報を渡します。[保存済みの入力](/bitrise-rde/configuration/saved-inputs)は個人用のため、プールでは使用できません。
@@ -140,7 +140,7 @@ warm poolで実行されるのは <strong>On create</strong> のみです。ウ�
 
 ## 例：iOS アプリのテンプレート {#example-an-ios-app-template}
 
-このテンプレートは、iOS アプリのリポジトリを準備します。直接作成したセッションにも、warm poolにも使用できます。
+このテンプレートは、iOS アプリのリポジトリを準備します。直接作成したセッションにも、プールにも使用できます。
 
 <strong>On create</strong> は、読み取り専用のボットトークンでリポジトリをクローンし、依存関係をインストールします。トークンは <strong>On create</strong> のシークレット入力のため、<strong>On claim</strong>、<strong>On restore</strong>、セッションを取得した人には渡りません。
 
@@ -201,7 +201,7 @@ nohup ./scripts/start-mock-server.sh > ~/mock-server.log 2>&1 &
 | <strong>Personalization failed</strong> | System setup または On claim が失敗しました。 |
 | <strong>Restore script failed</strong> | On restore が失敗しました。 |
 
-warm poolのページでは、まだ取得されていないセッションは、<strong>On create</strong> の実行中は <strong>Warming up</strong>、完了すると <strong>Ready to claim</strong> と表示されます。
+プールのページでは、まだ取得されていないセッションは、<strong>On create</strong> の実行中は <strong>Warming up</strong>、完了すると <strong>Ready to claim</strong> と表示されます。
 
 セッションは、マシンが起動した時点で <strong>Running</strong> になります。これは <strong>On create</strong> が終了する前です。スクリプトや AIエージェントがセッションを操作する場合は、代わりに <strong>Ready</strong> になるまで待機してください。`bitrise-cli rde session create --wait`がこれを代行します。
 
@@ -223,7 +223,7 @@ warm poolのページでは、まだ取得されていないセッションは�
 
 :::
 
-### warm poolで On create が失敗した場合 {#when-on-create-fails-in-a-warm-pool}
+###プールで On create が失敗した場合 {#when-on-create-fails-in-a-warm-pool}
 
 <strong>On create</strong> が失敗すると、プールはマシンを交換して再試行します。3 回連続で失敗すると、プールに <strong>Setup failed</strong> と表示され、ウォームアップが停止します。
 
@@ -292,7 +292,7 @@ bitrise-cli rde template create --file template.json
 | `bitrise-cli rde session rebuild SESSION_ID` | マシンを破棄し、On create からセットアップを再実行します。 |
 | `bitrise-cli rde warm-pool retry WARM_POOL_ID` | On create が 3 回連続で失敗した後、プールのウォームアップを再開します。 |
 
-warm poolから取得する場合、`--input`が <strong>On claim</strong> と <strong>On restore</strong> の入力を設定します。
+プールから取得する場合、`--input`が <strong>On claim</strong> と <strong>On restore</strong> の入力を設定します。
 
 ```bash
 bitrise-cli rde session create my-fix --warm-pool ios-app --input GIT_EMAIL=you@example.com
@@ -303,7 +303,7 @@ bitrise-cli rde session create my-fix --warm-pool ios-app --input GIT_EMAIL=you@
 
 自然な言葉で依頼してください。例：*「Create a template that clones example-org/example-app on create and restarts the mock server on restore.」* エージェントは、フックを`bitrise_devenv_create_template`または`bitrise_devenv_update_template`に渡します。
 
-エージェントは、セッションのセットアップの準備が整うまで待機してから、コマンドを実行します。失敗した場合は、`bitrise_devenv_get_logs`でフックのログを読み取り、原因を調べます。その後、`bitrise_devenv_run_hook`を呼び出してフックを再実行します。<strong>On create</strong> が失敗した場合は`bitrise_devenv_rebuild`を呼び出します。セットアップの失敗で停止したwarm poolに対しては、`bitrise_devenv_retry_warm_pool`を呼び出します。
+エージェントは、セッションのセットアップの準備が整うまで待機してから、コマンドを実行します。失敗した場合は、`bitrise_devenv_get_logs`でフックのログを読み取り、原因を調べます。その後、`bitrise_devenv_run_hook`を呼び出してフックを再実行します。<strong>On create</strong> が失敗した場合は`bitrise_devenv_rebuild`を呼び出します。セットアップの失敗で停止したプールに対しては、`bitrise_devenv_retry_warm_pool`を呼び出します。
 
 </TabItem>
 <TabItem value="api" label="API">
@@ -339,7 +339,7 @@ POST /v1/workspaces/{workspace_id}/sessions/{session_id}/rebuild
 GET /v1/workspaces/{workspace_id}/sessions/{session_id}/logs/LOG_STAGE_ON_CREATE
 ```
 
-セットアップの失敗後にwarm poolのウォームアップを再開するには、`POST /v1/workspaces/{workspace_id}/warm-pools/{warm_pool_id}/retry`を送信します。
+セットアップの失敗後にプールのウォームアップを再開するには、`POST /v1/workspaces/{workspace_id}/warm-pools/{warm_pool_id}/retry`を送信します。
 
 </TabItem>
 </Tabs>

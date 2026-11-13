@@ -1,0 +1,248 @@
+---
+title: "Pools"
+description: "Keep pre-booted Remote Dev Environment sessions ready to claim, so a new session or a device preview open is handed out in seconds instead of waiting for a machine to boot."
+sidebar_position: 3
+slug: /bitrise-rde/configuration/pools
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import GlossTerm from '@site/src/components/GlossTerm';
+
+A <GlossTerm baseform="pool">pool</GlossTerm> keeps a set number of <GlossTerm baseform="rde session">RDE sessions</GlossTerm> booted and idle. Creating a session from the pool takes seconds, instead of the minutes a fresh machine needs to boot and run its setup. You describe the session once, as you would when creating one, and set how many warm sessions to keep. Bitrise keeps that many sessions warm and hands one out on request.
+
+Pools were called warm pools before. The name changed, the identifiers didn't: the API keeps the `/warm-pools` endpoints and `warm_pool_id`, the CLI keeps the `--warm-pool` flag (and `rde warm-pool` still works as an alias of `rde pool`), and the MCP tools keep their `bitrise_devenv_*_warm_pool` names.
+
+Use a pool when you need sessions right away, for example:
+
+- An AI agent that needs a machine now.
+- A team that starts many similar sessions a day.
+- A [device preview link](/bitrise-rde/devices/device-preview-links), where a reviewer clicks and expects the app on screen.
+
+Pools aren't available on free-trial workspaces.
+
+:::warning[Alpha feature]
+
+Pools are in alpha, as the **Alpha** badge in the RDE UI shows. Pool configuration, the way a claimed session is personalized, and the related CLI commands, MCP tools, and API endpoints can change in backwards-incompatible ways without notice. Expect to adjust your templates, scripts, and automation.
+
+:::
+
+## How a pool works
+
+A pool has three parts: a stored session configuration, a number of warm sessions, and an optional max sessions. The workspace owns the pool.
+
+- The configuration holds the same fields as a session create request: a <GlossTerm baseform="rde template">template</GlossTerm>, the values of its Shared and **On create** inputs, the enabled feature flags, and optional overrides for stack, machine type, cluster, and virtual device.
+- Warm sessions is how many sessions the pool keeps booted and ready to claim. Bitrise creates the sessions, runs the workspace's [workspace script](/bitrise-rde/configuration/workspace-script), if it has one, and then the template's **On create** hook on them, and keeps them ready. When someone claims one, a replacement boots while the pool has room.
+- A pool with 0 warm sessions keeps no sessions but still works as a configuration preset. Claiming from it creates a session from the stored configuration.
+- Max sessions caps how many sessions from the pool can be in use at once. The default is **No limit**. See [Max sessions](#max-sessions).
+
+When you claim a session, you get one of the pool's warm sessions. Bitrise renames it and applies your name, labels, and auto-terminate window. If no session is ready yet, you get one that is still warming up, and it finishes starting as your session. If the pool has no warm session at all, Bitrise creates a session from the pool's configuration instead. Every session records where it came from: a claimed session has the warm state `claimed`, and a session created on demand has the warm state `cold`. The session list in the RDE UI shows these as **Claimed** and **Built cold** badges.
+
+A warm session is a regular session that waits to be claimed, and it costs machine time while it waits. Until someone claims it, it doesn't appear in any session list, and nobody can connect to it, change it, or terminate it. You can read its logs on the pool page to check that the template's **On create** hook works. A warm session has no auto-terminate timer. It waits until someone claims it, or until Bitrise retires it because the pool shrank or its configuration changed.
+
+## Who can use a pool
+
+Every member of the <GlossTerm baseform="workspace">workspace</GlossTerm> with RDE access sees the pool, claims from it, and manages it. A [Workspace API token](/bitrise-platform/workspaces/workspace-api-token) can reach it from CI.
+
+The pool stores the template's Shared and **On create** inputs as plain values, encrypted at rest when marked secret. Whoever claims a session fills in the **On claim** and **On restore** inputs. [Saved inputs](/bitrise-rde/configuration/saved-inputs) are personal, so a pool can't reference them: there is no single person whose saved inputs it could use.
+
+## Who owns a claimed session
+
+A session claimed from a pool is yours, like a session you create yourself: only you see and manage it. A warm session is booted before anyone claims it, so it has nothing personal on it until the claim. When you claim it, Bitrise sets up your SSH key and Claude credentials, if you supplied them, signs you in to GitHub if you turned on the [GitHub integration](/bitrise-rde/configuration/github-integration), and then runs the template's **On claim** hook with your **On claim** inputs. See [Using hooks with a pool](/bitrise-rde/configuration/lifecycle-hooks#using-hooks-with-a-pool).
+
+To share a claimed session instead, choose **Workspace** as the owner when you claim it. Every member then sees and manages it under **Workspace sessions**, with you recorded as its creator. Sessions claimed with a Workspace API token, and the device sessions a [preview link](/bitrise-rde/devices/device-preview-links) opens, always belong to the workspace.
+
+## Creating a pool
+
+<Tabs>
+<TabItem value="ui" label="RDE UI" default>
+
+1. In the Remote Dev Environments section, open **Pools** and click **New pool**. From a template's page, **Create pool** opens the same form with the template already selected.
+1. Choose the template. The form shows only what the template needs: Shared and **On create** inputs, feature flags, a device section if the template boots a device, and the same **Override machine configuration** switch as the session form.
+1. Enter a **Pool name**.
+1. Set **Warm sessions** and, to cap the pool, **Max sessions**. Leave **Max sessions** empty for no limit.
+1. Click **Create pool**.
+
+The pool page shows how many sessions are ready and how many are still warming up. It also lists the warm sessions by name, and lifetime counts of claimed and cold sessions.
+
+</TabItem>
+<TabItem value="cli" label="CLI">
+
+```bash
+bitrise-cli rde pool create ios-reviewers --template "iOS Xcode 26" --size 2 --max-sessions 20
+```
+
+`--input` and `--secret-input` set the template's Shared and **On create** inputs, `--feature-flag` enables a template feature flag, and the `--stack`, `--machine-type`, and `--device-*` flags override what the template declares. `--size` is the number of warm sessions and `--max-sessions` caps the pool; leave the max out for no limit. Every command that takes a pool ID also accepts the pool's name.
+
+</TabItem>
+<TabItem value="mcp" label="AI agent (MCP)">
+
+Ask for it in plain language, for example: *"Keep two sessions of the iOS Xcode 26 template warm for the team, and never more than twenty in use."* The agent calls `bitrise_devenv_create_warm_pool` with the template, the inputs, `warm_sessions`, and `max_sessions`.
+
+</TabItem>
+<TabItem value="api" label="API">
+
+```bash
+curl -X POST "https://api.bitrise.io/rde/v1/workspaces/WORKSPACE_ID/warm-pools" \
+  -H "Authorization: token YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "ios-reviewers",
+    "template_id": "TEMPLATE_ID",
+    "warm_sessions": 2,
+    "max_sessions": 20
+  }'
+```
+
+The configuration fields are the same as the create session request's. `warm_sessions` was called `pool_size` before; the old name is still accepted and returned for one release, then removed. See [Create pool](/bitrise-rde-api/api-reference/codespaces-service-create-warm-pool) in the API reference.
+
+</TabItem>
+</Tabs>
+
+Bitrise validates the configuration the same way as a session create request. An unknown input, a missing required input, or a device the machine type can't run is rejected when you save. Warm sessions use the workspace's CPUs like any other session. If the workspace is out of CPUs and the pool can't reach its size, the pool page shows the error and the pool keeps trying.
+
+## Claiming a session
+
+<Tabs>
+<TabItem value="ui" label="RDE UI" default>
+
+1. In the Remote Dev Environments section, click **New session**. To claim from a specific pool instead, open **Pools**, select the pool, and click **Claim a session**: the form opens with the template and the pool already selected.
+1. Choose the template.
+1. In **Start from pool**, select the pool. If the template has only one pool, Bitrise selects it for you.
+1. Enter a session title and choose when the session auto-terminates.
+1. Choose the owner: **Me** (the default) or **Workspace**.
+1. Fill in the template's **On claim** and **On restore** inputs, if it has any.
+1. Click **Create**.
+
+</TabItem>
+<TabItem value="cli" label="CLI">
+
+Create a session with the pool's ID or name in the `--warm-pool` flag:
+
+```bash
+bitrise-cli rde session create my-fix --warm-pool ios-reviewers
+```
+
+`--input` and `--map-saved-inputs` fill in the template's **On claim** and **On restore** inputs.
+
+</TabItem>
+<TabItem value="mcp" label="AI agent (MCP)">
+
+Ask for it in plain language, for example: *"Start a session called my-fix from the ios-reviewers pool."* The agent calls `bitrise_devenv_list_warm_pools` to find the pools it can claim from, then `bitrise_devenv_create` with the pool's `warm_pool_id`.
+
+</TabItem>
+<TabItem value="api" label="API">
+
+Set `warm_pool_id` on the create session request and leave the configuration fields empty. Send the template's **On claim** and **On restore** inputs in `session_inputs`.
+
+```bash
+curl -X POST "https://api.bitrise.io/rde/v1/workspaces/WORKSPACE_ID/sessions" \
+  -H "Authorization: token YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "my-fix",
+    "warm_pool_id": "POOL_ID",
+    "session_inputs": [
+      { "key": "GIT_EMAIL", "value": "you@example.com" }
+    ]
+  }'
+```
+
+See [Create session](/bitrise-rde-api/api-reference/codespaces-service-create-session) in the API reference.
+
+</TabItem>
+</Tabs>
+
+The pool fixes the configuration. A claim that also passes a template, Shared or **On create** inputs, feature flags, a stack, a machine type, a cluster, or a device is rejected, not ignored. Per session, you still choose the name, description, labels, and auto-terminate window. For a pool that boots a device, you can also choose an app build to install.
+
+## Max sessions
+
+**Max sessions** is the most sessions from a pool that can be in use at once. It counts:
+
+- Warm sessions, which are booted and waiting to be claimed.
+- Claimed sessions.
+- Sessions created cold: created from the pool's configuration because no warm session was ready.
+
+The default is **No limit**: the pool always refills to its warm-session count and always grants a claim.
+
+Set a max when several groups share the workspace's CPUs and one of them must not take them all: an agent fleet that opens a session per task, or the reviewers a [device preview link](/bitrise-rde/devices/device-preview-links) serves. A pool has one machine type, so a max of 10 sessions on a 6-vCPU machine type means at most 60 vCPUs for that group.
+
+### Setting max sessions
+
+Set it in one of several ways:
+
+- When you create the pool, or later from the pool page with **Change limits**.
+- With the `bitrise-cli rde pool update --max-sessions` command.
+- With `bitrise_devenv_update_warm_pool`, 
+- With `max_sessions` on the [Update pool](/bitrise-rde-api/api-reference/codespaces-service-update-warm-pool) request. 
+
+Changing the warm sessions or the max requires the permission to view the workspace's usage; a Workspace API token always has it. A limit change never touches the warm sessions.
+
+### About the limit
+
+- It is a ceiling, not a reservation. The max stops a pool from taking more. It holds nothing for a pool that is idle, and the maxes of all pools together can add up to more than the workspace's CPU quota. A pool under its max can still be refused because the workspace is out of CPUs.
+- In use means the session's machine is starting, running, terminating, or draining. It's what the **Usage** page counts. A terminated session frees its place.
+- Warm sessions fill the room the max leaves. Claiming a warm session at the max always succeeds; it is a claim that finds no warm session that is refused. The warm sessions can't be more than the max.
+- Restores count. Restoring a terminated session, or starting a failed one, takes a place in the pool again. When the pool is full, the restore is refused, and the session stays terminated and intact.
+- **Full** is what the pool shows when its sessions in use have reached the max. **Over max** is what it shows after the max was lowered below the number in use: nothing is terminated, and claims are refused until enough sessions end. The pool page, the pools list, the **Usage** page, `bitrise-cli rde pool list`, and `status.limit_state` in the API all show the state.
+- **Refused (last 7 days)** on the pool page counts the claims and restores refused because the pool was full. A growing number means the max is too low for the demand.
+
+### Refused claims
+
+A refusal always says what happened, lists your own sessions in use from the pool or says that none of them are yours, and tells you what to do next: use one of yours, end one you're done with, or try again when a session of the pool ends. A workspace owner, or a member with a billing-managing custom role, can raise the pool's max sessions. The refusal never suggests a session outside the pool.
+
+The API answers with HTTP `429` and one of two reasons, carried in a `google.rpc.ErrorInfo` detail and in a `codespaces.v1.WarmPoolRefusal` detail with the numbers, your sessions, and the next steps:
+
+| Reason | When |
+|---|---|
+| `POOL_FULL` | The pool's sessions in use have reached its max sessions, and the claim found no warm session, or a restore or start needs a place. |
+| `CPU_QUOTA_EXHAUSTED` | The workspace is out of CPUs for the session's machine family. The pool still has room under its max; the whole workspace is full. Also returned for a session created without a pool. |
+
+The RDE UI shows the refusal on the **New session** form as soon as you select a full pool, and on the session page when a restore is refused. The CLI and the MCP tools print it as text, with your sessions from the pool, so a person or an agent reads the same words.
+
+## Keeping the pool healthy
+
+Bitrise checks every pool regularly and keeps its warm sessions at the number you set, within the room the max leaves. A few things to know:
+
+- Editing the configuration replaces the warm sessions. When you change the inputs, the feature flags, or the machine or device settings, Bitrise retires the sessions warmed with the old configuration and boots new ones. The UI warns you before you save such a change. Renaming the pool or changing its limits doesn't affect the warm sessions.
+- A template edit does the same. The pool follows its template, so editing the template's hooks or variables replaces the pool's warm sessions too.
+- A broken configuration pauses the pool. A template edit can add a required input the pool doesn't set, or remove a feature flag the pool enables. The pool then shows a configuration error and stops creating sessions until you fix it. The pool's existing warm sessions stay claimable.
+- A failing On create stops the pool. After three failures in a row, the pool shows **Setup failed**, stops warming, and refuses claims. It keeps the last failed machine for you to inspect, and **Retry** starts warming again. See [When On create fails in a pool](/bitrise-rde/configuration/lifecycle-hooks#when-on-create-fails-in-a-pool).
+- Repeated machine failures pause the pool. When machines fail to boot, the pool waits a while before it retries, so it doesn't keep starting new machines. The pool page shows the last error.
+
+## Scaling a pool on a schedule
+
+Warm sessions cost machine time while idle. To avoid that, you can scale pools on a schedule. Use a cron job with a Workspace API token:
+
+```bash
+0 8  * * 1-5  BITRISE_TOKEN=bitwat_… bitrise-cli rde pool set-size ios-reviewers 3 --workspace WORKSPACE_ID -q
+0 19 * * 1-5  BITRISE_TOKEN=bitwat_… bitrise-cli rde pool set-size ios-reviewers 0 --workspace WORKSPACE_ID -q
+```
+
+Zero warm sessions retires every warm session but keeps the pool, its configuration, and any preview links minted with it. 
+
+Deleting the pool retires its warm sessions and also invalidates its preview links. Sessions already claimed from the pool are regular sessions, and neither change affects them.
+
+## Device pools and preview links
+
+If the pool's template boots a virtual device, the pool keeps devices booted too. This is why a [device preview link](/bitrise-rde/devices/device-preview-links) opens in the time it takes to download the app. Mint the link against the pool, and every open claims one of its warm devices. See [Serving links from a pool](/bitrise-rde/devices/device-preview-links#serving-links-from-a-pool).
+
+A claim from a device pool can install an app build right away. Pass the build's URL as the session's artifact. Because the device is already running, the app installs the moment the session is handed out.
+
+## Managing pools
+
+The **Pools** page lists the workspace's pools with their sessions in use against the max, and a **Full** or **Over max** badge when it applies. From a pool's page you can manage the pool. The CLI mirrors the UI:
+
+| Task | In the UI | With the CLI |
+| --- | --- | --- |
+| List the pools | **Pools** page | `bitrise-cli rde pool list` |
+| View a pool | The pool's page | `bitrise-cli rde pool view POOL_ID` |
+| Change its limits | **Change limits** on the pool's page | `bitrise-cli rde pool update POOL_ID --max-sessions N`, or `bitrise-cli rde pool set-size POOL_ID N` for the warm sessions |
+| Edit its configuration | **Edit** on the pool's page | `bitrise-cli rde pool update POOL_ID` |
+| Claim a session | **Claim a session** on the pool's page | `bitrise-cli rde session create NAME --warm-pool POOL_ID` |
+| Start warming again after a setup failure | **Retry** in the **Setup failed** alert on the pool's page | `bitrise-cli rde pool retry POOL_ID` |
+| Delete a pool | **Delete pool** on the pool's page | `bitrise-cli rde pool delete POOL_ID` |
+
+The [API](/bitrise-rde/configuration/rde-api#pools) has an endpoint for each of these.
+
+Workspace owners and members who manage billing also see every pool, its warm sessions, and its sessions in use against the max. The pools appear on the **Usage** page and in `bitrise-cli rde pool list --all`, alongside the rest of the workspace's RDE spend.
