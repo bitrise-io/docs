@@ -25,6 +25,7 @@
   --ifm-footer-background-color: var(--pal-neutral-10);
 
   --ifm-navbar-height: 48px;
+  --hub-switcher-width: 248px;
   --ifm-navbar-background-color: var(--pal-purple-30);
   --ifm-navbar-shadow: none;
 
@@ -103,11 +104,25 @@
 
 .navbar__items--right > div:has(> .DocSearch-Button) {
   position: fixed;
-  left: max(220px, calc(50vw - 494px));
+  /* The hub switcher takes the content-aligned spot; search sits right after it. */
+  left: calc(max(220px, calc(50vw - 494px)) + var(--hub-switcher-width) + 12px);
   top: 0;
   height: var(--ifm-navbar-height);
   display: flex;
   align-items: center;
+}
+
+/* Hub switcher: pinned where the search bar used to start, same approach. */
+.navbar__items--right > .hub-switcher {
+  position: fixed;
+  left: max(220px, calc(50vw - 494px));
+  top: 0;
+  width: var(--hub-switcher-width);
+  height: var(--ifm-navbar-height);
+}
+
+html.plugin-pages .navbar__items--right > .hub-switcher {
+  display: none;
 }
 
 /* The homepage (Docusaurus's "pages" plugin, flagged by the html.plugin-pages
@@ -1042,8 +1057,18 @@ article:has([data-product-overview]) > .markdown {
     display: contents !important;
   }
 
-  .navbar__items--right > :not(div:has(> .DocSearch-Button)) {
+  .navbar__items--right > :not(div:has(> .DocSearch-Button)):not(.hub-switcher) {
     display: none !important;
+  }
+
+  /* The hub switcher shrinks to its icon and chevron, sitting just left of the
+     search button; its menu opens full width under the navbar. */
+  .navbar__items--right > .hub-switcher {
+    position: static;
+    width: auto;
+    height: auto;
+    order: 1;
+    margin-right: 0.5rem;
   }
 
   .navbar__items--right > div:has(> .DocSearch-Button) {
@@ -1086,7 +1111,9 @@ article:has([data-product-overview]) > .markdown {
 
   .navbar-sidebar {
     --ifm-navbar-sidebar-width: 100vw;
-    background-color: white;
+    /* Follows the color mode: the menu text turns light in dark mode, so a
+       fixed white panel left it unreadable. */
+    background-color: var(--background-primary);
   }
 
   .navbar-sidebar .navbar-sidebar__brand {
