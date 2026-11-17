@@ -33,7 +33,7 @@ type Hub = {
 
 // Same icons as the portal cards (src/pages/index.tsx).
 const HUBS: Hub[] = [
-  {id: 'bitrise-platform', href: '/bitrise-platform', icon: IconDashboard, label: translate({id: 'portal.bitrise-platform.title', message: 'Bitrise as a Platform'})},
+  {id: 'bitrise-platform', href: '/bitrise-platform', icon: IconDashboard, label: translate({id: 'hubSwitcher.bitrise-platform.title', message: 'Bitrise as a Platform'})},
   {id: 'bitrise-ci', href: '/bitrise-ci', icon: IconCi, alsoMatches: ['bitrise-api'], label: translate({id: 'portal.bitrise-ci.title', message: 'Bitrise CI'})},
   {id: 'bitrise-build-cache', href: '/bitrise-build-cache', icon: IconBuildCache, label: translate({id: 'portal.bitrise-build-cache.title', message: 'Build Cache'})},
   {id: 'release-management', href: '/release-management', icon: IconRelease, alsoMatches: ['release-management-api'], label: translate({id: 'portal.release-management.title', message: 'Release Management'})},
