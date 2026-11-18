@@ -73,7 +73,7 @@ workflows:
 
 Stepは、`app_path` 入力からプラットフォームを判別します。iOS の場合は `.zip`、Android の場合は上記の例のように `.apk` を指定します。`app_path` は、CI build machine 上のローカルファイルです。[Deploy to Bitrise.io](https://bitrise.io/integrations/steps/deploy-to-bitrise-io) Step が Workflow 内で先にそのファイルをアップロード済みの場合、Device Preview Step はその URL を再利用してプレビューリンクを作成します。そうでない場合は、ファイル自体をアップロードし、そこからリンクを作成します。
 
-その他の入力は、以下の[リンクオプション](#link-options)に対応しています。`device_model`、`os_version`、`system_image`、`link_ttl_hours`、`auto_terminate_minutes`、`stack`、`machine_type`、および Android のエミュレーターサイズ指定の入力です。`warm_pool_id` を指定すると、リンクを開いたときの処理を [warm pool](#serving-links-from-a-warm-pool)から提供します。すべての入力と出力は、[Step の README](https://github.com/bitrise-steplib/steps-device-preview#readme) に記載されています。
+その他の入力は、以下の[リンクオプション](#link-options)に対応しています。`device_model`、`os_version`、`system_image`、`link_ttl_hours`、`auto_terminate_minutes`、`stack`、`machine_type`、および Android のエミュレーターサイズ指定の入力です。`warm_pool_id` を指定すると、リンクを開いたときの処理を [プール](#serving-links-from-a-warm-pool)から提供します。すべての入力と出力は、[Step の README](https://github.com/bitrise-steplib/steps-device-preview#readme) に記載されています。
 
 Stepは、後続の Steps 向けに `BITRISE_DEVICE_PREVIEW_URL` と `BITRISE_DEVICE_PREVIEW_EXPIRES_AT` をエクスポートします。URL を Slack に投稿する、チェックに添付する、リリースノートに貼り付けるといった使い方ができます。Step は、リンクを作成できない場合にビルドを失敗させます。プレビューの問題でビルドを止めたくない場合は、`is_skippable: true` を設定してください。
 
@@ -141,9 +141,9 @@ curl -X POST "https://api.bitrise.io/rde/v1/workspaces/WORKSPACE_ID/preview-link
 | Auto-terminate | 最後の閲覧者が切断してから、デバイスが起動し続ける時間です。デフォルトは60分で、最短は10分です。 |
 | Stack and machine type | デバイスが実行される場所です。プラットフォームのデフォルトを使う場合は空のままにします。プラットフォームに合わない値は、リンクの発行時に拒否されます。 |
 
-## warm poolからリンクを提供する {#serving-links-from-a-warm-pool}
+##プールからリンクを提供する {#serving-links-from-a-warm-pool}
 
-プールを使わない場合、リンクを開くたびに新しいセッションが一から開始されます。マシンのプロビジョニング、セッションのセットアップの実行、シミュレーターまたはエミュレーターの起動が行われ、その後にようやくアプリがダウンロードされ、インストールされます。この起動処理が、レビュアーが待つ1〜3分のほとんどを占めます。[warm pool](/bitrise-rde/configuration/warm-pools)を使うと、この待ち時間をなくせます。アプリのデバイスを起動するテンプレートのプールに対してリンクを発行すると、リンクを開くたびに、デバイスが起動済みのウォームセッションがプールから割り当てられるため、クリックからアプリが表示されるまでの時間はアプリのダウンロード時間だけになります。その時点でプールにウォームセッションがない場合は、プールの設定から新しいセッションが作成されるため、リンクは引き続き動作しますが、表示までの時間は長くなります。
+プールを使わない場合、リンクを開くたびに新しいセッションが一から開始されます。マシンのプロビジョニング、セッションのセットアップの実行、シミュレーターまたはエミュレーターの起動が行われ、その後にようやくアプリがダウンロードされ、インストールされます。この起動処理が、レビュアーが待つ1〜3分のほとんどを占めます。[プール](/bitrise-rde/configuration/pools)を使うと、この待ち時間をなくせます。アプリのデバイスを起動するテンプレートのプールに対してリンクを発行すると、リンクを開くたびに、デバイスが起動済みのウォームセッションがプールから割り当てられるため、クリックからアプリが表示されるまでの時間はアプリのダウンロード時間だけになります。その時点でプールにウォームセッションがない場合は、プールの設定から新しいセッションが作成されるため、リンクは引き続き動作しますが、表示までの時間は長くなります。
 
 プールの設定では、アプリのプラットフォームに対応したデバイスを起動する必要があります。デバイスとマシンはプールによって固定されるため、プールに対してリンクを発行するときは、デバイスモデル、OSのバージョン、システムイメージ、エミュレーターのサイズ、スタック、マシンタイプを未設定のままにしてください。アプリのプラットフォームは引き続き検証されるため、AndroidのビルドをiOSのプールに対して発行することはできません。
 
