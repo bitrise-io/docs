@@ -44,7 +44,7 @@ DRY_RUN      = "--dry-run" in sys.argv
 INSTALL_POSITIONS: Dict[str, int] = {
     "install-claude":             1,
     "install-cursor":             2,
-    "install-gemini-cli":         3,
+    "install-antigravity-cli":    3,
     "install-kiro":               4,
     "install-other-copilot-ides": 5,
     "install-vscode":             6,
@@ -63,9 +63,9 @@ ROOT_POSITIONS: Dict[str, int] = {
 # scripts/check-descriptions-source.js fails the build when a page has none, so
 # a newly synced page needs an entry here.
 DESCRIPTIONS: Dict[str, str] = {
+    "install-antigravity-cli":    "Add the Bitrise MCP server to Google Antigravity CLI with OAuth or a personal access token, run the local server, or move over from Gemini CLI.",
     "install-claude":             "Add the Bitrise MCP server to Claude Code and Claude Desktop with OAuth, or run the local server with a personal access token.",
     "install-cursor":             "Install the Bitrise MCP server in Cursor from the marketplace or by hand, using OAuth or a personal access token.",
-    "install-gemini-cli":         "Install the Bitrise MCP server in Google Gemini CLI as an extension, as a remote server, or as a local server.",
     "install-kiro":               "Install the Bitrise MCP server in AWS Kiro as a Kiro Power, authenticating with a Bitrise personal access token.",
     "install-other-copilot-ides": "Add the Bitrise MCP server to GitHub Copilot in Visual Studio, JetBrains IDEs, Xcode, and Eclipse.",
     "install-vscode":             "Add the Bitrise MCP server to VS Code with OAuth, or fall back to a personal access token or the local server.",
