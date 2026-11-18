@@ -61,6 +61,7 @@ Disambiguation rules (shared verbatim by both consumers)
 from __future__ import annotations
 
 import bisect
+import gzip
 import json
 import re
 import sys
@@ -69,7 +70,7 @@ from dataclasses import dataclass
 
 import yaml
 
-STEP_SPEC_URL = "https://bitrise-steplib-collection.s3.amazonaws.com/spec.json"
+STEP_SPEC_URL = "https://steplib.bitrise.io/spec.json"
 
 CONTEXT_CATEGORY = "ui_labels_context_protect"
 EXACT_CASE_CATEGORIES = {"acronyms", "code_literals"}
@@ -204,8 +205,17 @@ def fetch_step_titles() -> list[str]:
     Step-name glossary tier. Network failures degrade gracefully: Step names
     just fall back to glossary coverage."""
     try:
-        with urllib.request.urlopen(STEP_SPEC_URL, timeout=30) as r:
-            data = json.loads(r.read())
+        # steplib.bitrise.io rejects urllib's default User-Agent with a 403. Asking for gzip
+        # makes the download about 1 MB instead of 27 MB.
+        req = urllib.request.Request(
+            STEP_SPEC_URL,
+            headers={"User-Agent": "Mozilla/5.0 (nt_terms)", "Accept-Encoding": "gzip"},
+        )
+        with urllib.request.urlopen(req, timeout=30) as r:
+            raw = r.read()
+            if r.headers.get("Content-Encoding") == "gzip":
+                raw = gzip.decompress(raw)
+        data = json.loads(raw)
     except Exception as e:
         print(f"  ! could not fetch step spec ({e}) — Step names rely on the glossary tier only", file=sys.stderr)
         return []

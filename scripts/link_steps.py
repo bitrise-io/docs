@@ -19,6 +19,7 @@ What it does:
   3. Single-word titles (e.g. "Script") are only linked when followed by "Step".
 """
 
+import gzip
 import json
 import re
 import subprocess
@@ -28,7 +29,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent
 DOCS_DIR  = REPO_ROOT / 'docs'
-SPEC_URL  = 'https://bitrise-steplib-collection.s3.amazonaws.com/spec.json'
+SPEC_URL  = 'https://steplib.bitrise.io/spec.json'
 DRY_RUN   = '--dry-run' in sys.argv
 
 
@@ -91,8 +92,17 @@ def _mdx_paths_from_names(names: list[str]) -> list[Path]:
 
 def fetch_mapping() -> dict[str, str]:
     print(f'Fetching {SPEC_URL} …', flush=True)
-    with urllib.request.urlopen(SPEC_URL, timeout=120) as r:
-        data = json.loads(r.read())
+    # steplib.bitrise.io rejects urllib's default User-Agent with a 403. Asking for gzip
+    # makes the download about 1 MB instead of 27 MB.
+    req = urllib.request.Request(
+        SPEC_URL,
+        headers={'User-Agent': 'Mozilla/5.0 (link_steps)', 'Accept-Encoding': 'gzip'},
+    )
+    with urllib.request.urlopen(req, timeout=120) as r:
+        raw = r.read()
+        if r.headers.get('Content-Encoding') == 'gzip':
+            raw = gzip.decompress(raw)
+    data = json.loads(raw)
 
     mapping: dict[str, str] = {}
     for slug, step in data.get('steps', {}).items():
