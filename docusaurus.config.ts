@@ -505,6 +505,10 @@ const config: Config = {
       },
       items: [
         {
+          type: 'custom-hubSwitcher',
+          position: 'right',
+        },
+        {
           type: 'search',
           position: 'right',
         },
