@@ -4,60 +4,67 @@ description: "インストゥルメンテッドテストは、実機かエミュ
 sidebar_position: 2
 slug: /bitrise-ci/testing/testing-android-apps/running-instrumented-tests-for-android-apps
 ---
-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 
-[インストルメンテッドテスト](https://developer.android.com/training/testing/instrumented-tests)は、実機かエミュレーターかを問わず、Androidデバイスで実行します。Bitriseでは、[adbツール](https://developer.android.com/tools/adb)を使用してインストルメンテッドテストを実行できます。インストルメンテッドテストを実行するには、<GlossTerm baseform="Workflow">Workflow</GlossTerm>内に2つの<GlossTerm baseform="Step">Steps</GlossTerm>が必要です。
+[Instrumented tests](https://developer.android.com/training/testing/instrumented-tests)は、物理デバイスかエミュレーターかを問わず、Android デバイス上で実行されます。Bitrise では、[adb ツール](https://developer.android.com/tools/adb)を使用して instrumented tests を実行できます。instrumented tests を実行するには、<GlossTerm baseform="Workflow">Workflow</GlossTerm> に3つの <GlossTerm baseform="Step">Steps</GlossTerm> が必要です。
 
-- [<strong>Android Build for UI testing</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing)Stepは、APKとテスト用APKの両方をビルドします。たとえば`MyappDebug.apk`と`MyAppDebugAndroidTest.apk`です。Stepは、これらのAPKのパスを2つの出力Environment Variables（BITRISE_APK_PATHとBITRISE_TEST_APK_PATH）に保存します。これらのEnv Varsを使用して、同じWorkflow内の後続のStepsでAPKにアクセスできます。
-- [<strong>Android Instrumented Test</strong>](https://github.com/bitrise-steplib/bitrise-step-android-instrumented-test)Stepは、前のStepでビルドされたAPKを使用してインストルメンテッドテストを実行します。
+- [<strong>Android Build for UI Testing</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing) Step は、APK とテスト APK の両方をビルドします。たとえば、`MyappDebug.apk` と `MyAppDebugAndroidTest.apk` です。Step は、これらの APK へのパスを BITRISE_APK_PATH と BITRISE_TEST_APK_PATH の2つの出力 Environment Variables に保存します。これらの Env Var を使用すると、同じ Workflow 内の後続の Steps から APK にアクセスできます。
+- [<strong>AVD Manager</strong>](https://github.com/bitrise-steplib/steps-avd-manager) Step は、テストを実行する Android エミュレーターを作成して起動します。デフォルトでは、エミュレーターの起動を待機し、システムアニメーションを無効にします。<strong>Disable animations</strong> 入力を `no` に設定すると待機しなくなるため、その後に [<strong>Wait for Android emulator</strong>](https://github.com/bitrise-steplib/steps-wait-for-android-emulator) Step を追加してください。
+- [<strong>Android Instrumented Test</strong>](https://github.com/bitrise-steplib/bitrise-step-android-instrumented-test) Step は、最初の Step でビルドした APK を使用して、<strong>AVD Manager</strong> Step が起動したエミュレーター上で instrumented tests を実行します。
 
-Androidでインストルメンテッドテストを実行するには：
+Android エミュレーターは macOS スタックでは動作しません。Linux Android スタックを使用してください。
+
+:::note[Test results]
+
+<strong>Android Instrumented Test</strong> Step は、テスト結果を Test reports ページに送信しません。テストが失敗すると Step は失敗し、Step のログにテスト実行の出力が表示されます。instrumented tests の結果を Test reports で確認するには、代わりに <strong>Virtual Device Testing for Android</strong> Step でテストを実行してください：[Android のデバイステスト](/bitrise-ci/testing/device-testing-with-firebase/device-testing-for-android)。
+
+:::
+
+Android の instrumented tests を実行するには：
 
 
 <Tabs>
   <TabItem value="workflow-editor" label="Workflow Editor">
 
-  1. [<strong>Android Build for UI testing</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing)StepをWorkflowに追加します。
-  1. <strong>Project location</strong>の入力がAndroidアプリのルートディレクトリを指していることを確認してください。
-  1. ビルドしたいモジュールとバリアントを<strong>Module</strong>と<strong>Variant</strong>の入力に設定します。
+  1. [<strong>Android Build for UI Testing</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing) Step を Workflow に追加します。
+  1. <strong>Project location</strong> 入力が、Android アプリのルートディレクトリを指していることを確認します。
+  1. ビルドするモジュールとバリアントを、<strong>Module</strong> 入力と <strong>Variant</strong> 入力で設定します。
 
-     利用可能なモジュールとバリアントは、[Android StudioのProjectウィンドウ](https://developer.android.com/studio/projects)で確認できます。
+     プロジェクトで利用可能なモジュールとバリアントは、[Android Studio のプロジェクトウィンドウ](https://developer.android.com/studio/projects)で確認できます。
 
      ![build-forui-tsting.png](/img/_paligo/uuid-9de8c3bc-abac-16bb-8a19-be18a97ac998.png)
-  1. <strong>Options</strong>の入力グループでは、<strong>APK location pattern</strong>の入力で生成されるAPKファイルの場所を設定できます。
+  1. <strong>Options</strong> 入力グループの <strong>APK location pattern</strong> 入力で、生成される APK ファイルの場所を設定できます。
 
-     この入力にはファイルパターンを値として指定します。default valueは`*/build/outputs/apk/*.apk`です。
-  1. 必要に応じて、<strong>Additional Gradle Arguments</strong>の入力でビルドタスクに[additional Gradle argumentsを渡す](https://docs.gradle.org/current/userguide/custom_tasks.html#sec:declaring_and_using_command_line_options)こともできます。
-  1. [<strong>Android Build for UI testing</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing)Stepの後の任意の時点で、[<strong>Android Instrumented Test</strong>](https://github.com/bitrise-steplib/bitrise-step-android-instrumented-test)StepをWorkflowに追加します。
-  1. <strong>Main APK path</strong>と<strong>Test APK path</strong>の入力が正しい場所を指していることを確認してください。
+     この入力は、値としてファイルパターンを受け取ります。default value は `*/build/outputs/apk/*.apk` です。
+  1. 必要に応じて、<strong>Additional Gradle Arguments</strong> 入力で、ビルドタスクに[additional Gradle arguments を渡す](https://docs.gradle.org/current/userguide/custom_tasks.html#sec:declaring_and_using_command_line_options)こともできます。
+  1. [<strong>AVD Manager</strong>](https://github.com/bitrise-steplib/steps-avd-manager) Step を Workflow に追加し、<strong>Android API Level</strong>、<strong>OS Tag</strong>、<strong>ABI</strong> の各入力でエミュレーターを設定します。たとえば、`34`、`google_apis`、`x86_64` です。ABI はスタックの CPU アーキテクチャと一致している必要があります。
+  1. [<strong>AVD Manager</strong>](https://github.com/bitrise-steplib/steps-avd-manager) Step の後に、[<strong>Android Instrumented Test</strong>](https://github.com/bitrise-steplib/bitrise-step-android-instrumented-test) Step を Workflow に追加します。
+  1. <strong>Main APK path</strong> 入力と <strong>Test APK path</strong> 入力が、正しい場所を指していることを確認します。
 
-     デフォルトでは、2つの入力の値はそれぞれBITRISE_APK_PATHとBITRISE_TEST_APK_PATHのEnvironment Variablesです。これらの変数は[<strong>Android Build for UI testing</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing)Stepによってエクスポートされます。そのため、ほとんどの場合、これらの入力の値を変更する必要はありません。
+     デフォルトでは、この2つの入力の値は、それぞれ BITRISE_APK_PATH と BITRISE_TEST_APK_PATH Environment Variables です。これらの変数は、[<strong>Android Build for UI Testing</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build-for-ui-testing) Step によってエクスポートされます。そのため、ほとんどの場合、これらの入力の値を変更する必要はありません。
 
      ![android-instrumented.png](/img/_paligo/uuid-ab9cf08d-eb9e-d46d-7bb2-740827ec96b9.png)
-  1. <strong>Test runner class</strong>の入力で、使用したいテストランナーを指定します。
+  1. <strong>Test runner class</strong> 入力で、使用するテストランナーを指定します。
 
-     デフォルトのランナーは[AndroidJUnitRunnerクラス](https://developer.android.com/training/testing/instrumented-tests/androidx-test-libraries/runner)です。
-  1. 必要に応じて、<strong>Additional testing options</strong>の入力を使用してテストランナーに追加のオプションを渡すことができます。
+     デフォルトのランナーは、[AndroidJUnitRunner クラス](https://developer.android.com/training/testing/instrumented-tests/androidx-test-libraries/runner)です。
+  1. 必要に応じて、<strong>Additional testing options</strong> 入力で、テストランナーに追加のオプションを渡せます。
 
-     この入力を使用すると、`adb`シェルのactivity managerツールにコマンドを発行できます。発行可能なコマンドの詳細については、[adbの公式ドキュメント](https://developer.android.com/tools/adb#issuingcommands)を参照してください。
-  1. テスト結果を表示するには、[<strong>Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files</strong>](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io)StepをWorkflowに追加します。[テスト結果のデプロイ](/bitrise-ci/testing/test-reports/deploying-test-results)。
+     この入力では、`adb` シェルのアクティビティマネージャーツールにコマンドを発行します。発行できるコマンドの詳細については、[adb の公式ドキュメント](https://developer.android.com/tools/adb#issuingcommands)を参照してください。
 
   </TabItem>
   <TabItem value="yaml" label="Configuration YAML">
 
-  1. `android-build-for-ui-testing`StepをWorkflowに追加します。
+  1. `android-build-for-ui-testing` Step を Workflow に追加します。
 
      ```yaml
      steps:
          - git-clone: {}
          - android-build-for-ui-testing:
              inputs:
-         - deploy-to-bitrise-io: {}
      ```
-  1. `project_location`の入力がAndroidアプリのルートディレクトリを指していることを確認してください。
+  1. `project_location` 入力が、Android アプリのルートディレクトリを指していることを確認します。
 
      ```yaml
      steps:
@@ -65,11 +72,10 @@ Androidでインストルメンテッドテストを実行するには：
          - android-build-for-ui-testing:
              inputs:
              - project_location: $BITRISE_SOURCE_DIR
-         - deploy-to-bitrise-io: {}
      ```
-  1. ビルドしたいモジュールとバリアントを`module`と`variant`の入力に設定します。
+  1. ビルドするモジュールとバリアントを、`module` 入力と `variant` 入力で設定します。
 
-     利用可能なモジュールとバリアントは、[Android StudioのProjectウィンドウ](https://developer.android.com/studio/projects)で確認できます。
+     プロジェクトで利用可能なモジュールとバリアントは、[Android Studio のプロジェクトウィンドウ](https://developer.android.com/studio/projects)で確認できます。
 
      ```yaml
      steps:
@@ -79,25 +85,22 @@ Androidでインストルメンテッドテストを実行するには：
              - module: app
              - variant: debug
              - project_location: $BITRISE_SOURCE_DIR
-         - deploy-to-bitrise-io: {}
      ```
-  1. `apk_path_pattern`の入力で、生成されるAPKファイルの場所を設定できます。
+  1. `apk_path_pattern` 入力で、生成される APK ファイルの場所を設定できます。
 
-     この入力にはファイルパターンを値として指定します。default valueは`*/build/outputs/apk/*.apk`です。
+     この入力は、値としてファイルパターンを受け取ります。default value は `*/build/outputs/apk/*.apk` です。
 
      ```yaml
      steps:
          - git-clone: {}
          - android-build-for-ui-testing:
              inputs:
-             - arguments: flag
              - module: app
              - variant: debug
              - apk_path_pattern: '*/build/outputs/apk/*.apk'
              - project_location: $BITRISE_SOURCE_DIR
-         - deploy-to-bitrise-io: {}
      ```
-  1. 必要に応じて、`arguments`の入力でビルドタスクに[additional Gradle argumentsを渡す](https://docs.gradle.org/current/userguide/custom_tasks.html#sec:declaring_and_using_command_line_options)こともできます。
+  1. 必要に応じて、`arguments` 入力で、ビルドタスクに[additional Gradle arguments を渡す](https://docs.gradle.org/current/userguide/custom_tasks.html#sec:declaring_and_using_command_line_options)こともできます。
 
      ```yaml
      steps:
@@ -109,92 +112,115 @@ Androidでインストルメンテッドテストを実行するには：
              - variant: debug
              - apk_path_pattern: '*/build/outputs/apk/*.apk'
              - project_location: $BITRISE_SOURCE_DIR
-         - deploy-to-bitrise-io: {}
      ```
-  1. `android-build-for-ui-testing`Stepの後の任意の時点で、`android-instrumented-test`StepをWorkflowに追加します。
+  1. `avd-manager` Step を Workflow に追加し、`api_level`、`tag`、`abi` の各入力でエミュレーターを設定します。ABI はスタックの CPU アーキテクチャと一致している必要があります。
 
      ```yaml
      steps:
          - git-clone: {}
          - android-build-for-ui-testing:
              inputs:
-             - arguments: flag
              - module: app
              - variant: debug
              - apk_path_pattern: '*/build/outputs/apk/*.apk'
-             - cache_level: all
              - project_location: $BITRISE_SOURCE_DIR
+         - avd-manager:
+             inputs:
+             - api_level: 34
+             - tag: google_apis
+             - abi: x86_64
+     ```
+  1. `avd-manager` Step の後に、`android-instrumented-test` Step を Workflow に追加します。
+
+     ```yaml
+     steps:
+         - git-clone: {}
+         - android-build-for-ui-testing:
+             inputs:
+             - module: app
+             - variant: debug
+             - apk_path_pattern: '*/build/outputs/apk/*.apk'
+             - project_location: $BITRISE_SOURCE_DIR
+         - avd-manager:
+             inputs:
+             - api_level: 34
+             - tag: google_apis
+             - abi: x86_64
          - android-instrumented-test:
              inputs:
-         - deploy-to-bitrise-io: {}
      ```
-  1. `main_apk_path`と`test_apk_path`の入力が正しい場所を指していることを確認してください。
+  1. `main_apk_path` 入力と `test_apk_path` 入力が、正しい場所を指していることを確認します。
 
-     デフォルトでは、2つの入力の値はそれぞれBITRISE_APK_PATHとBITRISE_TEST_APK_PATHのEnvironment Variablesです。これらの変数は`android-build-for-ui-testing`Stepによってエクスポートされます。そのため、ほとんどの場合、これらの入力の値を設定する必要はありません。
+     デフォルトでは、この2つの入力の値は、それぞれ BITRISE_APK_PATH と BITRISE_TEST_APK_PATH Environment Variables です。これらの変数は、`android-build-for-ui-testing` Step によってエクスポートされます。そのため、ほとんどの場合、これらの入力の値を設定する必要はありません。
 
      ```yaml
      steps:
          - git-clone: {}
          - android-build-for-ui-testing:
              inputs:
-             - arguments: flag
              - module: app
              - variant: debug
              - apk_path_pattern: '*/build/outputs/apk/*.apk'
-             - cache_level: all
              - project_location: $BITRISE_SOURCE_DIR
+         - avd-manager:
+             inputs:
+             - api_level: 34
+             - tag: google_apis
+             - abi: x86_64
          - android-instrumented-test:
              inputs:
              - main_apk_path: $BITRISE_APK_PATH
              - test_apk_path: $BITRISE_TEST_APK_PATH
-         - deploy-to-bitrise-io: {}
      ```
-  1. `test_runner_class`の入力で、使用したいテストランナーを指定します。
+  1. `test_runner_class` 入力で、使用するテストランナーを指定します。
 
-     デフォルトのランナーは[AndroidJUnitRunnerクラス](https://developer.android.com/training/testing/instrumented-tests/androidx-test-libraries/runner)です。
+     デフォルトのランナーは、[AndroidJUnitRunner クラス](https://developer.android.com/training/testing/instrumented-tests/androidx-test-libraries/runner)です。
 
      ```yaml
      steps:
          - git-clone: {}
          - android-build-for-ui-testing:
              inputs:
-             - arguments: flag
              - module: app
              - variant: debug
              - apk_path_pattern: '*/build/outputs/apk/*.apk'
-             - cache_level: all
              - project_location: $BITRISE_SOURCE_DIR
+         - avd-manager:
+             inputs:
+             - api_level: 34
+             - tag: google_apis
+             - abi: x86_64
          - android-instrumented-test:
              inputs:
              - test_runner_class: androidx.test.runner.AndroidJUnitRunner
              - main_apk_path: $BITRISE_APK_PATH
              - test_apk_path: $BITRISE_TEST_APK_PATH
-         - deploy-to-bitrise-io: {}
      ```
-  1. 必要に応じて、`additional_testing_options`の入力を使用してテストランナーに追加のオプションを渡すことができます。
+  1. 必要に応じて、`additional_testing_options` 入力で、テストランナーに追加のオプションを渡せます。
 
-     この入力を使用すると、`adb`シェルのactivity managerツールにコマンドを発行できます。発行可能なコマンドの詳細については、[adbの公式ドキュメント](https://developer.android.com/tools/adb#issuingcommands)を参照してください。たとえば、値`KEY1 true KEY2 false`はadbに`adb shell am instrument -e "KEY1" "true" "KEY2" "false" [...]`として渡されます。
+     この入力では、`adb` シェルのアクティビティマネージャーツールにコマンドを発行します。発行できるコマンドの詳細については、[adb の公式ドキュメント](https://developer.android.com/tools/adb#issuingcommands)を参照してください。たとえば、値 `KEY1 true KEY2 false` は adb に `adb shell am instrument -e "KEY1" "true" "KEY2" "false" [...]` として渡されます。
 
      ```yaml
      steps:
          - git-clone: {}
          - android-build-for-ui-testing:
              inputs:
-             - arguments: flag
              - module: app
              - variant: debug
              - apk_path_pattern: '*/build/outputs/apk/*.apk'
-             - cache_level: all
              - project_location: $BITRISE_SOURCE_DIR
+         - avd-manager:
+             inputs:
+             - api_level: 34
+             - tag: google_apis
+             - abi: x86_64
          - android-instrumented-test:
              inputs:
              - test_runner_class: androidx.test.runner.AndroidJUnitRunner
              - additional_testing_options: KEY1 true KEY2 false
              - main_apk_path: $BITRISE_APK_PATH
              - test_apk_path: $BITRISE_TEST_APK_PATH
-         - deploy-to-bitrise-io: {}
      ```
-  1. テスト結果を表示するには、[<strong>Deploy to Bitrise.io - Build Artifacts, Test Reports, and Pipeline intermediate files</strong>](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io)StepをWorkflowに追加します。[テスト結果のデプロイ](/bitrise-ci/testing/test-reports/deploying-test-results)。
 
   </TabItem>
 </Tabs>

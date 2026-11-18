@@ -24,24 +24,24 @@ build machine で実行できるエミュレーターまたはシミュレータ
 
 次のものを用意してください。
 
-- リポジトリ内の Maestro フロー。デフォルトでは、Step は `.maestro` フォルダー内のフローを実行します。他のフローファイルやフォルダーを実行するには、<strong>Flow path</strong> 入力に指定してください。フローの書き方については、[Maestro のドキュメント](https://docs.maestro.dev)を参照してください。
-- アプリの `.apk`。React Native や Flutter など、どのフレームワークでも使用できます。Step は Maestro のウェブフローを実行しません。
+- リポジトリ内の Maestro フロー。デフォルトでは、Step は `.maestro` フォルダー内のフローを実行します。他のフローファイルやフォルダーを実行するには、<strong>Flow path</strong> 入力に指定します。フローの書き方については、[Maestro のドキュメント](https://docs.maestro.dev)を参照してください。
+- アプリの `.apk`。React Native や Flutter など、どのフレームワークでも使用できます。Step は Maestro の Web フローを実行しません。
 - Linux Android [スタック](/bitrise-ci/configure-builds/configuring-build-settings/setting-the-stack-for-your-builds)。Android エミュレーターは macOS スタックでは動作しません。
 
 <Tabs>
 <TabItem value="workflow-editor" label="Workflow Editor" default>
 
-1. <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm> で、使用する Workflow を開きます。
-1. [<strong>Android Build</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build) Step を追加し、<strong>Module</strong> と <strong>Variant</strong> の入力を設定します。
-1. [<strong>AVD Manager</strong>](https://github.com/bitrise-steplib/steps-avd-manager) Step を追加し、<strong>Android API Level</strong>、<strong>OS Tag</strong>、<strong>ABI</strong> の入力でエミュレーターを設定します。ABI はスタックの CPU アーキテクチャと一致している必要があります。
-1. <strong>Maestro Test</strong> Step を追加し、<strong>App path</strong> 入力を `$BITRISE_APK_PATH` に設定します。
+1. <GlossTerm baseform="Workflow Editor">Workflow Editor</GlossTerm> で使用する Workflow を開きます。
+1. [<strong>Android Build</strong>](https://github.com/bitrise-steplib/bitrise-step-android-build) Step を追加し、<strong>Module</strong> 入力と <strong>Variant</strong> 入力を設定します。
+1. [<strong>AVD Manager</strong>](https://github.com/bitrise-steplib/steps-avd-manager) Step を追加し、<strong>Android API Level</strong>、<strong>OS Tag</strong>、<strong>ABI</strong> の各入力でエミュレーターを設定します。ABI はスタックの CPU アーキテクチャと一致している必要があります。
+1. <strong>Maestro Test</strong> Step を追加し、その <strong>App path</strong> 入力を `$BITRISE_APK_PATH` に設定します。
 1. [<strong>Deploy to Bitrise.io</strong>](https://github.com/bitrise-steplib/steps-deploy-to-bitrise-io) Step を追加します。
 
 </TabItem>
 <TabItem value="configuration-yaml" label="Configuration YAML">
 
 1. アプリの <GlossTerm baseform="configuration yaml">Configuration YAML</GlossTerm> ファイルを開きます。
-1. Workflow に `android-build` Step を追加し、`module` と `variant` の入力を設定します。Step はアプリの APK をビルドします。
+1. `android-build` Step を Workflow に追加し、`module` 入力と `variant` 入力を設定します。Step はアプリの APK をビルドします。
 
    ```yaml
    - android-build:
@@ -50,7 +50,7 @@ build machine で実行できるエミュレーターまたはシミュレータ
        - variant: debug
    ```
 
-1. `avd-manager` Step を追加し、`api_level`、`tag`、`abi` の入力でエミュレーターを設定します。`maestro-test` Step はデバイスを起動しないため、この Step がエミュレーターを起動します。ABI はスタックの CPU アーキテクチャと一致している必要があります。
+1. `avd-manager` Step を追加し、`api_level`、`tag`、`abi` の各入力でエミュレーターを設定します。`maestro-test` Step はデバイスを起動しないため、この Step がエミュレーターを起動します。ABI はスタックの CPU アーキテクチャと一致している必要があります。
 
    ```yaml
    - avd-manager:
@@ -60,7 +60,7 @@ build machine で実行できるエミュレーターまたはシミュレータ
        - abi: x86_64
    ```
 
-1. `maestro-test` Step を追加し、`app_path` 入力を、`android-build` Step がエクスポートする APK である `$BITRISE_APK_PATH` に設定します。
+1. `maestro-test` Step を追加し、その `app_path` 入力を、`android-build` Step がエクスポートする APK である `$BITRISE_APK_PATH` に設定します。
 
    ```yaml
    - maestro-test:
@@ -68,7 +68,7 @@ build machine で実行できるエミュレーターまたはシミュレータ
        - app_path: $BITRISE_APK_PATH
    ```
 
-1. `deploy-to-bitrise-io` Step を追加して、Test Reports ページに結果が表示されるようにします。
+1. 結果を Test Reports ページに表示するため、`deploy-to-bitrise-io` Step を追加します。
 
    ```yaml
    - deploy-to-bitrise-io: {}
@@ -99,7 +99,9 @@ workflows:
 </TabItem>
 </Tabs>
 
-エミュレーターには Android App Bundle（`.aab`）をインストールできません。App Bundle をビルドする場合は、<strong>Maestro Test</strong> Step の前に <strong>Export Universal APK</strong> Step で APK に変換してください。
+デフォルトでは、<strong>AVD Manager</strong> Step はエミュレーターの起動を待ちます。<strong>Disable animations</strong> 入力を `no` に設定すると待機しなくなります。その場合は、<strong>Maestro Test</strong> Step が起動済みのエミュレーターを見つけられるように、その後に [<strong>Wait for Android emulator</strong>](https://github.com/bitrise-steplib/steps-wait-for-android-emulator) Step を追加してください。
+
+エミュレーターには Android App Bundle（`.aab`）をインストールできません。App Bundle をビルドする場合は、<strong>Maestro Test</strong> Step の前に、<strong>Export Universal APK</strong> Step で APK に変換してください。
 
 ### iOS アプリ {#ios-apps}
 
@@ -245,7 +247,7 @@ Step は、セットアップなしで、デフォルトで隔離されたフロ
 
 Step は、<strong>Flow path</strong> フォルダー内のパスでフローを照合します。別の <strong>Flow path</strong> フォルダーに同じパスのファイルがある場合、Step はそのファイルもスキップし、警告をログに記録します。
 
-隔離は 1 つのプラットフォームに適用されます。Step は各フローをクラス名 `<platform>:<flow file>`（例: `android:.maestro/login.yaml`）で報告するため、Android で隔離されたフローも iOS では引き続き実行されます。
+隔離は 1 つのプラットフォームに適用されます。Step は各フローをクラス名 `<platform>:<flow file>`（例： `android:.maestro/login.yaml`）で報告するため、Android で隔離されたフローも iOS では引き続き実行されます。
 
 :::important[バージョン要件]
 
@@ -257,7 +259,7 @@ Step が <strong>Flow path</strong> フォルダー内で見つけたフロー�
 
 Maestro 独自のシャーディングは 1 台のマシン上に複数のデバイスを必要としますが、<strong>Maestro Test</strong> Step はこれをサポートしていません。代わりに、<GlossTerm baseform="Pipeline">Pipeline</GlossTerm> で Workflow のコピーを並列に実行し、それぞれを専用の仮想マシンで動かします。詳しくは、[Pipelines での並列実行](/bitrise-ci/workflows-and-pipelines/build-pipelines/configuring-a-bitrise-pipeline#running-variations-of-the-same-workflow)を参照してください。
 
-1. 各フローに、それを実行するコピーを示すタグを付けます: `shard0`、`shard1` など。
+1. 各フローに、それを実行するコピーを示すタグを付けます： `shard0`、`shard1` など。
 1. <strong>Include tags</strong> を `shard$BITRISE_IO_PARALLEL_INDEX` に設定します。各コピーには、この Env Var 内で 0 から始まる固有のインデックスが割り当てられます。
 1. 結果が Test Reports ページで混ざらないように、コピーごとに異なる <strong>Test name</strong> を設定します。
 
