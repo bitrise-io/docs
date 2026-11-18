@@ -31,7 +31,7 @@ Term sources
         the tagger doesn't (2-char acronyms are invisible to the env_var
         protect pattern, which needs 3+ ALL-CAPS chars).
       * everything else -> always protected
-  - the live steplib spec.json — canonical Step titles (the same source
+  - the live steplib slim-spec.json — canonical Step titles (the same source
     scripts/link_steps.py uses), merged in on top of the glossary tiers.
     Network failures degrade gracefully to glossary-only coverage.
 
@@ -70,7 +70,7 @@ from dataclasses import dataclass
 
 import yaml
 
-STEP_SPEC_URL = "https://steplib.bitrise.io/spec.json"
+STEP_SPEC_URL = "https://steplib.bitrise.io/slim-spec.json"
 
 CONTEXT_CATEGORY = "ui_labels_context_protect"
 EXACT_CASE_CATEGORIES = {"acronyms", "code_literals"}
@@ -206,7 +206,7 @@ def fetch_step_titles() -> list[str]:
     just fall back to glossary coverage."""
     try:
         # steplib.bitrise.io rejects urllib's default User-Agent with a 403. Asking for gzip
-        # makes the download about 1 MB instead of 27 MB.
+        # keeps the download under 1 MB.
         req = urllib.request.Request(
             STEP_SPEC_URL,
             headers={"User-Agent": "Mozilla/5.0 (nt_terms)", "Accept-Encoding": "gzip"},

@@ -10,7 +10,7 @@ Usage:
   python3 scripts/link_steps.py --commit abc123  # files changed in commit
 
 What it does:
-  1. Fetches spec.json from S3 and builds a title → source_code_url mapping
+  1. Fetches slim-spec.json from steplib.bitrise.io and builds a title → source_code_url mapping
      from each step's latest version.
   2. For every target .mdx file:
      a. Rewrites existing [text](bitrise.io/integrations/...) links whose text
@@ -29,7 +29,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent
 DOCS_DIR  = REPO_ROOT / 'docs'
-SPEC_URL  = 'https://steplib.bitrise.io/spec.json'
+SPEC_URL  = 'https://steplib.bitrise.io/slim-spec.json'
 DRY_RUN   = '--dry-run' in sys.argv
 
 
@@ -93,7 +93,7 @@ def _mdx_paths_from_names(names: list[str]) -> list[Path]:
 def fetch_mapping() -> dict[str, str]:
     print(f'Fetching {SPEC_URL} …', flush=True)
     # steplib.bitrise.io rejects urllib's default User-Agent with a 403. Asking for gzip
-    # makes the download about 1 MB instead of 27 MB.
+    # keeps the download under 1 MB.
     req = urllib.request.Request(
         SPEC_URL,
         headers={'User-Agent': 'Mozilla/5.0 (link_steps)', 'Accept-Encoding': 'gzip'},

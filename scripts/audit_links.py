@@ -31,7 +31,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent
 DOCS_DIR  = REPO_ROOT / 'docs'
-SPEC_URL  = 'https://steplib.bitrise.io/spec.json'
+SPEC_URL  = 'https://steplib.bitrise.io/slim-spec.json'
 
 SKIP_DOMAINS = {'bitrise.io', 'app.bitrise.io', 'www.bitrise.io', 'api.bitrise.io'}
 
@@ -149,7 +149,7 @@ def normalise_internal(url: str) -> tuple:
 def fetch_step_urls() -> set[str]:
     print('Fetching steplib spec to identify step links …', flush=True)
     # steplib.bitrise.io rejects urllib's default User-Agent with a 403. Asking for gzip
-    # makes the download about 1 MB instead of 27 MB.
+    # keeps the download under 1 MB.
     req = urllib.request.Request(
         SPEC_URL,
         headers={'User-Agent': 'Mozilla/5.0 (audit_links)', 'Accept-Encoding': 'gzip'},
