@@ -1,165 +1,130 @@
 ---
 title: "公開インストールページからのipaファイルのインストール"
-description: ".ipaファイルは、公開インストールページから、またはビルドのArtifactsタブからインストールできます。"
+description: "公開インストールページまたは Artifacts タブを使用して、 Bitrise ビルドの .ipa ファイルを iPhone や iPad にインストールする方法と、デバイスの登録方法を説明します。"
 sidebar_position: 5
 slug: /bitrise-ci/deploying/ios-deployment/installing-an-ipa-file-from-the-public-install-page
 sidebar_label: ".ipaファイルのインストール"
 ---
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
+import Partial_AccessingBuildsTabAndSelectingABuild from '@site/i18n/ja/partials/accessing-builds-tab-and-selecting-a-build.mdx';
+import Partial_CheckingTheRequirementsForInstallingAnIpaFile from '@site/i18n/ja/partials/checking-the-requirements-for-installing-an-ipa-file.mdx';
+import Partial_InstallingTheDeviceRegistrationProfile from '@site/i18n/ja/partials/installing-the-device-registration-profile.mdx';
 
-Bitriseビルド中に生成された.ipaファイルをテストデバイスにインストールする方法は、次の2つです。
+Bitrise ビルドで生成された .ipa ファイルは、次の 2 つの方法でテストデバイスにインストールできます。
 
-- [パブリックインストールページの使用](#installing-an-ipa-file-on-test-devices-from-the-public-install-page)。パブリックインストールページは、プロビジョニングおよび登録済みのテストデバイスにアクセスできるユーザーに配布可能な生成されたURLです。
-- Bitriseのビルドページにある[<strong>Artifacts</strong>タブからファイルをダウンロードする](#installing-an-ipa-file-on-test-devices-from-the-artifacts-tab)方法。
+- [公開インストールページを使用する](#installing-an-ipa-file-on-test-devices-from-the-public-install-page)。公開インストールページは、生成された URL で、アプリのプロビジョニングが済んでいる iPhone または iPad を持つ人であれば誰とでも共有できます。 Bitrise アカウントは不要です。
+- Bitrise のビルドページの <strong>Artifacts</strong> タブを[使用する](#installing-an-ipa-file-on-test-devices-from-the-artifacts-tab)。この方法は Bitrise ユーザーのみが利用できます。
 
-テストデバイスへの.ipaファイルのインストールは、デバイスの互換性チェックの開始、テストデバイスへの構成プロファイルのインストール、そしてデバイスへのアプリのインストールという3つのフェーズで構成されています。
+## 公開インストールページの表示内容 {#what-the-public-install-page-shows}
 
-このチュートリアルでは、次の内容について説明します。
+ページには、アプリ、そのバージョン、ビルドの詳細が表示されます。 <strong>Install this version</strong> セクションの表示内容は、ページを開いたデバイスによって異なります。
 
-- Bitriseアカウントなしで登録済みのテストデバイスにアプリをインストールする方法(Bitriseを契約していないが、アプリの現在のバージョンを確認したい方向け)。
-- Bitriseにまだ登録されていないテストデバイスにアプリをインストールする方法(Bitriseユーザー向け)。
+| 表示 | 意味 | 対処方法 |
+|---|---|---|
+| <strong>Install through Safari</strong> | Safari 以外のブラウザーでページを開いています。 | Safari でページを開いてください。 |
+| <strong>Check compatibility</strong> | Bitrise がデバイスをまだ認識しておらず、 Safari で Bitrise にログインしていません。 | <strong>Check compatibility</strong> をタップして、[登録プロファイルをインストール](#installing-an-app-on-a-test-device-without-a-bitrise-account)します。 |
+| <strong>Register device</strong>（デバイスがアカウントに登録されていないというメッセージ付き） | Safari で Bitrise にログインしていますが、デバイスがアカウントに登録されていません。 | <strong>Register device</strong> をタップして、[デバイスを登録](#installing-an-app-on-a-test-device-not-registered-to-bitrise)します。 |
+| <strong>App not allowed to be installed on this device</strong> | デバイスがアプリのプロビジョニングプロファイルに含まれていません。 | チームの管理者にデバイスの追加とアプリの再ビルドを依頼してください。古いデバイスの設定をこのデバイスに復元した場合は、 <strong>clear your cache</strong> を選択してから、もう一度デバイスを登録してください。 |
+| <strong>App cannot be installed on this device</strong> | デバイスタイプまたは iOS バージョンがアプリの要件を満たしていません。メッセージに理由が表示されます。 | 互換性のあるデバイスを使用するか、 iOS を更新してください。 |
+| <strong>Install</strong> | デバイスはインストールの準備ができています。 | <strong>Install</strong> をタップします。 |
+| <strong>This version is intended for distribution via the App Store</strong> | .ipa ファイルが App Store 配布向けです。 | テストデバイスにインストールするには、開発、アドホック、またはエンタープライズ配布向けにアプリをビルドしてください。 |
 
-  :::note[Artifactsタブから.ipaファイルをインストールする]
+:::note[Safari 16.3 以前]
 
-  <strong>Artifacts</strong>タブからの.ipaファイルのインストールは、Bitriseユーザーのみが実行できます。
-
-  :::
-
-
-## インストールの準備 {#prepping-for-installation}
-
-任意のテストデバイスにアプリをインストールする前に、アプリの開発者はアプリをビルドして誰とでも共有できるようにするために、いくつかの手順を完了する必要があります。
-
-- アプリをインストールするデバイスが、開発者のAppleアカウントにテストデバイスとして登録されていること。
-- デバイスがアプリのプロビジョニングプロファイルに含まれている必要があります。
-- デバイスがアプリの最小OS要件を満たしている必要があります。
-
-テストデバイスがApple Developer portalに登録されていない場合、開発者はデバイスリストにデバイスを手動で追加し、アプリをインストールできるテストデバイスが.ipaファイルに含まれるようにアプリを再ビルドする必要があることに注意してください。また、[Bitriseにテストデバイスを登録](/bitrise-ci/testing/testing-ios-apps/registering-a-test-device)することもお勧めします。
-
-:::tip[パブリックインストールページではどのブラウザを使用すればよいですか?]
-
-テストデバイスにアプリをインストールしたい方は、アプリのパブリックインストールページを、非シークレットモードのネイティブSafariセッションで開くようにしてください。
+Safari 16.3 以前では、ページのレイアウトがよりシンプルになります。実行できる操作とボタンの名前は同じで、一部のメッセージの表現のみが少し異なります。
 
 :::
 
-### iPadOS搭載iPadでBitriseのパブリックインストールページから.ipaファイルをインストールする {#installing-an-ipa-file-from-bitrises-public-install-page-to-an-ipad-with-ipados}
+## 公開インストールページからテストデバイスに .ipa ファイルをインストールする {#installing-an-ipa-file-on-test-devices-from-the-public-install-page}
 
-iPadOSを実行しているiPadを使用している場合は、Bitriseのパブリックインストールページをモバイルモードで開くようにしてください。
+公開インストールページは、アプリの latest version を、チームメンバーや、アプリを確認したいその他の関係者と共有するのに便利な方法です。
 
-.ipaファイルのパブリックインストールページを開くと、Bitriseはデバイスが埋め込まれたプロビジョニングプロファイルに保存されているかどうかを確認します。このチェックは、デスクトップ版ではなくモバイルモードでパブリックインストールページにアクセスした場合にのみ完了します。一時的にモバイルモードに切り替えることをお勧めします。
-
-Safariアドレスバーの左隅にあるᴀAアイコンをタップし、<strong>Show Mobile Website</strong>オプションをタップすると、簡単に一時的にモバイルモードに切り替えられます。
-
-
-## 公開インストールページからテストデバイスに.ipaファイルをインストールする {#installing-an-ipa-file-on-test-devices-from-the-public-install-page}
-
-公開インストールページは、アプリのlatest versionをチームメンバーや、アプリを確認したいその他の関係者と共有するための便利な方法です。このページには、バージョン、ファイル名、サイズ、supported device types、最小OSバージョン、ビルド番号など、ビルドの重要な詳細情報がすべて含まれています。
-
-<strong>Deploy to Bitrise.io</strong> <GlossTerm baseform="step">Step</GlossTerm>を設定すると、公開インストールページへのリンクを記載したメールをユーザーに送信できます。このリンクは誰とでも共有できます。
-
-この一連の操作では、他のアプリ内ブラウザーではなく、ネイティブのSafariをシークレットモード以外で使用してください。Bitriseから届いた通知メールのリンクをタップすると、公開インストールページはネイティブのSafariで自動的に開きます。
+<strong>Deploy to Bitrise.io</strong> <GlossTerm baseform="step">Step</GlossTerm> を設定すると、公開インストールページへのリンクを記載したメールをユーザーに送信できます。このリンクは誰とでも共有できます。
 
 :::tip[アプリをダウンロードしたい場合]
 
-アプリをダウンロードして別の場所に手動でアップロードするだけの場合は、ビルドの<strong>Artifacts</strong>ページにあるダウンロードボタンを使用できます。アプリをダウンロードしても、テストデバイスにインストールできるとは限りませんのでご注意ください。
+アプリをダウンロードして手動で別の場所にアップロードするだけの場合は、ビルドの <strong>Artifacts</strong> タブで、ファイルの横にあるダウンロードアイコンを使用してください。アプリをダウンロードしても、テストデバイスにインストールできるわけではありません。
 
 :::
 
-### Bitriseアカウントがないテストデバイスにアプリをインストールする {#installing-an-app-on-a-test-device-without-a-bitrise-account}
+### Bitrise アカウントなしでテストデバイスにアプリをインストールする {#installing-an-app-on-a-test-device-without-a-bitrise-account}
 
-1. Bitriseから受け取ったリンクを長押しします。ネイティブのSafariでリンクを開くには、<strong>Open Link</strong>をタップします。公開インストールページがネイティブのSafariで開きます。メールからリンクをコピーする場合は、ネイティブのSafariに貼り付けてください。
-1. <strong>Check compatibility</strong>をタップします。代わりに<strong>Install through Safari</strong>というメッセージが表示された場合は、別のブラウザーを使用しています。ページをSafariで開いてください。
-1. ポップアップで<strong>Allow</strong>をタップして、デバイスに構成プロファイルをインストールします。この構成プロファイルにより、互換性チェックのために、デバイスのUDIDがBitriseで利用可能になります。
+1. <Partial_CheckingTheRequirementsForInstallingAnIpaFile />
+1. 公開インストールページへのリンクを、アプリ内ブラウザーではなく、 Safari の通常モード（非プライベートモード）で開きます。
 
-   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-29d5ecf3-28a9-e914-1ffa-e8f8ffa9c744.jpg)
-1. 構成プロファイルがダウンロードされたこと、および<strong>Settings</strong>アプリでインストールできることを示すポップアップが表示されます。<strong>Close</strong>をタップします。
+   リンクをコピーした場合は、 Safari に貼り付けてください。他のブラウザーでは、ページに <strong>Install through Safari</strong> メッセージが表示され、 .ipa ファイルのダウンロードしかできません。 iPad では、デフォルト設定の Safari を使用してください。モバイル版のウェブサイトをリクエストする必要はありません。
 
-   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-d443aa9e-a514-c8ab-eb2c-3ffb05847a9d.jpg)
-1. <strong>Home</strong>ボタンをタップして、ホーム画面に移動します。
+1. <strong>Check compatibility</strong> をタップします。
 
-   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-a660119f-d305-200d-a30b-8dbf66e6a054.jpg)
-1. <strong>Settings</strong>を開きます。ダウンロードしたプロファイルが<strong>Settings</strong>の上部に表示されます。左側の<strong>Profile Downloaded</strong>メニュー項目をタップして、プロファイルをインストールします。
+   このボタンは、互換性チェックのために、デバイスの UDID を Bitrise に提供する構成プロファイルをダウンロードします。
 
-   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-0f079f8c-ae86-fcff-2b7b-978d7545e551.jpg)
-1. <strong>Install</strong>をタップします。
+1. <Partial_InstallingTheDeviceRegistrationProfile />
+1. 公開インストールページで <strong>Install</strong> をタップします。
 
-   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-de20be05-7f66-9b1d-fb5d-042d92b0af3c.jpg)
-1. <strong>Enter passcode</strong>ポップアップで、デバイスのパスコードを入力します。
+   このボタンは、デバイスに互換性があり、アプリのプロビジョニングプロファイルに含まれている場合にのみ利用できます。
 
-   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-324132c7-6f52-185f-1d59-917938fd4174.jpg)
-1. もう一度<strong>Install</strong>をタップします。
+   <img src={require('@site/static/img/ios-deployment/2026-11-12-public-install-page-install-button.png').default} alt="The Install this version section of the public install page with the Install button" width="260" />
 
-   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-dd095ae4-b0b8-5e20-70db-91b30bf9b6eb.jpg)
-1. プロファイルがインストールされるまで待ちます。
+1. アプリをインストールするかどうかを尋ねる iOS のプロンプトを確認し、ホーム画面に移動してインストールの進行状況を確認します。
 
-   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-f13c2746-f8bf-10d2-0284-1090f23c47e0.jpg)
-1. プロファイルがインストールされると、公開インストールページに移動し、<strong>Install</strong>ボタンが利用できるようになっています。タップします。
-1. 次のポップアップで<strong>OK</strong>をタップします。
+インストールが完了すると、テストデバイスのホーム画面にアプリが表示されます。
 
-   ![Installing_an_ipa_file_from_the_public_install_page.png](/img/_paligo/uuid-480a1aea-dba2-c5e7-ad91-f05c9d144541.png)
-1. 最終確認として<strong>Install</strong>をタップし、<strong>Home</strong>ボタンを押します。これで、テストデバイスにアプリがインストールされます。
+### Bitrise に登録されていないテストデバイスにアプリをインストールする {#installing-an-app-on-a-test-device-not-registered-to-bitrise}
 
-   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-6556fa37-6a3c-7358-f031-137d1ca1d26c.jpg)
-1. テストデバイスのホーム画面にアプリがインストールされるまで待ちます。
+Safari で Bitrise にログインしていて、公開インストールページにデバイスがアカウントに登録されていないことと <strong>Register device</strong> ボタンが表示されている場合は、 Bitrise にデバイスを登録する必要があります。上記のフローと比べて、手順が少し増えるだけです。
 
-   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-b7e8b6d7-ad45-1950-e950-e6c37907d0d0.jpg)
+テストデバイスを登録できるのは、 Bitrise アカウントをお持ちの場合のみです。詳細は[テストデバイスの登録](/bitrise-ci/testing/testing-ios-apps/registering-a-test-device)を参照してください。
 
-テストデバイスに正常にインストールされたアプリを確認してください。
+1. <Partial_CheckingTheRequirementsForInstallingAnIpaFile />
+1. Safari で Bitrise にログインした状態で、公開インストールページへのリンクを Safari の通常モード（非プライベートモード）で開きます。
 
-### Bitriseに登録されていないテストデバイスにアプリをインストールする {#installing-an-app-on-a-test-device-not-registered-to-bitrise}
+   iPad では、デフォルト設定の Safari を使用してください。
 
-公開インストールページに、テストデバイスがアカウントに登録されていないというメッセージと<strong>Register device</strong>ボタンが表示された場合は、Bitriseにデバイスを登録する必要があります。上記の手順とは数ステップ異なるだけです。
+1. <strong>Register device</strong> をタップします。
+1. <Partial_InstallingTheDeviceRegistrationProfile />
+1. 登録ページで、 <strong>Title</strong> と <strong>Device Unique Identifier</strong> の各フィールドを確認します。
 
-テストデバイスをBitriseに追加できるのは、すでにBitriseアカウントをお持ちの場合のみです。
+   Bitrise は、両方のフィールドにデバイスの名前と UDID を入力します。変更できるのはタイトルのみです。
 
-1. <strong>Register device</strong>をタップして、デバイスの登録プロセスを開始します。
-1. <strong>Allow</strong>をタップして、構成プロファイルをダウンロードします。
+1. <strong>Register device</strong> をタップします。
 
-   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-29d5ecf3-28a9-e914-1ffa-e8f8ffa9c744.jpg)
-1. 構成プロファイルがダウンロードされたら、<strong>Close</strong>をタップします。
+   Bitrise が公開インストールページに戻します。
 
-   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-d443aa9e-a514-c8ab-eb2c-3ffb05847a9d.jpg)
-1. <strong>Home</strong>ボタンをタップして、テストデバイスのホーム画面にある<strong>Settings</strong>アプリに移動します。
+1. <strong>Install</strong> をタップします。
 
-   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-a660119f-d305-200d-a30b-8dbf66e6a054.jpg)
-1. <strong>Settings</strong>を開きます。ダウンロードしたプロファイルが<strong>Settings</strong>の上部に表示されます。左側の<strong>Profile Downloaded</strong>メニュー項目をタップして、プロファイルをインストールします。
+   代わりにページに <strong>App not allowed to be installed on this device</strong> と表示される場合は、デバイスがまだアプリのプロビジョニングプロファイルに含まれていません。 Apple Developer アカウントでデバイスを追加し、アプリを再ビルドしてください。
 
-   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-0f079f8c-ae86-fcff-2b7b-978d7545e551.jpg)
-1. <strong>Install</strong>をタップします。
+1. アプリをインストールするかどうかを尋ねる iOS のプロンプトを確認し、ホーム画面に移動してインストールの進行状況を確認します。
 
-   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-de20be05-7f66-9b1d-fb5d-042d92b0af3c.jpg)
-1. <strong>Enter Passcode</strong>ポップアップで、デバイスのパスコードを入力します。
+インストールが完了すると、テストデバイスのホーム画面にアプリが表示されます。
 
-   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-324132c7-6f52-185f-1d59-917938fd4174.jpg)
-1. <strong>Install Profile</strong>ポップアップで、もう一度<strong>Install</strong>をタップします。
+## Artifacts タブからテストデバイスに .ipa ファイルをインストールする {#installing-an-ipa-file-on-test-devices-from-the-artifacts-tab}
 
-   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-dd095ae4-b0b8-5e20-70db-91b30bf9b6eb.jpg)
-1. プロファイルのインストールが完了するまで待ちます。自動的にデバイス登録ページにリダイレクトされます。
+ビルドの <strong>Artifacts</strong> タブから .ipa ファイルをインストールできます。この方法は公開インストールページよりも安全ですが、テストデバイスで Bitrise アカウントにログインする必要があります。そのため、外部のテスターには適していません。
 
-   ![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-f13c2746-f8bf-10d2-0284-1090f23c47e0.jpg)
-1. <strong>Title</strong>フィールドと<strong>Device Unique Identifier</strong>フィールドには、デバイスの名前とUDIDが自動的に入力されます。変更できるのはタイトルのみです。<strong>Register device</strong>をタップします。
-1. 公開インストールページに移動し、<strong>Install</strong>ボタンが利用できるようになっています。タップします。
-1. プロンプトで<strong>OK</strong>をタップします。
+<strong>Artifacts</strong> タブから .ipa ファイルをインストールするには、次の手順を実行します。
 
-   ![Installing_an_ipa_file_from_the_public_install_page.png](/img/_paligo/uuid-480a1aea-dba2-c5e7-ad91-f05c9d144541.png)
-1. テストデバイスにアプリをインストールするには、<strong>Install</strong>をタップします。次に、<strong>Home</strong>ボタンを押して、アプリのインストールの進行状況を確認します。
+1. <Partial_CheckingTheRequirementsForInstallingAnIpaFile />
+1. <Partial_AccessingBuildsTabAndSelectingABuild />
+1. <strong>Artifacts</strong> タブを開きます。
+1. <strong>Installable app packages</strong> セクションで .ipa ファイルを見つけ、横にある矢印アイコン（<strong>View artifact</strong>）をクリックします。
 
-すべてがうまくいけば、テストデバイスのホーム画面にインストールされたアプリが表示されます。
+   ダウンロードアイコンでは、ファイルがダウンロードされるだけです。
 
-![Installing_an_ipa_file_from_the_public_install_page.jpg](/img/_paligo/uuid-b7e8b6d7-ad45-1950-e950-e6c37907d0d0.jpg)
+1. アーティファクトページで、テストデバイスで QR コードをスキャンするか、 <strong>Copy page URL</strong> をクリックして、デバイスでリンクを開きます。
 
+   Safari の通常モードで開き、 Safari からログインを求められた場合は Bitrise にログインしてください。このページでは認証が必要です。
 
-## Artifactsタブからテストデバイスに.ipaファイルをインストールする {#installing-an-ipa-file-on-test-devices-from-the-artifacts-tab}
+1. ページに <strong>Register this device</strong> と表示された場合は、 <strong>Register device</strong> をタップして、画面の指示に従います。
 
-アプリのビルドの<strong>Artifacts</strong>タブから.ipaファイルをインストールできます。この方法は、公開インストールページよりも安全ですが、Bitriseアカウントにログインする必要があるため、外部のテスターには向いていません。
+   詳細は[テストデバイスの登録](/bitrise-ci/testing/testing-ios-apps/registering-a-test-device)を参照してください。
 
-<strong>Artifacts</strong>タブから.ipaファイルをインストールするには、次の手順を行います。
+1. <strong>Install</strong> をタップし、アプリをインストールするかどうかを尋ねる iOS のプロンプトを確認します。
 
-1. Bitriseでアプリを開きます。
-1. インストールしたい.ipaファイルを含むビルドを選択します。
-1. <strong>Artifacts</strong>タブに移動します。
-1. .ipaファイルの横にある<strong>Download</strong>をクリックします。
-1. <strong>Install the app on your iOS device</strong>セクションの下にある<strong>Install</strong>をクリックします。
+:::note[コンピューターへのインストール]
+
+アーティファクトページを Safari 以外のブラウザーで開くと、 <strong>Install</strong> は表示されません。 <strong>Install through Safari</strong> メッセージ、 <strong>Download artifact</strong> 、 <strong>Copy page URL</strong> のみが表示されます。
+
+:::
+
+同じページには <strong>Public install link</strong> セクションがあり、公開インストールページへのリンクを取得したり、使用できるユーザーを管理したりできます。
