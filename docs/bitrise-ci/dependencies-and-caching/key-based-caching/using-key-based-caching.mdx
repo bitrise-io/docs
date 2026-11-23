@@ -24,7 +24,7 @@ For a full list of dedicated key-based caching Steps, check out [Dedicated cachi
 
 :::
 
-Both Steps access cache archives via key strings. These keys need to be specified as the values of the **Cache keys** [Step input](/bitrise-ci/workflows-and-pipelines/steps/step-inputs); each key identifies a separate cache archive.
+Both Steps access cache archives via key strings. These keys need to be specified as the values of the **Cache key** input of the **Save Cache** Step and the **Cache keys** input of the **Restore Cache** Step ([Step inputs](/bitrise-ci/workflows-and-pipelines/steps/step-inputs)); each key identifies a separate cache archive.
 
 ## Cache retention and eviction policy
 
@@ -56,7 +56,7 @@ If you run out of your cache storage allowance, the Least Recently Used (LRU) ca
    In this example, we're creating a cache archive with a key that refers to the type of the operating system of the build machine.
 
    ```yaml
-   - save-cache@1:
+   - save-cache:
        inputs:
        - key: |-
            npm-cache-{{ .OS }}
@@ -74,7 +74,7 @@ If you run out of your cache storage allowance, the Least Recently Used (LRU) ca
    **Caching all files and folders recursively in the node_modules folder**
 
    ```yaml
-   - save-cache@1:
+   - save-cache:
        inputs:
        - key: |-
            npm-cache-{{ .OS }}
@@ -86,7 +86,7 @@ Once a cache archive has been created, you can access it on the **App Settings**
 ## Restoring an existing cache archive
 
 1. Add the [**Restore Cache**](https://github.com/bitrise-steplib/bitrise-step-restore-cache) Step at the start of your Workflow.
-1. In the **Cache key** input, type the key of the cache that you want to restore.
+1. In the **Cache keys** input, type the key of the cache that you want to restore.
 
    You can use [templates and functions](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-based-caching-templates-and-functions) to create dynamic keys that change depending on the build environment or other factors.
 
@@ -100,7 +100,7 @@ Once a cache archive has been created, you can access it on the **App Settings**
    - Second, we'll look for an archive with a key that includes the name of the current branch. For example, if the current branch's name is `main`, the Step will look for an archive with the key `npm-cache-main`.
 
    ```yaml
-   - restore-cache@1:
+   - restore-cache:
        inputs:
        - key: |-
            npm-cache-{{ .Workflow }}
@@ -120,6 +120,7 @@ Both key-based caching Steps support using template elements in their Step input
 | `cache-key-{{ .CommitHash }}` | SHA-256 hash of the git commit the build runs on. | Any existing commit hash. |
 | `cache-key-{{ .Workflow }}` | Current Bitrise workflow name (for example, `primary`). | The exact name of any existing Workflow of the app. |
 | `{{ .OS }}-cache-key` | Current operating system of the build <GlossTerm baseform="stack">stack</GlossTerm> (`linux` or `darwin`). | - `linux`: For Linux-based stacks. - `darwin`: For macOS-based stacks. |
+| `{{ .Arch }}-cache-key` | Current CPU architecture of the build machine (`amd64` or `arm64`). | - `amd64`: For x86-64 machines. - `arm64`: For ARM-based machines. |
 
 ### Using functions in caching templates
 
@@ -133,7 +134,7 @@ The key-based caching templates support the use of two different functions:
 Use the `checksum` function to create a key that computes the checksum of the `package-lock.json` file:
 
 ```yaml
-- save-cache@1:
+- save-cache:
     inputs:
     - key: npm-cache-{{ checksum "package-lock.json" }}
     - paths: node_modules
@@ -142,7 +143,7 @@ Use the `checksum` function to create a key that computes the checksum of the `p
 Use the `checksum` function to create a key that computes a checksum for any `.gradle` file and the `gradle.properties` file:
 
 ```yaml
-- save-cache@1:
+- save-cache:
     inputs:
     - key: gradle-cache-{{ checksum "**/*.gradle*" "gradle.properties" }}
     - paths: AndroidApp
@@ -153,7 +154,7 @@ Use the `checksum` function to create a key that computes a checksum for any `.g
 Use the `getenv` function to create a key that contains the value of the BITRISE_BUILD_NUMBER Env Var.
 
 ```yaml
-- save-cache@1:
+- save-cache:
     inputs:
     - key: npm-cache-{{ getenv "BITRISE_BUILD_NUMBER" }}
     - paths: node_modules
@@ -162,7 +163,7 @@ Use the `getenv` function to create a key that contains the value of the BITRISE
 
 ## Key matching for cache archives
 
-It's possible to define more than one key in the **Cache keys** input of the key-based caching Steps. You can specify additional keys by listing one key per line. The list is in priority order, so the Step will first try to find a match for the first key you provided, and if there is no cache stored for the key, it will move on to find a match for the second key (and so on).
+It's possible to define more than one key in the **Cache keys** input of the **Restore Cache** Step. The **Save Cache** Step accepts only one key. You can specify additional keys by listing one key per line, up to a maximum of 8 keys. The list is in priority order, so the Step will first try to find a match for the first key you provided, and if there is no cache stored for the key, it will move on to find a match for the second key (and so on).
 
 ```yaml
 inputs:
@@ -220,10 +221,10 @@ In this example, the cache key calculates the sum for any `.gradle` file and the
 workflows:    
   caching:      
     steps:      
-    - restore-cache@1:          
+    - restore-cache:          
         inputs:          
         - key: gradle-cache-{{ checksum "**/*.gradle*" "gradle.properties" }}      
-    - save-cache@1:          
+    - save-cache:          
         inputs:          
         - key: gradle-cache-{{ checksum "**/*.gradle*" "gradle.properties" }}          
         - is_key_unique: 'true'
