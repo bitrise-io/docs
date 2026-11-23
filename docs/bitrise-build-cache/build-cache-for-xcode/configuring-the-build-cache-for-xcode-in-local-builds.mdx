@@ -239,6 +239,15 @@ To undo the project edits `xcode link` made, run `bitrise-build-cache xcode unli
 
 The pipeline watches the default DerivedData root (`~/Library/Developer/Xcode/DerivedData`) and the custom one you set from Xcode's **Preferences → Locations → Derived Data → Custom** (`IDECustomDerivedDataLocation`). If your builds use yet another location — or several — list them in the `BITRISE_XCELERATE_DERIVED_DATA_DIRS` environment variable as a colon-separated list, and the pipeline will watch them all.
 
+### Warming Xcode.app builds from terminal builds
+
+**Does a cached terminal build speed up later Xcode.app builds on the same machine?**
+
+Yes with the wrapperless pipeline, no with the default wrapper.
+
+- **Wrapperless pipeline:** Terminal `xcodebuild` and Xcode.app both use the Bitrise toolchain and write into the default DerivedData root (or the custom one `BITRISE_XCELERATE_DERIVED_DATA_DIRS` / `IDECustomDerivedDataLocation` points at). A terminal build populates the DerivedData that Xcode.app reads on the next ⌘B, and both builds pull compilation-cache entries from the same proxy.
+- **Default wrapper:** The `xcodebuild` wrapper redirects DerivedData to `~/.bitrise/cache/xcode-dd/` to keep cache keys portable across machines, while Xcode.app keeps using `~/Library/Developer/Xcode/DerivedData` and bypasses the wrapper entirely. A terminal build populates the remote cache but leaves Xcode.app's DerivedData cold, so the next ⌘B still compiles from scratch locally.
+
 ### Known limitations
 
 - Running several `xcodebuild` builds in parallel from the same shell collapses them into a single invocation row. A warning is logged when this happens.
