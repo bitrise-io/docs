@@ -5,26 +5,25 @@ sidebar_position: 1
 slug: /bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching
 sidebar_label: "ビルドでのキーベースのキャッシュの使用"
 ---
-
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import GlossTerm from '@site/src/components/GlossTerm';
 import Partial_OpeningTheWorkflowEditor from '@site/i18n/ja/partials/opening-the-workflow-editor.mdx';
 
-キーベースキャッシュでは、一緒に使用する必要のある2つの<GlossTerm baseform="Step">Steps</GlossTerm>が必要です:
+キーベースキャッシュには、必ず一緒に使用する必要がある 2 つの <GlossTerm baseform="Step">Steps</GlossTerm> が必要です。
 
-- [<strong>Save Cache</strong>](https://github.com/bitrise-steplib/bitrise-step-save-cache): キーで識別されるキャッシュアーカイブにビルドファイルを保存します。
-- [<strong>Restore Cache</strong>](https://github.com/bitrise-steplib/bitrise-step-restore-cache): キーで識別されるキャッシュアーカイブからビルドファイルを復元します。
+- [<strong>Save Cache</strong>](https://github.com/bitrise-steplib/bitrise-step-save-cache)：ビルドファイルをキーで識別されるキャッシュアーカイブに保存します。
+- [<strong>Restore Cache</strong>](https://github.com/bitrise-steplib/bitrise-step-restore-cache)：キーで識別されるキャッシュアーカイブからビルドファイルを復元します。
 
-:::note[専用のキーベースキャッシュSteps]
+:::note[専用のキーベースキャッシュ Steps]
 
-npmやyarnの依存関係をキャッシュするには、[Save NPM Cache](https://github.com/bitrise-steplib/bitrise-step-save-npm-cache)などの専用のキーベースキャッシュStepsを使用できます。
+npm や yarn の依存関係をキャッシュするには、 [Save NPM Cache](https://github.com/bitrise-steplib/bitrise-step-save-npm-cache) などの専用のキーベースキャッシュ Steps を使用できます。
 
-専用のキーベースキャッシュStepsの完全な一覧については、[依存関係マネージャー向けの専用キャッシュSteps](/bitrise-ci/dependencies-and-caching/key-based-caching/dedicated-caching-steps-for-dependency-managers)をご覧ください。
+専用のキーベースキャッシュ Steps の一覧については、 [依存関係マネージャー向けの専用キャッシュ Steps](/bitrise-ci/dependencies-and-caching/key-based-caching/dedicated-caching-steps-for-dependency-managers)を参照してください。
 
 :::
 
-Stepsはどちらも、キー文字列を使用してキャッシュアーカイブにアクセスします。これらのキーは、<strong>Cache keys</strong> [Step input](/bitrise-ci/workflows-and-pipelines/steps/step-inputs)の値として指定する必要があります。各キーは個別のキャッシュアーカイブを識別します。
+どちらの Steps も、キー文字列を使ってキャッシュアーカイブにアクセスします。これらのキーは、 <strong>Save Cache</strong> Step の <strong>Cache key</strong> 入力と、 <strong>Restore Cache</strong> Step の <strong>Cache keys</strong> 入力（[Step inputs](/bitrise-ci/workflows-and-pipelines/steps/step-inputs)）の値として指定する必要があります。各キーは、それぞれ別のキャッシュアーカイブを識別します。
 
 ## キャッシュの保持と削除ポリシー {#cache-retention-and-eviction-policy}
 
@@ -34,73 +33,73 @@ Stepsはどちらも、キー文字列を使用してキャッシュアーカイ
 
 ## 新しいキャッシュアーカイブの作成 {#creating-a-new-cache-archive}
 
-1. Workflowの最後に[<strong>Save Cache</strong>](https://github.com/bitrise-steplib/bitrise-step-save-cache) Stepを追加します。
-1. <strong>Cache key</strong> inputでcache keyを定義します。このキーはキャッシュアーカイブを識別するために使用されます。
+1. [<strong>Save Cache</strong>](https://github.com/bitrise-steplib/bitrise-step-save-cache) Step を Workflow の最後に追加します。
+1. <strong>Cache key</strong> 入力で cache key を定義します。このキーは、キャッシュアーカイブの識別に使用されます。
 
    :::important[キーの制限事項]
 
-   cache keyの最大長は512文字です(それより長いキーは切り詰められます)。キーにカンマ(,)を使用することはできません。
+   cache key の最大長は 512 文字です（これより長いキーは切り捨てられます）。キーにカンマ（,）は使用できません。
 
    :::
 
    [テンプレートと関数](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-based-caching-templates-and-functions)を使用すると、ビルド環境やその他の要因に応じて変化する動的なキーを作成できます。
 
-   :::tip[動的キーを使用した条件付きキャッシュ]
+   :::tip[動的キーによる条件付きキャッシュ]
 
-   Stepを設定して、ビルド中にコンテンツが変更されていない場合に、キャッシュのアーカイブ化とアップロードを自動的にスキップさせることができます。詳細は[条件付きキャッシュ](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#using-conditional-caching-with-dynamic-keys)をご覧ください。
+   ビルド中にキャッシュの内容が変更されていない場合、アーカイブとアップロードを自動的にスキップするように Step を設定できます。詳細は[条件付きキャッシュ](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#using-conditional-caching-with-dynamic-keys)を参照してください。
 
    :::
 
-   <strong>OSを参照するキーを使用して新しいキャッシュアーカイブを作成する</strong>
+   <strong>OS を参照するキーで新しいキャッシュアーカイブを作成する</strong>
 
-   この例では、build machineのオペレーティングシステムの種類を参照するキーを使用してキャッシュアーカイブを作成します。
+   この例では、 build machine のオペレーティングシステムの種類を参照するキーで、キャッシュアーカイブを作成します。
 
    ```yaml
-   - save-cache@1:
+   - save-cache:
        inputs:
        - key: |-
            npm-cache-{{ .OS }}
    ```
-1. <strong>Paths to cache</strong> inputで、キャッシュするファイルとフォルダを定義します。
+1. <strong>Paths to cache</strong> 入力で、キャッシュするファイルとフォルダーを定義します。
 
-   この入力ではワイルドカード`*`および`**`を使用できます。入力値は実行時に評価されます。
+   この入力ではワイルドカードとして `*` と `**` を使用できます。入力値は実行時に評価されます。
 
-   :::caution[アーカイブサイズの上限]
+   :::caution[アーカイブのサイズ制限]
 
-   1つのキャッシュアーカイブのサイズは15GBを超えることはできません。
+   1 つのキャッシュアーカイブのサイズは 15 GB を超えることはできません。
 
    :::
 
-   <strong>node_modulesフォルダ内のすべてのファイルとフォルダを再帰的にキャッシュする</strong>
+   <strong>node_modules フォルダー内のすべてのファイルとフォルダーを再帰的にキャッシュする</strong>
 
    ```yaml
-   - save-cache@1:
+   - save-cache:
        inputs:
        - key: |-
            npm-cache-{{ .OS }}
        - paths: node_modules/
    ```
 
-キャッシュアーカイブが作成されたら、<strong>App Settings</strong>ページでアクセスできます。詳細は[キーベースキャッシュアーカイブへのアクセス](/bitrise-ci/dependencies-and-caching/key-based-caching/accessing-key-based-cache-archives)をご覧ください。
+キャッシュアーカイブを作成したら、 <strong>App Settings</strong> ページでアクセスできます。詳細は[キーベースのキャッシュアーカイブへのアクセス](/bitrise-ci/dependencies-and-caching/key-based-caching/accessing-key-based-cache-archives)を参照してください。
 
 ## 既存のキャッシュアーカイブの復元 {#restoring-an-existing-cache-archive}
 
-1. Workflowの最初に[<strong>Restore Cache</strong>](https://github.com/bitrise-steplib/bitrise-step-restore-cache) Stepを追加します。
-1. <strong>Cache key</strong> inputに、復元したいキャッシュのキーを入力します。
+1. [<strong>Restore Cache</strong>](https://github.com/bitrise-steplib/bitrise-step-restore-cache) Step を Workflow の先頭に追加します。
+1. <strong>Cache keys</strong> 入力に、復元するキャッシュのキーを入力します。
 
    [テンプレートと関数](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-based-caching-templates-and-functions)を使用すると、ビルド環境やその他の要因に応じて変化する動的なキーを作成できます。
 
-   複数のキーを指定できます。Stepはそれらを順番に評価し、最初に一致したものを選択します。詳細は[キャッシュアーカイブのキー照合](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-matching-for-cache-archives)をご覧ください。
+   複数のキーを指定できます。 Step はキーを順番に評価し、最初に一致したものを選択します。詳細は[キャッシュアーカイブのキーマッチング](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-matching-for-cache-archives)を参照してください。
 
-   <strong>2つのキーのいずれかからキャッシュアーカイブを復元する</strong>
+   <strong>2 つのキーのいずれかからキャッシュアーカイブを復元する</strong>
 
-   この例では、2つのキーのいずれかを使用して復元します:
+   この例では、2 つのキーのいずれかを復元します。
 
-   - まず、現在のWorkflowの名前を含むキーを持つキャッシュアーカイブを探します。たとえば、現在のWorkflowの名前が`primary`の場合、Stepはキー`npm-cache-primary`を持つアーカイブを探します。
-   - 次に、現在のブランチの名前を含むキーを持つアーカイブを探します。たとえば、現在のブランチの名前が`main`の場合、Stepはキー`npm-cache-main`を持つアーカイブを探します。
+   - まず、現在の Workflow の名前を含むキーのキャッシュアーカイブを探します。たとえば、現在の Workflow の名前が `primary` の場合、 Step はキー `npm-cache-primary` のアーカイブを探します。
+   - 次に、現在のブランチの名前を含むキーのアーカイブを探します。たとえば、現在のブランチの名前が `main` の場合、 Step はキー `npm-cache-main` のアーカイブを探します。
 
    ```yaml
-   - restore-cache@1:
+   - restore-cache:
        inputs:
        - key: |-
            npm-cache-{{ .Workflow }}
@@ -114,55 +113,56 @@ Stepsはどちらも、キー文字列を使用してキャッシュアーカイ
 
 ### 利用可能なキャッシュテンプレート {#available-caching-templates}
 
-| Template expression | Definition | Possible values |
+| Template expression | 定義 | 使用可能な値 |
 | --- | --- | --- |
-| `cache-key-{{ .Branch }}` | ビルドが実行されている現在のgitブランチ。 | アプリに存在する任意のブランチの正確な名前。 |
-| `cache-key-{{ .CommitHash }}` | ビルドが実行されているgitコミットのSHA-256ハッシュ。 | 既存の任意のコミットハッシュ。 |
-| `cache-key-{{ .Workflow }}` | 現在のBitriseワークフロー名(例:`primary`)。 | アプリに存在する任意のWorkflowの正確な名前。 |
-| `{{ .OS }}-cache-key` | ビルド<GlossTerm baseform="stack">stack</GlossTerm>の現在のオペレーティングシステム(`linux`または`darwin`)。 | - `linux`:Linuxベースのstack向け。 - `darwin`:macOSベースのstack向け。 |
+| `cache-key-{{ .Branch }}` | ビルドが実行されている現在の git ブランチ。 | アプリの既存のブランチの正確な名前。 |
+| `cache-key-{{ .CommitHash }}` | ビルドが実行されている git コミットの SHA-256 ハッシュ。 | 既存の任意のコミットハッシュ。 |
+| `cache-key-{{ .Workflow }}` | 現在の Bitrise Workflow 名（例： `primary`）。 | アプリの既存の Workflow の正確な名前。 |
+| `{{ .OS }}-cache-key` | ビルド <GlossTerm baseform="stack">stack</GlossTerm> の現在のオペレーティングシステム（ `linux` または `darwin`）。 | - `linux`： Linux ベースのスタック向け。 - `darwin`：macOS ベースのスタック向け。 |
+| `{{ .Arch }}-cache-key` | build machine の現在の CPU アーキテクチャ（ `amd64` または `arm64`）。 | - `amd64`：x86-64 マシン向け。 - `arm64`：ARM ベースのマシン向け。 |
 
 ### キャッシュテンプレートでの関数の使用 {#using-functions-in-caching-templates}
 
-キーベースキャッシュのテンプレートでは、2つの異なる関数を使用できます:
+キーベースキャッシュのテンプレートでは、2 つの関数を使用できます。
 
-- `checksum`:この関数は、1つまたは複数のファイルの内容のSHA-256チェックサムを計算します。これは、キャッシュするコンテンツを記述するファイルに基づいて一意のcache keysを作成する場合に役立ちます。以下の例を参照してください。
-- `getenv`:この関数は、[環境変数](/bitrise-ci/configure-builds/environment-variables)(Env Var)の値を返します。変数が定義されていない場合は空の文字列を返します。以下の例を参照してください。
+- `checksum`：1 つ以上のファイルの内容の SHA-256 チェックサムを計算する関数です。キャッシュする内容を記述したファイルに基づいて、一意の cache keys を作成する場合に便利です。以下の例を参照してください。
+- `getenv`： [環境変数](/bitrise-ci/configure-builds/environment-variables)（Env Var）の値を返す関数です。変数が定義されていない場合は空の文字列を返します。以下の例を参照してください。
 
-<strong>checksum関数の使用</strong>
+<strong>チェックサム関数の使用</strong>
 
-`checksum`関数を使用して、`package-lock.json`ファイルのチェックサムを計算するキーを作成します:
+`checksum` 関数を使用して、 `package-lock.json` ファイルのチェックサムを計算するキーを作成します。
 
 ```yaml
-- save-cache@1:
+- save-cache:
     inputs:
     - key: npm-cache-{{ checksum "package-lock.json" }}
     - paths: node_modules
 ```
 
-`checksum`関数を使用して、任意の`.gradle`ファイルおよび`gradle.properties`ファイルのチェックサムを計算するキーを作成します:
+`checksum` 関数を使用して、任意の `.gradle` ファイルと `gradle.properties` ファイルのチェックサムを計算するキーを作成します。
 
 ```yaml
-- save-cache@1:
+- save-cache:
     inputs:
     - key: gradle-cache-{{ checksum "**/*.gradle*" "gradle.properties" }}
     - paths: AndroidApp
 ```
 
-<strong>getenv関数の使用</strong>
+<strong>getenv 関数の使用</strong>
 
-`getenv`関数を使用して、BITRISE_BUILD_NUMBER Env Varの値を含むキーを作成します。
+`getenv` 関数を使用して、 BITRISE_BUILD_NUMBER Env Var の値を含むキーを作成します。
 
 ```yaml
-- save-cache@1:
+- save-cache:
     inputs:
     - key: npm-cache-{{ getenv "BITRISE_BUILD_NUMBER" }}
     - paths: node_modules
 ```
 
 
-## キャッシュアーカイブのキー照合 {#key-matching-for-cache-archives}
+## キャッシュアーカイブのキーマッチング {#key-matching-for-cache-archives}
 
-キーベースキャッシュのStepsの<strong>Cache keys</strong> inputには、複数のキーを定義できます。追加のキーは、1行に1つずつ記述することで指定できます。このリストは優先順位順になっており、Stepはまず指定した最初のキーの一致を試み、そのキーに対応するキャッシュが保存されていない場合は、2番目のキーの一致を試みます(以降も同様です)。
+<strong>Restore Cache</strong> Step の <strong>Cache keys</strong> 入力には、複数のキーを定義できます。 <strong>Save Cache</strong> Step が受け付けるキーは 1 つだけです。追加のキーは、1 行に 1 つずつ、最大 8 個まで指定できます。リストは優先順位順に並び、 Step はまず最初に指定したキーに一致するものを探します。そのキーで保存されたキャッシュがない場合は、2 番目のキーに一致するものを探します（以降も同様です）。
 
 ```yaml
 inputs:
@@ -172,7 +172,7 @@ inputs:
     key-3
 ```
 
-複数のキーを列挙するだけでなく、各キーは保存されたcache keyの接頭辞であっても、一致するキャッシュアーカイブを取得できます。たとえば、キー`my-cache-`は、キー`my-cache-a6a102ff`で保存された既存のアーカイブと一致する場合があります。最初のキーをチェックサムキーと完全一致させ、フォールバックとしてより汎用的な接頭辞キーを使用するようにキーを設定することをお勧めします:
+複数のキーを列挙するだけでなく、各キーは保存済みの cache key のプレフィックスであっても、一致するキャッシュアーカイブを取得できます。たとえば、キー `my-cache-` は、キー `my-cache-a6a102ff` で保存された既存のアーカイブと一致します。最初のキーをチェックサムキーに完全一致させ、フォールバックとして、より汎用的なプレフィックスキーを使用するようにキーを設定することをお勧めします。
 
 ```yaml
 inputs:
@@ -182,48 +182,48 @@ inputs:
 ```
 
 
-## 動的キーを使用した条件付きキャッシュの利用 {#using-conditional-caching-with-dynamic-keys}
+## 動的キーによる条件付きキャッシュの使用 {#using-conditional-caching-with-dynamic-keys}
 
-ビルドを実行するたびにキャッシュアーカイブを更新したくない場合があります。キャッシュをスキップすることで、次のことができます:
+ビルドを実行するたびにキャッシュアーカイブを更新したくない場合があります。キャッシュをスキップすると、次のことができます。
 
-- 誤ったビルドデータをキャッシュに保存することを回避する。
-- PRの検証ワークフローを高速化する。
-- 保存および転送されるデータ量を制限する。
+- 誤っている可能性のあるビルドデータをキャッシュに保存しない。
+- PR 検証 Workflow を高速化する。
+- 保存および転送されるデータ量を抑える。
 
-ビルド中にキャッシュされたコンテンツがまったく変更されなかった場合、<strong>Save cache</strong> Stepはキャッシュの圧縮とアップロードを自動的にスキップできます。これを機能させるには、キャッシュの内容が変更されるたびに変化する一意のcache keyをキャッシュアーカイブに設定する必要があります。実際には、[チェックサムを使用した動的キー](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-based-caching-templates-and-functions)と、キャッシュ対象のコンテンツを記述するファイルが必要です。チェックサムはファイルの内容に基づいて計算されるため、ファイルが変更されなければチェックサムも変更されません。
+ビルド中にキャッシュされた内容がまったく変更されなかった場合、 <strong>Save cache</strong> Step はキャッシュの圧縮とアップロードを自動的にスキップできます。これを機能させるには、キャッシュの内容が変わるたびに変化する一意の cache key をキャッシュアーカイブに設定する必要があります。実際には、[チェックサムを含む動的キー](/bitrise-ci/dependencies-and-caching/key-based-caching/using-key-based-caching#key-based-caching-templates-and-functions)と、キャッシュする内容を記述したファイルが必要です。チェックサムはファイルの内容に基づいて計算されます。ファイルが変更されなければ、チェックサムも変わりません。
 
-この機能を活用できるようにStepを設定することを強くお勧めします。以下の手順に従うか、このセクションの最後にあるYAMLの例まで読み進めてください。
+この機能を活用できるように Step を設定することを強くお勧めします。以下の手順に従うか、このセクションの最後にある YAML の例に進んでください。
 
-:::tip[Save cache Stepを完全にスキップする]
+:::tip[Save cache Step を完全にスキップする]
 
-キャッシュ対象のコンテンツが変更された場合でもキャッシュアーカイブを更新したくない場合は、Workflowから<strong>Save cache</strong> Stepを削除するか、Stepに条件を設定できます。詳細は[Stepを条件付きで有効化・無効化する](/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally)をご覧ください。
+キャッシュ対象の内容が変更されていてもキャッシュアーカイブを更新しない場合は、 Workflow から <strong>Save cache</strong> Step を削除するか、 Step に条件を設定できます。詳細は[ Step を条件付きで有効化または無効化する](/bitrise-ci/workflows-and-pipelines/steps/enabling-or-disabling-a-step-conditionally)を参照してください。
 
 :::
 
 1. <Partial_OpeningTheWorkflowEditor />
-1. Workflowを開き、<strong>Save cache</strong> Stepを選択します。
-1. <strong>Unique cache key</strong> inputを`true`に設定します。
+1. Workflow を開き、 <strong>Save cache</strong> Step を選択します。
+1. <strong>Unique cache key</strong> 入力を `true` に設定します。
 
-   inputが`false`に設定されている場合でも、Stepはキャッシュのアップロードをスキップできますが、チェックサムを計算するためにまずキャッシュアーカイブを作成する必要があります。これには時間がかかります。
-1. <strong>Cache key</strong> inputで、キャッシュ対象のコンテンツを記述するファイルのチェックサムを含むキーを作成します。
+   入力が `false` に設定されている場合でも、 Step はキャッシュのアップロードをスキップできますが、チェックサムを計算するために、まずキャッシュアーカイブを作成する必要があります。これには時間がかかります。
+1. <strong>Cache key</strong> 入力で、キャッシュする内容を記述したファイルのチェックサムを含むキーを作成します。
 
-   たとえば、`npm-cache-{{ checksum "package-lock.json" }}`は`package-lock.json`ファイルが変更されない限り変化しない動的キーです。
-1. <strong>Restore cache</strong> Stepの<strong>Cache keys</strong> inputに、同じ動的キーを追加します。
+   たとえば、 `npm-cache-{{ checksum "package-lock.json" }}` は、 `package-lock.json` ファイルが変更されない限り変わらない動的キーです。
+1. 同じ動的キーを、 <strong>Restore cache</strong> Step の <strong>Cache keys</strong> 入力にも追加します。
 
-すべてが正しく設定されていれば、2つのキャッシュStepsのキーが一致する場合、キャッシュアーカイブは更新されません。
+すべて正しく設定されていれば、2 つのキャッシュ Steps のキーが一致する場合、キャッシュアーカイブは更新されません。
 
-<strong>チェックサムを使用した動的キーのYAML例</strong>
+<strong>チェックサム付きの動的キーを使用する YAML の例</strong>
 
-この例では、cache keyが任意の`.gradle`ファイルおよび`gradle.properties`ファイルのチェックサムを計算します。<strong>Restore cache</strong>と<strong>Save cache</strong> Stepはどちらも同じcache keyを探します:
+この例では、 cache key が任意の `.gradle` ファイルと `gradle.properties` ファイルの合計を計算します。 <strong>Restore cache</strong> と <strong>Save cache</strong> Step の両方が、同じ cache key を探します。
 
 ```yaml
 workflows:    
   caching:      
     steps:      
-    - restore-cache@1:          
+    - restore-cache:          
         inputs:          
         - key: gradle-cache-{{ checksum "**/*.gradle*" "gradle.properties" }}      
-    - save-cache@1:          
+    - save-cache:          
         inputs:          
         - key: gradle-cache-{{ checksum "**/*.gradle*" "gradle.properties" }}          
         - is_key_unique: 'true'

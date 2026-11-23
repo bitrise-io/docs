@@ -13,41 +13,41 @@ import GlossTerm from '@site/src/components/GlossTerm';
 
 もちろん、Bitriseのビルド中にCocoaPodsの依存関係を簡単にインストールできます。専用の<GlossTerm baseform="Step">Step</GlossTerm>である<strong>[Run CocoaPods Install](https://github.com/bitrise-io/steps-cocoapods-install)</strong>を使用するだけです。このStepは、`pod install`コマンドと`pod update`コマンドの両方を実行できます。
 
-## CocoaPodsの依存関係をインストールする {#installing-cocoapods-dependencies}
+## CocoaPods の依存関係のインストール {#installing-cocoapods-dependencies}
 
-CocoaPodsで依存関係をインストールするには、次の手順に従います。
+CocoaPods で依存関係をインストールするには、次の手順を実行します。
 
 <Tabs>
 <TabItem value="workflow-editor" label="Workflow Editor" default>
 
-1. CocoaPodsの特定のバージョンが必要な場合は、`Gemfile.lock`または`Podfile.lock`ファイルのいずれかで必ず定義してください。
+1. CocoaPods の特定のバージョンが必要な場合は、 `Gemfile.lock` または `Podfile.lock` ファイルでバージョンを定義してください。
 
-   Stepは、まず`Gemfile.lock`ファイル内の`cocoapods`gemを探します。そこに`cocoapods`gemがない場合、Stepは`Podfile.lock`ファイルで定義されているCocoaPodsバージョンを使用します。どちらのファイルにもバージョンが定義されていない場合は、プリインストールされているシステムバージョンが使用されます。これは[システムレポート](https://github.com/bitrise-io/bitrise.io/tree/master/system_reports/MACOS)で確認できます。
-1. アプリをビルドするXcode Stepが`.xcworkspace`ファイルを使用するようにしてください。Stepの<strong>Project path</strong>入力には、`.xcworkspace`のパスを指定する必要があります。
-1. [<strong>Run CocoaPods Install</strong>](https://github.com/bitrise-io/steps-cocoapods-install) Stepを<GlossTerm baseform="Workflow">Workflow</GlossTerm>に追加します。
+   Step はまず `Gemfile.lock` ファイル内の `cocoapods` gem を探します。そこに `cocoapods` gem がない場合、 Step は `Podfile.lock` ファイルで定義された CocoaPods のバージョンを使用します。どちらのファイルでもバージョンが定義されていない場合は、プリインストールされているシステムバージョンが使用されます。このバージョンは[スタックレポート](https://stacks.bitrise.io/stack_reports/)で確認できます。
+1. アプリをビルドする Xcode Step が `.xcworkspace` ファイルを使用していることを確認してください。 Step の <strong>Project path</strong> 入力が `.xcworkspace` のパスを指している必要があります。
+1. [<strong>Run CocoaPods Install</strong>](https://github.com/bitrise-io/steps-cocoapods-install) Step を <GlossTerm baseform="Workflow">Workflow</GlossTerm> に追加します。
 
-   これは、[build cacheから](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache)プルするStepの後に配置する必要があります。キャッシュStepsがない場合は、[<strong>Git Clone Repository</strong>](https://github.com/bitrise-steplib/steps-git-clone) Stepの直後にStepを追加してください。
-1. <strong>CocoaPods command</strong>入力で、実行したいコマンドを選択します。
+   [build cache](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache) から取得する Step よりも後に配置してください。キャッシュ用の Steps がない場合は、 [<strong>Git Clone Repository</strong>](https://github.com/bitrise-steplib/steps-git-clone) Step の直後に Step を追加します。
+1. <strong>CocoaPods command</strong> 入力で、実行するコマンドを選択します。
 
-   <strong>install</strong>: 各ポッドについて`Podfile`で指定されたバージョンをインストールします。
+   <strong>install</strong>：各 pod について、 `Podfile` に指定されたバージョンをインストールします。
 
-   <strong>update</strong>: `Podfile`に記載されている各ポッドについてlatest versionをインストールします。
+   <strong>update</strong>： `Podfile` に記載された各 pod について、 latest version をインストールします。
 
    ![pod-install.png](/img/_paligo/uuid-92405804-e42c-f788-4026-7339492f1113.png)
-1. 必要に応じて、<strong>Podfile path</strong>入力に`Podfile`のパスを指定できます。
+1. 必要に応じて、 <strong>Podfile path</strong> 入力で `Podfile` のパスを指定できます。
 
-   これは必須ではありません。入力を空のままにした場合、Stepはアプリのルートディレクトリを再帰的に検索し、最初に見つかった`Podfile`を使用します。
+   指定は必須ではありません。入力を空のままにすると、 Step はアプリのルートディレクトリを再帰的に検索し、最初に見つかった `Podfile` を使用します。
 
 </TabItem>
 <TabItem value="bitriseyml" label="Configuration YAML">
 
-1. CocoaPodsの特定のバージョンが必要な場合は、`Gemfile.lock`または`Podfile.lock`ファイルのいずれかで必ず定義してください。
+1. CocoaPods の特定のバージョンが必要な場合は、 `Gemfile.lock` または `Podfile.lock` ファイルでバージョンを定義してください。
 
-   Stepは、まず`Gemfile.lock`ファイル内の`cocoapods`gemを探します。そこに`cocoapods`gemがない場合、Stepは`Podfile.lock`ファイルで定義されているCocoaPodsバージョンを使用します。どちらのファイルにもバージョンが定義されていない場合は、プリインストールされているシステムバージョンが使用されます。これは[スタックレポート](https://stacks.bitrise.io/stack_reports/)で確認できます。
-1. アプリをビルドするXcode Stepが`.xcworkspace`ファイルを使用するようにしてください。Stepの`project_path`入力には、`.xcworkspace`のパスを指定する必要があります。
-1. `cocoapods-install` StepをWorkflowに追加します。
+   Step はまず `Gemfile.lock` ファイル内の `cocoapods` gem を探します。そこに `cocoapods` gem がない場合、 Step は `Podfile.lock` ファイルで定義された CocoaPods のバージョンを使用します。どちらのファイルでもバージョンが定義されていない場合は、プリインストールされているシステムバージョンが使用されます。このバージョンは[スタックレポート](https://stacks.bitrise.io/stack_reports/)で確認できます。
+1. アプリをビルドする Xcode Step が `.xcworkspace` ファイルを使用していることを確認してください。 Step の `project_path` 入力が `.xcworkspace` のパスを指している必要があります。
+1. `cocoapods-install` Step を Workflow に追加します。
 
-   これは、[build cacheから](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache)プルするStepの後に配置する必要があります。キャッシュStepsがない場合は、`git-clone` Stepの直後にStepを追加してください。
+   [build cache](/bitrise-build-cache/getting-started-with-the-build-cache/getting-started-with-the-build-cache) から取得する Step よりも後に配置してください。キャッシュ用の Steps がない場合は、 `git-clone` Step の直後に Step を追加します。
 
    ```yml
    my-workflow:
@@ -59,11 +59,11 @@ CocoaPodsで依存関係をインストールするには、次の手順に従�
            is_always_run: true
        - save-cocoapods-cache: {}
    ```
-1. `command`入力で、実行したいコマンドを選択します。
+1. `command` 入力で、実行するコマンドを選択します。
 
-   <strong>install</strong>: 各ポッドについて`Podfile`で指定されたバージョンをインストールします。
+   <strong>install</strong>：各 pod について、 `Podfile` に指定されたバージョンをインストールします。
 
-   <strong>update</strong>: `Podfile`に記載されている各ポッドについてlatest versionをインストールします。
+   <strong>update</strong>： `Podfile` に記載された各 pod について、 latest version をインストールします。
 
    ```yml
    my-workflow:
@@ -77,7 +77,7 @@ CocoaPodsで依存関係をインストールするには、次の手順に従�
              - command: update
        - save-cocoapods-cache: {}
    ```
-1. 必要に応じて、`podfile_path`入力に`Podfile`のパスを指定できます。
+1. 必要に応じて、 `podfile_path` 入力で `Podfile` のパスを指定できます。
 
    ```yml
    my-workflow:
@@ -93,7 +93,7 @@ CocoaPodsで依存関係をインストールするには、次の手順に従�
        - save-cocoapods-cache: {}
    ```
 
-   これは必須ではありません。入力を空のままにした場合、Stepはアプリのルートディレクトリを再帰的に検索し、最初に見つかった`Podfile`を使用します。
+   指定は必須ではありません。入力を空のままにすると、 Step はアプリのルートディレクトリを再帰的に検索し、最初に見つかった `Podfile` を使用します。
 
 </TabItem>
 </Tabs>
