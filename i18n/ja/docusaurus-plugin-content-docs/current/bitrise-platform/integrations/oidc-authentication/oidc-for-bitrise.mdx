@@ -15,55 +15,165 @@ Open ID Connect (OIDC) 信頼ポリシーを作成し、`app.bitrise.io`をオ�
 OIDCの仕組みについて詳しくは、[BitriseへのOIDCを使用した認証](/bitrise-platform/integrations/oidc-authentication/oidc-authentication-overview#authentication-to-bitrise-with-oidc)をご覧ください。
 
 
-## Bitriseで信頼ポリシーを作成する {#creating-a-trust-policy-on-bitrise}
+## Bitrise でのトラストポリシーの作成 {#creating-a-trust-policy-on-bitrise}
 
-OIDCトークン交換を使用して外部サービスにBitriseリソースへのアクセスを許可するため、OIDC信頼ポリシーを作成します。
+OIDC トラストポリシーを作成して、OIDC トークン交換を介して外部サービスに Bitrise リソースへのアクセスを許可します。
 
 1. <Partial_OpeningTheWorkspaceSettingsPage />
-1. <strong>Security</strong>を選択し、<strong>OIDC trust policies</strong>タブに移動します。
+1. <strong>Security</strong> を選択し、<strong>OIDC trust policies</strong> タブに移動します。
 
    ![2026-03-11-oicd-trust-policies.png](/img/_paligo/uuid-3424f770-b6c1-749a-b936-6d073bab7469.png)
-1. <strong>New OIDC policy</strong>をクリックします。
-1. policy detailsを入力します。
+1. <strong>New OIDC policy</strong> をクリックします。
+1. policy details に入力します。
 
-   - <strong>Policy name</strong>: ポリシーの識別子です。
-   - <strong>Issuer (iss)</strong>: Bitriseが信頼するIDプロバイダーのHTTPS URLです。
-   - <strong>Session duration</strong>: トークンの有効期間です。
+   - <strong>Policy name</strong>：ポリシーの識別子。
+   - <strong>Issuer（iss）</strong>：Bitrise が信頼する IdP の HTTPS URL。
+   - <strong>Session duration</strong>：トークンの有効期間。
 
    ![2026-03-11-oicd-new-policy.png](/img/_paligo/uuid-fb66f7d5-2c56-4480-4a54-4d79a29c6c67.png)
-1. 次のページで、JSON形式でマッチングルールを設定します。
+1. 次のページで、JSON 形式で一致ルールを設定します。
 
-   マッチングルールは、信頼ポリシーに一致させるためにトークン内でBitriseが確認する必要があるクレームを定義します。
+   一致ルールは、トークンがトラストポリシーに一致するために Bitrise がトークン内で確認する必要があるクレームを定義します。
 
    :::important
 
-   マッチングルールを少なくとも1つ設定する必要があります。`sub`クレームは必須で、トークン交換のトリガーとなったサブジェクトを識別します。
+   一致ルールは少なくとも 1 つ必要です。`sub` クレームは必須です。トークン交換のきっかけとなったサブジェクトを識別します。
 
    :::
 
-   例えば、リポジトリの特定のブランチに対するマッチングルールを作成し、<GlossTerm baseform="workflow">Workflow</GlossTerm>を指定できます。
+   たとえば、リポジトリの特定のブランチに対する一致ルールを作成し、<GlossTerm baseform="workflow">Workflow</GlossTerm> に名前を付けることができます。
 
    ```json
    {
      "sub": "repo:my-org/my-repo:environment:prod",
      "workflow": "CI",
      "ref": "refs/heads/main",
-     "repository": "my-account/my-repo"
+     "repository": "my-org/my-repo"
    }
    ```
-1. 次のページで、短命トークン用にworkspaceロールを設定します。
 
-   workspaceロールによってトークンのアクセスレベルが決まります。詳しくは、[workspacesのロールと権限](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces)をご覧ください。
-1. 次のページで、製品へのアクセスを設定します。すべての製品に対して完全な管理者アクセスを許可するか、Bitrise CIまたはRelease Management、あるいはその両方に対して詳細なアクセスを許可します。
+   複数の値やパターンに一致させるには、[一致ルールの記述](#writing-matching-rules)を参照してください。
+1. 次のページで、短期間有効なトークン用の workspace ロールを設定します。
 
-   - <strong>Admin access</strong>を選択すると、workspaceが所有するすべてのプロジェクトに対して管理者アクセスを許可します。
-   - <strong>Bitrise CI</strong>を選択し、トークンのプロジェクトまたはRelease Managementアプリとアクセスロールを選択します。プロジェクトごとに異なるアクセスレベルを設定できます。
+   workspace ロールによって、トークンのアクセスレベルが決まります。詳細：[Roles and permissions in workspaces](/bitrise-platform/workspaces/collaboration-and-permissions-in-workspaces/roles-and-permissions-in-workspaces)
+1. 次のページで、プロダクトへのアクセスを設定します。すべてのプロダクトに対するフル管理者アクセスを付与するか、Bitrise CI または Release Management、あるいはその両方に対して細かくアクセスを付与します。
 
-     詳しくは、[Bitrise CIのロールと権限](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)
-   - <strong>Release Management</strong>を選択し、トークンのRelease Managementアプリとアクセスロールを選択します。Release Managementアプリごとに異なるアクセスレベルを設定できます。
+   - <strong>Admin access</strong> を選択すると、workspace が所有するすべてのプロジェクトへの管理者アクセスが付与されます。
+   - <strong>Bitrise CI</strong> を選択するか、またはそのうえでプロジェクトまたは Release Management アプリとトークンのアクセスロールを選択します。プロジェクトごとに異なるアクセスレベルを設定できます。
 
-     詳しくは、[Release Managementのロールと権限](/release-management/configuring-connected-apps/release-management-roles-and-permissions)
-1. 準備ができたら、<strong>Create policy</strong>をクリックします。
+     詳細：[Roles and permissions for Bitrise CI](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)
+   - <strong>Release Management</strong> を選択し、Release Management アプリとトークンのアクセスロールを選択します。Release Management アプリごとに異なるアクセスレベルを設定できます。
+
+     詳細：[Release Management roles and permissions](/release-management/configuring-connected-apps/release-management-roles-and-permissions)
+1. 準備ができたら、<strong>Create policy</strong> をクリックします。
+
+
+## 一致ルールの記述 {#writing-matching-rules}
+
+各ルールは、トークン内の 1 つのクレームに一致します。すべてのルールが一致した場合にのみ、トークンはポリシーに一致します。
+
+以下の例では、オーナーとリポジトリの ID を含まない GitHub `sub` 形式を使用します。ID を含む形式や、GitLab および Bitbucket については、[プロバイダー別の例](#examples-by-provider)を参照してください。
+
+### 完全一致 {#exact-value}
+
+この値にのみ一致します。次の例では、`main` ブランチ上の `my-org/my-repo` からのジョブを受け付けます。
+
+```json
+{ "sub": "repo:my-org/my-repo:ref:refs/heads/main" }
+```
+
+### 複数の値のいずれか {#any-of-several-values}
+
+クレームがリスト内のいずれかの値と等しい場合に一致します。次の例では、`main` ブランチと `release` ブランチを受け付けます。
+
+```json
+{
+  "sub": [
+    "repo:my-org/my-repo:ref:refs/heads/main",
+    "repo:my-org/my-repo:ref:refs/heads/release"
+  ]
+}
+```
+
+### パターン {#pattern}
+
+パターンに合致するすべての値に一致します。`*` は任意のテキストを表します。次の例では、`my-org` 内のすべてのリポジトリを、どのブランチでも受け付けます。
+
+```json
+{ "sub": { "glob": "repo:my-org/*" } }
+```
+
+パターンはリストにすることもでき、`*` は値の途中に置くこともできます。次の例では、`my-org` 内のすべてのリポジトリからの、プルリクエストのジョブと `main` ブランチのジョブを受け付けます。
+
+```json
+{
+  "sub": {
+    "glob": [
+      "repo:my-org/*:pull_request",
+      "repo:my-org/*:ref:refs/heads/main"
+    ]
+  }
+}
+```
+
+パターンには、`*` の前に固定のテキストが必要です。`*` のみのパターンは、すべてのトークンに一致してしまうため拒否されます。
+
+:::tip[ID のルールを追加する]
+
+名前は再登録される可能性があります。アカウント、リポジトリ、プロジェクトの名前を変更または削除すると、他のユーザーが古い名前を取得できます。ID は変わりません。より厳格なポリシーにするには、ID クレームのルールも追加してください。たとえば、GitHub では `repository_owner_id` または `repository_id`、GitLab では `namespace_id` または `project_id` を使用します。
+
+:::
+
+### プロバイダー別の例 {#examples-by-provider}
+
+プロバイダーごとに `sub` の書き方が異なります。
+
+| プロバイダー | `sub` 形式 |
+| --- | --- |
+| GitHub Actions | `repo:<owner>/<repo>:ref:<ref>` |
+| GitLab CI | `project_path:<group>/<project>:ref_type:<type>:ref:<branch>` |
+| Bitbucket Pipelines | `{<repositoryUuid>}:{<stepUuid>}` |
+
+#### GitHub
+
+1 つのリポジトリからのジョブに、`main` ブランチのみで一致します。
+
+```json
+{ "sub": "repo:my-org@123456/my-repo@456789:ref:refs/heads/main" }
+```
+
+2026 年 7 月 15 日以降に作成されたリポジトリでは、`sub` にオーナーとリポジトリの ID が含まれます。それより前のリポジトリは、GitHub で新しい形式を有効にしない限り、以前の形式のままです。以前の形式には ID が含まれません。
+
+```json
+{ "sub": "repo:my-org/my-repo:ref:refs/heads/main" }
+```
+
+リポジトリの名前を変更または移管すると、その `sub` は新しい形式に変わります。ポリシーを更新しないと、トークン交換は失敗します。詳細については、GitHub ドキュメントの [Immutable subject claims](https://docs.github.com/en/actions/reference/security/oidc#immutable-subject-claims) を参照してください。トークンに含まれる正確な `sub` を確認するには、同じページの [Debugging your OIDC claims](https://docs.github.com/en/actions/reference/security/oidc#debugging-your-oidc-claims) を参照してください。
+
+すべてのクレームについては、GitHub ドキュメントの [OpenID Connect reference](https://docs.github.com/en/actions/reference/security/oidc) を参照してください。
+
+#### GitLab
+
+1 つのプロジェクトからのジョブに、`main` ブランチのみで一致します。
+
+```json
+{ "sub": "project_path:my-group/my-project:ref_type:branch:ref:main" }
+```
+
+すべてのクレームについては、GitLab ドキュメントの [Token payload](https://docs.gitlab.com/ci/secrets/id_token_authentication/#token-payload) を参照してください。
+
+#### Bitbucket
+
+1 つのリポジトリからのジョブに、`main` ブランチのみで一致します。Bitbucket は、波括弧で囲んだ UUID でリポジトリを識別します。Step がデプロイ環境を使用する場合、`sub` の途中に環境の UUID が入ります：`{<repositoryUuid>}:{<environmentUuid>}:{<stepUuid>}`。次のパターンは、どちらの形式にも一致します。
+
+```json
+{
+  "sub": { "glob": "{11111111-2222-3333-4444-555555555555}:*" },
+  "branchName": "main"
+}
+```
+
+すべてのクレームについては、Bitbucket ドキュメントの [Integrate Pipelines with resource servers using OIDC](https://support.atlassian.com/bitbucket-cloud/docs/integrate-pipelines-with-resource-servers-using-oidc/) を参照してください。
 
 
 ## トークンリクエストを作成する {#crafting-a-token-request}
@@ -72,7 +182,7 @@ Bitriseで少なくとも1つの信頼ポリシーを作成すると、OIDCト�
 
 1. Bitriseへの認証に使用したいサービスからOIDCトークンを取得します。
 
-   トークンの取得方法はサービスによって異なります。例: [GitHub Actionsからトークンをリクエストする](https://docs.github.com/en/actions/reference/security/oidc#methods-for-requesting-the-oidc-token)。
+   トークンの取得方法はサービスによって異なります。例： [GitHub Actionsからトークンをリクエストする](https://docs.github.com/en/actions/reference/security/oidc#methods-for-requesting-the-oidc-token)。
 1. このトークンを使用して、Bitriseへの交換リクエストを行います。
 
    リクエストにはポリシーIDを含める必要があり、`app.bitrise.io`に送信する必要があります。
@@ -96,3 +206,17 @@ Bitriseで少なくとも1つの信頼ポリシーを作成すると、OIDCト�
           \"subject_token\": <OIDC_TOKEN>,
           \"policy_id\": <POLICY_ID> }"
    ```
+### レスポンス {#response}
+
+リクエストが成功すると、`access_token` に短期間有効な Bitrise トークンが返されます。
+
+```json
+{
+  "access_token": "<BITRISE_WAT_TOKEN>",
+  "token_type": "bearer",
+  "issued_token_type": "urn:ietf:params:oauth:token-type:access_token",
+  "expires_in": 3600
+}
+```
+
+`access_token` の値を使用して Bitrise API へのリクエストを認証します。`Authorization` ヘッダーで送信してください。詳細は [Authenticating with the Bitrise API](/bitrise-ci/api/authenticating-with-the-bitrise-api) を参照してください。トークンは、ポリシーで設定した session duration が経過すると期限切れになります。
