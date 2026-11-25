@@ -1,0 +1,41 @@
+---
+title: "Copying CodePush updates between deployments"
+description: "Copy a released CodePush update to another deployment of the same app, for example from Staging to Production, without bundling or uploading it again."
+sidebar_position: 4.5
+slug: /release-management/codepush/copying-codepush-updates-between-deployments
+---
+
+Copy a CodePush update from one deployment to another deployment of the same app. A typical use case is moving an update you tested in your `Staging` deployment to `Production`. The copy uses the same update file as the original, so you don't need to bundle, sign, or upload it again.
+
+To copy an update, your role needs the **Promote CodePush updates** permission, and the app needs at least two deployments. See [Roles and permissions for Bitrise CodePush](/release-management/configuring-connected-apps/release-management-roles-and-permissions#roles-and-permissions-for-bitrise-codepush) and [Creating a CodePush deployment](/release-management/codepush/creating-a-codepush-deployment).
+
+The CodePush CLI and the API call this operation promoting. See [Promoting a release](/release-management/codepush/codepush-cli/using-the-codepush-cli#promoting-a-release) and [Promote a package](/release-management-api/code-push/api-reference/promote-code-push-package).
+
+## Copying an update
+
+1. Open your app in Release Management.
+1. Select **CodePush** on the left.
+1. Select the deployment that contains the update.
+1. Click the options menu (⋮) at the end of the update's row and select **Copy to deployment…**.
+
+   You can also open the update, click **Manage update**, and select **Copy to deployment**.
+
+   ![Options menu of a CodePush update with Copy to deployment… highlighted](/img/codepush/copy-to-deployment-menu.png)
+1. In the **Copy to deployment** field, select the deployment you want to copy the update to.
+
+   ![Copy update to deployment page with Production selected as the target deployment](/img/codepush/copy-update-to-deployment-page.png)
+1. Optionally, change the settings of the copy.
+
+   Bitrise fills in the target versions, the description, and the **Enabled for download** and **Mandatory** settings from the original update. The settings work the same way as for a new update: [Uploading the package to the Bitrise CodePush Server](/release-management/codepush/creating-and-releasing-codepush-updates#uploading-the-package-to-the-bitrise-codepush-server).
+1. Click **Copy update**.
+
+Bitrise opens the page of the new update. A notice on the page shows which deployment the update was copied from and when.
+
+![Page of a copied update with a notice that it was copied from the Staging deployment](/img/codepush/copied-update-notice.png)
+
+## When you can't copy an update
+
+Bitrise doesn't copy the update if:
+
+- The latest enabled update in the target deployment hasn't reached 100% rollout. Roll it out to 100% or disable it first.
+- The target deployment already contains an update with the same contents.
