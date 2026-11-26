@@ -205,9 +205,11 @@ The default setup only sees `xcodebuild` runs through your `PATH`, so Xcode.app 
 
 The wrapperless pipeline is a beta feature and off by default. The behavior may still change, and a few limitations are documented at the end of this section.
 
+Use Bitrise Build Cache CLI 3.20.2 or later. Earlier versions can't turn the pipeline off again, and their cache keys don't match across machines with different home directories.
+
 :::
 
-### Turning it on
+### Turning on the wrapperless pipeline
 
 1. Activate the pipeline on this machine:
 
@@ -223,11 +225,11 @@ The wrapperless pipeline is a beta feature and off by default. The behavior may 
    bitrise-build-cache xcode link <path-to-.xcodeproj-or-.xcworkspace>
    ```
 
-   The command is idempotent — re-run it after moving the project. Swift Package Manager package targets are not reachable this way; they stay uncached.
+   The command is idempotent — re-run it after moving the project. Swift Package Manager package targets don't pick up this include. They rely on the Bitrise toolchain from the next step: without it, they use only the local compilation cache.
 
 3. In Xcode, pick the Bitrise toolchain from **Xcode → Toolchains**. Xcode doesn't honor the toolchain setting from the xcconfig automatically for the IDE, so this is a manual step the first time around. Build with ⌘B afterwards.
 
-To turn it back off, re-activate and pass the explicit `false`:
+To turn it back off (CLI 3.20.2 or later), re-activate and pass the explicit `false`:
 
 ```bash
 bitrise-build-cache activate xcode --wrapperless-pipeline=false
@@ -241,12 +243,10 @@ The pipeline watches the default DerivedData root (`~/Library/Developer/Xcode/De
 
 ### Warming Xcode.app builds from terminal builds
 
-**Does a cached terminal build speed up later Xcode.app builds on the same machine?**
+With the wrapperless pipeline, a cached terminal build speeds up later Xcode.app builds on the same machine. With the default wrapper, it does not:
 
-Yes with the wrapperless pipeline, no with the default wrapper.
-
-- **Wrapperless pipeline:** Terminal `xcodebuild` and Xcode.app both use the Bitrise toolchain and write into the default DerivedData root (or the custom one `BITRISE_XCELERATE_DERIVED_DATA_DIRS` / `IDECustomDerivedDataLocation` points at). A terminal build populates the DerivedData that Xcode.app reads on the next ⌘B, and both builds pull compilation-cache entries from the same proxy.
-- **Default wrapper:** The `xcodebuild` wrapper redirects DerivedData to `~/.bitrise/cache/xcode-dd/<project-hash>` so it has a predictable path to normalize with its prefix-map rules; Xcode.app keeps using `~/Library/Developer/Xcode/DerivedData` and bypasses the wrapper entirely. A terminal build populates the remote cache but leaves Xcode.app's DerivedData cold, so the next ⌘B still compiles from scratch locally.
+- **Wrapperless pipeline:** Terminal `xcodebuild` and Xcode.app both use the Bitrise toolchain and write into the default DerivedData root, or into the custom one that `BITRISE_XCELERATE_DERIVED_DATA_DIRS` or `IDECustomDerivedDataLocation` points at. A terminal build populates the DerivedData that Xcode.app reads on the next ⌘B, and both builds pull compilation-cache entries from the same proxy.
+- **Default wrapper:** The `xcodebuild` wrapper redirects DerivedData to `~/.bitrise/cache/xcode-dd/<project-hash>` so it has a predictable path to normalize with its prefix-map rules. Xcode.app keeps using `~/Library/Developer/Xcode/DerivedData` and bypasses the wrapper. A terminal build populates the remote cache but leaves Xcode.app's DerivedData cold, so the next ⌘B still compiles from scratch locally.
 
 ### Known limitations
 
