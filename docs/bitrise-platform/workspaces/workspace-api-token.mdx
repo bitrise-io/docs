@@ -55,6 +55,12 @@ You can't turn on notifications for tokens that never expire or that expire in l
 
 For example, you create a token that never expires. Because notifications aren't available for it, the setting is off. Later you regenerate the token with an expiration of **6 months**, which would normally send notices. The token still doesn't send them, because regenerating doesn't change the setting. To get notifications for this token, create a new one.
 
+### Tokens created before expiry notifications
+
+Tokens created before expiry notifications were released don't send reminders. Review your existing tokens on the **Security** page and sort the list by expiration to find the ones you need to rotate first. To get reminders for one of these tokens, replace it with a new token. See [Rotating a Workspace API token](#rotating-a-workspace-api-token).
+
+When a token expires, it stops working immediately. Any integration or script that still uses it fails to authenticate.
+
 
 ## Regenerating a Workspace API token
 
@@ -75,3 +81,16 @@ If a Workspace API token is lost for any reason, there is no way to view it agai
 1. Click **Copy and close**.
 
    Make sure to save the token in a secure way: you won't be able to see it again.
+
+
+## Rotating a Workspace API token
+
+To replace a token without breaking your integrations:
+
+1. [Create a new token](#creating-a-workspace-api-token) with the same **Workspace role** and product access.
+1. Update every integration, script, and Secret that uses the old token.
+1. Delete the old token from the **Security** page.
+
+You can also [regenerate the token](#regenerating-a-workspace-api-token) to give it a new expiration date. Regenerating replaces the token value, so you still need to update everything that uses it.
+
+Avoid tokens that never expire. For services that call the Bitrise API, consider [OIDC authentication](/bitrise-platform/integrations/oidc-authentication/oidc-for-bitrise) instead: it doesn't need a long-lived secret that you have to store and rotate.
