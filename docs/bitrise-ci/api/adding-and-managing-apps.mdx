@@ -47,6 +47,12 @@ The procedure and the examples are aimed at adding a private app with an SSH git
     }'
    ```
 
+   If you set `is_public` to `true`, the repository must be publicly accessible. Bitrise checks it, and the request fails if the check doesn't pass:
+
+   - `422` with the `public_project_requires_public_repository` code: the repository is private.
+   - `503` with the `git_provider_unavailable` code: Bitrise can't reach your Git provider. Try again later.
+   - `400` with the `provider_reauth_required` code: your Git provider rejected Bitrise's credentials. Reconnect your Git provider account.
+
    :::tip[Changing the name of your app]
 
    By default, when you register an app, it will inherit the name of your git repository.
@@ -84,6 +90,8 @@ The procedure and the examples are aimed at adding a private app with an SSH git
    This endpoint allows you to configure your apps: set the project type, the <GlossTerm baseform="stack">stack</GlossTerm> on which the build will run (this may vary based on your app), and the initial configuration settings.
 
    You can also set Environment Variables, as well as immediately specify a Workspace that will be the owner of the application. Please note that the `mode` parameter must be set to the value of `manual`.
+
+   To make the app public at this point, add `"is_public": true`. The same repository check runs as with the `register` endpoint.
 
    ```yaml
    curl -X POST -H 'Authorization: ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/APP-SLUG/finish' -d \
@@ -162,7 +170,7 @@ The optional parameters are:
 - apple_credential_user_slug: The new apple credential user slug (recommendation: use the UI to set this)
 - default_branch: The new default branch for the application.
 - is_public: The new the value if the application should be publicly visible.
-- repository_url: The new repository URL for the application.
+- repository_url: The new repository URL for the application. If the app is public, the new repository must be publicly accessible, too.
 - services_credential_user_id: The new service credential user ID (recommendation: use the UI to set this).
 - title: The new title of the application.
 
