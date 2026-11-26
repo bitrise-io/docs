@@ -4,9 +4,9 @@ The CLI publishes its configuration through `$GITHUB_ENV`, which GitHub Actions 
 
 Keep activation in a step of its own, before the step that runs the build.
 
-### Workflows triggered by forks cannot authenticate
+### Workflows triggered by forks cannot use the Build Cache
 
-GitHub does not pass repository or organization secrets to workflow runs triggered from a fork, and by default it does not let them request an OIDC token either. In those runs `BITRISE_BUILD_CACHE_AUTH_TOKEN` is empty and the OIDC exchange is not available, so the CLI cannot authenticate and the build runs without the cache.
+GitHub does not give workflow runs triggered from a fork access to secrets or, by default, to OIDC tokens. The CLI cannot authenticate in those runs, so the activation step fails. Skip the activation step for fork runs.
 
 ### Keep dependency caching separate from the Build Cache
 
