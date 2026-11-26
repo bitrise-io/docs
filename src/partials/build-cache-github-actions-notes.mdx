@@ -6,7 +6,13 @@ Keep activation in a step of its own, before the step that runs the build.
 
 ### Workflows triggered by forks cannot use the Build Cache
 
-GitHub does not give workflow runs triggered from a fork access to secrets or, by default, to OIDC tokens. The CLI cannot authenticate in those runs, so the activation step fails. Skip the activation step for fork runs.
+When a workflow run is triggered from a fork, GitHub does not give the run access to secrets or OIDC tokens. The CLI cannot authenticate in those runs, so the activation step fails. Skip the activation step for fork runs. For example, you can use the `github.event.pull_request.head.repo.full_name` context to check if the run is from a fork:
+
+```yaml
+- name: Activate Bitrise Build Cache for Gradle
+  if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+  run: /tmp/bin/bitrise-build-cache activate gradle --cache --cache-push
+```
 
 ### Keep dependency caching separate from the Build Cache
 
