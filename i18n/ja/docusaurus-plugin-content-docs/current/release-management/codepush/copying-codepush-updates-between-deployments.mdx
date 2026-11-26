@@ -1,0 +1,53 @@
+---
+title: "デプロイ間でのCodePushアップデートのコピー"
+description: "リリース済みのCodePushアップデートを、バンドルや再アップロードなしで、同じアプリの別のデプロイ（StagingからProductionなど）にコピーします。"
+sidebar_position: 4.5
+slug: /release-management/codepush/copying-codepush-updates-between-deployments
+---
+CodePushアップデートを、同じアプリの別のデプロイにコピーします。典型的な用途は、`Staging`デプロイでテストしたアップデートを`Production`に移行することです。コピーは元のアップデートと同じアップデートファイルを使用するため、バンドル、署名、アップロードをやり直す必要はありません。
+
+アップデートをコピーするには、ロールに <strong>Promote CodePush updates</strong> 権限が必要であり、アプリに少なくとも2つのデプロイが必要です。[Bitrise CodePushのロールと権限](/release-management/configuring-connected-apps/release-management-roles-and-permissions#roles-and-permissions-for-bitrise-codepush)と[CodePushデプロイの作成](/release-management/codepush/creating-a-codepush-deployment)をご覧ください。
+
+CodePush CLIとAPIでは、この操作をプロモートと呼びます。[リリースのプロモート](/release-management/codepush/codepush-cli/using-the-codepush-cli#promoting-a-release)と[パッケージのプロモート](/release-management-api/code-push/api-reference/promote-code-push-package)をご覧ください。
+
+## アップデートのコピー {#copying-an-update}
+
+:::important
+
+アップデートをコピーするには、ロールに <strong>Promote CodePush updates</strong> 権限が必要であり、アプリに少なくとも2つのデプロイが必要です。
+
+:::
+
+
+1. Release Managementでアプリを開きます。
+1. 左側の <strong>CodePush</strong> を選択します。
+1. アップデートが含まれているデプロイを選択します。
+1. アップデートの行の末尾にあるオプションメニュー（⋮）をクリックし、<strong>Copy to deployment…</strong> を選択します。
+
+   または、アップデートを開き、<strong>Manage update</strong> をクリックして、<strong>Copy to deployment</strong> を選択することもできます。
+
+   ![Copy to deployment…が強調表示されたCodePushアップデートのオプションメニュー](/img/codepush/copy-to-deployment-menu.png)
+1. <strong>Copy to deployment</strong> フィールドで、アップデートのコピー先のデプロイを選択します。
+
+   ![コピー先のデプロイとしてProductionが選択されたアップデートのコピー先デプロイページ](/img/codepush/copy-update-to-deployment-page.png)
+1. 必要に応じて、コピーの設定を変更します。
+
+   Bitriseは、元のアップデートから、ターゲットバージョン、説明、<strong>Enabled for download</strong> 設定、<strong>Mandatory</strong> 設定を引き継ぎます。コピー後にターゲットバージョンは変更できません。各設定はnew updateの場合と同じように機能します：[Bitrise CodePush Serverへのパッケージのアップロード](/release-management/codepush/creating-and-releasing-codepush-updates#uploading-the-package-to-the-bitrise-codepush-server)。
+1. <strong>Rollout settings</strong> セクションで、コピーのロールアウト方法を選択します：
+
+   - <strong>Set rollout percentage manually</strong>：アップデートを今すぐ受け取るユーザーの割合を入力します。後から増やすことができます。
+   - <strong>Automatically change rollout percentage over a 7-day period</strong>：開始日と時刻を選択します。Bitriseは、その時刻からロールアウトを毎日段階的（1%、2%、5%、10%、20%、50%、100%）に引き上げます。
+1. <strong>Copy update</strong> をクリックします。
+
+Bitriseがnew updateのページを開きます。ページ上の通知には、どのデプロイから、いつコピーされたかが表示されます。
+
+![Stagingデプロイからコピーされたことを示す通知が表示されたコピー済みアップデートのページ](/img/codepush/copied-update-notice.png)
+
+Bitriseがコピーを作成したものの自動ロールアウトをスケジュールできなかった場合、new updateのページに警告が表示されます。どちらの場合もコピーは作成されています。ページでロールアウト設定を確認し、必要に応じて再設定してください。
+
+## コピーの制限事項 {#copying-limitations}
+
+次の場合、Bitriseはアップデートをコピーしません：
+
+- ターゲットのデプロイで最新の有効なアップデートが、ロールアウト100%に達していない。100%までロールアウトするか、無効にしてください。
+- ターゲットのデプロイに、同じ内容のアップデートがすでに存在する。
