@@ -1,7 +1,7 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-You have three options to authenticate the Bitrise Build Cache CLI on GitHub Actions. The best method depends on where the job runs. 
+You have four options to authenticate the Bitrise Build Cache CLI on GitHub Actions. The best method depends on where the job runs: on Build Hub runners there is nothing to set up, and on GitHub-hosted runners we recommend OpenID Connect (OIDC).
 
 <Tabs>
 <TabItem value="build-hub" label="Build Hub runners" default>
@@ -19,9 +19,61 @@ Automatic authentication on Build Hub runners needs Bitrise Build Cache CLI v3.1
 If the CLI can't reach Bitrise to get a token, it falls back to the other methods on this page. A job that also sets `BITRISE_BUILD_CACHE_AUTH_TOKEN` and `BITRISE_BUILD_CACHE_WORKSPACE_ID` keeps working, and those values take precedence over the machine's own credentials.
 
 </TabItem>
+<TabItem value="oidc" label="OpenID Connect (OIDC)">
+
+On GitHub-hosted runners, we recommend OIDC. There is no token to create, store or rotate: Bitrise trusts the GitHub Actions runs of your repository through an [OIDC trust policy](/bitrise-platform/integrations/oidc-authentication/oidc-for-bitrise), and each job exchanges its GitHub OIDC token for a short-lived Bitrise token.
+
+To use OIDC, you need all of the following:
+
+- You must be an owner of the Bitrise workspace. Other members don't see this option.
+- The repository is on github.com. The setup flow doesn't support GitHub Enterprise Server or GitHub Enterprise Cloud with data residency.
+- Bitrise Build Cache CLI v3.15.0 or later. The install command on this page always fetches the latest release, so this only matters if you pin the CLI to an older version.
+
+If any of these doesn't apply, use a Workspace API token instead.
+
+:::note[A token in the job takes precedence]
+
+If the job also sets `BITRISE_BUILD_CACHE_AUTH_TOKEN`, the CLI uses that token and skips the OIDC exchange. Remove the token from the job when you switch to OIDC.
+
+:::
+
+Bitrise creates the trust policy for you when you add a new Build Cache connection:
+
+1. On Bitrise, select **Build Cache** from the left navigation menu and click **New connection**.
+1. Select **GitHub Actions** as the CI provider, then select your build tool.
+1. At the authentication step, select **Use OpenID Connect (OIDC)**.
+1. Connect to GitHub and select the repository that will use the Build Cache.
+
+   Bitrise creates a trust policy for the repository, or offers the existing one if the repository already has it. The policy matches every GitHub Actions run of that repository and grants the **viewer** workspace role, the lowest role that can access the Build Cache.
+1. Copy the `permissions` and `env` blocks from the next step into your GitHub Actions workflow:
+
+   ```yaml
+   jobs:
+     build:
+       permissions:
+         id-token: write   # lets the job request a GitHub OIDC token
+         contents: read    # checkout; setting permissions drops the defaults
+       env:
+         BITRISE_BUILD_CACHE_WORKSPACE_ID: "<your workspace slug>"
+         BITRISE_BUILD_CACHE_OIDC_POLICY_ID: "<your trust policy ID>"
+   ```
+
+   Neither value is sensitive, so you don't need a GitHub secret. In the example workflow on this page, these two blocks replace the `env` block of the GitHub-hosted runner job.
+
+You can find the policy later on the **Workspace settings** page, under **Security**, on the **OIDC trust policies** tab.
+
+:::note
+
+If activating the Build Cache fails with `GitHub Actions offers this job no OIDC token`, the job is usually missing `id-token: write` in its `permissions`. Adding the permission and re-running the job fixes it.
+
+The same error appears in [workflows triggered by forks](#workflows-triggered-by-forks-cannot-use-the-build-cache), where it is expected and adding the permission doesn't help.
+
+:::
+
+</TabItem>
 <TabItem value="workspace-api-token" label="Workspace API token">
 
-On GitHub-hosted runners, we recommend using a [workspace API token](/bitrise-platform/workspaces/workspace-api-token). It belongs to the workspace rather than to a person, so it keeps working when someone changes roles or leaves the company.
+If you can't use OIDC on GitHub-hosted runners, use a [workspace API token](/bitrise-platform/workspaces/workspace-api-token). It belongs to the workspace rather than to a person, so it keeps working when someone changes roles or leaves the company.
 
 Give the token at least the **viewer** workspace role: that is the lowest role that can access the Build Cache.
 
