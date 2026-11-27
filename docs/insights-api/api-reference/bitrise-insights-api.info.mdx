@@ -39,7 +39,8 @@ accepted.
 Both personal access tokens and workspace API tokens work; the token must have view
 access to the workspace in the path and to the project it is queried with.
 A missing or malformed header answers 401; a token that is rejected, expired or not
-entitled to the workspace or project answers 403.
+entitled to the workspace or project answers 403. A token whose trusted IP ranges
+don't include the caller is rejected too.
 
 ## Requirements
 The Insights API is part of a paid Insights plan. A workspace without one gets 402
@@ -47,11 +48,11 @@ on every endpoint.
 
 ## Rate limiting
 Requests are rate limited per token: 60 requests per minute, across every endpoint
-and workspace the token is used with. Every response to a request carrying a
-well-formed token carries `X-RateLimit-Limit`, `X-RateLimit-Remaining` and
-`X-RateLimit-Reset` - the limiter runs once the token is known, so a 401 for a
-missing or malformed header has none. Over the limit the API answers 429 with a
-`Retry-After` header.
+and workspace the token is used with. Responses to requests that pass the token,
+workspace and project checks carry `X-RateLimit-Limit`, `X-RateLimit-Remaining` and
+`X-RateLimit-Reset`. Requests are also limited to 600 per minute per client IP
+address. Over either limit the API answers 429 with a `Retry-After` header and the
+`X-RateLimit-*` headers of the limit that was hit.
 
 ## Conventions
 Every call reports on exactly one project, named by the required `project` parameter.

@@ -10,7 +10,7 @@
     ],
     "swagger": "2.0",
     "info": {
-        "description": "Public, read-only API for Bitrise Insights build and test metrics.\n\n## Authentication\nSend a Bitrise API token in the `Authorization` header, either as\n`Authorization: Bearer \u003ctoken\u003e` or bare as `Authorization: \u003ctoken\u003e`. Both forms are\naccepted.\nBoth personal access tokens and workspace API tokens work; the token must have view\naccess to the workspace in the path and to the project it is queried with.\nA missing or malformed header answers 401; a token that is rejected, expired or not\nentitled to the workspace or project answers 403.\n\n## Requirements\nThe Insights API is part of a paid Insights plan. A workspace without one gets 402\non every endpoint.\n\n## Rate limiting\nRequests are rate limited per token: 60 requests per minute, across every endpoint\nand workspace the token is used with. Every response to a request carrying a\nwell-formed token carries `X-RateLimit-Limit`, `X-RateLimit-Remaining` and\n`X-RateLimit-Reset` - the limiter runs once the token is known, so a 401 for a\nmissing or malformed header has none. Over the limit the API answers 429 with a\n`Retry-After` header.\n\n## Conventions\nEvery call reports on exactly one project, named by the required `project` parameter.\nTimestamps are RFC3339 in UTC, both in requests and in responses. Durations are\nseconds and rates are percentages in 0-100. Filter parameters that accept several\nvalues are repeated rather than comma-separated: `branch=main\u0026branch=develop`.\nThe `branch` filter accepts `*` as a wildcard matching any run of characters:\n`branch=release/*` matches every release branch.\nResponses are long format: one row type per endpoint, and grouping adds a label to\neach row instead of changing its shape.",
+        "description": "Public, read-only API for Bitrise Insights build and test metrics.\n\n## Authentication\nSend a Bitrise API token in the `Authorization` header, either as\n`Authorization: Bearer \u003ctoken\u003e` or bare as `Authorization: \u003ctoken\u003e`. Both forms are\naccepted.\nBoth personal access tokens and workspace API tokens work; the token must have view\naccess to the workspace in the path and to the project it is queried with.\nA missing or malformed header answers 401; a token that is rejected, expired or not\nentitled to the workspace or project answers 403. A token whose trusted IP ranges\ndon't include the caller is rejected too.\n\n## Requirements\nThe Insights API is part of a paid Insights plan. A workspace without one gets 402\non every endpoint.\n\n## Rate limiting\nRequests are rate limited per token: 60 requests per minute, across every endpoint\nand workspace the token is used with. Responses to requests that pass the token,\nworkspace and project checks carry `X-RateLimit-Limit`, `X-RateLimit-Remaining` and\n`X-RateLimit-Reset`. Requests are also limited to 600 per minute per client IP\naddress. Over either limit the API answers 429 with a `Retry-After` header and the\n`X-RateLimit-*` headers of the limit that was hit.\n\n## Conventions\nEvery call reports on exactly one project, named by the required `project` parameter.\nTimestamps are RFC3339 in UTC, both in requests and in responses. Durations are\nseconds and rates are percentages in 0-100. Filter parameters that accept several\nvalues are repeated rather than comma-separated: `branch=main\u0026branch=develop`.\nThe `branch` filter accepts `*` as a wildcard matching any run of characters:\n`branch=release/*` matches every release branch.\nResponses are long format: one row type per endpoint, and grouping adds a label to\neach row instead of changing its shape.",
         "title": "Bitrise Insights API",
         "contact": {},
         "version": "1.0.0"
@@ -190,7 +190,7 @@
                         }
                     },
                     "503": {
-                        "description": "authorization is temporarily unavailable; the request may be retried",
+                        "description": "Insights is temporarily unavailable; the request may be retried",
                         "schema": {
                             "$ref": "#/definitions/insightsapi.ServiceUnavailableResponse"
                         }
@@ -340,7 +340,7 @@
                         }
                     },
                     "503": {
-                        "description": "authorization is temporarily unavailable; the request may be retried",
+                        "description": "Insights is temporarily unavailable; the request may be retried",
                         "schema": {
                             "$ref": "#/definitions/insightsapi.ServiceUnavailableResponse"
                         }
@@ -559,7 +559,7 @@
                         }
                     },
                     "503": {
-                        "description": "authorization is temporarily unavailable; the request may be retried",
+                        "description": "Insights is temporarily unavailable; the request may be retried",
                         "schema": {
                             "$ref": "#/definitions/insightsapi.ServiceUnavailableResponse"
                         }
@@ -760,7 +760,7 @@
                         }
                     },
                     "503": {
-                        "description": "authorization is temporarily unavailable; the request may be retried",
+                        "description": "Insights is temporarily unavailable; the request may be retried",
                         "schema": {
                             "$ref": "#/definitions/insightsapi.ServiceUnavailableResponse"
                         }
@@ -923,7 +923,7 @@
                         }
                     },
                     "503": {
-                        "description": "authorization is temporarily unavailable; the request may be retried",
+                        "description": "Insights is temporarily unavailable; the request may be retried",
                         "schema": {
                             "$ref": "#/definitions/insightsapi.ServiceUnavailableResponse"
                         }
@@ -1213,7 +1213,7 @@
                 "message": {
                     "description": "A human-readable description of what went wrong. Not a stable contract - branch on the status.",
                     "type": "string",
-                    "example": "authorization is unavailable"
+                    "example": "Insights is unavailable"
                 }
             }
         },
@@ -1397,7 +1397,7 @@
                 "message": {
                     "description": "A human-readable description of what went wrong. Not a stable contract - branch on the status.",
                     "type": "string",
-                    "example": "invalid Authorization header"
+                    "example": "A personal access token or workspace API token is required"
                 }
             }
         },
