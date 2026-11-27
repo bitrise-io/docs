@@ -225,7 +225,7 @@ Use Bitrise Build Cache CLI 3.20.2 or later. Earlier versions can't turn the pip
    bitrise-build-cache xcode link <path-to-.xcodeproj-or-.xcworkspace>
    ```
 
-   The command is idempotent — re-run it after moving the project. Swift Package Manager package targets don't pick up this include. They rely on the Bitrise toolchain from the next step: without it, they use only the local compilation cache.
+   The command appends the include block to each build configuration's existing xcconfig. If a configuration has none, it creates a `.bitrise-build-cache.xcconfig` next to the project and points the configuration at it. The command is idempotent — re-run it after moving the project. Swift Package Manager package targets don't pick up this include. They rely on the Bitrise toolchain from the next step: without it, they use only the local compilation cache.
 
 3. In Xcode, pick the Bitrise toolchain from **Xcode → Toolchains**. Xcode doesn't honor the toolchain setting from the xcconfig automatically for the IDE, so this is a manual step the first time around. Build with ⌘B afterwards.
 
@@ -235,11 +235,11 @@ To turn it back off (CLI 3.20.2 or later), re-activate and pass the explicit `fa
 bitrise-build-cache activate xcode --wrapperless-pipeline=false
 ```
 
-To undo the project edits `xcode link` made, run `bitrise-build-cache xcode unlink <path>` with the same project or workspace path.
+To undo the project edits `xcode link` made, run `bitrise-build-cache xcode unlink <path>` with the same project or workspace path. It removes the include blocks and any empty `.bitrise-build-cache.xcconfig` file, but leaves the xcconfig reference in the project.
 
 ### DerivedData locations
 
-The pipeline watches the default DerivedData root (`~/Library/Developer/Xcode/DerivedData`) and the custom one you set from Xcode's **Preferences → Locations → Derived Data → Custom** (`IDECustomDerivedDataLocation`). If your builds use yet another location — or several — list them in the `BITRISE_XCELERATE_DERIVED_DATA_DIRS` environment variable as a colon-separated list, and the pipeline will watch them all.
+The pipeline watches the default DerivedData root (`~/Library/Developer/Xcode/DerivedData`) and the custom one you set from Xcode's **Xcode → Settings → Locations → Derived Data → Custom** (`IDECustomDerivedDataLocation`). If your builds use yet another location — or several — list them in the `BITRISE_XCELERATE_DERIVED_DATA_DIRS` environment variable as a colon-separated list, and the pipeline will watch them all.
 
 ### Warming Xcode.app builds from terminal builds
 
