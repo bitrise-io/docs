@@ -13,7 +13,7 @@ import GlossTerm from '@site/src/components/GlossTerm';
 
 :::important
 
-このガイドでは、CodePushアップデートをリリースする一般的な流れについて説明します。プロセスの自動化にはBitrise CIの使用をお勧めします: [Bitrise CIを使ったCodePushアップデート](/release-management/codepush/codepush-updates-with-bitrise-ci)。
+このガイドでは、CodePushアップデートをリリースする一般的な流れについて説明します。プロセスの自動化にはBitrise CIの使用をお勧めします： [Bitrise CIを使ったCodePushアップデート](/release-management/codepush/codepush-updates-with-bitrise-ci)。
 
 :::
 
@@ -37,7 +37,7 @@ APIでCodePushアップデートをリリースするには、次のデプロイ
 - デプロイキー。
 
   iOSとAndroidでは、それぞれ別のデプロイキーが必要です。
-- Bitrise APIトークン: [個人用アクセストークン](/bitrise-platform/accounts/personal-access-tokens)または[workspace APIトークン](/bitrise-platform/workspaces/workspace-api-token)のいずれかを使用できます。
+- Bitrise APIトークン： [個人用アクセストークン](/bitrise-platform/accounts/personal-access-tokens)または[workspace APIトークン](/bitrise-platform/workspaces/workspace-api-token)のいずれかを使用できます。
 
 これらの認証情報は、CodePushデプロイの作成時に保存できます。後で取得する必要がある場合は、Release Management APIを使用してください。
 
@@ -47,7 +47,7 @@ APIでCodePushアップデートをリリースするには、次のデプロイ
    - [Workspace APIトークンを作成する](/bitrise-platform/workspaces/workspace-api-token#creating-a-workspace-api-token)。
 1. iOSアプリとAndroidアプリの両方について、Release ManagementからアプリIDを取得します。
 
-   Release Managementでアプリを開き、URLからIDをコピーします。これはURLの末尾にある英数字のコードです: https://app.bitrise.io/release-management/workspaces/4afb6c4bb001295/connected-apps/12a0cf2b-9cf1-401a-8904-393b18v449ca.
+   Release Managementでアプリを開き、URLからIDをコピーします。これはURLの末尾にある英数字のコードです： https://app.bitrise.io/release-management/workspaces/4afb6c4bb001295/connected-apps/12a0cf2b-9cf1-401a-8904-393b18v449ca.
 1. APIからデプロイIDとデプロイキーを取得します。
 
    :::tip
@@ -65,7 +65,7 @@ APIでCodePushアップデートをリリースするには、次のデプロイ
      -H 'authorization: <YOUR-ACCESS-TOKEN>'
    ```
 
-   レスポンスには各デプロイのデプロイID(`id`)が含まれています。これはデプロイキー(`key`を取得するために必要です。`id`の値を指定して`deployments`を呼び出します:
+   レスポンスには各デプロイのデプロイID（`id`）が含まれています。これはデプロイキー（`key`）を取得するために必要です。`id`の値を指定して`deployments`を呼び出します：
 
    ```yaml
    curl -X 'GET' \
@@ -151,50 +151,52 @@ APIでCodePushアップデートをリリースするには、次のデプロイ
 
 ## Bitrise CodePush Serverへのパッケージのアップロード {#uploading-the-package-to-the-bitrise-codepush-server}
 
-パッケージはRelease ManagementのGUIまたはRelease Management APIのいずれかを使ってアップロードできます。
+パッケージは Release Management GUI または Release Management API のいずれかを使ってアップロードできます。
 
 <Tabs>
 <TabItem value="gui" label="GUI" default>
 
-1. Release Managementでアプリを開きます。
-1. 左側で<strong>CodePush</strong>を選択します。
-1. デプロイを選択します。
+1. Release Management でアプリを開きます。
+1. 左側で <strong>CodePush</strong> を選択します。
+1. <strong>New update</strong> をクリックします。
 
    ![20251217-rm-deployments.png](/img/_paligo/uuid-87908768-bac5-5e86-6412-826381a0b8a4.png)
-1. <strong>New update</strong>をクリックします。
-1. <strong>Target versions</strong>フィールドに、アップデートのバージョン範囲を追加します。
+1. <strong>Deployment</strong> フィールドでデプロイを選択します。
+1. <strong>Target versions</strong> フィールドに、アップデートのバージョン範囲を追加します。
 
-   範囲式を使用できます: [対象バージョン](#target-versions)。
+   範囲式を使用できます：[対象バージョン](#target-versions)。
 1. 必要に応じて、アップデートの説明を追加します。
-1. <strong>Enabled</strong>をチェックして、ユーザーがアップデートをダウンロードできるようにします。
+1. <strong>Enabled for download</strong> をチェックして、ユーザーがアップデートをダウンロードできるようにします。
 
    ![20251217-new-codepush-update-dialog.png](/img/_paligo/uuid-8e971849-b560-9393-f308-ed2587195b2c.png)
-1. 必要に応じて、<strong>Mandatory</strong>をチェックして、ユーザーに今すぐアップデートするよう促します。
+1. 必要に応じて、<strong>Mandatory</strong> をチェックして、ユーザーに今すぐアップデートするよう促します。
 1. アップデートファイルをドラッグ&ドロップエリアにドラッグ&ドロップするか、エリアをクリックしてファイルを選択します。
 
    :::important[ファイルの要件]
 
-   - `.bundle`、`.jsbundle`、または`.zip`ファイルをアップロードしてください。
+   - `.bundle`、`.jsbundle`、または `.zip` ファイルをアップロードしてください。
    - 最大ファイルサイズは50 MBです。
 
    :::
-1. <strong>Rollout percentage</strong>フィールドで、アップデートを受け取るユーザーの割合を設定します。
+1. <strong>Rollout percentage</strong> フィールドで、アップデートを受け取るユーザーの割合を設定します。
 
-   後でパーセンテージの値を増やすことができます。default valueは100%です。
-1. <strong>Release update</strong>をクリックします。
+   後でパーセンテージの値を増やすことができます。default value は100%です。
+
+   アップデートを自動的にロールアウトするには、代わりに <strong>Automatically change rollout percentage over a 7-day period</strong> を選択し、<strong>Rollout start</strong> フィールドで開始日時を設定します。パーセンテージは毎日増加し、初日の1%から7日目の100%になります。この場合、次のステップで <strong>Schedule release</strong> をクリックします。
+1. <strong>Release update</strong> をクリックします。
 
 </TabItem>
 <TabItem value="api" label="API">
 
-1. CodePushの認証情報が利用可能であることを確認します。[CodePushの認証情報を取得する](#getting-your-codepush-credentials)を参照してください。
-1. Bitriseから`release-management-recipes`リポジトリをクローンします。
+1. CodePushの認証情報が利用可能であることを確認します：[CodePushの認証情報を取得する](#getting-your-codepush-credentials)。
+1. Bitrise から `release-management-recipes` リポジトリをクローンします。
 
    このリポジトリには、アップデートパッケージのアップロードに使用するヘルパースクリプトが含まれています。
 
    ```bash
    git clone https://github.com/bitrise-io/release-management-recipes
    ```
-1. `release-management-recipes`フォルダに移動します。
+1. `release-management-recipes` フォルダに移動します。
 
    ```bash
    cd release-management-recipes
@@ -203,8 +205,8 @@ APIでCodePushアップデートをリリースするには、次のデプロイ
 
    スクリプトには次の入力データが必要です。
 
-   - `update.zip`ファイルのパス。
-   - Bitrise APIトークン: [個人用アクセストークン](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token)または[workspace APIトークン](/bitrise-platform/workspaces/workspace-api-token)のいずれかを使用できます。
+   - `update.zip` ファイルのパス。
+   - Bitrise API トークン：[個人用アクセストークン](/bitrise-platform/accounts/personal-access-tokens#creating-a-personal-access-token)または [workspace API トークン](/bitrise-platform/workspaces/workspace-api-token)のいずれかを使用できます。
    - デプロイID。
    - アプリのバージョン。詳細については、[対象バージョン](/release-management/codepush/creating-and-releasing-codepush-updates#target-versions)を参照してください。
 

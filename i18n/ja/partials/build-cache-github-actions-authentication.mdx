@@ -1,7 +1,7 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-GitHub Actions で Bitrise Build Cache CLI を認証する方法は3つあります。最適な方法は、ジョブの実行場所によって異なります。
+GitHub Actions で Bitrise Build Cache CLI を認証する方法は4つあります。最適な方法は、ジョブの実行場所によって異なります。Build Hub ランナーでは設定は不要です。GitHub ホストのランナーでは、OpenID Connect（OIDC）を推奨します。
 
 <Tabs>
 <TabItem value="build-hub" label="Build Hub runners" default>
@@ -19,24 +19,76 @@ Build Hub ランナーでの自動認証には、Bitrise Build Cache CLI v3.10.0
 CLI が Bitrise に接続してトークンを取得できない場合は、このページの他の方法にフォールバックします。`BITRISE_BUILD_CACHE_AUTH_TOKEN` と `BITRISE_BUILD_CACHE_WORKSPACE_ID` も設定しているジョブは引き続き動作し、それらの値がマシン自体の認証情報よりも優先されます。
 
 </TabItem>
+<TabItem value="oidc" label="OpenID Connect (OIDC)">
+
+GitHub ホストのランナーでは、OIDC を推奨します。作成、保存、ローテーションが必要なトークンはありません。Bitrise は、[OIDC 信頼ポリシー](/bitrise-platform/integrations/oidc-authentication/oidc-for-bitrise)を通じてリポジトリの GitHub Actions の実行を信頼し、各ジョブは GitHub OIDC トークンを短命な Bitrise トークンと交換します。
+
+OIDC を使用するには、次のすべてを満たす必要があります。
+
+- Bitrise workspace のオーナーである必要があります。他のメンバーにはこのオプションは表示されません。
+- リポジトリが github.com にあること。セットアップフローは、GitHub Enterprise Server および GitHub Enterprise Cloud（データレジデンシー対応）をサポートしていません。
+- Bitrise Build Cache CLI v3.15.0 以降であること。このページのインストールコマンドは常に最新リリースを取得するため、CLI を古いバージョンに固定している場合にのみ関係します。
+
+これらのいずれかに当てはまらない場合は、代わりに Workspace API トークンを使用してください。
+
+:::note[ジョブ内のトークンが優先されます]
+
+ジョブが `BITRISE_BUILD_CACHE_AUTH_TOKEN` も設定している場合、CLI はそのトークンを使用し、OIDC の交換をスキップします。OIDC に切り替えるときは、ジョブからトークンを削除してください。
+
+:::
+
+Bitrise は、新しい Build Cache 接続を追加するときに信頼ポリシーを作成します。
+
+1. Bitrise で、左側のナビゲーションメニューから <strong>Build Cache</strong> を選択し、<strong>New connection</strong> をクリックします。
+1. CI プロバイダーとして <strong>GitHub Actions</strong> を選択し、ビルドツールを選択します。
+1. 認証のステップで、<strong>Use OpenID Connect（OIDC）</strong> を選択します。
+1. GitHub に接続し、Build Cache を使用するリポジトリを選択します。
+
+   Bitrise はリポジトリの信頼ポリシーを作成します。リポジトリにすでにポリシーがある場合は、既存のポリシーを提示します。このポリシーは、そのリポジトリのすべての GitHub Actions の実行に一致し、Build Cache にアクセスできる最も低いロールである <strong>viewer</strong> workspace ロールを付与します。
+1. 次のステップの `permissions` ブロックと `env` ブロックを、GitHub Actions のワークフローにコピーします。
+
+   ```yaml
+   jobs:
+     build:
+       permissions:
+         id-token: write   # lets the job request a GitHub OIDC token
+         contents: read    # checkout; setting permissions drops the defaults
+       env:
+         BITRISE_BUILD_CACHE_WORKSPACE_ID: "<your workspace slug>"
+         BITRISE_BUILD_CACHE_OIDC_POLICY_ID: "<your trust policy ID>"
+   ```
+
+   どちらの値も機密情報ではないため、GitHub のシークレットは不要です。このページのワークフロー例では、この2つのブロックが GitHub ホストのランナーのジョブの `env` ブロックに置き換わります。
+
+ポリシーは、後から <strong>Workspace settings</strong> ページの <strong>Security</strong> にある <strong>OIDC trust policies</strong> タブで確認できます。
+
+:::note
+
+Build Cache のアクティベーションが `GitHub Actions offers this job no OIDC token` で失敗する場合、多くはジョブの `permissions` に `id-token: write` がありません。権限を追加してジョブを再実行すると解決します。
+
+同じエラーは[フォークからトリガーされたワークフロー](#workflows-triggered-by-forks-cannot-use-the-build-cache)でも発生しますが、これは想定どおりの動作であり、権限を追加しても解決しません。
+
+:::
+
+</TabItem>
 <TabItem value="workspace-api-token" label="Workspace API token">
 
-GitHub ホストのランナーでは、[workspace API トークン](/bitrise-platform/workspaces/workspace-api-token) の使用を推奨します。このトークンは個人ではなく workspace に属するため、担当者のロールが変わったり退職したりしても引き続き使用できます。
+GitHub ホストのランナーで OIDC を使用できない場合は、[workspace API トークン](/bitrise-platform/workspaces/workspace-api-token)を使用します。このトークンは個人ではなく workspace に属するため、担当者のロールが変わったり退職したりしても引き続き使用できます。
 
 トークンには、少なくとも <strong>viewer</strong> workspace ロールを付与してください。これは Build Cache にアクセスできる最も低いロールです。
 
 ジョブには2つの値が必要です。
 
 - トークン。機密情報のため、GitHub のシークレットに保存します。
-- [workspace スラッグ](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs)。機密情報ではないため、GitHub の変数として設定できます。どちらも単一のリポジトリに追加することも、組織に追加してすべてのリポジトリで使用できるようにすることもできます。
+- [workspace スラッグ](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs)。機密情報ではないため、GitHub の変数として設定できます。どちらも単一のリポジトリに追加することも、Organization に追加してすべてのリポジトリで使用できるようにすることもできます。
 
-1. GitHub で、追加先のリポジトリまたは組織を開き、<strong>Settings</strong> を選択します。
+1. GitHub で、追加先のリポジトリまたは Organization を開き、<strong>Settings</strong> を選択します。
 1. サイドバーの <strong>Security</strong> で、<strong>Secrets and variables</strong>、<strong>Actions</strong> の順に選択します。
-1. <strong>Secrets</strong> タブで <strong>New repository secret</strong> をクリックします。組織の設定を開いている場合は <strong>New organization secret</strong> をクリックします。
+1. <strong>Secrets</strong> タブで <strong>New repository secret</strong> をクリックします。Organization の設定を開いている場合は <strong>New organization secret</strong> をクリックします。
 1. 名前に `BITRISE_BUILD_CACHE_AUTH_TOKEN` を設定し、値に Workspace API トークンを貼り付けて、<strong>Add secret</strong> をクリックします。
 
-   組織のシークレットでは、使用を許可するリポジトリも選択します。
-1. <strong>Variable</strong> タブに切り替えて <strong>New repository variable</strong> をクリックします。組織の場合は <strong>New organization variable</strong> をクリックします。
+   Organization のシークレットでは、使用を許可するリポジトリも選択します。
+1. <strong>Variable</strong> タブに切り替えて <strong>New repository variable</strong> をクリックします。Organization の場合は <strong>New organization variable</strong> をクリックします。
 1. 名前に `BITRISE_BUILD_CACHE_WORKSPACE_ID` を設定し、値に Bitrise Workspace のスラッグを設定して、<strong>Add variable</strong> をクリックします。
 
    スラッグは、Bitrise Workspace の <strong>Workspace settings</strong> ページの <strong>General settings</strong> で確認できます。
@@ -62,15 +114,15 @@ GitHub ホストのランナーでは、[workspace API トークン](/bitrise-pl
 ジョブには2つの値が必要です。
 
 - トークン。機密情報のため、GitHub のシークレットに保存します。
-- [workspace スラッグ](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs)。機密情報ではないため、GitHub の変数として設定できます。どちらも単一のリポジトリに追加することも、組織に追加してすべてのリポジトリで使用できるようにすることもできます。
+- [workspace スラッグ](/bitrise-ci/api/identifying-workspaces-and-apps-with-their-slugs)。機密情報ではないため、GitHub の変数として設定できます。どちらも単一のリポジトリに追加することも、Organization に追加してすべてのリポジトリで使用できるようにすることもできます。
 
-1. GitHub で、追加先のリポジトリまたは組織を開き、<strong>Settings</strong> を選択します。
+1. GitHub で、追加先のリポジトリまたは Organization を開き、<strong>Settings</strong> を選択します。
 1. サイドバーの <strong>Security</strong> で、<strong>Secrets and variables</strong>、<strong>Actions</strong> の順に選択します。
-1. <strong>Secrets</strong> タブで <strong>New repository secret</strong> をクリックします。組織の設定を開いている場合は <strong>New organization secret</strong> をクリックします。
+1. <strong>Secrets</strong> タブで <strong>New repository secret</strong> をクリックします。Organization の設定を開いている場合は <strong>New organization secret</strong> をクリックします。
 1. 名前に `BITRISE_BUILD_CACHE_AUTH_TOKEN` を設定し、値に Personal Access Token を貼り付けて、<strong>Add secret</strong> をクリックします。
 
-   組織のシークレットでは、使用を許可するリポジトリも選択します。
-1. <strong>Variable</strong> タブに切り替えて <strong>New repository variable</strong> をクリックします。組織の場合は <strong>New organization variable</strong> をクリックします。
+   Organization のシークレットでは、使用を許可するリポジトリも選択します。
+1. <strong>Variable</strong> タブに切り替えて <strong>New repository variable</strong> をクリックします。Organization の場合は <strong>New organization variable</strong> をクリックします。
 1. 名前に `BITRISE_BUILD_CACHE_WORKSPACE_ID` を設定し、値に Bitrise Workspace のスラッグを設定して、<strong>Add variable</strong> をクリックします。
 
    スラッグは、Bitrise Workspace の <strong>Workspace settings</strong> ページの <strong>General settings</strong> で確認できます。

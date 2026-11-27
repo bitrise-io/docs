@@ -4,9 +4,15 @@ CLIは、`$GITHUB_ENV`を通じて設定を公開します。GitHub Actions は�
 
 アクティベーションは、ビルドを実行するステップより前の独立したステップで行ってください。
 
-### Workflows：フォークからトリガーされた実行にはシークレットがありません {#workflows-triggered-by-forks-have-no-secrets}
+### フォークからトリガーされた Workflows では Build Cache を使用できません {#workflows-triggered-by-forks-cannot-use-the-build-cache}
 
-GitHubは、フォークからトリガーされたワークフローの実行に、リポジトリや Organization のシークレットを渡しません。そのような実行では`BITRISE_BUILD_CACHE_AUTH_TOKEN`が空になるため、CLIは認証できず、ビルドはキャッシュなしで実行されます。
+ワークフローの実行がフォークからトリガーされた場合、GitHub は実行にシークレットや OIDC トークンへのアクセスを許可しません。そのため、CLI はこれらの実行で認証できず、アクティベーションのステップが失敗します。フォークからの実行では、アクティベーションのステップをスキップしてください。たとえば、`github.event.pull_request.head.repo.full_name` コンテキストを使用して、実行がフォークからのものかどうかを確認できます。
+
+```yaml
+- name: Activate Bitrise Build Cache for Gradle
+  if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+  run: /tmp/bin/bitrise-build-cache activate gradle --cache --cache-push
+```
 
 ### 依存関係のキャッシュとBuild Cacheを分けて考える {#keep-dependency-caching-separate-from-the-build-cache}
 
