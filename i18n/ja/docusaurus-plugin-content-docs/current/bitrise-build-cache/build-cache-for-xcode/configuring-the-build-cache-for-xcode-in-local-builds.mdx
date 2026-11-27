@@ -17,15 +17,15 @@ Bitrise Build Cache CLIは、`xcodebuild`ラッパーを`PATH`にインストー
 ## 始める前に {#before-you-start}
 
 次のものを用意してください。
-- お使いのマシン上で、Xcode 26 or laterでビルドされた動作するXcodeプロジェクト。それより前のバージョンでは、CLIが必要とするコンパイルキャッシュのフラグが公開されておらず、ラッパーは何も行いません。
-- Build Cacheが有効なBitrise workspace。[Build Cacheページ](https://app.bitrise.io/build-cache/)で確認できます。
-- お使いのマシンがファイアウォールやアウトバウンドプロキシ、VPNの内側にある場合は、Build Cacheが使用するBitriseホストへのネットワークアクセス。[Network endpoints for firewalls and VPNs](/bitrise-build-cache/getting-started-with-the-build-cache/network-endpoints-for-firewalls-and-vpns)を参照してください。
+- Xcode 26 or later でビルドされた、お使いのマシン上で動作する Xcode プロジェクト。以前のバージョンでは、CLI が必要とするコンパイルキャッシュのフラグが公開されておらず、ラッパーは何も行いません。
+- Build Cache が有効な Bitrise workspace。[Build Cache ページ](https://app.bitrise.io/build-cache/)で確認できます。
+- VPN、ファイアウォール、またはアウトバウンドプロキシの内側にマシンがある場合は、Build Cache が使用する Bitrise ホストへのネットワークアクセス。[ファイアウォールと VPN のネットワークエンドポイント](/bitrise-build-cache/getting-started-with-the-build-cache/network-endpoints-for-firewalls-and-vpns)を参照してください。
 
-:::important[Terminal builds only]
+:::important[Terminal builds by default]
 
-キャッシュは、`PATH`を介して解決される`xcodebuild`の実行で機能します。対象は、Terminal、iTerm、エディターの統合ターミナル、`fastlane`、および`xcodebuild`を呼び出すスクリプトです。
+デフォルトのセットアップでは、`PATH` 経由で解決される `xcodebuild` の実行をキャッシュします。対象は、Terminal、iTerm、エディターの統合ターミナル、`fastlane`、および `xcodebuild` を呼び出すすべてのスクリプトです。
 
-Xcode.appは`xcodebuild`をハードコードされた絶対パスで呼び出すため、IDEで⌘Bまたは⌘Rを押すとラッパーが迂回されます。これらのビルドでは、キャッシュの読み取り、キャッシュの書き込み、アナリティクスのいずれも行われません。IDEからビルドしてキャッシュのアクティビティが表示されない場合は、これが原因です。代わりにターミナルからビルドを実行してください。
+Xcode.app は `xcodebuild` をハードコードされた絶対パスで呼び出すため、デフォルトのセットアップでは、IDE で ⌘B や ⌘R を押してもラッパーを経由しません。Xcode.app IDE のビルドでもキャッシュが必要な場合は、以下の[Xcode.app IDE ビルド（オプトインベータ）](#xcodeapp-ide-builds-opt-in-beta)を参照してください。
 
 :::
 
@@ -70,7 +70,7 @@ bitrise-build-cache activate --interactive
 1. <strong>Select a workspace</strong>: 使用するBuild Cacheを持つworkspaceを選択します。アクセスできるものが1つだけの場合は、CLIが自動的に選択します。
 1. <strong>Which build tools should I set up</strong>: <strong>Xcode</strong>が選択されていることを確認します。スペースキーでオプションを切り替え、Enterキーで確定します。
 1. <strong>Cache for all projects, or only opted-in ones?</strong>: このマシンに複数のプロジェクトがあり、その一部だけでキャッシュを使用したい場合を除き、デフォルトの<strong>Always</strong>のままにします。[Per-project cache scoping](/bitrise-build-cache/getting-started-with-the-build-cache/per-project-cache-scoping)を参照してください。
-1. <strong>Display name for this machine's local invocations</strong>: Build Cacheダッシュボードでローカルビルドが表示される名前です。例: `local-<yourhandle>`
+1. <strong>Display name for this machine's local invocations</strong>: Build Cacheダッシュボードでローカルビルドが表示される名前です。例： `local-<yourhandle>`
 1. <strong>Enable cache push</strong>: デフォルトの<strong>Yes, push too</strong>のままにします。[Cache push mode](#cache-push-mode)を参照してください。
 1. <strong>Keep the cache proxies running in the background</strong>: <strong>Yes, install + start</strong>を選択します。これにより、キャッシュプロキシがOSに登録され、シェルを再起動しても動作し続けます。
 
@@ -195,6 +195,62 @@ bitrise-build-cache activate xcode --cache --no-swift-cache
   ```bash
   bitrise-build-cache activate xcode --cache --cache-push=false --debug
   ```
+
+## Xcode.app IDE ビルド（オプトインベータ） {#xcodeapp-ide-builds-opt-in-beta}
+
+デフォルトのセットアップでは、`PATH` 経由の `xcodebuild` の実行のみが対象となるため、Xcode.app の GUI ビルド（⌘B、⌘R）ではキャッシュが使われません。オプトインの<strong>ラッパーレスパイプライン</strong>を使うと、この制限がなくなります。`xcodebuild` をラップする代わりに、CLI のプロキシが DerivedData を直接監視するため、Xcode.app のビルドと `/usr/bin/xcodebuild` の直接実行で、キャッシュ転送量とヒット率が Build Cache の呼び出し行に記録されます。
+
+:::note[Beta]
+
+ラッパーレスパイプラインはベータ機能で、デフォルトではオフです。動作は今後変更される可能性があり、いくつかの制限事項をこのセクションの末尾に記載しています。
+
+Bitrise Build Cache CLI 3.20.2 以降を使用してください。それより前のバージョンではパイプラインを再びオフにできず、cache keys がホームディレクトリの異なるマシン間で一致しません。
+
+:::
+
+### ラッパーレスパイプラインを有効にする {#turning-on-the-wrapperless-pipeline}
+
+1. このマシンでパイプラインを有効にします。
+
+   ```bash
+   bitrise-build-cache activate xcode --wrapperless-pipeline
+   ```
+
+   CLI は、この選択を `~/.bitrise-xcelerate/config.json` に `wrapperlessPipelineEnabled: true` として保存します。以降のキャッシュプロキシの再起動にもこの設定が引き継がれるため、再度フラグを渡す必要はありません。このフラグを切り替えない場合、デフォルトのラッパー + エンリッチャーのセットアップは変更されません。
+
+2. Xcode プロジェクトまたは workspace を、上書き用の xcconfig に接続します。Xcode 27 では上書き設定が SwiftBuild に自動的に伝わらなくなったため、CLI は各プロジェクトのビルド構成に、管理対象の `#include?` ディレクティブを追加します。
+
+   ```bash
+   bitrise-build-cache xcode link <path-to-.xcodeproj-or-.xcworkspace>
+   ```
+
+   このコマンドは、各ビルド構成の既存の xcconfig にインクルードブロックを追記します。xcconfig がない構成では、プロジェクトの隣に `.bitrise-build-cache.xcconfig` を作成し、構成がそれを指すようにします。このコマンドは冪等です。プロジェクトを移動したあとに再実行してください。Swift Package Manager のパッケージターゲットには、このインクルードが適用されません。これらは次のステップの Bitrise ツールチェーンに依存します。ツールチェーンがない場合、ローカルのコンパイルキャッシュのみを使用します。
+
+3. Xcode で、<strong>Xcode → Toolchains</strong> から Bitrise ツールチェーンを選択します。Xcode は、xcconfig のツールチェーン設定を IDE に対して自動的には反映しないため、初回は手動で行う必要があります。その後、⌘B でビルドします。
+
+オフに戻すには（CLI 3.20.2 以降）、再度有効化コマンドを実行し、明示的な `false` を渡します。
+
+```bash
+bitrise-build-cache activate xcode --wrapperless-pipeline=false
+```
+
+`xcode link` が行ったプロジェクトの編集を元に戻すには、同じ project or workspace path を指定して `bitrise-build-cache xcode unlink <path>` を実行します。インクルードブロックと空の `.bitrise-build-cache.xcconfig` ファイルは削除されますが、プロジェクト内の xcconfig 参照は残ります。
+
+### DerivedData の場所 {#deriveddata-locations}
+
+パイプラインは、デフォルトの DerivedData ルート（`~/Library/Developer/Xcode/DerivedData`）と、Xcode の <strong>Xcode → Settings → Locations → Derived Data → Custom</strong> で設定したカスタムの場所（`IDECustomDerivedDataLocation`）を監視します。ビルドが別の場所、または複数の場所を使用している場合は、`BITRISE_XCELERATE_DERIVED_DATA_DIRS` 環境変数にコロン区切りのリストで指定すると、パイプラインがそれらすべてを監視します。
+
+### ターミナルのビルドから Xcode.app のビルドをウォームアップする {#warming-xcodeapp-builds-from-terminal-builds}
+
+ラッパーレスパイプラインでは、キャッシュされたターミナルのビルドが、同じマシン上の後続の Xcode.app のビルドを高速化します。デフォルトのラッパーでは高速化されません。
+
+- <strong>ラッパーレスパイプライン：</strong> ターミナルの `xcodebuild` と Xcode.app はどちらも Bitrise ツールチェーンを使用し、デフォルトの DerivedData ルート、または `BITRISE_XCELERATE_DERIVED_DATA_DIRS` や `IDECustomDerivedDataLocation` が指すカスタムの場所に書き込みます。ターミナルのビルドが、次の ⌘B で Xcode.app が読み取る DerivedData を生成し、どちらのビルドも同じプロキシからコンパイルキャッシュのエントリを取得します。
+- <strong>Default ラッパー：</strong> `xcodebuild` ラッパーは、プレフィックスマップのルールで正規化できる予測可能なパスを確保するため、DerivedData を `~/.bitrise/cache/xcode-dd/<project-hash>` にリダイレクトします。Xcode.app は引き続き `~/Library/Developer/Xcode/DerivedData` を使用し、ラッパーを経由しません。ターミナルのビルドはリモートキャッシュを更新しますが、Xcode.app の DerivedData は空のままのため、次の ⌘B でもローカルでゼロからコンパイルされます。
+
+### 既知の制限事項 {#known-limitations}
+
+- 同じシェルから複数の `xcodebuild` ビルドを並行して実行すると、それらは1つの呼び出し行にまとめられます。この場合、警告がログに記録されます。
+- `^C` でビルドをキャンセルすると、`xcodebuild` が SIGINT 時にログを正常に確定するため、Build Cache UI では成功したビルドとして表示されます。
 
 ## トラブルシューティング {#troubleshooting}
 
