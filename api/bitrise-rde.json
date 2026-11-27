@@ -969,7 +969,7 @@
     },
     "v1PreviewDeviceState": {
       "default": "PREVIEW_DEVICE_STATE_UNSPECIFIED",
-      "description": "PreviewDeviceState is the device-readiness verdict carried on preview\nresolves and on Session.device. A \"running\" session only means the startup script began — the\ndevice (emulator/simulator) boots in the background for minutes more.\nREADY is asserted by the VM itself (via MachineReportDeviceReady) once the\ndevice is booted AND the streamer delivers frames: the one authoritative\nreadiness fact consumers read instead of guessing from session status.\n\n - PREVIEW_DEVICE_STATE_UNSPECIFIED: No readiness verdict available (session predates the signal, or the\nmachine is not running yet). Consumers behave exactly as they did\nbefore the signal existed.\n - PREVIEW_DEVICE_STATE_BOOTING: The machine is running but the VM has not yet proven its device usable.\n - PREVIEW_DEVICE_STATE_READY: The VM reported: device booted and streamer delivering frames.\n - PREVIEW_DEVICE_STATE_FAILED: The VM reported a terminal device failure for this boot (emulator never\nbooted, streamer never delivered a frame). Only ever asserted by the VM —\nabsence of a report stays UNSPECIFIED/BOOTING and consumers keep their\npre-signal bounded waits, so old VMs can never surface as FAILED.",
+      "description": "PreviewDeviceState is the device-readiness verdict carried on preview\nresolves and on Session.device. A \"running\" session only means the machine is up — the\ndevice (emulator/simulator) boots in the background for minutes more.\nREADY is asserted by the VM itself (via MachineReportDeviceReady) once the\ndevice is booted AND the streamer delivers frames: the one authoritative\nreadiness fact consumers read instead of guessing from session status.\n\n - PREVIEW_DEVICE_STATE_UNSPECIFIED: No readiness verdict available (session predates the signal, or the\nmachine is not running yet). Consumers behave exactly as they did\nbefore the signal existed.\n - PREVIEW_DEVICE_STATE_BOOTING: The machine is running but the VM has not yet proven its device usable.\n - PREVIEW_DEVICE_STATE_READY: The VM reported: device booted and streamer delivering frames.\n - PREVIEW_DEVICE_STATE_FAILED: The VM reported a terminal device failure for this boot (emulator never\nbooted, streamer never delivered a frame). Only ever asserted by the VM —\nabsence of a report stays UNSPECIFIED/BOOTING and consumers keep their\npre-signal bounded waits, so old VMs can never surface as FAILED.",
       "enum": [
         "PREVIEW_DEVICE_STATE_UNSPECIFIED",
         "PREVIEW_DEVICE_STATE_BOOTING",
@@ -1281,7 +1281,7 @@
         },
         "lifecycle": {
           "$ref": "#/definitions/v1SessionLifecycle",
-          "description": "Lifecycle hooks: the session's phase and its hook runs\n(docs/lifecycle-hooks/DESIGN.md). Unset on a session that runs the\nlegacy warmup/startup scripts. Like `device`, this is separate from\n`status`: a \"running\" session still means the machine is up; whether\nits setup has finished is in lifecycle.phase."
+          "description": "Lifecycle hooks: the session's phase and its hook runs. A session that\ndoes not run lifecycle hooks has only `mode`, set to \"legacy\". Like\n`device`, this is separate from\n`status`: a \"running\" session still means the machine is up; whether\nits setup has finished is in lifecycle.phase."
         },
         "name": {
           "description": "Human-readable name of the session.",
@@ -1549,7 +1549,7 @@
           "type": "boolean"
         },
         "mode": {
-          "title": "\"hooks\" for a session that runs lifecycle hooks through the RDE runner.\n(A legacy session has no lifecycle at all.)",
+          "description": "\"hooks\" for a session that runs lifecycle hooks. \"legacy\" for a session\nthat does not (it boots with the deprecated warmup and startup scripts):\nit has no phase and no runs. Which of the two a session is was decided\nwhen it was created; most \"legacy\" sessions predate lifecycle hooks, but\nthe mode is not a creation date.",
           "type": "string"
         },
         "phase": {
@@ -1717,11 +1717,13 @@
           "type": "boolean"
         },
         "hasStartupScript": {
-          "description": "Whether the template had a startup script configured.",
+          "deprecated": true,
+          "description": "Deprecated: see has_on_restore_hook. Whether the session's template copy\ncarries a startup script: the template's deprecated startup_script, or,\non a session that does not run lifecycle hooks, the script generated\nfrom its template's hooks. It says nothing about which hooks exist: a\nsession can report true here and false in has_on_restore_hook.",
           "type": "boolean"
         },
         "hasWarmupScript": {
-          "description": "Whether the template had a warmup script configured.",
+          "deprecated": true,
+          "description": "Deprecated: see has_on_create_hook. Whether the session's template copy\ncarries a warmup script (the template's deprecated warmup_script).",
           "type": "boolean"
         },
         "image": {
@@ -1729,7 +1731,7 @@
           "type": "string"
         },
         "lifecycleMode": {
-          "description": "Lifecycle hooks: \"hooks\" when the session runs its hooks through the RDE\nrunner (a legacy template mapped at creation, or a hooks template);\nempty for a session on the legacy warmup/startup path.",
+          "description": "\"hooks\" when the session runs lifecycle hooks (its template's own, or\nthe deprecated warmup/startup scripts mapped to hooks at creation);\nempty for a session that does not run lifecycle hooks.",
           "type": "string"
         },
         "machineType": {
@@ -1978,7 +1980,7 @@
       "properties": {
         "convertedHooks": {
           "$ref": "#/definitions/v1TemplateHooks",
-          "description": "Read-only, legacy templates only: the hooks the fixed mapping derives\nfrom warmup_script and startup_script — exactly what a session created\nfrom this template runs in a workspace with lifecycle hooks enabled, and\nwhat the editor starts from when the template is converted to hooks.\nUnset on a hooks template. Ignored on writes."
+          "description": "Read-only, only on a template that still has the deprecated\nwarmup_script / startup_script: those scripts expressed as hooks —\nexactly what a session created from this template runs. Send it as\n`hooks` with update_hooks to convert the template without changing what\nits sessions run. Unset on a template with hooks. Ignored on writes."
         },
         "createdAt": {
           "description": "When the template was created.",
@@ -2007,7 +2009,7 @@
         },
         "hooks": {
           "$ref": "#/definitions/v1TemplateHooks",
-          "description": "The lifecycle hooks of a \"hooks\" template; unset on a legacy template."
+          "description": "The template's lifecycle hooks (On create, On claim, On restore): the\nscripts that set its sessions up. Unset on a template that still has the\ndeprecated warmup_script / startup_script."
         },
         "id": {
           "description": "Unique identifier (UUID) of the template.",
@@ -2018,7 +2020,7 @@
           "type": "string"
         },
         "lifecycleMode": {
-          "description": "How the template's scripts are stored and run (lifecycle hooks,\ndocs/lifecycle-hooks/DESIGN.md). \"legacy\": warmup_script and\nstartup_script, run by the instance manager's two stages as before.\n\"hooks\": the lifecycle hooks in `hooks`, run on the booted VM by the RDE\nrunner. In a workspace with lifecycle hooks enabled a legacy template\nruns through a fixed mapping applied when a session is created (On\ncreate = the warmup part, then the startup part in the background; On\nrestore = the startup part in the background); it becomes a hooks\ntemplate only when it is saved with `hooks`.",
+          "description": "How the template defines its scripts. \"hooks\": the lifecycle hooks in\n`hooks`. \"legacy\": a template that still has the deprecated\nwarmup_script and startup_script. Its sessions run those scripts as\nhooks through a fixed mapping applied when a session is created (On\ncreate = the warmup script, then the startup script in the background;\nOn restore = the startup script in the background; see\nconverted_hooks). A legacy template becomes a hooks template when it is\nsaved with `hooks`, and never goes back.",
           "type": "string"
         },
         "machineType": {
@@ -2050,7 +2052,8 @@
           "type": "string"
         },
         "startupScript": {
-          "description": "Startup script (bash) that runs every time the session starts or restarts.",
+          "deprecated": true,
+          "description": "Deprecated: use `hooks`. The startup script (bash) of a template that\ndefines no `hooks`; it ran on every start of a session. Set only while\nlifecycle_mode is \"legacy\" (converted_hooks shows the hooks such a\ntemplate runs). On a template with hooks this is a generated, read-only\nequivalent of the hooks: never send it back on an update.",
           "type": "string"
         },
         "templateVariables": {
@@ -2067,7 +2070,8 @@
           "type": "string"
         },
         "warmupScript": {
-          "description": "Warmup script (bash) that runs only once during initial session creation.\nUse for setup tasks like dependency installation.",
+          "deprecated": true,
+          "description": "Deprecated: use `hooks`. The warmup script (bash) of a template that\ndefines no `hooks`; it ran once, when a session was created. Set only\nwhile lifecycle_mode is \"legacy\"; empty on a template with hooks.",
           "type": "string"
         },
         "workingDirectory": {
@@ -2106,7 +2110,7 @@
         },
         "hooks": {
           "$ref": "#/definitions/v1TemplateHooks",
-          "description": "The lifecycle hooks (the session's creation-time copy on the snapshot\nside; the template's current ones on the current side). Unset for a\nlegacy template; a legacy template mapped at session creation shows the\nmapped hooks on the snapshot side."
+          "description": "The lifecycle hooks (the session's creation-time copy on the snapshot\nside; the template's current ones on the current side). Unset for a\ntemplate that still has the deprecated warmup/startup scripts; a session\ncreated from one shows the mapped hooks on the snapshot side."
         },
         "image": {
           "description": "Machine image name.",
@@ -2141,7 +2145,8 @@
           "type": "string"
         },
         "startupScript": {
-          "description": "Startup script (runs every start).",
+          "deprecated": true,
+          "description": "Deprecated: see Template.startup_script. The startup script of this\nside. Compare the two sides' scripts when either side has no `hooks`;\nwhen both have `hooks`, compare those instead.",
           "type": "string"
         },
         "templateName": {
@@ -2162,7 +2167,8 @@
           "type": "string"
         },
         "warmupScript": {
-          "description": "Warmup script (runs once on creation).",
+          "deprecated": true,
+          "description": "Deprecated: see Template.warmup_script. The warmup script of this side.\nCompare the two sides' scripts when either side has no `hooks`; when\nboth have `hooks`, compare those instead.",
           "type": "string"
         },
         "workingDirectory": {
@@ -2748,7 +2754,7 @@
           "type": "array"
         },
         "warming": {
-          "description": "Warm sessions still booting (machine, warmup script, device).",
+          "description": "Warm sessions still booting (machine, On create, device).",
           "format": "int32",
           "type": "integer"
         }
@@ -3570,7 +3576,7 @@
                   "type": "string"
                 },
                 "templateId": {
-                  "description": "ID of the template to use. Optional: omit to create a session without a\ntemplate. When empty, image and machine_type are required and no\nwarmup/startup scripts run.",
+                  "description": "ID of the template to use. Optional: omit to create a session without a\ntemplate. When empty, image and machine_type are required and the\nsession runs no template hooks.",
                   "type": "string"
                 },
                 "warmPoolId": {
@@ -5043,7 +5049,7 @@
                 },
                 "hooks": {
                   "$ref": "#/definitions/v1TemplateHooks",
-                  "description": "Lifecycle hooks (see TemplateHooks). Setting this creates a \"hooks\"\ntemplate: it cannot be combined with warmup_script / startup_script, and\nit requires lifecycle hooks to be enabled for the workspace."
+                  "description": "The template's lifecycle hooks: the scripts (bash) that set its sessions\nup. On create runs once, when a session is created; On claim when the\nsession is assigned to its owner; On restore every time a stopped\nsession is restored. Every hook is optional: leave one unset to not have\nit. This is how a template defines its scripts; it replaces the\ndeprecated warmup_script / startup_script and cannot be combined with\nthem."
                 },
                 "image": {
                   "description": "Machine image name (for example, \"osx-xcode-edge\"). Consistent across clusters.\n\nSuperseded by stack_id (prefer it). Accepted for now and resolved to a stack id on the\nfly so un-migrated clients keep working.",
@@ -5078,7 +5084,8 @@
                   "type": "string"
                 },
                 "startupScript": {
-                  "description": "Startup script (bash) that runs every time the session starts or restarts.",
+                  "deprecated": true,
+                  "description": "Deprecated: use `hooks`. Startup script (bash) that ran on every start of\na session. Still accepted so existing integrations keep working; cannot\nbe combined with `hooks`. A template created with it runs it as hooks\n(see Template.lifecycle_mode).",
                   "type": "string"
                 },
                 "templateVariables": {
@@ -5090,7 +5097,8 @@
                   "type": "array"
                 },
                 "warmupScript": {
-                  "description": "Warmup script (bash) that runs only once during initial session creation.",
+                  "deprecated": true,
+                  "description": "Deprecated: use `hooks`. Warmup script (bash) that ran once, when a\nsession was created. Still accepted so existing integrations keep\nworking; cannot be combined with `hooks`. A template created with it runs\nit as hooks (see Template.lifecycle_mode).",
                   "type": "string"
                 },
                 "workingDirectory": {
@@ -5239,7 +5247,7 @@
                 },
                 "hooks": {
                   "$ref": "#/definitions/v1TemplateHooks",
-                  "description": "With update_hooks, replaces the template's lifecycle hooks (see\nTemplateHooks) and makes it a \"hooks\" template if it was legacy — that\nconversion requires lifecycle hooks to be enabled for the workspace; a\ntemplate that already is a hooks template stays editable either way.\nOnce a template is a hooks template, warmup_script / startup_script are\nrefused on it. A session input resent without `hook` keeps the hook it\nis stored with."
+                  "description": "With update_hooks, replaces the template's lifecycle hooks (On create,\nOn claim, On restore; a hook left unset is removed). On a template that\nstill has the deprecated warmup_script / startup_script this converts it\nto hooks, one way: the old scripts are cleared and are refused on it\nfrom then on. To convert without changing what sessions run, send the\ntemplate's converted_hooks. A session input resent without `hook` keeps\nthe hook it is stored with."
                 },
                 "image": {
                   "description": "Updated image name (optional).\n\nSuperseded by stack_id (prefer it). Accepted for now and resolved to a stack id on the fly.",
@@ -5274,7 +5282,8 @@
                   "type": "string"
                 },
                 "startupScript": {
-                  "description": "Updated startup script (optional).",
+                  "deprecated": true,
+                  "description": "Deprecated: use `hooks` with update_hooks. Updated startup script\n(optional). Accepted only on a template that still has the deprecated\nscripts (lifecycle_mode \"legacy\"); refused on a template with hooks.",
                   "type": "string"
                 },
                 "templateVariables": {
@@ -5314,7 +5323,8 @@
                   "type": "boolean"
                 },
                 "warmupScript": {
-                  "description": "Updated warmup script (optional).",
+                  "deprecated": true,
+                  "description": "Deprecated: use `hooks` with update_hooks. Updated warmup script\n(optional). Accepted only on a template that still has the deprecated\nscripts (lifecycle_mode \"legacy\"); refused on a template with hooks.",
                   "type": "string"
                 },
                 "workingDirectory": {
@@ -5843,7 +5853,7 @@
       "name": "Saved inputs"
     },
     {
-      "description": "Reusable configurations used to create sessions. A template defines the machine image, machine type, startup/warmup scripts, template variables, session inputs, feature flags, and workspace links.",
+      "description": "Reusable configurations used to create sessions. A template defines the machine image, machine type, lifecycle hooks, template variables, session inputs, feature flags, and workspace links.",
       "name": "Templates"
     },
     {
