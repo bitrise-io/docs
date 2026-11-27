@@ -19,20 +19,20 @@ Bitriseでは、APIを使って新しいプロジェクトを追加できます�
 
 | エンドポイント | 機能 | アプリのチームで必要なロール |
 | --- | --- | --- |
-| POST /apps/register | 新しいアプリを追加します。 | 該当なし |
-| POST /apps/\{app-slug\}/register-ssh-key | 特定のアプリにSSHキーを追加します。 | OwnerまたはAdmin |
-| POST /apps/\{app-slug\}/finish | アプリ追加プロセスの最後にアプリケーションを保存します。 | 該当なし |
-| POST /apps/\{app-slug\}/<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm> | アプリケーション用の新しいbitrise.ymlをアップロードします。 | OwnerまたはAdmin |
+| POST /apps/register | 新しいアプリを追加します。 | なし |
+| POST /apps/\{app-slug\}/register-ssh-key | 特定のアプリに SSH キーを追加します。 | OwnerまたはAdmin |
+| POST /apps/\{app-slug\}/finish | アプリ追加プロセスの最後にアプリを保存します。 | なし |
+| POST /apps/\{app-slug\}/<GlossTerm baseform="bitrise.yml">bitrise.yml</GlossTerm> | アプリ用の新しい bitrise.yml をアップロードします。 | OwnerまたはAdmin |
 
-:::note[HTTPS GitのURLを使用するアプリ]
+:::note[HTTPS Git URL を使用するアプリ]
 
-この手順と例は、SSHのGitURLを使ってプライベートなアプリを追加することを想定しています。HTTPSのGitURLを使ってアプリを追加する場合は、SSHキーの追加を省略できます。
+この手順と例は、SSH Git URL を使用するプライベートアプリの追加を対象としています。HTTPS Git URL を使用するアプリを追加する場合は、SSH キーの追加を省略できます。
 
 :::
 
-1. `register`エンドポイントを呼び出し、必要なパラメータをすべて設定して、アプリを登録します。
+1. `register` エンドポイントを呼び出し、必須パラメーターをすべて設定してアプリを登録します。
 
-   Gitプロバイダー、リポジトリのURL、プロバイダー上に表示されるリポジトリのslugを設定する必要があります。また、アプリを所有するWorkspaceのslugも追加する必要があります。これは、レガシーな命名規則により`organization_slug`パラメータが必要になるためです。
+   Gitプロバイダー、リポジトリの URL、およびプロバイダー上に表示されるリポジトリのスラッグを指定する必要があります。また、アプリを所有する Workspace のスラッグも追加する必要があります。従来の命名規則により、`organization_slug` パラメーターを使用します。
 
    ```yaml
    curl -X POST -H 'Authorization: ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/register' -d \
@@ -47,11 +47,17 @@ Bitriseでは、APIを使って新しいプロジェクトを追加できます�
     }'
    ```
 
-   :::tip[アプリの名前を変更する]
+   `is_public` を `true` に設定した場合、リポジトリは公開されている必要があります。Bitrise がこれを確認し、確認に通らないとリクエストは失敗します：
 
-   デフォルトでは、アプリを登録すると、Gitリポジトリの名前が引き継がれます。
+   - `422`（`public_project_requires_public_repository` コード）：リポジトリはプライベートです。
+   - `503`（`git_provider_unavailable` コード）：Bitrise がGitプロバイダーに接続できません。GitHub Enterprise Server では、Workspace の GitHub App が壊れている場合にも発生します。エラーメッセージで、後で再試行すればよいか、Workspace の管理者に GitHub App の確認を依頼すべきかがわかります。
+   - `400`（`provider_reauth_required` コード）：Gitプロバイダーが Bitrise の認証情報を拒否しました。Gitプロバイダーのアカウントを再接続してください。
 
-   別の名前でアプリを追加したい場合は、次の構文を使ってPOSTリクエストに「title」パラメータを追加できます。
+   :::tip[アプリ名の変更]
+
+   デフォルトでは、アプリを登録するとGitリポジトリの名前が引き継がれます。
+
+   別の名前でアプリを追加したい場合は、次の構文を使用して、POSTリクエストに "title" パラメーターを追加します。
 
    ```yaml
    curl -X POST -H 'Authorization: ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/register' -d \
@@ -62,14 +68,14 @@ Bitriseでは、APIを使って新しいプロジェクトを追加できます�
     }'
    ```
 
-   アプリを作成した後で名前を変更する場合は、PATCHリクエストを送信して`apps`エンドポイントを呼び出すこともできます。詳しくは、[既存のアプリを管理する](/bitrise-ci/api/adding-and-managing-apps#managing-an-existing-app)を参照してください。
+   アプリの作成後に、PATCHリクエストを送信して `apps` エンドポイントを呼び出すことで、名前を変更することもできます。詳細については、[既存のアプリの管理](/bitrise-ci/api/adding-and-managing-apps#managing-an-existing-app)を参照してください。
 
    :::
-1. 完了したら、`register-ssh-key`エンドポイントを呼び出して、作成したSSHキーを設定します。これにより、ビルドの実行時にBitriseがリポジトリをクローンできるようになります。
+1. 完了したら、`register-ssh-key` エンドポイントを呼び出して、作成した SSH キーを設定します。これにより、ビルドの実行時に Bitrise がリポジトリをクローンできるようになります。
 
-   秘密鍵と公開鍵の両方のSSHキーを指定する必要があります。なお、秘密鍵を手動でコピーする場合は、すべての改行を`\n`でエスケープする必要があります。
+   プライベートの SSH キーとパブリックキーの両方を指定する必要があります。プライベートキーを手動でコピーする場合は、すべての改行を `\n` でエスケープする必要があります。
 
-   Gitプロバイダーに公開鍵を自動的に登録するかどうかも設定できます。`is_register_key_into_provider_service`パラメータをtrueまたはfalseに設定してください。
+   パブリックキーをGitプロバイダーに自動的に登録するかどうかも設定できます。`is_register_key_into_provider_service` パラメーターを true または false に設定してください。
 
    ```yaml
    curl -X POST -H 'Authorization: ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/APP-SLUG/register-ssh-key' -d \
@@ -79,11 +85,13 @@ Bitriseでは、APIを使って新しいプロジェクトを追加できます�
        "is_register_key_into_provider_service": false
     }'
    ```
-1. `finish`エンドポイントを呼び出して、アプリの登録プロセスを完了します。
+1. `finish` エンドポイントを呼び出して、アプリの登録プロセスを完了します。
 
-   このエンドポイントでは、アプリの設定を行えます。プロジェクトタイプ、ビルドの実行対象となる<GlossTerm baseform="stack">stack</GlossTerm>（アプリによって異なる場合があります）、初期設定を設定します。
+   このエンドポイントでは、アプリの設定を行います。プロジェクトタイプ、ビルドを実行する <GlossTerm baseform="stack">スタック</GlossTerm>（アプリによって異なる場合があります）、および初期設定を指定します。
 
-   Environment Variablesを設定したり、アプリケーションの所有者となるWorkspaceをすぐに指定したりすることもできます。なお、`mode`パラメータは`manual`の値に設定する必要があります。
+   Environment Variables を設定できるほか、アプリのオーナーとなる Workspace をその場で指定することもできます。`mode` パラメーターには `manual` の値を設定する必要があります。
+
+   この時点でアプリを公開するには、`"is_public": true` を追加します。`register` エンドポイントと同じリポジトリチェックが実行されます。
 
    ```yaml
    curl -X POST -H 'Authorization: ACCESS-TOKEN' 'https://api.bitrise.io/v0.1/apps/APP-SLUG/finish' -d \
@@ -101,19 +109,19 @@ Bitriseでは、APIを使って新しいプロジェクトを追加できます�
    ```
 
 
-## 既存のアプリを管理する {#managing-an-existing-app}
+## 既存のアプリの管理 {#managing-an-existing-app}
 
 | エンドポイント | 機能 | アプリのチームで必要なロール |
 | --- | --- | --- |
 | GET /apps | アプリの一覧を取得します。 | 任意 |
 | GET /apps/\{app-slug\} | 特定のアプリを取得します。 | 任意 |
-| GET /apps/\{app-slug\}/bitrise.yml | 特定のアプリのbitrise.ymlを取得します。 | OwnerまたはAdmin |
+| GET /apps/\{app-slug\}/bitrise.yml | 特定のアプリの bitrise.yml を取得します。 | OwnerまたはAdmin |
 | GET /apps/\{app-slug\}/branches | アプリのリポジトリのブランチを一覧表示します。 | 任意 |
-| GET /organizations/\{org-slug\}/apps | Workspaceのアプリの一覧を取得します。 | 任意 |
+| GET /organizations/\{org-slug\}/apps | Workspace のアプリの一覧を取得します。 | 任意 |
 | GET /users/\{user-slug\}/apps | ユーザーのアプリの一覧を取得します。 | 任意 |
-| PATCH /apps/\{app-slug\} | 既存のアプリのパラメータを更新します | OwnerまたはAdmin |
+| PATCH /apps/\{app-slug\} | 既存のアプリのパラメーターを更新します | OwnerまたはAdmin |
 
-1つまたは複数のアプリに関するGETリクエストへのレスポンスには、アプリのslug、プロジェクトタイプ、Gitプロバイダー、リポジトリのオーナー、URLが含まれます。
+1つ以上のアプリに関するGETリクエストへのレスポンスには、アプリのスラッグ、プロジェクトタイプ、Gitプロバイダー、リポジトリのオーナー、および URL が含まれます。
 
 ```json
 {
@@ -139,36 +147,36 @@ Bitriseでは、APIを使って新しいプロジェクトを追加できます�
     {
 ```
 
-また、任意のアプリの既存のbitrise.ymlファイルをダウンロードすることもできます。レスポンスにはYAML設定全体が含まれます。
+任意のアプリの既存の bitrise.yml ファイルをダウンロードすることもできます。レスポンスには、完全な YAML 設定が含まれます。
 
-既存のアプリのタイトルやデフォルトのGitブランチを変更したいですか？`apps`エンドポイントのPATCHメソッドを呼び出すことで、既存のアプリのパラメータを更新できます。
+既存のアプリのタイトルやデフォルトのGitブランチを変更したい場合は、`apps` エンドポイントのPATCHメソッドを呼び出して、既存のアプリのパラメーターを更新できます。
 
 :::important[必要なロール]
 
-Bitrise APIを使って既存のアプリのパラメータを更新するには、アプリのチームでadminまたはownerロールを持っている必要があります。
+Bitrise API を使用して既存のアプリのパラメーターを更新するには、アプリのチームでAdminまたはOwnerのロールが必要です。
 
-ユーザーロールとロールのチートシートの全一覧については、[アプリチームのユーザーロール](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)を確認してください。
+ユーザーロールの一覧とロールのチートシートについては、[アプリチームのユーザーロール](/bitrise-platform/projects/roles-and-permissions-for-bitrise-ci)を参照してください。
 
 :::
 
-必須パラメータは次のとおりです。
+必須のパラメーターは次のとおりです：
 
 - slug
 
-オプションパラメータは次のとおりです。
+任意のパラメーターは次のとおりです：
 
-- apple_api_credential_slug: 新しいApple APIキーのslug（推奨: 設定にはUIを使用してください）
-- apple_credential_user_id: 新しいapple credentialのユーザーID（推奨: 設定にはUIを使用してください）
-- apple_credential_user_slug: 新しいapple credentialのuser slug（推奨: 設定にはUIを使用してください）
-- default_branch: アプリケーションの新しいdefault branch。
-- is_public: アプリケーションを公開表示するかどうかの新しい値。
-- repository_url: アプリケーションの新しいリポジトリURL。
-- services_credential_user_id: 新しいservice credential user ID（推奨: 設定にはUIを使用してください）。
-- title: アプリケーションの新しいタイトル。
+- apple_api_credential_slug：新しい Apple API キーのスラッグ（推奨：UI を使用して設定してください）
+- apple_credential_user_id：新しいApple認証情報のユーザーID（推奨：UI を使用して設定してください）
+- apple_credential_user_slug：新しいApple認証情報の user slug（推奨：UI を使用して設定してください）
+- default_branch：アプリの新しい default branch。
+- is_public：アプリを一般公開するかどうかの新しい値。
+- repository_url：アプリの新しいリポジトリの URL。アプリが公開されている場合、新しいリポジトリも公開されている必要があります。
+- services_credential_user_id：新しい service credential user ID（推奨：UI を使用して設定してください）。
+- title：アプリの新しいタイトル。
 
-<strong>既存のアプリの名前とdefault branchを変更する</strong>
+<strong>既存のアプリの名前と default branch の変更</strong>
 
-リクエスト:
+リクエスト：
 
 ```bash
 curl -X 'PATCH' 'https://api.bitrise.io/v0.1/apps/THE-APP-SLUG' -H 'accept: application/json' -H 'Authorization: ACCESS-TOKEN' -H 'Content-Type: application/json' -d '{"default_branch": "main", "title": "Example_app_title_3"}'
@@ -368,7 +376,7 @@ Bitrise APIには、ユーザーまたは[Workspace](/bitrise-platform/workspace
 
 - to_machine: 切り替え先のマシンタイプ。
 
-利用可能なマシンタイプの一覧はこちらで確認できます: [Build machineタイプ](/bitrise-build-hub/infrastructure/build-machine-types)。
+利用可能なマシンタイプの一覧はこちらで確認できます： [Build machineタイプ](/bitrise-build-hub/infrastructure/build-machine-types)。
 
 エンドポイントがfrom_machineパラメータで指定されたマシンタイプを見つけられない場合でも、空の`migrated_apps`オブジェクトを含む200レスポンスが返されます。
 
@@ -378,7 +386,7 @@ Bitrise APIには、ユーザーまたは[Workspace](/bitrise-platform/workspace
 
 :::
 
-<strong>ユーザーが所有するすべてのアプリをM1 MediumマシンからM1 Largeマシンに移行する:</strong>
+<strong>ユーザーが所有するすべてのアプリをM1 MediumマシンからM1 Largeマシンに移行する：</strong>
 
 ```bash
 curl -X 'PATCH' \
@@ -392,7 +400,7 @@ curl -X 'PATCH' \
 }'
 ```
 
-<strong>Workspaceが所有するすべてのアプリをM4 Pro LargeマシンからM4 Pro X Largeマシンに移行する:</strong>
+<strong>Workspaceが所有するすべてのアプリをM4 Pro LargeマシンからM4 Pro X Largeマシンに移行する：</strong>
 
 ```bash
 curl -X 'PATCH' \

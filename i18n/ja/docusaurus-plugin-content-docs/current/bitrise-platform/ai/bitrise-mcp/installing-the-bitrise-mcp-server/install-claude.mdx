@@ -24,35 +24,35 @@ slug: /bitrise-platform/ai/bitrise-mcp/installing-the-bitrise-mcp-server/install
 3. 初めてツールを使用すると、Claude Codeがブラウザーを開いてサインインを求めます。Bitriseにログインし（または既存のセッションを確認し）、同意画面を承認してください。
 4. `claude mcp list`を実行して、サーバーが設定されていることを確認します。
 
-#### フォールバック：PAT ベースの認証 {#fallback-pat-based-authentication}
+#### フォールバック：PATベースの認証 {#fallback-pat-based-authentication}
 
-Claude Code のバージョンが MCP OAuth をサポートしていない場合や、Personal Access Token を使用したい場合は、次の手順に従ってください。
+Claude CodeのバージョンがMCP OAuthに対応していない場合、またはPersonal Access Token（PAT）を使用したい場合：
 
-1. [Account Settings → Security](https://app.bitrise.io/me/account/security)で、[Bitrise API Token を作成](/bitrise-platform/accounts/personal-access-tokens)します。
-2. トークンを Bearer ヘッダーとして指定して、サーバーを追加します。
+1. [Account Settings → Security](https://app.bitrise.io/me/account/security)で[Bitrise API Token](https://devcenter.bitrise.io/api/authentication)を作成します。
+2. トークンをBearerヘッダーとして指定してサーバーを追加します。
    ```bash
    claude mcp add --transport http bitrise "https://mcp.bitrise.io/?toolset=all" -H "Authorization: Bearer YOUR_BITRISE_PAT"
    ```
 
 <details>
-<summary><b>PAT の安全な保管</b></summary>
+<summary><b>PATの安全な保管</b></summary>
 <br/>
 
-セキュリティのため、トークンをハードコードしないでください。一般的な方法の1つは次のとおりです。
+セキュリティのため、トークンをハードコードしないでください。一般的な方法の1つを紹介します。
 
-1. トークンを `.env` ファイルに保存します。
+1. トークンを`.env`ファイルに保存します。
 
    ```
    BITRISE_PAT=your_token_here
    ```
 
-2. .gitignore に追加します。
+2. .gitignoreに追加します。
 
    ```bash
    echo -e ".env\n.mcp.json" >> .gitignore
    ```
 
-3. 追加時にそのファイルを参照します。
+3. 追加時にこれを参照します。
 
    ```bash
    claude mcp add --transport http bitrise "https://mcp.bitrise.io/?toolset=all" -H "Authorization: Bearer $(grep BITRISE_PAT .env | cut -d '=' -f2)"
